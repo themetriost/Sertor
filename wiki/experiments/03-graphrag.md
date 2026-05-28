@@ -93,6 +93,16 @@ GraphRAG usa **sia un LLM (chat, costo dominante) sia un embedding (minore)** �
   resta un'API (non locale) e non è nativo in GraphRAG.
 - Idea: eseguire il subset in **entrambe** le varianti e confrontare qualità/tempo/costo.
 
+**Scelta modelli (qualità/prezzo).** Per GraphRAG conta il prezzo/token (estrazione ad alto
+volume) e l'affidabilità sull'output strutturato → i *mini* OpenAI sono il punto giusto:
+- Cloud consigliato: **`5.5-mini`** per l'estrazione + **`text-embedding-3-small`** (eguaglia
+  quasi `-large`, vedi [[01-baseline]]). Per la 3C **non serve deployare altro**.
+- Ottimizzazione: GraphRAG supporta **modelli diversi per step** → `5.5-mini` per l'estrazione
+  per-chunk + un modello più forte (`5.4`) solo per i **community report** (poche chiamate, alto valore).
+- Alternative catalogo: Cohere Command R (RAG/structured, buono); Phi-4 (economico ma rischio
+  output malformato); Llama 3.3 70B (open). La Tappa 4 (agentic) vorrà invece un modello forte
+  per il planning (esigenza opposta).
+
 ## Prossimi passi
 - **Tappa 3C:** Microsoft GraphRAG (estrazione entità/relazioni via LLM + community summaries)
   e **confronto** con questo grafo AST.
