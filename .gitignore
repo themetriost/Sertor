@@ -22,6 +22,7 @@ __pycache__/
 03-graphrag/*.log
 03-graphrag/grag/input/
 03-graphrag/grag/output/
+03-graphrag/grag/output_*/
 03-graphrag/grag/cache/
 03-graphrag/grag/logs/
 03-graphrag/grag/metrics/

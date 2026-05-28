@@ -174,3 +174,21 @@ dove `<operazione>` ∈ { setup, ingest, record, query, lint }.
 - **Apri come:** tuning custom entity_types (class/function/module/endpoint/exception/concept) + prompt-tune;
   integrazione AST↔GraphRAG↔vettoriale.
 - Dettagli: [experiments/03-graphrag.md](experiments/03-graphrag.md) (sezione "Query di prova (global + local)").
+
+## [2026-05-28] record | Tappa 3C re-run: entity_types di dominio vs generici
+
+- **Re-run GraphRAG con entity_types di dominio** (CLASS, FUNCTION, DATA_MODEL, ENDPOINT, EXCEPTION, CONCEPT, LIBRARY)
+  derivati data-driven dal tool `derive-entity-types` (analizza AST + embedding cluster). Prompt di estrazione riscritto
+  con 2 esempi few-shot reali FastAPI (codice+doc).
+- **Esecuzione:** primo tentativo ucciso sessione (extract 100/102), retry ha riusato cache (102/102 in ~20s) e completato step a valle.
+  Backup run1 generico in `03-graphrag/grag/output_run1_generic/` (gitignored). Script riusabile `compare_runs.py`.
+- **Confronto struttura:** entità 1090→1305 (+215), relazioni 1779→2684 (+905, +51%), community 239→330 (+91).
+  Distribuzione run2: CONCEPT 68.4%, FUNCTION 7.3%, LIBRARY 7.0%, DATA_MODEL 6.7%, CLASS 4.9%, ENDPOINT 4.1%, EXCEPTION 1.1%, ~0.4% untyped.
+  Entity top tipizzate correttamente: FASTAPI ORGANIZATION→LIBRARY, PATH OPERATION EVENT→ENDPOINT, OAUTH2PASSWORDBEARER→CLASS, REQUEST→DATA_MODEL, OPENAPI→CONCEPT.
+- **Token/costo:** gpt-5.4-mini 1362 call (202 cache, 470 retry, 45% retry_rate), 1.761M+678K = 2.439M token, ~$4.37
+  (+30% vs run1 generico $3.34). Embedding 138 call, 478K token, ~$0.01. Tradeoff: grafo +51% relazioni → più summarize/report.
+- **Learning:** entity_types dominio abilita navigazione-per-tipo strutturale (CONCEPT catch-all 68%), ma costo +30%.
+  CONCEPT domina → margine di split/raffinamento; ~0.4% mislabel/untyped. Conferma flow `derive-entity-types` data-driven.
+  Dual-conclusione: entity_types generici ok per retrieval NL (GraphRAG usa report testuali), ma entity_types dominio
+  necessari per drill-down/aggregazione per tipo (use case dipendente).
+- Dettagli: [experiments/03-graphrag.md](experiments/03-graphrag.md) (sezione "Re-run con entity_types di dominio").

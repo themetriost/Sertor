@@ -1,10 +1,10 @@
 ---
 title: 03 GraphRAG (A+C — code graph leggero + Microsoft GraphRAG)
 type: experiment
-tags: [graphrag, code-graph, ast, networkx, microsoft-graphrag, multi-hop, query]
+tags: [graphrag, code-graph, ast, networkx, microsoft-graphrag, multi-hop, query, entity-types, domain-tuning]
 created: 2026-05-28
 updated: 2026-05-28
-status: completato (A + C + query prova eseguita)
+status: completato (A + C + query prova eseguita + re-run dominio)
 sources: [https://github.com/fastapi/fastapi, https://github.com/microsoft/graphrag]
 ---
 
@@ -95,9 +95,9 @@ GraphRAG usa **sia un LLM (chat, costo dominante) sia un embedding (minore)** �
 
 **Scelta modelli (qualità/prezzo).** Per GraphRAG conta il prezzo/token (estrazione ad alto
 volume) e l'affidabilità sull'output strutturato → i *mini* OpenAI sono il punto giusto:
-- Cloud consigliato: **`5.5-mini`** per l'estrazione + **`text-embedding-3-small`** (eguaglia
+- Cloud consigliato: **`5.4-mini`** per l'estrazione + **`text-embedding-3-small`** (eguaglia
   quasi `-large`, vedi [[01-baseline]]). Per la 3C **non serve deployare altro**.
-- Ottimizzazione: GraphRAG supporta **modelli diversi per step** → `5.5-mini` per l'estrazione
+- Ottimizzazione: GraphRAG supporta **modelli diversi per step** → `5.4-mini` per l'estrazione
   per-chunk + un modello più forte (`5.4`) solo per i **community report** (poche chiamate, alto valore).
 - Alternative catalogo: Cohere Command R (RAG/structured, buono); Phi-4 (economico ma rischio
   output malformato); Llama 3.3 70B (open). La Tappa 4 (agentic) vorrà invece un modello forte
@@ -228,6 +228,65 @@ python -m graphrag query --root 03-graphrag/grag --method local "cos'è OAuth2Pa
 - Token reali: **1 chiamata LLM** (streaming, token non contati nel metrics di GraphRAG) + **1 embedding** (18 token) → **quasi gratis**.
 
 **Token totale Tappa 3C finora:** Indexing $3.34 + Query ~$0.23 ≈ **~$3.57** (mini subset).
+
+### Re-run con entity_types di dominio (generico vs dominio)
+
+**Motivazione:** run1 usava entity_types generici (ORGANIZATION, PERSON, EVENT, GEO, API) non tarati su codice tecnico, forzando concetti come FASTAPI→ORGANIZATION, OPENAPI→EVENT. Run2 ripete l'indicizzazione con entity_types **di dominio** (CLASS, FUNCTION, DATA_MODEL, ENDPOINT, EXCEPTION, CONCEPT, LIBRARY), derivati data-driven dal corpus indicizzato tramite il tool `derive-entity-types` (analizza simboli AST + cluster embedding per concept).
+
+**Configurazione:**
+- **Entity_types run1 (generico):** [ORGANIZATION, PERSON, EVENT, GEO, API] — default GraphRAG.
+- **Entity_types run2 (dominio):** [CLASS, FUNCTION, DATA_MODEL, ENDPOINT, EXCEPTION, CONCEPT, LIBRARY] — proposti da `derive-entity-types` dopo analisi: kind/simboli da grafo AST per codice, cluster di embedding per concetti tecnici.
+- **Prompt di estrazione (`prompts/extract_graph.txt`):** riscritto con **2 esempi few-shot reali FastAPI** (codice + doc annotati coi nuovi tipi) anziché 3 generici. Cambio tipi + prompt invalida la cache GraphRAG → re-estrazione necessaria.
+
+**Esecuzione e recovery:**
+- **Primo tentativo:** ucciso alla chiusura sessione (extract_graph 100/102 completato, ma metrics non salvate). Ha però **popolato la cache** di GraphRAG.
+- **Retry:** riusato la cache per l'estrazione (102/102 in ~20s) e completato i step a valle (community report, embedding) senza rallentamenti ulteriori.
+- **Backup grafo run1:** artefatti parquet originali conservati in `03-graphrag/grag/output_run1_generic/` (gitignored per evitare bloat).
+- **Script di confronto:** `03-graphrag/compare_runs.py` (riusabile) per legger entrambi e confrontare struttura.
+
+**Confronto struttura (run1 generico → run2 dominio):**
+
+| Metrica | Run1 (generico) | Run2 (dominio) | Δ |
+|---------|:---------------:|:--------------:|---:|
+| Entità | 1090 | 1305 | +215 (+19.7%) |
+| Relazioni | 1779 | 2684 | +905 (+50.9%) |
+| Community + report | 239 | 330 | +91 (+38.1%) |
+| Documenti | 57 | 57 | — |
+| Text_units | 102 | 102 | — |
+
+**Distribuzione entity_types:**
+
+*Run1 (generico):*
+- EVENT 650 (59.6%), ORGANIZATION 355 (32.6%), PERSON 48 (4.4%), GEO 36 (3.3%), API 1 (0.1%).
+
+*Run2 (dominio):*
+- CONCEPT 892 (68.4%), FUNCTION 95 (7.3%), LIBRARY 91 (7.0%), DATA_MODEL 87 (6.7%), CLASS 64 (4.9%), ENDPOINT 53 (4.1%), EXCEPTION 14 (1.1%), senza tipo ~5 (0.4%).
+
+**Entità top — tipizzazione corretta in run2:**
+- `FASTAPI`: ORGANIZATION (run1, hubdeg 311) → **LIBRARY** (run2, hubdeg 230). Corretto.
+- `PATH OPERATION`: EVENT (run1) → **ENDPOINT** (run2). Corretto.
+- `OAUTH2PASSWORDBEARER`: ORGANIZATION (run1) → **CLASS** (run2). Corretto.
+- `REQUEST`: EVENT (run1) → **DATA_MODEL** (run2). Corretto.
+- `OPENAPI`: EVENT (run1) → **CONCEPT** (run2). Corretto.
+
+**Token e costo (metrics writer jsonl 20260528_213633):**
+- Chat `gpt-5.4-mini`: 1362 chiamate (202 servite da cache, 470 con retry, retry_rate 45%).
+  - Prompt: 1.761M, completion: 678K → **2.439M token totali** (include risposte cache → costo "logico" a freddo della config dominio).
+  - Costo litellm: **~$4.37** (registrato dal cost map).
+- Embedding `text-embedding-3-small`: 138 chiamate, 478K token, ~$0.01.
+- **Totale run2:** ~$4.38 vs run1 ~$3.34 → **+30% rispetto al run generico** (causa: grafo più ricco → +51% relazioni → più chiamate `summarize_descriptions` e `community_reports`).
+
+**Learning critico:**
+- **Guadagno tassonomico:** il tuning entity_types trasforma il grafo da "non navigabile per tipo" (tutto EVENT/ORGANIZATION) a una tassonomia di dominio coerente con il codice (class/function/data_model/endpoint/exception/concept/library). I simboli chiave sono finalmente tipizzati correttamente.
+- **Tradeoff costo:** grafo più ricco e tipizzato consuma ~30% più token/costo. Questo è il prezzo della granularità — motivo per cui l'entity_types va scelto strategicamente per il caso d'uso (navigazione-per-tipo vs solo retrieval semantico).
+- **Caveat sulla qualità:**
+  - CONCEPT funge da **catch-all** (68.4%) → margine di raffinamento. Potrebbe essere splittato ulteriormente (concetti di design vs pattern vs architettura) o usato come fallback.
+  - Qualche **mislabel** residuo (es. QUERY→FUNCTION, ANNOTATED→LIBRARY) — il prompt-tune o esempi few-shot aggiuntivi potrebbero migliorare.
+  - ~0.4% entità **senza tipo** — fringe case, ma dimostra limite della classificazione.
+- **Conferma del flusso tool `derive-entity-types`:** la tassonomia proposta data-driven produce un grafo strutturalmente coerente col dominio. Approccio riproducibile e automatizzabile.
+- **Doppia conclusione:**
+  1. **Entity_types generici:** non penalizzavano il retrieval semantico su query NL (la GLOBAL funzionava comunque) perché GraphRAG usa i community report testuali come backbone. Penalizzavano solo la **navigazione-per-tipo** (filtrare entità ORGANIZATION).
+  2. **Entity_types di dominio:** abilitano navigazione-per-tipo significativa, ma al costo di ~30% più token. Hanno senso quando il caso d'uso richiede aggregazione/drill-down per tipo (es. "dimmi tutte le EXCEPTION" o "quali sono gli ENDPOINT della APIs").
 
 ### Learning: entity_types generici non penalizzano il retrieval
 Anche con entity_types di default (ORGANIZATION/EVENT/PERSON/GEO/API) **generici/sbagliati per il codice**, la qualità delle risposte della GLOBAL rimane alta. Motivo: GraphRAG si appoggia ai **community report testuali** (descrizioni NL delle entità + testo originale dei doc) e alle **relazioni**, non alle etichette di tipo. I tipi generici penalizzano la **navigazione-per-tipo** (filtrare entità ORGANIZATION), non il retrieval semantico.
