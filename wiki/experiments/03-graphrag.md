@@ -84,6 +84,15 @@ per conflitti di dipendenze: usa `graspologic` (Leiden) → `numba`, che tipicam
 - Gli artefatti si **rileggono dal `.venv` principale** (pandas/networkx) per il confronto col grafo AST.
 - Isolamento solo dei *pacchetti Python*, non dei dati (condivisi sul filesystem).
 
+GraphRAG usa **sia un LLM (chat, costo dominante) sia un embedding (minore)** — config separata
+(`llm` / `embeddings`). Opzioni provider:
+- **Cloud (Foundry):** LLM `5.5-mini` + embedding `text-embedding-3-small` → veloce, ~$0.20 sul subset.
+- **Locale (no API):** Ollama via endpoint **OpenAI-compatible** `http://localhost:11434/v1`,
+  LLM `qwen3:30b` + embedding `nomic-embed-text` → costo zero/privacy, più lento; la qualità
+  d'estrazione dipende dal modello (i piccoli spesso danno output malformato). Claude Haiku
+  resta un'API (non locale) e non è nativo in GraphRAG.
+- Idea: eseguire il subset in **entrambe** le varianti e confrontare qualità/tempo/costo.
+
 ## Prossimi passi
 - **Tappa 3C:** Microsoft GraphRAG (estrazione entità/relazioni via LLM + community summaries)
   e **confronto** con questo grafo AST.
