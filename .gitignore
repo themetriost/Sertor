@@ -26,6 +26,7 @@ __pycache__/
 03-graphrag/grag/logs/
 03-graphrag/grag/metrics/
 03-graphrag/grag/update_output/
+03-graphrag/entity_types_evidence.*
 
 # OS / editor
 .DS_Store
