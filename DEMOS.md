@@ -1,0 +1,173 @@
+# DEMOS — test dimostrativi delle configurazioni RAG
+
+Runbook riproducibile delle configurazioni esplorate (Tappe 01–03). Per ogni demo:
+**scopo · prerequisiti · comando · output atteso · output osservato**.
+
+La controparte automatica è la suite `tests/` (smoke test pytest): vedi
+[§ Suite di test](#suite-di-test-pytest). Obiettivo (vedi [`CLAUDE.md`](CLAUDE.md)): tooling
+**riproducibile e repo-agnostico** verso un toolset RAG portabile in un progetto enterprise.
+
+## Prerequisiti generali
+
+| Risorsa | Serve a | Come ottenerla |
+|---|---|---|
+| venv principale `.venv` | Tappe 01/02/03A | `uv venv .venv --python 3.12 && uv pip install -r requirements.txt` |
+| indice Chroma `01-baseline/.index` | retrieval dense/hybrid | `python 01-baseline/index.py --provider all` |
+| grafo AST `03-graphrag/.index/code_graph.graphml` | Tappa 3A | `python 03-graphrag/build_graph.py` |
+| Ollama in esecuzione | embedding locale (provider `ollama`) | `ollama serve` + `ollama pull nomic-embed-text` |
+| chiavi Azure in `.env` | provider `azure-*` (qualità migliore) | vedi `.env.example` |
+| venv isolato `03-graphrag/.venv-grag` + artefatti `grag/output` | Tappa 3C | vedi [§ 3C](#3c--microsoft-graphrag) |
+
+> Tutti i comandi si lanciano dalla **root del repo** con `PYTHONPATH=.` (i moduli usano `shared/`).
+> Su Windows: `PYTHONPATH=. .venv\Scripts\python.exe <script> ...`.
+
+---
+
+## 01 — Baseline (dense vector retrieval)
+
+**Scopo:** similarity search densa su Chroma, una collection per provider di embedding.
+**Prerequisiti:** indice Chroma + un backend embedding (Ollama locale o Azure).
+
+```bash
+PYTHONPATH=. python 01-baseline/search.py "OAuth2 password bearer token authentication" --provider ollama -k 3
+```
+
+**Atteso:** 3 risultati numerati nel formato `N. [source/kind] path#chunk (d=…)`.
+**Osservato (provider `ollama`):** la pipeline gira ma il provider locale (nomic-embed-text, il
+più debole — vedi eval sotto) qui pesca **blob base64** (dati immagine in `docs_src/stream_data/`)
+invece di `security/oauth2`:
+
+```
+1. [code/example] docs_src/stream_data/tutorial002_py310.py#3  (d=0.4322)
+   AgdGlmZjpJbWFnZUxlbmd0aD0iMjki...   (← base64, rumore)
+```
+
+> **Finding:** (1) il provider locale è debole su query NL; (2) il corpus contiene blob base64 da
+> ripulire in ingestion. La **qualità** per provider è misurata da `evaluate.py`:
+>
+> ```bash
+> PYTHONPATH=. python 01-baseline/evaluate.py      # hit-rate@k + MRR@10 sui 3 provider
+> ```
+>
+> Risultati documentati: `azure-large` hit@1 0.90 / MRR 0.950 > `azure-small` 0.70 / 0.833 >
+> `ollama` 0.60 / 0.693 (vedi `wiki/experiments/01-baseline.md`).
+
+---
+
+## 02 — Hybrid + reranking (BM25 + dense + RRF)
+
+**Scopo:** fondere BM25 (sparse, lessicale) e dense via Reciprocal Rank Fusion; il ramo sparse
+eccelle sui **simboli esatti** del codice.
+**Prerequisiti:** indice Chroma. Il `--mode sparse` è **offline** (nessun embedding/rete).
+
+```bash
+PYTHONPATH=. python 02-hybrid-reranking/hybrid.py "OAuth2PasswordBearer" --provider ollama --mode sparse -k 3
+```
+
+**Atteso:** in cima i file che contengono il simbolo esatto `OAuth2PasswordBearer`.
+**Osservato:** deterministico, centra gli esempi `docs_src/security/` e il tutorial security:
+
+```
+1. [code/example] docs_src/security/tutorial001_py310.py#0
+   from fastapi import Depends, FastAPI from fastapi.security import OAuth2PasswordBearer ...
+3. [doc/markdown] docs/en/docs/tutorial/security/first-steps.md#5
+   ## **FastAPI**'s `OAuth2PasswordBearer` ...
+```
+
+Fusione completa (richiede Ollama): `--mode hybrid`. Eval comparativa dense/hybrid/+rerank:
+`PYTHONPATH=. python 02-hybrid-reranking/evaluate.py` (vedi `wiki/experiments/02-hybrid-reranking.md`).
+
+---
+
+## 03A — Code graph (AST)
+
+**Scopo:** query **strutturali/deterministiche** sul grafo AST (definizioni, chiamanti, doc
+collegati) — gratis, nessun LLM.
+**Prerequisiti:** grafo AST.
+
+```bash
+PYTHONPATH=. python 03-graphrag/graph_query.py def     OAuth2PasswordBearer
+PYTHONPATH=. python 03-graphrag/graph_query.py callers HTTPException
+PYTHONPATH=. python 03-graphrag/graph_query.py docs    APIRouter
+```
+
+**Atteso:** definizione con `path:lineno`; lista chiamanti; doc Markdown collegati.
+**Osservato:**
+
+```
+Definizioni di 'OAuth2PasswordBearer':
+   - fastapi/security/oauth2.py:433  class OAuth2PasswordBearer
+Chi chiama 'HTTPException':           (10 chiamanti, es. docs_src/app_testing/.../main.py)
+Doc che menzionano 'APIRouter':       (es. advanced/custom-response.md, openapi-callbacks.md)
+```
+
+> I conteggi riflettono il **grafo corrente** su disco (`build_graph.py` risolve le chiamate in
+> modo conservativo). Limite noto: i re-export da Starlette (`JSONResponse`) non risultano
+> "definiti" (vedi `wiki/experiments/03-graphrag.md`).
+
+---
+
+## 3C — Microsoft GraphRAG
+
+GraphRAG gira in un **venv isolato** (`03-graphrag/.venv-grag`) per conflitti di dipendenze
+(numpy<2 di `graspologic`). Tutti i comandi richiedono `LITELLM_LOCAL_MODEL_COST_MAP=True`
+(altrimenti `litellm` si blocca sul fetch della cost-map).
+
+**Setup (una tantum):**
+```bash
+uv venv 03-graphrag/.venv-grag --python 3.12 && uv pip install --python 03-graphrag/.venv-grag graphrag
+# config: 03-graphrag/grag/settings.yaml (entity_types di dominio) + grag/.env (key/endpoint)
+```
+
+**Indicizzazione (a pagamento, ~$3–4, ~14 min sul subset):**
+```bash
+LITELLM_LOCAL_MODEL_COST_MAP=True 03-graphrag/.venv-grag/Scripts/python.exe -m graphrag index --root 03-graphrag/grag
+```
+
+**Ispezione artefatti (gratis):**
+```bash
+PYTHONPATH=. 03-graphrag/.venv-grag/Scripts/python.exe 03-graphrag/summarize.py     # token + struttura
+PYTHONPATH=. 03-graphrag/.venv-grag/Scripts/python.exe 03-graphrag/compare_runs.py \
+    --a 03-graphrag/grag/output_run1_generic --a-label generico \
+    --b 03-graphrag/grag/output            --b-label dominio
+```
+
+**Osservato (generico vs dominio):** entità 1090→1305, relazioni 1779→2684 (+51%), community
+239→330. Tipi: generico 92% EVENT/ORGANIZATION → dominio CONCEPT/CLASS/FUNCTION/DATA_MODEL/
+ENDPOINT/EXCEPTION/LIBRARY (vedi `wiki/experiments/03-graphrag.md`). Derivazione tipi data-driven:
+skill `/derive-entity-types`.
+
+**Query (a pagamento):**
+```bash
+# local search ≈ 1 chiamata (economica); global search ≈ map-reduce su tutte le community (~$0.23)
+LITELLM_LOCAL_MODEL_COST_MAP=True 03-graphrag/.venv-grag/Scripts/python.exe -m graphrag query \
+    --root 03-graphrag/grag --method local "What is OAuth2PasswordBearer?"
+```
+
+---
+
+## Suite di test (pytest)
+
+Smoke test che invocano gli **stessi comandi** qui sopra e ne verificano output/return code.
+Test **free** (BM25 sparse, grafo AST, artefatti GraphRAG) sempre eseguibili; test **gated**
+(dense/hybrid → Ollama; GraphRAG query → Azure) **skippati** se l'ambiente non è pronto; test
+**`paid`** skippati salvo flag.
+
+```bash
+.venv/Scripts/python.exe -m pytest tests/ -v            # suite free + gated (skip se mancano backend)
+.venv/Scripts/python.exe -m pytest tests/ --run-paid    # include la query GraphRAG a pagamento
+```
+
+**Stato corrente:** `8 passed, 1 skipped` (l'1 skip è il test `paid`; con Ollama attivo i gated passano).
+
+| Test | Config | Tipo | Verifica |
+|---|---|---|---|
+| `test_graph_ast.py` | 03A | free | def/callers/docs su simboli noti |
+| `test_graphrag_artifacts.py` | 3C | free | tipi ⊆ tassonomia di dominio; grafo ricco |
+| `test_hybrid.py::...sparse` | 02 | free | BM25 trova il simbolo esatto |
+| `test_baseline.py` | 01 | gated (Ollama) | forma output dense (k risultati) |
+| `test_hybrid.py::...fusione` | 02 | gated (Ollama) | la fusione RRF gira |
+| `test_graphrag_query.py` | 3C | paid (Azure) | local search risponde su `OAuth2PasswordBearer` |
+
+> Gli smoke test verificano **che le pipeline girino e producano output ben formato**, non la
+> *qualità* del retrieval (misurata dagli `evaluate.py` di ogni tappa, con numeri nel wiki).

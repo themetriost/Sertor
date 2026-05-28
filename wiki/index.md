@@ -43,6 +43,11 @@ Il wiki è mantenuto secondo lo schema descritto in [`../CLAUDE.md`](../CLAUDE.m
 
 - [fastapi/fastapi (corpus campione)](sources/fastapi.md) — codice + docs Markdown + esempi, in `raw/fastapi/`
 
+## Demo & Test
+
+- [**DEMOS.md**](../DEMOS.md) — runbook eseguibile per ogni configurazione RAG (01, 02, 3A, 3C):
+  prerequisiti, comandi, output atteso/osservato. Smoke test pytest in `tests/`.
+
 ## Sintesi
 
 - [Architettura target — dual-RAG codice + documentazione](syntheses/architettura-target.md) — disegno finale + roadmap incrementale 01→04

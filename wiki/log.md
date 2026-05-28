@@ -192,3 +192,24 @@ dove `<operazione>` ∈ { setup, ingest, record, query, lint }.
   Dual-conclusione: entity_types generici ok per retrieval NL (GraphRAG usa report testuali), ma entity_types dominio
   necessari per drill-down/aggregazione per tipo (use case dipendente).
 - Dettagli: [experiments/03-graphrag.md](experiments/03-graphrag.md) (sezione "Re-run con entity_types di dominio").
+
+## [2026-05-28] record | Suite di test dimostrativi (pytest) + runbook DEMOS.md
+
+- Creato **runbook `DEMOS.md`** (root) per ogni configurazione [[01-baseline]], [[02-hybrid-reranking]], 
+  3A grafo AST, 3C GraphRAG: scopo, prerequisiti, comando esatto, output atteso e osservato reale.
+  + sezione suite pytest.
+- **Suite pytest** in `tests/` con 3 categorie di test:
+  - **FREE** (sempre eseguibili): BM25 sparse, grafo AST, artefatti GraphRAG/parquet.
+  - **GATED** (skipati se backend manca): dense/hybrid → need Ollama/Chroma via `conftest.py` fixture; passano con Ollama attivo.
+  - **PAID** (skipati salvo `--run-paid`): query GraphRAG local search su Azure.
+  Stato attuale: **8 passed, 1 skipped** (skip = test paid).
+- Principio (coerente col goal enterprise toolset): smoke test verificano che PIPELINE girino e output
+  ben formato, NON qualità retrieval (quella è negli evaluate.py di ogni tappa, numeri già nel wiki).
+- **FINDING emerso:** il provider locale Ollama `nomic-embed-text` su query NL tipo "OAuth2 password bearer..."
+  restituisce blob base64 (dati immagine in docs_src/stream_data) anziché doc pertinenti → segnala:
+  (a) debolezza provider locale già nota da eval, (b) **IGIENE CORPUS**: blob base64 da filtrare in ingestion.
+  → Spunto miglioramento: chunking/filtri binari in fase ingestion (aperto per Tappa follow-up).
+- Nota: graph_query.py callers HTTPException sul grafo AST corrente = 10 chiamanti (grafo su disco).
+- pytest aggiunto a requirements.txt (dev). Prossimi: filtro blob binari; tassonomia entity_types;
+  integrazione AST↔GraphRAG↔vettoriale; Tappa 4 Agentic.
+- Dettagli: `DEMOS.md` e `tests/*.py`.

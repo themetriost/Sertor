@@ -11,3 +11,6 @@ flashrank>=0.2.9
 
 # Dipendenze Tappa 3A — code graph
 networkx>=3.2
+
+# Dev — test dimostrativi (suite tests/, vedi DEMOS.md)
+pytest>=8.0
