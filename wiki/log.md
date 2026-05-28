@@ -98,3 +98,17 @@ dove `<operazione>` ∈ { setup, ingest, record, query, lint }.
   [experiments/01-baseline.md](experiments/01-baseline.md).
 - Learning chiave: baseline solo denso; query a simboli esatti → motivano hybrid+rerank (Tappa 02).
 - Commit per step: `2eac297` setup, `a97bfc3` ambiente, `3567404` shared, `351f13a` baseline.
+
+## [2026-05-28] record | Tappa 2 hybrid + reranking completata
+
+- `02-hybrid-reranking/`: BM25 (tokenizer pro-identificatori) + dense da Chroma + fusione RRF
+  (`hybrid.py`), reranking cross-encoder FlashRank (`rerank.py`), eval esteso a 18 query
+  (10 NL + 8 a simboli) confrontando dense/hybrid/hybrid+rerank sui 3 provider (`evaluate.py`).
+- **Esito chiave (onesto):** il valore della tecnica dipende dalla forza del retriever.
+  - ollama (locale, debole): hybrid+rerank MRR 0.50→0.90, simboli 0.13→0.94 (quasi a pari con Azure).
+  - azure-large (forte, già saturo su questo eval): dense puro resta il migliore (MRR 0.972);
+    il reranker generico ms-marco non aiuta o peggiora di poco.
+- Implicazione: per deploy locale/privacy hybrid+rerank è essenziale; per cloud large serve
+  un reranker tarato sul codice o un eval più difficile. Dettagli:
+  [experiments/02-hybrid-reranking.md](experiments/02-hybrid-reranking.md).
+- Commit: `cd0c67a` deps, `ca1708e` hybrid, `bf61177` rerank.
