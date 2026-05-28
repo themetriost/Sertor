@@ -112,3 +112,16 @@ dove `<operazione>` ∈ { setup, ingest, record, query, lint }.
   un reranker tarato sul codice o un eval più difficile. Dettagli:
   [experiments/02-hybrid-reranking.md](experiments/02-hybrid-reranking.md).
 - Commit: `cd0c67a` deps, `ca1708e` hybrid, `bf61177` rerank.
+
+## [2026-05-28] record | Tappa 3A code graph leggero (AST) completata
+
+- Scelta concordata: **A ora** (grafo custom leggero), **C in seguito** (Microsoft GraphRAG) per confronto.
+- `03-graphrag/`: `build_graph.py` (AST→networkx, 1917 nodi / 4868 archi),
+  `graph_query.py` (def/callers/callees/docs/context multi-hop), `evaluate.py`.
+- **Esito:** definizione@1 sui simboli 6/8. Navigazione ricca (es. HTTPException 69 chiamanti,
+  APIRouter 10 doc collegati). Miss: `JSONResponse`/`WebSocketDisconnect` perché **re-export
+  da Starlette** (l'AST li vede come import, non come definizioni) → limite onesto.
+- Learning: il grafo è preciso/strutturale ma senza ricerca semantica → **complementare** al
+  vettoriale/ibrido. Motiva la fusione grafo+vettoriale. Dettagli:
+  [experiments/03-graphrag.md](experiments/03-graphrag.md).
+- Commit: `5af963a` deps, `de8ec3a` build, `4a4517c` query.

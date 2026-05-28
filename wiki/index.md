@@ -36,7 +36,7 @@ Il wiki è mantenuto secondo lo schema descritto in [`../CLAUDE.md`](../CLAUDE.m
 |---|-----------|--------|-------|
 | 01 | Baseline (vector retrieval) | [01-baseline](experiments/01-baseline.md) | **completato** |
 | 02 | Hybrid + reranking | [02-hybrid-reranking](experiments/02-hybrid-reranking.md) | **completato** |
-| 03 | GraphRAG | _da creare_ | pianificato |
+| 03 | GraphRAG | [03-graphrag](experiments/03-graphrag.md) | **A fatto** (C in seguito) |
 | 04 | Agentic RAG | _da creare_ | pianificato |
 
 ## Fonti
