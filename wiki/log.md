@@ -125,3 +125,11 @@ dove `<operazione>` ∈ { setup, ingest, record, query, lint }.
   vettoriale/ibrido. Motiva la fusione grafo+vettoriale. Dettagli:
   [experiments/03-graphrag.md](experiments/03-graphrag.md).
 - Commit: `5af963a` deps, `de8ec3a` build, `4a4517c` query.
+
+## [2026-05-28] query | Stima costo token per la Tappa 3C (Microsoft GraphRAG)
+
+- Misurato il corpus: completo **~590K token** (229K codice + 361K doc), subset **~90K**.
+- Regola empirica indicizzazione GraphRAG ≈ **5–10× il corpus** in token LLM →
+  subset ~0.6–1.2M tok (~$0.15–0.30 mini / ~$2–4 4o); completo ~3.5–7.5M tok (~$1–2 / ~$15–30).
+  Incertezza ±2× (chunk_size, gleanings, #entità/community). Dettagli e tabella:
+  [experiments/03-graphrag.md](experiments/03-graphrag.md) (sezione Stima costi).

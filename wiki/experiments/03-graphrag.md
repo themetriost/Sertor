@@ -54,6 +54,26 @@ Scelta concordata: **A ora** (grafo custom leggero), **C in seguito** (Microsoft
 - **Implicazione → fusione:** vettoriale/ibrido per fuzzy/NL e re-export; grafo per
   struttura/navigazione precisa. La combinazione è il cuore del dual-RAG target.
 
+## Stima costi Tappa 3C (Microsoft GraphRAG)
+Dimensione corpus misurata (~4 char/token): **completo ~590K token** (229K codice + 361K doc);
+**subset** (`docs/en/docs/tutorial` + `fastapi/security`) **~90K token**.
+
+L'indicizzazione GraphRAG consuma in chiamate LLM **circa 5–10× la dimensione del corpus**
+(estrazione entità/relazioni per chunk + gleaning, summary delle descrizioni, community report).
+Assunzioni: `chunk_size≈1200`, `max_gleanings=1`, ~80% input / 20% output.
+
+| scenario | corpus | LLM token stimati (I/O) | costo modello *mini* | costo modello *4o* |
+|----------|-------:|------------------------:|---------------------:|-------------------:|
+| subset | ~90K | **~0.6–1.2M** | ~$0.15–0.30 | ~$2–4 |
+| completo | ~590K | **~3.5–7.5M** | ~$1–2 | ~$15–30 |
+
+Embeddings (text-embedding-3): trascurabili (~$0.02–0.1). Costi indicativi su prezzi pubblici
+(*mini* ≈ $0.15/$0.60 per 1M in/out; *4o* ≈ $2.5/$10) — su Azure variano col listino del deployment.
+**Incertezza ±2×**: dipende molto da `chunk_size` (300 → ~5× chunk e costo maggiore), gleanings,
+e da quante entità/community emergono. Il tempo è limitato dal rate limit (TPM) del deployment.
+**Approccio consigliato:** partire dal subset con un modello *mini*, leggere il consumo reale
+dai log GraphRAG, poi estrapolare al corpus completo.
+
 ## Prossimi passi
 - **Tappa 3C:** Microsoft GraphRAG (estrazione entità/relazioni via LLM + community summaries)
   e **confronto** con questo grafo AST.
