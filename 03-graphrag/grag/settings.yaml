@@ -82,7 +82,7 @@ embed_text:
 extract_graph:
   completion_model_id: default_completion_model
   prompt: "prompts/extract_graph.txt"
-  entity_types: [organization,person,geo,event]
+  entity_types: [class, function, data_model, endpoint, exception, concept, library]
   max_gleanings: 1
 
 summarize_descriptions:

@@ -20,4 +20,5 @@ for tag, m in [("CHAT", cm), ("EMBED", em)]:
     print(f"   metrics.writer={m.metrics.writer} base_dir={m.metrics.base_dir}")
 
 print(f"INPUT: type={cfg.input.type} file_pattern={cfg.input.file_pattern!r}")
+print(f"EXTRACT_GRAPH: entity_types={cfg.extract_graph.entity_types}")
 print("CONFIG OK")
