@@ -1,0 +1,22 @@
+[
+  {"query": "how to declare a dependency with Depends",
+   "expected": ["tutorial/dependencies", "param_functions.py", "fastapi/dependencies"]},
+  {"query": "validate and constrain a numeric path parameter",
+   "expected": ["tutorial/path-params"]},
+  {"query": "run a task in the background after returning the response",
+   "expected": ["background-tasks", "fastapi/background.py"]},
+  {"query": "OAuth2 password bearer token authentication",
+   "expected": ["security/oauth2", "tutorial/security"]},
+  {"query": "enable CORS for cross-origin requests",
+   "expected": ["cors"]},
+  {"query": "define a WebSocket endpoint",
+   "expected": ["websockets"]},
+  {"query": "return a custom HTMLResponse or JSONResponse",
+   "expected": ["responses.py", "custom-response"]},
+  {"query": "split a large app into multiple routers with APIRouter",
+   "expected": ["bigger-applications", "routing.py"]},
+  {"query": "set a custom HTTP status code on a response",
+   "expected": ["response-status-code", "response-change-status-code"]},
+  {"query": "declare a request body using a Pydantic model",
+   "expected": ["tutorial/body", "fastapi/params.py"]}
+]

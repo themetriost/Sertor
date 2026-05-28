@@ -86,3 +86,15 @@ dove `<operazione>` ∈ { setup, ingest, record, query, lint }.
   dopo ogni step** di lavoro significativo (incluso l'aggiornamento del wiki).
 - `.gitignore`: esclusi `.env` (contiene la API key) e il contenuto di `raw/` (fonti vendored,
   riproducibili via `sources/*.md`), mantenendo `raw/README.md`.
+
+## [2026-05-28] record | Tappa 1 baseline completata (3 provider a confronto)
+
+- Ambiente: venv `uv` Python 3.12 + `chromadb`, `langchain-text-splitters`, `httpx`, `numpy`.
+- `shared/`: config (.env override + normalizza OLLAMA_HOST), embeddings layer sui 3 provider, loaders.
+- `01-baseline/`: chunking language-aware, indicizzazione Chroma (1 collection/provider), retrieval.
+  655 doc → **3500 chunk**. Dual-corpus (codice+doc) confermata nel retrieval.
+- **Eval (10 query, hit-rate@k + MRR@10):** azure-large (hit@1 0.90, MRR 0.950) >
+  azure-small (0.70 / 0.833) > ollama locale (0.60 / 0.693). Dettagli:
+  [experiments/01-baseline.md](experiments/01-baseline.md).
+- Learning chiave: baseline solo denso; query a simboli esatti → motivano hybrid+rerank (Tappa 02).
+- Commit per step: `2eac297` setup, `a97bfc3` ambiente, `3567404` shared, `351f13a` baseline.
