@@ -1,0 +1,28 @@
+# Segreti
+.env
+.env.local
+*.key
+
+# Python / ambienti
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Vector store / indici locali
+**/chroma/
+*.chroma
+**/.index/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Fonti esterne vendored in raw/ (riproducibili via sources/*.md): non versionare,
+# ma tieni il nostro README della cartella.
+raw/*
+!raw/README.md
