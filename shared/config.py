@@ -27,6 +27,7 @@ class Settings:
     azure_api_version: str = os.getenv("AZURE_OPENAI_API_VERSION", "2024-10-21")
     azure_embed_small: str = os.getenv("AZURE_OPENAI_EMBED_SMALL_DEPLOYMENT", "")
     azure_embed_large: str = os.getenv("AZURE_OPENAI_EMBED_LARGE_DEPLOYMENT", "")
+    azure_chat: str = os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT", "")
 
     # Percorsi
     root: Path = ROOT

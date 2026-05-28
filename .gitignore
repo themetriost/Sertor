@@ -17,6 +17,16 @@ __pycache__/
 *.chroma
 **/.index/
 
+# GraphRAG (Tappa 3C): venv isolato + artefatti rigenerabili (input staged da raw/)
+03-graphrag/.venv-grag/
+03-graphrag/*.log
+03-graphrag/grag/input/
+03-graphrag/grag/output/
+03-graphrag/grag/cache/
+03-graphrag/grag/logs/
+03-graphrag/grag/metrics/
+03-graphrag/grag/update_output/
+
 # OS / editor
 .DS_Store
 Thumbs.db

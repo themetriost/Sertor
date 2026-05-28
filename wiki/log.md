@@ -133,3 +133,44 @@ dove `<operazione>` ∈ { setup, ingest, record, query, lint }.
   subset ~0.6–1.2M tok (~$0.15–0.30 mini / ~$2–4 4o); completo ~3.5–7.5M tok (~$1–2 / ~$15–30).
   Incertezza ±2× (chunk_size, gleanings, #entità/community). Dettagli e tabella:
   [experiments/03-graphrag.md](experiments/03-graphrag.md) (sezione Stima costi).
+
+## [2026-05-28] record | Tappa 3C Microsoft GraphRAG eseguita sul subset
+
+- Esecuzione GraphRAG 3.1.0 in venv isolato (`03-graphrag/.venv-grag`) sul subset (50 doc `.md`
+  + 7 `.py` security). Causa isolamento: GraphRAG/graspologic porta `numpy < 2.x`; il `.venv` principale
+  ha 2.4 → conflitto diretto.
+- **Setup:** config YAML con new schema (v3.1: `completion_models:` / `embedding_models:` anziché `llm:`),
+  `gpt-5.4-mini` + `text-embedding-3-small` su Azure Foundry. Fissati 2 ostacoli: (1) hang
+  `litellm` import → `LITELLM_LOCAL_MODEL_COST_MAP=True`; (2) pattern file `*.txt` only → fix
+  `file_pattern: '.*\.(md|py)$$'`.
+- **Token reali (ground truth metrics):** chat 1.098 chiamate / 1.965M token (prompt 1.469M +
+  completion 496K), 949 retry (46% rate — throttling TPM pesante); embedding 112 chiamate / 366K token.
+  **Totale ~2.33M token, costo ~$3.34** (litellm chat+embed). Tempo wall 14 min (extract 557s,
+  community report 250s).
+- **Grafo:** 57 doc / 102 text_unit / **1090 entità / 1779 relazioni / 239 community + report NL**.
+  Entity_types: default (EVENT 650, ORG 355, PERSON 48, GEO 36, API 1) → concetti tecnici forzati
+  in categorie sbagliate (FASTAPI/OAUTH2→ORG, OPENAPI→EVENT). Hub FASTAPI (degree 311), relazioni
+  semantiche FASTAPI→PYDANTIC/OPENAPI/STARLETTE (catturate dal grafo vs AST).
+- **Vs stima:** atteso 0.6–1.2M tok (~$0.15–0.30); reale 1.965M tok (+60–230% sopra): motivi
+  = `summarize_descriptions` ad alto volume, `gpt-5.4-mini` non economico come inizialmente pensato,
+  49% retry rate (throttling). La regola empirica 5–10× era giusta, il modello sottodimensionato.
+- **Learning 3A vs 3C:** AST = preciso strutturale (def@path:lineno), semantica zero, costo zero,
+  deterministico. GraphRAG = semantico/tematico, summary NL, denaro reale, lento, entity_types
+  generico (non tarato sul codice). **Conferma dual-RAG:** nessuno dominante; fusion necessaria.
+- Dettagli: [experiments/03-graphrag.md](experiments/03-graphrag.md) (Tappa 3C).
+
+## [2026-05-28] query | Tappa 3C: query GraphRAG global+local sul subset
+
+- Eseguite query di prova su grafo 3C via CLI `python -m graphrag query --root ... --method {global|local}`.
+- **GLOBAL** ("come gestisce FastAPI auth/security..."): sintesi tematica su 239 community,
+  copre OAuth2/JWT/HTTP auth/API key/OpenID/Argon2/error handling, citazioni `[Data: Reports]`.
+  ~21 call LLM / 257K token / ~$0.23.
+- **LOCAL** ("cos'è OAuth2PasswordBearer?"): puntuale e corretta (subclass OAuth2, estrae bearer,
+  NON valida token), citazioni Entities/Relationships/Sources. 1 call LLM + 1 embedding (18 tok) → quasi gratis.
+- **Token 3C totale finora:** indexing $3.34 + query ~$0.23 ≈ ~$3.57 (subset).
+- **Learning critico:** entity_types generici non penalizzano il retrieval (GraphRAG usa community report testuali);
+  penalizzano la navigazione-per-tipo. Conferma: AST spiega dov'è; GraphRAG spiega cosa fa (NL grounded).
+  → Complementarità dual-RAG confermata.
+- **Apri come:** tuning custom entity_types (class/function/module/endpoint/exception/concept) + prompt-tune;
+  integrazione AST↔GraphRAG↔vettoriale.
+- Dettagli: [experiments/03-graphrag.md](experiments/03-graphrag.md) (sezione "Query di prova (global + local)").

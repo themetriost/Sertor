@@ -1,11 +1,11 @@
 ---
-title: 03 GraphRAG (A — code graph leggero)
+title: 03 GraphRAG (A+C — code graph leggero + Microsoft GraphRAG)
 type: experiment
-tags: [graphrag, code-graph, ast, networkx, multi-hop]
+tags: [graphrag, code-graph, ast, networkx, microsoft-graphrag, multi-hop, query]
 created: 2026-05-28
 updated: 2026-05-28
-status: parziale (A fatto; C — Microsoft GraphRAG — pianificato)
-sources: [https://github.com/fastapi/fastapi]
+status: completato (A + C + query prova eseguita)
+sources: [https://github.com/fastapi/fastapi, https://github.com/microsoft/graphrag]
 ---
 
 # 03 GraphRAG (A — code graph leggero)
@@ -103,8 +103,141 @@ volume) e l'affidabilità sull'output strutturato → i *mini* OpenAI sono il pu
   output malformato); Llama 3.3 70B (open). La Tappa 4 (agentic) vorrà invece un modello forte
   per il planning (esigenza opposta).
 
+## Tappa 3C — Microsoft GraphRAG eseguita
+
+### Setup
+- **Ambiente:** venv isolato `03-graphrag/.venv-grag` (Python 3.12, uv), GraphRAG 3.1.0 installato.
+  Motivazione: GraphRAG usa `graspologic`→`numba` che richiede `numpy < 2.x`; il `.venv` principale
+  ha `numpy 2.4` (conflitto). Carica inoltre `lancedb`, `pandas`, `fnllm`/`tiktoken` con pin stretti.
+  **Nota importante:** il conflitto con numpy è il **motivo principale** dell'env separato, non per
+  evitare contaminazione diretta nel codice principale ma per proteggere dalle incompatibilità di
+  stack di dipendenze.
+
+- **Configurazione GraphRAG 3.1 (nuovo schema vs vecchie versioni):** il config usa ora
+  `completion_models:` e `embedding_models:` (non più `llm:` / `type:`). Ogni modello specifica
+  `model_provider: azure` e delega l'LLM al pacchetto `graphrag_llm` che usa **litellm** sotto.
+  - Chat: `gpt-5.4-mini` (deployment omonimo su Azure OpenAI).
+  - Embedding: `text-embedding-3-small`.
+  - Endpoint e key riusati da quelli embedding (Azure Foundry), passati via env var
+    `${GRAPHRAG_API_BASE}` / `${GRAPHRAG_API_KEY}` da `03-graphrag/grag/.env` (gitignored).
+  - API version: `2024-10-21`.
+
+- **Progetto GraphRAG:** `03-graphrag/grag/` con `settings.yaml`, 13 prompt di default,
+  `.env` (gitignored). Input staged in `grag/input/` (50 doc tutorial `.md` + 7 `fastapi/security/*.py`).
+  Helper script `03-graphrag/check_config.py` (validazione offline) e `03-graphrag/summarize.py`
+  (token + struttura grafo).
+
+### Ostacoli risolti
+1. **CLI hang su `litellm` import:** il CLI `graphrag` tenta di scaricare cost-map dal web
+   all'avvio; con rete sandbox ristretta → timeout infinito. **Fix:** env var
+   `LITELLM_LOCAL_MODEL_COST_MAP=True` (forza la mappa bundled locale). **Workaround init:**
+   chiamare `graphrag.cli.initialize.initialize_project_at` da Python instead del CLI.
+
+2. **Pattern file input:** `input: type: text` di default matcha solo `*.txt` → 0 documenti letti.
+   **Fix:** `file_pattern: '.*\.(md|py)$$'` (doppio dollaro perché GraphRAG interpola env con
+   `string.Template`, che usa `$` come escape; serve escaping anche nei commenti).
+
+### Risultati token reali (ground truth via `metrics` nativo di GraphRAG 3.1)
+GraphRAG 3.1 espone `writer: file` → jsonl in `grag/metrics/` aggregati ad atexit con dettagli
+per modello.
+
+- **Chat `gpt-5.4-mini`** (estrazione grafo + community reports):
+  - Chiamate: 1098; fallite: 0; **retry: 949 (retry_rate 46%)** ← forte throttling TPM del deployment.
+  - Token: prompt 1.469M + completion 496K = **1.965M token**.
+  - Tempo: extract_graph 557s, community_reports 250s.
+
+- **Embedding `text-embedding-3-small`:**
+  - Chiamate: 112; token: **366K**.
+
+- **TOTALE: ~2.33M token** (1.836M prompt + 0.496M completion).
+  - Costo da registry litellm: **~$3.34** (chat $3.33 + embed $0.007 arrotondati).
+    Nota: litellm prezza `gpt-5.4-mini` ~$0.75/$4.50 per 1M (in/out); il costo reale dipende dal
+    listino del deployment Azure dell'utente. **I TOKEN sono esatti**, il costo è derivato.
+  - Tempo wall: ~14 min (834s total); embeddings 26s.
+
+### Struttura del grafo prodotto
+Output parquet in `grag/output/`:
+- **57 documenti, 102 text_units.**
+- **1090 entità, 1779 relazioni, 239 community + 239 community report** (con summary NL).
+- **Attenzione:** NON confrontabile numericamente con 3A (3A: completo `fastapi/`+`docs_src/`;
+  3C: solo subset tutorial+security).
+
+**Distribuzione entità per tipo** (entity_types generici di default):
+- EVENT 650, ORGANIZATION 355, PERSON 48, GEO 36, API 1.
+- **Learning critico:** GraphRAG usa i **type di default pensati per news/prosa** (organization/person/geo/event);
+  ha forzato concetti tecnici in categorie sbagliate: FASTAPI/PYDANTIC/OAUTH2/HTTPEXCEPTION → ORGANIZATION;
+  OPENAPI/PATH OPERATION → EVENT. Per codice/doc tecnica serve **custom entity_types** + prompt tarato.
+
+**Hub e relazioni semantiche:**
+- Hub: FASTAPI (degree 311).
+- Top relazioni (per weight): FASTAPI→PYDANTIC 257, →OPENAPI 199, →STARLETTE 112, →DEPENDS 73,
+  →HTTPEXCEPTION 72.
+- **Osservazione:** sono relazioni **semantiche/concettuali** che il grafo AST (3A) non poteva
+  dare (es. FastAPI "si basa su" Starlette/Pydantic); l'AST le vedeva solo come import.
+
+**Community report tematici** (sample):
+- "FastAPI OAuth2 Authorization Utilities"
+- "JWT and JSON Web Tokens Authentication Community"
+- "FastAPI Request Body and Body Parameters"
+
+### Confronto 3A vs 3C — learning chiave
+| Aspetto | AST (3A) | GraphRAG (3C) |
+|---------|----------|--------------|
+| **Precisione strutturale** | ✓ deterministico (def/callers@path:lineno) | — ricerca semantica via NL |
+| **Semantica/relazioni concettuali** | — niente | ✓ cattura relazioni "si basa su" ecc. |
+| **Summary NL community** | — | ✓ tematico |
+| **Costo** | zero (locale) | **denaro reale** (~$3.34 subset) |
+| **Velocità** | rapido | lento (14 min subset; throttling TPM pesante) |
+| **Tipizzazione entità** | N/A | generica (inadatta a codice tecnico) |
+| **Determinismo** | ✓ | — dipende dalle retry LLM |
+
+**Conclusione:** confermano la tesi della **fusione dual-RAG**: GraphRAG per navigazione
+tematica/semantica + summary; grafo AST per struttura di codice precisa; vettoriale/ibrido
+per fuzzy/NL. Nessuno è dominante.
+
+### Confronto vs stima costi (Sezione precedente)
+- **Stima:** 0.6–1.2M token LLM per il subset → ~$0.15–0.30.
+- **Reale:** 1.965M token LLM (~1.6–3× sopra) → ~$3.34.
+- **Motivo overstimate:** `summarize_descriptions` fa molte chiamate per entità/relazione + gleaning
+  + community report (più alto volume dell'estrazione base). Inoltre `gpt-5.4-mini` non è prezzato
+  come un "mini" economico in litellm (più costoso di gpt-3.5). La **stima 5–10× del corpus** era
+  corretta, ma il modello scelto era sottodimensionato nei parametri di prezzo.
+
+### Query di prova (global + local)
+Eseguite due query di prova sul grafo della Tappa 3C via CLI:
+
+**Comandi (riproducibili):**
+```bash
+export LITELLM_LOCAL_MODEL_COST_MAP=True
+python -m graphrag query --root 03-graphrag/grag --method global "come gestisce FastAPI auth/security e quali componenti?"
+python -m graphrag query --root 03-graphrag/grag --method local "cos'è OAuth2PasswordBearer?"
+```
+(Query è argomento POSIZIONALE in GraphRAG 3.1, non `--query`; argomenti dopo il path.)
+
+**GLOBAL ("come gestisce FastAPI auth/security...")**
+- Tipo di ricerca: sintesi tematica (map-reduce su 239 community).
+- Qualità output: **eccellente**. Ha sintetizzato un testo coerente coprendo OAuth2 bearer, JWT (PyJWT/HS256/scopes), HTTP auth (Basic/Bearer/Digest), API key (header/query/cookie), OpenID Connect, hashing password (Argon2 + dummy-hash anti timing-attack), error handling HTTPException/401.
+- Citazioni: `[Data: Reports (...)]` che riconducono ai community report originali.
+- Token reali: **~21 chiamate LLM** (aggregate reduce), **~257K token** (248K prompt + 9K completion), **~$0.23**.
+  - Motivo del costo: la global è un map-reduce su tutte le 239 community → moltiplicazione delle prompt.
+
+**LOCAL ("cos'è OAuth2PasswordBearer?")**
+- Tipo di ricerca: puntuale (nearest-neighbor su entità/relazioni, sintesi breve).
+- Qualità output: **corretta e concisa**. Risposta accurata: subclass di OAuth2, estrae bearer da header Authorization, usa Depends()+tokenUrl→/token+OAuth2PasswordRequestForm, restituisce 401 se manca, e coglie che **non valida il token** (delegato al caller).
+- Citazioni: Entities/Relationships/Sources nativi del grafo.
+- Token reali: **1 chiamata LLM** (streaming, token non contati nel metrics di GraphRAG) + **1 embedding** (18 token) → **quasi gratis**.
+
+**Token totale Tappa 3C finora:** Indexing $3.34 + Query ~$0.23 ≈ **~$3.57** (mini subset).
+
+### Learning: entity_types generici non penalizzano il retrieval
+Anche con entity_types di default (ORGANIZATION/EVENT/PERSON/GEO/API) **generici/sbagliati per il codice**, la qualità delle risposte della GLOBAL rimane alta. Motivo: GraphRAG si appoggia ai **community report testuali** (descrizioni NL delle entità + testo originale dei doc) e alle **relazioni**, non alle etichette di tipo. I tipi generici penalizzano la **navigazione-per-tipo** (filtrare entità ORGANIZATION), non il retrieval semantico.
+
+Confronto vs Tappa 3A (AST):
+- **AST (3A):** trovava `OAuth2PasswordBearer` dove è definito (dov'è nel file) + doc collegati, ma non lo spiegava (pura struttura).
+- **GraphRAG (3C):** lo spiega in linguaggio naturale grounded su doc+codice + lo contextualizza nelle community (auth flow).
+→ Conferma della **complementarità** e della tesi della **fusione dual-RAG** (AST + GraphRAG + vettoriale).
+
 ## Prossimi passi
-- **Tappa 3C:** Microsoft GraphRAG (estrazione entità/relazioni via LLM + community summaries)
-  e **confronto** con questo grafo AST.
-- Risoluzione re-export/alias nel grafo AST.
-- Integrare il grafo nel retrieval (espansione del contesto a partire dai simboli trovati dal vettoriale).
+- **Tuning entity_types:** ri-run con custom entity_types per codice tecnico (class/function/module/endpoint/exception/concept) + prompt specializzati per il contesto FastAPI.
+- **Integrazione sistematica:** confronto AST ↔ GraphRAG ↔ vettoriale (fusion retrieval con RRF / LLM).
+- **Tappa 04:** agentic RAG con AutoGen / Semantic Kernel.
