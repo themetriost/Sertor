@@ -113,14 +113,15 @@ dopo ogni step** di lavoro significativo (incluso l'aggiornamento del wiki). Mes
 artefatti rigenerabili (`output/`, `cache/`, `logs/`, `metrics/`, indici/store vettoriali): sono
 coperti da `.gitignore`.
 
-> **Delega (non bloccante):** le operazioni git vanno **delegate all'agente `configuration-manager`**
+> **Delega (SEMPRE, non bloccante):** **tutte** le operazioni git (staging, commit, branch,
+> merge, tag, push, pull, ...) vanno **delegate all'agente `configuration-manager`**
 > (modello Haiku, vedi `.claude/agents/configuration-manager.md`), lanciato **in background** durante
-> o dopo uno step, così il flusso principale non si blocca sul versionamento. Passagli un brief
-> autocontenuto (cosa è stato fatto, file/percorsi, motivo, operazione richiesta). L'agente fa
-> staging selettivo + commit con messaggio convenzionale e riporta hash e file inclusi. Le operazioni
-> **distruttive/irreversibili** (`push --force`, `reset --hard`, riscrittura di storia, `branch -D`,
-> `clean -fd`, ...) le esegue **solo se richieste esplicitamente** nel brief; altrimenti si ferma e
-> segnala. Per step piccoli o puramente meccanici puoi committare direttamente.
+> o dopo uno step, così il flusso principale non si blocca sul versionamento. **Non** eseguire git
+> direttamente (nemmeno per step piccoli o meccanici). Passagli un brief autocontenuto (cosa è stato
+> fatto, file/percorsi, motivo, operazione richiesta). L'agente fa staging selettivo + commit con
+> messaggio convenzionale e riporta hash e file inclusi. Le operazioni **distruttive/irreversibili**
+> (`push --force`, `reset --hard`, riscrittura di storia, `branch -D`, `clean -fd`, ...) le esegue
+> **solo se richieste esplicitamente** nel brief; altrimenti si ferma e segnala.
 
 ## Wiki & documentazione (regola SEMPRE attiva)
 
