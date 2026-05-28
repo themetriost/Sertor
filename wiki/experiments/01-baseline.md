@@ -57,6 +57,58 @@ Esempio (query "how to declare a dependency with Depends", ollama): recupera sia
   ([[architettura-target]]).
 - L'eval set è piccolo (10 query): indicativo, non statisticamente robusto. Da ampliare.
 
+## Chunking code-aware (tree-sitter)
+
+**Implementazione:** nuovo modulo `shared/chunking_code.py` con **tree-sitter** (binding standard
+`tree-sitter >= 0.25` + grammatica `tree-sitter-python`) per parsing AST-driven del codice Python.
+Granularità: funzioni top-level e **metodi** = chunk singolo; metodi portano in testa il contesto
+classe (`class ...`); codice modulo-level raggruppato; unità > 50 righe suddivise. Metadati per chunk:
+`symbol`, `symbol_kind` (module/class/function/method), `qualname` (es. `OAuth2PasswordBearer.__init__`),
+`start_line`, `end_line`. Integrato in `01-baseline/chunking.py` (config `CODE_CHUNKER` = `treesitter` |
+`recursive`); fallback a recursive se lingua non supportata. **Nota tecnica:** il pacchetto
+`tree-sitter-language-pack` scartato (binding incompatibile: Node senza `.children`); usato binding
+standard documentato.
+
+**Eval Tappa 01 (doc-biased):** 10 query NL, ground-truth doc Markdown.
+Corpus: 3500→3942 chunk (fini tree-sitter vs recursive). Regressione inattesa:
+- ollama: 0.60/0.693 → 0.50/0.578 (peggiora)
+- azure-small: 0.70/0.833 → 0.80/0.883 (migliora)
+- azure-large: 0.90/0.950 → 0.70/0.833 (peggiora)
+
+**Lettura:** questo eval è doc-biased; il chunking Markdown è invariato. Con chunk codice più fini/numerosi,
+query NL richiedenti un doc possono trovare piccoli chunk di codice in cima (competizione), penalizzando
+il dense puro, specie su azure-large già saturo. Eval piccolo (10 query) → alta varianza.
+**Conclusione eval 01:** non misura il code-aware chunking; motivazione per Tappa 02.
+
+**Eval Tappa 02 (symbol-biased):** 18 query (10 NL + **8 a SIMBOLI**) su indice tree-sitter.
+Questo eval testa il code-aware sul suo terreno naturale:
+
+| Provider | Retrievr | MRR | **MRR simboli** |
+|----------|----------|-----|-----------------|
+| azure-large | hybrid+rerank | 0.972 | **1.000** |
+| azure-large | dense puro | 0.880 | 0.938 |
+| azure-small | hybrid+rerank | 0.907 | 0.917 |
+| ollama | hybrid+rerank | 0.889 | 0.812 |
+
+**Risultato chiave:** il code-aware chunking (tree-sitter) eccelle dove deve **quando abbinato a hybrid+rerank**.
+Symbol-MRR 1.000 su azure-large = perfetto. Dense puro soffre la frammentazione più fine (più chunk di codice
+in competizione). Ipotesi: nel vettoriale denso-ingenuo, simboli disparati (piccoli chunk) hanno sim. uguale.
+
+**Learnings:**
+- **Tree-sitter + hybrid + rerank** = la combinazione giusta: unità di codice coerenti, lessico BM25 cattura
+  identificatori, reranking disambigua.
+- **Tree-sitter + dense puro** = subottimale per simboli, accettabile per doc (regressione Tappa 01 dovuta
+  al rumore valutativo doc-biased).
+- **Metadati strutturali** (qualname, righe) sono il PONTE per la fusione grafo↔vettoriale
+  (obiettivo [[architettura-target]] dual-RAG): AST sa dov'è, grafo cosa fa, vettoriale cosa significa.
+- Default mantenuto **`treesitter`** per due ragioni strategiche: (a) coerenza unità codice; (b) metadati
+  verso la fusione. Config `CODE_CHUNKER=recursive` disponibile per override.
+
+**Aperto:** ampliare eval 01 con query a simboli; valutare recursive-vs-treesitter su eval 02 con re-index;
+igiene corpus (blob base64 in docs_src catturati da some provider).
+
 ## Prossimi passi
 - Tappa 02: hybrid (BM25 + dense) + reranking, e **fusione** quando entreranno due corpora distinti.
-- Rifinitura chunking con tree-sitter (AST per funzione/classe).
+- Tappa 03: GraphRAG per retrieval semantico su grafo.
+- Tappa 04: Agentic RAG con orchestrazione multi-step.
+- Integrazione AST↔GraphRAG↔vettoriale verso dual-RAG.

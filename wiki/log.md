@@ -222,3 +222,26 @@ dove `<operazione>` ∈ { setup, ingest, record, query, lint }.
   (chi-chiama-chi); GraphRAG eccelle su spiegazioni (ma con costo LLM e limite su re-export). → Conferma dual-RAG (fusion).
 - Aggiornata `index.md`: aggiunto link a nuova sintesi in sezione Sintesi; accostato ESEMPI.md in sezione Demo & Test.
 - Rimando sempre a `ESEMPI.md` per gli esempi completi (vetrina divulgativa, non tecnica).
+
+## [2026-05-28] record | Chunking code-aware via tree-sitter + eval recursive vs tree-sitter
+
+- **Implementazione:** modulo `shared/chunking_code.py` — parser tree-sitter (binding standard `tree-sitter>=0.25`
+  + grammatica `tree-sitter-python>=0.25`) per AST-driven chunking codice Python. Granularità: funzioni top-level
+  e metodi = chunk; metodi con contesto classe in testa; modulo-level raggruppato; >50 righe suddivise.
+  Metadati: `symbol`, `symbol_kind` (module/class/function/method), `qualname`, `start_line`, `end_line`.
+  Config `CODE_CHUNKER=treesitter` (default) | `recursive` (fallback se lingua non supportata).
+  **Nota tecnica:** pacchetto `tree-sitter-language-pack` scartato (binding incompatibile); usato binding
+  standard documentato.
+- **Eval Tappa 01 (doc-biased):** 10 query NL su doc Markdown (ground-truth). Corpus 3500→3942 chunk.
+  Regressione dovuta a valutazione doc-oriented: chunk codice più fini competono con doc, penalizzando dense.
+  ollama 0.60/0.693→0.50/0.578, azure-small 0.70/0.833→0.80/0.883, azure-large 0.90/0.950→0.70/0.833.
+  **Insight:** eval 01 non misura il code-aware; serve eval 02.
+- **Eval Tappa 02 (symbol-biased):** 18 query (10 NL + **8 a SIMBOLI**) su indice tree-sitter, ibrido+rerank.
+  **Risultato chiave:** tree-sitter eccelle sui simboli: azure-large MRR 0.972 (overall) / **1.000 (simboli)** = perfetto.
+  Dense puro: 0.880 / 0.938. Ipotesi: denso-ingenuo, chunk piccoli di codice hanno sim. uniforme.
+  Conclusione: **tree-sitter + hybrid + rerank** = la combinazione giusta.
+- **Learnings:** (a) tree-sitter unità coerenti + BM25 lessico identificatori + rerank disambigua = perfetto per simboli;
+  (b) metadati strutturali (qualname, righe) sono il PONTE verso fusione grafo↔vettoriale ([[architettura-target]] dual-RAG);
+  (c) default **treesitter** mantenuto per coerenza unità e metadati ingestion; `CODE_CHUNKER=recursive` disponibile.
+- **Aperto:** ampliare eval 01 con query simboli; recursive-vs-treesitter su eval 02 con re-index; igiene corpus (blob base64).
+- Dettagli: `experiments/01-baseline.md` (sezione "Chunking code-aware (tree-sitter)").

@@ -21,6 +21,9 @@ class Settings:
     ollama_host: str = os.getenv("OLLAMA_HOST", "http://localhost:11434")
     ollama_embed_model: str = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
 
+    # Chunking del codice: "treesitter" (code-aware) | "recursive" (LangChain, size-driven)
+    code_chunker: str = os.getenv("CODE_CHUNKER", "treesitter")
+
     # Azure OpenAI / Azure AI Foundry (endpoint v1)
     azure_endpoint: str = os.getenv("AZURE_OPENAI_ENDPOINT", "")
     azure_key: str = os.getenv("AZURE_OPENAI_API_KEY", "")

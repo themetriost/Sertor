@@ -17,6 +17,9 @@ __pycache__/
 *.chroma
 **/.index/
 
+# Log rigenerabili (re-index, ecc.)
+**/*.log
+
 # GraphRAG (Tappa 3C): venv isolato + artefatti rigenerabili (input staged da raw/)
 03-graphrag/.venv-grag/
 03-graphrag/*.log

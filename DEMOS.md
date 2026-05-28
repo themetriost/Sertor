@@ -158,16 +158,23 @@ Test **free** (BM25 sparse, grafo AST, artefatti GraphRAG) sempre eseguibili; te
 .venv/Scripts/python.exe -m pytest tests/ --run-paid    # include la query GraphRAG a pagamento
 ```
 
-**Stato corrente:** `8 passed, 1 skipped` (l'1 skip è il test `paid`; con Ollama attivo i gated passano).
+**Stato corrente:** `14 passed, 1 skipped` (l'1 skip è il test `paid`; con Ollama attivo i gated passano).
 
 | Test | Config | Tipo | Verifica |
 |---|---|---|---|
+| `test_chunking_code.py` | chunking | free | chunk per simbolo (module/class/method), qualname, righe, contesto classe |
 | `test_graph_ast.py` | 03A | free | def/callers/docs su simboli noti |
 | `test_graphrag_artifacts.py` | 3C | free | tipi ⊆ tassonomia di dominio; grafo ricco |
 | `test_hybrid.py::...sparse` | 02 | free | BM25 trova il simbolo esatto |
 | `test_baseline.py` | 01 | gated (Ollama) | forma output dense (k risultati) |
 | `test_hybrid.py::...fusione` | 02 | gated (Ollama) | la fusione RRF gira |
 | `test_graphrag_query.py` | 3C | paid (Azure) | local search risponde su `OAuth2PasswordBearer` |
+
+> **Chunking del codice** selezionabile via `CODE_CHUNKER` (`treesitter` default | `recursive`).
+> Il tree-sitter spezza ai confini sintattici (funzioni/metodi/classi) con metadati
+> `symbol`/`qualname`/righe — vedi `shared/chunking_code.py`. Effetto misurato: con la pipeline
+> **hybrid+rerank** porta il recupero a simboli al massimo (azure-large MRR simboli **1.000**);
+> col **dense puro** la frammentazione più fine penalizza le query NL-doc (vedi wiki).
 
 > Gli smoke test verificano **che le pipeline girino e producano output ben formato**, non la
 > *qualità* del retrieval (misurata dagli `evaluate.py` di ogni tappa, con numeri nel wiki).
