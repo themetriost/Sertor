@@ -1,0 +1,6 @@
+# Dipendenze Tappa 1 — baseline RAG (venv uv, Python 3.12)
+chromadb>=0.5
+langchain-text-splitters>=0.3
+httpx>=0.27
+python-dotenv>=1.0
+numpy>=1.26
