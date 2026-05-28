@@ -8,3 +8,6 @@ numpy>=1.26
 # Dipendenze Tappa 2 — hybrid + reranking
 rank-bm25>=0.2.2
 flashrank>=0.2.9
+
+# Dipendenze Tappa 3A — code graph
+networkx>=3.2
