@@ -213,3 +213,12 @@ dove `<operazione>` ∈ { setup, ingest, record, query, lint }.
 - pytest aggiunto a requirements.txt (dev). Prossimi: filtro blob binari; tassonomia entity_types;
   integrazione AST↔GraphRAG↔vettoriale; Tappa 4 Agentic.
 - Dettagli: `DEMOS.md` e `tests/*.py`.
+
+## [2026-05-28] record | Vetrina esempi query→risposta (ESEMPI.md) + pagina sintesi
+
+- Creata `syntheses/esempi-query-risposta.md` (pagina di sintesi): presenta i 4 motori ([[01-baseline]], [[02-hybrid-reranking]], Grafo AST, [[03-graphrag]]),
+  tabella "quale motore, quando", insight dal testa-a-testa sulla stessa domanda (3 casi: autenticazione FastAPI, chi chiama HTTPException, abilita CORS).
+- **Tesi confermata:** nessun motore domina tutto. Baseline/Hybrid vincono per "andare al file giusto"; AST è preciso su struttura
+  (chi-chiama-chi); GraphRAG eccelle su spiegazioni (ma con costo LLM e limite su re-export). → Conferma dual-RAG (fusion).
+- Aggiornata `index.md`: aggiunto link a nuova sintesi in sezione Sintesi; accostato ESEMPI.md in sezione Demo & Test.
+- Rimando sempre a `ESEMPI.md` per gli esempi completi (vetrina divulgativa, non tecnica).

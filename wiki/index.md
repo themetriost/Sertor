@@ -47,7 +47,10 @@ Il wiki è mantenuto secondo lo schema descritto in [`../CLAUDE.md`](../CLAUDE.m
 
 - [**DEMOS.md**](../DEMOS.md) — runbook eseguibile per ogni configurazione RAG (01, 02, 3A, 3C):
   prerequisiti, comandi, output atteso/osservato. Smoke test pytest in `tests/`.
+- [**ESEMPI.md**](../ESEMPI.md) — vetrina divulgativa "ho cercato X → mi ha restituito Y":
+  esempi reali su FastAPI per ciascun motore, testa-a-testa sulla stessa domanda, guida "quale scegliere quando".
 
 ## Sintesi
 
+- [Vetrina di esempi — query → risposta per motore](syntheses/esempi-query-risposta.md) — sintesi pratica dei 4 motori e quando usarli
 - [Architettura target — dual-RAG codice + documentazione](syntheses/architettura-target.md) — disegno finale + roadmap incrementale 01→04
