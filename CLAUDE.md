@@ -109,10 +109,17 @@ Questo workspace mantiene un **wiki locale** in [`wiki/`](wiki/), ispirato al pa
 "LLM Wiki" di Karpathy. Lo scopo: il wiki è un artefatto persistente e cumulativo che
 cresce a ogni sessione, invece di ricostruire la conoscenza ogni volta.
 
-> **Regola aurea:** ogni cosa di rilievo che facciamo va documentata nel wiki **prima di
-> chiudere il turno**. Non aspettare che l'utente lo chieda: l'aggiornamento è implicito.
-> Vale per esperimenti eseguiti, decisioni prese, concetti/tecnologie approfonditi e fonti
-> ingerite. Modifiche puramente meccaniche e di poco conto non richiedono una voce.
+> **Regola aurea:** ogni cosa di rilievo che facciamo va documentata nel wiki. Non aspettare
+> che l'utente lo chieda: l'aggiornamento è implicito. Vale per esperimenti eseguiti, decisioni
+> prese, concetti/tecnologie approfonditi e fonti ingerite. Modifiche puramente meccaniche e di
+> poco conto non richiedono una voce.
+
+> **Delega (non bloccante):** l'aggiornamento del wiki va **delegato all'agente `wiki-keeper`**
+> (modello Haiku, vedi `.claude/agents/wiki-keeper.md`), lanciato **in background** durante o
+> dopo un'attività di progetto, così il flusso principale non si blocca sul bookkeeping.
+> Passagli un brief autocontenuto (cosa è stato fatto, file/percorsi, numeri/esiti, commit).
+> Quando l'agente ha finito, includi le modifiche al wiki nel commit dello step. Per attività
+> piccole o puramente meccaniche puoi non delegare.
 
 ### Struttura
 - `raw/` — fonti esterne **immutabili** (solo lettura): `articles/`, `papers/`, `assets/`.
@@ -140,5 +147,7 @@ cresce a ogni sessione, invece di ricostruire la conoscenza ogni volta.
 - Crea una **nuova** pagina per un concetto/entità nuovo; **aggiorna** quella esistente altrimenti.
 - Quando una fonte nuova contraddice una pagina, **segnala esplicitamente** la contraddizione.
 
-Per innescare manualmente un consolidamento usa il comando **`/wiki`**. Un hook `SessionStart`
-carica lo stato del wiki a inizio sessione, così la manutenzione resta implicita.
+Per innescare manualmente un consolidamento usa il comando **`/wiki`** (lavora nel flusso
+principale) oppure delega all'agente `wiki-keeper` (in background). Un hook `SessionStart`
+carica lo stato del wiki a inizio sessione. Non c'è più uno `Stop` hook bloccante: la
+manutenzione è garantita dalla delega al `wiki-keeper`, non dal blocco del turno.
