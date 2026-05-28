@@ -84,16 +84,6 @@ per conflitti di dipendenze: usa `graspologic` (Leiden) → `numba`, che tipicam
 - Gli artefatti si **rileggono dal `.venv` principale** (pandas/networkx) per il confronto col grafo AST.
 - Isolamento solo dei *pacchetti Python*, non dei dati (condivisi sul filesystem).
 
-## Nota setup Tappa 3C — env isolato (non Docker)
-Microsoft `graphrag` richiede un **virtualenv dedicato**, separato dal `.venv` principale,
-per conflitti di dipendenze: usa `graspologic` (Leiden) -> `numba`, che tipicamente vuole
-**`numpy < 2.x`**, mentre il nostro `.venv` ha **numpy 2.4** -> conflitto diretto. Porta anche
-`lancedb`, `pyarrow`, `pandas`, `fnllm`/`tiktoken` con pin stretti.
-- Setup: `uv venv 03-graphrag/.venv-grag` + `uv pip install graphrag`, oppure `uv tool install graphrag`.
-- Si usa **da CLI** (`graphrag init/index/query`): legge `raw/`, scrive artefatti **parquet**.
-- Gli artefatti si **rileggono dal `.venv` principale** (pandas/networkx) per il confronto col grafo AST.
-- Isolamento solo dei *pacchetti Python*, non dei dati (condivisi sul filesystem).
-
 ## Prossimi passi
 - **Tappa 3C:** Microsoft GraphRAG (estrazione entità/relazioni via LLM + community summaries)
   e **confronto** con questo grafo AST.
