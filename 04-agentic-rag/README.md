@@ -163,8 +163,8 @@ dipendenza MCP. Se in conflitto con lo stack attuale, **venv isolato** come per 
 - [x] adattatore **AutoGen** (`autogen_app.py`) — 1° framework a confronto
 - [x] eval multi-step + eval set (`eval_tasks.json` + `evaluate.py`) con **doc parlante** auto-generata
 - [x] adattatore **Semantic Kernel** (`sk_app.py`) — 2° framework a confronto
-- [ ] adattatore **LangGraph** (3°)
-- [ ] MCP server che espone i tool
+- [x] adattatore **LangGraph** (`langgraph_app.py`) — 3° framework a confronto
+- [ ] MCP server che espone i tool (superficie per l'agente Claude)
 
 > **Stato (2026-05-29):** prerequisiti + orchestratore vanilla + **adattatore AutoGen** +
 > **eval comparativa** fatti e verificati end-to-end su Ollama. `agent.py` (vanilla) e
@@ -211,11 +211,11 @@ dipendenza MCP. Se in conflitto con lo stack attuale, **venv isolato** come per 
 ├─ tools.py             ← schemi dei tool sopra shared/retrieval.py
 ├─ autogen_app.py       ← adattatore AutoGen        (1° ✓)
 ├─ sk_app.py            ← adattatore Semantic Kernel (2° ✓)
-├─ langgraph_app.py     ← adattatore LangGraph       (3° — prossimo)
-├─ mcp_server.py        ← (ultimo) espone i tool a Claude Code via MCP
-└─ evaluate.py          ← eval multi-step + doc parlante (eval_results.json, --render-from)
+├─ langgraph_app.py     ← adattatore LangGraph       (3° ✓)
+├─ mcp_server.py        ← (prossimo) espone i tool a Claude Code via MCP
+└─ evaluate.py          ← eval multi-step + doc parlante (eval_results.json, --render-from, merge per-motore)
 ```
 
-> **Stato (2026-05-29):** prerequisiti, orchestratore vanilla, **AutoGen** e **Semantic Kernel**
-> fatti e confrontati a parità su gpt-5.4-mini (`evaluate.py`, 9 task). Prossimo: **LangGraph**,
-> poi il server **MCP** per l'agente Claude.
+> **Stato (2026-05-29):** prerequisiti, orchestratore vanilla, e **tutti e tre i framework**
+> (AutoGen, Semantic Kernel, LangGraph) fatti e confrontati a parità su gpt-5.4-mini
+> (`evaluate.py`, 9 task, 4 motori). **Prossimo: il server MCP** per l'agente Claude.

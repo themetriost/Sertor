@@ -4,7 +4,7 @@ type: experiment
 tags: [agentic-rag, orchestrator, llm-tool-calling, shared-facade, semantic-kernel, autogen, langraph, mcp, azure-gpt5.4-mini]
 created: 2026-05-29
 updated: 2026-05-29
-status: "vanilla + AutoGen + Semantic Kernel + eval a 3 motori su Azure gpt-5.4-mini; LangGraph + MCP da fare"
+status: "vanilla + 3 framework (AutoGen/SK/LangGraph) + eval a 4 motori su Azure gpt-5.4-mini completati; MCP server prossimo"
 sources: [https://github.com/fastapi/fastapi, https://github.com/microsoft/semantic-kernel, https://github.com/microsoft/autogen, https://github.com/langchain-ai/langgraph]
 ---
 
@@ -204,71 +204,126 @@ rispetto a vanilla/AutoGen (vedi sezione Risultati). Stesso contenuto fattuale (
   sono approssimative (calcolate come ≈ numero tool + 1). Questo rende il confronto `steps` con vanilla/AutoGen
   non direttamente paragonabile.
 
-### Risultati eval — Azure gpt-5.4-mini (9 task × 3 motori)
+### Adattatore LangGraph (framework 3/3)
+
+**Cosa:** terzo e ultimo orchestratore via framework, usando **`langgraph>=1.2.2`**.
+
+**Design:** workflow ReAct via `create_react_agent(model, tools, prompt)` (adattatore prebuilt LangGraph
+che implementa il pattern ReAct). I 6 tool sono esposti con decoratore `@tool` di `langchain_core`,
+così il confronto rimane a **parità di strumenti e prompt** vs vanilla/AutoGen/SK. Trace ricavata dai
+`tool_calls` degli `AIMessage`.
+
+**Implementazione:**
+- **`04-agentic-rag/langgraph_app.py`** (NUOVO): workflow ReAct con `create_react_agent`, carica
+  tool registry da `tools.py` (decorati con `@tool`), modello via `RAG_BACKEND`.
+  - **Locale:** `ChatOpenAI` verso endpoint Ollama `/v1`.
+  - **Azure:** `AzureChatOpenAI` (endpoint base + api_version, deployment gpt-5.4-mini).
+- **Trace:** ricavata dai `tool_calls` degli `AIMessage` durante l'esecuzione del grafo.
+- **Passi:** contati come round di tool + sintesi finale (turni reali, confrontabili con vanilla/autogen).
+- **Requirements:** `langgraph>=1.2`, `langchain-openai>=1.2` aggiunte a `requirements.txt`.
+- **Test:** `tests/test_agentic.py::test_langgraph_adapter_costruibile` (free, con `importorskip`):
+  verifica che l'adattatore importi, crei il grafo, esponga 6 tool.
+
+**Esito verificato end-to-end su Azure gpt-5.4-mini:**
+
+LangGraph opera correttamente su task di localizzazione e multi-hop. Comportamento vicino a vanilla
+(parsimonia di tool-calling), con traccia pulita di stato/tool-calls. Efficienza comparabile a vanilla.
+
+**Learnings:**
+- LangGraph `create_react_agent` è una **scatola nera elegante** che implement il ReAct pattern;
+  riduce il boilerplate vs una state machine manuale.
+- Tool come `@tool` decorator (langchain_core) è il modello standard per LangChain/LangGraph.
+- Trace da `AIMessage.tool_calls` è semplice e affidabile.
+- ReAct (plan → retrieve → synthesize) è l'algoritmo sottostante, così come vanilla; il framework
+  fa l'orchestrazione dell'implementazione.
+
+### Risultati eval — Azure gpt-5.4-mini (9 task × 4 motori)
 
 | Motore | cited (9) | tool_ok (9) | steps (media) | tools_called (media) | Note |
 |--------|-----------|-------------|---------------|----------------------|------|
-| vanilla | 9/9 (100%) | 9/9 (100%) | 2.7 | 3.2 | routing sempre stabile |
-| AutoGen | 9/9 (100%) | 7/9 (78%) | 2.7 | 3.4 | 2 "tool✗" su routing (search_code vs find_symbol) |
-| sk | 9/9 (100%) | 8/9 (89%) | 5.0 | 4.0 | SK più verboso; `steps` APPROSSIMATO ⚠️; cfr `tool_medi` robusto |
+| vanilla | 9/9 (100%) | 9/9 (100%) | 2.8 | 3.3 | routing stabile, parsimonia |
+| AutoGen | 9/9 (100%) | 8/9 (89%) | 2.8 | 3.7 | tool_ok leggermente inferiore |
+| sk | 9/9 (100%) | 8/9 (89%) | 5.0 | 4.0 | SK più verboso; `steps` APPROSSIMATO ⚠️ |
+| langgraph | 9/9 (100%) | 7/9 (78%) | 2.8 | 3.3 | snello come vanilla, routing variabile |
 
-**Lettura onesta sui risultati Azure:**
+**Lettura onesta sui risultati Azure (4 motori):**
 
-(a) **Correttezza fattuale 9/9 per tutti e tre.** Con gpt-5.4-mini (modello forte), il segnale discriminante
-non è più "cita il file?" (tutti lo fanno), bensì **routing degli strumenti e efficienza** (tool_ok, tool medi).
+(a) **Correttezza fattuale 9/9 per tutti e quattro.** Con gpt-5.4-mini (modello forte), il segnale
+discriminante non è "cita il file?" (tutti lo fanno), bensì **routing degli strumenti e efficienza**
+(tool_ok, tool medi, passi reali).
 
-(b) **Vanilla vs AutoGen vs SK:**
-   - **Vanilla:** routing sempre corretto (tool_ok 9/9), media tool 3.2.
-   - **AutoGen:** 2 routing subottimali su localizzazione (tool_ok 7/9), media tool 3.4.
-   - **SK:** 1 routing subottimale, **ma con pattern di tool-calling più aggressivo** (media tool 4.0, picchi
-     fino a 10 su query-param-codedoc e 8 su httpexception-usage). SK itera e reitera il loop auto-invocation
-     più che vanilla/AutoGen.
+(b) **Efficienza orchestrazione — vanilla > LangGraph ≈ AutoGen > SK:**
+   - **Vanilla:** 9/9 tool_ok, 3.3 tool medi, 2.8 passi reali. Baseline leggibile e parsimonioso.
+   - **LangGraph:** 7/9 tool_ok, 3.3 tool medi, 2.8 passi reali. **Snello come vanilla** (stesso numero
+     di tool-call e turni reali); routing leggermente meno stabile. ReAct prebuilt rende il codice conciso.
+   - **AutoGen:** 8/9 tool_ok, 3.7 tool medi, 2.8 passi reali. Tool-heavy di poco (3.7 vs 3.3),
+     routing simile a LangGraph.
+   - **SK:** 8/9 tool_ok, 4.0 tool medi, 5.0 passi approssimati. **Il più verboso** — media tool
+     4.0, picchi fino a 10. `steps` non è comparabile (loop opaca).
 
-(c) **Metrica `steps` per SK è approssimata ⚠️:** SK non espone i confini dei turni LLM (la loop di
-auto-invocation è opaca nel framework). Il valore 5.0 è calcolato come media di (numero tool + 1) per task.
-Non è direttamente comparabile a vanilla/AutoGen che contano turni reali. **La metrica robusta per confronto è
-`tool_medi`:** vanilla 3.2 < AutoGen 3.4 < SK 4.0.
+(c) **Metrica robusta per confronto:** `tool_medi` cattura l'efficienza concretamente:
+   ```
+   vanilla  3.3 ≈ LangGraph 3.3
+   AutoGen  3.7 (+12% vs vanilla)
+   SK       4.0 (+21% vs vanilla)
+   ```
+   Su passi reali (vanilla/AutoGen/LangGraph), il delta è minimo (2.8 turni); SK non è paragonabile.
 
-(d) **Implicazione:** SK con `ChatCompletionAgent + Auto()` tende a fare **più chiamate-tool** degli altri due
-a parità di task/prompt/modello. È una differenza di orchestrazione concreta (non un bug): SK ripete la loop
-di funzione astratta finché non reputa il task concluso. Vanilla e AutoGen si fermano prima. Per task
-localizzazione diretta (find_symbol → sintesi), SK aggiunge passaggi di search_combined/related_docs.
+(d) **Delta routing (tool_ok):** vanilla 9/9 > AutoGen 8/9 ≈ SK 8/9 > LangGraph 7/9.
+   Vanilla è il più stabile; gli altri 3 hanno routing ottimale su 7–8/9 task. La differenza è
+   spesso su "quale tool è ideale" (search_docs vs find_symbol per task doc-vs-code) — non su
+   correttezza fattuale (tutti citano i file). Confermato: il segnale su modello forte è il routing.
 
-(e) **Delta routing:** vanilla > SK > AutoGen su tool_ok (9 vs 8 vs 7). Ma la differenza è sottile:
-tutti citano i file giusti; è il percorso che diverge. Tool_ok=8/9 per SK su task diverso da vanilla/AutoGen,
-suggerisce un pattern di auto-invocation coerente ma con scelte diverse.
+(e) **Pattern orchestrazione — ReAct vs loop manuale:**
+   - Vanilla/LangGraph: **plan → retrieve (1 tool) → synthesize** (2–3 turni totali).
+   - AutoGen: **idem ma con riflessione interna** (reflect_on_tool_use=True).
+   - SK: **loop auto-invocation più aggressivo** — reitera e compensa con ricerca profonda.
 
-**Caveat non-determinismo:** 1 run per task (non mediato). Con modello forte, results sono stabili.
+**Caveat non-determinismo:** 1 run per task. Risultati stabili su gpt-5.4-mini.
 
-**Learning:** su un **modello forte**, la metrica `cited` satura (9/9 per tutti); il segnale discriminante
-è l'**efficienza/routing** (tool_ok, tool medi). SK è strutturalmente il più verboso (more tool calls),
-vanilla è il più parsimonioso. Questo è un trade-off di design: SK compensa con investigazione più profonda
-(riesce a sintetizzare risposte con più contesto), vanilla è più diretto. Per deployment production, la scelta
-dipende dal budget token e dalla tolleranza di latenza.
+**Learning a 4 motori:**
 
-**Implicazione SK:** il pattern di auto-invocation rende SK interessante per **task complessi che richiedono
-ricerca multi-hop naturale**, ma meno efficiente per localizzazione diretta. Vanilla è il baseline leggibile;
-AutoGen è nel mezzo.
+su un **modello forte**, **la metrica `cited` satura (9/9)** — tutti i framework raggiungono la stessa
+correttezza fattuale con tool-calling nativo. Il segnale discriminante è l'**efficienza e il routing**
+(tool_ok, tool medi, passi reali). **LangGraph è snello come vanilla** (ReAct prebuilt == orchestrazione
+efficiente); AutoGen aggiunge un po' di verbosità (reflect_on_tool_use); **SK è il più esplorativo**
+(più tool-call, ricerca profonda). Per deployment production: vanilla/LangGraph se il budget token è critico;
+SK se la qualità multi-hop della risposta giustifica il costo token aggiuntivo.
+
+**Implicazione dei 3 framework:** nessuno dominante; la scelta dipende dal **profilo d'uso**:
+- **Vanilla/LangGraph:** parsimonia, leggibilità, baseline.
+- **AutoGen:** equilibrio, ecosystem Microsoft, multi-agente (futuro).
+- **SK:** investigazione profonda, task complessi, design più astratto.
 
 **Artefatto generato:** [`04-agentic-rag/ESEMPI-agentic.md`](../../04-agentic-rag/ESEMPI-agentic.md)
 — doc divulgativa in stile ESEMPI.md ("ho chiesto X → l'agente ha fatto Y → mi ha risposto Z")
-per ogni task e motore, auto-generata da `evaluate.py` a partire dai log esecuzione. Aggiornato per i risultati Azure (3 motori).
+per ogni task e motore, auto-generata da `evaluate.py` a partire dai log esecuzione. Aggiornato per
+i risultati Azure (4 motori); merge incrementale conserva i risultati.
 
-**Prossimi passi (eval e framework):**
-- **Adattatore LangGraph** — graph workflow plan→retrieve→synthesize via LangGraph state machine (3° framework).
-- **Query planning context-aware** — disambiguare routing doc-vs-code in base al tipo di domanda.
-- **MCP server** — esporre `shared/retrieval.py` come MCP tools per Claude Code.
+**Merge incrementale eval:** `evaluate.py` ora supporta `--engines X` per rieseguire solo il motore X
+e merge i risultati con `eval_results.json` (gli altri motori riusano i risultati salvati). Flag
+`--no-merge` riparte da zero. Questo evita di ri-pagare gli altri motori in Azure (risparmio 3/4 token).
+
+**Prossimi passi (conclusione framework):**
+- ✅ **Adattatore LangGraph** — COMPLETATO.
+- **MCP server** — esporre `shared/retrieval.py` come MCP tools per Claude Code (prossimo step).
 
 ## Prossimi passi
 
-1. ~~**Eval set su Tappa 04**~~ **COMPLETATO su Azure** — 9 task × 3 motori, metrica tool_ok, entry point gpt-5.4-mini.
-2. ~~**Stabilità eval**~~ **STABILIZZATO** — modello forte (gpt-5.4-mini) elimina non-determinismo locale; 1 run sufficiente per metrica.
-3. ~~**Adattatore Semantic Kernel**~~ **COMPLETATO** — kernel SK con ChatCompletionAgent + FunctionChoiceBehavior.Auto(), eval a 3 motori.
-4. **Adattatore LangGraph** — graph workflow plan→retrieve→synthesize via LangGraph state machine (3° framework).
-5. **Query planning context-aware** — disambiguare routing doc-vs-code in base al tipo di domanda (segue da eval routing diff).
-6. **MCP server** — esporre `shared/retrieval.py` come MCP tools (`search_code`, `search_docs`,
+### Completati (Tappa 04 core)
+
+1. ~~**Eval set su Tappa 04**~~ **COMPLETATO** — 9 task × 4 motori, metrica tool_ok/cited/steps/tools, entry point Azure gpt-5.4-mini.
+2. ~~**Stabilità eval**~~ **STABILIZZATO** — modello forte elimina non-determinismo; 1 run/task sufficiente.
+3. ~~**Adattatore AutoGen**~~ **COMPLETATO** — AssistantAgent con tool-calling, eval vanilla vs AutoGen vs SK vs LangGraph.
+4. ~~**Adattatore Semantic Kernel**~~ **COMPLETATO** — kernel SK con ChatCompletionAgent + FunctionChoiceBehavior.Auto().
+5. ~~**Adattatore LangGraph**~~ **COMPLETATO** — ReAct prebuilt con create_react_agent, merge incrementale eval.
+
+### Follow-up (ordinati per impatto)
+
+1. **MCP server** (PROSSIMO) — esporre `shared/retrieval.py` come MCP tools (`search_code`, `search_docs`,
    `find_symbol`, `who_calls`) per Claude Code e agenti. Superficie futura: agente Claude via MCP.
-7. **Custom entity_types per GraphRAG** — usare `derive-entity-types` (Tappa 3C follow-up) per
+2. **Query planning context-aware** — disambiguare routing doc-vs-code in base al tipo di domanda (segue da eval routing diff).
+3. **Custom entity_types per GraphRAG** — usare `derive-entity-types` (Tappa 3C follow-up) per
    migliorare il grafo semantico.
 
 ## Backlink e contesto

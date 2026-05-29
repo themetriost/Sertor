@@ -23,6 +23,9 @@ autogen-agentchat>=0.7
 autogen-ext[openai]>=0.7
 # Semantic Kernel — 2° framework a confronto (adattatore 04-agentic-rag/sk_app.py)
 semantic-kernel>=1.36
+# LangGraph — 3° framework a confronto (adattatore 04-agentic-rag/langgraph_app.py)
+langgraph>=1.2
+langchain-openai>=1.2
 
 # Dev — test dimostrativi (suite tests/, vedi DEMOS.md)
 pytest>=8.0

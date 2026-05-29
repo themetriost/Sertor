@@ -9,6 +9,7 @@
 | Motore | task | cita atteso | tool giusto | passi medi | tool medi |
 |---|---|---|---|---|---|
 | `autogen` | 9 | 9/9 | 8/9 | 2.8 | 3.7 |
+| `langgraph` | 9 | 9/9 | 7/9 | 2.8 | 3.3 |
 | `sk` | 9 | 9/9 | 8/9 | 5.0 | 4.0 |
 | `vanilla` | 9 | 9/9 | 7/9 | 2.8 | 3.3 |
 
@@ -62,6 +63,20 @@
 > Fonte: `fastapi/routing.py:1005`
 
 **Esito:** ✅ ha citato il file atteso · strumento giusto ✅ · 4 passi · 3 strumenti
+
+### 🤖 langgraph  ·  _azure:gpt-5.4-mini_
+
+**Ha fatto:** `search_code`
+
+**Ha risposto:**
+
+> La classe `APIRouter` è definita in:
+> 
+> - `fastapi/routing.py#49`
+> 
+> Se vuoi, posso anche indicarti dove viene esportata/importata da `fastapi` (`from fastapi import APIRouter`).
+
+**Esito:** ✅ ha citato il file atteso · strumento giusto ❌ · 2 passi · 1 strumento
 
 ---
 
@@ -118,6 +133,21 @@
 
 **Esito:** ✅ ha citato il file atteso · strumento giusto ✅ · 3 passi · 2 strumenti
 
+### 🤖 langgraph  ·  _azure:gpt-5.4-mini_
+
+**Ha fatto:** `search_docs` → `find_symbol`
+
+**Ha risposto:**
+
+> `OAuth2PasswordBearer` è una classe di FastAPI usata per definire uno schema di sicurezza OAuth2 basato su password flow. In pratica, FastAPI la usa per leggere il token Bearer dall’header `Authorization`, integrarlo con OpenAPI e usarlo come dipendenza (`Depends`) nei path operation o nelle dependency di sicurezza. Vedi la spiegazione nei tutorial di FastAPI su `OAuth2PasswordBearer` e `OAuth2PasswordRequestForm` (`docs/en/docs/tutorial/security/first-steps.md#5`, `docs/en/docs/tutorial/security/simple-oauth2.md#3`).
+> 
+> È definito nel file:
+> - `fastapi/security/oauth2.py:433`
+> 
+> Se vuoi, posso anche mostrarti un esempio minimo di utilizzo in FastAPI.
+
+**Esito:** ✅ ha citato il file atteso · strumento giusto ✅ · 2 passi · 2 strumenti
+
 ---
 
 ## «Dove è implementato Depends in FastAPI? Indica il file.»
@@ -169,6 +199,24 @@
 
 **Esito:** ✅ ha citato il file atteso · strumento giusto ✅ · 7 passi · 6 strumenti
 
+### 🤖 langgraph  ·  _azure:gpt-5.4-mini_
+
+**Ha fatto:** `search_code` → `search_code` → `find_symbol`
+
+**Ha risposto:**
+
+> `Depends` è implementato in `fastapi/params.py` come classe dataclass:
+> 
+> - `fastapi/params.py:746` — `class Depends`
+> 
+> C’è anche una funzione helper/esportata con lo stesso nome in:
+> 
+> - `fastapi/param_functions.py:2283` — `function Depends`
+> 
+> Se vuoi, posso anche dirti quale dei due viene usato pubblicamente da `from fastapi import Depends` e come si collega al sistema di dependency injection.
+
+**Esito:** ✅ ha citato il file atteso · strumento giusto ✅ · 4 passi · 3 strumenti
+
 ---
 
 ## «In quale file è definita la classe BackgroundTasks di FastAPI?»
@@ -215,6 +263,20 @@
 
 **Esito:** ✅ ha citato il file atteso · strumento giusto ❌ · 3 passi · 2 strumenti
 
+### 🤖 langgraph  ·  _azure:gpt-5.4-mini_
+
+**Ha fatto:** `search_code`
+
+**Ha risposto:**
+
+> La classe `BackgroundTasks` di FastAPI è definita nel file:
+> 
+> - `fastapi/background.py#1`
+> 
+> Se vuoi, posso anche indicarti dove viene esportata/importata nel package `fastapi`.
+
+**Esito:** ✅ ha citato il file atteso · strumento giusto ❌ · 2 passi · 1 strumento
+
 ---
 
 ## «In quale file del codice sorgente è definita la classe HTTPException?»
@@ -254,6 +316,18 @@
 > La classe `HTTPException` è definita in:
 > 
 > - `fastapi/exceptions.py:17` — `class HTTPException`
+
+**Esito:** ✅ ha citato il file atteso · strumento giusto ✅ · 2 passi · 1 strumento
+
+### 🤖 langgraph  ·  _azure:gpt-5.4-mini_
+
+**Ha fatto:** `find_symbol`
+
+**Ha risposto:**
+
+> La classe `HTTPException` è definita in:
+> 
+> - `fastapi/exceptions.py:17`
 
 **Esito:** ✅ ha citato il file atteso · strumento giusto ✅ · 2 passi · 1 strumento
 
@@ -343,6 +417,40 @@
 
 **Esito:** ✅ ha citato il file atteso · strumento giusto ✅ · 9 passi · 8 strumenti
 
+### 🤖 langgraph  ·  _azure:gpt-5.4-mini_
+
+**Ha fatto:** `find_symbol` → `search_code` → `search_docs` → `search_code` → `search_code` → `search_code`
+
+**Ha risposto:**
+
+> `HTTPException` è definita in `fastapi/exceptions.py` alla riga 17 circa, come classe `HTTPException(StarletteHTTPException)`; il simbolo è anche indicato in `fastapi/exceptions.py#2-3` nei risultati di ricerca. Fonte: `fastapi/exceptions.py:17` e `fastapi/exceptions.py#2-3`.
+> 
+> Ecco alcuni esempi di codice che la usa:
+> 
+> - In una dependency che valida un header:
+>   - `docs_src/dependencies/tutorial006_py310.py#1`
+>   - esempio: `raise HTTPException(status_code=400, detail="X-Token header invalid")`
+> 
+> - In un altro tutorial equivalente:
+>   - `docs_src/dependencies/tutorial012_py310.py#1`
+>   - stesso pattern: `raise HTTPException(status_code=400, detail="X-Token header invalid")`
+> 
+> - Nel codice di sicurezza HTTP:
+>   - `fastapi/security/http.py#6`
+>   - `return HTTPException(status_code=HTTP_401_UNAUTHORIZED, ...)`
+> 
+> - Nel gestore delle eccezioni HTTP:
+>   - `fastapi/exception_handlers.py#1`
+>   - funzione `http_exception_handler(request: Request, exc: HTTPException)`
+> 
+> - Nella documentazione sugli errori:
+>   - `docs/en/docs/tutorial/handling-errors.md#1`
+>   - sezione “Import `HTTPException`” e “Raise an `HTTPException` in your code”
+> 
+> Se vuoi, posso anche mostrarti il contenuto della definizione di `HTTPException` in `fastapi/exceptions.py` oppure raccogliere 3-5 esempi completi con contesto più ampio.
+
+**Esito:** ✅ ha citato il file atteso · strumento giusto ✅ · 3 passi · 6 strumenti
+
 ---
 
 ## «Qual è la differenza tra una funzione di endpoint definita con def e una con async def in FastAPI?»
@@ -425,6 +533,25 @@
 > Se vuoi, posso anche spiegarti **quando conviene scegliere `def` rispetto a `async def`** con esempi concreti.
 
 **Esito:** ✅ ha citato il file atteso · strumento giusto ✅ · 3 passi · 2 strumenti
+
+### 🤖 langgraph  ·  _azure:gpt-5.4-mini_
+
+**Ha fatto:** `search_docs` → `search_code` → `search_docs` → `search_docs`
+
+**Ha risposto:**
+
+> In FastAPI, la differenza principale è **come viene eseguita la funzione**, non il fatto che l’endpoint “funzioni” o meno.
+> 
+> - **`async def`**: definisce una coroutine. FastAPI la esegue direttamente nell’event loop, quindi è ideale per operazioni **I/O-bound** che supportano `await` (es. chiamate HTTP async, database async, file async).  
+> - **`def`**: FastAPI la esegue in un **threadpool** separato, così non blocca l’event loop. È utile per codice **sincrono/bloccante** o librerie che non supportano `async`/`await`.
+> 
+> Quindi:
+> - usa **`async def`** se stai usando librerie async e vuoi sfruttare la concorrenza;
+> - usa **`def`** se il codice è sincrono o se chiami librerie bloccanti.
+> 
+> FastAPI documenta esplicitamente che una path operation function definita con `def` invece di `async def` viene eseguita in un threadpool, mentre `async def` è la forma naturale per codice asincrono. Vedi **docs/en/docs/async.md#27** e il riepilogo in **docs/en/docs/async.md#2**.
+
+**Esito:** ✅ ha citato il file atteso · strumento giusto ✅ · 4 passi · 4 strumenti
 
 ---
 
@@ -568,6 +695,40 @@
 
 **Esito:** ✅ ha citato il file atteso · strumento giusto ✅ · 11 passi · 10 strumenti
 
+### 🤖 langgraph  ·  _azure:gpt-5.4-mini_
+
+**Ha fatto:** `search_code` → `search_docs` → `find_symbol` → `search_code` → `search_docs` → `related_docs` → `search_code` → `search_code` → `search_docs`
+
+**Ha risposto:**
+
+> In FastAPI, un parametro di query si dichiara tipicamente nel path operation function come parametro normale, oppure esplicitamente con `Query(...)` per aggiungere validazioni/metadati.
+> 
+> Esempio base:
+> 
+> ```python
+> from fastapi import FastAPI, Query
+> 
+> app = FastAPI()
+> 
+> @app.get("/items/")
+> def read_items(q: str | None = Query(default=None, min_length=3)):
+>     return {"q": q}
+> ```
+> 
+> Qui `q` è un query parameter perché non fa parte del path, e `Query(...)` serve a specificarne il comportamento. La documentazione dice che i parametri della funzione che non sono path parameters vengono interpretati automaticamente come query parameters. Vedi: `docs/en/docs/tutorial/query-params.md#0`.
+> 
+> Dove è implementato `Query`:
+> - `fastapi/param_functions.py#8` — funzione `Query(...)`
+> - `fastapi/params.py#10` — classe `Query(Param)` con `in_ = ParamTypes.query`
+> 
+> Documentazione utile:
+> - `docs/en/docs/tutorial/query-params.md#0` — spiegazione dei query parameters
+> - `docs/en/docs/reference/parameters.md#0` — riferimento dei request parameters
+> 
+> Se vuoi, posso anche mostrarti la differenza tra `Query`, `Path`, `Header` e `Cookie` con esempi.
+
+**Esito:** ✅ ha citato il file atteso · strumento giusto ✅ · 4 passi · 9 strumenti
+
 ---
 
 ## «A cosa servono le BackgroundTasks e dove sono documentate?»
@@ -627,5 +788,24 @@
 > - `fastapi/background.py#1`
 
 **Esito:** ✅ ha citato il file atteso · strumento giusto ✅ · 3 passi · 2 strumenti
+
+### 🤖 langgraph  ·  _azure:gpt-5.4-mini_
+
+**Ha fatto:** `search_combined` → `search_code` → `search_docs`
+
+**Ha risposto:**
+
+> Le `BackgroundTasks` servono a eseguire operazioni **dopo** che la risposta è già stata inviata al client, quindi sono utili per lavori non critici nel flusso della request, come inviare notifiche o scrivere log. Questo è spiegato nella guida **Background Tasks**: `docs/en/docs/tutorial/background-tasks.md#0` e anche nella reference API `docs/en/docs/reference/background.md#0`.
+> 
+> Nel codice, la classe è definita in `fastapi/background.py#1`, dove la docstring dice esplicitamente che è “a collection of background tasks that will be called after a response has been sent to the client”. Inoltre, la guida chiarisce che `BackgroundTasks` deriva da `starlette.background` e che si integra con la dependency injection: `docs/en/docs/tutorial/background-tasks.md#3` e `docs/en/docs/tutorial/background-tasks.md#2`.
+> 
+> In breve:
+> - **A cosa servono:** eseguire task dopo la response, senza bloccare il client `docs/en/docs/tutorial/background-tasks.md#0`
+> - **Dove sono documentate:** tutorial e reference in `docs/en/docs/tutorial/background-tasks.md#0` e `docs/en/docs/reference/background.md#0`
+> - **Dove sono implementate:** `fastapi/background.py#1`
+> 
+> Se vuoi, posso anche mostrarti un esempio d’uso preso dai file `docs_src/background_tasks/...`.
+
+**Esito:** ✅ ha citato il file atteso · strumento giusto ✅ · 2 passi · 3 strumenti
 
 ---

@@ -52,6 +52,12 @@ def _run_engine(engine: str, question: str, max_steps: int) -> dict:
         tools = [t["tool"] for t in out["trace"]]
         return {"answer": out["answer"], "tools": tools,
                 "steps": out.get("steps", len(tools)), "client": out["client"]}
+    if engine == "langgraph":
+        import langgraph_app  # import pigro: richiede langgraph + langchain-openai
+        out = langgraph_app.run(question, max_steps=max_steps)
+        tools = [t["tool"] for t in out["trace"]]
+        return {"answer": out["answer"], "tools": tools,
+                "steps": out.get("steps", len(tools)), "client": out["client"]}
     raise ValueError(f"motore sconosciuto: {engine}")
 
 
@@ -185,7 +191,9 @@ def main() -> None:
         pass
 
     ap = argparse.ArgumentParser(description="Eval comparativa Agentic RAG + doc parlante")
-    ap.add_argument("--engines", default="vanilla,autogen,sk", help="motori separati da virgola")
+    ap.add_argument("--engines", default="vanilla,autogen,sk,langgraph", help="motori separati da virgola")
+    ap.add_argument("--no-merge", action="store_true",
+                    help="non fondere con la cache esistente (default: i motori non rieseguiti restano in cache)")
     ap.add_argument("--limit", type=int, default=0, help="esegui solo i primi N task (0 = tutti)")
     ap.add_argument("--max-steps", type=int, default=5)
     ap.add_argument("--out", default=str(HERE / "ESEMPI-agentic.md"), help="file Markdown da generare")
@@ -206,8 +214,18 @@ def main() -> None:
         tasks = TASKS[: args.limit] if args.limit else TASKS
         print(f"Eval: {len(tasks)} task × {len(engines)} motori ({', '.join(engines)})\n")
         rows = evaluate(engines, tasks, args.max_steps)
-        pathlib.Path(args.results).write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
+        # merge incrementale: conserva i risultati dei motori NON rieseguiti (eval per-motore senza re-spend)
+        p = pathlib.Path(args.results)
+        if p.exists() and not args.no_merge:
+            try:
+                prev = json.loads(p.read_text(encoding="utf-8"))
+            except Exception:  # noqa: BLE001
+                prev = []
+            kept = [r for r in prev if r.get("engine") not in set(engines)]
+            rows = rescore(kept, TASKS) + rows  # riallinea i vecchi alla ground-truth corrente
+        p.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
         print(f"\nRisultati grezzi salvati: {args.results}")
+        engines = sorted({r["engine"] for r in rows})  # render/metriche su tutti i motori in cache
 
     print("\n" + _metrics_table(rows, engines))
     doc = render_doc(rows, engines, tasks)

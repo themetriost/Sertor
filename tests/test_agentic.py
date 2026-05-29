@@ -74,3 +74,15 @@ def test_sk_adapter_costruibile():
     kf = [m for m in dir(mod.RagTools) if not m.startswith("_")]
     assert len(kf) == 6, f"attesi 6 kernel function, trovati {kf}"
     assert mod._service() is not None  # servizio costruibile senza rete
+
+
+def test_langgraph_adapter_costruibile():
+    """L'adattatore LangGraph importa, espone i 6 tool e costruisce il modello."""
+    import pytest
+    pytest.importorskip("langgraph")
+    spec = importlib.util.spec_from_file_location("agentic_lg", ROOT / "04-agentic-rag" / "langgraph_app.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert len(mod._TOOLS) == 6
+    assert all(t.name and t.description for t in mod._TOOLS), "i tool LangGraph devono avere nome+descrizione"
+    assert mod._model() is not None  # modello costruibile senza rete

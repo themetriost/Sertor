@@ -105,8 +105,7 @@ Ogni cartella dovrebbe avere un proprio `README.md`, i requirements e un entry-p
 
 ## Git & versionamento (regola SEMPRE attiva)
 
-Questo workspace è un **repo git locale** (al momento senza remote). Convenzione: **un commit
-dopo ogni step** di lavoro significativo (incluso l'aggiornamento del wiki). Messaggi in stile
+Questo workspace è un **repo git con remote `origin`** (ci si pusha regolarmente). **Policy di branching durante la fase di prototipo (attuale):** commit e push **direttamente su `master`/`main`** (autorizzato). Al passaggio in produzione si adotterà **SpecKit** e si lavorerà a **branch + PR** (niente più push diretti su main). Convenzione: **un commit dopo ogni step** di lavoro significativo (incluso l'aggiornamento del wiki). Messaggi in stile
 **Conventional Commits in italiano** (`tipo(scope): sommario`; scope tipici `01-baseline`,
 `02-hybrid-reranking`, `03-graphrag`, `shared`, `wiki`), corpo che spiega il *perché*, footer
 `Co-Authored-By`. **Mai committare** `.env`, `*.key`, il contenuto di `raw/`, i virtualenv o gli

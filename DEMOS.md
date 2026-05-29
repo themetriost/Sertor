@@ -214,15 +214,17 @@ copre tipi diversi — *localizzazione, multi-hop, doc-concept, code+doc* — pe
 strategie dei framework.
 
 ```bash
-PYTHONPATH=. python 04-agentic-rag/evaluate.py                  # esegue (LLM) tutti i task: vanilla+autogen+sk
-PYTHONPATH=. python 04-agentic-rag/evaluate.py --engines vanilla,sk --limit 3
+PYTHONPATH=. python 04-agentic-rag/evaluate.py                  # tutti i task: vanilla+autogen+sk+langgraph
+PYTHONPATH=. python 04-agentic-rag/evaluate.py --engines langgraph   # solo 1 motore: si FONDE con la cache
 # Re-score + rigenera la doc SENZA ri-eseguire l'LLM (gratis, dai risultati salvati):
 PYTHONPATH=. python 04-agentic-rag/evaluate.py --render-from 04-agentic-rag/eval_results.json
 ```
 
-> Motori confrontati a parità (stessi tool + prompt): `vanilla` (loop manuale), `autogen`,
-> `sk` (Semantic Kernel). `passi` è confrontabile solo tra vanilla/autogen (turni reali); per
-> sk è approssimato — per il costo guarda `tool medi`.
+> 4 motori a parità (stessi tool + prompt): `vanilla` (loop manuale), `autogen`, `sk`
+> (Semantic Kernel), `langgraph`. **Merge incrementale**: rieseguire `--engines X` aggiorna
+> solo X e conserva gli altri in `eval_results.json` (usa `--no-merge` per ripartire da zero).
+> `passi` è confrontabile tra vanilla/autogen/langgraph (turni reali); per `sk` è approssimato
+> → per il costo guarda `tool medi`.
 
 > L'esecuzione salva `eval_results.json` (cache dei risultati grezzi): raffinare la
 > ground-truth dei task e rigenerare `ESEMPI-agentic.md` via `--render-from` **non ricosta**

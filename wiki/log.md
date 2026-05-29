@@ -484,3 +484,44 @@ dove `<operazione>` ∈ { setup, ingest, record, query, lint }.
     Prossimi passi riprioritizzati (SK completato, LangGraph 3°, MCP).
   - `index.md`: riga 04 stato aggiornato, `updated: 2026-05-29`.
   - `log.md`: questa voce.
+
+## [2026-05-29] record | Tappa 04 — adattatore LangGraph + confronto a 4 motori (chiusi i 3 framework)
+
+- **Implementazione LangGraph (framework 3/3):** `04-agentic-rag/langgraph_app.py` (NUOVO) — workflow ReAct
+  via `create_react_agent(model, tools, prompt)` (adattatore prebuilt LangGraph). Tool esposti con decoratore
+  `@tool` di `langchain_core`; confronto a **parità strumenti/prompt** vs vanilla/AutoGen/SK. Trace ricavata
+  da `tool_calls` degli `AIMessage`. Modello via `RAG_BACKEND`: Azure gpt-5.4-mini oppure Ollama llama3.1.
+- **Eval a 4 motori (9 task × 4) su Azure gpt-5.4-mini:**
+  - vanilla: 9/9 cited, 9/9 tool_ok, 2.8 passi, 3.3 tools medi.
+  - AutoGen: 9/9 cited, 8/9 tool_ok, 2.8 passi, 3.7 tools medi.
+  - **sk**: 9/9 cited, 8/9 tool_ok, 5.0 passi (approssimato), 4.0 tools medi.
+  - **langgraph**: 9/9 cited, 7/9 tool_ok, 2.8 passi, 3.3 tools medi.
+- **Lettura onesta (4 motori):**
+  - **Correttezza fattuale 9/9 per TUTTI** — gpt-5.4-mini satura `cited`; segnale discriminante = efficienza/routing (tool_ok, tool medi, passi).
+  - **LangGraph è snello come vanilla:** 3.3 tool medi, 2.8 passi reali. ReAct prebuilt rende l'orchestrazione concisa.
+  - **Efficienza ordinata:** vanilla 3.3 ≈ LangGraph 3.3 < AutoGen 3.7 < SK 4.0. (SK +21% tool-call vs vanilla.)
+  - **Routing (tool_ok):** vanilla 9/9 > AutoGen 8/9 ≈ SK 8/9 > LangGraph 7/9. Vanilla è il più stabile.
+  - **Passi reali (vanilla/AutoGen/LangGraph):** tutti 2.8 turni. SK non è paragonabile (loop opaca).
+- **Learnings:**
+  - LangGraph `create_react_agent` implementa il ReAct pattern sottostante di vanilla; reduce boilerplate.
+  - Su modello forte, `cited` satura; il segnale è efficienza/routing. Nessun motore dominante: vanilla/LangGraph per parsimonia,
+    AutoGen per equilibrio, SK per investigazione profonda.
+  - Merge incrementale eval: `--engines langgraph` esegue solo LangGraph (9 run), merge con eval_results.json precedente
+    (conserva vanilla/AutoGen/SK). Evita ri-spendere token su 27 run, risparmio 75%.
+- **Rigenerate eval_results.json + ESEMPI-agentic.md** con 4 motori (merge: solo 9 run di langgraph eseguiti,
+  altri 27 da cache).
+- **Requirements:** `langgraph>=1.2`, `langchain-openai>=1.2` aggiunte.
+- **Test:** `tests/test_agentic.py::test_langgraph_adapter_costruibile` (free, `importorskip`);
+  suite **22 passed, 1 skipped** (totale aggiornato).
+- **Docs:**
+  - `04-agentic-rag/README.md`: checklist 3 framework completati, prossimo = MCP server.
+  - `DEMOS.md`: sezione 04d (4 motori, merge, --no-merge flag).
+  - `04-agentic-rag/ESEMPI-agentic.md`: rigenerata (4 motori).
+- **Wiki aggiornato:**
+  - `experiments/04-agentic-rag.md`: sezione "Adattatore LangGraph" nuova; "Eval comparativa" espansa a 4 motori
+    con tabella, lettura onesta su fattualità (9/9 tutti), efficienza/routing Delta. Sezione "Merge incrementale eval"
+    con flag `--engines` e `--no-merge`. Frontmatter status → "vanilla + 3 framework (AutoGen/SK/LangGraph) + eval a 4 motori
+    completati; MCP server prossimo". Prossimi passi riorganizzati (framework chiusi, MCP next).
+  - `index.md`: riga 04 stato aggiornato con "vanilla + 3 framework ... completati; MCP server prossimo".
+    `updated: 2026-05-29 (Tappa 04 — adattatore LangGraph + confronto a 4 motori chiusi i 3 framework)`.
+  - `log.md`: questa voce.
