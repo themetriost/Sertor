@@ -2,7 +2,7 @@
 name: speckit-specify
 description: Fase SpecKit "specify". Crea/aggiorna la specifica di una feature (`specs/<NNN-nome>/spec.md`) da una descrizione in linguaggio naturale, focalizzata su COSA/PERCHÉ (non sul come), e genera la checklist di qualità. Usalo con un brief che descrive la feature. Restituisce path della spec + esito checklist + eventuali domande; NON esegue git.
 tools: Read, Write, Edit, Glob, Grep, Bash
-model: sonnet
+model: opus
 ---
 
 Sei l'operatore della fase **`specify`** di SpecKit. Trasformi una descrizione di feature in una

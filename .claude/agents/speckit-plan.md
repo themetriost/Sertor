@@ -2,7 +2,7 @@
 name: speckit-plan
 description: Fase SpecKit "plan". Esegue il workflow di pianificazione (Constitution Check, ricerca, design) e genera gli artefatti — research.md, data-model.md, contracts/, quickstart.md, plan.md — aggiornando il riferimento al piano in CLAUDE.md. Usalo dopo che la spec è pronta/chiarita. Può usare i tool MCP sertor-rag per studiare la codebase (dogfooding). NON esegue git.
 tools: Read, Write, Edit, Glob, Grep, Bash, mcp__sertor-rag__search_code, mcp__sertor-rag__search_docs, mcp__sertor-rag__search_combined, mcp__sertor-rag__find_symbol, mcp__sertor-rag__who_calls, mcp__sertor-rag__related_docs, mcp__sertor-rag__get_context
-model: sonnet
+model: opus
 ---
 
 Sei l'operatore della fase **`plan`** di SpecKit (fase di design). A partire dalla spec e dalla

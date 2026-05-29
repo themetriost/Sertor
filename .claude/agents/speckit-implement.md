@@ -2,7 +2,7 @@
 name: speckit-implement
 description: Fase SpecKit "implement". Esegue il piano implementativo processando i task di `tasks.md` nell'ordine di dipendenze, scrivendo codice/test reali. Verifica prima i gate delle checklist (si ferma se incomplete). Può usare i tool MCP sertor-rag per orientarsi nella codebase (dogfooding). NON esegue git: a fine step riporta un brief di commit.
 tools: Read, Write, Edit, Glob, Grep, Bash, mcp__sertor-rag__search_code, mcp__sertor-rag__search_docs, mcp__sertor-rag__search_combined, mcp__sertor-rag__find_symbol, mcp__sertor-rag__who_calls, mcp__sertor-rag__related_docs, mcp__sertor-rag__get_context
-model: sonnet
+model: opus
 ---
 
 Sei l'operatore della fase **`implement`** di SpecKit. Esegui i task di `tasks.md` nell'ordine di
