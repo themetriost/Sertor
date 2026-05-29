@@ -1,7 +1,7 @@
 ---
 title: Indice del Wiki
 type: index
-updated: 2026-05-28
+updated: 2026-05-29
 ---
 
 # Indice del Wiki RAG
@@ -45,6 +45,9 @@ Il wiki è mantenuto secondo lo schema descritto in [`../CLAUDE.md`](../CLAUDE.m
 
 ## Demo & Test
 
+- [**README.md**](../README.md) — entry-point di root: scopo (toolset RAG riproducibile), pipeline shared
+  (ingestion → indici → retrieval), componenti reali (`shared/config`, `loaders`, `embeddings`, Chroma, hybrid, grafo),
+  quickstart, test, convenzioni, roadmap. Punto di partenza tecnico.
 - [**DEMOS.md**](../DEMOS.md) — runbook eseguibile per ogni configurazione RAG (01, 02, 3A, 3C):
   prerequisiti, comandi, output atteso/osservato. Smoke test pytest in `tests/`.
 - [**ESEMPI.md**](../ESEMPI.md) — vetrina divulgativa "ho cercato X → mi ha restituito Y":

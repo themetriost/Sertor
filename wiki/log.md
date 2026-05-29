@@ -245,3 +245,19 @@ dove `<operazione>` ∈ { setup, ingest, record, query, lint }.
   (c) default **treesitter** mantenuto per coerenza unità e metadati ingestion; `CODE_CHUNKER=recursive` disponibile.
 - **Aperto:** ampliare eval 01 con query simboli; recursive-vs-treesitter su eval 02 con re-index; igiene corpus (blob base64).
 - Dettagli: `experiments/01-baseline.md` (sezione "Chunking code-aware (tree-sitter)").
+
+## [2026-05-29] record | README di root — documento "come funziona"
+
+- Creato `README.md` in root del workspace come punto d'ingresso principale. Documenta l'obiettivo
+  (toolset RAG riproducibile, repo-agnostico per fusione codice+doc), la pipeline shared
+  (ingestion → indici → retrieval), e descrive il ruolo di ogni componente reale:
+  - `shared/config.py` — switch `RAG_BACKEND` (local/azure) e `CODE_CHUNKER` (treesitter/recursive).
+  - `shared/loaders.py` — ingestion corpus (file `.py`, `.md`).
+  - `shared/embeddings.py` — 3 provider intercambiabili (Ollama, Azure text-embedding-3-small/large).
+  - Chroma — 1 collection per provider, retrieval vettoriale.
+  - Hybrid BM25+dense+RRF+rerank FlashRank — per locale e confronti; Azure AI Search alternativa.
+  - Code graph (AST networkx) — navigazione strutturale; Microsoft GraphRAG come upgrade semantico.
+- **Sezioni:** scopo, architettura pipeline (con diagramma Mermaid), struttura cartelle,
+  quickstart, test (14 passed / 1 skipped), convenzioni (delega git/wiki, `.env`), roadmap con 4 tappe.
+- **Ruolo complementare:** README = tecnico "come va insieme"; DEMOS.md = runbook eseguibile;
+  ESEMPI.md = vetrina divulgativa. Aggiornato `index.md` con link e nota su entry-point.
