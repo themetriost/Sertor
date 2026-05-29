@@ -237,11 +237,23 @@ Il server è registrato in [`.mcp.json`](.mcp.json) (root del repo); Claude Code
 PYTHONPATH=. python 04-agentic-rag/mcp_server.py
 ```
 
-**Tool esposti:** `search_code`, `search_docs`, `search_combined`, `find_symbol`, `who_calls`,
-`related_docs`. **Verificato** via client stdio: handshake + `list_tools` (6 tool) +
-`call_tool find_symbol("APIRouter")` → `fastapi/routing.py:1005`.
+**Tool esposti (7):** `search_code`, `search_docs`, `search_combined`, `find_symbol`,
+`who_calls`, `related_docs`, **`get_context`** (fusione codice↔doc). **Verificato** via client
+stdio: handshake + `list_tools` + `call_tool find_symbol("APIRouter")` → `fastapi/routing.py:1005`.
 
 > Le ricerche dense usano gli embedding del backend (`RAG_BACKEND`): in `azure` sono a pagamento.
+
+### 04e — Fusione dual-RAG vs LLM
+
+`get_context(simbolo)` è la **fusione dual-RAG deterministica**: unisce in un solo bundle
+definizione + codice (con righe) + chiamanti + doc collegati (via grafo + metadati), **senza LLM**.
+`compare_fusion.py` la confronta con la fusione fatta dall'LLM (che assembla dai tool primitivi),
+usando il bundle dual-RAG come riferimento di copertura → genera [`FUSIONE.md`](04-agentic-rag/FUSIONE.md).
+
+```bash
+PYTHONPATH=. python 04-agentic-rag/compare_fusion.py                 # LLM su azure (a pagamento)
+PYTHONPATH=. python 04-agentic-rag/compare_fusion.py --render-from 04-agentic-rag/fusion_results.json  # gratis
+```
 
 > L'esecuzione salva `eval_results.json` (cache dei risultati grezzi): raffinare la
 > ground-truth dei task e rigenerare `ESEMPI-agentic.md` via `--render-from` **non ricosta**
@@ -262,8 +274,9 @@ Test **free** (BM25 sparse, grafo AST, artefatti GraphRAG) sempre eseguibili; te
 .venv/Scripts/python.exe -m pytest tests/ --run-paid    # include la query GraphRAG a pagamento
 ```
 
-**Stato corrente:** `23 passed, 1 skipped` (l'1 skip è il test `paid`; con Ollama attivo i gated passano).
-Tra i free: adattatori `autogen`/`sk`/`langgraph` costruibili e server MCP che espone i 6 tool.
+**Stato corrente:** `24 passed, 1 skipped` (l'1 skip è il test `paid`; con Ollama attivo i gated passano).
+Tra i free: `get_context` (fusione dual-RAG), adattatori `autogen`/`sk`/`langgraph` costruibili,
+e server MCP che espone i **7** tool.
 
 | Test | Config | Tipo | Verifica |
 |---|---|---|---|

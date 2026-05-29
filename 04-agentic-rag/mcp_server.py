@@ -71,5 +71,13 @@ def related_docs(name: str) -> list[str]:
     return retrieval.related_docs(name)
 
 
+@mcp.tool()
+def get_context(target: str, semantic_docs: bool = False) -> dict:
+    """FUSIONE codice+doc per un simbolo: in un colpo solo definizione, codice (con righe),
+    chiamanti e documentazione collegata (via grafo). Deterministico. Usalo quando serve il
+    contesto COMPLETO di un simbolo invece di cercare codice e doc separatamente."""
+    return retrieval.get_context(target, semantic_docs=semantic_docs)
+
+
 if __name__ == "__main__":
     mcp.run(transport="stdio")

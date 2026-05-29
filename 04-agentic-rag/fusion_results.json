@@ -1,0 +1,238 @@
+[
+  {
+    "symbol": "OAuth2PasswordBearer",
+    "ref": {
+      "definitions": [
+        "fastapi/security/oauth2.py:433  class OAuth2PasswordBearer"
+      ],
+      "code_lines": [
+        [
+          "fastapi/security/oauth2.py",
+          433,
+          441
+        ]
+      ],
+      "callers": [],
+      "docs": [
+        {
+          "path": "docs/en/docs/reference/security/index.md",
+          "why": "grafo:mentions"
+        },
+        {
+          "path": "docs/en/docs/release-notes.md",
+          "why": "grafo:mentions"
+        },
+        {
+          "path": "docs/en/docs/tutorial/security/first-steps.md",
+          "why": "grafo:mentions"
+        },
+        {
+          "path": "docs/en/docs/tutorial/security/simple-oauth2.md",
+          "why": "grafo:mentions"
+        }
+      ]
+    },
+    "have": {
+      "def": true,
+      "callers": false,
+      "docs": true
+    },
+    "llm": {
+      "answer": "Ecco il contesto completo di `OAuth2PasswordBearer` nella codebase.\n\n## 1) Dove è definito\nIl simbolo è definito in:\n\n- `fastapi/security/oauth2.py:433` — `class OAuth2PasswordBearer`\n\n## 2) Chi lo usa / chi lo chiama nel codice\nLa ricerca dei chiamanti non ha restituito risultati:\n\n- **nessun risultato trovato** per `who_calls(OAuth2PasswordBearer)`\n\nQuindi, nel grafo dei simboli disponibile, non risultano chiamate dirette a `OAuth2PasswordBearer` da altri simboli del codice indicizzato.\n\n## 3) Quali documenti lo spiegano\nI documenti Markdown che lo menzionano sono:\n\n- `docs/en/docs/reference/security/index.md`\n- `docs/en/docs/release-notes.md`\n- `docs/en/docs/tutorial/security/first-steps.md`\n- `docs/en/docs/tutorial/security/simple-oauth2.md`\n\nSe vuoi, posso anche ricostruirti il contesto d’uso pratico di `OAuth2PasswordBearer` nel codice FastAPI, ad esempio mostrando la sua implementazione e i simboli correlati.",
+      "tools": [
+        "find_symbol",
+        "who_calls",
+        "related_docs"
+      ],
+      "steps": 2,
+      "client": "azure:gpt-5.4-mini",
+      "def": true,
+      "callers": true,
+      "docs": true
+    }
+  },
+  {
+    "symbol": "HTTPException",
+    "ref": {
+      "definitions": [
+        "fastapi/exceptions.py:17  class HTTPException"
+      ],
+      "code_lines": [
+        [
+          "fastapi/exceptions.py",
+          17,
+          44
+        ]
+      ],
+      "callers": [
+        "docs_src/app_testing/app_b_an_py310/main.py:32  function create_item",
+        "docs_src/app_testing/app_b_an_py310/main.py:23  function read_main",
+        "docs_src/app_testing/app_b_py310/main.py:30  function create_item",
+        "docs_src/app_testing/app_b_py310/main.py:21  function read_main",
+        "docs_src/authentication_error_status_code/tutorial001_an_py310.py:10  method HTTPBearer403.make_not_authenticated_error",
+        "docs_src/bigger_applications/app_an_py310/dependencies.py:11  function get_query_token",
+        "docs_src/bigger_applications/app_an_py310/dependencies.py:6  function get_token_header",
+        "docs_src/bigger_applications/app_an_py310/routers/items.py:22  function read_item"
+      ],
+      "docs": [
+        {
+          "path": "docs/en/docs/advanced/advanced-dependencies.md",
+          "why": "grafo:mentions"
+        },
+        {
+          "path": "docs/en/docs/advanced/security/http-basic-auth.md",
+          "why": "grafo:mentions"
+        },
+        {
+          "path": "docs/en/docs/advanced/security/oauth2-scopes.md",
+          "why": "grafo:mentions"
+        },
+        {
+          "path": "docs/en/docs/advanced/websockets.md",
+          "why": "grafo:mentions"
+        },
+        {
+          "path": "docs/en/docs/reference/exceptions.md",
+          "why": "grafo:mentions"
+        },
+        {
+          "path": "docs/en/docs/release-notes.md",
+          "why": "grafo:mentions"
+        }
+      ]
+    },
+    "have": {
+      "def": true,
+      "callers": true,
+      "docs": true
+    },
+    "llm": {
+      "answer": "Ecco il contesto completo di `HTTPException` nella codebase, con riferimenti ai file.\n\n## 1) Dove è definito\n\nIl simbolo `HTTPException` è definito in:\n\n- `fastapi/exceptions.py:17` — `class HTTPException`\n\nQuesta è la definizione principale del simbolo nella codebase.\n\n## 2) Chi lo usa / chi lo chiama nel codice\n\nDalla call graph risultano questi usi/chiamate di `HTTPException`:\n\n### Codice applicativo / esempi in `docs_src`\n- `docs_src/app_testing/app_b_an_py310/main.py:23` — `function read_main`\n- `docs_src/app_testing/app_b_an_py310/main.py:32` — `function create_item`\n- `docs_src/app_testing/app_b_py310/main.py:21` — `function read_main`\n- `docs_src/app_testing/app_b_py310/main.py:30` — `function create_item`\n- `docs_src/authentication_error_status_code/tutorial001_an_py310.py:10` — `method HTTPBearer403.make_not_authenticated_error`\n- `docs_src/bigger_applications/app_an_py310/dependencies.py:6` — `function get_token_header`\n- `docs_src/bigger_applications/app_an_py310/dependencies.py:11` — `function get_query_token`\n- `docs_src/bigger_applications/app_an_py310/routers/items.py:22` — `function read_item`\n- `docs_src/bigger_applications/app_an_py310/routers/items.py:33` — `function update_item`\n- `docs_src/custom_request_and_route/tutorial002_an_py310.py:13` — `method ValidationErrorLoggingRoute.get_route_handler.custom_route_handler`\n- `docs_src/custom_request_and_route/tutorial002_py310.py:12` — `method ValidationErrorLoggingRoute.get_route_handler.custom_route_handler`\n- `docs_src/dependencies/tutorial006_an_py310.py:8` — `function verify_token`\n- `docs_src/dependencies/tutorial006_an_py310.py:13` — `function verify_key`\n- `docs_src/dependencies/tutorial006_py310.py:6` — `function verify_token`\n- `docs_src/dependencies/tutorial006_py310.py:11` — `function verify_key`\n- `docs_src/dependencies/tutorial008b_an_py310.py:18` — `function get_username`\n- `docs_src/dependencies/tutorial008b_an_py310.py:26` — `function get_item`\n- `docs_src/dependencies/tutorial008b_py310.py:16` — `function get_username`\n- `docs_src/dependencies/tutorial008b_py310.py:24` — `function get_item`\n- `docs_src/dependencies/tutorial008c_an_py310.py:20` — `function get_item`\n- `docs_src/dependencies/tutorial008c_py310.py:18` — `function get_item`\n- `docs_src/dependencies/tutorial008d_an_py310.py:21` — `function get_item`\n- `docs_src/dependencies/tutorial008d_py310.py:19` — `function get_item`\n- `docs_src/dependencies/tutorial012_an_py310.py:6` — `function verify_token`\n- `docs_src/dependencies/tutorial012_an_py310.py:11` — `function verify_key`\n- `docs_src/dependencies/tutorial012_py310.py:4` — `function verify_token`\n- `docs_src/dependencies/tutorial012_py310.py:9` — `function verify_key`\n- `docs_src/dependencies/tutorial013_an_py310.py:24` — `function get_user`\n- `docs_src/dependencies/tutorial014_an_py310.py:24` — `function get_user`\n- `docs_src/handling_errors/tutorial001_py310.py:9` — `function read_item`\n- `docs_src/handling_errors/tutorial002_py310.py:9` — `function read_item_header`\n- `docs_src/handling_errors/tutorial004_py310.py:23` — `function read_item`\n- `docs_src/handling_errors/tutorial006_py310.py:25` — `function read_item`\n- `docs_src/path_operation_advanced_configuration/tutorial007_py310.py:22` — `function create_item`\n- `docs_src/security/tutorial003_an_py310.py:58` — `function get_current_user`\n- `docs_src/security/tutorial003_an_py310.py:69` — `function get_current_active_user`\n- `docs_src/security/tutorial003_an_py310.py:78` — `function login`\n- `docs_src/security/tutorial003_py310.py:56` — `function get_current_user`\n- `docs_src/security/tutorial003_py310.py:67` — `function get_current_active_user`\n- `docs_src/security/tutorial003_py310.py:74` — `function login`\n- `docs_src/security/tutorial004_an_py310.py:93` — `function get_current_user`\n- `docs_src/security/tutorial004_an_py310.py:113` — `function get_current_active_user`\n- `docs_src/security/tutorial004_an_py310.py:122` — `function login_for_access_token`\n- `docs_src/security/tutorial004_py310.py:92` — `function get_current_user`\n- `docs_src/security/tutorial004_py310.py:112` — `function get_current_active_user`\n- `docs_src/security/tutorial004_py310.py:119` — `function login_for_access_token`\n- `docs_src/security/tutorial005_an_py310.py:108` — `function get_current_user`\n- `docs_src/security/tutorial005_an_py310.py:143` — `function get_current_active_user`\n- `docs_src/security/tutorial005_an_py310.py:152` — `function login_for_access_token`\n- `docs_src/security/tutorial005_py310.py:107` — `function get_current_user`\n- `docs_src/security/tutorial005_py310.py:142` — `function get_current_active_user`\n- `docs_src/security/tutorial005_py310.py:151` — `function login_for_access_token`\n- `docs_src/security/tutorial007_an_py310.py:12` — `function get_current_username`\n- `docs_src/security/tutorial007_py310.py:11` — `function get_current_username`\n- `docs_src/sql_databases/tutorial001_an_py310.py:59` — `function read_hero`\n- `docs_src/sql_databases/tutorial001_an_py310.py:67` — `function delete_hero`\n- `docs_src/sql_databases/tutorial001_py310.py:55` — `function read_hero`\n- `docs_src/sql_databases/tutorial001_py310.py:63` — `function delete_hero`\n- `docs_src/sql_databases/tutorial002_an_py310.py:76` — `function read_hero`\n- `docs_src/sql_databases/tutorial002_an_py310.py:84` — `function update_hero`\n- `docs_src/sql_databases/tutorial002_an_py310.py:97` — `function delete_hero`\n- `docs_src/sql_databases/tutorial002_py310.py:73` — `function read_hero`\n- `docs_src/sql_databases/tutorial002_py310.py:81` — `function update_hero`\n- `docs_src/sql_databases/tutorial002_py310.py:96` — `function delete_hero`\n\n### Uso interno della libreria FastAPI\n- `fastapi/routing.py:382` — `method get_request_handler.app`\n- `fastapi/security/api_key.py:31` — `method APIKeyBase.make_not_authenticated_error`\n- `fastapi/security/http.py:87` — `method HTTPBase.make_not_authenticated_error`\n- `fastapi/security/oauth2.py:401` — `method OAuth2.make_not_authenticated_error`\n- `fastapi/security/open_id_connect_url.py:80` — `method OpenIdConnect.make_not_authenticated_error`\n\n## 3) Quali documenti lo spiegano\n\nI documenti Markdown che lo menzionano/spiegano sono:\n\n- `docs/en/docs/reference/exceptions.md`\n- `docs/en/docs/tutorial/handling-errors.md`\n- `docs/en/docs/tutorial/dependencies/dependencies-with-yield.md`\n- `docs/en/docs/tutorial/security/simple-oauth2.md`\n- `docs/en/docs/advanced/advanced-dependencies.md`\n- `docs/en/docs/advanced/security/http-basic-auth.md`\n- `docs/en/docs/advanced/security/oauth2-scopes.md`\n- `docs/en/docs/advanced/websockets.md`\n- `docs/en/docs/release-notes.md`\n\n## Sintesi rapida\n\n- **Definizione:** `fastapi/exceptions.py:17`\n- **Usi nel codice:** soprattutto in `fastapi/routing.py`, nei moduli `fastapi/security/*`, e in molti esempi sotto `docs_src/*`\n- **Documentazione:** soprattutto `docs/en/docs/reference/exceptions.md` e `docs/en/docs/tutorial/handling-errors.md`, più varie guide su dependency/security\n\nSe vuoi, posso anche fare un secondo passaggio e raggruppare gli usi di `HTTPException` per categoria, ad esempio:\n1. errori di validazione/route,\n2. security/auth,\n3. esempi tutorial,\n4. gestione errori generica.",
+      "tools": [
+        "find_symbol",
+        "who_calls",
+        "related_docs"
+      ],
+      "steps": 2,
+      "client": "azure:gpt-5.4-mini",
+      "def": true,
+      "callers": true,
+      "docs": true
+    }
+  },
+  {
+    "symbol": "APIRouter",
+    "ref": {
+      "definitions": [
+        "fastapi/routing.py:1005  class APIRouter"
+      ],
+      "code_lines": [
+        [
+          "fastapi/routing.py",
+          1005,
+          1031
+        ]
+      ],
+      "callers": [
+        "fastapi/applications.py:57  method FastAPI.__init__"
+      ],
+      "docs": [
+        {
+          "path": "docs/en/docs/_llm-test.md",
+          "why": "grafo:mentions"
+        },
+        {
+          "path": "docs/en/docs/advanced/custom-response.md",
+          "why": "grafo:mentions"
+        },
+        {
+          "path": "docs/en/docs/advanced/openapi-callbacks.md",
+          "why": "grafo:mentions"
+        },
+        {
+          "path": "docs/en/docs/advanced/openapi-webhooks.md",
+          "why": "grafo:mentions"
+        },
+        {
+          "path": "docs/en/docs/how-to/custom-request-and-route.md",
+          "why": "grafo:mentions"
+        },
+        {
+          "path": "docs/en/docs/reference/apirouter.md",
+          "why": "grafo:mentions"
+        }
+      ]
+    },
+    "have": {
+      "def": true,
+      "callers": true,
+      "docs": true
+    },
+    "llm": {
+      "answer": "Ecco il contesto completo di `APIRouter` nella codebase, con i limiti di ciò che sono riuscito a recuperare.\n\n## 1) Dove è definito\nIl simbolo `APIRouter` è definito in:\n\n- `fastapi/routing.py:1005` — `class APIRouter`\n\n## 2) Chi lo usa / chi lo chiama nel codice\nDal grafo dei simboli risulta che `APIRouter` è chiamato/usato da:\n\n- `fastapi/applications.py:57` — metodo `FastAPI.__init__`\n\nNon sono riuscito a ottenere un elenco più completo dei chiamanti perché i tool di ricerca sul codice hanno restituito un errore interno durante l’analisi.\n\n## 3) Quali documenti lo spiegano\nI documenti che lo menzionano/spiegano sono:\n\n- `docs/en/docs/_llm-test.md`\n- `docs/en/docs/advanced/custom-response.md`\n- `docs/en/docs/advanced/openapi-callbacks.md`\n- `docs/en/docs/advanced/openapi-webhooks.md`\n- `docs/en/docs/how-to/custom-request-and-route.md`\n- `docs/en/docs/reference/apirouter.md`\n- `docs/en/docs/release-notes.md`\n- `docs/en/docs/tutorial/bigger-applications.md`\n- `docs/en/docs/tutorial/metadata.md`\n- `docs/en/docs/tutorial/static-files.md`\n\n## Nota\nHo usato il grafo dei simboli per la definizione e i riferimenti, ma le ricerche testuali su codice e docs hanno avuto un errore 500 del backend di embedding, quindi non posso garantire che l’elenco dei chiamanti sia esaustivo oltre a quanto emerso dal grafo.\n\nSe vuoi, posso fare un secondo passaggio mirato per ricostruire:\n- tutti gli import/usi di `APIRouter` nel codice,\n- e un riassunto dei contenuti di `docs/en/docs/reference/apirouter.md` e degli altri documenti citati.",
+      "tools": [
+        "find_symbol",
+        "who_calls",
+        "related_docs",
+        "search_code",
+        "search_docs",
+        "search_code"
+      ],
+      "steps": 4,
+      "client": "azure:gpt-5.4-mini",
+      "def": true,
+      "callers": true,
+      "docs": true
+    }
+  },
+  {
+    "symbol": "BackgroundTasks",
+    "ref": {
+      "definitions": [
+        "fastapi/background.py:11  class BackgroundTasks"
+      ],
+      "code_lines": [
+        [
+          "fastapi/background.py",
+          11,
+          39
+        ]
+      ],
+      "callers": [
+        "fastapi/dependencies/utils.py:598  function solve_dependencies"
+      ],
+      "docs": [
+        {
+          "path": "docs/en/docs/reference/background.md",
+          "why": "grafo:mentions"
+        },
+        {
+          "path": "docs/en/docs/release-notes.md",
+          "why": "grafo:mentions"
+        },
+        {
+          "path": "docs/en/docs/tutorial/background-tasks.md",
+          "why": "grafo:mentions"
+        }
+      ]
+    },
+    "have": {
+      "def": true,
+      "callers": true,
+      "docs": true
+    },
+    "llm": {
+      "answer": "Ecco il contesto completo di `BackgroundTasks` nella codebase.\n\n## 1) Dove è definito\nIl simbolo `BackgroundTasks` è definito in:\n\n- `fastapi/background.py:11` — `class BackgroundTasks`\n\n## 2) Chi lo usa / chi lo chiama nel codice\nDalla call graph risulta usato da:\n\n- `fastapi/dependencies/utils.py:598` — funzione `solve_dependencies`\n\n## 3) Quali documenti lo spiegano\nI documenti Markdown che lo menzionano/spiegano sono:\n\n- `docs/en/docs/reference/background.md` — documentazione di riferimento\n- `docs/en/docs/release-notes.md` — note di rilascio\n- `docs/en/docs/tutorial/background-tasks.md` — tutorial dedicato ai background tasks\n\nSe vuoi, posso anche ricostruirti il flusso completo di utilizzo di `BackgroundTasks` nella FastAPI codebase, partendo dalla definizione fino all’iniezione nelle dependency.",
+      "tools": [
+        "find_symbol",
+        "who_calls",
+        "related_docs"
+      ],
+      "steps": 2,
+      "client": "azure:gpt-5.4-mini",
+      "def": true,
+      "callers": true,
+      "docs": true
+    }
+  }
+]

@@ -38,6 +38,16 @@ def test_graph_tools(need_ast_graph):
     assert isinstance(retrieval.who_calls("HTTPException"), list)
 
 
+def test_get_context_fonde_codice_e_doc(need_chroma, need_ast_graph):
+    """get_context unisce in un bundle deterministico codice (def+righe) e doc collegati."""
+    from shared import retrieval
+    ctx = retrieval.get_context("OAuth2PasswordBearer")  # semantic_docs=False → niente embedding
+    assert ctx["symbol"] == "OAuth2PasswordBearer"
+    assert any("oauth2.py" in d for d in ctx["definitions"])
+    assert ctx["code"] and ctx["code"][0]["start_line"]              # codice con range righe
+    assert ctx["docs"] and all("path" in d and "why" in d for d in ctx["docs"])  # doc collegati
+
+
 def test_search_code_filtra_codice(need_chroma, need_ollama):
     from shared import retrieval
     # provider esplicito ollama: il test resta gratuito anche con RAG_BACKEND=azure
@@ -98,5 +108,6 @@ def test_mcp_server_espone_i_tool():
     spec.loader.exec_module(mod)
     tools_list = asyncio.run(mod.mcp.list_tools())
     names = {t.name for t in tools_list}
-    assert names == {"search_code", "search_docs", "search_combined", "find_symbol", "who_calls", "related_docs"}
+    assert names == {"search_code", "search_docs", "search_combined", "find_symbol",
+                     "who_calls", "related_docs", "get_context"}
     assert all(t.description for t in tools_list), "ogni tool MCP deve avere una descrizione (schema per il client)"

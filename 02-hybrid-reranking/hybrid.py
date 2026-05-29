@@ -87,6 +87,9 @@ class HybridIndex:
         return {
             "id": doc_id, "path": meta["path"], "source": meta["source"],
             "kind": meta.get("kind"), "chunk": meta.get("chunk"),
+            # ponte verso il grafo/fusione: i metadati strutturali del chunk code-aware
+            "symbol": meta.get("symbol"), "qualname": meta.get("qualname"),
+            "start_line": meta.get("start_line"), "end_line": meta.get("end_line"),
             "text": doc, "preview": " ".join(doc.split())[:160],
         }
 

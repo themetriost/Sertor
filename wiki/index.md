@@ -1,7 +1,7 @@
 ---
 title: Indice del Wiki
 type: index
-updated: 2026-05-29 (Architettura as-built documentata)
+updated: 2026-05-29 (Fusione dual-RAG get_context + confronto vs LLM)
 ---
 
 # Indice del Wiki RAG
@@ -49,12 +49,14 @@ Il wiki è mantenuto secondo lo schema descritto in [`../CLAUDE.md`](../CLAUDE.m
   (ingestion → indici → retrieval), componenti reali (`shared/config`, `loaders`, `embeddings`, Chroma, hybrid, grafo),
   quickstart, test, convenzioni, roadmap. Punto di partenza tecnico.
 - [**DEMOS.md**](../DEMOS.md) — runbook eseguibile per ogni configurazione RAG (01, 02, 3A, 3C, 04, 04 MCP):
-  prerequisiti, comandi, output atteso/osservato. Smoke test pytest in `tests/` (23 passed, 1 skipped).
-  Sezione "04d — Server MCP" per Claude Code (Model Context Protocol, 6 tool di retrieval).
+  prerequisiti, comandi, output atteso/osservato. Smoke test pytest in `tests/` (24 passed, 1 skipped).
+  Sezione "04d — Server MCP" per Claude Code (Model Context Protocol, 7 tool di retrieval).
 - [**ESEMPI.md**](../ESEMPI.md) — vetrina divulgativa "ho cercato X → mi ha restituito Y":
   esempi reali su FastAPI per ciascun motore (01–03), testa-a-testa sulla stessa domanda, guida "quale scegliere quando".
 - [**ESEMPI-agentic.md**](../04-agentic-rag/ESEMPI-agentic.md) — doc parlante Tappa 04:
-  eval comparativa vanilla vs AutoGen su 5 task, generata da `evaluate.py`.
+  eval comparativa vanilla vs AutoGen/SK/LangGraph su 9 task, generata da `evaluate.py`.
+- [**FUSIONE.md**](../04-agentic-rag/FUSIONE.md) — confronto quantitativo **fusione dual-RAG (get_context,
+  deterministica, 0 token LLM)** vs fusione assemblata dall'agente LLM; misura copertura e costo.
 
 ## Sintesi
 

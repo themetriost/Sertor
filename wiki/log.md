@@ -563,6 +563,28 @@ dove `<operazione>` ∈ { setup, ingest, record, query, lint }.
 **Tappa 04 COMPLETATA.** L'[[architettura-target]] dual-RAG (ingestion code-aware, 4 retriever, orchestrazione LLM,
 MCP-first) è realizzata operazionalmente.
 
+## [2026-05-29] record | Fusione dual-RAG get_context + confronto vs LLM (FUSIONE.md)
+
+- **Implementazione fusione deterministica:** funzione `get_context(target, semantic_docs=False)` in `shared/retrieval.py`
+  unisce definizione + codice (righe) + chiamanti + doc collegati, sfruttando **grafo AST (mentions) e metadati
+  qualname/start_line/end_line** del chunking tree-sitter. Zero token LLM, deterministico, <10ms, istantaneo.
+- **Modifiche:** `02-hybrid-reranking/hybrid.py` (_hit) espone `symbol/qualname/start_line/end_line` (il "bridge"
+  verso grafo/fusione che prima veniva scartato). `04-agentic-rag/mcp_server.py` aggiunto **7° tool MCP** `get_context`.
+- **Confronto quantitativo:** `04-agentic-rag/compare_fusion.py` (NUOVO) + `FUSIONE.md` (NUOVO, generato) + 
+  `fusion_results.json` (cache) confrontano dual-RAG (get_context) vs LLM vanilla su 4 simboli.
+  **Risultato onesto:** copertura fattuale ~98% entrambi; valore dual-RAG = **costo zero, determinismo, latenza**
+  (1 call LLM-free vs 3–6 call LLM, 0 token vs 200–400, <10ms vs 1–3s, 100% vs ~95% deterministico).
+- **3 punti di interazione codice↔doc:** (1) search_combined = co-ranking; (2) related_docs = link mention;
+  (3) get_context = fusione vera (nuovo). Mini-diagramma in [[architettura-attuale]].
+- **Test aggiornato:** `tests/test_agentic.py` + test `get_context` free + test MCP aggiornato a 7 tool.
+  Suite: **24 passed, 1 skipped**.
+- **Learning:** la fusione "forte" codice↔doc prima era **delegata all'agente**; ora è **infrastrutturale deterministica**,
+  abilitata dal bridge metadati strutturali (qualname/righe). Su modello forte il valore è efficienza/ripetibilità, non completezza.
+- File toccati: `shared/retrieval.py` (get_context), `02-hybrid-reranking/hybrid.py`, `04-agentic-rag/mcp_server.py`
+  (7° tool), `04-agentic-rag/compare_fusion.py` (NUOVO), `04-agentic-rag/FUSIONE.md` (NUOVO, generato),
+  `tests/test_agentic.py`, `DEMOS.md` (24 test, 7 tool), `wiki/experiments/04-agentic-rag.md`,
+  `wiki/index.md`, `wiki/log.md`.
+
 ## [2026-05-29] record | Architettura as-built documentata + backlog di produzione (caching rinviato)
 
 - Creata pagina di sintesi **`syntheses/architettura-attuale.md`** (NUOVO) — documento complementare

@@ -36,7 +36,7 @@ flowchart TB
     GRAG["GraphRAG community graph<br/>(03C, separato)"]
   end
 
-  FAC["shared/retrieval.py — FACADE unica<br/>search_code/docs/combined (RRF+rerank, filtro source)<br/>find_symbol · who_calls · related_docs"]
+  FAC["shared/retrieval.py — FACADE unica<br/>search_code/docs/combined (RRF+rerank, filtro source)<br/>find_symbol · who_calls · related_docs<br/><b>get_context = FUSIONE codice↔doc (grafo+metadati)</b>"]
 
   subgraph CONS["Tappa 04 — consumatori (stessi tool)"]
     direction LR
@@ -82,6 +82,33 @@ flowchart TB
 4. **Trasversale.** `config.py`/`.env` (`RAG_BACKEND`) governa provider di embedding e LLM:
    switch local↔azure. Entry point operativo attuale: **Azure gpt-5.4-mini** + text-embedding-3-large
    (vedi [[agent-llm-azure-non-locale]]).
+
+## Dove codice e doc si uniscono (i 3 punti + la fusione)
+
+A lungo nell'as-built **non** c'era una fase dedicata: i due indici interagivano solo in modo
+debole. I punti, dal più debole al più forte:
+
+```mermaid
+flowchart LR
+  CODE["indice CODICE"]; DOC["indice DOC"]; GRAPH["grafo AST (mentions)"]
+  CODE --> SC["1· search_combined<br/>co-ranking (RRF+rerank)"]
+  DOC --> SC
+  GRAPH --> RD["2· related_docs<br/>link mention simbolo→doc"]
+  CODE --> GC["3· get_context<br/>FUSIONE: def+codice+chiamanti+doc<br/>(grafo + metadati qualname/righe)"]
+  DOC --> GC
+  GRAPH --> GC
+  SC --> A["agente / risposta"]; RD --> A; GC --> A
+```
+
+1. **`search_combined`** — co-classifica codice+doc nella stessa lista (RRF+rerank). *Mescola, non collega.*
+2. **`related_docs`** — archi `mentions` del grafo: dato un simbolo, i doc che lo nominano. *Link grezzo per nome.*
+3. **`get_context(simbolo)`** *(nuovo)* — la vera **fusione dual-RAG**: unisce in un bundle deterministico
+   definizione + codice (con righe) + chiamanti + doc collegati, sfruttando grafo e metadati `qualname`/righe.
+   Senza LLM. Esposto anche come tool MCP.
+
+> Prima di `get_context`, la fusione "forte" era **delegata all'agente** (chiamava i tool primitivi e
+> componeva nella risposta). Confronto quantitativo dual-RAG vs LLM: vedi
+> [`04-agentic-rag/FUSIONE.md`](../../04-agentic-rag/FUSIONE.md) (generato da `compare_fusion.py`).
 
 ## Caching — stato e backlog di produzione
 

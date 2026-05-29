@@ -369,6 +369,63 @@ con lo stesso backend di embeddings/BM25/grafo.
 - ✅ **Adattatore LangGraph** — COMPLETATO.
 - ✅ **Server MCP** — COMPLETATO.
 
+## Fusione dual-RAG: get_context + confronto con LLM
+
+**Cosa:** la **fase mancante** della fusione forte codice↔doc, ora implementata come **funzione
+deterministica** in `shared/retrieval.py` — la `get_context(target, semantic_docs=False)`. Prima,
+la fusione era delegata completamente all'agente (usava tool primitivi e componeva nella risposta);
+ora esiste come **operazione infrastrutturale** che unisce definizione + codice (con righe) +
+chiamanti + doc collegati, sfruttando il **grafo AST** (mentions) e i **metadati strutturali**
+(`qualname`, `start_line`, `end_line`) del chunking tree-sitter.
+
+**Implementazione:**
+- `shared/retrieval.py::get_context(target, semantic_docs=False)` — prende un nome di simbolo (es.
+  `"APIRouter"`) e ritorna un **bundle fusionato**: definizione file:linea (da grafo), codice sorgente
+  (retrieve via qualname dagli indici), chiamanti (who_calls), doc collegati (related_docs/mentions).
+  **Zero token LLM**, deterministico, istantaneo.
+- Helper `_code_for_symbol(symbol)` — collega il simbolo al chunk in indice via `qualname`/`symbol`
+  (bridge che il precedente hybrid+reranking scartava); recupera file:linea/codice senza search semantica.
+- **Modifiche sussidiarie:** `02-hybrid-reranking/hybrid.py` (_hit) espone `symbol/qualname/start_line/end_line`
+  (la "ponte verso grafo/fusione" che mancava).
+
+**Integrazione MCP:** `04-agentic-rag/mcp_server.py` aggiunto il **7° tool MCP** `get_context(name)`,
+esposto come tool per Claude Code.
+
+**Confronto quantitativo dual-RAG vs LLM (FUSIONE.md):**
+
+Setup: 4 simboli (APIRouter, OAuth2PasswordBearer, HTTPException, Depends), LLM = Azure gpt-5.4-mini
+(vanilla, orchestratore che assembla dai tool primitivi).
+
+| Aspetto | Dual-RAG (get_context) | LLM (vanilla) | Winner |
+|---------|------------------------|---------------|--------|
+| **Copertura (simbolo)** | Def + codice + 3–10 chiamanti + doc | Def + codice + 2–6 chiamanti + doc | Pareggio (~98% entrambi) |
+| **Tool-call** | 1 | 3–6 per simbolo | Dual-RAG (1 call fisso) |
+| **Token LLM** | 0 | 200–400 (vanilla assembla) | Dual-RAG (zero) |
+| **Turni orchestrazione** | 1 | 2–4 | Dual-RAG (uno scatto) |
+| **Determinismo** | 100% (grafo + metadati) | ~95% (LLM non deterministico) | Dual-RAG |
+| **Latenza** | <10ms | 1–3s | Dual-RAG |
+
+**Insight onesto:** con un modello **forte** (gpt-5.4-mini), la *copertura fattuale* della fusione
+LLM è paragonabile al dual-RAG (l'euristica LLM è generosa: "doc coperto" se cita un `.md`,
+"chiamanti" se invoca chi_chiama). Il valore del dual-RAG è **costo (zero token), determinismo,
+latenza**, non maggior completezza.
+
+**3 punti di interazione codice↔doc:**
+
+(vedi diagramma mini in [[architettura-attuale]]):
+1. **`search_combined`** — co-classifica codice+doc nella stessa lista (RRF+rerank). *Mescola, non collega.*
+2. **`related_docs`** — archi `mentions` del grafo: dato un simbolo, i doc che lo nominano. *Link grezzo.*
+3. **`get_context` (nuovo)** — **fusione vera**: unisce in un bundle definizione + codice + chiamanti + doc,
+   senza LLM, sfruttando grafo AST e metadati qualname/righe. Esposto come tool MCP.
+
+**Dettagli e dati:** vedi [`04-agentic-rag/FUSIONE.md`](../../04-agentic-rag/FUSIONE.md)
+(generato da `04-agentic-rag/compare_fusion.py`; supporta `--render-from` per re-render gratis).
+
+**Learning:** la fusione **forte** del dual-RAG non era strutturale prima (viveva nell'agente).
+Il bridge era il **metadato strutturale** (`qualname`/`symbol`/righe) dal chunking tree-sitter, scartato
+dal ranking precedente. Ora quel bridge è il fondamento di `get_context`, rendendo la fusione
+**deterministica, gratuita, prevedibile** — adatta a deployment con vincoli di costo/latenza.
+
 ## Prossimi passi
 
 ### Completati (Tappa 04 — CHIUSA)
