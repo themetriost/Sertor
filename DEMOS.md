@@ -208,12 +208,22 @@ se la risposta **cita il file atteso**, con passi e n° tool. Oltre alle metrich
 la doc divulgativa [`ESEMPI-agentic.md`](04-agentic-rag/ESEMPI-agentic.md) ("ho chiesto X →
 l'agente ha fatto Y → mi ha risposto Z"), controparte di `ESEMPI.md` per la Tappa 04.
 
+Metriche: **cita atteso** (la risposta nomina il file giusto), **tool giusto** (ha usato uno
+strumento ideale per quel tipo di task), passi e tool medi. L'eval set (`eval_tasks.json`)
+copre tipi diversi — *localizzazione, multi-hop, doc-concept, code+doc* — per discriminare le
+strategie dei framework.
+
 ```bash
-PYTHONPATH=. python 04-agentic-rag/evaluate.py                  # tutti i task, vanilla+autogen
+PYTHONPATH=. python 04-agentic-rag/evaluate.py                  # esegue (LLM) tutti i task, vanilla+autogen
 PYTHONPATH=. python 04-agentic-rag/evaluate.py --engines vanilla --limit 3
+# Re-score + rigenera la doc SENZA ri-eseguire l'LLM (gratis, dai risultati salvati):
+PYTHONPATH=. python 04-agentic-rag/evaluate.py --render-from 04-agentic-rag/eval_results.json
 ```
 
-> A pagamento solo con `RAG_BACKEND=azure`; in locale usa Ollama (`OLLAMA_CHAT_MODEL`).
+> L'esecuzione salva `eval_results.json` (cache dei risultati grezzi): raffinare la
+> ground-truth dei task e rigenerare `ESEMPI-agentic.md` via `--render-from` **non ricosta**
+> chiamate al modello. A pagamento solo con `RAG_BACKEND=azure`; in locale usa Ollama.
+> I modelli locali non sono perfettamente deterministici: conta la *tendenza* tra i run.
 
 ---
 

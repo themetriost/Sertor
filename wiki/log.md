@@ -369,3 +369,43 @@ dove `<operazione>` ∈ { setup, ingest, record, query, lint }.
     Link a ESEMPI-agentic.md aggiunto.
   - `index.md`: riga 04 stato aggiornato; Demo & Test link a ESEMPI-agentic.md aggiunto.
   - `updated: 2026-05-29` (eval comparativa vanilla vs AutoGen).
+
+## [2026-05-29] record | Tappa 04 — eval set ampliato (9 task, metrica tool_ok, cache + render-from)
+
+- **Ampliamento eval set:** `04-agentic-rag/eval_tasks.json` esteso da 5 a **9 task** con campi
+  `type` (categoria: localizzazione, multi-hop, doc-concept, code+doc) e `expected_tools` (strumenti ideali).
+  Ground-truth ancorata a token file-specifici (es. `async.md`, `routing.py:1005`) per evitare falsi
+  positivi. Nuovi task: **httpexception-usage** (multi-hop find_symbol+who_calls),
+  **def-vs-async** (doc-concept puro: find_symbol inutile), **query-param-codedoc** (code+doc fusion),
+  **background-doc** (domanda documentale → routing cruciale: search_docs vs find_symbol).
+- **Nuova metrica:** `tool_ok` (boolean) — agente ha usato ≥1 strumento ideale da `expected_tools`.
+  Affianca `cited` e cattura il routing dei tool (non solo se il file viene citato).
+- **Separazione esecuzione/scoring:** `04-agentic-rag/eval_results.json` (NUOVO) salva i risultati
+  grezzi (18 righe: 9 task × 2 motori) con esecuzione LLM. Nuovo flag **`--render-from eval_results.json`**
+  ri-calcola metriche e rigenera ESEMPI-agentic.md SENZA chiamate LLM (re-score gratuito quando si
+  raffina la ground-truth).
+- **Risultati eval (Ollama qwen3:30b-a3b, 9 task × 2 motori):**
+  - vanilla: 9/9 cita (100%), 9/9 tool_ok (100%), 2.2 passi medi, 1.3 tool medi.
+  - AutoGen: 8/9 cita (89%), 8/9 tool_ok (89%), 1.4 passi medi, 1.4 tool medi.
+- **Discriminazione reale emersa:** task **background-doc** ("a cosa servono e DOVE SONO DOCUMENTATE
+  le BackgroundTasks"):
+  - vanilla: usa `search_docs` → cita `docs/en/docs/reference/background.md` (doc) ✅.
+  - AutoGen: usa `find_symbol`+`search_code` → cita esempio di codice `docs_src/.../tutorial001.py`
+    (codice, non doc) ❌. Routing di tool sbagliato per domanda documentale.
+  - Implicazione: **routing doc-vs-code** è critico per dual-RAG; serve context-aware query planning
+    per disambiguare "dove è documentato" (scegli search_docs) vs "mostra esempio" (scegli search_code).
+- **Caveat non-determinismo:** modelli locali Ollama non-deterministici; run precedenti davano
+  numeri leggermente diversi (es. 4.8/5 vs 5/5). Con 9 task la tendenza è più stabile, ma serve
+  **mediare su più run** per ridurre rumore statistico.
+- **Learning:** (a) tipi di task eterogenei + metrica tool_ok rendono confronto **discriminante**
+  (non più 5/5 piatto); (b) bug ground-truth originale (token `background.md` non matchava
+  `background-tasks.md`) spingeva verso falsi positivi → correzione spinse il design separazione
+  esecuzione/scoring; (c) cache eval_results.json + --render-from permette iterate su ground-truth
+  a costo zero.
+- **Wiki aggiornato:**
+  - `experiments/04-agentic-rag.md`: sezione "Eval comparativa" ampliata con 9 task, metriche
+    tool_ok, risultati vanilla 9/9 vs AutoGen 8/9, caso background-doc, cache/render-from, caveat.
+    Status → "vanilla + AutoGen + eval comparativa ampliata (9 task, tool_ok, cache);
+    SK/LangGraph + MCP da fare". Prossimi passi riprioritizzati (stabilità eval, SK, LangGraph).
+  - `index.md`: riga 04 stato aggiornato; timestamp updated.
+  - `log.md`: questa voce.

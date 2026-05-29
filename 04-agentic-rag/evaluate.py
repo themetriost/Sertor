@@ -58,6 +58,17 @@ def _fmt_tools(tools: list[str]) -> str:
     return " → ".join(f"`{t}`" for t in tools)
 
 
+def _score(r: dict, task: dict) -> dict:
+    """(Ri)calcola cited/tool_ok di una riga rispetto alla ground-truth del task. Senza LLM."""
+    exp_tools = task.get("expected_tools", [])
+    r["cited"] = _cited(r["answer"], task["expected_files"])
+    r["tool_ok"] = (not exp_tools) or any(t in r["tools"] for t in exp_tools)
+    r.update(task_id=task["id"], question=task["question"],
+             expected_files=task["expected_files"], expected_tools=exp_tools,
+             type=task.get("type", ""))
+    return r
+
+
 def evaluate(engines: list[str], tasks: list[dict], max_steps: int) -> list[dict]:
     rows = []
     for task in tasks:
@@ -67,25 +78,33 @@ def evaluate(engines: list[str], tasks: list[dict], max_steps: int) -> list[dict
                 r["error"] = None
             except Exception as e:  # noqa: BLE001
                 r = {"answer": "", "tools": [], "steps": 0, "client": engine, "error": str(e)}
-            r["cited"] = _cited(r["answer"], task["expected_files"])
-            r.update(task_id=task["id"], engine=engine, question=task["question"],
-                     expected_files=task["expected_files"])
+            r["engine"] = engine
+            _score(r, task)
             rows.append(r)
             mark = "ERR" if r["error"] else ("OK " if r["cited"] else "miss")
-            print(f"[{mark}] {engine:8} · {task['id']:18} · passi={r['steps']} tool={len(r['tools'])}")
+            tmark = "" if not r["expected_tools"] else (" tool✓" if r["tool_ok"] else " tool✗")
+            print(f"[{mark}] {engine:8} · {task['id']:18} · passi={r['steps']} tool={len(r['tools'])}{tmark}")
     return rows
 
 
+def rescore(rows: list[dict], tasks: list[dict]) -> list[dict]:
+    """Ri-calcola i punteggi di righe già eseguite (da cache) sulla ground-truth corrente."""
+    by_id = {t["id"]: t for t in tasks}
+    return [_score(r, by_id[r["task_id"]]) for r in rows if r.get("task_id") in by_id]
+
+
 def _metrics_table(rows: list[dict], engines: list[str]) -> str:
-    lines = ["| Motore | task | cita atteso | passi medi | tool medi |",
-             "|---|---|---|---|---|"]
+    lines = ["| Motore | task | cita atteso | tool giusto | passi medi | tool medi |",
+             "|---|---|---|---|---|---|"]
     for e in engines:
         er = [r for r in rows if r["engine"] == e]
         n = len(er) or 1
         cited = sum(1 for r in er if r["cited"])
+        tool_ok = sum(1 for r in er if r.get("tool_ok"))
         avg_steps = sum(r["steps"] for r in er) / n
         avg_tools = sum(len(r["tools"]) for r in er) / n
-        lines.append(f"| `{e}` | {len(er)} | {cited}/{len(er)} | {avg_steps:.1f} | {avg_tools:.1f} |")
+        lines.append(f"| `{e}` | {len(er)} | {cited}/{len(er)} | {tool_ok}/{len(er)} | "
+                     f"{avg_steps:.1f} | {avg_tools:.1f} |")
     return "\n".join(lines)
 
 
@@ -103,7 +122,10 @@ def render_doc(rows: list[dict], engines: list[str], tasks: list[dict]) -> str:
         _metrics_table(rows, engines),
         "",
         "- **cita atteso**: la risposta finale nomina il file giusto (successo end-to-end).",
+        "- **tool giusto**: l'agente ha usato almeno uno strumento ideale per quel tipo di task.",
         "- I motori condividono `tools.py` e il system prompt: le differenze sono di **orchestrazione**.",
+        "- ⚠️ I modelli locali non sono perfettamente deterministici: i numeri variano tra run; "
+        "conta la *tendenza* (es. quale motore sceglie i tool giusti per i task doc vs codice).",
         "",
         "---",
         "",
@@ -114,15 +136,19 @@ def render_doc(rows: list[dict], engines: list[str], tasks: list[dict]) -> str:
         trows = [r for r in rows if r["task_id"] == tid]
         if not trows:
             continue
+        ideal = ", ".join(f"`{t}`" for t in task.get("expected_tools", [])) or "—"
         out += [f"## «{task['question']}»",
                 "",
-                f"> **Atteso:** che la risposta citi `{'` o `'.join(task['expected_files'])}`.",
+                f"> **Tipo:** {task.get('type', '—')} · **Atteso:** la risposta cita "
+                f"`{'` o `'.join(task['expected_files'])}` · **strumenti ideali:** {ideal}",
                 ""]
         for r in trows:
             if r["error"]:
                 out += [f"### 🤖 {r['engine']}", "", f"⚠️ errore: {r['error']}", ""]
                 continue
             esito = "✅ ha citato il file atteso" if r["cited"] else "❌ non ha citato il file atteso"
+            if r.get("expected_tools"):
+                esito += " · strumento giusto " + ("✅" if r.get("tool_ok") else "❌")
             answer = (r["answer"] or "_(nessuna risposta)_").strip().replace("\n", "\n> ")
             out += [
                 f"### 🤖 {r['engine']}  ·  _{r['client']}_",
@@ -142,20 +168,38 @@ def render_doc(rows: list[dict], engines: list[str], tasks: list[dict]) -> str:
 
 
 def main() -> None:
+    # Su Windows lo stdout rediretto usa cp1252 e non codifica i simboli/emoji: forza UTF-8.
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:  # noqa: BLE001
+        pass
+
     ap = argparse.ArgumentParser(description="Eval comparativa Agentic RAG + doc parlante")
     ap.add_argument("--engines", default="vanilla,autogen", help="motori separati da virgola")
     ap.add_argument("--limit", type=int, default=0, help="esegui solo i primi N task (0 = tutti)")
     ap.add_argument("--max-steps", type=int, default=5)
     ap.add_argument("--out", default=str(HERE / "ESEMPI-agentic.md"), help="file Markdown da generare")
+    ap.add_argument("--results", default=str(HERE / "eval_results.json"),
+                    help="dove salvare/leggere i risultati grezzi (cache per re-score senza LLM)")
+    ap.add_argument("--render-from", metavar="RESULTS_JSON", default=None,
+                    help="NON esegue l'LLM: ri-calcola i punteggi e rigenera la doc dai risultati salvati")
     args = ap.parse_args()
 
-    engines = [e.strip() for e in args.engines.split(",") if e.strip()]
-    tasks = TASKS[: args.limit] if args.limit else TASKS
-    print(f"Eval: {len(tasks)} task × {len(engines)} motori ({', '.join(engines)})\n")
+    if args.render_from:  # solo re-score + render, gratis (nessuna chiamata LLM)
+        rows = json.loads(pathlib.Path(args.render_from).read_text(encoding="utf-8"))
+        rows = rescore(rows, TASKS)
+        engines = sorted({r["engine"] for r in rows})
+        tasks = [t for t in TASKS if any(r["task_id"] == t["id"] for r in rows)]
+        print(f"Re-score da {args.render_from}: {len(rows)} righe, motori {', '.join(engines)}")
+    else:
+        engines = [e.strip() for e in args.engines.split(",") if e.strip()]
+        tasks = TASKS[: args.limit] if args.limit else TASKS
+        print(f"Eval: {len(tasks)} task × {len(engines)} motori ({', '.join(engines)})\n")
+        rows = evaluate(engines, tasks, args.max_steps)
+        pathlib.Path(args.results).write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"\nRisultati grezzi salvati: {args.results}")
 
-    rows = evaluate(engines, tasks, args.max_steps)
     print("\n" + _metrics_table(rows, engines))
-
     doc = render_doc(rows, engines, tasks)
     pathlib.Path(args.out).write_text(doc, encoding="utf-8")
     print(f"\nDoc parlante generata: {args.out}")

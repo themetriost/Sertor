@@ -4,7 +4,7 @@ type: experiment
 tags: [agentic-rag, orchestrator, llm-tool-calling, shared-facade, autoboxed, semantic-kernel, langraph, mcp]
 created: 2026-05-29
 updated: 2026-05-29
-status: "vanilla + AutoGen + eval comparativa completati; SK/LangGraph + MCP da fare"
+status: "vanilla + AutoGen + eval comparativa ampliata (9 task, metrica tool_ok, cache + render-from); SK/LangGraph + MCP da fare"
 sources: [https://github.com/fastapi/fastapi, https://github.com/microsoft/semantic-kernel, https://github.com/microsoft/autogen, https://github.com/langchain-ai/langgraph]
 ---
 
@@ -139,67 +139,88 @@ per strategia e sintesi; è il futuro **eval set** che dovrà misurare il delta.
 
 ## Eval comparativa (vanilla vs AutoGen)
 
-**Setup:** eval set in `04-agentic-rag/eval_tasks.json` con 5 task multi-step, ognuno con query,
-`expected_files` (ground-truth) e descrizione uso-case:
-1. **apirouter-def** — "In quale file è definito APIRouter?" → `fastapi/routing.py`
-2. **oauth2-concept** — "Cos'è OAuth2PasswordBearer e come funziona l'autenticazione?" → `fastapi/security/oauth2.py`
-3. **depends-impl** — "Dov'è implementato `Depends`?" → `fastapi/param_functions.py` o `fastapi/params.py`
-4. **background-tasks** — "Cos'è BackgroundTasks e dove viene definito?" → `fastapi/background.py`
-5. **httpexception-def** — "Dov'è definita HTTPException?" → `fastapi/exceptions.py`
+**Setup:** eval set in `04-agentic-rag/eval_tasks.json` con **9 task** multi-step, ognuno con query,
+`expected_files` (ground-truth), `type` (categoria task), e `expected_tools` (strumenti ideali).
+Ground-truth ancorata a token file-specifici (es. `async.md`, `routing.py:1005`) per evitare falsi
+positivi su testo generico. Task categorizzati per coprire localizzazione → multi-hop → doc-concept →
+fusione code+doc:
+
+1. **apirouter-def** `[localizzazione]` — "In quale file è definito APIRouter?" → `fastapi/routing.py`
+2. **oauth2-concept** `[localizzazione]` — "Cos'è OAuth2PasswordBearer e come funziona l'autenticazione?" → `fastapi/security/oauth2.py`
+3. **depends-impl** `[localizzazione]` — "Dov'è implementato `Depends`?" → `fastapi/param_functions.py` o `fastapi/params.py`
+4. **background-tasks** `[localizzazione]` — "Cos'è BackgroundTasks e dove viene definito?" → `fastapi/background.py`
+5. **httpexception-def** `[localizzazione]` — "Dov'è definita HTTPException?" → `fastapi/exceptions.py`
+6. **httpexception-usage** `[multi-hop]` — "Quali funzioni di FastAPI usano HTTPException?" (trova_simbolo → chi_chiama) → `fastapi/exceptions.py`, citando 69+ callers
+7. **def-vs-async** `[doc-concept]` — "Qual è la differenza tra Depends e Depends async? Dove è documentata?" → `docs/en/docs/advanced/async.md` (non codice)
+8. **query-param-codedoc** `[code+doc]` — "Come si usano query parameter in FastAPI?" → codice `docs_src/query_params/` + doc `docs/en/docs/tutorial/query-params.md`
+9. **background-doc** `[doc-concept]` — "A cosa servono e DOVE SONO DOCUMENTATE le BackgroundTasks?" → `docs/en/docs/reference/background.md` (routing cruciale: doc, non codice)
 
 **Esecuzione:** `04-agentic-rag/evaluate.py` lancia ogni task attraverso ogni motore (**vanilla**,
-**AutoGen**) a **parità di strumenti e prompt** (entrambi usano `tools.py` e SYSTEM_PROMPT), misura
+**AutoGen**) a **parità di strumenti e prompt** (entrambi usano `tools.py` e SYSTEM_PROMPT). Misura
 metriche standardizzate:
 - **cited**: la risposta sintetizzata cita il file atteso (boolean).
+- **tool_ok**: l'agente ha usato ≥1 strumento ideale da `expected_tools` (boolean).
 - **steps**: numero di passi del loop orchestratore (plan → retrieve → reflect → synthesize).
 - **tools_called**: numero di tool invocazioni.
 
-**Risultati eval (Ollama `qwen3:30b-a3b`, 5 task × 2 motori):**
+**Cache e re-scoring:** `04-agentic-rag/eval_results.json` salva i risultati grezzi (18 righe: 9 task
+× 2 motori) con esecuzione LLM. Nuova modalità **`--render-from eval_results.json`** ri-calcola
+metriche e rigenera documentazione parlante SENZA chiamate LLM (re-score gratuito quando si raffina
+ground-truth).
 
-| Motore | cited (%) | steps (media) | tools_called (media) |
-|--------|-----------|---------------|----------------------|
-| vanilla | 5/5 (100%) | 2.0 | 1.0 |
-| AutoGen | 5/5 (100%) | 1.4 | 1.4 |
+**Risultati eval (Ollama `qwen3:30b-a3b`, 9 task × 2 motori):**
 
-Entrambi i motori risolvono correttamente i 5 task di localizzazione; la differenza è nella
-**strategia e numero di passi**:
-- **vanilla:** segue il loop plan→route→retrieve→reflect→synthesize letteralmente (più esplicito).
-- **AutoGen:** ottimizza passi iterativi, spesso non-linear; su BackgroundTasks ha una traiettoria
-  più ricca (find_symbol → search_docs → related_docs), producendo una risposta con riferimenti
-  anche alla documentazione (non solo alla posizione nel codice).
+| Motore | cited (9) | tool_ok (9) | steps (media) | tools_called (media) | Note |
+|--------|-----------|-------------|---------------|----------------------|------|
+| vanilla | 9/9 (100%) | 9/9 (100%) | 2.2 | 1.3 | routing stabile |
+| AutoGen | 8/9 (89%) | 8/9 (89%) | 1.4 | 1.4 | miss su background-doc |
 
-**Osservazione qualitativa:** su BackgroundTasks vanilla fa 1 tool-call (`find_symbol`),
-AutoGen ne fa 3 (find_symbol + search_docs + related_docs) e fornisce un contesto
-documentativo più ricco (descrive cosa sia BackgroundTasks, non solo il file). Suggerisce che
-i due framework, **a parità di strumenti**, divergono per **orchestrazione interna**.
+**Discriminazione reale emersa:** task `background-doc` ("a cosa servono e DOVE SONO DOCUMENTATE le
+BackgroundTasks"):
+- **vanilla:** usa `search_docs` e cita `docs/en/docs/reference/background.md` (doc) ✅ — routing
+  corretto per una domanda documentale.
+- **AutoGen:** usa `find_symbol` + `search_code` e cita un ESEMPIO di codice `docs_src/.../tutorial001.py`
+  invece della documentazione ❌ — routing dei tool sbagliato. Il modello cade su localizzazione codice
+  quando dovrebbe rispondere "è documentato in...".
 
-**Learning:** con un eval set standardizzato (stessi tool, prompt, modello LLM), il confronto
-tra orchestratori diventa **misurabile** e non aneddotico. La "documentazione parlante"
-(generata da `evaluate.py`) rende il confronto leggibile ai non-tecnici. I task attuali
-sono di localizzazione (single-symbol queries), che favoriscono `find_symbol`; per
-**discriminare meglio** i framework serviranno task più aperti e multi-hop (es.
-"Quali funzioni usano FastAPI Depends?", "Come fluisce l'autenticazione?").
+Su altri 8 task entrambi i motori excel (9/9 e 8/9 rispettivamente); il miss di AutoGen è **su
+routing doc vs code**, non su localizzazione pura.
+
+**Caveat non-determinismo:** i modelli locali (Ollama `qwen3:30b-a3b`) non sono deterministici; run
+precedenti su stessi 5 task originali davano numeri leggermente diversi (es. 4.8/5 vs 5/5). Con 9
+task e metrica `tool_ok` la tendenza è più stabile, ma occorre mediare su **più run** per ridurre
+rumore statistico.
+
+**Learning:** (a) con tipi di task eterogenei + metrica tool_ok il confronto tra framework diventa
+**discriminante** (non più 5/5 piatto); (b) un primo miss era dovuto a **bug di ground-truth** nel set
+originale (token `background.md` non matchava `background-tasks.md`) → corretto. Dalla correzione
+è nata l'idea di **separazione esecuzione/scoring**: cache `eval_results.json` + `--render-from`
+permette di raffinare ground-truth a costo zero; (c) per la **fusione codice ↔ doc** il routing del
+tool è cruciale: su domande "dove è documentato" l'agente deve preferire tool doc; su domande "mostra
+esempio di codice" deve scegliere code. Questo richiede **context-aware query planning** (prossimo
+passo).
 
 **Artefatto generato:** [`04-agentic-rag/ESEMPI-agentic.md`](../../04-agentic-rag/ESEMPI-agentic.md)
 — doc divulgativa in stile ESEMPI.md ("ho chiesto X → l'agente ha fatto Y → mi ha risposto Z")
 per ogni task e motore, auto-generata da `evaluate.py` a partire dai log esecuzione.
 
-**Prossimi passi (eval discriminante):**
-- Task multi-hop (es. "Quali funzioni usano `APIRouter.post`?").
-- Task doc-concept (es. "Come funziona il sistema di dependency injection?").
-- Estensione a Semantic Kernel e LangGraph (adattatori già sul roadmap).
+**Prossimi passi (eval e framework):**
+- **Mediare su più run** per stabilità metrica (caveat non-determinismo).
+- **Adattatore Semantic Kernel** — kernel SK con skill mapping su `tools.py` + orchestrazione K.
+- **Adattatore LangGraph** — graph workflow plan→retrieve→synthesize via LangGraph state machine.
 
 ## Prossimi passi
 
-1. ~~**Eval set su Tappa 04**~~ **COMPLETATO** — 5 task × 2 motori, metriche, ESEMPI-agentic.md.
-2. **Adattatore Semantic Kernel** — kernel SK con skill mapping su `tools.py` + orchestrazione K.
-3. **Adattatore LangGraph** — graph workflow plan→retrieve→synthesize via LangGraph state machine.
-4. **MCP server** — esporre `shared/retrieval.py` come MCP tools (`search_code`, `search_docs`,
+1. ~~**Eval set su Tappa 04**~~ **AMPLIATO** — 9 task × 2 motori, metrica tool_ok, cache eval_results.json + --render-from, caveat non-determinismo.
+2. **Stabilità eval** — mediare metriche su più run per ridurre rumore (Ollama locali non-deterministico).
+3. **Adattatore Semantic Kernel** — kernel SK con skill mapping su `tools.py` + orchestrazione K.
+4. **Adattatore LangGraph** — graph workflow plan→retrieve→synthesize via LangGraph state machine.
+5. **Query planning context-aware** — leveraging AST metadati (symbol_kind, qualname, lineno)
+   per disambiguare query a simboli; routing doc-vs-code in base al tipo domanda.
+6. **MCP server** — esporre `shared/retrieval.py` come MCP tools (`search_code`, `search_docs`,
    `find_symbol`, `who_calls`) per Claude Code e agenti.
-5. **Custom entity_types per GraphRAG** — usare `derive-entity-types` (Tappa 3C follow-up) per
+7. **Custom entity_types per GraphRAG** — usare `derive-entity-types` (Tappa 3C follow-up) per
    migliorare il grafo semantico.
-6. **Query planning context-aware** — leveraging AST metadati (symbol_kind, qualname, lineno)
-   per disambiguare query a simboli.
 
 ## Backlink e contesto
 

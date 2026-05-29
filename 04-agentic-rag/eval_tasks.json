@@ -1,37 +1,75 @@
 [
   {
     "id": "apirouter-def",
+    "type": "localizzazione",
     "question": "In quale file è definita la classe APIRouter di FastAPI?",
     "expected_files": ["fastapi/routing.py"],
-    "ideal_tool": "find_symbol",
+    "expected_tools": ["find_symbol"],
     "note": "localizzazione di un simbolo: dovrebbe bastare find_symbol"
   },
   {
     "id": "oauth2-concept",
+    "type": "localizzazione",
     "question": "Cos'è OAuth2PasswordBearer in FastAPI e in quale file è definito?",
     "expected_files": ["fastapi/security/oauth2.py"],
-    "ideal_tool": "find_symbol",
-    "note": "concetto + localizzazione: find_symbol (+ eventuale search_docs/code)"
-  },
-  {
-    "id": "depends-impl",
-    "question": "Dove è implementato Depends in FastAPI? Indica il file.",
-    "expected_files": ["fastapi/param_functions.py", "fastapi/params.py"],
-    "ideal_tool": "find_symbol",
-    "note": "simbolo con doppia definizione (funzione + classe)"
-  },
-  {
-    "id": "background-tasks",
-    "question": "Cosa sono le BackgroundTasks in FastAPI e in quale file sono definite?",
-    "expected_files": ["fastapi/background.py"],
-    "ideal_tool": "find_symbol",
+    "expected_tools": ["find_symbol"],
     "note": "concetto + localizzazione"
   },
   {
+    "id": "depends-impl",
+    "type": "localizzazione",
+    "question": "Dove è implementato Depends in FastAPI? Indica il file.",
+    "expected_files": ["fastapi/param_functions.py", "fastapi/params.py"],
+    "expected_tools": ["find_symbol"],
+    "note": "simbolo con doppia definizione (funzione + classe)"
+  },
+  {
+    "id": "background-def",
+    "type": "localizzazione",
+    "question": "In quale file è definita la classe BackgroundTasks di FastAPI?",
+    "expected_files": ["fastapi/background.py"],
+    "expected_tools": ["find_symbol"],
+    "note": "localizzazione pura (contrappone background-doc)"
+  },
+  {
     "id": "httpexception-def",
+    "type": "localizzazione",
     "question": "In quale file del codice sorgente è definita la classe HTTPException?",
     "expected_files": ["fastapi/exceptions.py"],
-    "ideal_tool": "find_symbol",
+    "expected_tools": ["find_symbol"],
     "note": "localizzazione di un'eccezione"
+  },
+
+  {
+    "id": "httpexception-usage",
+    "type": "multi-hop",
+    "question": "In quale file è definita HTTPException e mostra qualche esempio del codice che la usa.",
+    "expected_files": ["fastapi/exceptions.py"],
+    "expected_tools": ["find_symbol", "who_calls"],
+    "note": "multi-hop: definizione (find_symbol) + chiamanti (who_calls). Discrimina chi naviga il grafo."
+  },
+  {
+    "id": "def-vs-async",
+    "type": "doc-concept",
+    "question": "Qual è la differenza tra una funzione di endpoint definita con def e una con async def in FastAPI?",
+    "expected_files": ["async.md"],
+    "expected_tools": ["search_docs", "search_combined"],
+    "note": "concetto puramente documentale: find_symbol/who_calls sono inutili → forza l'uso dei doc."
+  },
+  {
+    "id": "query-param-codedoc",
+    "type": "code+doc",
+    "question": "Come si dichiara un parametro di query in FastAPI? Mostra sia dove è implementato Query sia la documentazione che lo spiega.",
+    "expected_files": ["fastapi/params.py", "fastapi/param_functions.py", "query-param"],
+    "expected_tools": ["find_symbol", "search_docs", "search_combined"],
+    "note": "richiede codice E doc: premia la traiettoria che combina i due corpora."
+  },
+  {
+    "id": "background-doc",
+    "type": "code+doc",
+    "question": "A cosa servono le BackgroundTasks e dove sono documentate?",
+    "expected_files": ["background-tasks.md", "reference/background", "background.md"],
+    "expected_tools": ["search_docs", "related_docs", "search_combined"],
+    "note": "stesso tema di background-def ma orientato alla DOC (tutorial o reference): discrimina il routing dei tool."
   }
 ]
