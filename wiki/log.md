@@ -563,6 +563,32 @@ dove `<operazione>` ∈ { setup, ingest, record, query, lint }.
 **Tappa 04 COMPLETATA.** L'[[architettura-target]] dual-RAG (ingestion code-aware, 4 retriever, orchestrazione LLM,
 MCP-first) è realizzata operazionalmente.
 
+## [2026-05-29] record | SpecKit — 9 subagent fedeli a skill canonici per phase-gate di produzione
+
+- **Creati 9 subagent SpecKit** in `.claude/agents/speckit-<fase>.md`: **constitution, specify, clarify, plan, tasks,
+  analyze, checklist, implement, taskstoissues**. Primo tassello operativo della **fase di produzione** (assettizzazione Sertor).
+- **Architettura:** ogni agente è **esecutore fedele** del rispettivo skill canonico in `.claude/skills/speckit-<fase>/SKILL.md`:
+  system prompt rimanda allo SKILL e lo esegue; note aggiungono solo adattamenti workspace (CLAUDE.md policy, convenzioni).
+  → Evita duplicazione/drift. Aggiornamento dello skill riflette automaticamente negli agenti.
+- **Delega git:** Git MAI eseguito dai subagent (coerente con policy prototipo→produzione di CLAUDE.md);
+  ogni agente chiude con **brief di commit** (speckit-plan suggerisce anche branch). Commit delegato a configuration-manager.
+- **Niente interazione diretta:** decisioni critiche tornano nel report come `[NEEDS CLARIFICATION]` formattate
+  (tabella opzioni) per il flusso principale; il flusso non blocca su domande.
+- **Dogfooding MCP sertor-rag:** speckit-plan, speckit-analyze, speckit-implement hanno i 6 tool MCP (search_code/docs/combined,
+  find_symbol, who_calls, related_docs) per studiare codebase Sertor durante planning/analysis. speckit-analyze è SOLA LETTURA.
+- **Modelli:** sonnet per fasi sostanziali (constitution/specify/clarify/plan/tasks/analyze/implement),
+  haiku per ausiliarie (checklist, taskstoissues). Equilibrio efficienza/qualità coerente con budget.
+- **Stato:** flusso operativo prototipo già definito (Constitution → Specify → Clarify → Plan → Tasks → Analyze → Checklist
+  → Implement → TasksToIssues → configuration-manager per git). Aperto: integrare hook `before_specify` per branch automatica;
+  collegare spec ↔ wiki; transizione rami/PR in produzione.
+- **Wiki aggiornato:**
+  - `wiki/tech/speckit.md` (NUOVO): descrizione SpecKit come framework di governance, architettura agenti, principi design,
+    flusso operativo, policy git, integrazione wiki.
+  - `wiki/index.md`: aggiunto link in sezione Tecnologie.
+  - `wiki/log.md`: questa voce.
+
+---
+
 ## [2026-05-29] record | Fusione dual-RAG get_context + confronto vs LLM (FUSIONE.md)
 
 - **Implementazione fusione deterministica:** funzione `get_context(target, semantic_docs=False)` in `shared/retrieval.py`

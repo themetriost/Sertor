@@ -1,7 +1,7 @@
 ---
 title: Indice del Wiki
 type: index
-updated: 2026-05-29 (Fusione dual-RAG get_context + confronto vs LLM)
+updated: 2026-05-29 (SpecKit — 9 subagent fedeli a skill canonici)
 ---
 
 # Indice del Wiki RAG
@@ -29,6 +29,7 @@ Il wiki è mantenuto secondo lo schema descritto in [`../CLAUDE.md`](../CLAUDE.m
 ## Tecnologie
 
 - [Stack del workspace](tech/stack.md) — panoramica dello stack (locale + Microsoft/Azure)
+- [SpecKit — Governance e Orchestrazione di Progetto](tech/speckit.md) — framework phase-gate, 9 subagent, transizione prototipo→produzione
 
 ## Esperimenti
 
