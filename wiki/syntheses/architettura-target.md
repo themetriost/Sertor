@@ -3,7 +3,7 @@ title: Architettura target — dual-RAG codice + documentazione
 type: synthesis
 tags: [architettura, roadmap, code-rag, agentic, graphrag, hybrid, mcp]
 created: 2026-05-28
-updated: 2026-05-28
+updated: 2026-05-29
 sources: []
 ---
 
@@ -123,7 +123,7 @@ Tool MCP previsti (bozza): `search_code`, `search_docs`, `search_combined`,
 | 1 | `01-baseline/` | Code RAG e Docs RAG **separati**: chunking code-aware, embeddings, Chroma, similarity search | query → chunk rilevanti su ciascun corpus |
 | 2 | `02-hybrid-reranking/` | Hybrid (BM25+dense) + reranking; **prima fusione** dei due corpora (RRF) | recall/precision migliori; un solo bundle codice+doc |
 | 3 | `03-graphrag/` | **Code knowledge graph** (simboli, call graph, import) + link doc↔codice con Microsoft GraphRAG | query multi-hop ("chi chiama X", "doc del modulo Y") |
-| 4 | `04-agentic-rag/` | **Orchestrator** (query planning, retrieval iterativo) esposto via **MCP**; gli agenti lo usano in automatico su bug/CR/feature | obiettivo finale: agente che legge da solo codice+doc |
+| 4 | `04-agentic-rag/` | **Orchestrator** (query planning, retrieval iterativo) esposto via **MCP**; gli agenti lo usano in automatico su bug/CR/feature — vedi [[design Tappa 4]](../../04-agentic-rag/README.md) | obiettivo finale: agente che legge da solo codice+doc |
 
 Dettaglio per tappa:
 

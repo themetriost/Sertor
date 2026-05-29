@@ -261,3 +261,30 @@ dove `<operazione>` ∈ { setup, ingest, record, query, lint }.
   quickstart, test (14 passed / 1 skipped), convenzioni (delega git/wiki, `.env`), roadmap con 4 tappe.
 - **Ruolo complementare:** README = tecnico "come va insieme"; DEMOS.md = runbook eseguibile;
   ESEMPI.md = vetrina divulgativa. Aggiornato `index.md` con link e nota su entry-point.
+
+## [2026-05-29] record | Tappa 4 Agentic RAG — design + decisioni
+
+- Creato `04-agentic-rag/README.md` (design doc): spiega il salto concettuale da **retrieval single-shot**
+  (01–03, flusso fisso deciso dall'utente) a **loop iterativo guidato da LLM** (PLAN → ROUTE → RETRIEVE →
+  REFLECT → SYNTHESIZE), con tabella di confronto puntuale e diagramma architettura (orchestratore +
+  shared/llm.py + shared/retrieval.py facade + MCP).
+- **Decisioni prese (coerenti col workspace):**
+  1. **Confronto orchestratori:** si testano tutti e tre i framework (AutoGen, Semantic Kernel, LangGraph)
+     sullo stesso orchestratore — fedele allo spirito "quale scegliere quando" del workspace — partendo da
+     **AutoGen** end-to-end, poi SK, poi LangGraph (velocità/semplicità criterio di priorità).
+  2. **LLM intercambiabile via `RAG_BACKEND`** (Ollama `llama3.1` default locale + Azure `gpt-5.4-mini` |
+     `gpt-4-turbo`), nuovo modulo `shared/llm.py` (client chat unificato con tool-calling).
+  3. **Libreria-first poi MCP:** prima la libreria di orchestrazione pura (consumabile, testabile); poi
+     MCP server a livello di applicazione (frontend per Claude Code/AutoGen/SK).
+- **Prerequisiti tecnici identificati:** manca client LLM chat in shared/ (c'è solo embeddings) → nuovo
+  modulo `shared/llm.py`. I retriever 01–03 sono già funzioni importabili ma sparsi → facade
+  `shared/retrieval.py` (search_code, search_docs, search_combined, find_symbol, who_calls, related_docs,
+  global_summary). Serve filtro `source=code|doc` in HybridIndex per separare le sorgenti in output
+  (fusion RRF + colonna "sorgente").
+- **Modifiche concrete:** nuovi file `shared/llm.py`, `shared/retrieval.py`, `04-agentic-rag/orchestrator.py`;
+  aggiornamento `02-hybrid-reranking/hybrid.py` (esporre come funzione facade); aggiornamento config
+  `shared/config.py` (LLM model/endpoint); test e runbook DEMOS.md aggiornati.
+- **Aperto:** tuning entity_types custom per GraphRAG (Tappa 4, follow-up); integrazione AST↔retrieval
+  (query planning context-aware); MCP schema e client tooling (Claude SDK).
+- Aggiornati `wiki/index.md` (tabella Esperimenti, 04 ora "design" con link) e
+  `wiki/syntheses/architettura-target.md` (riga Tappa 4 roadmap con backlink al design).
