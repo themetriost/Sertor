@@ -179,6 +179,29 @@ OAuth2PasswordBearer è una classe di FastAPI ... definita in fastapi/security/o
 > Il loop LLM end-to-end **non** è in pytest (lento e dipendente dal modello): la verifica
 > è il comando qui sopra. La suite testa invece la **facade** e il **registry** dei tool.
 
+### 04b — Adattatore AutoGen (1° framework a confronto)
+
+Stesso compito della baseline, ma il loop di tool-use è orchestrato da **AutoGen**
+(`AssistantAgent`), riusando **gli stessi tool e system prompt** (`tools.py`). Usa il client
+OpenAI-compatible verso Ollama (`/v1`) o `AzureOpenAIChatCompletionClient`.
+
+```bash
+PYTHONPATH=. python 04-agentic-rag/autogen_app.py "In quale file è definita la classe APIRouter?" -v
+```
+
+**Osservato (locale, `qwen3:30b-a3b`):**
+
+```
+== tool chiamati ==
+  - find_symbol({"name":"APIRouter"})
+=== RISPOSTA (AutoGen) ===
+La classe APIRouter è definita nel file fastapi/routing.py alla riga 1005.
+```
+
+> Confronto a parità (stessi tool/prompt/modello): la **baseline vanilla** e **AutoGen**
+> possono divergere per *strategia* (numero di tool, sintesi). È la differenza che il
+> confronto tra framework (poi SK e LangGraph) vuole misurare — serve l'eval set (TODO).
+
 ---
 
 ## Suite di test (pytest)
@@ -193,7 +216,7 @@ Test **free** (BM25 sparse, grafo AST, artefatti GraphRAG) sempre eseguibili; te
 .venv/Scripts/python.exe -m pytest tests/ --run-paid    # include la query GraphRAG a pagamento
 ```
 
-**Stato corrente:** `19 passed, 1 skipped` (l'1 skip è il test `paid`; con Ollama attivo i gated passano).
+**Stato corrente:** `20 passed, 1 skipped` (l'1 skip è il test `paid`; con Ollama attivo i gated passano).
 
 | Test | Config | Tipo | Verifica |
 |---|---|---|---|
@@ -203,6 +226,7 @@ Test **free** (BM25 sparse, grafo AST, artefatti GraphRAG) sempre eseguibili; te
 | `test_hybrid.py::...sparse` | 02 | free | BM25 trova il simbolo esatto |
 | `test_agentic.py::test_registry*` | 04 | free | registry tool ↔ dispatch 1:1; tool sconosciuto gestito |
 | `test_agentic.py::test_graph_tools` | 04 | free | facade `find_symbol`/`who_calls` sul grafo |
+| `test_agentic.py::...autogen*` | 04b | free | adattatore AutoGen importabile, 6 tool con docstring, client locale costruibile |
 | `test_baseline.py` | 01 | gated (Ollama) | forma output dense (k risultati) |
 | `test_hybrid.py::...fusione` | 02 | gated (Ollama) | la fusione RRF gira |
 | `test_agentic.py::test_search_*` | 04 | gated (Ollama) | filtri facade `source=code\|doc` |

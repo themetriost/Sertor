@@ -315,3 +315,32 @@ dove `<operazione>` ∈ { setup, ingest, record, query, lint }.
   `04-agentic-rag/README.md` checklist aggiornata.
 - Wiki: pagina esperimento `experiments/04-agentic-rag.md`, aggiornato `index.md` (tabella 04),
   backlink da [[architettura-target]].
+
+## [2026-05-29] record | Tappa 04 — adattatore AutoGen implementato e verificato
+
+- **Implementazione AutoGen (framework 1/3):** `04-agentic-rag/autogen_app.py` (NUOVO), classe
+  `AssistantAgent` con `reflect_on_tool_use=True`. Client LLM riusato da `shared/llm.py`: locale
+  = OpenAI-compatible Ollama `/v1` (nessun `[ollama]` extra), Azure = `AzureOpenAIChatCompletionClient`.
+  Tool registry e system prompt ereditati da `tools.py` → confronto a parità strumenti/prompt vs
+  vanilla.
+- **Implementazione modulo:** AgentApp costruisce client locale o Azure da `RAG_BACKEND`, carica
+  tool 6/registry (schema da firma + docstring), avvia conversazione. Modello Ollama scelto da
+  config: qwen3, llama3.1, etc. (richiede tool-calling nativo).
+- **Requirements:** `autogen-agentchat>=0.7`, `autogen-ext[openai]>=0.7` aggiunte a `requirements.txt`;
+  installate nel venv principale (riuso `shared.retrieval` → chromadb/flashrank/networkx).
+  Declassamento protobuf 6→5.29 verificato OK, niente rotta suite.
+- **Test:** `test_autogen_adapter_costruibile` (free, `importorskip`): adattatore importa, espone
+  6 tool/docstring, costruisce client locale OK.
+- **Esito E2E Ollama `qwen3:30b-a3b`:** task "In quale file è definita la classe APIRouter?"
+  → `find_symbol("APIRouter")` → `fastapi/routing.py:1005` (AST) → sintesi corretta.
+  Risultato: 1 tool-call, trace pulita.
+- **Learning:** AutoGen schema-tool **da firma + docstring**. Ollama API OpenAI-compatible su `/v1`
+  con tool-calling nativo → unica classe client (locale + Azure). Modularità `shared/llm.py` +
+  `shared/retrieval.py` semplifica adattatore.
+- **Suite aggiornata:** 20 passed, 1 skipped (skip = test paid GraphRAG).
+- **Docs:** DEMOS.md "04b — Adattatore AutoGen" (comando, output osservato, test), 
+  `04-agentic-rag/README.md` checklist aggiornata (AutoGen done).
+- **Wiki aggiornato:** `experiments/04-agentic-rag.md` sezione "Adattatore AutoGen" con cosa/come/esito/learning,
+  status frontmatter → "vanilla + AutoGen completati; SK/LangGraph + eval da fare",
+  prossimi passi riprioritizzati (eval set primo),
+  `index.md` riga 04 stato aggiornato.

@@ -16,5 +16,11 @@ networkx>=3.2
 tree-sitter>=0.25
 tree-sitter-python>=0.25
 
+# Tappa 4 — Agentic RAG. L'orchestratore vanilla usa solo httpx (già sopra).
+# AutoGen è il 1° dei framework a confronto (adattatore 04-agentic-rag/autogen_app.py);
+# usa il client OpenAI-compatible anche verso Ollama (/v1) e Azure.
+autogen-agentchat>=0.7
+autogen-ext[openai]>=0.7
+
 # Dev — test dimostrativi (suite tests/, vedi DEMOS.md)
 pytest>=8.0

@@ -4,7 +4,7 @@ type: experiment
 tags: [agentic-rag, orchestrator, llm-tool-calling, shared-facade, autoboxed, semantic-kernel, langraph, mcp]
 created: 2026-05-29
 updated: 2026-05-29
-status: "baseline (vanilla orchestrator) completata; framework adapters (AutoGen/SK/LangGraph) da fare"
+status: "vanilla + AutoGen completati; eval set, SK/LangGraph + MCP da fare"
 sources: [https://github.com/fastapi/fastapi, https://github.com/microsoft/semantic-kernel, https://github.com/microsoft/autogen, https://github.com/langchain-ai/langgraph]
 ---
 
@@ -55,7 +55,7 @@ Task: "Cos'è OAuth2PasswordBearer e in quale file è definito?"
 
 Esito: **2 passi**, risposta corretta e cita il file.
 
-### Suite test — 19 passed, 1 skipped
+### Suite test — 19 passed, 1 skipped (baseline vanilla)
 
 - **`test_llm_basic`** — client LLM (`shared/llm.py`) funziona e restituisce un messaggio.
 - **`test_llm_with_tools`** — tool-calling: orchestratore riceve risposta con `tool_calls` strutturato.
@@ -65,6 +65,49 @@ Esito: **2 passi**, risposta corretta e cita il file.
   colonna "source" nei risultati per fusione RRF.
 
 Nota: suite aggiornata al totale 19 passed (precedenti 14 su 01–03; 5 nuovi su 04).
+
+### Adattatore AutoGen (framework 1/3)
+
+**Cosa:** implementazione del primo orchestratore via framework, usando **`autogen-agentchat>=0.7.5`**.
+
+**Design:** `AssistantAgent` con `reflect_on_tool_use=True` e `max_tool_iterations`. L'agente
+consuma direttamente i tool e il system prompt di `04-agentic-rag/tools.py`, così il confronto
+rimane a **parità di strumenti e prompt** vs vanilla. Client LLM viene riusato da `shared/llm.py`:
+- **Locale:** OpenAI-compatible verso endpoint `/v1` di Ollama (nessun wrapper `[ollama]` aggiunto);
+  il modello Ollama espone tool-calling nativo.
+- **Azure:** `AzureOpenAIChatCompletionClient` (deployment `gpt-5.4-mini`, modello non noto ad
+  AutoGen → va passato `model_info` con `function_calling=True`).
+
+**Implementazione:**
+- **`04-agentic-rag/autogen_app.py`** (NUOVO): orchestratore AutoGen, carica registry tool da
+  `tools.py`, costruisce client locale o Azure a seconda di `RAG_BACKEND`, definisce `AssistantAgent`,
+  avvia conversazione. Schema tool estratto da firma + docstring dei callable Python.
+- **Requirements:** `autogen-agentchat>=0.7`, `autogen-ext[openai]>=0.7` aggiunte. Installate nel
+  venv principale (l'agente riusa `shared.retrieval` che dipende da chromadb/flashrank/networkx);
+  installazione ha declassato protobuf 6→5.29 senza rompere suite.
+- **Test:** `tests/test_agentic.py::test_autogen_adapter_costruibile` (free, con `importorskip`):
+  verifica che l'adattatore importi, esponga 6 tool con docstring, costruisca client locale.
+
+**Esito verificato end-to-end su Ollama `qwen3:30b-a3b`:**
+
+Task: "In quale file è definita la classe APIRouter?"
+1. Agente AutoGen interpreta query → richiede strumento.
+2. Chiama `find_symbol("APIRouter")` via tool-calling.
+3. Facade restituisce `fastapi/routing.py:1005` (AST grafo).
+4. Agente sintetizza: "APIRouter è definita in fastapi/routing.py alla linea 1005".
+
+Risultato: **1 tool-call, risposta corretta, trace pulita**.
+
+Nota: su task più complesso (es. OAuth2PasswordBearer), AutoGen e baseline vanilla possono divergere
+per strategia e sintesi; è il futuro **eval set** che dovrà misurare il delta.
+
+**Learnings:**
+- AutoGen genera schema-tool **da firma + docstring** dei callable Python → i wrapper devono avere
+  docstring (è lo schema).
+- Ollama espone un'API OpenAI-compatible su `/v1` con tool-calling nativo → **unica classe client
+  copre locale e Azure** (niente binding specifici Ollama).
+- Riuso `shared/llm.py` e `shared/retrieval.py` semplifica l'adattatore → **modularità confermata**.
+- Suite totale aggiornata: **20 passed, 1 skipped** (skip = test paid GraphRAG).
 
 ## Learnings chiave
 
@@ -96,8 +139,9 @@ Nota: suite aggiornata al totale 19 passed (precedenti 14 su 01–03; 5 nuovi su
 
 ## Prossimi passi
 
-1. **Adattatore AutoGen** — wrappare orchestratore vanilla in `groupchat` AutoGen + agent.
-2. **Adattatore Semantic Kernel** — kernel SK con skill mapping su `tools.py` + plugin MCP.
+1. **Eval set su Tappa 04** — misurare delta vanilla vs AutoGen vs SK vs LangGraph su eval 18 query
+   (10 NL + 8 simboli). Metriche: tool-call count, sintesi coherence, costo LLM.
+2. **Adattatore Semantic Kernel** — kernel SK con skill mapping su `tools.py` + orchestrazione K.
 3. **Adattatore LangGraph** — graph workflow plan→retrieve→synthesize via LangGraph state machine.
 4. **MCP server** — esporre `shared/retrieval.py` come MCP tools (`search_code`, `search_docs`,
    `find_symbol`, `who_calls`) per Claude Code e agenti.

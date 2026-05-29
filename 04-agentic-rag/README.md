@@ -160,13 +160,14 @@ dipendenza MCP. Se in conflitto con lo stack attuale, **venv isolato** come per 
 - [x] `04-agentic-rag/` — orchestratore **vanilla** (plan/route/retrieve/reflect/synthesize) + CLI `agent.py`
 - [x] schemi tool per function-calling (`tools.py`)
 - [x] smoke test (`tests/test_agentic.py`)
-- [ ] adattatore **AutoGen** (1°) → poi Semantic Kernel, poi LangGraph
+- [x] adattatore **AutoGen** (`autogen_app.py`) — 1° framework a confronto
+- [ ] adattatore **Semantic Kernel** (2°) → poi **LangGraph** (3°)
+- [ ] eval multi-step + eval set di task (per confrontare i framework a parità)
 - [ ] MCP server che espone i tool
-- [ ] eval multi-step + eval set di task
 
-> **Stato (2026-05-29):** prerequisiti + orchestratore vanilla **fatti e verificati**
-> end-to-end su Ollama (`agent.py`). È la baseline; il prossimo passo è l'adattatore
-> AutoGen che riusa `tools.py`/`shared.retrieval`.
+> **Stato (2026-05-29):** prerequisiti + orchestratore vanilla + **adattatore AutoGen**
+> fatti e verificati end-to-end su Ollama. `agent.py` (vanilla) e `autogen_app.py` (AutoGen)
+> condividono `tools.py`/`shared.retrieval`. Prossimo: eval set, poi SK e LangGraph.
 
 ---
 

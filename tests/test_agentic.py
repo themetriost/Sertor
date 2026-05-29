@@ -48,3 +48,15 @@ def test_search_docs_filtra_doc(need_chroma, need_ollama):
     from shared import retrieval
     hits = retrieval.search_docs("how to declare a dependency", k=3)
     assert hits and all(h["source"] == "doc" for h in hits)
+
+
+def test_autogen_adapter_costruibile():
+    """L'adattatore AutoGen importa, espone i 6 tool documentati e costruisce il client locale."""
+    import pytest
+    pytest.importorskip("autogen_agentchat")
+    spec = importlib.util.spec_from_file_location("agentic_autogen", ROOT / "04-agentic-rag" / "autogen_app.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert len(mod._TOOL_FNS) == 6
+    assert all(fn.__doc__ for fn in mod._TOOL_FNS), "i tool AutoGen devono avere docstring (diventano lo schema)"
+    assert mod._model_client() is not None  # client locale costruibile senza rete
