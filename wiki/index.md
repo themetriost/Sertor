@@ -1,7 +1,7 @@
 ---
 title: Indice del Wiki
 type: index
-updated: 2026-05-29 (Tappa 04 COMPLETA — server MCP per agente Claude)
+updated: 2026-05-29 (Architettura as-built documentata)
 ---
 
 # Indice del Wiki RAG
@@ -60,3 +60,4 @@ Il wiki è mantenuto secondo lo schema descritto in [`../CLAUDE.md`](../CLAUDE.m
 
 - [Vetrina di esempi — query → risposta per motore](syntheses/esempi-query-risposta.md) — sintesi pratica dei 4 motori e quando usarli
 - [Architettura target — dual-RAG codice + documentazione](syntheses/architettura-target.md) — disegno finale + roadmap incrementale 01→04
+- [Architettura attuale (as-built) — tappe 01–04 complete](syntheses/architettura-attuale.md) — diagramma realizzato + strati + backlog di produzione (caching)

@@ -148,6 +148,7 @@ Dettaglio per tappa:
 - **Sicurezza/privacy**: codice sensibile → locale in dev, Azure con private endpoint in scala.
 - **Access control** (futuro): rispettare i permessi di repo/doc nelle risposte.
 - **Multi-repo & multi-linguaggio**: metadati per repo/lingua/modulo; tree-sitter copre molti linguaggi.
+- **Caching e produzione**: il backlog di produzione (embedding cache, LLM response cache, Azure prompt-caching) è tracciato in [[architettura-attuale]] § "Caching — stato e backlog di produzione".
 
 ## Decisioni prese (2026-05-28)
 

@@ -562,3 +562,22 @@ dove `<operazione>` ∈ { setup, ingest, record, query, lint }.
 
 **Tappa 04 COMPLETATA.** L'[[architettura-target]] dual-RAG (ingestion code-aware, 4 retriever, orchestrazione LLM,
 MCP-first) è realizzata operazionalmente.
+
+## [2026-05-29] record | Architettura as-built documentata + backlog di produzione (caching rinviato)
+
+- Creata pagina di sintesi **`syntheses/architettura-attuale.md`** (NUOVO) — documento complementare
+  a [[architettura-target]]: diagramma mermaid dello stato realizzato (tappe 01–04 complete), descrizione
+  a strati (ingestion → indici → facade shared/retrieval → consumatori Tappa 04).
+- **Diagramma as-built:** corpus raw/fastapi/ → loaders + tree-sitter + embeddings 3-provider → 3 indici
+  (Chroma dense, BM25 sparse, AST graph) + GraphRAG separato → facade unica `shared/retrieval.py` (6 tool) →
+  4 orchestratori LLM (vanilla/AutoGen/SK/LangGraph) + server MCP (`mcp_server.py`) + client Claude Code.
+  Config/.env trasversale governa RAG_BACKEND e provider LLM.
+- **Sezione "Caching — stato e backlog di produzione":** tracciati 3 item rinviati alla produzione per policy
+  SpecKit/branch: (1) cache embedding query in shared/embeddings.py; (2) cache risposte LLM (SQLite, run agent
+  riproducibili); (3) tracciare/ottimizzare Azure prompt-caching (cached_tokens in shared/llm.py). Più: igiene
+  corpus (blob base64), eval multi-hop + media multi-run, transizione SpecKit+branch/PR.
+- Aggiornato **`wiki/index.md`**: aggiunto link a nuova pagina nella sezione Sintesi + timestamp updated.
+- Aggiornato **`wiki/syntheses/architettura-target.md`**: added backlink in § "Concerns trasversali" che rimanda
+  a [[architettura-attuale]] per il backlog di produzione.
+- File toccati: `wiki/index.md`, `wiki/syntheses/architettura-target.md`, `wiki/syntheses/architettura-attuale.md` (creato),
+  `wiki/log.md`.
