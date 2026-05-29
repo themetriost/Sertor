@@ -46,6 +46,12 @@ def _run_engine(engine: str, question: str, max_steps: int) -> dict:
         # `steps` = turni LLM reali (round di tool + sintesi), confrontabile con vanilla
         return {"answer": out["answer"], "tools": tools,
                 "steps": out.get("steps", len(tools)), "client": out["client"]}
+    if engine == "sk":
+        import sk_app  # import pigro: richiede semantic-kernel
+        out = sk_app.run(question, max_steps=max_steps)
+        tools = [t["tool"] for t in out["trace"]]
+        return {"answer": out["answer"], "tools": tools,
+                "steps": out.get("steps", len(tools)), "client": out["client"]}
     raise ValueError(f"motore sconosciuto: {engine}")
 
 
@@ -126,8 +132,10 @@ def render_doc(rows: list[dict], engines: list[str], tasks: list[dict]) -> str:
         "- **cita atteso**: la risposta finale nomina il file giusto (successo end-to-end).",
         "- **tool giusto**: l'agente ha usato almeno uno strumento ideale per quel tipo di task.",
         "- I motori condividono `tools.py` e il system prompt: le differenze sono di **orchestrazione**.",
-        "- ⚠️ I modelli locali non sono perfettamente deterministici: i numeri variano tra run; "
-        "conta la *tendenza* (es. quale motore sceglie i tool giusti per i task doc vs codice).",
+        "- ⚠️ **`passi`**: per `vanilla`/`autogen` sono turni LLM reali; per `sk` è *approssimato* "
+        "(SK non espone i confini dei turni: vale ≈ n° tool + 1). Per il **costo** confronta `tool medi`.",
+        "- ⚠️ I modelli non sono perfettamente deterministici: i numeri variano tra run; "
+        "conta la *tendenza* (es. quale motore sceglie i tool giusti, e quanto è verboso).",
         "",
         "---",
         "",
@@ -177,7 +185,7 @@ def main() -> None:
         pass
 
     ap = argparse.ArgumentParser(description="Eval comparativa Agentic RAG + doc parlante")
-    ap.add_argument("--engines", default="vanilla,autogen", help="motori separati da virgola")
+    ap.add_argument("--engines", default="vanilla,autogen,sk", help="motori separati da virgola")
     ap.add_argument("--limit", type=int, default=0, help="esegui solo i primi N task (0 = tutti)")
     ap.add_argument("--max-steps", type=int, default=5)
     ap.add_argument("--out", default=str(HERE / "ESEMPI-agentic.md"), help="file Markdown da generare")

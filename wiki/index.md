@@ -1,7 +1,7 @@
 ---
 title: Indice del Wiki
 type: index
-updated: 2026-05-29 (Tappa 04 — entry point Azure gpt-5.4-mini + eval rieseguita + fix metrica passi)
+updated: 2026-05-29 (Tappa 04 — adattatore Semantic Kernel + eval a 3 motori su Azure gpt-5.4-mini)
 ---
 
 # Indice del Wiki RAG
@@ -37,7 +37,7 @@ Il wiki è mantenuto secondo lo schema descritto in [`../CLAUDE.md`](../CLAUDE.m
 | 01 | Baseline (vector retrieval) | [01-baseline](experiments/01-baseline.md) | **completato** |
 | 02 | Hybrid + reranking | [02-hybrid-reranking](experiments/02-hybrid-reranking.md) | **completato** |
 | 03 | GraphRAG | [03-graphrag](experiments/03-graphrag.md) | **A+C completato; re-run dominio** |
-| 04 | Agentic RAG | [04-agentic-rag](experiments/04-agentic-rag.md) | **vanilla + AutoGen + eval ampliata (9 task, tool_ok, cache); SK/LangGraph da fare** |
+| 04 | Agentic RAG | [04-agentic-rag](experiments/04-agentic-rag.md) | **vanilla + AutoGen + Semantic Kernel + eval a 3 motori; LangGraph + MCP da fare** |
 
 ## Fonti
 

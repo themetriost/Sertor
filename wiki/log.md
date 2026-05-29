@@ -445,3 +445,42 @@ dove `<operazione>` ∈ { setup, ingest, record, query, lint }.
   - Frontmatter status e tags aggiornati.
   - `index.md`: updated timestamp.
   - `log.md`: questa voce.
+
+## [2026-05-29] record | Tappa 04 — adattatore Semantic Kernel + eval a 3 motori su Azure gpt-5.4-mini
+
+- **Implementazione Semantic Kernel (framework 2/3):** `04-agentic-rag/sk_app.py` (NUOVO) — kernel SK con
+  `ChatCompletionAgent` + `FunctionChoiceBehavior.Auto()`. I 6 tool da `tools.py` sono esposti come
+  `@kernel_function` nel plugin `RagTools`. Auto-invocation tracciato via filtro `AUTO_FUNCTION_INVOCATION`.
+  Backend: `RAG_BACKEND=azure` → `AzureChatCompletion` (endpoint v1, parsing manuale di `/openai/v1`);
+  locale → `OpenAIChatCompletion` verso Ollama `/v1`.
+- **Esecuzione eval (9 task × 3 motori) su Azure gpt-5.4-mini:**
+  - vanilla: 9/9 cited, 9/9 tool_ok, 2.7 steps medi, 3.2 tools medi.
+  - AutoGen: 9/9 cited, 7/9 tool_ok, 2.7 steps medi, 3.4 tools medi.
+  - **sk**: 9/9 cited, 8/9 tool_ok, 5.0 steps medi ⚠️ APPROSSIMATO, 4.0 tools medi.
+- **Lettura onesta (3 motori):**
+  (a) **Correttezza fattuale 9/9 per tutti** — gpt-5.4-mini satura `cited`; segnale discriminante =
+  efficienza/routing (tool_ok, tool medi).
+  (b) **SK più verboso:** media tool 4.0 (vs vanilla 3.2, AutoGen 3.4); picchi fino a 10 su query-param-codedoc,
+  8 su httpexception-usage. SK ripete il loop di auto-invocation più che gli altri (design concretamente diverso).
+  (c) **Metrica `steps` per SK approssimata:** SK non espone i confini dei turni LLM (loop opaca) → steps ≈
+  num_tool + 1, non è paragonabile a vanilla/AutoGen. Metrica robusta = tool_medi: vanilla 3.2 < AutoGen 3.4 < SK 4.0.
+  (d) **Tool_ok:** vanilla 9/9 > SK 8/9 > AutoGen 7/9. Tutti citano i file; divergono sul percorso. SK ha 1 routing
+  subottimale (su task diverso da vanilla/AutoGen).
+  (e) **Pattern SK:** investigazione più profonda per compensare (search_code → who_calls → related_docs → search_docs).
+  Trade-off design: SK più verboso, vanilla più parsimonioso, AutoGen nel mezzo.
+- **Learning:** SK con `ChatCompletionAgent + Auto()` è interessante per task multi-hop complessi (cerca profondità),
+  meno efficiente per localizzazione diretta (overhead di auto-invocation). Vanilla è il baseline leggibile.
+- **Test aggiornato:** `tests/test_agentic.py::test_sk_adapter_costruibile` (free, `importorskip`);
+  suite **21 passed, 1 skipped**.
+- **Requirements:** `semantic-kernel>=1.36.0` aggiunto.
+- **Docs:**
+  - `04-agentic-rag/README.md`: checklist SK completato.
+  - `DEMOS.md`: sezione 04c (3 motori, comando, caveat passi SK).
+  - `04-agentic-rag/ESEMPI-agentic.md`: rigenerata da `evaluate.py --render-from` (gratis, cache eval_results.json).
+- **Wiki aggiornato:**
+  - `experiments/04-agentic-rag.md`: sezione "Adattatore Semantic Kernel" nuova; "Eval comparativa" espansa
+    a 3 motori con tabella, lettura onesta su fattualità/efficienza/steps approssimato, learning pattern SK.
+    Frontmatter status → "vanilla + AutoGen + SK + eval a 3 motori; LangGraph + MCP da fare".
+    Prossimi passi riprioritizzati (SK completato, LangGraph 3°, MCP).
+  - `index.md`: riga 04 stato aggiornato, `updated: 2026-05-29`.
+  - `log.md`: questa voce.

@@ -21,6 +21,8 @@ tree-sitter-python>=0.25
 # usa il client OpenAI-compatible anche verso Ollama (/v1) e Azure.
 autogen-agentchat>=0.7
 autogen-ext[openai]>=0.7
+# Semantic Kernel — 2° framework a confronto (adattatore 04-agentic-rag/sk_app.py)
+semantic-kernel>=1.36
 
 # Dev — test dimostrativi (suite tests/, vedi DEMOS.md)
 pytest>=8.0

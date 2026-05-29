@@ -40,13 +40,14 @@ def test_graph_tools(need_ast_graph):
 
 def test_search_code_filtra_codice(need_chroma, need_ollama):
     from shared import retrieval
-    hits = retrieval.search_code("OAuth2 password bearer", k=3)
+    # provider esplicito ollama: il test resta gratuito anche con RAG_BACKEND=azure
+    hits = retrieval.search_code("OAuth2 password bearer", k=3, provider="ollama")
     assert hits and all(h["source"] == "code" for h in hits)
 
 
 def test_search_docs_filtra_doc(need_chroma, need_ollama):
     from shared import retrieval
-    hits = retrieval.search_docs("how to declare a dependency", k=3)
+    hits = retrieval.search_docs("how to declare a dependency", k=3, provider="ollama")
     assert hits and all(h["source"] == "doc" for h in hits)
 
 
@@ -60,3 +61,16 @@ def test_autogen_adapter_costruibile():
     assert len(mod._TOOL_FNS) == 6
     assert all(fn.__doc__ for fn in mod._TOOL_FNS), "i tool AutoGen devono avere docstring (diventano lo schema)"
     assert mod._model_client() is not None  # client locale costruibile senza rete
+
+
+def test_sk_adapter_costruibile():
+    """L'adattatore Semantic Kernel importa, espone i 6 tool e costruisce il servizio."""
+    import pytest
+    pytest.importorskip("semantic_kernel")
+    spec = importlib.util.spec_from_file_location("agentic_sk", ROOT / "04-agentic-rag" / "sk_app.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    from semantic_kernel.functions import kernel_function  # noqa: F401
+    kf = [m for m in dir(mod.RagTools) if not m.startswith("_")]
+    assert len(kf) == 6, f"attesi 6 kernel function, trovati {kf}"
+    assert mod._service() is not None  # servizio costruibile senza rete

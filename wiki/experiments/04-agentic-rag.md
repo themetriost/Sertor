@@ -1,10 +1,10 @@
 ---
 title: 04 Agentic RAG (orchestratore vanilla + framework adapters)
 type: experiment
-tags: [agentic-rag, orchestrator, llm-tool-calling, shared-facade, autoboxed, semantic-kernel, langraph, mcp, azure-gpt5.4-mini]
+tags: [agentic-rag, orchestrator, llm-tool-calling, shared-facade, semantic-kernel, autogen, langraph, mcp, azure-gpt5.4-mini]
 created: 2026-05-29
 updated: 2026-05-29
-status: "vanilla + AutoGen + eval su Azure gpt-5.4-mini (entry point operativo); SK/LangGraph + MCP da fare"
+status: "vanilla + AutoGen + Semantic Kernel + eval a 3 motori su Azure gpt-5.4-mini; LangGraph + MCP da fare"
 sources: [https://github.com/fastapi/fastapi, https://github.com/microsoft/semantic-kernel, https://github.com/microsoft/autogen, https://github.com/langchain-ai/langgraph]
 ---
 
@@ -138,7 +138,7 @@ per strategia e sintesi; è il futuro **eval set** che dovrà misurare il delta.
    - Loop manuale è **leggibile e debuggabile** (vs framework più complesso che nasconde la logica).
    - È il riferimento contro cui misurare AutoGen/SK/LangGraph: velocità, coerenza retrieval, costo LLM.
 
-## Eval comparativa (vanilla vs AutoGen)
+## Eval comparativa (vanilla vs AutoGen vs Semantic Kernel)
 
 **Setup:** eval set in `04-agentic-rag/eval_tasks.json` con **9 task** multi-step, ognuno con query,
 `expected_files` (ground-truth), `type` (categoria task), e `expected_tools` (strumenti ideali).
@@ -157,82 +157,113 @@ fusione code+doc:
 9. **background-doc** `[doc-concept]` — "A cosa servono e DOVE SONO DOCUMENTATE le BackgroundTasks?" → `docs/en/docs/reference/background.md` (routing cruciale: doc, non codice)
 
 **Esecuzione:** `04-agentic-rag/evaluate.py` lancia ogni task attraverso ogni motore (**vanilla**,
-**AutoGen**) a **parità di strumenti e prompt** (entrambi usano `tools.py` e SYSTEM_PROMPT). Misura
+**AutoGen**, **Semantic Kernel**) a **parità di strumenti e prompt** (tutti usano `tools.py` e SYSTEM_PROMPT). Misura
 metriche standardizzate:
 - **cited**: la risposta sintetizzata cita il file atteso (boolean).
 - **tool_ok**: l'agente ha usato ≥1 strumento ideale da `expected_tools` (boolean).
-- **steps**: numero di turni LLM reali (round di tool-call + turno sintesi finale); ora coerente tra vanilla e AutoGen (fix 2026-05-29).
+- **steps**: numero di turni LLM reali (round di tool-call + turno sintesi finale); per SK è **approssimato** (vedi caveat sotto).
 - **tools_called**: numero di tool invocazioni.
 
-**Cache e re-scoring:** `04-agentic-rag/eval_results.json` salva i risultati grezzi (18 righe: 9 task
-× 2 motori) con esecuzione LLM. Nuova modalità **`--render-from eval_results.json`** ri-calcola
+**Cache e re-scoring:** `04-agentic-rag/eval_results.json` salva i risultati grezzi (27 righe: 9 task
+× 3 motori) con esecuzione LLM. Modalità **`--render-from eval_results.json`** ri-calcola
 metriche e rigenera documentazione parlante SENZA chiamate LLM (re-score gratuito quando si raffina
 ground-truth).
 
-### Risultati eval — Ollama locale vs Azure gpt-5.4-mini
+### Adattatore Semantic Kernel (framework 2/3)
 
-**Locale (Ollama `qwen3:30b-a3b`, 9 task × 2 motori):**
+**Cosa:** secondo orchestratore via framework, usando **`semantic-kernel>=1.36.0`**.
+
+**Design:** `ChatCompletionAgent` con `FunctionChoiceBehavior.Auto()` per invocare automaticamente i tool.
+Il kernel riusa i tool da `04-agentic-rag/tools.py`, esposti come `kernel_function` in un plugin
+`RagTools`, così il confronto rimane a **parità di strumenti e prompt** vs vanilla e AutoGen.
+L'auto-invocation è tracciato via filtro `AUTO_FUNCTION_INVOCATION` sul kernel.
+
+**Implementazione:**
+- **`04-agentic-rag/sk_app.py`** (NUOVO): kernel SK con servizio chat (`AzureChatCompletion` per Azure,
+  `OpenAIChatCompletion` puntato a Ollama `/v1` per locale), plugin `RagTools` che espone i 6 tool
+  come `@kernel_function`. L'agente invoca i tool via `FunctionChoiceBehavior.Auto()`.
+- **Normalizzazione LLM backend:** `RAG_BACKEND=azure` → `AzureChatCompletion` (endpoint base
+  ricavato strippando `/openai/v1` dal valore `AZURE_OPENAI_ENDPOINT`); locale → `OpenAIChatCompletion`
+  verso `/v1` di Ollama.
+- **Trace:** filtro kernel `AUTO_FUNCTION_INVOCATION` cattura le invocazioni di tool.
+- **Test:** `tests/test_agentic.py::test_sk_adapter_costruibile` (free, con `importorskip`):
+  verifica che l'adattatore SK importi, il kernel costruisca, il plugin esponga 6 tool.
+
+**Esito verificato end-to-end su Azure gpt-5.4-mini:**
+
+SK opera correttamente su task di localizzazione e multi-hop, ma con **pattern di tool-calling più verboso**
+rispetto a vanilla/AutoGen (vedi sezione Risultati). Stesso contenuto fattuale (cited=True), divergenza su routing/efficienza.
+
+**Learnings:**
+- SK `ChatCompletionAgent` + `FunctionChoiceBehavior.Auto()` espone tool-calling astratto (gestisce
+  la loop interna di invocazione automatica).
+- Kernel plugin model è flessibile: mappare Python callable → `@kernel_function` è diretto.
+- Endpoint Azure per SK richiede parsing manuale (stripping `/openai/v1`); il parametro `api_version`
+  va passato al servizio.
+- **SK non espone i confini dei turni LLM:** la loop di auto-invocation è opaca → metriche `steps` e `passi`
+  sono approssimative (calcolate come ≈ numero tool + 1). Questo rende il confronto `steps` con vanilla/AutoGen
+  non direttamente paragonabile.
+
+### Risultati eval — Azure gpt-5.4-mini (9 task × 3 motori)
 
 | Motore | cited (9) | tool_ok (9) | steps (media) | tools_called (media) | Note |
 |--------|-----------|-------------|---------------|----------------------|------|
-| vanilla | 9/9 (100%) | 9/9 (100%) | 2.2 | 1.3 | routing stabile |
-| AutoGen | 8/9 (89%) | 8/9 (89%) | 1.4 | 1.4 | miss su background-doc |
-
-**Azure (gpt-5.4-mini, 9 task × 2 motori, 2026-05-29):**
-
-| Motore | cited (9) | tool_ok (9) | steps (media) | tools_called (media) | Note |
-|--------|-----------|-------------|---------------|----------------------|------|
-| vanilla | 9/9 (100%) | 9/9 (100%) | 2.7 | 3.2 | routing sempre stabile; più tool-call (modello verboso) |
-| AutoGen | 9/9 (100%) | 7/9 (78%) | 2.7 | 3.4 | cita sempre; 2 "tool✗" su routing (search_code vs find_symbol) |
+| vanilla | 9/9 (100%) | 9/9 (100%) | 2.7 | 3.2 | routing sempre stabile |
+| AutoGen | 9/9 (100%) | 7/9 (78%) | 2.7 | 3.4 | 2 "tool✗" su routing (search_code vs find_symbol) |
+| sk | 9/9 (100%) | 8/9 (89%) | 5.0 | 4.0 | SK più verboso; `steps` APPROSSIMATO ⚠️; cfr `tool_medi` robusto |
 
 **Lettura onesta sui risultati Azure:**
 
-(a) **Correttezza fattuale 9/9 per entrambi.** Con gpt-5.4-mini (modello forte), il segnale discriminante
-non è più "cita il file?" (entrambi lo fanno), bensì **routing degli strumenti** (tool_ok): vanilla
-9/9, AutoGen 7/9. L'entry point locale non era affidabile su correttezza dei contenuti; quella
-problema scompare con il modello grande.
+(a) **Correttezza fattuale 9/9 per tutti e tre.** Con gpt-5.4-mini (modello forte), il segnale discriminante
+non è più "cita il file?" (tutti lo fanno), bensì **routing degli strumenti e efficienza** (tool_ok, tool medi).
 
-(b) **Delta su routing:** i 2 "tool✗" di AutoGen sono task di localizzazione (apirouter-def, background-def).
-Su questi, l'agente ha scelto `search_code` quando l'ideale era `find_symbol`, oppure ha percorso
-multi-hop non ottimale. Tuttavia: **ha comunque citato il file giusto** (cited=True). È una scelta
-meno ideale (tool subottimale), non un errore di contenuto.
+(b) **Vanilla vs AutoGen vs SK:**
+   - **Vanilla:** routing sempre corretto (tool_ok 9/9), media tool 3.2.
+   - **AutoGen:** 2 routing subottimali su localizzazione (tool_ok 7/9), media tool 3.4.
+   - **SK:** 1 routing subottimale, **ma con pattern di tool-calling più aggressivo** (media tool 4.0, picchi
+     fino a 10 su query-param-codedoc e 8 su httpexception-usage). SK itera e reitera il loop auto-invocation
+     più che vanilla/AutoGen.
 
-(c) **gpt-5.4-mini è più "agentico"/verboso del locale:** usa più strumenti per step (media 3.2–3.4 vs
-1.3–1.4 su Ollama), fino a 9–11 tool-call su singola query (es. query-param-codedoc). Il modello sceglie
-di investigare a fondo (search_code → who_calls → related_docs → search_docs) per sintetizzare risposta
-completa. Locale era più parsimonioso (early-exit se trova il simbolo).
+(c) **Metrica `steps` per SK è approssimata ⚠️:** SK non espone i confini dei turni LLM (la loop di
+auto-invocation è opaca nel framework). Il valore 5.0 è calcolato come media di (numero tool + 1) per task.
+Non è direttamente comparabile a vanilla/AutoGen che contano turni reali. **La metrica robusta per confronto è
+`tool_medi`:** vanilla 3.2 < AutoGen 3.4 < SK 4.0.
 
-(d) **Metrica `passi` ora coerente:** prima di questa run, `passi` per AutoGen contava il numero di tool
-(incoerente con vanilla che contava turni). Fix: ora entrambi contano i **turni LLM reali** (round di
-tool-call + turno finale di sintesi). Vanilla: 2.7 passi = 1 round tool + 1 sintesi + padding. AutoGen:
-stesso conteggio.
+(d) **Implicazione:** SK con `ChatCompletionAgent + Auto()` tende a fare **più chiamate-tool** degli altri due
+a parità di task/prompt/modello. È una differenza di orchestrazione concreta (non un bug): SK ripete la loop
+di funzione astratta finché non reputa il task concluso. Vanilla e AutoGen si fermano prima. Per task
+localizzazione diretta (find_symbol → sintesi), SK aggiunge passaggi di search_combined/related_docs.
 
-**Caveat non-determinismo (persistente):** il modello locale Ollama non è deterministico; run precedenti
-davano leggeri delta. Azure gpt-5.4-mini è più stabile su questa eval (1 run).
+(e) **Delta routing:** vanilla > SK > AutoGen su tool_ok (9 vs 8 vs 7). Ma la differenza è sottile:
+tutti citano i file giusti; è il percorso che diverge. Tool_ok=8/9 per SK su task diverso da vanilla/AutoGen,
+suggerisce un pattern di auto-invocation coerente ma con scelte diverse.
 
-**Learning:** su un **modello forte**, la metrica `cited` satura (9/9 per entrambi); il segnale discriminante
-diventa il routing e l'efficienza (tool_ok, quanti strumenti per sintetizzare). La correttezza fattuale non
-differenzia più i framework: è la *qualità del routing* che conta per una soluzione production-grade.
+**Caveat non-determinismo:** 1 run per task (non mediato). Con modello forte, results sono stabili.
 
-**Implicazione entry point:** il modello locale non è affidabile come agente; **l'entry point operativo è
-Azure gpt-5.4-mini**. Il default *di codice* in `config.py` resta local-first (local-first philosophy
-del workspace), ma il `.env` di riferimento usa `RAG_BACKEND=azure` (chat gpt-5.4-mini + embeddings
-text-embedding-3-large). Superficie futura prevista: agente Claude via MCP.
+**Learning:** su un **modello forte**, la metrica `cited` satura (9/9 per tutti); il segnale discriminante
+è l'**efficienza/routing** (tool_ok, tool medi). SK è strutturalmente il più verboso (more tool calls),
+vanilla è il più parsimonioso. Questo è un trade-off di design: SK compensa con investigazione più profonda
+(riesce a sintetizzare risposte con più contesto), vanilla è più diretto. Per deployment production, la scelta
+dipende dal budget token e dalla tolleranza di latenza.
+
+**Implicazione SK:** il pattern di auto-invocation rende SK interessante per **task complessi che richiedono
+ricerca multi-hop naturale**, ma meno efficiente per localizzazione diretta. Vanilla è il baseline leggibile;
+AutoGen è nel mezzo.
 
 **Artefatto generato:** [`04-agentic-rag/ESEMPI-agentic.md`](../../04-agentic-rag/ESEMPI-agentic.md)
 — doc divulgativa in stile ESEMPI.md ("ho chiesto X → l'agente ha fatto Y → mi ha risposto Z")
-per ogni task e motore, auto-generata da `evaluate.py` a partire dai log esecuzione. Aggiornato per i risultati Azure.
+per ogni task e motore, auto-generata da `evaluate.py` a partire dai log esecuzione. Aggiornato per i risultati Azure (3 motori).
 
 **Prossimi passi (eval e framework):**
-- **Adattatore Semantic Kernel** — kernel SK con skill mapping su `tools.py` + orchestrazione K.
-- **Adattatore LangGraph** — graph workflow plan→retrieve→synthesize via LangGraph state machine.
+- **Adattatore LangGraph** — graph workflow plan→retrieve→synthesize via LangGraph state machine (3° framework).
 - **Query planning context-aware** — disambiguare routing doc-vs-code in base al tipo di domanda.
+- **MCP server** — esporre `shared/retrieval.py` come MCP tools per Claude Code.
 
 ## Prossimi passi
 
-1. ~~**Eval set su Tappa 04**~~ **COMPLETATO su Azure** — 9 task × 2 motori, metrica tool_ok, entry point gpt-5.4-mini.
+1. ~~**Eval set su Tappa 04**~~ **COMPLETATO su Azure** — 9 task × 3 motori, metrica tool_ok, entry point gpt-5.4-mini.
 2. ~~**Stabilità eval**~~ **STABILIZZATO** — modello forte (gpt-5.4-mini) elimina non-determinismo locale; 1 run sufficiente per metrica.
-3. **Adattatore Semantic Kernel** — kernel SK con skill mapping su `tools.py` + orchestrazione K (2° framework).
+3. ~~**Adattatore Semantic Kernel**~~ **COMPLETATO** — kernel SK con ChatCompletionAgent + FunctionChoiceBehavior.Auto(), eval a 3 motori.
 4. **Adattatore LangGraph** — graph workflow plan→retrieve→synthesize via LangGraph state machine (3° framework).
 5. **Query planning context-aware** — disambiguare routing doc-vs-code in base al tipo di domanda (segue da eval routing diff).
 6. **MCP server** — esporre `shared/retrieval.py` come MCP tools (`search_code`, `search_docs`,
