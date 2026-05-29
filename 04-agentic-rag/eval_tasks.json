@@ -1,0 +1,37 @@
+[
+  {
+    "id": "apirouter-def",
+    "question": "In quale file è definita la classe APIRouter di FastAPI?",
+    "expected_files": ["fastapi/routing.py"],
+    "ideal_tool": "find_symbol",
+    "note": "localizzazione di un simbolo: dovrebbe bastare find_symbol"
+  },
+  {
+    "id": "oauth2-concept",
+    "question": "Cos'è OAuth2PasswordBearer in FastAPI e in quale file è definito?",
+    "expected_files": ["fastapi/security/oauth2.py"],
+    "ideal_tool": "find_symbol",
+    "note": "concetto + localizzazione: find_symbol (+ eventuale search_docs/code)"
+  },
+  {
+    "id": "depends-impl",
+    "question": "Dove è implementato Depends in FastAPI? Indica il file.",
+    "expected_files": ["fastapi/param_functions.py", "fastapi/params.py"],
+    "ideal_tool": "find_symbol",
+    "note": "simbolo con doppia definizione (funzione + classe)"
+  },
+  {
+    "id": "background-tasks",
+    "question": "Cosa sono le BackgroundTasks in FastAPI e in quale file sono definite?",
+    "expected_files": ["fastapi/background.py"],
+    "ideal_tool": "find_symbol",
+    "note": "concetto + localizzazione"
+  },
+  {
+    "id": "httpexception-def",
+    "question": "In quale file del codice sorgente è definita la classe HTTPException?",
+    "expected_files": ["fastapi/exceptions.py"],
+    "ideal_tool": "find_symbol",
+    "note": "localizzazione di un'eccezione"
+  }
+]

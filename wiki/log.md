@@ -344,3 +344,28 @@ dove `<operazione>` ∈ { setup, ingest, record, query, lint }.
   status frontmatter → "vanilla + AutoGen completati; SK/LangGraph + eval da fare",
   prossimi passi riprioritizzati (eval set primo),
   `index.md` riga 04 stato aggiornato.
+
+## [2026-05-29] record | Tappa 04 — eval comparativa + documentazione parlante (vanilla vs AutoGen)
+
+- **Setup eval:** `04-agentic-rag/eval_tasks.json` (NUOVO) — eval set 5 task multi-step con
+  `expected_files` (ground-truth verificata): apirouter-def, oauth2-concept, depends-impl,
+  background-tasks, httpexception-def.
+- **Esecuzione:** `04-agentic-rag/evaluate.py` (NUOVO) — lancia ogni task attraverso ogni motore
+  (vanilla, AutoGen) **a parità di tool/prompt**, misura `cited` (risposta cita file atteso),
+  `steps`, `tools_called`. Stampa tabella metriche + genera documentazione parlante.
+- **Risultati (Ollama qwen3:30b-a3b, 5 task × 2 motori):**
+  - vanilla: 5/5 cita, 2.0 passi medi, 1.0 tool medi.
+  - AutoGen: 5/5 cita, 1.4 passi medi, 1.4 tool medi.
+  - Nota: BackgroundTasks AutoGen fa traiettoria più ricca (find_symbol → search_docs → related_docs),
+    testo risposta include documentazione non solo posizione file.
+- **Artefatto generato:** `04-agentic-rag/ESEMPI-agentic.md` (NUOVO) — doc divulgativa
+  "ho chiesto X → l'agente ha fatto Y → mi ha risposto Z", auto-generata da evaluate.py.
+- **Learning:** eval set standardizzato (stessi tool/prompt/modello) rende confronto misurabile;
+  i due motori condividono strumenti ma divergono per orchestrazione. Task attuali favoriscono
+  localizzazione (find_symbol); prossimi task multi-hop discrimineranno meglio.
+- **Wiki aggiornato:**
+  - `experiments/04-agentic-rag.md`: sezione "Eval comparativa" con setup/risultati/osservazione/learning.
+    Frontmatter status → "vanilla + AutoGen + eval comparativa completati; SK/LangGraph + MCP da fare".
+    Link a ESEMPI-agentic.md aggiunto.
+  - `index.md`: riga 04 stato aggiornato; Demo & Test link a ESEMPI-agentic.md aggiunto.
+  - `updated: 2026-05-29` (eval comparativa vanilla vs AutoGen).

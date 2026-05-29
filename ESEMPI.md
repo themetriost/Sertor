@@ -149,12 +149,21 @@ Qui si capisce **quale scegliere quando**: la stessa domanda data ai quattro mot
 
 ---
 
+## 6) Agentic RAG — l'**agente** sceglie da solo gli strumenti
+
+I motori 1–4 li scegli tu. Nella Tappa 04 un **agente LLM** riceve la domanda e decide da
+sé quali strumenti usare, itera, e risponde **citando i file**. Esempi reali (uno per
+motore di orchestrazione, a parità di strumenti) sono generati automaticamente in
+[**ESEMPI-agentic.md**](04-agentic-rag/ESEMPI-agentic.md) dall'eval `04-agentic-rag/evaluate.py`.
+
 ## In sintesi: quale uso, quando?
 
 - **So cosa cerco a parole mie** → Baseline.
 - **Cerco un nome/simbolo preciso** → Hybrid.
 - **Voglio navigare il codice** (definizioni, chiamanti) → Grafo AST.
 - **Voglio una risposta spiegata** → GraphRAG.
+- **Voglio solo fare la domanda e lasciar lavorare l'agente** → Agentic RAG (Tappa 04).
 
 Nessuno vince su tutto: l'idea del progetto (vedi [`wiki/syntheses/architettura-target.md`](wiki/syntheses/architettura-target.md))
 è **combinarli** — struttura del grafo + ricerca semantica + sintesi — in un unico assistente.
+L'Agentic RAG è il passo che li orchestra automaticamente.

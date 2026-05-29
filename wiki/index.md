@@ -1,7 +1,7 @@
 ---
 title: Indice del Wiki
 type: index
-updated: 2026-05-29 (AutoGen implementato)
+updated: 2026-05-29 (eval comparativa vanilla vs AutoGen)
 ---
 
 # Indice del Wiki RAG
@@ -37,7 +37,7 @@ Il wiki è mantenuto secondo lo schema descritto in [`../CLAUDE.md`](../CLAUDE.m
 | 01 | Baseline (vector retrieval) | [01-baseline](experiments/01-baseline.md) | **completato** |
 | 02 | Hybrid + reranking | [02-hybrid-reranking](experiments/02-hybrid-reranking.md) | **completato** |
 | 03 | GraphRAG | [03-graphrag](experiments/03-graphrag.md) | **A+C completato; re-run dominio** |
-| 04 | Agentic RAG | [04-agentic-rag](experiments/04-agentic-rag.md) | **vanilla + AutoGen completati; SK/LangGraph + eval da fare** |
+| 04 | Agentic RAG | [04-agentic-rag](experiments/04-agentic-rag.md) | **vanilla + AutoGen + eval comparativa fatti; SK/LangGraph da fare** |
 
 ## Fonti
 
@@ -48,10 +48,12 @@ Il wiki è mantenuto secondo lo schema descritto in [`../CLAUDE.md`](../CLAUDE.m
 - [**README.md**](../README.md) — entry-point di root: scopo (toolset RAG riproducibile), pipeline shared
   (ingestion → indici → retrieval), componenti reali (`shared/config`, `loaders`, `embeddings`, Chroma, hybrid, grafo),
   quickstart, test, convenzioni, roadmap. Punto di partenza tecnico.
-- [**DEMOS.md**](../DEMOS.md) — runbook eseguibile per ogni configurazione RAG (01, 02, 3A, 3C):
+- [**DEMOS.md**](../DEMOS.md) — runbook eseguibile per ogni configurazione RAG (01, 02, 3A, 3C, 04):
   prerequisiti, comandi, output atteso/osservato. Smoke test pytest in `tests/`.
 - [**ESEMPI.md**](../ESEMPI.md) — vetrina divulgativa "ho cercato X → mi ha restituito Y":
-  esempi reali su FastAPI per ciascun motore, testa-a-testa sulla stessa domanda, guida "quale scegliere quando".
+  esempi reali su FastAPI per ciascun motore (01–03), testa-a-testa sulla stessa domanda, guida "quale scegliere quando".
+- [**ESEMPI-agentic.md**](../04-agentic-rag/ESEMPI-agentic.md) — doc parlante Tappa 04:
+  eval comparativa vanilla vs AutoGen su 5 task, generata da `evaluate.py`.
 
 ## Sintesi
 

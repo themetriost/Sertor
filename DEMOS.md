@@ -199,8 +199,21 @@ La classe APIRouter è definita nel file fastapi/routing.py alla riga 1005.
 ```
 
 > Confronto a parità (stessi tool/prompt/modello): la **baseline vanilla** e **AutoGen**
-> possono divergere per *strategia* (numero di tool, sintesi). È la differenza che il
-> confronto tra framework (poi SK e LangGraph) vuole misurare — serve l'eval set (TODO).
+> possono divergere per *strategia* (numero di tool, sintesi).
+
+### 04c — Eval comparativa + documentazione parlante
+
+`evaluate.py` esegue un eval set di task (`eval_tasks.json`) attraverso ogni motore e misura
+se la risposta **cita il file atteso**, con passi e n° tool. Oltre alle metriche, **genera**
+la doc divulgativa [`ESEMPI-agentic.md`](04-agentic-rag/ESEMPI-agentic.md) ("ho chiesto X →
+l'agente ha fatto Y → mi ha risposto Z"), controparte di `ESEMPI.md` per la Tappa 04.
+
+```bash
+PYTHONPATH=. python 04-agentic-rag/evaluate.py                  # tutti i task, vanilla+autogen
+PYTHONPATH=. python 04-agentic-rag/evaluate.py --engines vanilla --limit 3
+```
+
+> A pagamento solo con `RAG_BACKEND=azure`; in locale usa Ollama (`OLLAMA_CHAT_MODEL`).
 
 ---
 
