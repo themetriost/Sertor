@@ -146,6 +146,41 @@ LITELLM_LOCAL_MODEL_COST_MAP=True 03-graphrag/.venv-grag/Scripts/python.exe -m g
 
 ---
 
+## 04 — Agentic RAG (orchestratore vanilla)
+
+**Scopo:** un **LLM-orchestratore** interroga da solo i motori 01–03 come *tool*
+(`search_code`, `search_docs`, `search_combined`, `find_symbol`, `who_calls`,
+`related_docs`), itera finché ha contesto a sufficienza e **sintetizza una risposta
+citando i file**. È la versione *framework-agnostica* (loop manuale su `shared/llm.py`),
+riferimento per i futuri adattatori AutoGen / SK / LangGraph. Vedi
+[`04-agentic-rag/README.md`](04-agentic-rag/README.md).
+
+**Prerequisiti:** indice Chroma + grafo AST + un LLM con **tool-calling**:
+- locale (`RAG_BACKEND=local`): Ollama con un modello tool-capable in `OLLAMA_CHAT_MODEL`
+  (es. `llama3.1`, `qwen3`, `mistral-nemo`);
+- Azure (`RAG_BACKEND=azure`): deployment `AZURE_OPENAI_CHAT_DEPLOYMENT` (es. `gpt-5.4-mini`).
+
+```bash
+PYTHONPATH=. python 04-agentic-rag/agent.py "Cos'è OAuth2PasswordBearer e in quale file è definito?" -v
+PYTHONPATH=. python 04-agentic-rag/agent.py "..." --backend azure --max-steps 5 --json
+```
+
+**Osservato (locale, `qwen3:30b-a3b`):** l'agente sceglie `find_symbol`, ottiene
+`fastapi/security/oauth2.py:433` e risponde citando il file:
+
+```
+== passi dell'agente ==
+  [1] find_symbol({'name': 'OAuth2PasswordBearer'}) -> - fastapi/security/oauth2.py:433  class OAuth2PasswordBearer
+=== RISPOSTA === (ollama:qwen3:30b-a3b)
+OAuth2PasswordBearer è una classe di FastAPI ... definita in fastapi/security/oauth2.py:433
+— passi: 2 · tool chiamati: find_symbol
+```
+
+> Il loop LLM end-to-end **non** è in pytest (lento e dipendente dal modello): la verifica
+> è il comando qui sopra. La suite testa invece la **facade** e il **registry** dei tool.
+
+---
+
 ## Suite di test (pytest)
 
 Smoke test che invocano gli **stessi comandi** qui sopra e ne verificano output/return code.
@@ -158,7 +193,7 @@ Test **free** (BM25 sparse, grafo AST, artefatti GraphRAG) sempre eseguibili; te
 .venv/Scripts/python.exe -m pytest tests/ --run-paid    # include la query GraphRAG a pagamento
 ```
 
-**Stato corrente:** `14 passed, 1 skipped` (l'1 skip è il test `paid`; con Ollama attivo i gated passano).
+**Stato corrente:** `19 passed, 1 skipped` (l'1 skip è il test `paid`; con Ollama attivo i gated passano).
 
 | Test | Config | Tipo | Verifica |
 |---|---|---|---|
@@ -166,8 +201,11 @@ Test **free** (BM25 sparse, grafo AST, artefatti GraphRAG) sempre eseguibili; te
 | `test_graph_ast.py` | 03A | free | def/callers/docs su simboli noti |
 | `test_graphrag_artifacts.py` | 3C | free | tipi ⊆ tassonomia di dominio; grafo ricco |
 | `test_hybrid.py::...sparse` | 02 | free | BM25 trova il simbolo esatto |
+| `test_agentic.py::test_registry*` | 04 | free | registry tool ↔ dispatch 1:1; tool sconosciuto gestito |
+| `test_agentic.py::test_graph_tools` | 04 | free | facade `find_symbol`/`who_calls` sul grafo |
 | `test_baseline.py` | 01 | gated (Ollama) | forma output dense (k risultati) |
 | `test_hybrid.py::...fusione` | 02 | gated (Ollama) | la fusione RRF gira |
+| `test_agentic.py::test_search_*` | 04 | gated (Ollama) | filtri facade `source=code\|doc` |
 | `test_graphrag_query.py` | 3C | paid (Azure) | local search risponde su `OAuth2PasswordBearer` |
 
 > **Chunking del codice** selezionabile via `CODE_CHUNKER` (`treesitter` default | `recursive`).

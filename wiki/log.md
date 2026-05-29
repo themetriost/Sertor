@@ -288,3 +288,30 @@ dove `<operazione>` ∈ { setup, ingest, record, query, lint }.
   (query planning context-aware); MCP schema e client tooling (Claude SDK).
 - Aggiornati `wiki/index.md` (tabella Esperimenti, 04 ora "design" con link) e
   `wiki/syntheses/architettura-target.md` (riga Tappa 4 roadmap con backlink al design).
+
+## [2026-05-29] record | Tappa 04 — baseline Agentic RAG (orchestratore vanilla) implementata e verificata
+
+- **Implementazione baseline vaniglia (loop manuale):** orchestratore iterativo plan→route→retrieve→reflect→synthesize.
+  Moduli nuovi:
+  - `shared/llm.py` — client chat intercambiabile (Ollama `/api/chat` + Azure OpenAI v1) con tool-calling nativo;
+    normalizza tool_calls Ollama e Azure in `ToolCall(id, name, arguments)`.
+  - `shared/retrieval.py` — facade unica ai motori 01–03 (caricati via importlib): `search_code`, `search_docs`,
+    `search_combined` (con rerank), `find_symbol`, `who_calls`, `related_docs`. Filtro `source` per separare/fondere.
+  - `04-agentic-rag/tools.py` — registry schemi-tool (OpenAI/Ollama format), dispatch `call_tool()`, SYSTEM_PROMPT.
+  - `04-agentic-rag/orchestrator.py` — loop orchestrator (piano, routing, retrieval, reflect, synthesize).
+  - `04-agentic-rag/agent.py` — CLI wrapping.
+- **Modifica `02-hybrid-reranking/hybrid.py`:** esposto parametro `source` (code|doc|None) a dense/sparse/search
+  (backward-compatible) per separare corpus in output (precondizione fusion RRF).
+- **Config:** nuovo setting `OLLAMA_CHAT_MODEL` in `shared/config.py` (default llama3.1, richiede tool-calling).
+- **Testing:** `tests/test_agentic.py` — 5 smoke test (registry, tool unknown, graph tool, source filter).
+  Suite totale: **19 passed, 1 skipped** (skip = test paid).
+- **Esito verificato end-to-end:** su Ollama `qwen3:30b-a3b` (llama3.1 non in locale), task "Cos'è OAuth2PasswordBearer
+  e dove?" → orchestratore chiama `find_symbol` → grafo AST restituisce `fastapi/security/oauth2.py:433` →
+  risposta sintetizzata corretta (2 passi).
+- **Learnings:** (a) modularità: LLM + retrieval come layer shared, orchestratori concorrenti (AutoGen/SK/LangGraph)
+  possono consumarli senza duplicazione; (b) tool-calling normalizzato tra provider; (c) vanilla loop è leggibile e
+  debuggabile, baseline vs framework.
+- Docs: `DEMOS.md` sezione "04 — Agentic RAG" (comando, output osservato, test), `.env.example` (OLLAMA_CHAT_MODEL),
+  `04-agentic-rag/README.md` checklist aggiornata.
+- Wiki: pagina esperimento `experiments/04-agentic-rag.md`, aggiornato `index.md` (tabella 04),
+  backlink da [[architettura-target]].

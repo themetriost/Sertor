@@ -20,6 +20,8 @@ class Settings:
     # Ollama (locale)
     ollama_host: str = os.getenv("OLLAMA_HOST", "http://localhost:11434")
     ollama_embed_model: str = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
+    # Modello chat/generativo locale (Agentic RAG): deve supportare il tool-calling.
+    ollama_chat_model: str = os.getenv("OLLAMA_CHAT_MODEL", "llama3.1")
 
     # Chunking del codice: "treesitter" (code-aware) | "recursive" (LangChain, size-driven)
     code_chunker: str = os.getenv("CODE_CHUNKER", "treesitter")

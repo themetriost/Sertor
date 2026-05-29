@@ -58,22 +58,28 @@ class HybridIndex:
         self._bm25 = BM25Okapi([tokenize(d) for d in data["documents"]])
         self.embedder = get_embedder(provider)
 
-    def dense_rank(self, query: str, k: int) -> list[str]:
+    def dense_rank(self, query: str, k: int, source: str | None = None) -> list[str]:
         qv = self.embedder.embed_one(query)
-        return self.coll.query(query_embeddings=[qv], n_results=k)["ids"][0]
+        kw = {"where": {"source": source}} if source else {}
+        return self.coll.query(query_embeddings=[qv], n_results=k, **kw)["ids"][0]
 
-    def sparse_rank(self, query: str, k: int) -> list[str]:
+    def sparse_rank(self, query: str, k: int, source: str | None = None) -> list[str]:
         scores = self._bm25.get_scores(tokenize(query))
-        order = sorted(range(len(scores)), key=lambda i: -scores[i])[:k]
-        return [self.ids[i] for i in order]
+        order = sorted(range(len(scores)), key=lambda i: -scores[i])
+        ids = [self.ids[i] for i in order]
+        if source:
+            ids = [i for i in ids if self.by_id[i][1].get("source") == source]
+        return ids[:k]
 
-    def search(self, query: str, k: int = 10, pool: int = 30, mode: str = "hybrid") -> list[dict]:
+    def search(self, query: str, k: int = 10, pool: int = 30, mode: str = "hybrid",
+               source: str | None = None) -> list[dict]:
+        """`source` opzionale (`code` | `doc`) filtra il corpus: abilita la fusione mirata."""
         if mode == "dense":
-            ids = self.dense_rank(query, k)
+            ids = self.dense_rank(query, k, source)
         elif mode == "sparse":
-            ids = self.sparse_rank(query, k)
+            ids = self.sparse_rank(query, k, source)
         else:
-            ids = rrf([self.dense_rank(query, pool), self.sparse_rank(query, pool)], k)
+            ids = rrf([self.dense_rank(query, pool, source), self.sparse_rank(query, pool, source)], k)
         return [self._hit(i) for i in ids]
 
     def _hit(self, doc_id: str) -> dict:

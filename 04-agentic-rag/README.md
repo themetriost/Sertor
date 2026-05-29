@@ -154,14 +154,19 @@ contesto atteso, ed eventualmente una valutazione della *traiettoria* (quali too
 dipendenza MCP. Se in conflitto con lo stack attuale, **venv isolato** come per GraphRAG.
 
 ### Checklist sintetica
-- [ ] `shared/llm.py` — chat client (Azure gpt-5.4-mini + Ollama) con tool-calling
-- [ ] `shared/retrieval.py` — facade `search_code/docs/combined`, `find_symbol/who_calls/related_docs`
-- [ ] filtro `source=code|doc` in `HybridIndex`
-- [ ] `04-agentic-rag/` — orchestratore (plan/route/retrieve/reflect/synthesize)
-- [ ] schemi tool per function-calling
+- [x] `shared/llm.py` — chat client (Azure gpt-5.4-mini + Ollama) con tool-calling
+- [x] `shared/retrieval.py` — facade `search_code/docs/combined`, `find_symbol/who_calls/related_docs`
+- [x] filtro `source=code|doc` in `HybridIndex`
+- [x] `04-agentic-rag/` — orchestratore **vanilla** (plan/route/retrieve/reflect/synthesize) + CLI `agent.py`
+- [x] schemi tool per function-calling (`tools.py`)
+- [x] smoke test (`tests/test_agentic.py`)
+- [ ] adattatore **AutoGen** (1°) → poi Semantic Kernel, poi LangGraph
 - [ ] MCP server che espone i tool
 - [ ] eval multi-step + eval set di task
-- [ ] requirements/venv + dipendenza MCP
+
+> **Stato (2026-05-29):** prerequisiti + orchestratore vanilla **fatti e verificati**
+> end-to-end su Ollama (`agent.py`). È la baseline; il prossimo passo è l'adattatore
+> AutoGen che riusa `tools.py`/`shared.retrieval`.
 
 ---
 
