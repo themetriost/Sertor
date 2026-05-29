@@ -525,3 +525,40 @@ dove `<operazione>` ∈ { setup, ingest, record, query, lint }.
   - `index.md`: riga 04 stato aggiornato con "vanilla + 3 framework ... completati; MCP server prossimo".
     `updated: 2026-05-29 (Tappa 04 — adattatore LangGraph + confronto a 4 motori chiusi i 3 framework)`.
   - `log.md`: questa voce.
+
+## [2026-05-29] record | Tappa 04 COMPLETA — server MCP per agente Claude
+
+- **Implementazione server MCP:** `04-agentic-rag/mcp_server.py` (NUOVO) — **Model Context Protocol server** basato su
+  `FastMCP` (pacchetto `mcp>=1.27.1`, transport stdio). Espone **6 tool di retrieval**:
+  - `search_code(query, k)`, `search_docs(query, k)`, `search_combined(query, k)` — ricerca ibrida.
+  - `find_symbol(name)`, `who_calls(name)`, `related_docs(name)` — navigazione grafo AST e relazioni doc.
+  
+  Schema/descrizione generati da docstring + type hint. Backend/embeddings seguono `RAG_BACKEND` del `.env`
+  (entry point: Azure gpt-5.4-mini + text-embedding-3-large; le ricerche dense sono a pagamento in modalità azure).
+
+- **Registrazione MCP:** `.mcp.json` (NUOVO, root del repo) — configurazione del server per Claude Code:
+  comando `.venv/Scripts/python.exe`, args `04-agentic-rag/mcp_server.py`, env `PYTHONPATH=.`.
+  Una volta presente, Claude Code ha accesso nativo ai 6 tool e orchestra il loop LLM.
+
+- **Test:** `tests/test_agentic.py::test_mcp_server_espone_i_tool` — test in-process (no stdio) che verifica
+  la registrazione dei 6 tool con schema via `list_tools()`. Suite aggiornata: **23 passed, 1 skipped**.
+
+- **Verifica end-to-end:** test client stdio reale (mcp.client.stdio + ClientSession): handshake `initialize` OK,
+  `list_tools()` → 6 tool con schema (query+k / name), `call_tool find_symbol("APIRouter")` →
+  `"fastapi/routing.py:1005  class APIRouter"` (risposta corretta dal grafo AST).
+
+- **Significato architetturale:** realizza il punto d'arrivo dell'[[architettura-target]] (**MCP-first**). Il workspace
+  ora offre 4 fronti di consumo dello stesso backend di retrieval: vanilla orchestrator, AutoGen/SK/LangGraph,
+  **MCP server** (superficie finale), e future surfaces. Il riuso di `shared/retrieval.py` come **unico layer di tool**
+  senza duplicazione ha confermato il pattern di design.
+
+- **Wiki aggiornato:**
+  - `experiments/04-agentic-rag.md`: sezione "Server MCP (framework 4/4 — superficie finale)" nuova con cosa/come/verifica/learning,
+    status → **COMPLETATO**, prossimi passi riprioritizzati (Tappa 04 chiusa; follow-up = igiene corpus, task eval
+    discriminanti, entity_types custom, query planning context-aware).
+  - `index.md`: riga 04 stato → "completato (vanilla + AutoGen/SK/LangGraph + eval 4 motori + server MCP)";
+    updated timestamp; cenno MCP in sezione Demo & Test.
+  - `log.md`: questa voce.
+
+**Tappa 04 COMPLETATA.** L'[[architettura-target]] dual-RAG (ingestion code-aware, 4 retriever, orchestrazione LLM,
+MCP-first) è realizzata operazionalmente.

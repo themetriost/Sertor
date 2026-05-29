@@ -226,6 +226,23 @@ PYTHONPATH=. python 04-agentic-rag/evaluate.py --render-from 04-agentic-rag/eval
 > `passi` è confrontabile tra vanilla/autogen/langgraph (turni reali); per `sk` è approssimato
 > → per il costo guarda `tool medi`.
 
+### 04d — Server MCP (superficie per l'agente Claude)
+
+Invece di un orchestratore nostro, gli **stessi tool** di `shared/retrieval.py` sono esposti via
+**Model Context Protocol**: così **Claude Code** li usa nativamente e orchestra lui il loop.
+Il server è registrato in [`.mcp.json`](.mcp.json) (root del repo); Claude Code lo avvia da solo.
+
+```bash
+# Avvio manuale (stdio) — di norma non serve, lo lancia il client MCP:
+PYTHONPATH=. python 04-agentic-rag/mcp_server.py
+```
+
+**Tool esposti:** `search_code`, `search_docs`, `search_combined`, `find_symbol`, `who_calls`,
+`related_docs`. **Verificato** via client stdio: handshake + `list_tools` (6 tool) +
+`call_tool find_symbol("APIRouter")` → `fastapi/routing.py:1005`.
+
+> Le ricerche dense usano gli embedding del backend (`RAG_BACKEND`): in `azure` sono a pagamento.
+
 > L'esecuzione salva `eval_results.json` (cache dei risultati grezzi): raffinare la
 > ground-truth dei task e rigenerare `ESEMPI-agentic.md` via `--render-from` **non ricosta**
 > chiamate al modello. A pagamento solo con `RAG_BACKEND=azure`; in locale usa Ollama.
@@ -245,7 +262,8 @@ Test **free** (BM25 sparse, grafo AST, artefatti GraphRAG) sempre eseguibili; te
 .venv/Scripts/python.exe -m pytest tests/ --run-paid    # include la query GraphRAG a pagamento
 ```
 
-**Stato corrente:** `20 passed, 1 skipped` (l'1 skip è il test `paid`; con Ollama attivo i gated passano).
+**Stato corrente:** `23 passed, 1 skipped` (l'1 skip è il test `paid`; con Ollama attivo i gated passano).
+Tra i free: adattatori `autogen`/`sk`/`langgraph` costruibili e server MCP che espone i 6 tool.
 
 | Test | Config | Tipo | Verifica |
 |---|---|---|---|

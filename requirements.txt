@@ -26,6 +26,8 @@ semantic-kernel>=1.36
 # LangGraph — 3° framework a confronto (adattatore 04-agentic-rag/langgraph_app.py)
 langgraph>=1.2
 langchain-openai>=1.2
+# MCP — server che espone i tool di retrieval a un agente Claude (04-agentic-rag/mcp_server.py)
+mcp>=1.27
 
 # Dev — test dimostrativi (suite tests/, vedi DEMOS.md)
 pytest>=8.0

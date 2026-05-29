@@ -4,7 +4,7 @@ type: experiment
 tags: [agentic-rag, orchestrator, llm-tool-calling, shared-facade, semantic-kernel, autogen, langraph, mcp, azure-gpt5.4-mini]
 created: 2026-05-29
 updated: 2026-05-29
-status: "vanilla + 3 framework (AutoGen/SK/LangGraph) + eval a 4 motori su Azure gpt-5.4-mini completati; MCP server prossimo"
+status: "**COMPLETATO** — vanilla + 3 framework (AutoGen/SK/LangGraph) + eval a 4 motori + server MCP"
 sources: [https://github.com/fastapi/fastapi, https://github.com/microsoft/semantic-kernel, https://github.com/microsoft/autogen, https://github.com/langchain-ai/langgraph]
 ---
 
@@ -304,27 +304,96 @@ i risultati Azure (4 motori); merge incrementale conserva i risultati.
 e merge i risultati con `eval_results.json` (gli altri motori riusano i risultati salvati). Flag
 `--no-merge` riparte da zero. Questo evita di ri-pagare gli altri motori in Azure (risparmio 3/4 token).
 
-**Prossimi passi (conclusione framework):**
+### Server MCP (framework 4/4 — superficie finale)
+
+**Cosa:** **Model Context Protocol server** che espone i 6 tool di retrieval (`shared/retrieval.py`)
+come **surface finale** dell'architettura target. Mentre gli orchestratori vanilla/AutoGen/SK/LangGraph
+orchestrano il loop con un nostro LLM, il server MCP **delega l'orchestrazione al client** (es. Claude Code):
+stesso backend di tool, frontend diverso.
+
+**Implementazione:**
+- **`04-agentic-rag/mcp_server.py`** (NUOVO) — server **FastMCP** basato su `mcp>=1.27.1` (pacchetto `mcp`,
+  transport stdio). Espone **6 tool** wrappando `shared/retrieval.py`:
+  - `search_code(query, k)` → list[dict] (hybrid BM25+dense su codice).
+  - `search_docs(query, k)` → list[dict] (dense su documentazione).
+  - `search_combined(query, k)` → list[dict] (ibrido + rerank su entrambi).
+  - `find_symbol(name)` → list[str] (AST grafo, definizione file:lineno).
+  - `who_calls(name)` → list[str] (AST grafo, 69+ callers per simboli hot).
+  - `related_docs(name)` → list[str] (Markdown che menzionano il simbolo).
+  
+  **Schema/descrizione:** generati automaticamente dalle docstring + type hint di ogni tool.
+  Backend (`RAG_BACKEND=local|azure`) e embeddings seguono `.env`.
+
+- **`.mcp.json`** (NUOVO, root del repo) — registrazione del server per Claude Code:
+  ```json
+  {
+    "mcpServers": {
+      "sertor-rag": {
+        "command": ".venv/Scripts/python.exe",
+        "args": ["04-agentic-rag/mcp_server.py"],
+        "env": { "PYTHONPATH": "." }
+      }
+    }
+  }
+  ```
+  Una volta registrato, Claude Code ha accesso nativamente ai 6 tool e orchestra il loop LLM.
+
+- **Test:** `tests/test_agentic.py::test_mcp_server_espone_i_tool` (free, `importorskip mcp`):
+  verifica che il server registri 6 tool con schema via `list_tools()` in-process (no stdio).
+
+**Verifica end-to-end (client stdio reale):**
+
+Implementato e eseguito test client stdio genuino (mcp.client.stdio + ClientSession):
+1. **Handshake:** `initialize` OK.
+2. **Tool registration:** `list_tools()` → 6 tool con schema (query+k o name a seconda del tool).
+3. **Tool invocation:** es. `call_tool find_symbol("APIRouter")` → `"fastapi/routing.py:1005  class APIRouter"` (risposta corretta dal grafo AST).
+
+**Significato architetturale:**
+
+Realizza il punto d'arrivo della [[architettura-target]] (**MCP-first**). Il workspace ora offre 4 fronti
+per consumare lo stesso backend di retrieval:
+1. **Vanilla orchestrator** — loop manuale, leggibile, baseline.
+2. **AutoGen/SK/LangGraph** — framework orchestratori con tool-calling nativo.
+3. **MCP server** — protocollo agnostico (Claude Code, agenti terzi, future surfaces).
+
+Il riuso di `shared/retrieval.py` come **unico layer di tool** senza duplicazione ha pagato:
+gli stessi 6 tool alimentano 4 orchestratori LLM + MCP server. Questo è il pattern di design finale.
+
+**Learning:** il salto da "nostri orchestratori LLM" a "MCP client fa l'orchestrazione"
+realizza la flessibilità dichiarata — un cliente Claude Code usa i nostri tool come una libreria nativa,
+con lo stesso backend di embeddings/BM25/grafo.
+
+**Suite aggiornata:** `tests/test_agentic.py` — **23 passed, 1 skipped** (skip = test paid GraphRAG).
+
+**Prossimi passi (Tappa 04 CHIUSA):**
 - ✅ **Adattatore LangGraph** — COMPLETATO.
-- **MCP server** — esporre `shared/retrieval.py` come MCP tools per Claude Code (prossimo step).
+- ✅ **Server MCP** — COMPLETATO.
 
 ## Prossimi passi
 
-### Completati (Tappa 04 core)
+### Completati (Tappa 04 — CHIUSA)
 
 1. ~~**Eval set su Tappa 04**~~ **COMPLETATO** — 9 task × 4 motori, metrica tool_ok/cited/steps/tools, entry point Azure gpt-5.4-mini.
 2. ~~**Stabilità eval**~~ **STABILIZZATO** — modello forte elimina non-determinismo; 1 run/task sufficiente.
 3. ~~**Adattatore AutoGen**~~ **COMPLETATO** — AssistantAgent con tool-calling, eval vanilla vs AutoGen vs SK vs LangGraph.
 4. ~~**Adattatore Semantic Kernel**~~ **COMPLETATO** — kernel SK con ChatCompletionAgent + FunctionChoiceBehavior.Auto().
 5. ~~**Adattatore LangGraph**~~ **COMPLETATO** — ReAct prebuilt con create_react_agent, merge incrementale eval.
+6. ~~**Server MCP**~~ **COMPLETATO** — Model Context Protocol server, 6 tool, FastMCP, stdio, registrato in `.mcp.json`, verifica end-to-end.
+
+**Tappa 04 è chiusa.** L'[[architettura-target]] dual-RAG è realizzata: ingestion code-aware,
+4 retriever ([[01-baseline]], [[02-hybrid-reranking]], AST/[[03-graphrag]]), orchestrazione LLM
+via 4 fronti (vanilla, AutoGen, SK, LangGraph, MCP).
 
 ### Follow-up (ordinati per impatto)
 
-1. **MCP server** (PROSSIMO) — esporre `shared/retrieval.py` come MCP tools (`search_code`, `search_docs`,
-   `find_symbol`, `who_calls`) per Claude Code e agenti. Superficie futura: agente Claude via MCP.
-2. **Query planning context-aware** — disambiguare routing doc-vs-code in base al tipo di domanda (segue da eval routing diff).
+1. **Igiene corpus** — filtro blob base64 in ingestion per ridurre rumore; filtri binari opzionali.
+2. **Task eval più discriminanti** — attualmente con modello forte (gpt-5.4-mini) la metrica `cited` satura; 
+   servono task multi-hop più difficili (es. "integra API key + autenticazione OAuth2 + CORS) o eval
+   media su più run per catturare varianza routing.
 3. **Custom entity_types per GraphRAG** — usare `derive-entity-types` (Tappa 3C follow-up) per
-   migliorare il grafo semantico.
+   migliorare il grafo semantico (tagging CLASS/FUNCTION/ENDPOINT); segue da learning 3C su generici vs dominio.
+4. **Query planning context-aware** (future upgrade) — disambiguare routing doc-vs-code in base al tipo di domanda
+   (segue da eval routing diff, es. task background-doc).
 
 ## Backlink e contesto
 

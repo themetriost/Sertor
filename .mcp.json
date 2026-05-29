@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "sertor-rag": {
+      "command": ".venv/Scripts/python.exe",
+      "args": ["04-agentic-rag/mcp_server.py"],
+      "env": { "PYTHONPATH": "." }
+    }
+  }
+}

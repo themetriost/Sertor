@@ -164,7 +164,7 @@ dipendenza MCP. Se in conflitto con lo stack attuale, **venv isolato** come per 
 - [x] eval multi-step + eval set (`eval_tasks.json` + `evaluate.py`) con **doc parlante** auto-generata
 - [x] adattatore **Semantic Kernel** (`sk_app.py`) — 2° framework a confronto
 - [x] adattatore **LangGraph** (`langgraph_app.py`) — 3° framework a confronto
-- [ ] MCP server che espone i tool (superficie per l'agente Claude)
+- [x] **MCP server** (`mcp_server.py` + `.mcp.json`) che espone i tool all'agente Claude
 
 > **Stato (2026-05-29):** prerequisiti + orchestratore vanilla + **adattatore AutoGen** +
 > **eval comparativa** fatti e verificati end-to-end su Ollama. `agent.py` (vanilla) e
@@ -212,10 +212,11 @@ dipendenza MCP. Se in conflitto con lo stack attuale, **venv isolato** come per 
 ├─ autogen_app.py       ← adattatore AutoGen        (1° ✓)
 ├─ sk_app.py            ← adattatore Semantic Kernel (2° ✓)
 ├─ langgraph_app.py     ← adattatore LangGraph       (3° ✓)
-├─ mcp_server.py        ← (prossimo) espone i tool a Claude Code via MCP
+├─ mcp_server.py        ← server MCP: espone i tool a Claude Code (✓; config in ../.mcp.json)
 └─ evaluate.py          ← eval multi-step + doc parlante (eval_results.json, --render-from, merge per-motore)
 ```
 
-> **Stato (2026-05-29):** prerequisiti, orchestratore vanilla, e **tutti e tre i framework**
-> (AutoGen, Semantic Kernel, LangGraph) fatti e confrontati a parità su gpt-5.4-mini
-> (`evaluate.py`, 9 task, 4 motori). **Prossimo: il server MCP** per l'agente Claude.
+> **Stato (2026-05-29):** Tappa 04 **completa**. Prerequisiti, orchestratore vanilla, **tutti e
+> tre i framework** (AutoGen, Semantic Kernel, LangGraph) confrontati a parità su gpt-5.4-mini
+> (`evaluate.py`, 9 task, 4 motori), e il **server MCP** che espone i tool a un agente Claude
+> (`mcp_server.py`, registrato in `.mcp.json`; handshake + call verificati via stdio).
