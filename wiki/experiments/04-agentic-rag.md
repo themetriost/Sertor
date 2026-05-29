@@ -1,10 +1,10 @@
 ---
 title: 04 Agentic RAG (orchestratore vanilla + framework adapters)
 type: experiment
-tags: [agentic-rag, orchestrator, llm-tool-calling, shared-facade, autoboxed, semantic-kernel, langraph, mcp]
+tags: [agentic-rag, orchestrator, llm-tool-calling, shared-facade, autoboxed, semantic-kernel, langraph, mcp, azure-gpt5.4-mini]
 created: 2026-05-29
 updated: 2026-05-29
-status: "vanilla + AutoGen + eval comparativa ampliata (9 task, metrica tool_ok, cache + render-from); SK/LangGraph + MCP da fare"
+status: "vanilla + AutoGen + eval su Azure gpt-5.4-mini (entry point operativo); SK/LangGraph + MCP da fare"
 sources: [https://github.com/fastapi/fastapi, https://github.com/microsoft/semantic-kernel, https://github.com/microsoft/autogen, https://github.com/langchain-ai/langgraph]
 ---
 
@@ -25,8 +25,9 @@ LangGraph) come alternative esplorabili sulla stessa codebase.
 ## Setup
 
 - **Sorgente:** [[fastapi]] (`raw/fastapi/` corpus campione).
-- **LLM backend:** Ollama `llama3.1` (locale) o Azure OpenAI `gpt-5.4-mini` / `gpt-4-turbo`
-  (cloud). Switch via `RAG_BACKEND` in `shared/config.py`.
+- **LLM backend:** **Entry point operativo = Azure OpenAI `gpt-5.4-mini`** (modello locale Ollama non affidabile come agente).
+  Default *di codice* (config.py) = Ollama `llama3.1` (local-first philosophy); switch via `RAG_BACKEND` in `.env`.
+  Superficie futura: agente Claude via MCP.
 - **Moduli nuovi:**
   - `shared/llm.py` — client chat unificato (Ollama `/api/chat` + Azure OpenAI v1 `/chat/completions`)
     con **tool-calling**: normalizza i tool_call dei due provider in `ToolCall(id, name, arguments)`.
@@ -160,7 +161,7 @@ fusione code+doc:
 metriche standardizzate:
 - **cited**: la risposta sintetizzata cita il file atteso (boolean).
 - **tool_ok**: l'agente ha usato ≥1 strumento ideale da `expected_tools` (boolean).
-- **steps**: numero di passi del loop orchestratore (plan → retrieve → reflect → synthesize).
+- **steps**: numero di turni LLM reali (round di tool-call + turno sintesi finale); ora coerente tra vanilla e AutoGen (fix 2026-05-29).
 - **tools_called**: numero di tool invocazioni.
 
 **Cache e re-scoring:** `04-agentic-rag/eval_results.json` salva i risultati grezzi (18 righe: 9 task
@@ -168,57 +169,74 @@ metriche standardizzate:
 metriche e rigenera documentazione parlante SENZA chiamate LLM (re-score gratuito quando si raffina
 ground-truth).
 
-**Risultati eval (Ollama `qwen3:30b-a3b`, 9 task × 2 motori):**
+### Risultati eval — Ollama locale vs Azure gpt-5.4-mini
+
+**Locale (Ollama `qwen3:30b-a3b`, 9 task × 2 motori):**
 
 | Motore | cited (9) | tool_ok (9) | steps (media) | tools_called (media) | Note |
 |--------|-----------|-------------|---------------|----------------------|------|
 | vanilla | 9/9 (100%) | 9/9 (100%) | 2.2 | 1.3 | routing stabile |
 | AutoGen | 8/9 (89%) | 8/9 (89%) | 1.4 | 1.4 | miss su background-doc |
 
-**Discriminazione reale emersa:** task `background-doc` ("a cosa servono e DOVE SONO DOCUMENTATE le
-BackgroundTasks"):
-- **vanilla:** usa `search_docs` e cita `docs/en/docs/reference/background.md` (doc) ✅ — routing
-  corretto per una domanda documentale.
-- **AutoGen:** usa `find_symbol` + `search_code` e cita un ESEMPIO di codice `docs_src/.../tutorial001.py`
-  invece della documentazione ❌ — routing dei tool sbagliato. Il modello cade su localizzazione codice
-  quando dovrebbe rispondere "è documentato in...".
+**Azure (gpt-5.4-mini, 9 task × 2 motori, 2026-05-29):**
 
-Su altri 8 task entrambi i motori excel (9/9 e 8/9 rispettivamente); il miss di AutoGen è **su
-routing doc vs code**, non su localizzazione pura.
+| Motore | cited (9) | tool_ok (9) | steps (media) | tools_called (media) | Note |
+|--------|-----------|-------------|---------------|----------------------|------|
+| vanilla | 9/9 (100%) | 9/9 (100%) | 2.7 | 3.2 | routing sempre stabile; più tool-call (modello verboso) |
+| AutoGen | 9/9 (100%) | 7/9 (78%) | 2.7 | 3.4 | cita sempre; 2 "tool✗" su routing (search_code vs find_symbol) |
 
-**Caveat non-determinismo:** i modelli locali (Ollama `qwen3:30b-a3b`) non sono deterministici; run
-precedenti su stessi 5 task originali davano numeri leggermente diversi (es. 4.8/5 vs 5/5). Con 9
-task e metrica `tool_ok` la tendenza è più stabile, ma occorre mediare su **più run** per ridurre
-rumore statistico.
+**Lettura onesta sui risultati Azure:**
 
-**Learning:** (a) con tipi di task eterogenei + metrica tool_ok il confronto tra framework diventa
-**discriminante** (non più 5/5 piatto); (b) un primo miss era dovuto a **bug di ground-truth** nel set
-originale (token `background.md` non matchava `background-tasks.md`) → corretto. Dalla correzione
-è nata l'idea di **separazione esecuzione/scoring**: cache `eval_results.json` + `--render-from`
-permette di raffinare ground-truth a costo zero; (c) per la **fusione codice ↔ doc** il routing del
-tool è cruciale: su domande "dove è documentato" l'agente deve preferire tool doc; su domande "mostra
-esempio di codice" deve scegliere code. Questo richiede **context-aware query planning** (prossimo
-passo).
+(a) **Correttezza fattuale 9/9 per entrambi.** Con gpt-5.4-mini (modello forte), il segnale discriminante
+non è più "cita il file?" (entrambi lo fanno), bensì **routing degli strumenti** (tool_ok): vanilla
+9/9, AutoGen 7/9. L'entry point locale non era affidabile su correttezza dei contenuti; quella
+problema scompare con il modello grande.
+
+(b) **Delta su routing:** i 2 "tool✗" di AutoGen sono task di localizzazione (apirouter-def, background-def).
+Su questi, l'agente ha scelto `search_code` quando l'ideale era `find_symbol`, oppure ha percorso
+multi-hop non ottimale. Tuttavia: **ha comunque citato il file giusto** (cited=True). È una scelta
+meno ideale (tool subottimale), non un errore di contenuto.
+
+(c) **gpt-5.4-mini è più "agentico"/verboso del locale:** usa più strumenti per step (media 3.2–3.4 vs
+1.3–1.4 su Ollama), fino a 9–11 tool-call su singola query (es. query-param-codedoc). Il modello sceglie
+di investigare a fondo (search_code → who_calls → related_docs → search_docs) per sintetizzare risposta
+completa. Locale era più parsimonioso (early-exit se trova il simbolo).
+
+(d) **Metrica `passi` ora coerente:** prima di questa run, `passi` per AutoGen contava il numero di tool
+(incoerente con vanilla che contava turni). Fix: ora entrambi contano i **turni LLM reali** (round di
+tool-call + turno finale di sintesi). Vanilla: 2.7 passi = 1 round tool + 1 sintesi + padding. AutoGen:
+stesso conteggio.
+
+**Caveat non-determinismo (persistente):** il modello locale Ollama non è deterministico; run precedenti
+davano leggeri delta. Azure gpt-5.4-mini è più stabile su questa eval (1 run).
+
+**Learning:** su un **modello forte**, la metrica `cited` satura (9/9 per entrambi); il segnale discriminante
+diventa il routing e l'efficienza (tool_ok, quanti strumenti per sintetizzare). La correttezza fattuale non
+differenzia più i framework: è la *qualità del routing* che conta per una soluzione production-grade.
+
+**Implicazione entry point:** il modello locale non è affidabile come agente; **l'entry point operativo è
+Azure gpt-5.4-mini**. Il default *di codice* in `config.py` resta local-first (local-first philosophy
+del workspace), ma il `.env` di riferimento usa `RAG_BACKEND=azure` (chat gpt-5.4-mini + embeddings
+text-embedding-3-large). Superficie futura prevista: agente Claude via MCP.
 
 **Artefatto generato:** [`04-agentic-rag/ESEMPI-agentic.md`](../../04-agentic-rag/ESEMPI-agentic.md)
 — doc divulgativa in stile ESEMPI.md ("ho chiesto X → l'agente ha fatto Y → mi ha risposto Z")
-per ogni task e motore, auto-generata da `evaluate.py` a partire dai log esecuzione.
+per ogni task e motore, auto-generata da `evaluate.py` a partire dai log esecuzione. Aggiornato per i risultati Azure.
 
 **Prossimi passi (eval e framework):**
-- **Mediare su più run** per stabilità metrica (caveat non-determinismo).
 - **Adattatore Semantic Kernel** — kernel SK con skill mapping su `tools.py` + orchestrazione K.
 - **Adattatore LangGraph** — graph workflow plan→retrieve→synthesize via LangGraph state machine.
+- **Query planning context-aware** — disambiguare routing doc-vs-code in base al tipo di domanda.
 
 ## Prossimi passi
 
-1. ~~**Eval set su Tappa 04**~~ **AMPLIATO** — 9 task × 2 motori, metrica tool_ok, cache eval_results.json + --render-from, caveat non-determinismo.
-2. **Stabilità eval** — mediare metriche su più run per ridurre rumore (Ollama locali non-deterministico).
-3. **Adattatore Semantic Kernel** — kernel SK con skill mapping su `tools.py` + orchestrazione K.
-4. **Adattatore LangGraph** — graph workflow plan→retrieve→synthesize via LangGraph state machine.
-5. **Query planning context-aware** — leveraging AST metadati (symbol_kind, qualname, lineno)
-   per disambiguare query a simboli; routing doc-vs-code in base al tipo domanda.
+1. ~~**Eval set su Tappa 04**~~ **COMPLETATO su Azure** — 9 task × 2 motori, metrica tool_ok, entry point gpt-5.4-mini.
+2. ~~**Stabilità eval**~~ **STABILIZZATO** — modello forte (gpt-5.4-mini) elimina non-determinismo locale; 1 run sufficiente per metrica.
+3. **Adattatore Semantic Kernel** — kernel SK con skill mapping su `tools.py` + orchestrazione K (2° framework).
+4. **Adattatore LangGraph** — graph workflow plan→retrieve→synthesize via LangGraph state machine (3° framework).
+5. **Query planning context-aware** — disambiguare routing doc-vs-code in base al tipo di domanda (segue da eval routing diff).
 6. **MCP server** — esporre `shared/retrieval.py` come MCP tools (`search_code`, `search_docs`,
-   `find_symbol`, `who_calls`) per Claude Code e agenti.
+   `find_symbol`, `who_calls`) per Claude Code e agenti. Superficie futura: agente Claude via MCP.
 7. **Custom entity_types per GraphRAG** — usare `derive-entity-types` (Tappa 3C follow-up) per
    migliorare il grafo semantico.
 

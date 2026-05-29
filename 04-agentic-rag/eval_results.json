@@ -1,11 +1,11 @@
 [
   {
-    "answer": "La classe `APIRouter` di FastAPI è definita nel file `fastapi/routing.py` alla riga 1005.  \nRiferimento: `fastapi/routing.py:1005`",
+    "answer": "La classe `APIRouter` è definita in `fastapi/routing.py` alla riga 1005 (`fastapi/routing.py:1005`).",
     "tools": [
       "find_symbol"
     ],
     "steps": 2,
-    "client": "ollama:qwen3:30b-a3b",
+    "client": "azure:gpt-5.4-mini",
     "error": null,
     "engine": "vanilla",
     "cited": true,
@@ -21,347 +21,380 @@
     "type": "localizzazione"
   },
   {
-    "answer": "La classe `APIRouter` di FastAPI è definita nel file **fastapi/routing.py** alla riga **1005**.  \nFile: `fastapi/routing.py#1005`",
+    "answer": "La classe `APIRouter` di FastAPI è definita in:\n\n- `fastapi/routing.py#49`",
     "tools": [
-      "find_symbol"
-    ],
-    "steps": 1,
-    "client": "qwen3:30b-a3b",
-    "error": null,
-    "engine": "autogen",
-    "cited": true,
-    "tool_ok": true,
-    "task_id": "apirouter-def",
-    "question": "In quale file è definita la classe APIRouter di FastAPI?",
-    "expected_files": [
-      "fastapi/routing.py"
-    ],
-    "expected_tools": [
-      "find_symbol"
-    ],
-    "type": "localizzazione"
-  },
-  {
-    "answer": "<answer>\nOAuth2PasswordBearer è una classe di sicurezza in FastAPI utilizzata per implementare il flusso OAuth2 \"password\" (o \"resource owner password credentials\"), che permette ai client di ottenere un token di accesso inviando credenziali direttamente (username e password). È comunemente usato per autenticare utenti tramite un endpoint di login.\n\nÈ definita nel file **fastapi/security/oauth2.py#433** (linea 433).\n\nPer ulteriori dettagli, la documentazione ufficiale spiega che questa classe si occupa di gestire il flusso OAuth2 password e di validare i token ricevuti nei header HTTP (es. `Authorization: Bearer <token>`).\n</answer>",
-    "tools": [
-      "find_symbol"
-    ],
-    "steps": 2,
-    "client": "ollama:qwen3:30b-a3b",
-    "error": null,
-    "engine": "vanilla",
-    "cited": true,
-    "tool_ok": true,
-    "task_id": "oauth2-concept",
-    "question": "Cos'è OAuth2PasswordBearer in FastAPI e in quale file è definito?",
-    "expected_files": [
-      "fastapi/security/oauth2.py"
-    ],
-    "expected_tools": [
-      "find_symbol"
-    ],
-    "type": "localizzazione"
-  },
-  {
-    "answer": "OAuth2PasswordBearer è una classe utilizzata in FastAPI per gestire l'autenticazione tramite il flusso OAuth2 \"password\" (in cui il client invia credenziali direttamente). È definita nella classe `OAuth2PasswordBearer` all'interno del file `fastapi/security/oauth2.py` alla riga 433.\n\nFile: fastapi/security/oauth2.py#433",
-    "tools": [
-      "find_symbol"
-    ],
-    "steps": 1,
-    "client": "qwen3:30b-a3b",
-    "error": null,
-    "engine": "autogen",
-    "cited": true,
-    "tool_ok": true,
-    "task_id": "oauth2-concept",
-    "question": "Cos'è OAuth2PasswordBearer in FastAPI e in quale file è definito?",
-    "expected_files": [
-      "fastapi/security/oauth2.py"
-    ],
-    "expected_tools": [
-      "find_symbol"
-    ],
-    "type": "localizzazione"
-  },
-  {
-    "answer": "Il simbolo `Depends` è implementato come classe nel file `fastapi/params.py` alla riga 746.  \nRiferimento: `fastapi/params.py#746`",
-    "tools": [
-      "find_symbol"
-    ],
-    "steps": 2,
-    "client": "ollama:qwen3:30b-a3b",
-    "error": null,
-    "engine": "vanilla",
-    "cited": true,
-    "tool_ok": true,
-    "task_id": "depends-impl",
-    "question": "Dove è implementato Depends in FastAPI? Indica il file.",
-    "expected_files": [
-      "fastapi/param_functions.py",
-      "fastapi/params.py"
-    ],
-    "expected_tools": [
-      "find_symbol"
-    ],
-    "type": "localizzazione"
-  },
-  {
-    "answer": "La classe `Depends` è implementata in `fastapi/params.py#746`.\n\nFile sorgente: `fastapi/params.py` (linea 746)",
-    "tools": [
-      "search_code",
-      "find_symbol"
-    ],
-    "steps": 2,
-    "client": "qwen3:30b-a3b",
-    "error": null,
-    "engine": "autogen",
-    "cited": true,
-    "tool_ok": true,
-    "task_id": "depends-impl",
-    "question": "Dove è implementato Depends in FastAPI? Indica il file.",
-    "expected_files": [
-      "fastapi/param_functions.py",
-      "fastapi/params.py"
-    ],
-    "expected_tools": [
-      "find_symbol"
-    ],
-    "type": "localizzazione"
-  },
-  {
-    "answer": "La classe `BackgroundTasks` è definita nel file `fastapi/background.py` alla riga 11.\n\n**Risposta:**  \n`fastapi/background.py#11`",
-    "tools": [
-      "find_symbol"
-    ],
-    "steps": 2,
-    "client": "ollama:qwen3:30b-a3b",
-    "error": null,
-    "engine": "vanilla",
-    "cited": true,
-    "tool_ok": true,
-    "task_id": "background-def",
-    "question": "In quale file è definita la classe BackgroundTasks di FastAPI?",
-    "expected_files": [
-      "fastapi/background.py"
-    ],
-    "expected_tools": [
-      "find_symbol"
-    ],
-    "type": "localizzazione"
-  },
-  {
-    "answer": "La classe `BackgroundTasks` è definita nel file `fastapi/background.py:#11`.",
-    "tools": [
-      "find_symbol"
-    ],
-    "steps": 1,
-    "client": "qwen3:30b-a3b",
-    "error": null,
-    "engine": "autogen",
-    "cited": true,
-    "tool_ok": true,
-    "task_id": "background-def",
-    "question": "In quale file è definita la classe BackgroundTasks di FastAPI?",
-    "expected_files": [
-      "fastapi/background.py"
-    ],
-    "expected_tools": [
-      "find_symbol"
-    ],
-    "type": "localizzazione"
-  },
-  {
-    "answer": "La classe `HTTPException` è definita nel file `fastapi/exceptions.py` alla riga 17.",
-    "tools": [
-      "find_symbol"
-    ],
-    "steps": 2,
-    "client": "ollama:qwen3:30b-a3b",
-    "error": null,
-    "engine": "vanilla",
-    "cited": true,
-    "tool_ok": true,
-    "task_id": "httpexception-def",
-    "question": "In quale file del codice sorgente è definita la classe HTTPException?",
-    "expected_files": [
-      "fastapi/exceptions.py"
-    ],
-    "expected_tools": [
-      "find_symbol"
-    ],
-    "type": "localizzazione"
-  },
-  {
-    "answer": "La classe `HTTPException` è definita nel file `fastapi/exceptions.py` alla linea 17.",
-    "tools": [
-      "find_symbol"
-    ],
-    "steps": 1,
-    "client": "qwen3:30b-a3b",
-    "error": null,
-    "engine": "autogen",
-    "cited": true,
-    "tool_ok": true,
-    "task_id": "httpexception-def",
-    "question": "In quale file del codice sorgente è definita la classe HTTPException?",
-    "expected_files": [
-      "fastapi/exceptions.py"
-    ],
-    "expected_tools": [
-      "find_symbol"
-    ],
-    "type": "localizzazione"
-  },
-  {
-    "answer": "HTTPException è definita nel file `fastapi/exceptions.py#17` (classe `HTTPException`).\n\nEsempi di utilizzo nel codice:\n\n1. **Esempio di uso in un endpoint** (da `docs_src/handling_errors/tutorial004_py310.py#0`):\n```python\nfrom fastapi import FastAPI, HTTPException\n\napp = FastAPI()\n\n@app.get(\"/items/{item_id}\")\nasync def read_item(item_id: str):\n    if item_id not in items:\n        raise HTTPException(\n            status_code=404,\n            detail=\"Item not found\",\n            headers={\"X-Error\": \"There was an error\"},\n        )\n    return items[item_id]\n```\n\n2. **Esempio di gestione di errori** (da `docs_src/handling_errors/tutorial004_py310.py#0`):\n```python\nfrom fastapi import HTTPException\n\ndef get_user(user_id: int):\n    if user_id not in users:\n        raise HTTPException(\n            status_code=404,\n            detail=\"User not found\",\n        )\n    return users[user_id]\n```\n\nQuesti esempi mostrano come `HTTPException` venga utilizzato per generare risposte HTTP con codici di stato specifici e dettagli personalizzati.",
-    "tools": [
-      "find_symbol",
       "search_code"
     ],
-    "steps": 3,
-    "client": "ollama:qwen3:30b-a3b",
+    "steps": 2,
+    "client": "gpt-5.4-mini",
+    "error": null,
+    "engine": "autogen",
+    "cited": true,
+    "tool_ok": false,
+    "task_id": "apirouter-def",
+    "question": "In quale file è definita la classe APIRouter di FastAPI?",
+    "expected_files": [
+      "fastapi/routing.py"
+    ],
+    "expected_tools": [
+      "find_symbol"
+    ],
+    "type": "localizzazione"
+  },
+  {
+    "answer": "`OAuth2PasswordBearer` è una classe di FastAPI usata per definire uno **schema di sicurezza OAuth2 con flow “password”**: in pratica dice a FastAPI che l’endpoint si aspetta un token Bearer nell’header `Authorization`, e contribuisce anche alla documentazione OpenAPI. La documentazione lo descrive come uno dei tool di FastAPI per implementare la security e come schema che viene aggiunto a OpenAPI. [docs/en/docs/tutorial/security/first-steps.md#5](docs/en/docs/tutorial/security/first-steps.md#5) [docs/en/docs/tutorial/security/simple-oauth2.md#3](docs/en/docs/tutorial/security/simple-oauth2.md#3)\n\nNel codice della codebase è definito in:\n\n- `fastapi/security/oauth2.py:433` — `class OAuth2PasswordBearer`",
+    "tools": [
+      "search_docs",
+      "find_symbol"
+    ],
+    "steps": 2,
+    "client": "azure:gpt-5.4-mini",
     "error": null,
     "engine": "vanilla",
     "cited": true,
     "tool_ok": true,
-    "task_id": "httpexception-usage",
-    "question": "In quale file è definita HTTPException e mostra qualche esempio del codice che la usa.",
+    "task_id": "oauth2-concept",
+    "question": "Cos'è OAuth2PasswordBearer in FastAPI e in quale file è definito?",
+    "expected_files": [
+      "fastapi/security/oauth2.py"
+    ],
+    "expected_tools": [
+      "find_symbol"
+    ],
+    "type": "localizzazione"
+  },
+  {
+    "answer": "`OAuth2PasswordBearer` è una dipendenza di FastAPI per gestire l’autenticazione **OAuth2 con bearer token** ottenuto tramite **password flow**. In pratica, legge l’header `Authorization: Bearer <token>` dalla richiesta e fornisce il token alla tua dependency. È anche usato da FastAPI per dichiarare lo schema di sicurezza nell’OpenAPI.  \nFonti: `docs/en/docs/tutorial/security/first-steps.md#5`, `docs/en/docs/tutorial/security/simple-oauth2.md#3`.\n\nÈ definito nel file:\n\n- `fastapi/security/oauth2.py#16-19`  \n  e il simbolo risulta anche a `fastapi/security/oauth2.py:433` per la definizione della classe.\n\nSe vuoi, posso anche mostrarti un esempio minimo d’uso in una route FastAPI.",
+    "tools": [
+      "search_docs",
+      "search_code",
+      "find_symbol"
+    ],
+    "steps": 2,
+    "client": "gpt-5.4-mini",
+    "error": null,
+    "engine": "autogen",
+    "cited": true,
+    "tool_ok": true,
+    "task_id": "oauth2-concept",
+    "question": "Cos'è OAuth2PasswordBearer in FastAPI e in quale file è definito?",
+    "expected_files": [
+      "fastapi/security/oauth2.py"
+    ],
+    "expected_tools": [
+      "find_symbol"
+    ],
+    "type": "localizzazione"
+  },
+  {
+    "answer": "`Depends` è implementato in FastAPI qui:\n\n- `fastapi/param_functions.py:2283` — funzione `Depends`\n- `fastapi/params.py:746` — classe `Depends`\n\nSe vuoi, posso anche dirti **qual è il ruolo della funzione rispetto alla classe** e come viene usata nel dependency injection system di FastAPI.",
+    "tools": [
+      "find_symbol"
+    ],
+    "steps": 2,
+    "client": "azure:gpt-5.4-mini",
+    "error": null,
+    "engine": "vanilla",
+    "cited": true,
+    "tool_ok": true,
+    "task_id": "depends-impl",
+    "question": "Dove è implementato Depends in FastAPI? Indica il file.",
+    "expected_files": [
+      "fastapi/param_functions.py",
+      "fastapi/params.py"
+    ],
+    "expected_tools": [
+      "find_symbol"
+    ],
+    "type": "localizzazione"
+  },
+  {
+    "answer": "`Depends` è implementato in `fastapi/param_functions.py` alla linea 2283, come funzione `Depends`.  \nEsiste anche la classe correlata `Depends` in `fastapi/params.py` alla linea 746.  \n\nRiferimenti:\n- `fastapi/param_functions.py:2283`\n- `fastapi/params.py:746`",
+    "tools": [
+      "search_code",
+      "find_symbol"
+    ],
+    "steps": 2,
+    "client": "gpt-5.4-mini",
+    "error": null,
+    "engine": "autogen",
+    "cited": true,
+    "tool_ok": true,
+    "task_id": "depends-impl",
+    "question": "Dove è implementato Depends in FastAPI? Indica il file.",
+    "expected_files": [
+      "fastapi/param_functions.py",
+      "fastapi/params.py"
+    ],
+    "expected_tools": [
+      "find_symbol"
+    ],
+    "type": "localizzazione"
+  },
+  {
+    "answer": "La classe `BackgroundTasks` di FastAPI è definita in:\n\n- `fastapi/background.py:11` — `class BackgroundTasks`\n\nSe vuoi, posso anche mostrarti da dove viene importata/esposta nel package FastAPI.",
+    "tools": [
+      "search_code",
+      "find_symbol"
+    ],
+    "steps": 2,
+    "client": "azure:gpt-5.4-mini",
+    "error": null,
+    "engine": "vanilla",
+    "cited": true,
+    "tool_ok": true,
+    "task_id": "background-def",
+    "question": "In quale file è definita la classe BackgroundTasks di FastAPI?",
+    "expected_files": [
+      "fastapi/background.py"
+    ],
+    "expected_tools": [
+      "find_symbol"
+    ],
+    "type": "localizzazione"
+  },
+  {
+    "answer": "La classe `BackgroundTasks` è definita in:\n\n- `fastapi/background.py#1`\n\nSe vuoi, posso anche indicarti dove viene esportata/importata nel package `fastapi` o mostrarti la gerarchia con `StarletteBackgroundTasks`.",
+    "tools": [
+      "search_code"
+    ],
+    "steps": 2,
+    "client": "gpt-5.4-mini",
+    "error": null,
+    "engine": "autogen",
+    "cited": true,
+    "tool_ok": false,
+    "task_id": "background-def",
+    "question": "In quale file è definita la classe BackgroundTasks di FastAPI?",
+    "expected_files": [
+      "fastapi/background.py"
+    ],
+    "expected_tools": [
+      "find_symbol"
+    ],
+    "type": "localizzazione"
+  },
+  {
+    "answer": "La classe `HTTPException` è definita in:\n\n- `fastapi/exceptions.py:17`",
+    "tools": [
+      "find_symbol"
+    ],
+    "steps": 2,
+    "client": "azure:gpt-5.4-mini",
+    "error": null,
+    "engine": "vanilla",
+    "cited": true,
+    "tool_ok": true,
+    "task_id": "httpexception-def",
+    "question": "In quale file del codice sorgente è definita la classe HTTPException?",
     "expected_files": [
       "fastapi/exceptions.py"
     ],
     "expected_tools": [
-      "find_symbol",
-      "who_calls"
+      "find_symbol"
     ],
-    "type": "multi-hop"
+    "type": "localizzazione"
   },
   {
-    "answer": "HTTPException è definita nel file `fastapi/exceptions.py#17` come classe:\n\n```python\nclass HTTPException(Exception):\n```\n\nEsempi di utilizzo in altri file (con riferimento alle linee di codice specifiche):\n\n- Gestione di errori nell'endpoint `/items/{item_id}` (error handling tutorial):  \n  `docs_src/handling_errors/tutorial001_py310.py:9`\n  \n- Implementazione di dipendenze con errori personalizzati:  \n  `docs_src/dependencies/tutorial006_py310.py:6` e `docs_src/dependencies/tutorial006_py310.py:11`\n  \n- Richiesta non autenticata nel sistema di sicurezza OAuth2:  \n  `fastapi/security/oauth2.py:401` (dove `OAuth2.make_not_authenticated_error` utilizza HTTPException)\n\nTutti gli esempi citati sono presenti nella documentazione ufficiale di FastAPI come casi d'uso realistici dell'eccezione.",
+    "answer": "La classe `HTTPException` è definita in:\n\n- `fastapi/exceptions.py:17`",
     "tools": [
-      "find_symbol",
-      "who_calls"
+      "find_symbol"
     ],
     "steps": 2,
-    "client": "qwen3:30b-a3b",
+    "client": "gpt-5.4-mini",
     "error": null,
     "engine": "autogen",
     "cited": true,
     "tool_ok": true,
-    "task_id": "httpexception-usage",
-    "question": "In quale file è definita HTTPException e mostra qualche esempio del codice che la usa.",
+    "task_id": "httpexception-def",
+    "question": "In quale file del codice sorgente è definita la classe HTTPException?",
     "expected_files": [
       "fastapi/exceptions.py"
     ],
     "expected_tools": [
-      "find_symbol",
-      "who_calls"
+      "find_symbol"
     ],
-    "type": "multi-hop"
+    "type": "localizzazione"
   },
   {
-    "answer": "La differenza principale tra una funzione di endpoint definita con `def` e una con `async def` in FastAPI riguarda il modello di esecuzione e la gestione delle operazioni I/O (Input/Output):\n\n1. **`async def`**:  \n   - Permette l'uso di `await` per operazioni asincrone (es. chiamate a database, API esterne).  \n   - Non blocca il thread principale durante le operazioni I/O, migliorando le prestazioni in scenari ad alto carico.  \n   - Richiede che le dipendenze e le operazioni interne siano compatibili con il modello asincrono.  \n   - *Esempio*:  \n     ```python\n     @app.get(\"/data\")\n     async def get_data():\n         result = await database.query()  # Operazione asincrona\n         return result\n     ```\n\n2. **`def`**:  \n   - Funzione sincrona: blocca l'esecuzione fino al completamento di ogni operazione (es. chiamate a database sincrone).  \n   - Non può usare `await`, quindi è adatta solo per operazioni non I/O-bound (es. calcoli CPU-bound).  \n   - FastAPI eseguirà automaticamente la funzione in un pool di thread per evitare blocchi, ma ciò è meno efficiente rispetto all'asincrono.  \n   - *Esempio*:  \n     ```python\n     @app.get(\"/data\")\n     def get_data():\n         result = database.query_sync()  # Operazione sincrona\n         return result\n     ```\n\n**Documentazione rilevante**:  \n- `async def` è necessario per usare `await` (vedi [docs/en/docs/async.md#22](docs/en/docs/async.md#22)).  \n- FastAPI richiede che le dipendenze siano compatibili con il modello asincrono se l'endpoint è definito con `async def` (vedi [docs/en/docs/tutorial/dependencies/index.md#10](docs/en/docs/tutorial/dependencies/index.md#10)).  \n- Anche se non si usa `await`, è possibile definire funzioni con `async def` (vedi [docs/en/docs/async.md#2](docs/en/docs/async.md#2)), ma il vantaggio principale è la gestione asincrona delle operazioni I/O.",
-    "tools": [
-      "search_docs"
-    ],
-    "steps": 2,
-    "client": "ollama:qwen3:30b-a3b",
-    "error": null,
-    "engine": "vanilla",
-    "cited": true,
-    "tool_ok": true,
-    "task_id": "def-vs-async",
-    "question": "Qual è la differenza tra una funzione di endpoint definita con def e una con async def in FastAPI?",
-    "expected_files": [
-      "async.md"
-    ],
-    "expected_tools": [
-      "search_docs",
-      "search_combined"
-    ],
-    "type": "doc-concept"
-  },
-  {
-    "answer": "La differenza tra una funzione di endpoint definita con `def` (sincrona) e `async def` (asincrona) in FastAPI riguarda la gestione del flusso di esecuzione e l'efficienza nell'elaborazione delle richieste:\n\n1. **Endpoint sincrono (`def`)**:\n   - Blocca il thread durante operazioni di I/O (es. chiamate a database, API esterne).\n   - Gestisce una richiesta alla volta, non è adatta per scenari ad alto carico con operazioni lente.\n   - Utilizza il pattern standard di Python (senza `async`/`await`).\n\n2. **Endpoint asincrono (`async def`)**:\n   - Utilizza **coroutine** e l'evento loop per evitare blocchi durante le operazioni I/O (es. `await` su chiamate asincrone).\n   - Permette di gestire **diverse richieste contemporaneamente** (concorrenza), migliorando l'efficienza per operazioni lente di I/O.\n   - Richiede l'utilizzo di `async`/`await` e restituisce un oggetto *awaitable*.\n\n**Riferimento alla documentazione**:\n- La spiegazione tecnica è fornita in [docs/en/docs/async.md#3](docs/en/docs/async.md#3), che descrive i dettagli sull'uso delle coroutine e il supporto per codice asincrono in Python moderno.\n- La sezione \"Other forms of asynchronous code\" ([docs/en/docs/async.md#24](docs/en/docs/async.md#24)) illustra come l'implementazione asincrona ottimizza il parallelismo in FastAPI.",
-    "tools": [
-      "search_docs"
-    ],
-    "steps": 1,
-    "client": "qwen3:30b-a3b",
-    "error": null,
-    "engine": "autogen",
-    "cited": true,
-    "tool_ok": true,
-    "task_id": "def-vs-async",
-    "question": "Qual è la differenza tra una funzione di endpoint definita con def e una con async def in FastAPI?",
-    "expected_files": [
-      "async.md"
-    ],
-    "expected_tools": [
-      "search_docs",
-      "search_combined"
-    ],
-    "type": "doc-concept"
-  },
-  {
-    "answer": "Il parametro di query in FastAPI si dichiara utilizzando la classe `Query` dal modulo `fastapi`. \n\n**Implementazione nel codice:**  \nLa classe `Query` è definita in `fastapi/params.py#221`:\n```python\nclass Query:\n    # Implementazione per gestire parametri di query con validazioni e default\n```\n\n**Documentazione esplicativa:**  \nLa documentazione spiega l'uso di `Query` per dichiarare parametri di query con validazioni e valori predefiniti. Esempio pratico:\n```python\nfrom fastapi import Query\n\n@app.get(\"/items/\")\nasync def read_items(q: str = Query(..., min_length=3)):\n    return {\"q\": q}\n```\nQuesta sintassi è descritta in:\n- `docs/en/docs/tutorial/query-params-str-validations.md#4` (spiegazione dell'uso di `Query` come valore predefinito)\n- `docs/en/docs/tutorial/query-params-str-validations.md#5` (esempio con validazione `min_length`)\n\nLa documentazione conferma che `Query` permette di definire parametri opzionali, impostare vincoli (es. `min_length`), e gestire valori predefiniti, come mostrato negli esempi.",
+    "answer": "`HTTPException` è definita in `fastapi/exceptions.py` alla riga 17.  \nFonte: `fastapi/exceptions.py:17` (`class HTTPException`) e `fastapi/exceptions.py#2` (`class HTTPException(StarletteHTTPException)`)  \n\nEcco alcuni esempi di codice che la usa:\n\n- `docs_src/app_testing/app_b_py310/main.py:3`  \n  ```python\n  if x_token != fake_secret_token:\n      raise HTTPException(status_code=400, ...)\n  ```\n\n- `docs_src/app_testing/app_b_an_py310/main.py:3`  \n  ```python\n  if x_token != fake_secret_token:\n      raise HTTPException(status_code=400, ...)\n  ```\n\n- `fastapi/security/http.py:6`  \n  ```python\n  def make_not_authenticated_error(self) -> HTTPException:\n      return HTTPException(status_code=HTTP_401_UNAUTHORIZED, ...)\n  ```\n\nSe vuoi, posso anche mostrarti **tutti i punti del codice dove viene sollevata (`raise`)** oppure spiegarti la differenza tra **FastAPI `HTTPException`** e **Starlette `HTTPException`**.",
     "tools": [
       "find_symbol",
-      "search_docs"
-    ],
-    "steps": 3,
-    "client": "ollama:qwen3:30b-a3b",
-    "error": null,
-    "engine": "vanilla",
-    "cited": true,
-    "tool_ok": true,
-    "task_id": "query-param-codedoc",
-    "question": "Come si dichiara un parametro di query in FastAPI? Mostra sia dove è implementato Query sia la documentazione che lo spiega.",
-    "expected_files": [
-      "fastapi/params.py",
-      "fastapi/param_functions.py",
-      "query-param"
-    ],
-    "expected_tools": [
-      "find_symbol",
-      "search_docs",
-      "search_combined"
-    ],
-    "type": "code+doc"
-  },
-  {
-    "answer": "Per dichiarare un parametro di query in FastAPI utilizzando `Query`, ecco gli elementi richiesti:\n\n1. **Implementazione di `Query` nel codice**:\n   - La classe `Query` è definita qui: `fastapi/params.py:221`\n   - La funzione `Query` è implementata qui: `fastapi/param_functions.py:357`\n\n2. **Documentazione che spiega l'uso**:\n   - Spiegazione dettagliata nell'[Riferimento Parametri](docs/en/docs/reference/parameters.md)\n   - Esempi pratici nella [Guida Query Parameters](docs/en/docs/tutorial/query-params.md)\n\nEsempio di utilizzo nella route:\n```python\nfrom fastapi import Query\n\n@app.get(\"/items/\")\nasync def read_items(q: str = Query(..., min_length=3, max_length=50)):\n    return {\"q\": q}\n```\n(Questa sintassi è illustrata nel file `docs/en/docs/tutorial/query-params.md`.)",
-    "tools": [
-      "find_symbol",
-      "related_docs"
-    ],
-    "steps": 2,
-    "client": "qwen3:30b-a3b",
-    "error": null,
-    "engine": "autogen",
-    "cited": true,
-    "tool_ok": true,
-    "task_id": "query-param-codedoc",
-    "question": "Come si dichiara un parametro di query in FastAPI? Mostra sia dove è implementato Query sia la documentazione che lo spiega.",
-    "expected_files": [
-      "fastapi/params.py",
-      "fastapi/param_functions.py",
-      "query-param"
-    ],
-    "expected_tools": [
-      "find_symbol",
-      "search_docs",
-      "search_combined"
-    ],
-    "type": "code+doc"
-  },
-  {
-    "answer": "Le `BackgroundTasks` in FastAPI servono per eseguire operazioni in background (ad esempio, invio email, elaborazione dati) dopo aver inviato la risposta HTTP al client, evitando di ritardare la risposta principale. Questo è utile per operazioni non critiche che non richiedono una risposta immediata.\n\nSono documentate nel file **docs/en/docs/reference/background.md#0** (sezione \"Background Tasks\"), che spiega come dichiarare un parametro di tipo `BackgroundTasks` in una funzione di path operation o in una dipendenza, e come aggiungere compiti da eseguire in background tramite il metodo `.add_task()`.\n\nEsempio di utilizzo dal codice:\n```python\nfrom fastapi import BackgroundTasks, FastAPI\n\napp = FastAPI()\n\ndef send_email(email: str):\n    # Logica per inviare email\n    pass\n\n@app.post(\"/send-email/\")\ndef send_email_endpoint(background_tasks: BackgroundTasks, email: str):\n    background_tasks.add_task(send_email, email)\n    return {\"message\": \"Email sent in background\"}\n```",
-    "tools": [
       "search_code",
       "search_docs"
     ],
     "steps": 2,
-    "client": "ollama:qwen3:30b-a3b",
+    "client": "azure:gpt-5.4-mini",
+    "error": null,
+    "engine": "vanilla",
+    "cited": true,
+    "tool_ok": true,
+    "task_id": "httpexception-usage",
+    "question": "In quale file è definita HTTPException e mostra qualche esempio del codice che la usa.",
+    "expected_files": [
+      "fastapi/exceptions.py"
+    ],
+    "expected_tools": [
+      "find_symbol",
+      "who_calls"
+    ],
+    "type": "multi-hop"
+  },
+  {
+    "answer": "`HTTPException` è definita in:\n\n- `fastapi/exceptions.py:17` — classe `HTTPException` (eredita da `StarletteHTTPException`)  \n  Citazione: `fastapi/exceptions.py#2: class HTTPException(StarletteHTTPException): ...`\n\nEcco alcuni esempi di codice che la usa:\n\n1. **Gestione errori in una dependency**\n   - `docs_src/dependencies/tutorial006_py310.py#1`\n   - Esempio:\n     ```py\n     async def verify_token(x_token: str = Header()):\n         if x_token != \"fake-super-secret-token\":\n             raise HTTPException(status_code=400, detail=\"X-Token header invalid\")\n     ```\n\n2. **Esempio simile con Annotated**\n   - `docs_src/dependencies/tutorial006_an_py310.py#1`\n   - Esempio:\n     ```py\n     async def verify_token(x_token: Annotated[str, Header()]):\n         if x_token != \"fake-super-secret-token\":\n             raise HTTPException(status_code=400, detail=\"X-Token header invalid\")\n     ```\n\n3. **Nel modulo di gestione degli errori**\n   - `fastapi/exception_handlers.py#1`\n   - Qui viene usata nella funzione handler:\n     ```py\n     async def http_exception_handler(request: Request, exc: HTTPException) -> Response:\n     ```\n\nLa documentazione che la spiega è in:\n- `docs/en/docs/tutorial/handling-errors.md#0`\n- `docs/en/docs/tutorial/handling-errors.md#1`\n\nSe vuoi, posso anche mostrarti **il contenuto completo** della classe `HTTPException` o altri esempi d’uso più vicini al codice applicativo.",
+    "tools": [
+      "find_symbol",
+      "search_code",
+      "related_docs",
+      "search_code",
+      "search_docs"
+    ],
+    "steps": 3,
+    "client": "gpt-5.4-mini",
+    "error": null,
+    "engine": "autogen",
+    "cited": true,
+    "tool_ok": true,
+    "task_id": "httpexception-usage",
+    "question": "In quale file è definita HTTPException e mostra qualche esempio del codice che la usa.",
+    "expected_files": [
+      "fastapi/exceptions.py"
+    ],
+    "expected_tools": [
+      "find_symbol",
+      "who_calls"
+    ],
+    "type": "multi-hop"
+  },
+  {
+    "answer": "In FastAPI, la differenza principale è questa:\n\n- **`async def`**: la funzione è una coroutine e viene eseguita nel **event loop**; puoi usare `await` dentro la funzione per chiamare operazioni asincrone. È la scelta giusta quando usi librerie/operazioni che supportano l’I/O asincrono.  \n  Fonte: `docs/en/docs/async.md#22` e `docs/en/docs/async.md#2`\n\n- **`def`**: la funzione è sincrona; FastAPI la esegue **in un threadpool**, così non blocca il server mentre fa operazioni bloccanti.  \n  Fonte: `docs/en/docs/async.md#27`\n\nDal codice si vede anche che FastAPI distingue i due casi e, se l’endpoint non è coroutine, lo esegue tramite `run_in_threadpool`; se invece è coroutine, lo `await` direttamente.  \nFonte: `fastapi/routing.py#22`\n\n### In pratica\n- Usa **`async def`** se fai I/O asincrono (es. client HTTP async, driver DB async).\n- Usa **`def`** se usi codice/librerie sincrone o bloccanti.\n\n### Nota importante\nSe dentro una funzione `async def` chiami codice bloccante senza `await`, puoi bloccare l’event loop e peggiorare le prestazioni.  \nFonte: `docs/en/docs/async.md#1`",
+    "tools": [
+      "search_docs",
+      "search_code",
+      "find_symbol",
+      "find_symbol",
+      "search_code",
+      "search_docs"
+    ],
+    "steps": 5,
+    "client": "azure:gpt-5.4-mini",
+    "error": null,
+    "engine": "vanilla",
+    "cited": true,
+    "tool_ok": true,
+    "task_id": "def-vs-async",
+    "question": "Qual è la differenza tra una funzione di endpoint definita con def e una con async def in FastAPI?",
+    "expected_files": [
+      "async.md"
+    ],
+    "expected_tools": [
+      "search_docs",
+      "search_combined"
+    ],
+    "type": "doc-concept"
+  },
+  {
+    "answer": "In FastAPI, la differenza principale è questa:\n\n- **`async def`**: l’endpoint è una coroutine asincrona. È adatto quando il codice fa I/O non bloccante, per esempio chiamate a database/HTTP supportate in async.\n- **`def`**: l’endpoint è sincrono. FastAPI lo esegue in un **threadpool**, così non blocca il event loop principale.\n\nLa documentazione FastAPI dice che una path operation function definita con `def` invece di `async def` viene eseguita in un threadpool; quindi va bene per codice sincrono o librerie non async. Viene anche suggerito di usare `async def` quando l’app “deve aspettare” altre risorse/servizi.  \nFonti: `docs/en/docs/async.md#27`, `docs/en/docs/async.md#2`, `docs/en/docs/async.md#29`.\n\nIn pratica:\n\n- usa **`async def`** se chiami funzioni async e fai molte operazioni di I/O non bloccanti;\n- usa **`def`** se hai codice sincrono/bloccante o librerie che non supportano async.\n\nNota importante: **non rende automaticamente il codice più veloce**. Se dentro un endpoint `async def` chiami operazioni bloccanti, blocchi comunque l’event loop; in quel caso meglio `def` o librerie realmente async.  \nFonte: `docs/en/docs/async.md#27`, `docs/en/docs/advanced/stream-data.md#4`.\n\nSe vuoi, posso anche farti un esempio concreto di due endpoint equivalenti, uno `def` e uno `async def`, con quando conviene usare ciascuno.",
+    "tools": [
+      "search_docs",
+      "search_docs",
+      "search_docs"
+    ],
+    "steps": 3,
+    "client": "gpt-5.4-mini",
+    "error": null,
+    "engine": "autogen",
+    "cited": true,
+    "tool_ok": true,
+    "task_id": "def-vs-async",
+    "question": "Qual è la differenza tra una funzione di endpoint definita con def e una con async def in FastAPI?",
+    "expected_files": [
+      "async.md"
+    ],
+    "expected_tools": [
+      "search_docs",
+      "search_combined"
+    ],
+    "type": "doc-concept"
+  },
+  {
+    "answer": "In FastAPI un parametro di query si dichiara usando `Query`, tipicamente con `Annotated`:\n\n```python\nfrom typing import Annotated\nfrom fastapi import FastAPI, Query\n\napp = FastAPI()\n\n@app.get(\"/items/\")\nasync def read_items(q: Annotated[str | None, Query(max_length=50)] = None):\n    return {\"q\": q}\n```\n\nOppure, nello stile “vecchio”, come valore di default:\n\n```python\nfrom fastapi import FastAPI, Query\n\napp = FastAPI()\n\n@app.get(\"/items/\")\nasync def read_items(q: str | None = Query(default=None, max_length=50)):\n    return {\"q\": q}\n```\n\nDove è implementato:\n- La funzione helper `Query` è in `fastapi/param_functions.py:8` e serve a costruire il parametro con metadati/validazioni.\n- La classe `Query` vera e propria è in `fastapi/params.py:10-11`, dove viene impostato `in_ = ParamTypes.query`.\n\nDocumentazione che lo spiega:\n- Tutorial sui query params e validazioni: `docs/en/docs/tutorial/query-params-str-validations.md#0`\n- Sezione “Add `Query` to `Annotated` in the `q` parameter”: `docs/en/docs/tutorial/query-params-str-validations.md#3`\n- Sezione alternativa “`Query` as the default value”: `docs/en/docs/tutorial/query-params-str-validations.md#4`\n\nSe vuoi, posso anche mostrarti un esempio completo con validazioni (`min_length`, `max_length`, `pattern`, ecc.) preso dalla documentazione.",
+    "tools": [
+      "search_code",
+      "search_docs",
+      "find_symbol",
+      "find_symbol",
+      "related_docs",
+      "search_docs",
+      "search_code",
+      "search_code",
+      "search_docs"
+    ],
+    "steps": 4,
+    "client": "azure:gpt-5.4-mini",
+    "error": null,
+    "engine": "vanilla",
+    "cited": true,
+    "tool_ok": true,
+    "task_id": "query-param-codedoc",
+    "question": "Come si dichiara un parametro di query in FastAPI? Mostra sia dove è implementato Query sia la documentazione che lo spiega.",
+    "expected_files": [
+      "fastapi/params.py",
+      "fastapi/param_functions.py",
+      "query-param"
+    ],
+    "expected_tools": [
+      "find_symbol",
+      "search_docs",
+      "search_combined"
+    ],
+    "type": "code+doc"
+  },
+  {
+    "answer": "In FastAPI, un parametro di query si dichiara tipicamente con `Query()` come valore di default oppure con `Annotated`.\n\nEsempio moderno:\n\n```python\nfrom typing import Annotated\nfrom fastapi import FastAPI, Query\n\napp = FastAPI()\n\n@app.get(\"/items/\")\nasync def read_items(q: Annotated[str | None, Query()] = None):\n    return {\"q\": q}\n```\n\nEsempio “vecchio stile” ancora valido:\n\n```python\nfrom fastapi import FastAPI, Query\n\napp = FastAPI()\n\n@app.get(\"/items/\")\nasync def read_items(q: str | None = Query(default=None)):\n    return {\"q\": q}\n```\n\nDove è implementato `Query`:\n- `fastapi/params.py#10` — `class Query(Param): ... in_ = ParamTypes.query`\n- `fastapi/param_functions.py:357` — funzione `Query`\n\nDocumentazione che lo spiega:\n- `docs/en/docs/tutorial/query-params.md#0` — spiega che i parametri non di path sono interpretati come query parameters\n- `docs/en/docs/tutorial/query-params-str-validations.md#1` — mostra l’import di `Query` e `Annotated`\n- `docs/en/docs/reference/parameters.md#0` — riferimento per i request parameters\n- `docs/en/docs/tutorial/query-param-models.md#0` — per casi con più query parameters correlati\n\nSe vuoi, posso anche mostrarti un esempio con validazioni (`min_length`, `max_length`, `regex`, ecc.).",
+    "tools": [
+      "search_code",
+      "search_docs",
+      "search_code",
+      "search_docs",
+      "search_docs",
+      "search_code",
+      "find_symbol",
+      "related_docs",
+      "search_code",
+      "search_docs",
+      "search_docs"
+    ],
+    "steps": 5,
+    "client": "gpt-5.4-mini",
+    "error": null,
+    "engine": "autogen",
+    "cited": true,
+    "tool_ok": true,
+    "task_id": "query-param-codedoc",
+    "question": "Come si dichiara un parametro di query in FastAPI? Mostra sia dove è implementato Query sia la documentazione che lo spiega.",
+    "expected_files": [
+      "fastapi/params.py",
+      "fastapi/param_functions.py",
+      "query-param"
+    ],
+    "expected_tools": [
+      "find_symbol",
+      "search_docs",
+      "search_combined"
+    ],
+    "type": "code+doc"
+  },
+  {
+    "answer": "Le `BackgroundTasks` servono per eseguire operazioni **dopo** che la risposta è già stata inviata al client, quindi sono utili per lavori non bloccanti come invio email, scrittura di log, notifiche, ecc. Lo dice sia il codice sia la documentazione: la classe è definita in `fastapi/background.py:11` con docstring “called after a response has been sent to the client”, e la guida spiega che puoi definire task da eseguire “after returning a response” in `docs/en/docs/tutorial/background-tasks.md#0` e nella reference `docs/en/docs/reference/background.md#0`.\n\nIn breve:\n- **Scopo**: posticipare attività leggere/non critiche alla risposta.\n- **Quando usarle**: quando non serve che il client aspetti il completamento dell’operazione.\n- **Dove sono documentate**:\n  - tutorial: `docs/en/docs/tutorial/background-tasks.md#0`\n  - reference: `docs/en/docs/reference/background.md#0`\n  - anche esempi: `docs_src/background_tasks/tutorial001_py310.py#0`, `docs_src/background_tasks/tutorial002_py310.py#0`\n\nNota: la documentazione avverte anche che per computazioni pesanti o distribuite potrebbe essere meglio usare un sistema di task queue esterno, non `BackgroundTasks` (`docs/en/docs/tutorial/background-tasks.md#4`).",
+    "tools": [
+      "search_combined",
+      "find_symbol",
+      "search_docs",
+      "related_docs"
+    ],
+    "steps": 3,
+    "client": "azure:gpt-5.4-mini",
     "error": null,
     "engine": "vanilla",
     "cited": true,
@@ -381,17 +414,19 @@
     "type": "code+doc"
   },
   {
-    "answer": "BackgroundTasks sono utilizzati per gestire operazioni in background (ad esempio, invio email o elaborazione dati) dopo che la risposta HTTP è stata inviata al client. Questo evita di bloccare la risposta principale con operazioni lente.\n\nSono documentati nel tutorial di esempio:  \n`docs_src/background_tasks/tutorial001_py310.py`#0\n\nQuesto file mostra l'uso tipico:\n```python\nfrom fastapi import BackgroundTasks, FastAPI\napp = FastAPI()\n\ndef send_email(email: str):\n    # Invio email in background\n    pass\n\n@app.post(\"/send-email/\")\ndef send_email_background(email: str, background_tasks: BackgroundTasks):\n    background_tasks.add_task(send_email, email)\n    return {\"message\": \"Email scheduled\"}\n```\n\nLa definizione implementativa è nel file:  \n`fastapi/background.py`#11",
+    "answer": "Le `BackgroundTasks` servono per eseguire operazioni **dopo** che la risposta è già stata inviata al client, quindi sono utili per lavori “leggeri” che non devono bloccare la request, ad esempio inviare email, scrivere log o fare piccole operazioni I/O. La classe è documentata come una collezione di task eseguiti dopo il response in `fastapi/background.py` e nei tutorial/reference FastAPI.  \nCittazioni:\n- Implementazione: `fastapi/background.py#1` e simbolo `BackgroundTasks` in `fastapi/background.py:11`\n- Documentazione tutorial: `docs/en/docs/tutorial/background-tasks.md#0`\n- Dettagli tecnici: `docs/en/docs/tutorial/background-tasks.md#3`\n- Reference API: `docs/en/docs/reference/background.md#0`\n\nNota: la doc avverte che **non** è pensato per computazioni pesanti o lavoro distribuito; in quei casi è meglio usare un sistema di task queue esterno. Citazione: `docs/en/docs/tutorial/background-tasks.md#4`",
     "tools": [
+      "search_combined",
       "find_symbol",
-      "search_code"
+      "search_docs",
+      "related_docs"
     ],
-    "steps": 2,
-    "client": "qwen3:30b-a3b",
+    "steps": 3,
+    "client": "gpt-5.4-mini",
     "error": null,
     "engine": "autogen",
-    "cited": false,
-    "tool_ok": false,
+    "cited": true,
+    "tool_ok": true,
     "task_id": "background-doc",
     "question": "A cosa servono le BackgroundTasks e dove sono documentate?",
     "expected_files": [

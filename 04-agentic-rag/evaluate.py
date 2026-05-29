@@ -43,7 +43,9 @@ def _run_engine(engine: str, question: str, max_steps: int) -> dict:
         import autogen_app  # import pigro: richiede il pacchetto autogen
         out = autogen_app.run(question, max_steps=max_steps)
         tools = [t["tool"] for t in out["trace"]]
-        return {"answer": out["answer"], "tools": tools, "steps": len(tools), "client": out["client"]}
+        # `steps` = turni LLM reali (round di tool + sintesi), confrontabile con vanilla
+        return {"answer": out["answer"], "tools": tools,
+                "steps": out.get("steps", len(tools)), "client": out["client"]}
     raise ValueError(f"motore sconosciuto: {engine}")
 
 

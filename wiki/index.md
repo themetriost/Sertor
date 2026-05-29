@@ -1,7 +1,7 @@
 ---
 title: Indice del Wiki
 type: index
-updated: 2026-05-29 (eval ampliata 9 task, metriche tool_ok, cache + render-from)
+updated: 2026-05-29 (Tappa 04 — entry point Azure gpt-5.4-mini + eval rieseguita + fix metrica passi)
 ---
 
 # Indice del Wiki RAG

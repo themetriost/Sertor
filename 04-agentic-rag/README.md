@@ -189,10 +189,14 @@ dipendenza MCP. Se in conflitto con lo stack attuale, **venv isolato** come per 
    Si procede **sequenzialmente**: prima **AutoGen** (completo, fino a eval), poi si riprende
    con Semantic Kernel e infine LangGraph. L'orchestratore e i tool sono indipendenti dal
    framework, così il confronto è a parità di tutto il resto.
-2. **LLM dell'agente → intercambiabile via `RAG_BACKEND`.** Come l'embeddings layer:
-   `shared/llm.py` espone un client unico con due tracce — **Ollama `llama3.1`** (default
-   locale, gratis) e **Azure `gpt-5.4-mini`** (già configurato, tool-calling più solido) —
-   selezionate da config. Local-first di default, Azure attivabile senza toccare il codice.
+2. **LLM dell'agente → intercambiabile via `RAG_BACKEND`, ma entry point su Azure.**
+   `shared/llm.py` espone un client unico con due tracce — Ollama (locale) e **Azure
+   `gpt-5.4-mini`** — selezionate da config. Il default *di codice* resta local-first, ma
+   **l'entry point operativo è gpt-5.4-mini**: sul nostro hardware il modello locale non è
+   affidabile come agente (tool-calling instabile). Sul `.env` di riferimento vale quindi
+   `RAG_BACKEND=azure` (chat gpt-5.4-mini + embeddings text-embedding-3-large). **Superficie
+   futura prevista: un agente Claude via MCP.** Nota: `config.py` usa `load_dotenv(override=True)`,
+   quindi `RAG_BACKEND` si imposta nel `.env`, non via variabile d'ambiente.
 3. **Superficie → libreria-first, poi MCP.** Prima l'orchestratore Python richiamabile e
    **testabile** (CLI + pytest), poi lo si wrappa come **server MCP** per Claude Code. MCP
    resta l'obiettivo (architettura target), ma come ultimo passo dopo aver validato il loop.

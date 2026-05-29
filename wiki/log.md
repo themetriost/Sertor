@@ -406,6 +406,42 @@ dove `<operazione>` ∈ { setup, ingest, record, query, lint }.
   - `experiments/04-agentic-rag.md`: sezione "Eval comparativa" ampliata con 9 task, metriche
     tool_ok, risultati vanilla 9/9 vs AutoGen 8/9, caso background-doc, cache/render-from, caveat.
     Status → "vanilla + AutoGen + eval comparativa ampliata (9 task, tool_ok, cache);
-    SK/LangGraph + MCP da fare". Prossimi passi riprioritizzati (stabilità eval, SK, LangGraph).
+    SK/LangGraph + MPC da fare". Prossimi passi riprioritizzati (stabilità eval, SK, LangGraph).
   - `index.md`: riga 04 stato aggiornato; timestamp updated.
+  - `log.md`: questa voce.
+
+## [2026-05-29] record | Tappa 04 — entry point su Azure gpt-5.4-mini + eval rieseguita + fix metrica passi
+
+- **Spostamento entry point su Azure:** il modello locale Ollama `qwen3:30b-a3b` non è affidabile come agente
+  (tool-calling instabile su agentic RAG). Riesecuzione eval set (9 task × 2 motori) su Azure **gpt-5.4-mini**
+  (endpoint v1 `/chat/completions`, api-key auth, deployment su Azure Foundry). Default *di codice*
+  (config.py) resta local-first; il `.env` di riferimento usa `RAG_BACKEND=azure` (chat gpt-5.4-mini +
+  embeddings text-embedding-3-large). Superficie futura: agente Claude via MCP.
+- **Verifica connettività Azure:** percorso Azure chat in `shared/llm.py` (AzureChat) funziona correttamente
+  con endpoint v1, header api-key, temperature 0. Adattatore AutoGen (`AzureOpenAIChatCompletionClient`) fa
+  tool-calling correttamente (stripping `/openai/v1` → azure_endpoint base + api_version + deployment).
+- **Fix metrica `passi`:** per AutoGen veniva contato `passi = n° tool` (incoerente con vanilla che contava
+  turni LLM). Ora `autogen_app.py` conta i **turni LLM reali** (round di tool-call + turno sintesi finale).
+  Reso confrontabile con vanilla. `evaluate.py` usa `out["steps"]` per autogen (coerente).
+- **Risultati eval (Azure gpt-5.4-mini, 9 task × 2 motori):**
+  - vanilla: 9/9 cita (100%), 9/9 tool_ok (100%), 2.7 passi medi, 3.2 tool medi.
+  - AutoGen: 9/9 cita (100%), 7/9 tool_ok (78%), 2.7 passi medi, 3.4 tool medi.
+  **Lettura onesta:** (a) correttezza fattuale 9/9 per ENTRAMBI — il modello affidabile elimina i miss di
+  contenuto che si vedevano in locale (conferma: entry point locale non era affidabile); (b) l'unica differenza
+  è il *routing degli strumenti*: i 2 "tool✗" di AutoGen sono task di localizzazione (apirouter-def,
+  background-def) dove ha usato `search_code` invece del più efficiente `find_symbol`, MA ha comunque citato
+  il file giusto (cited=True) → scelta meno ideale, non errore; (c) gpt-5.4-mini è molto più "agentico"/verboso
+  del locale: usa più strumenti (fino a 9–11 chiamate su query-param-codedoc). Su modello forte, la metrica
+  `cited` satura: il segnale discriminante diventa l'efficienza/routing (tool_ok).
+- **Caveat non-determinismo:** 1 run per task (non mediato). Learning: con modello forte, è il routing che
+  differenzia, non la correttezza fattuale.
+- **Wiki aggiornato:**
+  - `experiments/04-agentic-rag.md`: sezione "Eval comparativa" riscritto con tabella Azure (vanilla 9/9/9 2.7/3.2 vs
+    AutoGen 9/9/7 2.7/3.4), lettura onesta (9/9 fattuale; differenza su routing; soft-miss di AutoGen con risposta
+    corretta; gpt-5.4-mini verboso), fix metrica passi, entry point Azure. Indicato che il confronto su modello forte
+    sposta il segnale su efficienza/routing.
+  - Setup section aggiornato: entry point operativo = Azure gpt-5.4-mini, default codice = locale, future = Claude
+    MCP.
+  - Frontmatter status e tags aggiornati.
+  - `index.md`: updated timestamp.
   - `log.md`: questa voce.

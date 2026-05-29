@@ -97,17 +97,21 @@ async def _arun(task: str, max_steps: int) -> dict:
     result = await agent.run(task=task)
     await client.close()
 
-    trace, answer = [], ""
+    trace, answer, rounds = [], "", 0
     for msg in result.messages:
         content = getattr(msg, "content", None)
-        if isinstance(content, list):  # eventi di tool-call
-            for item in content:
-                # solo le RICHIESTE (FunctionCall ha `arguments`); gli esiti d'esecuzione no.
-                if hasattr(item, "arguments"):
-                    trace.append({"tool": getattr(item, "name", "?"), "args": item.arguments})
+        if isinstance(content, list):  # turno con richieste di tool-call
+            requests = [i for i in content if hasattr(i, "arguments")]  # FunctionCall (non gli esiti)
+            if requests:
+                rounds += 1  # un turno LLM che ha deciso di chiamare strumenti
+            for item in requests:
+                trace.append({"tool": getattr(item, "name", "?"), "args": item.arguments})
         elif isinstance(content, str) and getattr(msg, "source", "") == "rag_agent":
             answer = content  # l'ultima risposta testuale dell'agente
-    return {"answer": answer, "trace": trace, "client": getattr(client, "_resolved_model", "autogen")}
+    # passi = turni LLM = round di tool-call + 1 turno di sintesi finale (come la baseline vanilla)
+    steps = rounds + (1 if answer else 0)
+    return {"answer": answer, "trace": trace, "steps": steps,
+            "client": getattr(client, "_resolved_model", "autogen")}
 
 
 def run(task: str, max_steps: int = 6) -> dict:
