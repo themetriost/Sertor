@@ -658,3 +658,57 @@ MCP-first) è realizzata operazionalmente.
   - `wiki/log.md`: questa voce.
 - **Intento strategico:** requirements engineering è un **asset permanente** del workspace, riusabile per ANY progetto (Sertor, client,
   research), indipendente da fasi di design/governance. Complementare (NON subordinato) a SpecKit.
+
+## [2026-05-30] record | Flusso end-to-end epica → implementazione (diagramma)
+
+- Creata pagina di sintesi **`wiki/syntheses/flusso-requisiti-implementazione.md`** (NUOVO) — documenta il flusso completo
+  dall'EPICA (requisito alto livello) all'implementazione finale, articolato su **due strati disaccoppiati**:
+  
+  1. **Fase REQUISITI** — skill propria `/requirements` (strumento workspace, basato su [[ears-methodology]], agnostico rispetto a SpecKit).
+     Output: epic.md (visione, ambito, backlog MoSCoW) + requirements.md per feature (requisiti EARS atomici).
+  
+  2. **Pipeline SpecKit** — framework di governance (9 fase canoniche per feature): specify → clarify? → plan → tasks → checklist? → analyze → implement.
+     Il disaccoppiamento è esplicito: `/requirements` genera requisiti, l'utente/orchestratore legge `requirements.md` e lo passa a `/speckit-specify`.
+  
+- **Diagramma mermaid:** mostra il flusso completo con i due subgraph REQ e SK, la constitution come governance trasversale, e la delega
+  al configuration-manager (git) e wiki-keeper (doc).
+  
+- **Sezione "Come leggerlo":** spiega punto per punto (① requisiti, ② SpecKit, ③ output finale, trasversali: constitution/git/wiki).
+- **Backlink aggiunti:** [[requirements-engineering]], [[ears-methodology]], [[speckit]].
+- **Index.md aggiornato:** link alla nuova pagina in sezione Sintesi, timestamp updated → 2026-05-30.
+- **Log.md aggiornato:** questa voce.
+
+**Significato:** il workspace ora ha una **mappa visuale completa** del flusso da idea a ship (requisiti → spec → piano → task → implementazione),
+con chiarezza su quando e come i due pilastri (requisiti e SpecKit) si connettono.
+
+## [2026-05-30] ingest | Panorama tools Requirements Engineering (ricerca avversariale mid-2026)
+
+- **Deep-research completata:** analisi del gap SpecKit (issue #1527 aperta gen 2026, no maintainer response), confronto strumenti
+  (BMAD-METHOD v6.8.0 ~48k★ ma +token-heavy; Kiro AWS EARS-native; PRD Creator lightweight; OpenSpec tool-agnostico;
+  speckit-agents PoC sperimentale). EARS (Alistair Mavin, IEEE RE09) confermato come metodologia consolidata per requirements atomici.
+- **Feedback community verificato:** BMAD davvero pesante (issue #1235 "Excessive Token Usage" rivendica −74% da v6), Kiro fuori IDE non dimostrato,
+  "requisiti migliori o boilerplate?" = domanda aperta (no benchmark indipendente), gap SpecKit riconosciuto utenti non maintainer.
+- **Decisione:** workspace costruisce uno **strumento proprio standalone** (skill `/requirements` + subagent `requirements-analyst`), basato su EARS,
+  agnostico rispetto a SpecKit a valle. Non dipende da BMAD (costo), da Kiro (IDE-bound), da aggregatori (ritardo).
+- **Artefatto creato:** `wiki/sources/requirements-tooling-landscape.md` (NUOVO) — digest ricerca, gap evidence, panorama tools (5 candidati),
+  EARS overview, feedback community, decisione Sertor. Frontmatter: type: source, tags [requirements, speckit, ears, tooling, ricerca].
+- **Wiki aggiornato:** `wiki/index.md` sezione Fonti, `wiki/log.md` questa voce.
+- **Learning:** il panorama è frammentato (no dominante), community riconosce il gap, la nostra scelta di uno strumento proprioè allineata
+  a bisogni reali (non over-engineering).
+
+## [2026-05-30] record | Costituzione di Progetto per Fase Produzione — Proposta
+
+- **Proposta di costituzione creata:** `wiki/syntheses/costituzione-produzione-proposta.md` (NUOVO) — livello sopra CLAUDE.md, principi
+  non-negoziabili per governance SpecKit in produzione. **Principio cardine:** "Il prototipo è EVIDENZA, non PROGETTO" (scelte design
+  tappe 01–04 sono exploration validate, NON ereditate; plan.md decide cosa ereditare/rimpiazzare/abbandonare).
+- **8 principi core** (how-agnostici): I. Repo-agnostico & riusabile; II. Local-first & provider-agnostico; III. YAGNI (semplicità giustificata);
+  IV. Qualità da misure non claim; V. Sicurezza segreti/artefatti; VI. Costo & determinismo consapevoli; VII. Governance via SpecKit (branch/PR);
+  VIII. Prototipo è evidenza (ripetuto).
+- **Decisioni aperte da ratificare:** (1) target Microsoft/Azure vs cloud-agnostico (Opzione B attualmente); (2) data ratifica (fine Tappa 04);
+  (3) numero principi (5 core vs 8 estesi); (4) rigore test (smoke+eval pragmatico vs TDD — Opzione A attualmente).
+- **Spunti RAG specifici notati:** groundedness/citazione obbligatoria, qualità retrieval valutata, provenienza corpus pulita,
+  governance agente (limiti passi, verifica prima di rispondere).
+- **Procedura ratifica:** review stakeholder → discussione → firma formale (data, versione) → upload `.specify/memory/constitution.md` → backlink.
+  Fino a ratifica, è working document per planning.
+- **Wiki aggiornato:** `wiki/syntheses/costituzione-produzione-proposta.md` (NUOVO), `wiki/index.md` sezione Sintesi, `wiki/log.md` questa voce.
+- **Significato:** formalizza il passaggio prototipo→produzione; SpecKit Constitution Check avrà rubrica esplicita da questo documento.

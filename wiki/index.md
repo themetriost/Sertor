@@ -1,7 +1,7 @@
 ---
 title: Indice del Wiki
 type: index
-updated: 2026-05-29 (SpecKit — 9 subagent fedeli a skill canonici)
+updated: 2026-05-30 (Registrate pagine 1–2: requirements-tooling-landscape.md, costituzione-produzione-proposta.md)
 ---
 
 # Indice del Wiki RAG
@@ -45,6 +45,7 @@ Il wiki è mantenuto secondo lo schema descritto in [`../CLAUDE.md`](../CLAUDE.m
 ## Fonti
 
 - [fastapi/fastapi (corpus campione)](sources/fastapi.md) — codice + docs Markdown + esempi, in `raw/fastapi/`
+- [Panorama strumenti Requirements Engineering (mid-2026)](sources/requirements-tooling-landscape.md) — deep-research su BMAD, Kiro, PRD Creator, OpenSpec, gap Spec-Kit, feedback community, EARS overview
 
 ## Demo & Test
 
@@ -66,3 +67,5 @@ Il wiki è mantenuto secondo lo schema descritto in [`../CLAUDE.md`](../CLAUDE.m
 - [Vetrina di esempi — query → risposta per motore](syntheses/esempi-query-risposta.md) — sintesi pratica dei 4 motori e quando usarli
 - [Architettura target — dual-RAG codice + documentazione](syntheses/architettura-target.md) — disegno finale + roadmap incrementale 01→04
 - [Architettura attuale (as-built) — tappe 01–04 complete](syntheses/architettura-attuale.md) — diagramma realizzato + strati + backlog di produzione (caching)
+- [Flusso end-to-end epica → implementazione](syntheses/flusso-requisiti-implementazione.md) — diagramma e spiegazione dei due strati disaccoppiati (requisiti EARS via skill propria, SpecKit per feature; governance trasversale)
+- [Costituzione di Progetto per Fase Produzione — Proposta](syntheses/costituzione-produzione-proposta.md) — 8 principi non-negoziabili (how-agnostici), decisioni aperte su target cloud/rigore test, ratifica in sospeso
