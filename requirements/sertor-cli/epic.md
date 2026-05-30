@@ -1,158 +1,127 @@
-# Epica — Sertor CLI (toolkit installabile per RAG + governance + LLM Wiki)
+# Epica — Sertor CLI (distribuzione e uso del core via command line)
 
-> Livello: **epica** (requisito di alto livello). Le feature del backlog (§8) verranno
-> decomposte una per una in `requirements/sertor-cli/<feature>/requirements.md` (EARS).
+> Livello: **epica SECONDARIA**. Veicola le capacità dell'epica primaria
+> [`../sertor-core/epic.md`](../sertor-core/epic.md) (motori RAG + skill LLM Wiki) rendendole
+> **installabili, configurabili ed eseguibili** su un repository qualunque. **Dipende dal core**:
+> la CLI non *è* il prodotto, è il **modo per usarlo**. Le feature (§8) si decompongono in
+> `requirements/sertor-cli/<feature>/requirements.md` (EARS).
 
 ## 1. Visione e problema (perché)
 
-Oggi la conoscenza maturata in questo workspace — i motori RAG (baseline vettoriale, hybrid,
-graph, agentico), la configurazione di agenti/skill, e il pattern dell'**LLM Wiki** — vive
-**dentro un singolo repository** e va ricostruita a mano ogni volta che la si vuole portare
-altrove. Manca un modo **riproducibile e portabile** per installare e configurare questi
-elementi su un progetto qualsiasi.
+Le capacità del **core** (creare RAG vettoriale/ibrido/grafico/agentico, creare e gestire l'LLM Wiki)
+devono poter essere **portate su un progetto qualsiasi** senza ricostruirle a mano. Serve un
+**pacchetto installabile** `sertor` (via `uv` o `pip`) che espone una **command line** (comando
+`sertor`) per **scegliere e installare** in modo selettivo le capacità del core su un repository —
+**nuovo o esistente** — **configurarle** (provider LLM, vector DB) ed **eseguirle** su richiesta.
 
-L'epica introduce un **pacchetto installabile** `sertor` (via `uv` o `pip`) che espone una
-**command line** (comando `sertor`). Il CLI permette di **scegliere e installare** in modo selettivo le capacità (motori RAG, configurazione
-di governance, LLM Wiki) su un repository — **nuovo o esistente** — e di **configurarle** (provider
-LLM, vector DB) **senza far partire automaticamente** la creazione/ingestione del RAG: l'installazione
-e l'esecuzione sono **comandi distinti**. Il fine è trasformare l'esperienza del prototipo in uno
-**strumento riusabile e repo-agnostico**, riutilizzabile in contesto enterprise.
+Principio cardine: **installazione ≠ esecuzione**. Installare o aggiungere una capacità **non** avvia
+da solo la creazione/ingestione del RAG: serve sempre un **comando esplicito** separato.
 
 ## 2. Ambito
 
 ### In ambito
-- Un **pacchetto installabile** (`uv`/`pip`) che fornisce un **CLI** come punto di ingresso unico.
-- **Setup selettivo**: l'utente sceglie *cosa* installare; nulla parte da solo.
-- **Installazione dei motori RAG** definiti nell'esempio: baseline vettoriale, hybrid/reranking,
-  graph, agentico — selezionabili indipendentemente.
-- **Configurazione del RAG**: scelta del **provider LLM** (obbligatorio) e del **vector DB**
-  (opzionale, e se presente con scelta locale/cloud).
-- **Comando separato** per la creazione/esecuzione del RAG (ingestione/indicizzazione), distinto
-  dall'installazione.
-- **LLM Wiki**: setup e gestione di un wiki in formato Markdown che indicizza le informazioni del
-  progetto, documenta in modo continuo, archivia e indicizza le conversazioni.
-- **Spider/Lint del wiki**: una manutenzione che tiene vivo il wiki (rigenera indice, valida i
-  collegamenti, distilla "conversazione grezza → voce di wiki").
-- **Arricchimento bidirezionale Wiki↔RAG**: il wiki alimenta la parte *documentale* del RAG; i
-  sorgenti (e le loro modifiche) alimentano la parte *codice* del RAG e le fondamenta del wiki.
-- **Setup della configurazione di governance** (skill/agenti per le fasi di progetto + skill di
-  gestione requisiti) come capacità installabile.
-- Funzionamento **agnostico rispetto al repository**: applicabile sia a un progetto nuovo sia a uno
-  già avviato.
+- **Pacchetto installabile** (`uv`/`pip`) con **CLI** `sertor` come punto d'ingresso unico.
+- **Setup selettivo** sul repo target: l'utente sceglie *quali* capacità del core installare; nulla parte da solo.
+- **Configurazione** delle capacità installate: provider **LLM** (obbligatorio, default cloud) e
+  **vector DB** (condizionale, locale vs cloud).
+- **Comando di creazione/esecuzione del RAG** (ingestione/indicizzazione), distinto dall'installazione.
+- **Setup della configurazione di governance** (skill/agenti di fase + skill gestione requisiti) su un repo.
+- **Agnosticità rispetto al repository** (progetto nuovo o già avviato) e **non distruttività**.
+- **Distribuzione** del pacchetto (interim via `git+url`).
 
-### Fuori ambito (per ora)
-- **Pubblicazione pubblica su PyPI** e relativo hardening (versioning pubblico, licenza, sicurezza
-  supply-chain): rimandata; il design *non deve precludervi* (vedi §6, §8 Won't).
-- Definizione del *come* (stack interno, API, schema dati, struttura del codice): è materia della
-  **fase di design** a valle, non dei requisiti.
-- Creazione dei *contenuti* RAG/Wiki di uno specifico progetto target (è uso dello strumento, non
-  costruzione dello strumento).
-- Interfaccia grafica/web: il deliverable è una **command line**.
+### Fuori ambito
+- **Le capacità in sé** (come si crea/interroga il RAG, come funzionano le skill del wiki): sono
+  l'epica **primaria** `sertor-core`. La CLI le **orchestra e installa**, non le definisce.
+- **Pubblicazione pubblica su PyPI** e relativo hardening: rinviata (§8 Won't); il design non deve precluderla.
+- Definizione del *come* (stack, API, schema, struttura del codice): fase di **design**.
+- GUI/web: il deliverable è una **command line**.
 
 ## 3. Criteri di successo
 <!-- misurabili e tech-agnostici -->
-- **CS-1 (installabilità):** un utente installa il pacchetto con un singolo comando `uv`/`pip` e ha
-  il CLI disponibile a riga di comando, su una macchina pulita, senza passi manuali aggiuntivi.
-- **CS-2 (install ≠ run):** in **0** casi l'installazione o l'aggiunta di un componente avvia
-  automaticamente l'ingestione/creazione del RAG; serve sempre un comando esplicito separato.
-- **CS-3 (selettività):** l'utente può installare un **qualsiasi sottoinsieme** delle capacità
-  (almeno: motori RAG, governance, wiki) e ottenere solo quelle.
-- **CS-4 (agnosticità):** lo stesso CLI completa con successo il setup sia su un **repo nuovo** sia
-  su un **repo esistente** (≥2 scenari verificati) senza sovrascrivere silenziosamente file utente.
+- **CS-1 (installabilità):** un utente installa il pacchetto con un singolo comando `uv`/`pip` e ha il
+  comando `sertor` disponibile, su una macchina pulita, senza passi manuali aggiuntivi.
+- **CS-2 (install ≠ run):** in **0** casi l'installazione/aggiunta di una capacità avvia automaticamente
+  l'ingestione/creazione del RAG; serve sempre un comando esplicito separato.
+- **CS-3 (selettività):** l'utente può installare un **qualsiasi sottoinsieme** delle capacità del core
+  (motori RAG, skill wiki, governance) e ottenere solo quelle.
+- **CS-4 (agnosticità & non distruttività):** lo stesso CLI completa il setup sia su un **repo nuovo**
+  sia su uno **esistente** (≥2 scenari) senza sovrascrivere silenziosamente file dell'utente.
 - **CS-5 (configurabilità LLM):** la configurazione supporta **≥1 provider cloud** (default) **e**
   un'opzione **locale (Ollama)**; senza un LLM configurato le operazioni RAG sono bloccate.
-- **CS-6 (vector DB a scelta):** la configurazione consente di scegliere tra **≥2** opzioni di
-  vector DB (locale vs cloud) oppure di **ometterlo** quando non richiesto.
-- **CS-7 (wiki vivo):** lo spider/lint può essere rieseguito in modo **idempotente** (re-run senza
-  divergenze) e produce un indice rigenerato e collegamenti validi.
-- **CS-8 (arricchimento):** una sessione di aggiornamento RAG può usare **sia** i sorgenti **sia** il
-  wiki come input, in modo dimostrabile (entrambe le sorgenti contribuiscono al risultato).
+- **CS-6 (vector DB a scelta):** la configurazione consente di scegliere tra **≥2** opzioni di vector DB
+  (locale vs cloud) oppure di **ometterlo** quando la modalità scelta non lo richiede.
 
 ## 4. Stakeholder e attori
-- **Owner/maintainer (tu):** utente primario interno; decide cosa installare e configurare.
-- **Team interno (futuro prossimo):** utenti dello strumento in altri repository.
+- **Owner/maintainer (tu):** decide cosa installare/configurare sul repo target.
+- **Team interno (futuro prossimo):** usa la CLI per portare il core su altri repository.
 - **Utenti pubblici (futuro):** destinatari di una eventuale release PyPI (oggi Won't).
-- **Agente LLM (es. Claude Code):** attore non umano che *consuma* la configurazione, il wiki e il
-  RAG installati (li usa come contesto/strumenti).
-- **Repository target:** il progetto (nuovo o esistente) su cui il CLI opera.
+- **Epica `sertor-core` (dipendenza a monte):** fornisce le capacità che la CLI installa/esegue.
+- **Repository target:** il progetto (nuovo o esistente) su cui la CLI opera.
 
 ## 5. Vincoli, assunzioni e dipendenze
-- **Linguaggio/distribuzione:** Python ≥ 3.11; pacchetto e comando si chiamano **`sertor`**;
-  installabile con **`uv`** (preferito) o **`pip`**. **Distribuzione interim (pre-PyPI): da repo git
-  via `git+url`** (`uv add git+https://…` / `pip install git+…`).
-- **LLM obbligatorio:** deve esistere un target LLM configurato; **default = provider cloud**.
-  Provider del primo taglio: **OpenAI, Anthropic, Azure OpenAI/Foundry, GitHub Copilot** e **Ollama**
-  (locale, non-default); candidati aggiuntivi (max 3, da confermare): **Google Gemini/Vertex AI,
-  AWS Bedrock, Mistral AI**.
-- **Vector DB obbligatorio in modo condizionale:** opzionale in generale, ma **obbligatorio se un
-  motore selezionato lo richiede** (retrieval testuale dense/hybrid); un setup **solo-graph** può
-  ometterlo. Se presente, scelta tra locale (**Chroma**) e cloud (**PGVector/MongoDB su Azure**).
-  *(Coerente col prototipo: il graph/strutturale gira senza vector DB; dense/hybrid no.)*
-- **Segreti:** chiavi/API mai persistite in file versionati (coerente con la policy `.env`).
-- **Idempotenza/non distruttività:** il setup su repo esistente non deve sovrascrivere
-  silenziosamente configurazioni dell'utente.
-- **Assunzione:** "local-first / everything local" è **supportato** ma **non** è il default.
-- **Dipendenza:** alcune capacità (es. motore graph) hanno dipendenze pesanti/conflittuali → vanno
-  isolabili per evitare conflitti.
+- **Dipendenza dal core:** la CLI installa/configura/esegue le capacità di `sertor-core`; non le duplica.
+- **Linguaggio/distribuzione:** Python ≥ 3.11; pacchetto e comando = **`sertor`**; installabile con
+  **`uv`** (preferito) o **`pip`**. **Distribuzione interim (pre-PyPI): `git+url`**.
+- **LLM obbligatorio:** target LLM configurato; **default = provider cloud**. Provider del primo taglio:
+  **OpenAI, Anthropic, Azure OpenAI/Foundry, GitHub Copilot** e **Ollama** (locale, non-default);
+  aggiuntivi proposti (max 3, da confermare): **Google Gemini/Vertex AI, AWS Bedrock, Mistral AI**.
+- **Vector DB condizionale:** obbligatorio solo se la modalità RAG selezionata lo richiede; a scelta
+  **Chroma** (locale) vs **PGVector/MongoDB su Azure** (cloud).
+- **Segreti:** mai persistiti in file versionati.
+- **Idempotenza/non distruttività** sul repo esistente; **local-first supportato** (non default).
 
 ## 6. Rischi
-- **R-1 — Conflitti di dipendenze** tra motori RAG (es. graph) installati insieme: rischio di ambienti
-  non risolvibili. *Mitigazione concettuale:* isolamento/opzionalità per motore.
-- **R-2 — Drift Wiki↔codice:** se lo spider non è robusto/idempotente, il wiki diverge dalla realtà
-  del progetto e degrada il RAG documentale.
-- **R-3 — Sicurezza segreti:** rischio di scrivere API key in file versionati durante la config.
-- **R-4 — Avvio non voluto:** un'installazione che fa partire ingestione costosa (viola CS-2).
-- **R-5 — Sovrascrittura su repo esistente:** perdita di config utente (viola CS-4).
+- **R-1 — Avvio non voluto:** un'installazione che fa partire ingestione costosa (viola CS-2).
+- **R-2 — Sovrascrittura su repo esistente:** perdita di config utente (viola CS-4).
+- **R-3 — Sicurezza segreti** in fase di configurazione.
+- **R-4 — Conflitti di dipendenze** tra capacità del core installate insieme (es. motore grafico).
+- **R-5 — Disallineamento col core:** se le capacità del core cambiano, la CLI deve restarvi allineata.
 - **R-6 — Scope creep verso il pubblico** prima della maturità interna.
 
 ## 7. Requisiti trasversali (EARS)
 <!-- solo i pochi requisiti davvero trasversali a tutta l'epica -->
 - **REQ-E1 (Optional):** *Where the user runs the setup command, the system shall let the user select
-  which capabilities to install and install only the selected subset.*
-- **REQ-E2 (Unwanted):** *If a component is installed or added, then the system shall not
-  automatically start RAG ingestion or index creation.*
-- **REQ-E3 (Ubiquitous):** *The system shall require a configured LLM target before performing any
-  RAG operation.*
+  which core capabilities to install and install only the selected subset.*
+- **REQ-E2 (Unwanted):** *If a capability is installed or added, then the system shall not automatically
+  start RAG ingestion or index creation.*
+- **REQ-E3 (Ubiquitous):** *The system shall require a configured LLM target before running any RAG operation.*
 - **REQ-E4 (Optional):** *Where the user selects a local-only configuration, the system shall operate
   without requiring any cloud service.*
-- **REQ-E5 (Unwanted):** *If a configuration value is a secret (e.g., an API key), then the system
-  shall not persist it in a version-controlled file.*
+- **REQ-E5 (Unwanted):** *If a configuration value is a secret (e.g., an API key), then the system shall
+  not persist it in a version-controlled file.*
 - **REQ-E6 (Event-driven):** *When the setup runs against an existing repository, the system shall not
   overwrite user-modified files without explicit confirmation.*
-- **REQ-E7 (Optional):** *Where a selected RAG engine requires a vector store, the system shall require
+- **REQ-E7 (Optional):** *Where a selected RAG modality requires a vector store, the system shall require
   a vector DB to be configured; otherwise it shall allow the setup to complete without one.*
 
 ## 8. Backlog di feature
 
 | ID | Feature | Valore / obiettivo | Priorità (MoSCoW) | Stato |
 |----|---------|--------------------|-------------------|-------|
-| FEAT-001 | **CLI installabile** (pacchetto `uv`/`pip`, entry-point, struttura comandi, principio install≠run) | Spina dorsale: senza il CLI nessuna capacità è raggiungibile | **Must** | da decomporre |
-| FEAT-002 | **Installazione selettiva dei motori RAG** (baseline vettoriale, hybrid, graph, agentico) | Portare i 4 approcci RAG su un repo, a scelta, senza eseguirli | **Must** | da decomporre |
-| FEAT-003 | **LLM Wiki — setup & gestione** (indicizza progetto in MD, documenta in continuo, archivia/indicizza conversazioni) | Conoscenza persistente e cumulativa del progetto | **Must** | da decomporre |
-| FEAT-004 | **Wiki Spider / Lint** (rigenera indice, valida link, rileva orfani/contraddizioni, distilla raw→concept) | Mantiene il wiki vivo e coerente (idempotente) | **Must** | da decomporre |
-| FEAT-005 | **Configurazione del RAG** (provider LLM obbligatorio, default cloud — OpenAI/Anthropic/Azure-Foundry/Copilot/+ — e Ollama; vector DB condizionale: obbligatorio solo se il motore lo richiede, a scelta Chroma vs PGVector/MongoDB Azure) | Adatta il RAG all'ambiente target senza toccare codice | **Should** | da decomporre |
-| FEAT-006 | **Comando di creazione/esecuzione del RAG** (ingestione/indicizzazione, separato dall'install) | Costruire/aggiornare effettivamente gli indici su richiesta esplicita | **Should** | da decomporre |
-| FEAT-007 | **Setup configurazione di governance** (skill/agenti di fase + skill gestione requisiti) | Replicare la configurazione di lavoro su altri repo | **Should** | da decomporre |
-| FEAT-008 | **Arricchimento bidirezionale Wiki↔RAG** (wiki → RAG documentale; sorgenti → RAG codice + fondamenta wiki) | Loop virtuoso doc/codice che migliora retrieval e documentazione | **Could** | da decomporre |
-| FEAT-009 | **Distribuzione pubblica su PyPI** (versioning pubblico, licenza, hardening supply-chain) | Apertura a utenti esterni | **Won't (per ora)** | rinviata |
+| FEAT-001 | **CLI installabile** (pacchetto `uv`/`pip`, entry-point `sertor`, struttura comandi, principio install≠run) | Spina dorsale: senza il CLI nessuna capacità è raggiungibile | **Must** | da decomporre |
+| FEAT-002 | **Installazione selettiva delle capacità del core** (motori RAG + skill wiki) su un repo target | Portare il core su un progetto, a scelta, senza eseguirlo | **Must** | da decomporre |
+| FEAT-003 | **Configurazione** (provider LLM obbligatorio default cloud + Ollama; vector DB condizionale a scelta Chroma vs PGVector/MongoDB Azure) | Adatta le capacità all'ambiente target senza toccare codice | **Should** | da decomporre |
+| FEAT-004 | **Comando di creazione/esecuzione del RAG** (ingestione/indicizzazione, separato dall'install) | Costruire/aggiornare gli indici su richiesta esplicita | **Should** | da decomporre |
+| FEAT-005 | **Setup configurazione di governance** (skill/agenti di fase + skill gestione requisiti) | Replicare la configurazione di lavoro su altri repo | **Should** | da decomporre |
+| FEAT-006 | **Distribuzione pubblica su PyPI** (versioning pubblico, licenza, hardening supply-chain) | Apertura a utenti esterni | **Won't (per ora)** | rinviata |
 
-> **Nota sull'MVP:** il primo taglio (Must) installa i **motori RAG** e mette in piedi il **wiki vivo**
-> (setup + spider). La **configurazione** (FEAT-005) e l'**esecuzione** (FEAT-006) del RAG completano
-> il ciclo subito dopo (Should): logicamente la config precede il run, ma il confine MVP scelto mette
-> prima l'installabilità e il loop del wiki. Confine **confermato** (§9, DA-2).
+> **Nota sull'MVP della CLI:** il primo taglio (Must) rende il pacchetto **installabile** e capace di
+> **installare selettivamente** le capacità del core su un repo. Configurazione (FEAT-003), esecuzione
+> (FEAT-004) e governance (FEAT-005) completano il ciclo subito dopo (Should). La CLI è utile **solo
+> insieme** al core: il suo MVP presuppone che il core esista (almeno baseline + creazione wiki).
 
 ## 9. Decisioni risolte (DA-1…DA-6)
 
-Tutte le domande aperte sono state chiuse in fase di elicitazione (2026-05-30):
+Chiuse in elicitazione (2026-05-30); restano valide a livello di distribuzione/uso:
 
 | # | Tema | Decisione |
 |---|------|-----------|
 | DA-1 | Naming | Pacchetto e comando = **`sertor`**. |
-| DA-2 | Confine install/config/run | **Confermato**: l'MVP installa i motori RAG (Must); configurazione (FEAT-005) ed esecuzione (FEAT-006) restano **Should** — il RAG non è ancora eseguibile end-to-end nel primo taglio. |
-| DA-3 | Governance | **Resta Should** (FEAT-007 fuori dall'MVP). |
+| DA-2 | Confine install/config/run | **Confermato**: l'MVP della CLI installa; configurazione (FEAT-003) ed esecuzione (FEAT-004) restano **Should**. |
+| DA-3 | Governance | **Resta Should** (FEAT-005 fuori dall'MVP della CLI). |
 | DA-4 | Distribuzione interim | **`git+url`** prima dell'eventuale PyPI pubblico. |
-| DA-5 | Vector DB | **Obbligatorio in modo condizionale**: solo se un motore selezionato lo richiede; setup solo-graph può ometterlo (vedi REQ-E7). Ancorato al prototipo (`02-hybrid-reranking/hybrid.py`, `03-graphrag/graph_query.py`). |
-| DA-6 | Provider LLM | Primo taglio: **OpenAI, Anthropic, Azure OpenAI/Foundry, GitHub Copilot, Ollama** (locale). Aggiuntivi proposti (max 3, da confermare): **Google Gemini/Vertex AI, AWS Bedrock, Mistral AI**. |
+| DA-5 | Vector DB | **Obbligatorio in modo condizionale**: solo se la modalità lo richiede; solo-graph può ometterlo (REQ-E7). |
+| DA-6 | Provider LLM | Primo taglio: **OpenAI, Anthropic, Azure OpenAI/Foundry, GitHub Copilot, Ollama**; aggiuntivi (max 3, da confermare): **Gemini/Vertex AI, AWS Bedrock, Mistral AI**. |
 
-> Nessuna domanda aperta residua a livello di epica. Le rifiniture di dettaglio (es. lista
-> definitiva dei provider, parametri di config) si chiudono alla **decomposizione** delle feature.
+> Nessuna domanda aperta residua a livello di questa epica. Le rifiniture di dettaglio si chiudono
+> alla **decomposizione** delle feature.

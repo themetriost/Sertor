@@ -40,3 +40,21 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
     congelato; corpus dogfooding come acceptance test.
 - **Index aggiornato:** sezione "Syntheses" con link a `[[chiusura-prototipo-dogfooding]]`.
 - **Branch/commit:** `chore/isolamento-prototipo` (commit `104e666`), pagina aggiunta in questo record.
+
+## [2026-05-30] record | Ristrutturazione epiche: sertor-core (primaria/MVP) + sertor-cli (secondaria)
+
+- **Nuova pagina:** `syntheses/epiche-sertor-core-e-cli.md` documenta la ristrutturazione di visione:
+  - **Razionale:** il valore core non è la CLI ma le capacità (creare RAG production-grade + skill
+    LLM Wiki). CLI è il veicolo di distribuzione/uso.
+  - **Epica primaria (sertor-core, `requirements/sertor-core/epic.md`):** 8 feature, sequenza logica.
+    FEAT-001/002/003 Must (nucleo retrieval, baseline, wiki skill); FEAT-004/005/006/007 Should
+    (ibrido, grafo, agentico, spider/lint); FEAT-008 Could (arricchimento bidirezionale). 7 success
+    criteria, 6 requisiti EARS.
+  - **Epica secondaria (sertor-cli, `requirements/sertor-cli/epic.md`):** 6 feature, CLI instalabile
+    + selezione capacità + config + RAG/wiki command. Decisioni DA-1…DA-6 (naming, git, vector DB,
+    provider) rimangono valide.
+  - **Questione aperta DA-W1:** ruolo profondo del wiki non ancora definito (fonte di contesto per
+    agenti? luogo di query precise? fonte di ingestion per RAG?). Blocca decomposizione FEAT-003
+    wiki. Richiede decisione di prodotto PRIMA di user story.
+- **Index aggiornato:** sezione Syntheses con link a nuova pagina.
+- **Pagina storica superata:** `prototype/wiki/epica-sertor-cli.md` (congelata, consultabile via RAG).
