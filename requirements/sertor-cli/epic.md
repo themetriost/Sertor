@@ -11,8 +11,8 @@ graph, agentico), la configurazione di agenti/skill, e il pattern dell'**LLM Wik
 altrove. Manca un modo **riproducibile e portabile** per installare e configurare questi
 elementi su un progetto qualsiasi.
 
-L'epica introduce un **pacchetto installabile** (via `uv` o `pip`) che espone una **command line**.
-Il CLI permette di **scegliere e installare** in modo selettivo le capacità (motori RAG, configurazione
+L'epica introduce un **pacchetto installabile** `sertor` (via `uv` o `pip`) che espone una
+**command line** (comando `sertor`). Il CLI permette di **scegliere e installare** in modo selettivo le capacità (motori RAG, configurazione
 di governance, LLM Wiki) su un repository — **nuovo o esistente** — e di **configurarle** (provider
 LLM, vector DB) **senza far partire automaticamente** la creazione/ingestione del RAG: l'installazione
 e l'esecuzione sono **comandi distinti**. Il fine è trasformare l'esperienza del prototipo in uno
@@ -77,11 +77,17 @@ e l'esecuzione sono **comandi distinti**. Il fine è trasformare l'esperienza de
 - **Repository target:** il progetto (nuovo o esistente) su cui il CLI opera.
 
 ## 5. Vincoli, assunzioni e dipendenze
-- **Linguaggio/distribuzione:** Python ≥ 3.11; installabile con **`uv`** (preferito) o **`pip`**.
-- **LLM obbligatorio:** deve esistere un target LLM configurato; **default = provider cloud**
-  (API key, es. OpenAI/Anthropic/Azure Foundry/…); **Ollama locale supportato** come scelta.
-- **Vector DB opzionale/a scelta:** può non essere presente; se presente, scelta tra locale (Chroma)
-  e cloud (PGVector/MongoDB su Azure).
+- **Linguaggio/distribuzione:** Python ≥ 3.11; pacchetto e comando si chiamano **`sertor`**;
+  installabile con **`uv`** (preferito) o **`pip`**. **Distribuzione interim (pre-PyPI): da repo git
+  via `git+url`** (`uv add git+https://…` / `pip install git+…`).
+- **LLM obbligatorio:** deve esistere un target LLM configurato; **default = provider cloud**.
+  Provider del primo taglio: **OpenAI, Anthropic, Azure OpenAI/Foundry, GitHub Copilot** e **Ollama**
+  (locale, non-default); candidati aggiuntivi (max 3, da confermare): **Google Gemini/Vertex AI,
+  AWS Bedrock, Mistral AI**.
+- **Vector DB obbligatorio in modo condizionale:** opzionale in generale, ma **obbligatorio se un
+  motore selezionato lo richiede** (retrieval testuale dense/hybrid); un setup **solo-graph** può
+  ometterlo. Se presente, scelta tra locale (**Chroma**) e cloud (**PGVector/MongoDB su Azure**).
+  *(Coerente col prototipo: il graph/strutturale gira senza vector DB; dense/hybrid no.)*
 - **Segreti:** chiavi/API mai persistite in file versionati (coerente con la policy `.env`).
 - **Idempotenza/non distruttività:** il setup su repo esistente non deve sovrascrivere
   silenziosamente configurazioni dell'utente.
@@ -113,6 +119,8 @@ e l'esecuzione sono **comandi distinti**. Il fine è trasformare l'esperienza de
   shall not persist it in a version-controlled file.*
 - **REQ-E6 (Event-driven):** *When the setup runs against an existing repository, the system shall not
   overwrite user-modified files without explicit confirmation.*
+- **REQ-E7 (Optional):** *Where a selected RAG engine requires a vector store, the system shall require
+  a vector DB to be configured; otherwise it shall allow the setup to complete without one.*
 
 ## 8. Backlog di feature
 
@@ -122,7 +130,7 @@ e l'esecuzione sono **comandi distinti**. Il fine è trasformare l'esperienza de
 | FEAT-002 | **Installazione selettiva dei motori RAG** (baseline vettoriale, hybrid, graph, agentico) | Portare i 4 approcci RAG su un repo, a scelta, senza eseguirli | **Must** | da decomporre |
 | FEAT-003 | **LLM Wiki — setup & gestione** (indicizza progetto in MD, documenta in continuo, archivia/indicizza conversazioni) | Conoscenza persistente e cumulativa del progetto | **Must** | da decomporre |
 | FEAT-004 | **Wiki Spider / Lint** (rigenera indice, valida link, rileva orfani/contraddizioni, distilla raw→concept) | Mantiene il wiki vivo e coerente (idempotente) | **Must** | da decomporre |
-| FEAT-005 | **Configurazione del RAG** (provider LLM obbligatorio con default cloud + Ollama; vector DB opzionale/a scelta locale vs Azure) | Adatta il RAG all'ambiente target senza toccare codice | **Should** | da decomporre |
+| FEAT-005 | **Configurazione del RAG** (provider LLM obbligatorio, default cloud — OpenAI/Anthropic/Azure-Foundry/Copilot/+ — e Ollama; vector DB condizionale: obbligatorio solo se il motore lo richiede, a scelta Chroma vs PGVector/MongoDB Azure) | Adatta il RAG all'ambiente target senza toccare codice | **Should** | da decomporre |
 | FEAT-006 | **Comando di creazione/esecuzione del RAG** (ingestione/indicizzazione, separato dall'install) | Costruire/aggiornare effettivamente gli indici su richiesta esplicita | **Should** | da decomporre |
 | FEAT-007 | **Setup configurazione di governance** (skill/agenti di fase + skill gestione requisiti) | Replicare la configurazione di lavoro su altri repo | **Should** | da decomporre |
 | FEAT-008 | **Arricchimento bidirezionale Wiki↔RAG** (wiki → RAG documentale; sorgenti → RAG codice + fondamenta wiki) | Loop virtuoso doc/codice che migliora retrieval e documentazione | **Could** | da decomporre |
@@ -131,20 +139,20 @@ e l'esecuzione sono **comandi distinti**. Il fine è trasformare l'esperienza de
 > **Nota sull'MVP:** il primo taglio (Must) installa i **motori RAG** e mette in piedi il **wiki vivo**
 > (setup + spider). La **configurazione** (FEAT-005) e l'**esecuzione** (FEAT-006) del RAG completano
 > il ciclo subito dopo (Should): logicamente la config precede il run, ma il confine MVP scelto mette
-> prima l'installabilità e il loop del wiki. Vedi domanda aperta DA-2.
+> prima l'installabilità e il loop del wiki. Confine **confermato** (§9, DA-2).
 
-## 9. Domande aperte
-<!-- ogni punto irrisolto resta [DA CHIARIRE] -->
-- **DA-1 — Nome ufficiale** del pacchetto e del comando CLI (es. `sertor`?). *[DA CHIARIRE: naming]*
-- **DA-2 — Confine install/config/run:** confermi che l'MVP **installa** i motori RAG ma **configura
-  ed esegue** in una fase successiva (FEAT-005/006 = Should), accettando che senza config il RAG non
-  sia ancora eseguibile? *[DA CHIARIRE: accettazione del confine]*
-- **DA-3 — Governance come Should:** ok che il setup di skill/agenti+requisiti (FEAT-007) **non** sia
-  nel primo taglio, pur essendo la config con cui lavoriamo ora? *[DA CHIARIRE]*
-- **DA-4 — Distribuzione interna interim:** come si distribuisce internamente prima di PyPI (indice
-  privato, `git+url`, wheel locale)? Incide su CS-1. *[DA CHIARIRE: canale di distribuzione interno]*
-- **DA-5 — Vector DB obbligatorio o no:** lasciamo il vector DB **realmente opzionale** (alcuni motori
-  potrebbero richiederlo)? Se un motore selezionato lo richiede, la config lo rende obbligatorio
-  *solo per quel motore*? *[DA CHIARIRE: regola di obbligatorietà condizionale]*
-- **DA-6 — Set di provider LLM del primo taglio:** quali provider cloud sono supportati da subito
-  (OpenAI, Anthropic, Azure Foundry, …)? (Dettaglio da rifinire a livello di FEAT-005.) *[DA CHIARIRE]*
+## 9. Decisioni risolte (DA-1…DA-6)
+
+Tutte le domande aperte sono state chiuse in fase di elicitazione (2026-05-30):
+
+| # | Tema | Decisione |
+|---|------|-----------|
+| DA-1 | Naming | Pacchetto e comando = **`sertor`**. |
+| DA-2 | Confine install/config/run | **Confermato**: l'MVP installa i motori RAG (Must); configurazione (FEAT-005) ed esecuzione (FEAT-006) restano **Should** — il RAG non è ancora eseguibile end-to-end nel primo taglio. |
+| DA-3 | Governance | **Resta Should** (FEAT-007 fuori dall'MVP). |
+| DA-4 | Distribuzione interim | **`git+url`** prima dell'eventuale PyPI pubblico. |
+| DA-5 | Vector DB | **Obbligatorio in modo condizionale**: solo se un motore selezionato lo richiede; setup solo-graph può ometterlo (vedi REQ-E7). Ancorato al prototipo (`02-hybrid-reranking/hybrid.py`, `03-graphrag/graph_query.py`). |
+| DA-6 | Provider LLM | Primo taglio: **OpenAI, Anthropic, Azure OpenAI/Foundry, GitHub Copilot, Ollama** (locale). Aggiuntivi proposti (max 3, da confermare): **Google Gemini/Vertex AI, AWS Bedrock, Mistral AI**. |
+
+> Nessuna domanda aperta residua a livello di epica. Le rifiniture di dettaglio (es. lista
+> definitiva dei provider, parametri di config) si chiudono alla **decomposizione** delle feature.

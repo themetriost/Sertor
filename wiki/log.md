@@ -596,12 +596,20 @@ MCP-first) è realizzata operazionalmente.
   → Implement → TasksToIssues → configuration-manager per git). Aperto: integrare hook `before_specify` per branch automatica;
   collegare spec ↔ wiki; transizione rami/PR in produzione.
 - **Wiki aggiornato:**
-  - `wiki/tech/speckit.md` (NUOVO): descrizione SpecKit come framework di governance, architettura agenti, principi design,
-    flusso operativo, policy git, integrazione wiki.
-  - `wiki/index.md`: aggiunto link in sezione Tecnologie.
-  - `wiki/log.md`: questa voce.
+  - `wiki/tech/speckit.md` (NUOVO): descrizione SpecKit come framework di governance, architettura agenti, principi design, link ai 9 subagent.
 
----
+## [2026-05-30] record | Epica Sertor CLI — chiuse le domande aperte DA-1…DA-6
+
+- **Trasformate le 6 domande aperte in decisioni risolte:**
+  - DA-1 (naming): **sertor** (pacchetto + comando).
+  - DA-2 (confine install/config/run): MVP installa motori RAG (FEAT-001/002) + wiki vivo (FEAT-003/004, Must); config (FEAT-005) + run (FEAT-006) rimangono Should — RAG non eseguibile end-to-end nel primo taglio.
+  - DA-3 (governance): FEAT-007 rimane Should, fuori MVP.
+  - DA-4 (distribuzione): `git+url` per interim, prima di eventuale PyPI pubblico.
+  - DA-5 (vector DB): **opzionale in generale, obbligatorio condizionatamente** — se motore lo richiede. Nel prototipo: retrieval graph AST (`03-graphrag/graph_query.py`) gira **senza** vector DB; retrieval testuale (baseline, hybrid, agentico) dipende da Chroma. Nuovo requisito trasversale **REQ-E7** codifica la regola.
+  - DA-6 (provider LLM primo taglio): OpenAI, Anthropic, Azure OpenAI/Foundry, GitHub Copilot, Ollama (locale); aggiuntivi proposti (max 3 da confermare): Google Gemini/Vertex AI, AWS Bedrock, Mistral AI.
+- **Scoperta di conoscenza registrata:** non tutti i motori RAG richiedono vector DB — la modalità graph/strutturale fa a meno; il testuale la richiede (Chroma come deposito, non solo per BM25). Implicazione per FEAT-005: CLI chiede vector DB solo se rilevante al motore scelto.
+- **Aggiornata sintesi** `wiki/syntheses/epica-sertor-cli.md`: sezione "Domande Aperte" trasformata in "Decisioni Risolte" con tabella; aggiunta sezione "Nota di Conoscenza: Vector DB Condizionale" con REQ-E7.
+- **Aggiornato `wiki/index.md`:** descrizione della riga epica-sertor-cli aggiornata da "6 domande aperte" a "6 decisioni risolte (naming, confine MVP, governance, distribuzione, vector DB condizionale, provider LLM)" e aggiunto REQ-E7.
 
 ## [2026-05-29] record | Fusione dual-RAG get_context + confronto vs LLM (FUSIONE.md)
 

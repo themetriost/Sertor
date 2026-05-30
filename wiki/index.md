@@ -1,7 +1,7 @@
 ---
 title: Indice del Wiki
 type: index
-updated: 2026-05-30 (Registrate pagine 1–2: requirements-tooling-landscape.md, costituzione-produzione-proposta.md; TODO wiki auto-manutentore aggiunto al backlog di architettura-attuale.md)
+updated: 2026-05-30 (DA-1…DA-6 chiuse in epica-sertor-cli.md con REQ-E7 vector DB condizionale; requirements-tooling-landscape.md e costituzione-produzione-proposta.md registrate; TODO wiki auto-manutentore in architettura-attuale.md)
 ---
 
 # Indice del Wiki RAG
@@ -64,7 +64,7 @@ Il wiki è mantenuto secondo lo schema descritto in [`../CLAUDE.md`](../CLAUDE.m
 
 ## Sintesi
 
-- [Epica Sertor CLI — requisiti di alto livello e backlog](syntheses/epica-sertor-cli.md) — visione, ambito, 9 feature (MoSCoW), 6 requisiti trasversali EARS, 8 criteri di successo, 6 domande aperte
+- [Epica Sertor CLI — requisiti di alto livello e backlog](syntheses/epica-sertor-cli.md) — visione, ambito, 9 feature (MoSCoW), 6 requisiti trasversali EARS (+REQ-E7), 8 criteri di successo, 6 decisioni risolte (naming, confine MVP, governance, distribuzione, vector DB condizionale, provider LLM)
 - [Vetrina di esempi — query → risposta per motore](syntheses/esempi-query-risposta.md) — sintesi pratica dei 4 motori e quando usarli
 - [Architettura target — dual-RAG codice + documentazione](syntheses/architettura-target.md) — disegno finale + roadmap incrementale 01→04
 - [Architettura attuale (as-built) — tappe 01–04 complete](syntheses/architettura-attuale.md) — diagramma realizzato + strati + backlog di produzione (caching)
