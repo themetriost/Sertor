@@ -34,3 +34,7 @@ cumulativo: cresce a ogni sessione secondo lo schema in [`../CLAUDE.md`](../CLAU
 ## Pagine
 
 _(La produzione inizia ora: questa sezione cresce a ogni sessione.)_
+
+### Syntheses (sintesi trasversali)
+
+- **[[chiusura-prototipo-dogfooding]]** — Isolamento del prototipo, motore corpus-aware, RAG di dogfooding su se stesso, MCP ri-puntato.

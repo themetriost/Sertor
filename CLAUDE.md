@@ -4,19 +4,34 @@ Guida per Claude Code in questo workspace.
 
 ## Scopo del workspace
 
-Workspace di **esplorazione e apprendimento** per confrontare diversi approcci RAG
-(Retrieval-Augmented Generation) in Python, con focus sull'ecosistema
-**Microsoft/Azure**. Ogni approccio vive in una sotto-cartella auto-contenuta ed è
-eseguibile **in locale** (local-first), con i servizi **Azure attivabili via config**.
+Il workspace è entrato nella **fase di produzione**: si costruisce il CLI **`sertor`**
+(pacchetto installabile `uv`/`pip`; requisiti in
+[`requirements/sertor-cli/epic.md`](requirements/sertor-cli/epic.md)).
 
-## Approcci RAG da esplorare
+Il precedente **prototipo di esplorazione** (4 approcci RAG su corpus FastAPI, focus
+Microsoft/Azure, local-first) è stato **isolato e congelato** in [`prototype/`](prototype/):
+non si modifica più a mano, lo si consulta tramite il **RAG di dogfooding** (vedi
+*Riferirsi al prototipo* sotto). La radice ospita la produzione (`requirements/`, nuovo
+`wiki/`, governance `.claude/` + `.specify/`).
+
+## Approcci RAG del prototipo (riferimento, in `prototype/`)
 
 | Cartella | Approccio | Note |
 |----------|-----------|------|
-| `01-baseline/` | Baseline (vector retrieval) | chunking + embeddings + similarity search |
-| `02-hybrid-reranking/` | Hybrid + reranking | keyword/BM25 + dense + reranking |
-| `03-graphrag/` | GraphRAG | retrieval su knowledge graph |
-| `04-agentic-rag/` | Agentic RAG | retrieval iterativo / multi-agente, query planning |
+| `prototype/01-baseline/` | Baseline (vector retrieval) | chunking + embeddings + similarity search |
+| `prototype/02-hybrid-reranking/` | Hybrid + reranking | keyword/BM25 + dense + reranking |
+| `prototype/03-graphrag/` | GraphRAG | retrieval su knowledge graph |
+| `prototype/04-agentic-rag/` | Agentic RAG | retrieval iterativo / multi-agente, query planning |
+
+## Riferirsi al prototipo (RAG di dogfooding)
+
+Il prototipo è **congelato**: per consultarlo **non** si leggono i file a mano, si **interroga il
+RAG**. Il server MCP **`sertor-rag`** (in `.mcp.json`) è puntato sul **prototipo come corpus**
+(`SERTOR_CORPUS=sertor`) — facciamo *dogfooding* del nostro stesso strumento. Tool: `search_code` /
+`search_docs` / `search_combined` (codice e doc del prototipo), `find_symbol` / `who_calls` /
+`related_docs` (relazioni nel code-graph), `get_context` (fusione codice↔doc). Ricostruzione indici
+dogfood: `SERTOR_CORPUS=sertor python prototype/01-baseline/index.py --provider azure-large`
+(Chroma) e `… prototype/03-graphrag/build_graph.py` (grafo AST).
 
 ## Stack tecnologico
 
@@ -49,20 +64,25 @@ Lo stack ha due "tracce" intercambiabili via config (vedi `RAG_BACKEND` sotto):
 
 ## Struttura del progetto
 
-Convenzione **"una cartella per approccio"**, ciascuna auto-contenuta. Lo switch tra
-backend locale e Azure è guidato da **config**, non da cartelle duplicate.
+Confine netto **prototipo (congelato) ↔ produzione (attiva)**:
 
 ```
-RAG/
-├─ CLAUDE.md
-├─ 01-baseline/            # chunk + embed + similarity search
-├─ 02-hybrid-reranking/    # hybrid retrieval + reranking (Azure AI Search / locale)
-├─ 03-graphrag/            # Microsoft GraphRAG
-├─ 04-agentic-rag/         # AutoGen / Semantic Kernel
-└─ shared/                 # config, loaders, eval comuni (opzionale)
+Sertor/
+├─ CLAUDE.md                # questa guida
+├─ requirements/           # PRODUZIONE: requisiti (epica sertor-cli, EARS) — fase a monte
+├─ wiki/                   # PRODUZIONE: wiki nuovo e attivo (LLM Wiki)
+├─ .claude/  .specify/     # governance: skill/agenti, SpecKit
+├─ .mcp.json               # server MCP `sertor-rag` → corpus dogfood (prototype)
+└─ prototype/              # PROTOTIPO CONGELATO (sola lettura, indicizzato nel RAG dogfood)
+   ├─ 01-baseline/ … 04-agentic-rag/   # i 4 motori RAG
+   ├─ shared/              # config, loaders, embeddings, retrieval (motore corpus-aware)
+   ├─ tests/  raw/         # smoke test + corpus FastAPI
+   └─ wiki/                # wiki storico del prototipo (congelato)
 ```
 
-Ogni cartella dovrebbe avere un proprio `README.md`, i requirements e un entry-point eseguibile.
+Il motore in `prototype/shared/` è **corpus-aware** (env `SERTOR_CORPUS`: `fastapi` = demo del
+prototipo · `sertor` = dogfooding sul prototipo stesso); gli indici sono namespaced per corpus
+(`.index` vs `.index-sertor`), così demo FastAPI e dogfood coesistono senza sovrascriversi.
 
 ## Setup ed esecuzione
 
@@ -107,7 +127,7 @@ Ogni cartella dovrebbe avere un proprio `README.md`, i requirements e un entry-p
 
 Questo workspace è un **repo git con remote `origin`** (ci si pusha regolarmente). **Policy di branching durante la fase di prototipo (attuale):** commit e push **direttamente su `master`/`main`** (autorizzato). Al passaggio in produzione si adotterà **SpecKit** e si lavorerà a **branch + PR** (niente più push diretti su main). Convenzione: **un commit dopo ogni step** di lavoro significativo (incluso l'aggiornamento del wiki). Messaggi in stile
 **Conventional Commits in italiano** (`tipo(scope): sommario`; scope tipici `01-baseline`,
-`02-hybrid-reranking`, `03-graphrag`, `shared`, `wiki`), corpo che spiega il *perché*, footer
+`prototype`, `requirements`, `cli`, `shared`, `wiki`), corpo che spiega il *perché*, footer
 `Co-Authored-By`. **Mai committare** `.env`, `*.key`, il contenuto di `raw/`, i virtualenv o gli
 artefatti rigenerabili (`output/`, `cache/`, `logs/`, `metrics/`, indici/store vettoriali): sono
 coperti da `.gitignore`.
@@ -141,7 +161,7 @@ cresce a ogni sessione, invece di ricostruire la conoscenza ogni volta.
 > piccole o puramente meccaniche puoi non delegare.
 
 ### Struttura
-- `raw/` — fonti esterne **immutabili** (solo lettura): `articles/`, `papers/`, `assets/`.
+- `prototype/raw/` — corpus **immutabile** del prototipo (FastAPI). Nuove fonti di produzione andranno in un `raw/` a root quando servirà.
 - `wiki/index.md` — catalogo globale (link + summary). **Leggilo per primo**; aggiornalo a ogni modifica.
 - `wiki/log.md` — registro **append-only** di tutto ciò che facciamo.
 - `wiki/concepts/` — concetti RAG. `wiki/tech/` — tecnologie. `wiki/experiments/` — un file per esperimento.
@@ -170,3 +190,8 @@ Per innescare manualmente un consolidamento usa il comando **`/wiki`** (lavora n
 principale) oppure delega all'agente `wiki-keeper` (in background). Un hook `SessionStart`
 carica lo stato del wiki a inizio sessione. Non c'è più uno `Stop` hook bloccante: la
 manutenzione è garantita dalla delega al `wiki-keeper`, non dal blocco del turno.
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+<!-- SPECKIT END -->
