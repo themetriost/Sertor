@@ -712,3 +712,16 @@ con chiarezza su quando e come i due pilastri (requisiti e SpecKit) si connetton
   Fino a ratifica, è working document per planning.
 - **Wiki aggiornato:** `wiki/syntheses/costituzione-produzione-proposta.md` (NUOVO), `wiki/index.md` sezione Sintesi, `wiki/log.md` questa voce.
 - **Significato:** formalizza il passaggio prototipo→produzione; SpecKit Constitution Check avrà rubrica esplicita da questo documento.
+
+## [2026-05-30] record | TODO: wiki auto-manutentore (spider / wiki-lint)
+
+- **TODO registrato** nel "Backlog di produzione" di `wiki/syntheses/architettura-attuale.md` (sezione #### Wiki & Tooling, item 4).
+- **Scopo:** realizzare un passaggio sistematico di manutenzione del wiki che:
+  - enumera tutte le pagine e valida i `[[link]]` (trovare rotti, backlog mancanti);
+  - rigenera `index.md` a partire dal filesystem;
+  - rileva pagine orfane, contraddizioni e claim superati (lint sull'intero grafo);
+  - distilla "raw conversation → wiki concept" in modo automatico.
+- **Decisione aperta:** implementarla come skill on-demand `wiki-lint` oppure automatico via hook/routine schedulata.
+  (Nota: il vecchio Stop hook bloccante è stato rimosso di proposito; l'unico hook attivo oggi è SessionStart che carica lo stato del wiki nel contesto.)
+- **Contesto:** mantenimento wiki oggi è on-demand (comando `/wiki` con operazioni record/ingest/query/lint, + agente wiki-keeper su delega).
+  L'aggiunta di uno spider sistematico allinea il wiki a una vera "evolving knowledge base" con audit trail completo.

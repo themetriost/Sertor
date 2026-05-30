@@ -1,7 +1,7 @@
 ---
 title: Indice del Wiki
 type: index
-updated: 2026-05-30 (Registrate pagine 1–2: requirements-tooling-landscape.md, costituzione-produzione-proposta.md)
+updated: 2026-05-30 (Registrate pagine 1–2: requirements-tooling-landscape.md, costituzione-produzione-proposta.md; TODO wiki auto-manutentore aggiunto al backlog di architettura-attuale.md)
 ---
 
 # Indice del Wiki RAG

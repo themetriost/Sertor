@@ -3,7 +3,7 @@ title: Architettura attuale (as-built) — Sertor RAG toolset
 type: synthesis
 tags: [architettura, as-built, retrieval, agentic, mcp, produzione]
 created: 2026-05-29
-updated: 2026-05-29
+updated: 2026-05-30
 sources: []
 ---
 
@@ -117,9 +117,20 @@ indici in-process (`@lru_cache` su HybridIndex/CodeGraph in `shared/retrieval.py
 processo long-lived del server MCP); modello FlashRank su disco; cache estrazione GraphRAG (~210 MB).
 
 **Backlog di produzione** (non in prototipo — vedi policy SpecKit/branch in [[git-policy-prototipo-vs-produzione]]):
+
+#### Caching & Performance
 1. **Cache embedding query** (lru/disk in `shared/embeddings.py`) — evita di ri-embeddare (e ri-pagare in azure) query identiche.
 2. **Cache risposte LLM su disco** (es. SQLite) — run agent/eval riproducibili e gratuiti sui task già visti.
 3. **Tracciare/ottimizzare il prompt-caching di Azure** (`cached_tokens` in `shared/llm.py`) — misurare l'hit-rate e ordinare i prompt (system + schemi tool in testa) per massimizzarlo.
 
-Altri punti di produzione: igiene corpus (blob base64 in `docs_src/`), eval con task multi-hop
-più discriminanti + media multi-run, transizione a **SpecKit + branch/PR**.
+#### Wiki & Tooling
+4. **[TODO] Wiki auto-manutentore (spider / wiki-lint)** — realizzare un passaggio sistematico di manutenzione che:
+   - enumera tutte le pagine del wiki e valida i `[[link]]` (trovare rotti, backlink mancanti);
+   - rigenera `index.md` a partire dal filesystem;
+   - rileva pagine orfane e contraddizioni/claim superati (lint sull'intero grafo);
+   - distilla "raw conversation → wiki concept" in modo automatico.
+   - **Decisione aperta:** skill on-demand `wiki-lint` oppure automatico via hook/routine schedulata (nota: vecchio Stop hook rimosso di proposito).
+
+#### Corpus & Operativo
+5. Igiene corpus (blob base64 in `docs_src/`), eval con task multi-hop più discriminanti + media multi-run.
+6. Transizione a **SpecKit + branch/PR**.
