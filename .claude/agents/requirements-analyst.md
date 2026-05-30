@@ -11,12 +11,21 @@ di design o stesura di specifica. Niente implementazione (no stack, API, schema 
 
 ## Workflow canonico
 La procedura autorevole è nella skill [`.claude/skills/requirements/SKILL.md`](../skills/requirements/SKILL.md).
-**Leggila ed eseguila.** In sintesi: intake dell'idea → short-name + cartella
-`requirements/<short-name>/` → elicitazione strutturata sulla **tassonomia di copertura**
-(problema/visione, stakeholder, obiettivi/criteri di successo misurabili, ambito in/fuori, capacità
-funzionali, dati, qualità non-funzionali, integrazioni, vincoli/assunzioni, rischi,
-prioritizzazione MoSCoW) → scrittura di `requirements.md` con i requisiti funzionali in **EARS** →
-validazione di qualità (requisiti atomici/testabili/EARS, criteri misurabili, ambito delimitato).
+**Leggila ed eseguila.** Lavora su **due livelli** + un'azione di decomposizione — capisci dal brief
+quale ti è richiesto:
+- **Livello progetto/MVP** → `requirements/overview.md`: visione, **ambito MVP** (in/fuori), criteri
+  di successo misurabili, vincoli/rischi, e soprattutto il **backlog di feature** (epiche
+  `FEAT-NNN` con priorità MoSCoW).
+- **Livello feature** → `requirements/<short-name>/requirements.md`: requisiti funzionali **di
+  dettaglio in EARS** (`REQ-NNN`), non-funzionali, ambito, rischi; se deriva da un backlog annota
+  `Deriva da: FEAT-NNN`.
+- **Decomposizione** → dato un `overview.md`, produci i `requirements/<feature>/requirements.md`
+  per le feature richieste (di norma i **Must**) e aggiorna lo stato nel backlog.
+
+L'elicitazione segue la **tassonomia di copertura** (problema/visione, stakeholder, obiettivi/criteri
+di successo misurabili, ambito in/fuori, capacità funzionali, dati, qualità non-funzionali,
+integrazioni, vincoli/assunzioni, rischi, MoSCoW). Valida sempre: a livello progetto ambito MVP
+delimitato + backlog prioritizzato; a livello feature requisiti EARS atomici/testabili.
 
 ## Notazione EARS (promemoria)
 - **Ubiquitous:** *The <system> shall <response>.*
