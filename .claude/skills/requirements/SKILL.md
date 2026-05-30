@@ -1,7 +1,7 @@
 ---
 name: requirements
-description: "Fase di gestione ed elicitazione dei requisiti, su due livelli. Livello progetto/MVP: produce requirements/overview.md con visione, ambito MVP, criteri di successo e un backlog di feature (epiche, MoSCoW). Livello feature: produce requirements/<feature>/requirements.md con requisiti funzionali in notazione EARS. Include la decomposizione dal backlog alle feature. È la fase a monte del design."
-argument-hint: "Descrivi il progetto/MVP o la singola feature da mettere a requisiti"
+description: "Fase di gestione ed elicitazione dei requisiti, su due livelli. Livello epica: produce requirements/<epica>/epic.md con visione, ambito, criteri di successo e un backlog di feature (MoSCoW). Livello feature: produce requirements/<epica>/<feature>/requirements.md con requisiti funzionali in notazione EARS. Include la decomposizione dal backlog alle feature. È la fase a monte del design."
+argument-hint: "Descrivi l'epica (requisito di alto livello) o la singola feature da mettere a requisiti"
 user-invocable: true
 disable-model-invocation: false
 ---
@@ -22,49 +22,52 @@ design o stesura di specifica. Niente implementazione (no stack, API, schema dat
 su **due livelli**, più un'azione di **decomposizione** che li collega.
 
 ```
-Livello PROGETTO/MVP  →  requirements/overview.md   (visione, ambito MVP, backlog di feature)
-        │  decomposizione (una per feature Must)
+Livello EPICA    →  requirements/<epica>/epic.md   (requisito di alto livello + backlog di feature)
+        │  decomposizione (una per feature, i Must prima)
         ▼
-Livello FEATURE       →  requirements/<feature>/requirements.md   (requisiti EARS di dettaglio)
+Livello FEATURE  →  requirements/<epica>/<feature>/requirements.md   (requisiti EARS di dettaglio)
 ```
+
+Un'**epica** è un requisito di alto livello (una grande capacità/obiettivo); le **feature** sono i
+requisiti di dettaglio in cui l'epica si decompone.
 
 ## Passo 0 — Determina il livello
 
 Dall'input capisci se stai mettendo a requisiti:
-- **un intero progetto / MVP** (più capacità, visione complessiva) → vai a **A. Livello progetto/MVP**;
-- **una singola feature** (un'unica capacità ben delimitata) → vai a **B. Livello feature**;
-- **la decomposizione** di un overview già esistente in feature → vai a **C. Decomposizione**.
+- **un'epica** (requisito di alto livello, più capacità, visione complessiva) → **A. Livello epica**;
+- **una singola feature** (un'unica capacità ben delimitata) → **B. Livello feature**;
+- **la decomposizione** di un'epica già esistente nelle sue feature → **C. Decomposizione**.
 In caso di ambiguità, chiedilo all'utente.
 
 ---
 
-## A. Livello progetto / MVP
+## A. Livello epica
 
-Obiettivo: `requirements/overview.md` con la visione, il **perimetro dell'MVP** e il **backlog di
-feature** (le "epiche" da decomporre poi).
+Obiettivo: `requirements/<epica>/epic.md` con il requisito di alto livello, il suo **perimetro** e il
+**backlog di feature** (i requisiti di dettaglio da decomporre poi).
 
-1. **Intake & short-name di progetto.** Estrai problema, attori, valore. Genera uno short-name di
-   progetto (per i riferimenti).
-2. **Elicitazione** sulla *tassonomia di copertura* (vedi sotto), a grana di progetto. Per le aree
+1. **Intake & short-name.** Estrai problema, attori, valore. Genera uno short-name dell'epica e crea
+   la cartella `requirements/<epica>/`.
+2. **Elicitazione** sulla *tassonomia di copertura* (vedi sotto), a grana di epica. Per le aree
    critiche *Missing/Partial* senza default, **poni domande all'utente** (raggruppate, prioritizzate:
-   ambito MVP > obiettivi > vincoli/sicurezza > resto). Il resto: assunzioni ragionevoli documentate.
-3. **Scrivi `requirements/overview.md`:**
+   ambito > obiettivi > vincoli/sicurezza > resto). Il resto: assunzioni ragionevoli documentate.
+3. **Scrivi `requirements/<epica>/epic.md`:**
 
    ```markdown
-   # Requisiti di progetto — <Nome> (MVP)
+   # Epica — <Nome>
 
    ## 1. Visione e problema (perché)
-   ## 2. Ambito dell'MVP
-   ### In ambito (MVP)
-   ### Fuori ambito (post-MVP)
-   ## 3. Criteri di successo dell'MVP
+   ## 2. Ambito
+   ### In ambito
+   ### Fuori ambito
+   ## 3. Criteri di successo
    <!-- misurabili e tech-agnostici -->
    ## 4. Stakeholder e attori
-   ## 5. Vincoli, assunzioni e dipendenze (progetto)
-   ## 6. Rischi (progetto)
-   ## 7. Requisiti di sistema trasversali (EARS, opzionale)
-   <!-- solo i pochi requisiti davvero trasversali a tutto l'MVP -->
-   ## 8. Backlog di feature (epiche)
+   ## 5. Vincoli, assunzioni e dipendenze
+   ## 6. Rischi
+   ## 7. Requisiti trasversali (EARS, opzionale)
+   <!-- solo i pochi requisiti davvero trasversali a tutta l'epica -->
+   ## 8. Backlog di feature
    | ID | Feature | Valore / obiettivo | Priorità (MoSCoW) | Stato |
    |----|---------|--------------------|-------------------|-------|
    | FEAT-001 | ... | ... | Must | da decomporre |
@@ -72,21 +75,21 @@ feature** (le "epiche" da decomporre poi).
    <!-- ogni punto irrisolto resta [DA CHIARIRE: domanda] -->
    ```
 
-   Il **backlog** è il cuore: ogni `FEAT-NNN` è un'epica che diventerà una cartella di feature.
-   Prioritizza con **MoSCoW**; per l'MVP contano soprattutto i **Must**.
+   Il **backlog** è il cuore: ogni `FEAT-NNN` è una feature che diventerà una cartella di dettaglio.
+   Prioritizza con **MoSCoW** (Must / Should / Could / Won't).
 
-4. **Validazione:** ambito MVP delimitato (in *e* fuori), criteri di successo misurabili, backlog
-   con priorità esplicite, nessun dettaglio implementativo.
+4. **Validazione:** ambito delimitato (in *e* fuori), criteri di successo misurabili, backlog con
+   priorità esplicite, nessun dettaglio implementativo.
 
 ---
 
 ## B. Livello feature
 
-Obiettivo: `requirements/<feature>/requirements.md` con i requisiti funzionali **di dettaglio** in EARS.
+Obiettivo: `requirements/<epica>/<feature>/requirements.md` con i requisiti funzionali **di dettaglio**
+in EARS. (Se la feature è autonoma, fuori da un'epica, usa `requirements/<feature>/requirements.md`.)
 
-1. **Short-name & cartella.** Genera lo short-name (2-4 parole) e crea
-   `requirements/<short-name>/requirements.md`. Se la feature deriva da un backlog, annota
-   `Deriva da: FEAT-NNN`.
+1. **Short-name & cartella.** Genera lo short-name (2-4 parole) e crea il `requirements.md`. Se la
+   feature deriva da un backlog, annota `Deriva da: FEAT-NNN`.
 2. **Elicitazione** sulla tassonomia, a grana di feature.
 3. **Scrivi `requirements.md`:**
 
@@ -116,10 +119,11 @@ Obiettivo: `requirements/<feature>/requirements.md` con i requisiti funzionali *
 
 ## C. Decomposizione (dal backlog alle feature)
 
-Dato un `requirements/overview.md` esistente: per ogni `FEAT-NNN` (i **Must** prima), esegui il
-**Livello feature (B)** producendo `requirements/<feature>/requirements.md` con `Deriva da: FEAT-NNN`.
-Aggiorna lo **Stato** nel backlog dell'overview (`da decomporre` → `decomposta`). Le feature sono
-indipendenti: la decomposizione di più feature può essere **parallelizzata** (un analista per feature).
+Dato un `requirements/<epica>/epic.md` esistente: per ogni `FEAT-NNN` (i **Must** prima), esegui il
+**Livello feature (B)** producendo `requirements/<epica>/<feature>/requirements.md` con
+`Deriva da: FEAT-NNN`. Aggiorna lo **Stato** nel backlog dell'epica (`da decomporre` → `decomposta`).
+Le feature sono indipendenti: la decomposizione di più feature può essere **parallelizzata** (un
+analista per feature).
 
 ---
 
@@ -154,7 +158,7 @@ vincoli/assunzioni · rischi/edge case · prioritizzazione **MoSCoW**.
 
 ## Done When
 
-- [ ] Artefatto scritto e validato: `overview.md` (progetto/MVP) **o** `<feature>/requirements.md` (feature).
-- [ ] Livello progetto: backlog di feature con MoSCoW; ambito MVP delimitato; successo misurabile.
+- [ ] Artefatto scritto e validato: `<epica>/epic.md` (epica) **o** `<feature>/requirements.md` (feature).
+- [ ] Livello epica: backlog di feature con MoSCoW; ambito delimitato; criteri di successo misurabili.
 - [ ] Livello feature: requisiti funzionali EARS atomici/testabili; `Deriva da: FEAT-NNN` se applicabile.
 - [ ] Domande aperte elencate; commit proposto al `configuration-manager`.

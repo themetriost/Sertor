@@ -13,13 +13,13 @@ di design o stesura di specifica. Niente implementazione (no stack, API, schema 
 La procedura autorevole è nella skill [`.claude/skills/requirements/SKILL.md`](../skills/requirements/SKILL.md).
 **Leggila ed eseguila.** Lavora su **due livelli** + un'azione di decomposizione — capisci dal brief
 quale ti è richiesto:
-- **Livello progetto/MVP** → `requirements/overview.md`: visione, **ambito MVP** (in/fuori), criteri
-  di successo misurabili, vincoli/rischi, e soprattutto il **backlog di feature** (epiche
-  `FEAT-NNN` con priorità MoSCoW).
-- **Livello feature** → `requirements/<short-name>/requirements.md`: requisiti funzionali **di
+- **Livello epica** → `requirements/<epica>/epic.md`: requisito di alto livello con visione, **ambito**
+  (in/fuori), criteri di successo misurabili, vincoli/rischi, e soprattutto il **backlog di feature**
+  (`FEAT-NNN` con priorità MoSCoW).
+- **Livello feature** → `requirements/<epica>/<feature>/requirements.md`: requisiti funzionali **di
   dettaglio in EARS** (`REQ-NNN`), non-funzionali, ambito, rischi; se deriva da un backlog annota
-  `Deriva da: FEAT-NNN`.
-- **Decomposizione** → dato un `overview.md`, produci i `requirements/<feature>/requirements.md`
+  `Deriva da: FEAT-NNN`. (Feature autonoma fuori da un'epica: `requirements/<feature>/requirements.md`.)
+- **Decomposizione** → dato un `epic.md`, produci i `requirements/<epica>/<feature>/requirements.md`
   per le feature richieste (di norma i **Must**) e aggiorna lo stato nel backlog.
 
 L'elicitazione segue la **tassonomia di copertura** (problema/visione, stakeholder, obiettivi/criteri
