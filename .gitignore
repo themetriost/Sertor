@@ -16,21 +16,22 @@ __pycache__/
 **/chroma/
 *.chroma
 **/.index/
+**/.index-sertor/
 
 # Log rigenerabili (re-index, ecc.)
 **/*.log
 
 # GraphRAG (Tappa 3C): venv isolato + artefatti rigenerabili (input staged da raw/)
-03-graphrag/.venv-grag/
-03-graphrag/*.log
-03-graphrag/grag/input/
-03-graphrag/grag/output/
-03-graphrag/grag/output_*/
-03-graphrag/grag/cache/
-03-graphrag/grag/logs/
-03-graphrag/grag/metrics/
-03-graphrag/grag/update_output/
-03-graphrag/entity_types_evidence.*
+prototype/03-graphrag/.venv-grag/
+prototype/03-graphrag/*.log
+prototype/03-graphrag/grag/input/
+prototype/03-graphrag/grag/output/
+prototype/03-graphrag/grag/output_*/
+prototype/03-graphrag/grag/cache/
+prototype/03-graphrag/grag/logs/
+prototype/03-graphrag/grag/metrics/
+prototype/03-graphrag/grag/update_output/
+prototype/03-graphrag/entity_types_evidence.*
 
 # OS / editor
 .DS_Store
@@ -38,6 +39,6 @@ Thumbs.db
 .vscode/
 
 # Fonti esterne vendored in raw/ (riproducibili via sources/*.md): non versionare,
-# ma tieni il nostro README della cartella.
-raw/*
-!raw/README.md
+# ma tieni il nostro README della cartella. (corpus del prototipo, isolato in prototype/)
+prototype/raw/*
+!prototype/raw/README.md

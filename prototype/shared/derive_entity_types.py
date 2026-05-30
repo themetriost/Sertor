@@ -171,7 +171,7 @@ def main() -> None:
     ap.add_argument("--source-key", default="source")
     ap.add_argument("--doc-value", default="doc")
     ap.add_argument("--code-value", default="code")
-    ap.add_argument("--graph", default=str(settings.root / "03-graphrag" / ".index" / "code_graph.graphml"))
+    ap.add_argument("--graph", default=str(settings.graph_path))
     ap.add_argument("--clusters", type=int, default=14)
     ap.add_argument("--per-cluster", type=int, default=4)
     ap.add_argument("--top-symbols", type=int, default=20)

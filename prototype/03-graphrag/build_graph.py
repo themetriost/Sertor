@@ -22,7 +22,18 @@ import networkx as nx  # noqa: E402
 from shared.config import settings  # noqa: E402
 from shared.loaders import load_code, load_docs  # noqa: E402
 
-GRAPH_PATH = pathlib.Path(__file__).resolve().parent / ".index" / "code_graph.graphml"
+GRAPH_PATH = settings.graph_path  # corpus-aware: .index (fastapi) | .index-<corpus> (sertor)
+
+
+def _import_roots() -> tuple[str, ...]:
+    """Top-level package importabili del corpus (per risolvere gli archi `imports`)."""
+    return ("fastapi",) if settings.corpus == "fastapi" else ("shared",)
+
+
+def _pkg_prefixes() -> tuple[str, ...]:
+    """Prefissi di path dei code-root del corpus (per filtrare i simboli 'di package')."""
+    return ("fastapi",) if settings.corpus == "fastapi" else (
+        "01-baseline", "02-hybrid-reranking", "03-graphrag", "04-agentic-rag", "shared")
 
 
 def _name_of(node) -> str | None:
@@ -44,12 +55,12 @@ def _module_candidates(path: str, node) -> list[str]:
             mod = node.module.split(".") if node.module else []
             out.append("/".join(base + mod))
             out += ["/".join(base + mod + [a.name]) for a in node.names]
-        elif node.module and node.module.split(".")[0] == "fastapi":
+        elif node.module and node.module.split(".")[0] in _import_roots():
             mp = node.module.replace(".", "/")
             out.append(mp)
             out += [f"{mp}/{a.name}" for a in node.names]
     elif isinstance(node, ast.Import):
-        out += [a.name.replace(".", "/") for a in node.names if a.name.split(".")[0] == "fastapi"]
+        out += [a.name.replace(".", "/") for a in node.names if a.name.split(".")[0] in _import_roots()]
     return out
 
 
@@ -127,7 +138,7 @@ def build() -> nx.DiGraph:
         distinctive = len(name) >= 5 or any(c.isupper() for c in name[1:]) or "_" in name
         if not distinctive:
             continue
-        pkg = [i for i in ids if i.startswith("fastapi/")]
+        pkg = [i for i in ids if i.split("/")[0] in _pkg_prefixes()]
         if pkg:
             pkg_names[name] = pkg
 

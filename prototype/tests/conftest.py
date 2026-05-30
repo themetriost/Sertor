@@ -19,7 +19,10 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
-VENV_PY = ROOT / ".venv" / "Scripts" / "python.exe"
+# Il `.venv` vive alla radice del repo; dopo l'isolamento i test stanno in `prototype/tests/`,
+# quindi la root del repo è `ROOT.parent`. Risali finché trovi il `.venv`.
+_REPO_ROOT = ROOT if (ROOT / ".venv").exists() else ROOT.parent
+VENV_PY = _REPO_ROOT / ".venv" / "Scripts" / "python.exe"
 GRAG_PY = ROOT / "03-graphrag" / ".venv-grag" / "Scripts" / "python.exe"
 INDEX_DIR = ROOT / "01-baseline" / ".index"
 AST_GRAPH = ROOT / "03-graphrag" / ".index" / "code_graph.graphml"

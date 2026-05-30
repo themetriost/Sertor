@@ -16,6 +16,10 @@ load_dotenv(ROOT / ".env", override=True)
 @dataclass(frozen=True)
 class Settings:
     backend: str = os.getenv("RAG_BACKEND", "local")
+    # Corpus attivo del RAG: "fastapi" (demo del prototipo) | "sertor" (dogfooding sul prototipo stesso).
+    # Selettore via env SERTOR_CORPUS (passato dal server MCP); MAI scritto in .env: con override=True
+    # verrebbe congelato e il namespacing per corpus non cambierebbe più.
+    corpus: str = os.getenv("SERTOR_CORPUS", "fastapi")
 
     # Ollama (locale)
     ollama_host: str = os.getenv("OLLAMA_HOST", "http://localhost:11434")
@@ -38,12 +42,21 @@ class Settings:
     root: Path = ROOT
     raw_dir: Path = ROOT / "raw"
     fastapi_dir: Path = ROOT / "raw" / "fastapi"
+    # Indici namespaced per corpus (calcolati in __post_init__): ".index" per fastapi,
+    # ".index-<corpus>" altrimenti. I default qui valgono per il corpus fastapi.
     index_dir: Path = ROOT / "01-baseline" / ".index"
+    graph_path: Path = ROOT / "03-graphrag" / ".index" / "code_graph.graphml"
 
     def __post_init__(self):
         # Garantisce uno schema sull'host Ollama (httpx richiede http://).
         if self.ollama_host and not self.ollama_host.startswith(("http://", "https://")):
             object.__setattr__(self, "ollama_host", f"http://{self.ollama_host}")
+        # Namespacing degli indici per corpus: NON distruttivo (fastapi resta in `.index`,
+        # il dogfooding "sertor" va in `.index-sertor`, in una directory separata).
+        suffix = "" if self.corpus == "fastapi" else f"-{self.corpus}"
+        object.__setattr__(self, "index_dir", ROOT / "01-baseline" / f".index{suffix}")
+        object.__setattr__(self, "graph_path",
+                           ROOT / "03-graphrag" / f".index{suffix}" / "code_graph.graphml")
 
 
 settings = Settings()
