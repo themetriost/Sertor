@@ -629,3 +629,32 @@ MCP-first) è realizzata operazionalmente.
   a [[architettura-attuale]] per il backlog di produzione.
 - File toccati: `wiki/index.md`, `wiki/syntheses/architettura-target.md`, `wiki/syntheses/architettura-attuale.md` (creato),
   `wiki/log.md`.
+
+## [2026-05-30] record | Requirements Engineering — fase autonoma + assets (skill + subagent)
+
+- **Decisione:** creata una fase **STANDALONE di Requirements Engineering a MONTE del design**, agnostica rispetto a SpecKit
+  o qualunque framework di governance a valle. Motivazione confermata da deep-research: i framework spec-driven non coprono
+  bene l'elicitazione e formalizzazione dei requisiti.
+- **Artefatti creati:**
+  - `.claude/skills/requirements/SKILL.md` — workflow **interattivo** (nel flusso principale): guida step-by-step per
+    elidere un progetto, genera bozza di `requirements/<short-name>/requirements.md`.
+  - `.claude/agents/requirements-analyst.md` — subagent **delegabile** (Sonnet, non interattivo): prende brief lordo,
+    esegue analisi profonda con access a tool MCP sertor-rag (dogfooding), output = report con EARS + domande aperte
+    `[DA CHIARIRE]` + tabella opzioni per il flusso.
+- **Formato output:** cartella `requirements/<short-name>/` con `requirements.md` contenente: Contesto & Problema, Obiettivi & Criteri,
+  Stakeholder, Ambito In/Out, **Requisiti Funzionali (EARS atomici)**, Requisiti Non-Funzionali, Vincoli/Assunzioni/Dipendenze,
+  Rischi, Prioritizzazione MoSCoW, Domande Aperte.
+- **Metodologia EARS (Alistair Mavin):** 5 pattern (Ubiquitous, State-driven, Event-driven, Optional, Unwanted Behaviour) + Complex.
+  Ogni requisito con ID REQ-NNN, atomico, testabile, tracciabile.
+- **Principio di disaccoppiamento:** la fase è agnostica; specifica a valle (SpecKit, IEEE 830, etc.) legge `requirements/<short-name>/`
+  senza accoppiamento per nome. Eventuale nota in SpecKit rimanda a questa fase come prerequisito.
+- **Wiki aggiornato:**
+  - `wiki/tech/requirements-engineering.md` (NUOVO): descrizione fase, motivazione, formato output, EARS overview, assets (skill/subagent),
+    principio disaccoppiamento, possibile estensione tassonomia di dominio.
+  - `wiki/concepts/ears-methodology.md` (NUOVO): approfondimento EARS, 5+1 pattern, proprietà (atomico, unambiguo, formale,
+    testabile, tracciabile), design patterns (gerarchia, acceptance criteria, linking a test & code), example set RAG, best practice.
+  - `wiki/index.md`: aggiunto link a `concepts/ears-methodology.md` in sezione Concetti; aggiunto link a `tech/requirements-engineering.md`
+    in sezione Tecnologie (tra Stack e SpecKit).
+  - `wiki/log.md`: questa voce.
+- **Intento strategico:** requirements engineering è un **asset permanente** del workspace, riusabile per ANY progetto (Sertor, client,
+  research), indipendente da fasi di design/governance. Complementare (NON subordinato) a SpecKit.

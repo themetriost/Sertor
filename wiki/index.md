@@ -25,10 +25,12 @@ Il wiki è mantenuto secondo lo schema descritto in [`../CLAUDE.md`](../CLAUDE.m
 ## Concetti
 
 - [Panoramica RAG e approcci](concepts/rag-overview.md) — cos'è il RAG e i 4 approcci che esploriamo
+- [EARS — Easy Approach to Requirements Syntax](concepts/ears-methodology.md) — metodologia pubblica (Alistair Mavin) per requisiti atomici e testabili
 
 ## Tecnologie
 
 - [Stack del workspace](tech/stack.md) — panoramica dello stack (locale + Microsoft/Azure)
+- [Requirements Engineering — Fase a Monte del Design](tech/requirements-engineering.md) — elicitazione e formalizzazione requisiti via EARS, agnostico rispetto a design a valle
 - [SpecKit — Governance e Orchestrazione di Progetto](tech/speckit.md) — framework phase-gate, 9 subagent, transizione prototipo→produzione
 
 ## Esperimenti
