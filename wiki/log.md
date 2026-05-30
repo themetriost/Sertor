@@ -567,6 +567,20 @@ MCP-first) è realizzata operazionalmente.
 
 - **Creati 9 subagent SpecKit** in `.claude/agents/speckit-<fase>.md`: **constitution, specify, clarify, plan, tasks,
   analyze, checklist, implement, taskstoissues**. Primo tassello operativo della **fase di produzione** (assettizzazione Sertor).
+
+## [2026-05-30] record | Epica Sertor CLI — requisiti di alto livello e backlog
+
+- **Eseguita skill `/requirements` a livello EPICA** sull'idea "Sertor CLI" (toolkit installabile per RAG + governance + LLM Wiki).
+  Artefatto creato: `requirements/sertor-cli/epic.md` (epica formale con visione, ambito, 9 feature MoSCoW, 6 requisiti trasversali EARS,
+  8 criteri di successo, 6 domande aperte).
+- **Decisioni di ambito prese:** distribuzione interna ora, pubblico (PyPI) poi; target CLI agnostico (repo nuovo o esistente);
+  confine MVP = install motori RAG + wiki vivo (spider/lint); config e run come Should; LLM obbligatorio con default cloud,
+  Ollama locale supportato; vector DB opzionale/a scelta.
+- **Creata pagina di sintesi** `syntheses/epica-sertor-cli.md`: riassume epica, backlog, requisiti EARS trasversali (REQ-E1…E6),
+  criteri di successo (CS-1…CS-8), domande aperte (DA-1…DA-6), link a flusso requisiti→implementazione.
+- **Aggiornato `index.md`** (sezione Sintesi, voce nuova in testa).
+- **Prossimi passi:** decomposizione di FEAT-001…009 in `requirements/sertor-cli/<feature>/requirements.md` con EARS atomici,
+  scenari di accettazione, trace verso design/architettura.
 - **Architettura:** ogni agente è **esecutore fedele** del rispettivo skill canonico in `.claude/skills/speckit-<fase>/SKILL.md`:
   system prompt rimanda allo SKILL e lo esegue; note aggiungono solo adattamenti workspace (CLAUDE.md policy, convenzioni).
   → Evita duplicazione/drift. Aggiornamento dello skill riflette automaticamente negli agenti.

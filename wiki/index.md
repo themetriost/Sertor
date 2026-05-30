@@ -64,6 +64,7 @@ Il wiki è mantenuto secondo lo schema descritto in [`../CLAUDE.md`](../CLAUDE.m
 
 ## Sintesi
 
+- [Epica Sertor CLI — requisiti di alto livello e backlog](syntheses/epica-sertor-cli.md) — visione, ambito, 9 feature (MoSCoW), 6 requisiti trasversali EARS, 8 criteri di successo, 6 domande aperte
 - [Vetrina di esempi — query → risposta per motore](syntheses/esempi-query-risposta.md) — sintesi pratica dei 4 motori e quando usarli
 - [Architettura target — dual-RAG codice + documentazione](syntheses/architettura-target.md) — disegno finale + roadmap incrementale 01→04
 - [Architettura attuale (as-built) — tappe 01–04 complete](syntheses/architettura-attuale.md) — diagramma realizzato + strati + backlog di produzione (caching)
