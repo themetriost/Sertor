@@ -118,9 +118,9 @@ produzione: testato, configurabile, repo-agnostico, osservabile, riusabile come 
 
 | ID | Feature | Valore / obiettivo | Priorità (MoSCoW) | Stato |
 |----|---------|--------------------|-------------------|-------|
-| FEAT-001 | **Nucleo di retrieval condiviso** (ingestione repo-agnostica, chunking code-aware, embeddings multi-provider, astrazione vector store, facade di retrieval) | Fondazione production-grade su cui poggiano tutti i motori | **Must** | da decomporre |
-| FEAT-002 | **Motore RAG vettoriale (baseline)** production-grade | La capacità minima di "creare un RAG" interrogabile | **Must** | da decomporre |
-| FEAT-003 | **Skill: creare/indicizzare l'LLM Wiki** (indicizza il progetto in MD, documenta in continuo, archivia/distilla conversazioni) | Conoscenza persistente e cumulativa del progetto | **Must** | da decomporre |
+| FEAT-001 | **Nucleo di retrieval condiviso** (ingestione repo-agnostica, chunking code-aware, embeddings multi-provider, astrazione vector store, facade di retrieval) | Fondazione production-grade su cui poggiano tutti i motori | **Must** | [decomposta](nucleo-retrieval/requirements.md) |
+| FEAT-002 | **Motore RAG vettoriale (baseline)** production-grade | La capacità minima di "creare un RAG" interrogabile | **Must** | [decomposta](rag-baseline/requirements.md) |
+| FEAT-003 | **Skill: creare/indicizzare l'LLM Wiki** (indicizza il progetto in MD, documenta in continuo, archivia/distilla conversazioni) | Conoscenza persistente e cumulativa del progetto | **Must** | [decomposta](wiki-creazione/requirements.md) |
 | FEAT-004 | **Motore RAG ibrido + reranking** (dense + lessicale/BM25 + reranking) | Qualità di retrieval superiore al baseline | **Should** | da decomporre |
 | FEAT-005 | **Motore RAG a grafo** (code-graph AST / GraphRAG) | Retrieval strutturale/relazionale; non richiede vector DB | **Should** | da decomporre |
 | FEAT-006 | **Motore RAG agentico** (retrieval iterativo/multi-step, query planning) | Risposte composite su domande complesse | **Should** | da decomporre |
