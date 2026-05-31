@@ -58,3 +58,19 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
     wiki. Richiede decisione di prodotto PRIMA di user story.
 - **Index aggiornato:** sezione Syntheses con link a nuova pagina.
 - **Pagina storica superata:** `prototype/wiki/epica-sertor-cli.md` (congelata, consultabile via RAG).
+
+## [2026-05-31] record | DA-W1 risolta (ruolo wiki: corpus×superficie) + hook SessionStart documentato
+
+- **Pagina creata:** `syntheses/ruolo-wiki-da-w1.md` documenta il modello concettuale risolutivo:
+  - **Due assi ortogonali:** corpus (wiki vs codice) × superficie (RAG semantica vs wiki-nativa).
+  - **Identità:** wiki = CORPUS + SUPERFICIE entrambi; già ingerito nel RAG, navigabile per struttura.
+  - **Tre ruoli:** (1) contesto iniettato (push, host); (2) query precisa (pull strutturato); (3) ingestion nel RAG (già attivo).
+  - **Decisioni chiave:** MVP Must = creare+indicizzare (ruolo 3); post-MVP = superficie nativa (ruoli 1–2) + spider/lint/arricchimento.
+  - **Confine MVP risolto:** chiude DA-W1 e DA-2 (wiki = solo creazione/indicizzazione, niente spider automatico).
+  - **Sblocca FEAT-003 decomposizione** e inquadra FEAT-007/008 (post-MVP).
+- **Pagina creata:** `tech/hook-sessionstart-wiki.md` documenta il meccanismo concreto di ruolo 1:
+  - **Hook `SessionStart`:** PowerShell inline in `.claude/settings.json`, attiva a inizio sessione/resume/compact.
+  - **Payload:** indice wiki intero + ultime 20 righe di log, iniettate in contesto (sola lettura).
+  - **Rilevanza DA-W1:** prova empirica di ruolo 1 (contesto iniettato); competenza dell'host, non MVP Sertor.
+- **Index aggiornato:** sezione Syntheses con `[[ruolo-wiki-da-w1]]`; nuova sezione Tech con `[[hook-sessionstart-wiki]]`.
+- **Epica sertor-core `epic.md`:** §9 (DA-W1, DA-2 risolte) e §6 (R-5 mitigato).

@@ -94,8 +94,9 @@ produzione: testato, configurabile, repo-agnostico, osservabile, riusabile come 
 - **R-3 — Conflitti di dipendenze** tra modalità (es. grafico) → ambienti non risolvibili.
 - **R-4 — Riscrittura sotto-stimata:** "rendere production-like" il prototipo può nascondere debito;
   rischio di reimplementare 1:1 l'esplorativo senza alzarne la qualità.
-- **R-5 — Ruolo del wiki non ancora definito a livello di prodotto** (vedi §9, DA-W1): decomporre le
-  feature wiki prima di chiarirlo rischia requisiti instabili.
+- **R-5 — Ruolo del wiki** (chiarito: §9, DA-W1 risolta il 2026-05-31 — identità corpus+superficie,
+  MVP = creazione/indicizzazione). Rischio residuo: tenere la decomposizione di FEAT-003/007/008
+  allineata a questo modello a due assi.
 
 ## 7. Requisiti trasversali (EARS)
 <!-- solo i pochi requisiti davvero trasversali a tutta l'epica -->
@@ -131,16 +132,26 @@ produzione: testato, configurabile, repo-agnostico, osservabile, riusabile come 
 > Ibrido/grafo/agentico e la manutenzione/arricchimento del wiki seguono come incrementi (Should/Could),
 > riusando il nucleo. Le quattro modalità RAG restano tutte parte del **core** della visione.
 
-## 9. Domande aperte
+## 9. Decisioni risolte
 
-- **DA-W1 — Ruolo di prodotto dell'LLM Wiki (da definire prima di decomporre FEAT-003/007/008).**
-  Non abbiamo ancora deciso, a livello di prodotto, *come* il wiki viene usato. Va chiarito se e come
-  il wiki serve a:
-  1. **popolare il contesto** degli agenti/persone che sviluppano con lo strumento (contesto iniettato);
-  2. essere il **luogo dove si fanno query precise** (interrogazione mirata, diversa dal RAG semantico);
-  3. essere **anche una fonte di ingestion** per il RAG — *oltre* all'MCP che interroga RAG/indice
-     (cioè il wiki come input documentale di prima classe, non solo come output).
-  *[DA CHIARIRE: modello d'uso del wiki — input/output/contesto/query — e relazione con il RAG e l'MCP.]*
-- **DA-2 — Confine "Must" del wiki:** "creare" il wiki è Must; "mantenere" (spider/lint) è Should.
-  Confermare che l'MVP del wiki è la **sola creazione/indicizzazione**, senza spider, in attesa di DA-W1.
-  *[DA CHIARIRE]*
+### DA-W1 (risolta 2026-05-31) — Ruolo di prodotto dell'LLM Wiki
+
+Modello a **due assi ortogonali**: **corpus** (*cosa* è indicizzato/conosciuto) × **superficie** (*come*
+vi si accede e che forma hanno i risultati). Il wiki si colloca su **entrambi**.
+
+| Tema | Decisione |
+|------|-----------|
+| **Identità** | Il wiki è **corpus + superficie** (entrambi): **ingerito nel RAG** *e* **navigabile per struttura** (indice → pagina → backlink). Le due porte restano aperte. |
+| **Autorità nel ranking** | **Paritario** sull'asse corpus: un chunk di wiki pesa come uno di codice (nessun boost). L'autorevolezza del wiki deriva dalla **superficie strutturata** (*come* vi si accede), **non** dal ranking semantico. |
+| **Tre ruoli** | (1) **contesto iniettato** [push; usa la superficie strutturata]; (2) **query precisa** [pull strutturato; superficie wiki-nativa]; (3) **ingestion nel RAG** [asse corpus — **già attivo** nel dogfood: `search_docs` restituisce pagine del wiki]. |
+| **Confine MVP** | L'MVP del core (FEAT-003, **Must**) = **creare + indicizzare nel RAG** (ruolo 3). La superficie wiki-nativa (ruoli 1 e 2), lo spider/lint (FEAT-007) e l'arricchimento (FEAT-008) sono **post-MVP**. |
+| **Ruolo 1 (contesto iniettato)** | **Competenza dell'host** (es. hook `SessionStart` di Claude Code, già funzionante), **non** capacità di prodotto nell'MVP. Sertor **espone** il wiki (indice/pagine); l'host decide *cosa/quando* iniettare. Non preclude un futuro "context payload" generato da sertor. |
+
+> Approfondimento del modello **corpus × superficie** e della meccanica dell'**hook SessionStart** (la
+> prova vivente del ruolo 1): nel wiki di produzione, `wiki/syntheses/ruolo-wiki-da-w1.md` e
+> `wiki/tech/hook-sessionstart-wiki.md`.
+
+### DA-2 (risolta 2026-05-31) — Confine "Must" del wiki
+
+Confermato: l'MVP del wiki è la **sola creazione/indicizzazione** (ruolo 3, ingestion nel RAG); niente
+spider. "Mantenere" (spider/lint, **FEAT-007**) resta **Should**, post-MVP.
