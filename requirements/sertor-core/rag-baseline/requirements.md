@@ -41,7 +41,7 @@ Collegati ai criteri dell'epica (§3 di `epic.md`):
 | ID | Criterio | Misura / soglia | CS epica |
 |----|----------|-----------------|----------|
 | OBJ-1 | Il motore indicizza una codebase qualunque e rende l'indice interrogabile | Indice costruito senza errori su ≥ 2 codebase diverse (es. prototipo Sertor + un secondo repo) | CS-1, CS-5 |
-| OBJ-2 | L'interrogazione restituisce risultati pertinenti su query note | Hit-rate@5 ≥ 0.70 e MRR@10 ≥ 0.70 su un corpus campione con ground-truth (baseline del prototipo: azure-small hit@5 ~0.80, ollama ~0.67) | CS-1 |
+| OBJ-2 | L'interrogazione restituisce risultati pertinenti su query note | Pertinenza (hit-rate@k, MRR) misurata su un corpus campione con ground-truth; **soglia di accettazione fissata in design** con baseline = prototipo (azure-small hit@5 ~0.80, ollama ~0.67), soglia ridotta ammessa per il provider locale | CS-1 |
 | OBJ-3 | La re-indicizzazione è idempotente | Due esecuzioni consecutive sull'identica codebase producono un indice con lo stesso numero di chunk e gli stessi risultati alle medesime query | CS-3 (trasversale) |
 | OBJ-4 | Il motore funziona con ≥ 2 provider di embeddings distinti (almeno uno locale, almeno uno cloud) | Test green su provider locale (es. Ollama) e su provider cloud (es. Azure) senza modificare il codice | CS-4, CS-7 |
 | OBJ-5 | Il motore è selezionabile come modalità "baseline" senza influenzare le altre modalità | L'attivazione/disattivazione della modalità baseline non altera il comportamento delle altre | CS-2 |
@@ -218,14 +218,14 @@ Ancora: `prototype/shared/loaders.py` — corpus-aware loader parametrizzato via
 
 | ID | Categoria | Requisito | Soglia / misura |
 |----|-----------|-----------|-----------------|
-| NFR-001 | Pertinenza | Hit-rate@5 ≥ 0.70 e MRR@10 ≥ 0.70 su corpus campione con ground-truth | Verificabile con REQ-011; baseline prototipo con `azure-small`: hit@5 ~0.80, MRR ~0.83 (`wiki/experiments/01-baseline.md`) |
-| NFR-002 | Performance (indicizzazione) | L'indicizzazione di una codebase di dimensioni tipiche (es. 500–2000 file sorgente, ≤ 100 MB) deve completare in tempo ragionevole (< 10 min con provider cloud, < 30 min con provider locale) | [DA CHIARIRE: DA-1 — soglie di performance da validare con il maintainer] |
-| NFR-003 | Performance (interrogazione) | Il tempo di risposta a una singola query deve essere < 2 s (escluso latency di rete verso provider cloud remoto) | [DA CHIARIRE: DA-1] |
+| NFR-001 | Pertinenza | Pertinenza (hit-rate@k, MRR) misurata su corpus campione con ground-truth; **soglia fissata in design**, baseline = prototipo, soglia ridotta ammessa per il locale (DA-1/DA-3 risolte) | Verificabile con REQ-011; riferimento prototipo `azure-small`: hit@5 ~0.80, MRR ~0.83; `ollama` hit@5 ~0.67 |
+| NFR-002 | Performance (indicizzazione) | L'indicizzazione di una codebase di dimensioni tipiche deve completare in tempo ragionevole; **soglia numerica fissata in design** dopo profiling, baseline = prototipo (nessun numero assoluto vincolante ora) | DA-1 risolta (§10) |
+| NFR-003 | Performance (interrogazione) | Il tempo di risposta a una singola query deve restare interattivo; **soglia (orientativa < 2 s locale) confermata in design** dopo misura (DA-1 risolta) | Riferimento prototipo |
 | NFR-004 | Affidabilità | In caso di errore del provider durante l'indicizzazione, l'indice preesistente non viene corrotto (atomicità dell'operazione di rebuild) | Verificabile con REQ-004 |
 | NFR-005 | Configurabilità | Il provider di embeddings è selezionabile via file di configurazione senza modificare il codice | Verificabile con REQ-012 |
 | NFR-006 | Testabilità | Ogni requisito funzionale di §5 deve essere coperto da almeno un test automatico eseguibile in locale (con provider locale o mock) | Verificabile con REQ-016 |
 | NFR-007 | Osservabilità minima | Il motore registra, a ogni run di indicizzazione e interrogazione: numero di chunk processati, provider usato, tempo di esecuzione, eventuali errori | Verificabile con REQ-003 |
-| NFR-008 | Portabilità | Il motore funziona su almeno due sistemi operativi (es. Linux e Windows) senza modifiche al codice | [DA CHIARIRE: DA-2 — il prototipo è sviluppato su Windows/WSL; testare Linux nativo è un requisito esplicito?] |
+| NFR-008 | Portabilità | Il motore funziona su almeno due sistemi operativi (es. Linux e Windows) senza modifiche al codice | Test su Linux nativo rinviato a CI/design (DA-2, §10) |
 
 ---
 
@@ -294,12 +294,14 @@ Ancora: `prototype/shared/loaders.py` — corpus-aware loader parametrizzato via
 
 ---
 
-## 10. Domande aperte
+## 10. Domande aperte (risolte)
 
-| ID | Domanda | Priorità | Impatto |
-|----|---------|----------|---------|
-| DA-1 | Soglie di performance per l'indicizzazione (NFR-002: < 10 min cloud / < 30 min locale) e per l'interrogazione (NFR-003: < 2 s) sono accettabili? Oppure è necessario un profiling preventivo su corpus reali per fissarle? | Alta | Blocca NFR-002/003 e i test di performance |
-| DA-2 | È un requisito esplicito che il motore venga testato anche su Linux nativo (oltre a Windows/WSL)? Il prototipo è sviluppato e validato su Windows; la portabilità multi-OS è in ambito per l'MVP o è un Should? | Media | Impatta NFR-008 e il CI/CD |
-| DA-3 | OBJ-2 fissa hit-rate@5 ≥ 0.70 come soglia minima per il provider **di default** (cloud in Azure, Ollama in locale). Deve valere anche per il provider locale Ollama, o si accetta una soglia inferiore per il locale (es. hit@5 ≥ 0.60) coerentemente con i risultati del prototipo (ollama hit@5 ~0.67)? | Media | Impatta i criteri di accettazione dei test automatici |
-| DA-4 | Il requisito REQ-005 (indici multi-provider in parallelo) è necessario nell'MVP oppure il motore baseline espone sempre un solo indice "attivo" (quello del provider configurato)? Il prototipo supporta entrambi (`--provider all`), ma per la produzione la semplicità potrebbe prevalere | Bassa | Impatta la complessità del design dell'indice |
-| DA-5 | REQ-011 (valutazione hit-rate/MRR) richiede un ground-truth esterno: il team prevede di definire un corpus campione standard per i test di accettazione di tutti i motori RAG, o il ground-truth è specifico per ogni codebase target? | Bassa | Impatta il setup dei test automatici e la comparabilità tra motori |
+Chiuse in elicitazione il 2026-05-31.
+
+| ID | Disposizione |
+|----|--------------|
+| DA-1 — Soglie di performance | **Risolta:** non si fissano numeri assoluti ora; le soglie (NFR-002/003) si fissano in **design** dopo profiling, con baseline = prototipo. |
+| DA-2 — Test Linux nativo | **Rinviata** a CI/design; la portabilità multi-OS (NFR-008) resta obiettivo di test, non blocca l'MVP. |
+| DA-3 — Soglia hit-rate locale | **Risolta:** si accetta una **soglia ridotta per il provider locale** (coerente col prototipo, ollama hit@5 ~0.67); le soglie esatte si fissano in design. |
+| DA-4 — Indici multi-provider in parallelo | **Risolta:** l'MVP espone **un solo indice attivo** (provider configurato); REQ-005 resta **Could**. |
+| DA-5 — Ground-truth condiviso o per-codebase | **Rinviata** al setup test/design; direzione: corpus campione condiviso (prototipo) come baseline + ground-truth per-codebase ammesso. |

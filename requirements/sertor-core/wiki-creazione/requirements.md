@@ -80,12 +80,12 @@ I sotto-criteri misurabili per questa feature:
    strutturato (attività/decisione), aggiornare `index.md` e appendere una voce a `log.md`.
 4. **Operazione ingest**: incorporare una fonte esterna (riassunto) in una pagina `sources/`,
    propagare i riferimenti nelle pagine concetto/tech correlate, aggiornare `index.md` e `log.md`.
-5. **Distillazione di conversazione/sessione**: dato un testo di conversazione (trascrizione o
-   riassunto), produrre una pagina wiki conforme (tipicamente in `experiments/` o `syntheses/`)
-   e registrarla nel log.
+5. **Distillazione di conversazione/sessione**: dato un **riassunto/brief condensato** di una
+   conversazione (non la trascrizione grezza — la pre-elaborazione spetta all'agente chiamante),
+   produrre una pagina wiki conforme (tipicamente in `experiments/` o `syntheses/`) e registrarla nel log.
 6. **Indicizzazione del wiki nel RAG**: dato un wiki esistente e un sistema RAG configurato,
-   ingerire le pagine Markdown del wiki nel corpus documentale del RAG; supportare la
-   reindicizzazione (update incremental o full rebuild) in modo idempotente.
+   ingerire le pagine Markdown del wiki nel corpus documentale del RAG; nell'MVP la reindicizzazione
+   è un **full rebuild** idempotente (l'aggiornamento incrementale è post-MVP, manutenzione).
 7. **Idempotenza**: ogni operazione di creazione/reindicizzazione eseguita più volte sullo stesso
    input produce lo stesso risultato senza divergenze (niente duplicati di pagine, voci di log,
    o chunk nel vettore store).
@@ -109,6 +109,8 @@ I sotto-criteri misurabili per questa feature:
 - **Priorità/boost nel ranking RAG**: il wiki è paritario agli altri chunk nel ranking semantico
   (decisione DA-W1, `requirements/sertor-core/epic.md §9`). Non si modellano meccanismi di
   prioritizzazione del ranking.
+- **Chunking/suddivisione dell'input di distillazione**: la skill riceve un brief già condensato;
+  non gestisce la suddivisione di trascrizioni grezze lunghe (DA-W3 risolta — post-MVP).
 - **GUI o interfaccia web** per il wiki.
 - **Versionamento/storicizzazione** interna delle pagine wiki (è responsabilità del VCS del
   progetto ospitante).
@@ -191,9 +193,11 @@ the system shall explicitly mark the contradiction in the affected page before u
 ### Gruppo D — Distillazione di conversazione/sessione
 
 **REQ-030 (Event-driven)**
-*When a distillation operation is invoked with a conversation or session text, the system shall
-produce a wiki page that captures the key decisions, concepts, and outcomes from that input,
-placed in the appropriate thematic directory.*
+*When a distillation operation is invoked with a condensed brief/summary of a conversation or session
+(not a raw transcript), the system shall produce a wiki page that captures the key decisions,
+concepts, and outcomes from that input, placed in the appropriate thematic directory.*
+> Nota: l'input è già pre-elaborato dall'agente chiamante; la suddivisione/chunking di trascrizioni
+> grezze è fuori ambito MVP (DA-W3 risolta).
 
 **REQ-031 (Event-driven)**
 *When a distillation operation produces a new page, the system shall require a configured LLM
@@ -222,6 +226,8 @@ metadata that identifies it as a wiki document (at minimum: `path`, `source: "do
 *When the indexing operation is invoked on a corpus that already contains wiki chunks, the
 system shall update or replace those chunks without creating duplicate entries for the same
 source file.*
+> Nota: nell'MVP l'operazione è un **full rebuild** (DA-W4 risolta); l'aggiornamento incrementale
+> è post-MVP (manutenzione).
 
 **REQ-042 (State-driven)**
 *While the RAG system is configured and reachable, the system shall complete the indexing
@@ -297,8 +303,9 @@ a new chunk identity.*
 - Il repository target dispone di un filesystem accessibile in lettura/scrittura nella
   directory radice dove viene creato il wiki.
 - Le pagine wiki sono scritte in Markdown (`.md`); altri formati sono fuori ambito.
-- Il testo di conversazione/sessione fornito all'operazione di distillazione è in lingua
-  comprensibile dal LLM configurato (nessun requisito di traduzione in scope).
+- L'input dell'operazione di distillazione è un **brief/riassunto già condensato** (non una
+  trascrizione grezza) in lingua comprensibile dal LLM configurato; nessun chunking dell'input né
+  traduzione in scope (DA-W3 risolta).
 - La struttura wiki (`concepts/`, `tech/`, `experiments/`, `sources/`, `syntheses/`,
   `index.md`, `log.md`) è quella definita nel CLAUDE.md del workspace e mostrata nel
   prototipo (`prototype/wiki/`); non si prevede personalizzazione strutturale nell'MVP.
@@ -342,31 +349,24 @@ a new chunk identity.*
 
 ---
 
-## 10. Domande aperte
+## 10. Domande aperte (risolte)
 
-**[DA CHIARIRE: DA-W2]** Le operazioni record e ingest (Gruppi B e C) devono essere invocabili
-solo da un agente LLM (che costruisce il brief), o anche direttamente da un umano tramite
-interfaccia testuale/CLI? Questo influenza se il formato del brief è strutturato (es. JSON/YAML)
-o in linguaggio naturale.
+Chiuse in elicitazione il 2026-05-31.
 
-**[DA CHIARIRE: DA-W3]** L'operazione di distillazione (Gruppo D) deve operare su **trascrizioni
-intere di conversazione** (potenzialmente molto lunghe) o su **riassunti già prodotti**
-dall'agente chiamante? La risposta determina se la skill deve gestire la suddivisione/chunking
-del testo in ingresso prima di passarlo al LLM, o se può assumere che l'input sia già
-pre-elaborato a dimensioni gestibili.
+**DA-W2 — Invocazione record/ingest.** *Risolta:* attore primario = **agente LLM**; l'input è un
+**brief condensato/strutturato**. L'umano può invocare **attraverso lo stesso canale** (fornendo o
+facendo produrre un brief); non si gestisce un secondo percorso in linguaggio naturale grezzo.
 
-**[DA CHIARIRE: DA-W4]** La reindicizzazione RAG del wiki (Gruppo E, REQ-041) deve essere
-**incrementale** (reindicizza solo i file modificati dall'ultimo run) o **full rebuild** (ogni
-run reindicizza tutto)? L'incrementale è preferibile per wiki grandi ma richiede un meccanismo
-di tracciamento delle modifiche (es. hash o timestamp); il full rebuild è più semplice e
-naturalmente idempotente. La scelta impatta FEAT-001.
+**DA-W3 — Input della distillazione.** *Risolta:* la skill riceve un **riassunto/brief già condensato**
+(non la trascrizione grezza); **non** gestisce il chunking/suddivisione dell'input nell'MVP (la
+pre-elaborazione spetta all'agente chiamante). La distillazione "end-to-end da trascrizione cruda" è
+post-MVP.
 
-**[DA CHIARIRE: DA-W5]** Il campo `sources` del frontmatter YAML (REQ-003) deve contenere
-**riferimenti formali** (es. URI, path file) o **etichette libere** in linguaggio naturale?
-La risposta determina se l'ingest (REQ-020) può popolare automaticamente questo campo in modo
-verificabile.
+**DA-W4 — Reindicizzazione incrementale o full.** *Risolta:* nell'MVP **full rebuild** (naturalmente
+idempotente, REQ-041); l'incrementale è **post-MVP** (manutenzione).
 
-**[DA CHIARIRE: DA-W6]** La struttura delle cartelle tematiche (`concepts/`, `tech/`,
-`experiments/`, `sources/`, `syntheses/`) deve essere **fissa** (come nel prototipo e in
-`CLAUDE.md`) o **configurabile per progetto**? Nell'MVP si assume fissa (§7 Assunzioni), ma
-un progetto diverso potrebbe avere esigenze diverse.
+**DA-W5 — Formato del campo `sources`.** *Rinviata* alla fase di design (riferimenti formali vs
+etichette libere); non blocca l'MVP.
+
+**DA-W6 — Struttura delle cartelle tematiche.** *Risolta:* **fissa** nell'MVP (come nel prototipo);
+la configurabilità per progetto è post-MVP, solo se un 2° repo lo richiede.

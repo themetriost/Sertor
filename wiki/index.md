@@ -4,7 +4,7 @@ type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
 updated: 2026-05-31
-sources: []
+sources: ["requirements/sertor-core/epic.md"]
 ---
 
 # Wiki di Produzione — Sertor
@@ -40,6 +40,7 @@ _(La produzione inizia ora: questa sezione cresce a ogni sessione.)_
 - **[[chiusura-prototipo-dogfooding]]** — Isolamento del prototipo, motore corpus-aware, RAG di dogfooding su se stesso, MCP ri-puntato.
 - **[[epiche-sertor-core-e-cli]]** — Ristrutturazione: Sertor Core (MVP, capacità RAG + Wiki) primaria; Sertor CLI (distribuzione via CLI) secondaria. Questione aperta DA-W1 su ruolo wiki.
 - **[[ruolo-wiki-da-w1]]** — DA-W1 risolta: il wiki è CORPUS + SUPERFICIE; identità, autorità, confine MVP, ruoli 1–3.
+- **[[decomposizione-must-core]]** — Decomposizione dei 3 Must (FEAT-001/002/003); 6 decisioni di ambito MVP; nuova FEAT-009 su refresh incrementale.
 
 ### Tech (tecnologie e infrastruttura)
 

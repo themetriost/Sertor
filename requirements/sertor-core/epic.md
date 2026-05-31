@@ -126,6 +126,7 @@ produzione: testato, configurabile, repo-agnostico, osservabile, riusabile come 
 | FEAT-006 | **Motore RAG agentico** (retrieval iterativo/multi-step, query planning) | Risposte composite su domande complesse | **Should** | da decomporre |
 | FEAT-007 | **Skill: mantenere il wiki vivo** (spider/lint: rigenera indice, valida link, rileva orfani/contraddizioni, distilla raw→concept) | Tiene il wiki coerente e aggiornato (idempotente) | **Should** | da decomporre |
 | FEAT-008 | **Arricchimento bidirezionale Wiki↔RAG** (wiki → parte documentale del RAG; sorgenti → parte codice del RAG + fondamenta del wiki) | Loop virtuoso doc/codice che migliora retrieval e documentazione | **Could** | da decomporre |
+| FEAT-009 | **Manutenzione/refresh incrementale dell'indice RAG sui sorgenti** (aggiorna l'indice solo sui file cambiati, senza full re-index) | Tiene il RAG fresco su repo grandi senza ricostruire tutto; pendant per i sorgenti di FEAT-007 (wiki) | **Could** | da decomporre |
 
 > **Nota sull'MVP (Must):** la prima release del core deve dimostrare **(1)** la creazione di un RAG
 > **vettoriale** funzionante poggiato sul **nucleo condiviso**, e **(2)** la **creazione di un LLM Wiki**.

@@ -64,7 +64,7 @@ I criteri sono misurabili e collegati ai criteri di successo dell'epica primaria
 | **Skill wiki (FEAT-003, 007, 008)** | Consumano il nucleo per indicizzare e recuperare contenuti del wiki. |
 | **Epica `sertor-cli` (consumatore a valle)** | Installa e configura il nucleo; non fa parte di questa feature. |
 | **Agente LLM (es. Claude Code)** | Attore non umano: usa la facade di retrieval come strumento; beneficia della qualità e della stabilità dei metadati restituiti. |
-| **Codebase target** | Il repository su cui il nucleo opera; qualunque progetto Python/Markdown (e in futuro altri linguaggi). |
+| **Codebase target** | Il repository su cui il nucleo opera; qualunque progetto **multi-linguaggio** (set MVP: Python, JS/TS, Java, C#, Go, C/C++, PHP, Ruby, PowerShell, Bash, T-SQL, PL/SQL) + Markdown, con fallback testuale per gli altri linguaggi. |
 
 ---
 
@@ -187,8 +187,14 @@ document identifier and the chunk's position, such that re-chunking the same unc
 produces the same chunk identifiers.
 
 **REQ-011** *(Ubiquitous)*
-The chunking parameters (chunk size, overlap, supported languages) shall be governable via the
-centralised configuration without modifying the chunking component's code.
+The chunking component shall provide syntactic (code-aware) chunking for the MVP set of supported
+languages — Python, JavaScript/TypeScript, Java, C#, Go, C/C++, PHP, Ruby, PowerShell, Bash, T-SQL,
+PL/SQL — and shall allow this set to be extended with additional languages as an increment, not a
+redesign. The chunking parameters (chunk size, overlap, supported-language set) shall be governable
+via the centralised configuration without modifying the chunking component's code.
+
+*Nota:* per i linguaggi del set non ancora coperti da un parser sintattico maturo al primo rilascio,
+REQ-009 (fallback dimensionale) ne garantisce comunque la copertura senza errore.
 
 ---
 
@@ -358,15 +364,12 @@ shall not persist it in a version-controlled file."*
 - **A-1:** Il repository target è accessibile in lettura dal file system locale (o da un path
   montato); non è richiesto il supporto a repository remoti (es. clone da URL) in questa feature.
 - **A-2:** Il corpus principale da indicizzare è composto da file di testo (codice sorgente e
-  Markdown); file binari, immagini e PDF sono esclusi dall'ambito di FEAT-001.
-  [DA CHIARIRE: DA-001 — il supporto a file PDF o altri formati documentali non-testo è
-  richiesto nell'MVP del nucleo o è rimandato?]
-- **A-3:** Per la fase MVP, il linguaggio di codice primario supportato dal chunker sintattico è
-  Python; il requisito REQ-009 (fallback dimensionale) garantisce la gestione di linguaggi
-  non ancora supportati senza errore.
-  [DA CHIARIRE: DA-002 — quali linguaggi di codice (oltre a Python) devono essere supportati
-  dal chunker sintattico nell'MVP? Il prototipo usa tree-sitter; i candidati evidenti sono
-  TypeScript/JavaScript e Go, ma la priorità non è definita.]
+  Markdown); file binari, immagini e formati non-testo (PDF/DOCX/notebook) sono **esclusi dall'MVP**
+  di FEAT-001 (DA-001 risolta — vedi §10).
+- **A-3:** Il chunker sintattico copre **dal primo rilascio** un set multi-linguaggio (Python,
+  JS/TS, Java, C#, Go, C/C++, PHP, Ruby, PowerShell, Bash, T-SQL, PL/SQL; REQ-011), estendibile come
+  incremento; REQ-009 (fallback dimensionale) garantisce la copertura dei linguaggi fuori dal set
+  senza errore (DA-002 risolta — vedi §10).
 - **A-4:** La facade di retrieval nel nucleo copre le operazioni di recupero (read); le operazioni
   di scrittura/indicizzazione sono gestite separatamente dai componenti di ingestione e store.
 - **A-5:** Un solo indice attivo per volta per corpus/repository è il caso d'uso principale; la
@@ -387,7 +390,7 @@ shall not persist it in a version-controlled file."*
 | ID   | Rischio | Probabilità | Impatto | Mitigazione |
 |------|---------|-------------|---------|-------------|
 | R-N1 | **Interfaccia facade insufficiente:** la facade definita per FEAT-001 non copre i bisogni dei motori ibrido/agentico (FEAT-004, 006) e deve essere estesa con breaking change. | Media | Alto | Coinvolgere la decomposizione di FEAT-004 e FEAT-006 come input di validazione dell'interfaccia prima di finalizzarla; progettare la facade con punti di estensione espliciti. |
-| R-N2 | **Chunking sintattico fragile su linguaggi non-Python:** il fallback dimensionale (REQ-009) compensa, ma produce chunk di qualità inferiore, degradando il retrieval. | Alta | Medio | Documentare i linguaggi supportati nella configurazione; misurare la qualità del retrieval per corpus multi-linguaggio durante il design. |
+| R-N2 | **Maturità disomogenea del chunking sintattico nel set multi-linguaggio:** per alcuni linguaggi del set MVP (es. shell, dialetti SQL) un parser sintattico maturo può non essere disponibile al primo rilascio; il fallback dimensionale (REQ-009) compensa ma produce chunk di qualità inferiore. | Alta | Medio | Prioritizzare i parser per i linguaggi più usati nel repo target; misurare la qualità del retrieval per linguaggio durante il design; il set è estensibile incrementalmente. |
 | R-N3 | **Idempotenza dell'indicizzazione difficile da garantire:** l'ordine di scoperta dei file e i timestamp possono variare tra esecuzioni, producendo chunk identifier diversi. | Media | Medio | Il requisito REQ-004 (ID da path relativo) e REQ-010 (ID chunk da posizione) devono essere verificati esplicitamente nei test di idempotenza (NFR-02). |
 | R-N4 | **Conflitti di dipendenze tra backend:** installare tutti i backend nel medesimo ambiente può causare conflitti irrisolvibili. | Media | Medio | Vincolo V-4 (isolamento dipendenze pesanti, NFR-04): definire gli extra del pacchetto durante la fase di design. |
 | R-N5 | **Scope creep verso il motore baseline:** la tentazione di includere logica specifica di FEAT-002 nel nucleo condiviso (es. pipeline di indicizzazione end-to-end) può gonfiare FEAT-001 e ritardare la delivery. | Media | Medio | Il confine "fuori ambito" (§4) è esplicito; verificarlo durante la revisione dei requisiti di FEAT-002. |
@@ -414,8 +417,9 @@ shall not persist it in a version-controlled file."*
 
 ### Could (desiderabili, posticipabili)
 
-- Supporto a linguaggi aggiuntivi nel chunker sintattico (dipende da DA-002)
-- Supporto a formati documentali non-testo (dipende da DA-001)
+- Supporto a linguaggi **oltre il set MVP** nel chunker sintattico (estensione incrementale; il set
+  MVP di 14 linguaggi è Must via REQ-011, DA-002 risolta)
+- Supporto a formati documentali **non-testo** (PDF/DOCX/notebook) — post-MVP (DA-001 risolta: fuori MVP)
 
 ### Won't (fuori ambito per questa feature, da rivedere nelle feature successive)
 
@@ -426,29 +430,25 @@ shall not persist it in a version-controlled file."*
 
 ---
 
-## 10. Domande aperte
+## 10. Domande aperte (risolte)
 
-**DA-001** *(Priorità: Media — impatta A-2 e l'ambito del chunker)*
-[DA CHIARIRE: il supporto a file in formati non-testo (PDF, DOCX, notebook Jupyter `.ipynb`) è
-richiesto nell'MVP del nucleo di retrieval, o è rimandato a una fase successiva?]
+Chiuse in elicitazione il 2026-05-31 (decisioni di ambito MVP del core).
 
-**DA-002** *(Priorità: Alta — impatta REQ-006, REQ-009 e il test LSC-1)*
-[DA CHIARIRE: quali linguaggi di codice sorgente, oltre a Python, devono essere supportati dal
-chunker sintattico nell'MVP? I candidati da prototipo (tree-sitter) sono TypeScript/JavaScript
-e Go. La risposta condiziona l'acceptance test di LSC-1 su un secondo repo non-Python.]
+**DA-001 — File non-testo (PDF/DOCX/notebook).** *Risolta:* **fuori MVP**. L'MVP ingesta codice
+(set multi-linguaggio) + Markdown/testo; PDF/DOCX/`.ipynb` sono post-MVP. (Aggiorna A-2.)
 
-**DA-003** *(Priorità: Media — impatta NFR-05 e i target di performance)*
-[DA CHIARIRE: esiste una dimensione di repository target ("baseline di riferimento") che definisce
-i requisiti di performance di indicizzazione (NFR-05)? Es. il prototipo stesso come corpus minimo,
-o un repo più grande come FastAPI/Django?]
+**DA-002 — Linguaggi del chunking sintattico.** *Risolta:* **multilinguaggio da subito**. Set MVP:
+Python, JavaScript/TypeScript, Java, C#, Go, C/C++, PHP, Ruby, PowerShell, Bash, T-SQL, PL/SQL
+(REQ-011), con **fallback testuale** per gli altri (REQ-009) ed **estensibilità** del set come
+incremento, non riprogettazione. (Aggiorna A-3; LSC-1 verificabile su un 2° repo non-Python.)
 
-**DA-004** *(Priorità: Bassa — impatta REQ-020 e la complessità del nucleo)*
-[DA CHIARIRE: l'aggiornamento incrementale dell'indice (REQ-020, classificato Should) è necessario
-già nella prima versione del nucleo, o è accettabile una full re-index per il rilascio MVP? La
-risposta determina se REQ-020 sale a Must.]
+**DA-003 — Baseline di performance.** *Risolta:* **non si fissano numeri assoluti ora**; le soglie
+(NFR-05/06) si fissano in **fase di design** dopo misura reale, con **baseline = il prototipo stesso**
+(corpus di dogfooding) come riferimento minimo.
 
-**DA-005** *(Priorità: Bassa — impatta NFR-04 e la struttura del pacchetto)*
-[DA CHIARIRE: si vuole che i backend di vector store e i provider di embeddings siano installabili
-come extra opzionali del pacchetto (`pip install sertor[azure]`, `sertor[local]`), oppure tutte le
-dipendenze sono obbligatorie? La risposta influenza la struttura del pacchetto definita in
-`sertor-cli`.]
+**DA-004 — Aggiornamento incrementale.** *Risolta:* l'MVP usa **full re-index** (naturalmente
+idempotente); l'aggiornamento incrementale (REQ-020) resta **Should/post-MVP**, collocato nella
+**manutenzione** (nuova FEAT-009 dell'epica, per l'indice sorgenti).
+
+**DA-005 — Extra opzionali del pacchetto.** *Rinviata* all'epica `sertor-cli` (struttura del
+pacchetto/installazione). La direzione (NFR-04) resta: dipendenze pesanti installabili come extra.

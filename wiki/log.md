@@ -74,3 +74,19 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
   - **Rilevanza DA-W1:** prova empirica di ruolo 1 (contesto iniettato); competenza dell'host, non MVP Sertor.
 - **Index aggiornato:** sezione Syntheses con `[[ruolo-wiki-da-w1]]`; nuova sezione Tech con `[[hook-sessionstart-wiki]]`.
 - **Epica sertor-core `epic.md`:** §9 (DA-W1, DA-2 risolte) e §6 (R-5 mitigato).
+
+## [2026-05-31] record | Decomposizione Must sertor-core + decisioni di ambito MVP
+
+- **Pagina creata:** `syntheses/decomposizione-must-core.md` documenta:
+  - **FEAT-001 (Nucleo retrieval):** ingestione repo-agnostica, chunking code-aware 14 linguaggi MVP, embeddings multi-provider, astrazione vector store, facade di retrieval. 32 REQ + 8 NFR.
+  - **FEAT-002 (RAG baseline):** indicizzazione, query vettoriale, ranking, valutazione pertinenza. 16 REQ + 8 NFR. Dipende da FEAT-001.
+  - **FEAT-003 (Wiki creazione):** invocazione via brief, distillazione (record/ingest/query/lint), indicizzazione nel RAG, struttura fissa. 26 REQ + 7 NFR. Perimetro MVP da DA-W1: creazione + indicizzazione, no spider.
+- **Sei decisioni MVP:**
+  1. Chunking 14 linguaggi + fallback testuale da subito (non Python-solo).
+  2. Full re-index idempotente nell'MVP; incrementale post-MVP → **FEAT-009 nuova** (refresh incrementale sorgenti, Could backlog).
+  3. No file non-testo (PDF/DOCX) nell'MVP.
+  4. Soglie di performance misurate in design su corpus con ground-truth; local Ollama hit@5≈0.67 accettabile (vs cloud ≈0.80).
+  5–6. Agente LLM primario per wiki; brief condensato → no chunking input MVP; struttura directory fissa.
+- **Conseguenza:** FEAT-009 nel backlog (§8 epic.md) come pendant per sorgenti di FEAT-007 wiki (post-MVP).
+- **Domande aperte (§10):** rinviate a design (estensione linguaggi, formati, ground-truth, test Linux, packaging extras → sertor-cli).
+- **Index aggiornato:** link `[[decomposizione-must-core]]` in Syntheses.
