@@ -4,7 +4,7 @@ type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
 updated: 2026-05-31
-sources: ["requirements/sertor-core/epic.md"]
+sources: ["requirements/sertor-core/epic.md", ".specify/memory/constitution.md"]
 ---
 
 # Wiki di Produzione — Sertor
@@ -37,6 +37,7 @@ _(La produzione inizia ora: questa sezione cresce a ogni sessione.)_
 
 ### Syntheses (sintesi trasversali)
 
+- **[[costituzione-v1]]** — Ratifica Costituzione v1.0.0 (governance, 9 principi vincolanti, gate Constitution Check). Governa design e produzione.
 - **[[chiusura-prototipo-dogfooding]]** — Isolamento del prototipo, motore corpus-aware, RAG di dogfooding su se stesso, MCP ri-puntato.
 - **[[epiche-sertor-core-e-cli]]** — Ristrutturazione: Sertor Core (MVP, capacità RAG + Wiki) primaria; Sertor CLI (distribuzione via CLI) secondaria. Questione aperta DA-W1 su ruolo wiki.
 - **[[ruolo-wiki-da-w1]]** — DA-W1 risolta: il wiki è CORPUS + SUPERFICIE; identità, autorità, confine MVP, ruoli 1–3.

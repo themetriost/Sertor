@@ -90,3 +90,13 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
 - **Conseguenza:** FEAT-009 nel backlog (§8 epic.md) come pendant per sorgenti di FEAT-007 wiki (post-MVP).
 - **Domande aperte (§10):** rinviate a design (estensione linguaggi, formati, ground-truth, test Linux, packaging extras → sertor-cli).
 - **Index aggiornato:** link `[[decomposizione-must-core]]` in Syntheses.
+
+## [2026-05-31] record | Ratifica Costituzione di Sertor v1.0.0
+
+- **Pagina creata:** `syntheses/costituzione-v1.md` documenta:
+  - **Origine:** derivata da zero da wiki Clean Code + Clean Architecture (ExternalRepos) allineata ai requisiti Sertor (REQ-E*, epiche, FEAT-001/002/003).
+  - **9 principi vincolanti:** (I) core a dipendenze interne; (II) provider intercambiabili; (III) semplicità YAGNI; (IV) gestione errori esplicita; (V) testabilità misurata; (VI) idempotenza/non-distruttività; (VII) leggibilità; (VIII) config centralizzata; (IX) osservabilità via log strutturati.
+  - **Principle I e IV NON-NEGOZIABILI:** gate Constitution Check del planning.
+  - **Governance attivata:** branch + PR (niente più push diretti); Constitution Check in Phase 0–1; semantic versioning per emendamenti.
+- **Index aggiornato:** aggiunto link `[[costituzione-v1]]` in testa a Syntheses; source `.specify/memory/constitution.md` aggiunta.
+- **File toccati:** `wiki/syntheses/costituzione-v1.md` (nuovo), `wiki/index.md`, `wiki/log.md`.
