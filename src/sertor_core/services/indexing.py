@@ -15,7 +15,7 @@ from pathlib import Path
 from sertor_core.config.settings import Settings
 from sertor_core.domain.entities import Chunk, EmbeddedChunk, IndexReport
 from sertor_core.domain.ports import EmbeddingProvider, VectorStore
-from sertor_core.observability.logging import log_event
+from sertor_core.observability.logging import log_error, log_event
 from sertor_core.services.chunking.dispatch import chunk_document
 from sertor_core.services.ingestion import discover
 
@@ -65,17 +65,21 @@ class IndexingService:
         for doc in documents:
             chunks.extend(chunk_document(doc, self._settings))
 
-        if chunks:
-            vectors = self._embedder.embed([c.text for c in chunks])  # può fallire: indice intatto
-            records = [
-                EmbeddedChunk(chunk_id=c.id, vector=v, payload=_payload(c))
-                for c, v in zip(chunks, vectors, strict=True)
-            ]
-            if rebuild:
-                self._store.reset(self._collection)  # scarta l'indice precedente, poi ricostruisce
-            self._store.upsert(self._collection, records)
-        elif rebuild:
-            self._store.reset(self._collection)  # corpus vuoto in rebuild: azzera l'indice
+        try:
+            if chunks:
+                vectors = self._embedder.embed([c.text for c in chunks])  # può fallire
+                records = [
+                    EmbeddedChunk(chunk_id=c.id, vector=v, payload=_payload(c))
+                    for c, v in zip(chunks, vectors, strict=True)
+                ]
+                if rebuild:
+                    self._store.reset(self._collection)  # scarta l'indice, poi ricostruisce
+                self._store.upsert(self._collection, records)
+            elif rebuild:
+                self._store.reset(self._collection)  # corpus vuoto in rebuild: azzera l'indice
+        except Exception as exc:  # boundary: logga l'errore prima di propagarlo (REQ-053)
+            log_error("index", exc, collection=self._collection, provider=self._embedder.name)
+            raise
 
         report = IndexReport(
             collection=self._collection,

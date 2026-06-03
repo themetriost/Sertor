@@ -101,6 +101,28 @@ La **distillazione** (`wiki.distill.distill`) richiede un LLM (`build_llm()`); s
 `LLMNotConfiguredError`. Le pagine wiki entrano nel RAG come corpus documentale **paritario** e si
 recuperano con `build_facade().search_docs(...)`.
 
+## CLI `sertor` (esecuzione da riga di comando)
+
+Il pacchetto `sertor-cli` espone un comando `sertor` (console-script) che esegue le capacità del core
+su un repository, come **layer sottile** sopra il composition root (non duplica il core).
+
+```bash
+sertor index .                          # indicizza il repo (rebuild idempotente, non distruttivo)
+sertor index /repo --corpus production  # collezione namespaced dedicata
+sertor search "valido un input" -k 5    # ricerca (default dal core); --type code|doc|both
+sertor search "x" --json                # output JSON (per agenti); --full per il testo completo
+sertor wiki index wiki/                 # indicizza un wiki nel corpus
+
+# osservabilità: log visibili e appender esterni (Splunk/syslog) senza toccare il codice
+sertor index . -v                       # INFO a console
+sertor index . --log-json               # record JSON
+sertor index . --log-config logging.yaml  # dictConfig (YAML/JSON)
+```
+
+Principi: install ≠ run (nessuna operazione automatica all'import), errori espliciti + exit code,
+provider/parametri letti dalla configurazione del core. Schema dei campi di log:
+[`observability/README.md`](observability/README.md).
+
 ## Test con mock (senza cloud né rete)
 
 Il core è esercitabile con adapter mock delle porte:

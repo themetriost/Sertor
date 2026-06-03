@@ -6,12 +6,29 @@ quindi vengono creati a runtime per rendere il test di esclusione ripetibile su 
 """
 from __future__ import annotations
 
+import logging
 import shutil
 from pathlib import Path
 
 import pytest
 
 from tests.fixtures.mocks import FakeEmbedder, FakeLLM, InMemoryStore
+
+
+@pytest.fixture(autouse=True)
+def _reset_sertor_logger():
+    """Isola lo stato del logger `sertor_core` tra i test.
+
+    La CLI (`observability.configure`) muta il logger globale (handler/level/propagate); senza
+    ripristino, `caplog` (che si appoggia alla propagazione verso root) si romperebbe nei test
+    successivi. Salva e ripristina lo stato dopo ogni test.
+    """
+    lg = logging.getLogger("sertor_core")
+    saved_handlers, saved_level, saved_propagate = list(lg.handlers), lg.level, lg.propagate
+    yield
+    lg.handlers = saved_handlers
+    lg.setLevel(saved_level)
+    lg.propagate = saved_propagate
 
 _SAMPLE = Path(__file__).parent / "fixtures" / "sample_repo"
 # Ciò che NON va copiato dal sorgente (verrà iniettato a runtime in modo deterministico).

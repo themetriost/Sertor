@@ -194,6 +194,6 @@ manutenzione è garantita dalla delega al `wiki-keeper`, non dal blocco del turn
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/003-wiki-creazione/plan.md` (FEAT-003 — skill LLM Wiki: creare/indicizzare).
-In `master`: FEAT-001 (nucleo) e FEAT-002 (motore baseline).
+`specs/004-cli-esecuzione/plan.md` (CLI `sertor` — esecuzione: index/search/wiki + osservabilità).
+In `master`: FEAT-001/002/003 (nucleo + motore baseline + skill wiki).
 <!-- SPECKIT END -->

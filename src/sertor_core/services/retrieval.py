@@ -12,7 +12,7 @@ import time
 
 from sertor_core.domain.entities import RetrievalResult
 from sertor_core.domain.ports import DocTypeFilter, EmbeddingProvider, VectorStore
-from sertor_core.observability.logging import log_event
+from sertor_core.observability.logging import log_error, log_event
 
 
 class RetrievalFacade:
@@ -42,8 +42,12 @@ class RetrievalFacade:
             )
             return []
         started = time.perf_counter()
-        vector = self._embedder.embed([query])[0]
-        results = self._store.query(self._collection, vector, k, doc_type)
+        try:
+            vector = self._embedder.embed([query])[0]
+            results = self._store.query(self._collection, vector, k, doc_type)
+        except Exception as exc:  # boundary: logga l'errore prima di propagarlo (REQ-053)
+            log_error("retrieve", exc, collection=self._collection, provider=self._embedder.name)
+            raise
         log_event(
             logging.INFO,
             "retrieve",
