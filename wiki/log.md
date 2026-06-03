@@ -100,3 +100,23 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
   - **Governance attivata:** branch + PR (niente più push diretti); Constitution Check in Phase 0–1; semantic versioning per emendamenti.
 - **Index aggiornato:** aggiunto link `[[costituzione-v1]]` in testa a Syntheses; source `.specify/memory/constitution.md` aggiunta.
 - **File toccati:** `wiki/syntheses/costituzione-v1.md` (nuovo), `wiki/index.md`, `wiki/log.md`.
+
+## [2026-06-03] record | Piano SpecKit FEAT-001 nucleo-retrieval
+
+- **Pagina creata:** `syntheses/piano-nucleo-retrieval.md` documenta:
+  - **Architettura Clean:** layout `src/sertor_core/` con domain (entità + porte + errori), services, adapters, config, observability, composition root. Nessun import SDK nel domain (Principio I).
+  - **Decisioni tecniche R1–R8:**
+    - R1: Chunking sintattico `tree-sitter-language-pack` (305+ linguaggi wheel precompilati, Win/Linux nativi); MVP 10 sintattici + 3 fallback (PowerShell, T-SQL, PL/SQL) al 1° rilascio.
+    - R2: Astrazione minimale `VectorStore` (upsert/query/delete/count), namespacing per collezione; Chroma embedded default, Azure Search extra opzionale.
+    - R3: Porta `EmbeddingProvider` (embed batch, dim, name, batch_size); Ollama locale (default), Azure OpenAI REST (extra); local-only via config.
+    - R4: ID stabili (doc_id = path relativo, chunk_id = {doc_id}#{ordinale}) → idempotenza garantita.
+    - R5: Logging strutturato stdlib, redazione segreti, nessun framework imposto.
+    - R6: `Settings` dataclass unica (env+file), nessun segreto versionato.
+    - R7: Extra opzionali (`[azure]`) + import lazy → evita conflitti dipendenze con CLI.
+    - R8: Soglie performance/qualità misurate (baseline prototipo: precision@5 ≈0.67 locale).
+  - **Constitution Check:** ✅ PASS su tutti e 9 i principi, Principi I+IV NON-NEGOZIABILI confermati. Complexity Tracking vuoto.
+  - **Modello dati:** Document, Chunk, ChunkMetadata (codice vs Markdown), EmbeddedChunk, RetrievalResult, SertorError gerarchia.
+  - **Scope MVP:** ingestione, chunking 14 linguaggi, embeddings Ollama, vector store Chroma, full re-index idempotente, facade+test.
+  - **Linkage:** FEAT-002 aggiunge ranking; FEAT-003 usa il RAG; sertor-cli importa libreria (no dipendenze cloud obbligatorie).
+- **Index aggiornato:** aggiunto link `[[piano-nucleo-retrieval]]` in Syntheses con descrizione.
+- **File toccati:** `wiki/syntheses/piano-nucleo-retrieval.md` (nuovo), `wiki/index.md`, `wiki/log.md`.
