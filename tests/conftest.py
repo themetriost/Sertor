@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.fixtures.mocks import FakeEmbedder, InMemoryStore
+from tests.fixtures.mocks import FakeEmbedder, FakeLLM, InMemoryStore
 
 _SAMPLE = Path(__file__).parent / "fixtures" / "sample_repo"
 # Ciò che NON va copiato dal sorgente (verrà iniettato a runtime in modo deterministico).
@@ -40,3 +40,18 @@ def fake_embedder() -> FakeEmbedder:
 @pytest.fixture
 def memory_store() -> InMemoryStore:
     return InMemoryStore()
+
+
+@pytest.fixture
+def fake_llm() -> FakeLLM:
+    return FakeLLM()
+
+
+@pytest.fixture
+def wiki_sandbox(tmp_path: Path) -> Path:
+    """Una radice wiki inizializzata in temp (mai il wiki di produzione, RNF-002/R-W5)."""
+    from sertor_core.wiki.structure import create_wiki
+
+    root = tmp_path / "wiki"
+    create_wiki(root, today="2026-06-03")
+    return root

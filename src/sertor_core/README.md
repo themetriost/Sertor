@@ -79,6 +79,28 @@ Differenze rispetto alla facade del nucleo: il motore **ricostruisce l'indice da
 `index()` (nessun chunk obsoleto) e su indice mancante **solleva `IndexNotFoundError`** invece di
 restituire una lista vuota. Usa **solo** retrieval vettoriale (nessun ibrido/grafo/agentico).
 
+## Skill LLM Wiki (creare / indicizzare)
+
+La skill (FEAT-003) gestisce un wiki di progetto e lo rende interrogabile dal RAG.
+
+```python
+from sertor_core.wiki.structure import create_wiki
+from sertor_core.wiki.operations import record, ingest
+from sertor_core.wiki.indexing import index_wiki
+from sertor_core.wiki.conventions import Brief, SourceBrief
+
+create_wiki("repo/wiki")                                   # struttura standard, non-distruttiva
+record("repo/wiki", Brief("Scelta DB", "synthesis", "Scelto Postgres perché ..."))
+ingest("repo/wiki", SourceBrief("Paper", "Riassunto...", reference="https://...",
+                                related=["concepts/hybrid-search"]))
+index_wiki("repo/wiki")                                    # full rebuild nel corpus RAG (riusa il nucleo)
+```
+
+Tutte le operazioni sono **idempotenti per struttura** (re-run su input invariato → file identici).
+La **distillazione** (`wiki.distill.distill`) richiede un LLM (`build_llm()`); senza, solleva
+`LLMNotConfiguredError`. Le pagine wiki entrano nel RAG come corpus documentale **paritario** e si
+recuperano con `build_facade().search_docs(...)`.
+
 ## Test con mock (senza cloud né rete)
 
 Il core è esercitabile con adapter mock delle porte:

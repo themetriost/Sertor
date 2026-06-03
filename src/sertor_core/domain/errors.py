@@ -65,3 +65,11 @@ class IndexNotFoundError(SertorError):
     def __init__(self, message: str, *, collection: str):
         self.collection = collection
         super().__init__(f"{message} [collection={collection}]")
+
+
+class LLMNotConfiguredError(SertorError):
+    """Un'operazione che richiede generazione LLM è invocata senza un provider configurato.
+
+    Es. la distillazione del wiki (REQ-031 di FEAT-003): si blocca in modo esplicito.
+    """
+

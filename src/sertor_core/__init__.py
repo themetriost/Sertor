@@ -11,6 +11,7 @@ from sertor_core.composition import (
     build_embedder,
     build_facade,
     build_indexer,
+    build_llm,
     build_store,
     collection_name,
 )
@@ -29,6 +30,7 @@ from sertor_core.domain.errors import (
     EmbeddingError,
     IndexNotFoundError,
     IngestionError,
+    LLMNotConfiguredError,
     SertorError,
     VectorStoreError,
 )
@@ -39,6 +41,7 @@ __all__ = [
     "build_facade",
     "build_indexer",
     "build_baseline_engine",
+    "build_llm",
     "build_embedder",
     "build_store",
     "collection_name",
@@ -56,6 +59,7 @@ __all__ = [
     "EmbeddingError",
     "VectorStoreError",
     "IndexNotFoundError",
+    "LLMNotConfiguredError",
     "BaselineEngine",
     "evaluate",
     "EvalReport",
