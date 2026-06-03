@@ -10,6 +10,7 @@ import shutil
 from pathlib import Path
 
 import pytest
+
 from tests.fixtures.mocks import FakeEmbedder, InMemoryStore
 
 _SAMPLE = Path(__file__).parent / "fixtures" / "sample_repo"

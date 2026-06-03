@@ -82,15 +82,15 @@ Single project a libreria: `src/sertor_core/`, `tests/` alla radice del repo (da
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T014 [P] [US2] Test code chunking in `tests/unit/test_chunking_code.py`: chunk sintattici Python/JS/Go con metadati (qualname, node_type, righe) (REQ-006/007/011); idempotenza chunk_id (REQ-010)
-- [ ] T015 [P] [US2] Test fallback + markdown in `tests/unit/test_chunking_fallback_md.py`: linguaggio fuori-set → size_fallback senza errore (REQ-009); Markdown → confini heading + heading_path (REQ-008)
+- [x] T014 [P] [US2] Test code chunking in `tests/unit/test_chunking_code.py`: chunk sintattici Python/JS/Go con metadati (qualname, node_type, righe) (REQ-006/007/011); idempotenza chunk_id (REQ-010)
+- [x] T015 [P] [US2] Test fallback + markdown in `tests/unit/test_chunking_fallback_md.py`: linguaggio fuori-set → size_fallback senza errore (REQ-009); Markdown → confini heading + heading_path (REQ-008)
 
 ### Implementation for User Story 2
 
-- [ ] T016 [P] [US2] Implement code chunker in `src/sertor_core/services/chunking/code.py`: tree-sitter via `tree-sitter-language-pack`; mappa `language -> {def_types, class_types, name_field}` per i linguaggi del set; emit class/method/function/module con contesto classe in testa ai metodi; split oversize (riuso logica `prototype/shared/chunking_code.py`, generalizzata) (REQ-006/007/011)
-- [ ] T017 [P] [US2] Implement markdown chunker in `src/sertor_core/services/chunking/markdown.py`: split ai confini heading, `heading_path` gerarchico (REQ-008)
-- [ ] T018 [P] [US2] Implement size fallback in `src/sertor_core/services/chunking/fallback.py`: chunking dimensionale (size/overlap da config), nessun errore (REQ-009)
-- [ ] T019 [US2] Implement dispatcher in `src/sertor_core/services/chunking/dispatch.py`: `chunk_document(doc, settings)` seleziona code/markdown/fallback per doc_type+linguaggio; assegna `chunk_id = f"{doc.id}#{index}"` ordinale (REQ-010); `chunker` nei metadati (depends on T016, T017, T018)
+- [x] T016 [P] [US2] Implement code chunker in `src/sertor_core/services/chunking/code.py`: tree-sitter via `tree-sitter-language-pack`; mappa `language -> {def_types, class_types, name_field}` per i linguaggi del set; emit class/method/function/module con contesto classe in testa ai metodi; split oversize (riuso logica `prototype/shared/chunking_code.py`, generalizzata) (REQ-006/007/011)
+- [x] T017 [P] [US2] Implement markdown chunker in `src/sertor_core/services/chunking/markdown.py`: split ai confini heading, `heading_path` gerarchico (REQ-008)
+- [x] T018 [P] [US2] Implement size fallback in `src/sertor_core/services/chunking/fallback.py`: chunking dimensionale (size/overlap da config), nessun errore (REQ-009)
+- [x] T019 [US2] Implement dispatcher in `src/sertor_core/services/chunking/dispatch.py`: `chunk_document(doc, settings)` seleziona code/markdown/fallback per doc_type+linguaggio; assegna `chunk_id = f"{doc.id}#{index}"` ordinale (REQ-010); `chunker` nei metadati (depends on T016, T017, T018)
 
 **Checkpoint**: US2 testabile (chunking multilinguaggio + fallback + idempotenza)
 
@@ -104,13 +104,13 @@ Single project a libreria: `src/sertor_core/`, `tests/` alla radice del repo (da
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T020 [P] [US3] Contract test in `tests/unit/test_embeddings.py`: output len/ordine preservati a batch (REQ-014); `texts` vuota → `[]`; provider down → `EmbeddingError(provider, reason, retriable)` (REQ-015); local-only nessuna connessione cloud via spia su client HTTP (REQ-016)
+- [x] T020 [P] [US3] Contract test in `tests/unit/test_embeddings.py`: output len/ordine preservati a batch (REQ-014); `texts` vuota → `[]`; provider down → `EmbeddingError(provider, reason, retriable)` (REQ-015); local-only nessuna connessione cloud via spia su client HTTP (REQ-016)
 
 ### Implementation for User Story 3
 
-- [ ] T021 [P] [US3] Implement Ollama adapter in `src/sertor_core/adapters/embeddings/ollama.py`: `EmbeddingProvider` via `httpx` `POST /api/embed`, batching, `dim` al primo batch, errori→`EmbeddingError` (REQ-012/013/016)
-- [ ] T022 [P] [US3] Implement Azure adapter in `src/sertor_core/adapters/embeddings/azure.py`: `httpx` `POST /embeddings` header `api-key`, riordino `data` per index, errori→`EmbeddingError`; import SDK/segreti lazy (REQ-013)
-- [ ] T023 [US3] Add embeddings factory in `src/sertor_core/composition.py` (`build_embedder(settings)`): seleziona provider da config; default ollama in local, azure in cloud (REQ-030)
+- [x] T021 [P] [US3] Implement Ollama adapter in `src/sertor_core/adapters/embeddings/ollama.py`: `EmbeddingProvider` via `httpx` `POST /api/embed`, batching, `dim` al primo batch, errori→`EmbeddingError` (REQ-012/013/016)
+- [x] T022 [P] [US3] Implement Azure adapter in `src/sertor_core/adapters/embeddings/azure.py`: `httpx` `POST /embeddings` header `api-key`, riordino `data` per index, errori→`EmbeddingError`; import SDK/segreti lazy (REQ-013)
+- [x] T023 [US3] Add embeddings factory in `src/sertor_core/composition.py` (`build_embedder(settings)`): seleziona provider da config; default ollama in local, azure in cloud (REQ-030)
 
 **Checkpoint**: US3 testabile (embeddings intercambiabili, local-only)
 
@@ -124,14 +124,14 @@ Single project a libreria: `src/sertor_core/`, `tests/` alla radice del repo (da
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T024 [P] [US4] Contract test in `tests/unit/test_vectorstore.py` (su Chroma temp dir): upsert+query per similarità (REQ-017); isolamento namespace tra 2 corpora (REQ-019); filtro doc_type senza indici separati (REQ-027); k>disponibili → tutti; collezione assente → `query`=[] / `exists`=False (REQ-028); upsert idempotente (no duplicati)
-- [ ] T025 [P] [US4] Test errore backend in `tests/unit/test_vectorstore_errors.py`: backend non disponibile → `VectorStoreError(backend, reason)`, non vuoto silenzioso (REQ-021)
+- [x] T024 [P] [US4] Contract test in `tests/unit/test_vectorstore.py` (su Chroma temp dir): upsert+query per similarità (REQ-017); isolamento namespace tra 2 corpora (REQ-019); filtro doc_type senza indici separati (REQ-027); k>disponibili → tutti; collezione assente → `query`=[] / `exists`=False (REQ-028); upsert idempotente (no duplicati)
+- [x] T025 [P] [US4] Test errore backend in `tests/unit/test_vectorstore_errors.py`: backend non disponibile → `VectorStoreError(backend, reason)`, non vuoto silenzioso (REQ-021)
 
 ### Implementation for User Story 4
 
-- [ ] T026 [P] [US4] Implement Chroma adapter in `src/sertor_core/adapters/vectorstores/chroma.py`: `VectorStore` con persistenza locale, collezioni namespaced `{corpus}-{provider}-{dim}`, filtro su metadato `doc_type`, `exists`, errori→`VectorStoreError` (REQ-017/018/019/021/022)
-- [ ] T027 [P] [US4] Implement Azure AI Search adapter in `src/sertor_core/adapters/vectorstores/azure_search.py`: `VectorStore` su vector index, import SDK lazy (extra `[azure]`), filtro su `doc_type` (REQ-018)
-- [ ] T028 [US4] Add vector store factory in `src/sertor_core/composition.py` (`build_store(settings)`): seleziona backend da config; calcolo nome collezione namespaced (REQ-018/019/030)
+- [x] T026 [P] [US4] Implement Chroma adapter in `src/sertor_core/adapters/vectorstores/chroma.py`: `VectorStore` con persistenza locale, collezioni namespaced `{corpus}-{provider}-{dim}`, filtro su metadato `doc_type`, `exists`, errori→`VectorStoreError` (REQ-017/018/019/021/022)
+- [x] T027 [P] [US4] Implement Azure AI Search adapter in `src/sertor_core/adapters/vectorstores/azure_search.py`: `VectorStore` su vector index, import SDK lazy (extra `[azure]`), filtro su `doc_type` (REQ-018)
+- [x] T028 [US4] Add vector store factory in `src/sertor_core/composition.py` (`build_store(settings)`): seleziona backend da config; calcolo nome collezione namespaced (REQ-018/019/030)
 
 **Checkpoint**: US4 testabile (persistenza/interrogazione, namespace, 2 backend)
 
@@ -145,14 +145,14 @@ Single project a libreria: `src/sertor_core/`, `tests/` alla radice del repo (da
 
 ### Tests for User Story 5 ⚠️
 
-- [ ] T029 [P] [US5] Contract test in `tests/unit/test_retrieval_facade.py` (mock embedder+store): risultati con text/path/chunk_id/doc_type/score (REQ-025); filtro tipo (REQ-027); k/default e oversize (REQ-026); indice vuoto → [] + warning, no eccezione (REQ-028); errori propagati (REQ-012/021); uso come libreria importata (REQ-029)
-- [ ] T030 [P] [US5] Quality test in `tests/integration/test_precision_at_k.py`: `precision@5` su corpus ground-truth (fixture) con baseline = prototipo; soglia registrata quando misurata (SC-004, DA-003) — marcato skip/xfail finché il baseline non è disponibile
+- [x] T029 [P] [US5] Contract test in `tests/unit/test_retrieval_facade.py` (mock embedder+store): risultati con text/path/chunk_id/doc_type/score (REQ-025); filtro tipo (REQ-027); k/default e oversize (REQ-026); indice vuoto → [] + warning, no eccezione (REQ-028); errori propagati (REQ-012/021); uso come libreria importata (REQ-029)
+- [x] T030 [P] [US5] Quality test in `tests/integration/test_precision_at_k.py`: `precision@5` su corpus ground-truth (fixture) con baseline = prototipo; soglia registrata quando misurata (SC-004, DA-003) — marcato skip/xfail finché il baseline non è disponibile
 
 ### Implementation for User Story 5
 
-- [ ] T031 [US5] Implement `RetrievalFacade` in `src/sertor_core/services/retrieval.py`: `search_code/search_docs/search_combined`, embed query → `store.query` con filtro doc_type, mapping a `RetrievalResult`, indice vuoto → []+warning (REQ-023..028); logging per query (REQ-031)
-- [ ] T031b [US5] Implement indexing orchestrator in `src/sertor_core/services/indexing.py`: `IndexingService.index(root) -> IndexReport` che concatena ingestion.discover → chunking.dispatch → embedder.embed → store.upsert (full re-index idempotente, namespace da config); logging strutturato (operation=index, doc/chunk count, dim, tempi) (REQ-015/031, SC-005) — chiude il gap C1 (depends on T012, T019, T023, T028)
-- [ ] T032 [US5] Implement composition root in `src/sertor_core/composition.py`: `build_facade()`, `build_indexer()` e `build_embedder/build_store` che cablano Settings→adapter→service; export pubblico in `src/sertor_core/__init__.py` (REQ-029) (depends on T023, T028, T031, T031b)
+- [x] T031 [US5] Implement `RetrievalFacade` in `src/sertor_core/services/retrieval.py`: `search_code/search_docs/search_combined`, embed query → `store.query` con filtro doc_type, mapping a `RetrievalResult`, indice vuoto → []+warning (REQ-023..028); logging per query (REQ-031)
+- [x] T031b [US5] Implement indexing orchestrator in `src/sertor_core/services/indexing.py`: `IndexingService.index(root) -> IndexReport` che concatena ingestion.discover → chunking.dispatch → embedder.embed → store.upsert (full re-index idempotente, namespace da config); logging strutturato (operation=index, doc/chunk count, dim, tempi) (REQ-015/031, SC-005) — chiude il gap C1 (depends on T012, T019, T023, T028)
+- [x] T032 [US5] Implement composition root in `src/sertor_core/composition.py`: `build_facade()`, `build_indexer()` e `build_embedder/build_store` che cablano Settings→adapter→service; export pubblico in `src/sertor_core/__init__.py` (REQ-029) (depends on T023, T028, T031, T031b)
 
 **Checkpoint**: US5 testabile (facade riusabile, indipendente dal backend) — **nucleo end-to-end funzionante**
 
