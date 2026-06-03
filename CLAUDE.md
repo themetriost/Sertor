@@ -193,5 +193,6 @@ manutenzione è garantita dalla delega al `wiki-keeper`, non dal blocco del turn
 
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
+shell commands, and other important information, read the current plan:
+`specs/001-nucleo-retrieval/plan.md` (FEAT-001 — nucleo di retrieval condiviso).
 <!-- SPECKIT END -->

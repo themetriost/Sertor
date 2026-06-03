@@ -5,12 +5,18 @@
 
 # Python / ambienti
 .venv/
+.venv-core/
 venv/
 __pycache__/
 *.pyc
 .pytest_cache/
 .ruff_cache/
 .ipynb_checkpoints/
+
+# Packaging (sertor-core di produzione)
+dist/
+build/
+*.egg-info/
 
 # Vector store / indici locali
 **/chroma/

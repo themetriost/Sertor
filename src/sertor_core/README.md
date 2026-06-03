@@ -1,0 +1,73 @@
+# sertor-core
+
+Nucleo di retrieval condiviso di Sertor (FEAT-001): la **fondazione production-grade** su cui
+poggiano i motori RAG e le skill wiki. Legge un repository qualunque, ne fa chunking di codice e
+documentazione, produce embeddings via provider intercambiabili, persiste/interroga i chunk via
+un'astrazione di vector store, ed espone una **facade di retrieval importabile come libreria**.
+
+## Architettura (Clean Architecture)
+
+Le dipendenze puntano verso l'interno: il `domain` (entità + porte + errori) non importa alcun SDK
+esterno; gli `adapters` implementano le porte; il `composition root` cabla tutto dalla
+configurazione.
+
+```
+domain/        entità (Document, Chunk, RetrievalResult), porte (EmbeddingProvider, VectorStore), errori
+services/      ingestion · chunking (code/markdown/fallback) · indexing · retrieval (facade)
+adapters/      embeddings/{ollama,azure} · vectorstores/{chroma,azure_search}
+config/        Settings (config centralizzata)
+observability/ logging strutturato
+composition.py build_facade() / build_indexer() / build_embedder() / build_store()
+```
+
+## Installazione
+
+```bash
+uv pip install sertor-core              # base: Chroma (locale) + Ollama (locale)
+uv pip install "sertor-core[azure]"     # extra cloud: Azure OpenAI + Azure AI Search
+```
+
+Il chunking usa `tree-sitter-language-pack` (wheel precompilati, nessuna toolchain C).
+
+## Configurazione
+
+Tutte le scelte passano da `Settings`, lette da env + file `.env` (non versionato). Vedi
+`.env.example` alla radice. Modalità `RAG_BACKEND=local` → nessuna chiamata di rete cloud.
+
+## Uso come libreria
+
+```python
+from sertor_core import build_indexer, build_facade
+
+# Indicizzare un repository qualunque
+report = build_indexer().index("/path/al/repo")
+print(report.documents, report.chunks)
+
+# Interrogare (codice / doc / combinata)
+facade = build_facade()
+for hit in facade.search_code("validazione input", k=5):
+    print(hit.path, hit.chunk_id, round(hit.score, 3))
+```
+
+Ogni risultato espone `text`, `path`, `chunk_id`, `doc_type`, `score`. Indice vuoto → lista vuota
++ warning (nessuna eccezione).
+
+## Test con mock (senza cloud né rete)
+
+Il core è esercitabile con adapter mock delle porte:
+
+```python
+from sertor_core.services.retrieval import RetrievalFacade
+
+facade = RetrievalFacade(embedder=FakeEmbedder(dim=8), store=InMemoryStore(),
+                         collection="test", default_k=5)
+```
+
+## Linguaggi del chunking code-aware
+
+Sintattici al primo rilascio: Python, JavaScript/TypeScript, Java, C#, Go, C/C++, PHP, Ruby.
+PowerShell e i dialetti SQL (T-SQL/PL-SQL) usano il **fallback dimensionale** finché i node-type
+non sono validati (estensione incrementale). Qualunque altro linguaggio ricade sul fallback senza
+errore.
+
+Vedi `specs/001-nucleo-retrieval/` per spec, piano, contratti e quickstart completi.
