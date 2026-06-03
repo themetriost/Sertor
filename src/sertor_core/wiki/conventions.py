@@ -124,3 +124,22 @@ def parse_created(existing_text: str) -> str | None:
     """Estrae il campo `created` dal frontmatter di una pagina esistente (per preservarlo)."""
     m = _CREATED_RE.search(existing_text)
     return m.group(1) if m else None
+
+
+# Marcatori del blocco "catalogo" gestito automaticamente dentro index.md (FEAT-007, DA-1).
+CATALOG_BEGIN = "<!-- sertor:catalog -->"
+CATALOG_END = "<!-- /sertor:catalog -->"
+
+
+def replace_managed_block(text: str, begin: str, end: str, new_block: str) -> str:
+    """Sostituisce il contenuto fra i marcatori `begin`/`end` con `new_block` (non distruttivo).
+
+    Aggiorna SOLO la regione gestita, preservando tutto il resto. Se i marcatori non esistono,
+    appende un nuovo blocco delimitato in coda. Idempotente a `new_block` invariato.
+    """
+    block = f"{begin}\n{new_block.rstrip(chr(10))}\n{end}"
+    start = text.find(begin)
+    stop = text.find(end)
+    if start != -1 and stop != -1 and stop > start:
+        return text[:start] + block + text[stop + len(end):]
+    return text.rstrip("\n") + "\n\n" + block + "\n"

@@ -101,6 +101,32 @@ La **distillazione** (`wiki.distill.distill`) richiede un LLM (`build_llm()`); s
 `LLMNotConfiguredError`. Le pagine wiki entrano nel RAG come corpus documentale **paritario** e si
 recuperano con `build_facade().search_docs(...)`.
 
+## Manutenzione del wiki (lint / indice / documentazione)
+
+La manutenzione (FEAT-007) tiene il wiki sano e allineato. È **LLM-free e non distruttiva**, pensata
+per girare di frequente come gate (es. a fine feature).
+
+```python
+from sertor_core.wiki.maintenance import lint, regenerate_index
+from sertor_core.wiki.distill import distill_artifact
+
+# Lint: report di igiene (link rotti, orfani, fuori-indice, contraddizioni marcate) + coperture.
+report = lint("repo/wiki", expected=["syntheses/architettura.md"])   # sola lettura
+print(report.render())
+import sys; sys.exit(0 if report.ok else 1)          # gate pass/fail non interattivo
+
+regenerate_index("repo/wiki")        # rigenera solo il blocco <!-- sertor:catalog --> (idempotente)
+lint("repo/wiki", fix=True)          # lint + unico fix sicuro (= rigenera indice); mai auto-fix dei link
+
+# Distilla un artifact (spec/plan/requisito) in documentazione ufficiale, con backlink alla fonte:
+distill_artifact("repo/wiki", source="specs/001-nucleo-retrieval/spec.md",
+                 kind="synthesis", title="Architettura del nucleo", llm=build_llm())
+```
+
+`lint` non scrive nulla (salvo `fix=True`); `regenerate_index` tocca **solo** la regione tra i
+marcatori del catalogo; `distill_artifact` **crea-se-assente** e non sovrascrive una pagina curata a
+mano. Vedi `specs/005-wiki-manutenzione/` per spec, piano, contratti e quickstart.
+
 ## CLI `sertor` (esecuzione da riga di comando)
 
 Il pacchetto `sertor-cli` espone un comando `sertor` (console-script) che esegue le capacità del core

@@ -87,3 +87,21 @@ def wiki_sandbox(tmp_path: Path) -> Path:
     root = tmp_path / "wiki"
     create_wiki(root, today="2026-06-03")
     return root
+
+
+@pytest.fixture
+def wiki_with_issues(wiki_sandbox: Path) -> Path:
+    """Wiki sandbox con problemi noti per il lint (FEAT-007): link rotto, orfano, fuori-indice, contraddizione."""  # noqa: E501
+    fm = ("---\ntitle: {t}\ntype: concept\ntags: []\ncreated: 2026-06-03\n"
+          "updated: 2026-06-03\nsources: []\n---\n\n# {t}\n\n")
+    # alpha: orfana, fuori indice, con un link rotto [[ghost]] (e uno valido [[beta]])
+    (wiki_sandbox / "concepts" / "alpha.md").write_text(
+        fm.format(t="Alpha") + "Vedi [[beta]] e anche [[ghost]] (rotto).\n", encoding="utf-8")
+    # beta: referenziata da alpha (non orfana) ma fuori indice
+    (wiki_sandbox / "concepts" / "beta.md").write_text(
+        fm.format(t="Beta") + "Pagina beta.\n", encoding="utf-8")
+    # contraddizione marcata (come la inserisce ingest di FEAT-003)
+    (wiki_sandbox / "concepts" / "contraddetta.md").write_text(
+        fm.format(t="Contraddetta") + "> ⚠️ Contraddizione (fonte [[beta]]): valori divergenti.\n",
+        encoding="utf-8")
+    return wiki_sandbox
