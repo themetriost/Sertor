@@ -166,13 +166,13 @@ Single project a libreria: `src/sertor_core/`, `tests/` alla radice del repo (da
 
 ### Tests for User Story 6 ⚠️
 
-- [ ] T033 [P] [US6] Test config in `tests/unit/test_settings.py`: tutte le scelte (provider/backend/percorsi/chunking/k/batch/esclusioni) lette da env+file; assenza di default hardcoded nei componenti (REQ-030); segreti mai su path versionato (REQ-032)
-- [ ] T034 [P] [US6] Test osservabilità in `tests/unit/test_logging.py`: index e query emettono log con campi (operation, provider/backend, conteggi, embedding_dim, elapsed_ms, error); `redact()` rimuove segreti (REQ-031/032, SC-007)
+- [x] T033 [P] [US6] Test config in `tests/unit/test_settings.py`: tutte le scelte (provider/backend/percorsi/chunking/k/batch/esclusioni) lette da env+file; assenza di default hardcoded nei componenti (REQ-030); segreti mai su path versionato (REQ-032)
+- [x] T034 [P] [US6] Test osservabilità in `tests/unit/test_logging.py`: index e query emettono log con campi (operation, provider/backend, conteggi, embedding_dim, elapsed_ms, error); `redact()` rimuove segreti (REQ-031/032, SC-007)
 
 ### Implementation for User Story 6
 
-- [ ] T035 [US6] Harden `Settings` (config/settings.py): coprire TUTTI i parametri usati dai componenti, rimuovere ogni default hardcoded residuo nei servizi/adapter (REQ-030)
-- [ ] T036 [US6] Ensure structured logs su tutte le operazioni di index e retrieval con i campi completi + redazione segreti (services/ingestion.py, services/retrieval.py, adapters) (REQ-031/032)
+- [x] T035 [US6] Harden `Settings` (config/settings.py): coprire TUTTI i parametri usati dai componenti, rimuovere ogni default hardcoded residuo nei servizi/adapter (REQ-030)
+- [x] T036 [US6] Ensure structured logs su tutte le operazioni di index e retrieval con i campi completi + redazione segreti (services/ingestion.py, services/retrieval.py, adapters) (REQ-031/032)
 
 **Checkpoint**: US6 verificata (config unica + osservabilità completa)
 
@@ -182,11 +182,11 @@ Single project a libreria: `src/sertor_core/`, `tests/` alla radice del repo (da
 
 **Purpose**: criteri di accettazione trasversali e validazione end-to-end
 
-- [ ] T037 Integration test idempotenza in `tests/integration/test_idempotence.py`: full re-index su corpus invariato → stesso insieme di chunk_id, nessun duplicato (SC-005, NFR-02)
-- [ ] T038 Integration test repo-agnosticità in `tests/integration/test_two_corpora.py`: indicizza 2 codebase distinte (fixture + prototype) senza modifiche al codice; collezioni isolate (SC-001)
-- [ ] T039 [P] Integration test local-only in `tests/integration/test_local_only.py`: con `RAG_BACKEND=local`, 0 chiamate di rete cloud (spia su httpx) lungo index+query (SC-006)
-- [ ] T040 [P] Run quickstart.md validation: eseguire i flussi di `quickstart.md` (index → search_code/docs/combined) sulla fixture e verificare gli output
-- [ ] T041 [P] Documentation: aggiungere `README.md` del pacchetto `src/sertor_core/` con uso come libreria (allineato a quickstart.md) e note extra opzionali (NFR-04)
+- [x] T037 Integration test idempotenza in `tests/integration/test_idempotence.py`: full re-index su corpus invariato → stesso insieme di chunk_id, nessun duplicato (SC-005, NFR-02)
+- [x] T038 Integration test repo-agnosticità in `tests/integration/test_two_corpora.py`: indicizza 2 codebase distinte (fixture + prototype) senza modifiche al codice; collezioni isolate (SC-001)
+- [x] T039 [P] Integration test local-only in `tests/integration/test_local_only.py`: con `RAG_BACKEND=local`, 0 chiamate di rete cloud (spia su httpx) lungo index+query (SC-006)
+- [x] T040 [P] Run quickstart.md validation: eseguire i flussi di `quickstart.md` (index → search_code/docs/combined) sulla fixture e verificare gli output
+- [x] T041 [P] Documentation: aggiungere `README.md` del pacchetto `src/sertor_core/` con uso come libreria (allineato a quickstart.md) e note extra opzionali (NFR-04)
 
 ---
 
