@@ -54,6 +54,20 @@ def test_search_type_filter(monkeypatch, capsys):
     assert all(r["doc_type"] == "doc" for r in data)
 
 
+def test_search_output_handles_non_ascii(monkeypatch, capsys):
+    # regressione: testo con caratteri non-ASCII (es. `→`, accenti) non deve far crashare l'output
+    emb = FakeEmbedder(dim=8)
+    store = InMemoryStore()
+    store.upsert(COLL, [
+        EmbeddedChunk("a.py#0", emb.embed(["x"])[0],
+                      {"text": "language -> tipo → unità con àccénti", "path": "a.py",
+                       "doc_type": "code"}),
+    ])
+    _patch(monkeypatch, store)
+    assert main(["search", "x"]) == 0
+    assert "→" in capsys.readouterr().out
+
+
 def test_search_missing_index_errors(monkeypatch, capsys):
     _patch(monkeypatch, InMemoryStore())             # store vuoto → collezione assente
     code = main(["search", "x"])
