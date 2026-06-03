@@ -4,6 +4,7 @@ type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
 updated: 2026-06-03
+sources: ["requirements/sertor-core/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "src/sertor_core/**"]
 sources: ["requirements/sertor-core/epic.md", ".specify/memory/constitution.md"]
 ---
 
@@ -43,7 +44,9 @@ _(La produzione inizia ora: questa sezione cresce a ogni sessione.)_
 - **[[ruolo-wiki-da-w1]]** — DA-W1 risolta: il wiki è CORPUS + SUPERFICIE; identità, autorità, confine MVP, ruoli 1–3.
 - **[[decomposizione-must-core]]** — Decomposizione dei 3 Must (FEAT-001/002/003); 6 decisioni di ambito MVP; nuova FEAT-009 su refresh incrementale.
 - **[[piano-nucleo-retrieval]]** — Piano SpecKit FEAT-001: architettura Clean, decisioni R1–R8, Constitution Check ✅ (Principi I+IV), modello dati, contratti, scope MVP vs post-MVP.
+- **[[implementazione-nucleo-retrieval]]** — Completamento FEAT-001: libreria `sertor-core` prod-ready, 53 test, chunking 14 lingue, embeddings multi-provider, facade retrieval, Constitution Check 9/9 ✅.
 
 ### Tech (tecnologie e infrastruttura)
 
 - **[[hook-sessionstart-wiki]]** — Hook SessionStart di Claude Code: carica indice + log a inizio sessione. Ruolo 1 di DA-W1 (contesto iniettato).
+- **[[tree-sitter-language-pack]]** — Binding Rust multilingua (305+ lingue), parser robusto, 14 lingue sintattico MVP + 3 fallback, wrapper `_Node` per API metodo-based.

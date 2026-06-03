@@ -120,3 +120,29 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
   - **Linkage:** FEAT-002 aggiunge ranking; FEAT-003 usa il RAG; sertor-cli importa libreria (no dipendenze cloud obbligatorie).
 - **Index aggiornato:** aggiunto link `[[piano-nucleo-retrieval]]` in Syntheses con descrizione.
 - **File toccati:** `wiki/syntheses/piano-nucleo-retrieval.md` (nuovo), `wiki/index.md`, `wiki/log.md`.
+
+## [2026-06-03] record | Implementazione FEAT-001 nucleo-retrieval
+
+- **Pagina creata:** `syntheses/implementazione-nucleo-retrieval.md` documenta il completamento phase 2 (implementation) di FEAT-001:
+  - **Stato:** ✅ 42 task completati (US1–US6), 53 test passed + 1 xfail (DA-003 precision@k baseline), ruff clean, Constitution Check 9/9 ✅.
+  - **Libreria:** `src/sertor_core/` installabile (sertor-core package), Python 3.12 + venv uv `.venv-core`.
+  - **Stack reale:** tree-sitter-language-pack 1.8.1 (binding Rust, wrapper `_Node` per API metodi), chromadb, httpx, python-dotenv, pytest 9.
+  - **Chunking sintattico:** 10 lingue validati (Python, JS/TS, Java, C#, Go, C/C++, PHP, Ruby, Bash); 3 fallback dimensionali (PowerShell, T-SQL, PL/SQL, validazione AST in sospeso).
+  - **Decisione tecnica notevole:** binding tree-sitter espone API come metodi (non attributi); wrapper `_Node` risolve leggibilità codice, chiama `kind()`, `byte_range()`, `start_position()`, slicia sorgente in byte.
+  - **Conformità:** R1–R8 implementate; Constitution Check 9/9; Principi I+IV NON-NEGOZIABILI confermati.
+  - **Idempotenza (SC-005):** doc_id = path POSIX, chunk_id = `{doc_id}#{ordinale}`, tested; re-ingest → stessi ID.
+  - **Local-only (SC-006):** `RAG_BACKEND=local` → Chroma + Ollama, zero cloud SDK required.
+  - **Test suite:** unit (ingestion, chunking, embeddings, vector store), integration (E2E ingest→retrieve), error handling, config/logging.
+  - **xfail 1:** `test_precision_at_k_baseline` — DA-003 (baseline prototipo vs ground-truth corpus, rinviato a definizione soglia).
+  - **Artefatti:** `src/sertor_core/**`, `specs/001-nucleo-retrieval/{plan,tasks,research,data-model,contracts}/*.md`, `tests/**`.
+  - **Linkage:** FEAT-002 (ranking su retrieval_facade), FEAT-003 (ingestion wiki), sertor-cli (import libreria).
+- **Pagina creata:** `tech/tree-sitter-language-pack.md` approfondimento su binding Rust, quirk API, 14 lingue MVP, wrapper `_Node`, performance/robustness, extension strategy (post-MVP).
+  - **Binding PyO3:** metodo-based API, no attributi (design choice ufficiale).
+  - **10 lingue sintattico:** Python, JS/TS, Java, C#, Go, C/C++, PHP, Ruby, Bash (node-type mappato, qualname support).
+  - **3 fallback:** PowerShell, T-SQL, PL/SQL (grammatica presente, AST non ancora stabile upstream).
+  - **Wrapper `_Node`:** proprietà clean per `kind`, `byte_range`, `start_position`, `start_line` (1-indexed), iterazione figli.
+  - **Quirk:** byte offsets (non character), 0-indexed row/col, slicing UTF-8, no `.text` diretto, wheel precompilato.
+  - **Performance:** parsing ~50 ms/file, bottleneck reale = embedding, memory = 1 MB/10KB file.
+  - **Extension strategy:** controllare upstream tree-sitter, identificare node-type, test corpus, fallback dimensionale se no AST.
+- **Index aggiornato:** aggiunto link `[[implementazione-nucleo-retrieval]]` in Syntheses; link `[[tree-sitter-language-pack]]` in Tech.
+- **File toccati:** `wiki/syntheses/implementazione-nucleo-retrieval.md` (nuovo), `wiki/tech/tree-sitter-language-pack.md` (nuovo), `wiki/index.md`.
