@@ -31,10 +31,10 @@ Single project a libreria: `src/sertor_core/`, `tests/` alla radice del repo (da
 
 **Purpose**: inizializzazione del pacchetto e struttura
 
-- [ ] T001 Create package structure per plan.md: `src/sertor_core/{domain,services,services/chunking,adapters/embeddings,adapters/vectorstores,config,observability}/__init__.py` e `tests/{unit,integration,fixtures}/`
-- [ ] T002 Initialize Python project in `pyproject.toml` (Python ≥3.11, build backend, package `sertor_core` in `src/`); dipendenze base: `httpx`, `chromadb`, `python-dotenv`, `tree-sitter`, `tree-sitter-language-pack`; extra opzionali `[azure]`; dev: `pytest`
-- [ ] T003 [P] Configure linting/formatting (`ruff` + config) e `pytest` (`[tool.pytest.ini_options]`, `testpaths=tests`) in `pyproject.toml`
-- [ ] T004 [P] Create `.env.example` con le chiavi di `Settings` (RAG_BACKEND, SERTOR_CORPUS, OLLAMA_*, AZURE_*, CHUNK_*, EMBED_BATCH_SIZE) e verifica che `.env`/`.index*` siano in `.gitignore`
+- [x] T001 Create package structure per plan.md: `src/sertor_core/{domain,services,services/chunking,adapters/embeddings,adapters/vectorstores,config,observability}/__init__.py` e `tests/{unit,integration,fixtures}/`
+- [x] T002 Initialize Python project in `pyproject.toml` (Python ≥3.11, build backend, package `sertor_core` in `src/`); dipendenze base: `httpx`, `chromadb`, `python-dotenv`, `tree-sitter`, `tree-sitter-language-pack`; extra opzionali `[azure]`; dev: `pytest`
+- [x] T003 [P] Configure linting/formatting (`ruff` + config) e `pytest` (`[tool.pytest.ini_options]`, `testpaths=tests`) in `pyproject.toml`
+- [x] T004 [P] Create `.env.example` con le chiavi di `Settings` (RAG_BACKEND, SERTOR_CORPUS, OLLAMA_*, AZURE_*, CHUNK_*, EMBED_BATCH_SIZE) e verifica che `.env`/`.index*` siano in `.gitignore`
 
 ---
 
@@ -44,12 +44,12 @@ Single project a libreria: `src/sertor_core/`, `tests/` alla radice del repo (da
 
 **⚠️ CRITICAL**: nessuna user story può iniziare prima del completamento di questa fase
 
-- [ ] T005 [P] Create domain entities in `src/sertor_core/domain/entities.py`: `DocType` (enum code/doc), `Document`, `ChunkMetadata` (code + markdown), `Chunk`, `RetrievalResult`, `IndexReport` (conteggi) — dataclass, nessun import di SDK esterni (data-model.md)
-- [ ] T006 [P] Create domain error hierarchy in `src/sertor_core/domain/errors.py`: `SertorError` → `ConfigError`, `IngestionError`, `EmbeddingError(provider, reason, retriable)`, `VectorStoreError(backend, reason)` (data-model.md §Errori; Principio IV)
-- [ ] T007 Create ports in `src/sertor_core/domain/ports.py`: `EmbeddingProvider` (`name`, `dim`, `batch_size`, `embed(texts)->list[list[float]]`) e `VectorStore` (`upsert`, `query`, `delete`, `exists`) come `Protocol` (contracts/embedding-provider.md, contracts/vector-store.md)
-- [ ] T008 [P] Implement centralized `Settings` in `src/sertor_core/config/settings.py`: legge env+file via `python-dotenv`, espone backend/corpus/embeddings/store/chunking/esclusioni/`default_k`/`batch_size`; default SOLO qui (REQ-030); nessun segreto su path versionati (REQ-032)
-- [ ] T009 [P] Implement structured logging in `src/sertor_core/observability/logging.py`: helper `get_logger` + emissione record con campi (operation, provider/backend, conteggi, dim, elapsed_ms, error) + `redact()` per segreti (REQ-031/032)
-- [ ] T010 [P] Create test fixtures in `tests/fixtures/`: mini-repo multi-linguaggio (≥ Python, JS, Go, Markdown, 1 file di linguaggio fuori-set, 1 file binario, 1 dir tipo `.venv`), `FakeEmbedder`(dim piccola, deterministico) e `InMemoryStore` (mock delle porte) in `tests/fixtures/mocks.py`
+- [x] T005 [P] Create domain entities in `src/sertor_core/domain/entities.py`: `DocType` (enum code/doc), `Document`, `ChunkMetadata` (code + markdown), `Chunk`, `RetrievalResult`, `IndexReport` (conteggi) — dataclass, nessun import di SDK esterni (data-model.md)
+- [x] T006 [P] Create domain error hierarchy in `src/sertor_core/domain/errors.py`: `SertorError` → `ConfigError`, `IngestionError`, `EmbeddingError(provider, reason, retriable)`, `VectorStoreError(backend, reason)` (data-model.md §Errori; Principio IV)
+- [x] T007 Create ports in `src/sertor_core/domain/ports.py`: `EmbeddingProvider` (`name`, `dim`, `batch_size`, `embed(texts)->list[list[float]]`) e `VectorStore` (`upsert`, `query`, `delete`, `exists`) come `Protocol` (contracts/embedding-provider.md, contracts/vector-store.md)
+- [x] T008 [P] Implement centralized `Settings` in `src/sertor_core/config/settings.py`: legge env+file via `python-dotenv`, espone backend/corpus/embeddings/store/chunking/esclusioni/`default_k`/`batch_size`; default SOLO qui (REQ-030); nessun segreto su path versionati (REQ-032)
+- [x] T009 [P] Implement structured logging in `src/sertor_core/observability/logging.py`: helper `get_logger` + emissione record con campi (operation, provider/backend, conteggi, dim, elapsed_ms, error) + `redact()` per segreti (REQ-031/032)
+- [x] T010 [P] Create test fixtures in `tests/fixtures/`: mini-repo multi-linguaggio (≥ Python, JS, Go, Markdown, 1 file di linguaggio fuori-set, 1 file binario, 1 dir tipo `.venv`), `FakeEmbedder`(dim piccola, deterministico) e `InMemoryStore` (mock delle porte) in `tests/fixtures/mocks.py`
 
 **Checkpoint**: dominio, config, logging e mock pronti → le user story possono partire
 
@@ -63,12 +63,12 @@ Single project a libreria: `src/sertor_core/`, `tests/` alla radice del repo (da
 
 ### Tests for User Story 1 ⚠️
 
-- [ ] T011 [P] [US1] Test ingestione in `tests/unit/test_ingestion.py`: scoperta file indicizzabili + id = path relativo (REQ-001/004); esclusione configurabile (REQ-002); skip file illeggibile con warning (REQ-003); repo senza file → lista vuota senza errore (edge case)
+- [x] T011 [P] [US1] Test ingestione in `tests/unit/test_ingestion.py`: scoperta file indicizzabili + id = path relativo (REQ-001/004); esclusione configurabile (REQ-002); skip file illeggibile con warning (REQ-003); repo senza file → lista vuota senza errore (edge case)
 
 ### Implementation for User Story 1
 
-- [ ] T012 [US1] Implement ingestion service in `src/sertor_core/services/ingestion.py`: `discover(root, settings)` scoperta **ordinata** (sort path), lettura UTF-8 `errors=ignore`, rilevamento linguaggio da estensione, esclusione via `settings.exclude_patterns`, skip illeggibili (warning + continua), `Document.id` = path relativo POSIX (REQ-001..005)
-- [ ] T013 [US1] Add structured logging all'ingestione (operation=ingest, doc_count, skipped) usando `observability.logging` (REQ-031)
+- [x] T012 [US1] Implement ingestion service in `src/sertor_core/services/ingestion.py`: `discover(root, settings)` scoperta **ordinata** (sort path), lettura UTF-8 `errors=ignore`, rilevamento linguaggio da estensione, esclusione via `settings.exclude_patterns`, skip illeggibili (warning + continua), `Document.id` = path relativo POSIX (REQ-001..005)
+- [x] T013 [US1] Add structured logging all'ingestione (operation=ingest, doc_count, skipped) usando `observability.logging` (REQ-031)
 
 **Checkpoint**: US1 indipendentemente testabile (scoperta repo-agnostica)
 
@@ -151,7 +151,8 @@ Single project a libreria: `src/sertor_core/`, `tests/` alla radice del repo (da
 ### Implementation for User Story 5
 
 - [ ] T031 [US5] Implement `RetrievalFacade` in `src/sertor_core/services/retrieval.py`: `search_code/search_docs/search_combined`, embed query → `store.query` con filtro doc_type, mapping a `RetrievalResult`, indice vuoto → []+warning (REQ-023..028); logging per query (REQ-031)
-- [ ] T032 [US5] Implement composition root in `src/sertor_core/composition.py`: `build_facade()` e `build_indexer()` che cablano Settings→adapter→service; export pubblico in `src/sertor_core/__init__.py` (REQ-029) (depends on T023, T028, T031)
+- [ ] T031b [US5] Implement indexing orchestrator in `src/sertor_core/services/indexing.py`: `IndexingService.index(root) -> IndexReport` che concatena ingestion.discover → chunking.dispatch → embedder.embed → store.upsert (full re-index idempotente, namespace da config); logging strutturato (operation=index, doc/chunk count, dim, tempi) (REQ-015/031, SC-005) — chiude il gap C1 (depends on T012, T019, T023, T028)
+- [ ] T032 [US5] Implement composition root in `src/sertor_core/composition.py`: `build_facade()`, `build_indexer()` e `build_embedder/build_store` che cablano Settings→adapter→service; export pubblico in `src/sertor_core/__init__.py` (REQ-029) (depends on T023, T028, T031, T031b)
 
 **Checkpoint**: US5 testabile (facade riusabile, indipendente dal backend) — **nucleo end-to-end funzionante**
 
