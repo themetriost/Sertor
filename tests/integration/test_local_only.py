@@ -29,3 +29,14 @@ def test_local_embedder_targets_local_host(monkeypatch):
     monkeypatch.setenv("OLLAMA_HOST", "http://localhost:11434")
     embedder = build_embedder(Settings.load(env_file=None))
     assert "localhost" in embedder._host       # nessun endpoint cloud (REQ-016)
+
+
+def test_store_backend_decoupled_from_embeddings(monkeypatch, tmp_path):
+    # embeddings su Azure ma store locale (Chroma) = combinazione del prototipo
+    monkeypatch.setenv("RAG_BACKEND", "azure")
+    monkeypatch.setenv("SERTOR_INDEX_DIR", str(tmp_path / "idx"))
+    # store_backend non impostato → default 'local'
+    settings = Settings.load(env_file=None)
+    assert settings.backend == "azure" and settings.store_backend == "local"
+    store = build_store(settings)
+    assert isinstance(store, ChromaStore)        # store locale anche con embeddings Azure
