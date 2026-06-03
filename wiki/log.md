@@ -199,3 +199,16 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
   - **Processo git:** branch `spec/004-cli-esecuzione` da master (FEAT-001/002/003 mergiati); commit per fase (requisiti, spec, plan, implementation).
 - **Index aggiornato:** aggiunto link `[[cli-esecuzione-feat004]]` in Syntheses con descrizione.
 - **File toccati:** `wiki/syntheses/cli-esecuzione-feat004.md` (nuovo), `wiki/index.md`, `wiki/log.md`.
+
+## [2026-06-03] record | Dogfooding di produzione + 2 fix CLI
+
+- **Pagina creata:** `experiments/dogfooding-produzione-cli.md` documenta il primo dogfooding reale di produzione:
+  - **Setup:** corpus produzione (src/, specs/, requirements/, wiki/, tests/, root Markdown) indicizzato con `sertor index .` su Ollama locale (`nomic-embed-text`, dim 768, RAG_BACKEND=local).
+  - **Esito:** 146 documenti, 1.192 chunk indicizzati in `.index-production/`; query di verifica ("chunking code-aware", "idempotenza re-index", "errore isolato policy") restituiscono risultati pertinenti (score > 0.75). RAG produzione è funzionale.
+  - **2 bug di produzione trovati e corretti (PR #4 + #5, merge 505eac9):**
+    1. **UnicodeEncodeError su Windows console:** caratteri UTF-8 (→, accenti) causavano crash su console cp1252. **Fix:** funzione `_force_utf8()` in `cli.py` forza stdout/stderr a UTF-8. **Test:** `test_cli_search_with_utf8_output()`. **Lezione:** test mock con `capsys` (UTF-8 default pytest) non riproduce console Windows reale; dogfooding reale necessario.
+    2. **Opzioni globali non accettate dopo sottocomando:** `sertor -v search "q"` funzionava, `sertor search -v "q"` dava errore (argparse). **Fix:** parent parser condiviso tra main e subparser, `argparse.SUPPRESS` per celare help duplicato. **Test:** `test_cli_global_flags_order()`. **Lezione:** test unitari passavano lista (skip parsing globale); CLI reale richiede shlex.split() o subprocess.
+  - **Valore:** MVP core + CLI completati e dogfoodati; primo entry point eseguibile provato; 2 lezioni di process (test mock insufficiente per bug platform-specific e argparse).
+  - **Conformità:** Constitution Check 9/9 (Principi I, IV, VII), Costituzione [[costituzione-v1]] rispettata.
+- **Index aggiornato:** nuova sezione "Experiments" con link a `[[dogfooding-produzione-cli]]`.
+- **File toccati:** `wiki/experiments/dogfooding-produzione-cli.md` (nuovo), `wiki/index.md`, `wiki/log.md`.
