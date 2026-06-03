@@ -17,6 +17,17 @@ pagine concept. Riusa le convenzioni e la struttura già definite nel core
 (`src/sertor_core/wiki/conventions.py`, `structure.py`): frontmatter YAML, wikilink `[[...]]`,
 naming kebab-case, cartelle tematiche, `index.md`/`log.md`.
 
+**Ruolo prioritario — il wiki è la documentazione UFFICIALE del progetto.** Deve racchiudere,
+descrivere, collegare e dettagliare **tutti i concetti alla base del progetto**: le **entità di
+business**, le **funzionalità ad alto/medio livello**, le **motivazioni dietro le scelte** e
+l'**architettura** — cioè la descrizione documentale di ciò che è realizzato nel codice. Le
+**sorgenti "raw"** da cui questa documentazione è distillata non sono solo le **discussioni**, ma
+anche **tutti gli artifact di SpecKit e dei requisiti** (epic, requirements, spec, plan, tasks,
+costituzione): il wiki li **sintetizza in forma narrativa** e vi **rimanda con link** per il
+dettaglio, **senza duplicarli** (coerente con DA-W1: il wiki *rimanda* agli artefatti, non li
+specchia, così non diverge). FEAT-007 mantiene questa documentazione **coerente, completa e
+collegata** nel tempo.
+
 ---
 
 ## 2. Obiettivi e criteri di successo
@@ -29,6 +40,8 @@ naming kebab-case, cartelle tematiche, `index.md`/`log.md`.
 | LSC-4 | Le contraddizioni **marcate** (dall'ingest di FEAT-003) sono elencate nel report; con LLM configurato, è possibile segnalare contraddizioni semantiche. | CS-3 |
 | LSC-5 | La skill opera su **≥2 wiki diversi** senza modifiche (path da configurazione). | CS-5 (repo-agnostico) |
 | LSC-6 | Ogni operazione emette **log strutturati** (operazione, file coinvolti, conteggi, esito). | Principio IX |
+| LSC-7 | Il wiki copre, come **documentazione ufficiale**, le aree fondamentali del progetto: **entità di business, funzionalità (alto/medio livello), motivazioni delle scelte, architettura**; il lint **segnala le aree mancanti**. | FEAT-007 (ruolo prioritario) |
+| LSC-8 | Ogni pagina di documentazione distillata da artifact **rimanda con link** alle fonti (spec/plan/tasks/requirements/epic/costituzione) per il dettaglio, **senza duplicarne** il contenuto. | DA-W1, Principio III |
 
 ---
 
@@ -47,11 +60,17 @@ naming kebab-case, cartelle tematiche, `index.md`/`log.md`.
 ## 4. Ambito
 
 ### In ambito
-- **Lint**: validazione dei wikilink (link rotti verso pagine inesistenti), rilevazione **pagine orfane**, segnalazione di pagine presenti su disco ma assenti dall'indice; **report strutturato, non distruttivo**.
+- **Documentazione ufficiale del progetto** (prioritario): mantenere nel wiki le pagine che descrivono **entità di business**, **funzionalità (alto/medio livello)**, **motivazioni/decisioni** e **architettura**; ogni pagina **rimanda con link** alle fonti di dettaglio (artifact SpecKit/requisiti) senza duplicarle.
+- **Distillazione di artifact e discussioni → documentazione** (con LLM): dato un artifact (epic/requirements/spec/plan/tasks/costituzione) o un brief di discussione, produrre/aggiornare la pagina di documentazione conforme, con backlink alla fonte.
+- **Lint**: validazione dei wikilink (link rotti verso pagine inesistenti), rilevazione **pagine orfane**, segnalazione di pagine presenti su disco ma assenti dall'indice, e **segnalazione delle aree di documentazione mancanti** (entità/feature/decisioni/architettura); **report strutturato, non distruttivo**.
 - **Rigenerazione dell'indice**: ricostruzione/aggiornamento del catalogo di `index.md` (link + sommario per pagina), **idempotente** e **non distruttiva** del contenuto curato a mano.
 - **Contraddizioni**: elenco delle pagine con marcatori di contraddizione; (opzionale, con LLM) segnalazione di contraddizioni semantiche.
-- **Distillazione raw→concept** (con LLM): da una sorgente in `raw/`, produrre/aggiornare una pagina concept conforme alle convenzioni.
 - **Idempotenza** trasversale; **repo-agnosticità** e **configurabilità** (path del wiki); **osservabilità** (log strutturati).
+
+> **Sorgenti "raw" (definizione estesa).** Non solo i file in `raw/` (discussioni, note), ma anche
+> **gli artifact del progetto**: `requirements/**` (epic + requisiti EARS), `specs/**`
+> (spec/plan/tasks/contracts/research/quickstart) e `.specify/memory/constitution.md`. Il wiki li
+> **distilla** in documentazione narrativa e vi **rimanda** per il dettaglio.
 
 ### Fuori ambito
 - **Creazione struttura, record, ingest** (è FEAT-003).
@@ -145,6 +164,33 @@ file/pagine coinvolte, conteggi, esito) senza segreti.*
 **REQ-052 (Ubiquitous)** *The system shall return the lint outcome as a **structured report**
 (elenco di problemi tipizzati) consumabile a programma (es. da una CI), oltre a una resa leggibile.*
 
+### Gruppo G — Il wiki come documentazione ufficiale (prioritario)
+
+**REQ-060 (Ubiquitous)** *The wiki shall act as the project's **official documentation**, covering at
+minimum: **business entities**, **high/medium-level features**, **rationale behind decisions**, and
+**architecture** — la descrizione documentale di ciò che è realizzato nel codice.*
+
+**REQ-061 (Ubiquitous)** *The system shall treat as distillation **sources** both project discussions
+and the **project artifacts**: `requirements/**` (epic + EARS), `specs/**`
+(spec/plan/tasks/contracts/research/quickstart) and `.specify/memory/constitution.md`.*
+
+**REQ-062 (Event-driven)** *When the system distills an artifact (or a discussion) into a
+documentation page, it shall **link** to the source artifact(s) for detail and **shall not duplicate**
+their content (il wiki sintetizza e rimanda, non specchia).*
+
+**REQ-063 (Event-driven)** *When a documentation-distillation operation is invoked on an artifact (or
+brief), the system shall produce or update a conforming wiki page (frontmatter, kebab-case, cartella
+tematica, wikilink) che descrive l'entità/funzionalità/decisione/architettura pertinente, con backlink
+alla fonte.*
+
+**REQ-064 (Event-driven)** *When linting, the system shall report **missing documentation coverage**:
+quali aree fondamentali (entità di business, funzionalità, decisioni, architettura) non risultano
+documentate nel wiki.*
+
+**REQ-065 (Unwanted behaviour)** *If a documentation-distillation operation needs generation and no LLM
+provider is configured, then the operation shall be blocked with an explicit, readable error (le sole
+operazioni LLM-free sono lint, rigenerazione indice e segnalazione coperture/contraddizioni marcate).*
+
 ---
 
 ## 6. Requisiti non funzionali
@@ -172,11 +218,16 @@ file/pagine coinvolte, conteggi, esito) senza segreti.*
 ### Assunzioni
 - **A-1**: Il wiki target è conforme alle convenzioni di FEAT-003 (frontmatter, wikilink, cartelle).
 - **A-2**: L'attore automatico (agente LLM) fornisce l'LLM quando serve (distill/contraddizioni semantiche).
-- **A-3**: La distillazione riceve una **sorgente già leggibile** in `raw/`; non gestisce crawling esterno né formati binari (coerente con DA-W3 di FEAT-003).
+- **A-3**: La distillazione riceve **sorgenti già leggibili** in formato testo: i file in `raw/`
+  (discussioni/note) **e** gli artifact del progetto (`requirements/**`, `specs/**`,
+  `.specify/memory/constitution.md`); non gestisce crawling esterno né formati binari.
+- **A-4**: La documentazione ufficiale **rimanda** agli artifact per il dettaglio (link), non li
+  duplica: gli artifact restano la fonte di verità formale, il wiki è la sintesi narrativa.
 
 ### Dipendenze
 - **D-1**: **FEAT-003** (convenzioni e struttura del wiki, marcatori di contraddizione) — in `master`.
-- **D-2**: Porta **`LLMProvider`** del core — solo per distillazione e contraddizioni semantiche.
+- **D-2**: Porta **`LLMProvider`** del core — per la distillazione documentale (ruolo prioritario) e le contraddizioni semantiche.
+- **D-3**: Gli **artifact** `requirements/**`, `specs/**`, `.specify/memory/constitution.md` come sorgenti della documentazione (in repo, versionati).
 
 ---
 
@@ -196,9 +247,9 @@ file/pagine coinvolte, conteggi, esito) senza segreti.*
 
 | Priorità | Requisiti | Motivazione |
 |----------|-----------|-------------|
-| **Must** | REQ-001..005 (lint+report), REQ-040/041 (idempotenza), REQ-050/051/052 (config/osservabilità/report) | Il valore centrale: verificare il wiki in modo non distruttivo e diagnosticabile. |
-| **Should** | REQ-010..013 (rigenera indice), REQ-020 (contraddizioni marcate) | Mantiene l'indice allineato e segnala contraddizioni note; deterministico, LLM-free. |
-| **Could** | REQ-030..033 (distillazione raw→concept), REQ-021/022 (contraddizioni semantiche) | Alto valore ma LLM-dipendenti e non deterministici; dopo i deterministici. |
+| **Must** | REQ-001..005 (lint+report), REQ-040/041 (idempotenza), REQ-050..052 (config/osservabilità/report), **REQ-060/061/062 (wiki = documentazione ufficiale: ruolo, sorgenti incl. artifact, link-non-duplica)**, REQ-064 (report coperture mancanti, LLM-free) | Valore centrale: il wiki **è** la documentazione ufficiale, mantenuta coerente e diagnosticabile in modo non distruttivo. |
+| **Should** | REQ-010..013 (rigenera indice), REQ-020 (contraddizioni marcate), **REQ-030..033 + REQ-063/065 (distillazione documentale da artifact/discussioni, con LLM)** | Mantiene l'indice allineato e **alimenta la documentazione ufficiale** (prioritaria) distillando gli artifact; richiede LLM. |
+| **Could** | REQ-021/022 (contraddizioni **semantiche** con LLM) | Alto valore ma LLM-dipendente e rumoroso; dopo il resto. |
 | **Won't (ora)** | Auto-fix dei link rotti; crawling esterno; arricchimento Wiki↔RAG (FEAT-008) | Fuori ambito / altre feature. |
 
 ---
@@ -211,8 +262,15 @@ file/pagine coinvolte, conteggi, esito) senza segreti.*
   curato, non distruttivo, idempotente). Da confermare in design.
 - **DA-2 — Contraddizioni: euristiche vs LLM.** *Direzione:* MVP = solo **marcatori espliciti**
   (deterministico); contraddizioni **semantiche** opt-in con LLM (Could). Da confermare.
-- **DA-3 — Distillazione raw→concept: MVP o post-MVP?** *Direzione:* **post-MVP / Could** (dipende
-  da LLM, non deterministica, e `raw/` è vendored): prima i deterministici (lint + indice). Da confermare.
+- **DA-3 — Distillazione documentale: portata.** *Aggiornata (ruolo prioritario):* la distillazione
+  che alimenta la **documentazione ufficiale** (da artifact + discussioni) è **in ambito e Should**
+  (non più post-MVP); richiede LLM (REQ-065). Resta da confermare **quanto** è automatica vs assistita.
+- **DA-7 — Modello di contenuto della documentazione ufficiale.** Quale tassonomia/granularità per
+  entità di business, funzionalità, decisioni, architettura (es. una pagina per entità? una per
+  feature? una pagina-architettura unica?) e **come** il lint verifica la "copertura" (euristica su
+  cartelle/tag attesi vs check esplicito). *Direzione proposta:* cartelle tematiche dedicate
+  (es. `concepts/` per entità, `syntheses/` per architettura/decisioni) + copertura verificata su un
+  set atteso configurabile. Da confermare in design.
 - **DA-4 — Lint: solo-report vs auto-fix.** *Direzione:* **solo report**; l'unica scrittura "fix" è
   la **rigenerazione dell'indice** (operazione separata, esplicita, sicura, idempotente). Niente
   auto-fix dei link. Da confermare.
