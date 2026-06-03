@@ -35,6 +35,10 @@ cumulativo: cresce a ogni sessione secondo lo schema in [`../CLAUDE.md`](../CLAU
 
 _(La produzione inizia ora: questa sezione cresce a ogni sessione.)_
 
+### Experiments (attività e test di produzione)
+
+- **[[dogfooding-produzione-cli]]** — Primo dogfooding CLI sul corpus di produzione (146 doc, 1192 chunk); 2 bug trovati e corretti (UnicodeEncodeError Windows, argparse parent flags). Lezione: dogfooding reale scopre bug che test mock non vedono.
+
 ### Syntheses (sintesi trasversali)
 
 - **[[costituzione-v1]]** — Ratifica Costituzione v1.0.0 (governance, 9 principi vincolanti, gate Constitution Check). Governa design e produzione.
