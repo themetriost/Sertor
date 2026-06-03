@@ -38,3 +38,12 @@ def log_event(level: int, operation: str, **fields: Any) -> None:
     safe = redact(fields)
     rendered = " ".join(f"{k}={v}" for k, v in safe.items())
     get_logger().log(level, "op=%s %s", operation, rendered, extra={"operation": operation, **safe})
+
+
+def log_error(operation: str, exc: BaseException, **fields: Any) -> None:
+    """Emette un evento di log strutturato per un fallimento su un boundary, prima del raise.
+
+    Completa l'osservabilità (Principio IX): l'errore è sia un'eccezione esplicita (Principio IV)
+    sia un evento di log diagnosticabile. I segreti restano redatti (via `log_event`).
+    """
+    log_event(logging.ERROR, operation, error=type(exc).__name__, reason=str(exc), **fields)
