@@ -31,6 +31,11 @@ cumulativo: cresce a ogni sessione secondo lo schema in [`../CLAUDE.md`](../CLAU
 | `syntheses/` | Confronti e sintesi trasversali |
 | [`log.md`](log.md) | Registro append-only di tutto ciò che facciamo |
 
+## 📌 Pagina viva
+
+- **[[roadmap]]** — **Roadmap & Piano di prodotto**: stato di tutte le feature, roadmap per fasi e la
+  sezione *Nuove funzionalità da discutere* (aggiornabile a mano). Tienila sempre aperta.
+
 ## Pagine
 
 _(La produzione inizia ora: questa sezione cresce a ogni sessione.)_
