@@ -67,3 +67,18 @@ class VectorStore(Protocol):
     def exists(self, collection: str) -> bool:
         """True se la collezione esiste ed è inizializzata."""
         ...
+
+
+@runtime_checkable
+class LLMProvider(Protocol):
+    """Astrazione di un provider di generazione testo (LLM).
+
+    Usata solo dalle capacità che richiedono generazione (es. distillazione del wiki, FEAT-003).
+    Minimale di proposito (Principio III): un solo metodo. Gli adapter concreti avvolgono gli SDK.
+    """
+
+    name: str
+
+    def generate(self, prompt: str, system: str | None = None) -> str:
+        """Genera testo dal prompt (con un eventuale messaggio di sistema)."""
+        ...

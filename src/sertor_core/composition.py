@@ -7,7 +7,7 @@ a `Settings`. Estendere qui (non nei servizi) per aggiungere provider/backend.
 from __future__ import annotations
 
 from sertor_core.config.settings import Settings
-from sertor_core.domain.ports import EmbeddingProvider, VectorStore
+from sertor_core.domain.ports import EmbeddingProvider, LLMProvider, VectorStore
 
 
 def build_embedder(settings: Settings | None = None) -> EmbeddingProvider:
@@ -88,6 +88,22 @@ def build_facade(settings: Settings | None = None):
     return RetrievalFacade(
         embedder, store, collection_name(settings, embedder), default_k=settings.default_k
     )
+
+
+def build_llm(settings: Settings | None = None) -> LLMProvider:
+    """Costruisce il provider LLM selezionato dalla configurazione (per la distillazione wiki)."""
+    settings = settings or Settings.load()
+    if settings.backend == "azure":
+        from sertor_core.adapters.llm.azure import AzureLLM
+
+        return AzureLLM(
+            endpoint=settings.azure_openai_endpoint,
+            api_key=settings.azure_openai_api_key,
+            deployment=settings.azure_openai_chat_deployment,
+        )
+    from sertor_core.adapters.llm.ollama import OllamaLLM
+
+    return OllamaLLM(host=settings.ollama_host, model=settings.ollama_chat_model)
 
 
 def build_baseline_engine(settings: Settings | None = None):

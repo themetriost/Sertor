@@ -40,6 +40,18 @@ class FakeEmbedder:
         return [self._vector(t) for t in texts]
 
 
+class FakeLLM:
+    """Provider LLM finto e deterministico per i test della distillazione."""
+
+    def __init__(self):
+        self.name = "fake-llm"
+        self.calls = 0
+
+    def generate(self, prompt: str, system: str | None = None) -> str:
+        self.calls += 1
+        return f"Sintesi distillata.\n\n{prompt.strip()}"
+
+
 def _cosine(a: list[float], b: list[float]) -> float:
     dot = sum(x * y for x, y in zip(a, b, strict=False))
     na = math.sqrt(sum(x * x for x in a))

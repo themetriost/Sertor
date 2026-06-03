@@ -43,10 +43,12 @@ class Settings:
     # embeddings: locale (Ollama)
     ollama_host: str = "http://localhost:11434"
     ollama_embed_model: str = "nomic-embed-text"
+    ollama_chat_model: str = "llama3.1"
     # embeddings: cloud (Azure OpenAI)
     azure_openai_endpoint: str = ""
     azure_openai_api_key: str = ""
     azure_openai_embed_deployment: str = ""
+    azure_openai_chat_deployment: str = ""
     embed_batch_size: int = 64
 
     # vector store
@@ -86,9 +88,11 @@ class Settings:
             corpus=os.getenv("SERTOR_CORPUS", "default"),
             ollama_host=os.getenv("OLLAMA_HOST", "http://localhost:11434"),
             ollama_embed_model=os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text"),
+            ollama_chat_model=os.getenv("OLLAMA_CHAT_MODEL", "llama3.1"),
             azure_openai_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT", ""),
             azure_openai_api_key=os.getenv("AZURE_OPENAI_API_KEY", ""),
             azure_openai_embed_deployment=os.getenv("AZURE_OPENAI_EMBED_DEPLOYMENT", ""),
+            azure_openai_chat_deployment=os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT", ""),
             embed_batch_size=int(os.getenv("EMBED_BATCH_SIZE", "64")),
             index_dir=Path(index_dir) if index_dir else Path(".index"),
             azure_search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT", ""),
