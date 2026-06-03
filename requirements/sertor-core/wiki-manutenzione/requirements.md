@@ -104,8 +104,12 @@ referenced by any wikilink in another page nor listed in `index.md` — escluden
 **REQ-004 (Event-driven)** *When linting, the system shall report pages present on disk but **missing
 from the `index.md` catalog** (indice disallineato).*
 
-**REQ-005 (Unwanted behaviour)** *If a lint operation runs, then the system shall NOT modify, create
-or delete any wiki file (sola lettura); le correzioni sono operazioni separate ed esplicite.*
+**REQ-005 (Unwanted behaviour)** *If a lint operation runs without an explicit fix flag, then the
+system shall NOT modify, create or delete any wiki file (sola lettura di default).*
+
+**REQ-006 (Optional feature)** *Where an explicit fix flag (`--fix`) is given, the system shall apply
+only **safe, idempotent** fixes (es. rigenerazione dell'indice) e **mai** auto-fix dei link rotti
+(che richiedono giudizio).*
 
 ### Gruppo B — Rigenerazione dell'indice
 
@@ -266,34 +270,27 @@ operazioni LLM-free sono lint, rigenerazione indice e segnalazione coperture/con
 
 ---
 
-## 10. Domande aperte
+## 10. Domande aperte (risolte)
 
-- **DA-1 — Strategia di rigenerazione di `index.md`.** Sezione **gestita tra marcatori**
-  (es. `<!-- sertor:catalog -->` … `<!-- /sertor:catalog -->`, si rigenera solo quel blocco) **vs**
-  ricostruzione dell'intero blocco "## Pagine". *Direzione proposta:* **marcatori** (preserva il
-  curato, non distruttivo, idempotente). Da confermare in design.
-- **DA-2 — Contraddizioni: euristiche vs LLM.** *Direzione:* MVP = solo **marcatori espliciti**
-  (deterministico); contraddizioni **semantiche** opt-in con LLM (Could). Da confermare.
-- **DA-3 — Distillazione documentale: portata.** *Aggiornata (ruolo prioritario):* la distillazione
-  che alimenta la **documentazione ufficiale** (da artifact + discussioni) è **in ambito e Should**
-  (non più post-MVP); richiede LLM (REQ-065). Resta da confermare **quanto** è automatica vs assistita.
-- **DA-8 — Meccanismo di attivazione del gate ricorrente.** Il lint "a fine feature" come si innesca:
-  **hook di fase SpecKit** (es. dopo `implement`, via `.specify/extensions.yml`) · **CI** (pre-merge) ·
-  **comando manuale**/skill · o una combinazione? *Direzione proposta:* esporre un'operazione
-  non-interattiva con esito pass/fail (requisito), e **agganciarla a un hook di fase** come default,
-  lasciando CI/manuale possibili. Il *meccanismo* preciso è design. Da confermare.
-- **DA-7 — Modello di contenuto della documentazione ufficiale.** Quale tassonomia/granularità per
-  entità di business, funzionalità, decisioni, architettura (es. una pagina per entità? una per
-  feature? una pagina-architettura unica?) e **come** il lint verifica la "copertura" (euristica su
-  cartelle/tag attesi vs check esplicito). *Direzione proposta:* cartelle tematiche dedicate
-  (es. `concepts/` per entità, `syntheses/` per architettura/decisioni) + copertura verificata su un
-  set atteso configurabile. Da confermare in design.
-- **DA-4 — Lint: solo-report vs auto-fix.** *Direzione:* **solo report**; l'unica scrittura "fix" è
-  la **rigenerazione dell'indice** (operazione separata, esplicita, sicura, idempotente). Niente
-  auto-fix dei link. Da confermare.
-- **DA-5 — Definizione di "referenziato" per gli orfani.** Solo wikilink `[[...]]`? anche link
-  Markdown `[..](..)`? l'indice conta? *Direzione:* referenziato = compare in `index.md` **o** in un
-  wikilink di un'altra pagina; `index.md`/`log.md` esenti. Da confermare.
-- **DA-6 — Superficie d'invocazione.** Operazioni come funzioni di libreria e/o sottocomandi della
-  CLL (`sertor wiki lint` / `wiki reindex` / `wiki distill`)? *Direzione:* libreria nel core +
-  (eventuale) esposizione CLI in una feature CLI successiva. Da confermare in design.
+Chiuse in elicitazione (2026-06-03) e codificate nei requisiti.
+
+- **DA-1 — Rigenerazione di `index.md`.** *Risolta:* **sezione gestita tra marcatori**
+  (`<!-- sertor:catalog -->` … `<!-- /sertor:catalog -->`); tutto il resto resta intatto (REQ-010/011).
+- **DA-2 — Contraddizioni.** *Risolta:* **solo marcatori espliciti** nell'MVP (REQ-020);
+  contraddizioni **semantiche** con LLM restano **Could** (REQ-021/022).
+- **DA-3 — Distillazione documentale.** *Risolta:* **in ambito, Should**, e **assistita /
+  non distruttiva** — l'LLM genera la pagina quando manca e **non sovrascrive** il contenuto curato a
+  mano (idempotenza strutturale); l'agente resta nel loop (REQ-030..033, REQ-063/065).
+- **DA-4 — Lint: report vs fix.** *Risolta:* **report di default + `--fix` opt-in** per i soli fix
+  **sicuri/idempotenti** (rigenerazione indice); **mai** auto-fix dei link rotti (REQ-005/006).
+- **DA-5 — "Referenziato" (orfani).** *Risolta:* referenziato = compare in `index.md` **o** in un
+  **wikilink** `[[...]]` di un'altra pagina; `index.md`/`log.md` esenti (REQ-003).
+- **DA-6 — Invocazione.** *Risolta:* **operazioni come libreria nel core** in questa feature;
+  l'esposizione via sottocomandi CLI (`sertor wiki lint/reindex/distill`) arriva in una feature CLI
+  successiva.
+- **DA-7 — Modello di contenuto.** *Risolta:* **cartelle tematiche dedicate** (entità di business →
+  `concepts/`; architettura + decisioni → `syntheses/`; una pagina per feature) + **copertura
+  verificata su un set atteso configurabile** (REQ-060/064).
+- **DA-8 — Trigger del gate.** *Risolta:* la feature espone un'**operazione non-interattiva con esito
+  pass/fail** (REQ-053); come **default** la si **aggancia a un hook di fase** (es. dopo `implement`),
+  lasciando CI e invocazione manuale possibili. Il meccanismo preciso è design.
