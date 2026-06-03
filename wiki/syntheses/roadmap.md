@@ -43,7 +43,7 @@ Legenda: ✅ in produzione (master) · 🔜 prossima (Should) · 💤 dopo (Coul
 | FEAT-004 RAG ibrido + reranking | Should | 🔜 da decomporre |
 | FEAT-005 RAG a grafo / GraphRAG | Should | 🔜 da decomporre *(riporta i tool `find_symbol`/`who_calls`/… nel MCP)* |
 | FEAT-006 RAG agentico (multi-step) | Should | 🔜 da decomporre |
-| FEAT-007 Skill: mantenere il wiki (lint/indice/distill) | Should (prioritizzata) | 🧪 in lavorazione — decomposta |
+| FEAT-007 Skill: mantenere il wiki (lint/indice/distill) | Should (prioritizzata) | ✅ *(dogfood: 2 link rotti trovati e corretti)* |
 | FEAT-008 Arricchimento bidirezionale Wiki↔RAG | Could | 💤 da decomporre |
 | FEAT-009 Refresh incrementale dell'indice | Could | 💤 da decomporre |
 
@@ -67,8 +67,8 @@ Legenda: ✅ in produzione (master) · 🔜 prossima (Should) · 💤 dopo (Coul
 
 ## Roadmap per fasi
 
-- **✅ Fatto (in produzione):** Nucleo · Baseline · Skill Wiki · CLI `sertor` · Server MCP · Dogfooding Azure.
-- **🔜 Prossimo (Should):** RAG ibrido+reranking (FEAT-004) · GraphRAG (FEAT-005) · RAG agentico (FEAT-006) · Manutenzione wiki (FEAT-007) · CLI install selettivo.
+- **✅ Fatto (in produzione):** Nucleo · Baseline · Skill Wiki · Manutenzione wiki (FEAT-007) · CLI `sertor` · Server MCP · Dogfooding Azure.
+- **🔜 Prossimo (Should):** RAG ibrido+reranking (FEAT-004) · GraphRAG (FEAT-005) · RAG agentico (FEAT-006) · CLI install selettivo.
 - **💤 Dopo (Could / Won't ora):** Arricchimento Wiki↔RAG (FEAT-008) · Refresh incrementale (FEAT-009) · CLI wizard config · Distribuzione PyPI.
 
 ---

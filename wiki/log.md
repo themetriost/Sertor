@@ -212,3 +212,21 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
   - **Conformità:** Constitution Check 9/9 (Principi I, IV, VII), Costituzione [[costituzione-v1]] rispettata.
 - **Index aggiornato:** nuova sezione "Experiments" con link a `[[dogfooding-produzione-cli]]`.
 - **File toccati:** `wiki/experiments/dogfooding-produzione-cli.md` (nuovo), `wiki/index.md`, `wiki/log.md`.
+
+## [2026-06-03] record | FEAT-007 manutenzione del wiki
+
+- **Pagina creata:** `syntheses/manutenzione-wiki-feat007.md` documenta il completamento phase 2 di FEAT-007:
+  - **Stato:** ✅ 16/16 task completati (US1–US5), 124 test passed + 2 xfail (soglie baseline, non critiche), ruff clean, Constitution Check 9/9 ✅.
+  - **Libreria skill:** `src/sertor_core/wiki/maintenance.py` con `lint(root, *, expected=None, fix=False) -> LintReport`, `regenerate_index(root) -> bool`, entità `IssueKind`/`Issue`/`LintReport`.
+  - **Estensioni additive:** marcatori catalogo `<!-- sertor:catalog -->` + helper `replace_managed_block()` in `conventions.py`; `distill_artifact()` in `distill.py` per convertire artefatti in documentazione wiki.
+  - **Funzionalità lint:** rileva link rotti, pagine orfane, pagine fuori indice, coperture mancanti, contraddizioni marcate. Report-only (fix=True rigenera solo index.md, mai auto-fix link). LintReport.ok = gate di passaggio.
+  - **Non-distruttivo & idempotente (Principi IV+VI):** rieseguire linting invariato → stessa report; managed block preserva sezioni a mano.
+  - **Distillazione artifact:** converte spec/plan/requisito/discussione in pagine wiki ufficiali con backlink alla sorgente; senza LLM → LLMNotConfiguredError (configurabilità esplicita).
+  - **Dogfooding su produzione:** primo `lint('wiki/')` ha scoperto **2 link rotti reali** in `syntheses/chiusura-prototipo-dogfooding.md` (wikilink rotte a epica sertor-cli e architettura-attuale). **Fix applicati**: corretti i nomi dei link / riformulato il testo. Dopo fix: gate verde (16 pagine, 0 problemi). **Lezione**: lo strumento ha rilevato errori di curatela che navigazione manuale non catturava.
+  - **Conformità:** R1–R8 implementate; Constitution Check 9/9; Principi I–IX confermati; Principi IV+VI (non-distruttività/idempotenza) cardine della feature.
+  - **Artefatti:** `src/sertor_core/wiki/maintenance.py`, `src/sertor_core/wiki/conventions.py` (esteso), `src/sertor_core/wiki/distill.py` (esteso), `specs/005-wiki-manutenzione/{plan,spec,tasks}/*.md`, `tests/**`.
+  - **Linkage:** CONSUMA FEAT-003 (operazioni wiki), CONSUMA FEAT-001/002 (nucleo/baseline per distill/index), gate di qualità per feature future.
+- **Analisi SpecKit Analyze:** FR 15/15, 0 critical, Constitution Check 9/9 ✅.
+- **Processo git:** branch `spec/005-wiki-manutenzione` allineato a master (FEAT-001/002/003/004 mergiati); commit per fase.
+- **Index aggiornato:** aggiunto link `[[manutenzione-wiki-feat007]]` in Syntheses con descrizione; sources frontmatter aggiornate con `specs/004-cli-esecuzione/**` + `specs/005-wiki-manutenzione/**`.
+- **File toccati:** `wiki/syntheses/manutenzione-wiki-feat007.md` (nuovo), `wiki/index.md`, `wiki/log.md`.

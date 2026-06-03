@@ -162,8 +162,8 @@ find_symbol("HybridIndex")
 2. **Wiki:** il wiki storico del prototipo (`prototype/wiki/`) è **congelato**. Il nuovo
    wiki (`wiki/`) è il centro di documentazione di produzione. Se serve riferire un
    concetto o tecnologia dal prototipo, si linkano le pagine di produzione e si cita il
-   MCP (es. `[[architettura-attuale]] (referenza storica da prototype/wiki)`, accedi via
-   `sertor-rag`).
+   MCP (es. una pagina di architettura di produzione che cita la referenza storica da
+   `prototype/wiki/`, accessibile via `sertor-rag`).
 
 3. **Test e validazione:** il corpus di dogfooding funge da **automated acceptance test**
    per il motore RAG. Ogni modifica al pipeline di ingestion, embedding, ranking dovrebbe
@@ -177,7 +177,7 @@ find_symbol("HybridIndex")
 
 ## Backlink e riferimenti
 
-- **[[epica-sertor-cli]]** — epica di produzione (requirements/sertor-cli/epic.md).
+- **[[epiche-sertor-core-e-cli]]** — epiche di produzione (requirements/sertor-core e sertor-cli).
 - **prototype/wiki/** — wiki storico del prototipo (consultabile via `sertor-rag` tool).
 - **`.mcp.json`** (root) — configurazione del server MCP.
 - **`prototype/shared/config.py`** — implementazione della selezione corpus-aware.

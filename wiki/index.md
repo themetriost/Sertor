@@ -4,7 +4,7 @@ type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
 updated: 2026-06-03
-sources: ["requirements/sertor-core/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "specs/003-wiki-creazione/**", "src/sertor_core/**"]
+sources: ["requirements/sertor-core/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "specs/003-wiki-creazione/**", "specs/004-cli-esecuzione/**", "specs/005-wiki-manutenzione/**", "src/sertor_core/**"]
 ---
 
 # Wiki di Produzione — Sertor
@@ -56,6 +56,7 @@ _(La produzione inizia ora: questa sezione cresce a ogni sessione.)_
 - **[[motore-baseline-feat002]]** — Implementazione FEAT-002: motore vettoriale baseline (ranking similarity + evaluation hit@k/MRR), 67 test, policy errore isolata, estensioni non-breaking al nucleo, Constitution Check 9/9 ✅.
 - **[[skill-wiki-feat003]]** — Implementazione FEAT-003: skill LLM Wiki (creare/indicizzare), 84 test, operazioni strutturali LLM-free, indicizzazione riusa nucleo, idempotenza strutturale, Constitution Check 9/9 ✅.
 - **[[cli-esecuzione-feat004]]** — Implementazione FEAT-CLI-004: CLI esecuzione (sottocomandi index/search/wiki), osservabilità configurabile, output flessibile, 17 task, 100 test, Constitution Check 9/9 ✅. Primo entry point eseguibile, abilita dogfooding produzione.
+- **[[manutenzione-wiki-feat007]]** — Implementazione FEAT-007: Manutenzione wiki (lint, distill, index rebuild), LLM-free + non-distruttivo, 16 task, 124 test, Constitution Check 9/9 ✅. Gate di qualità per feature, dogfooding: 2 link rotti trovati/corretti.
 
 ### Tech (tecnologie e infrastruttura)
 
