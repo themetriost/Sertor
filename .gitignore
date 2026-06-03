@@ -23,6 +23,7 @@ build/
 *.chroma
 **/.index/
 **/.index-sertor/
+**/.index-production/
 
 # Log rigenerabili (re-index, ecc.)
 **/*.log

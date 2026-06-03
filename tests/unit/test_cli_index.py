@@ -52,3 +52,10 @@ def test_index_provider_unavailable_aborts(monkeypatch, sample_repo, capsys):
 def test_no_command_prints_help_and_nonzero(capsys):
     code = main([])                                   # install ≠ run: nessuna azione senza comando
     assert code == 1
+
+
+def test_global_option_after_subcommand(monkeypatch, sample_repo):
+    # regressione: le opzioni globali (-v) devono funzionare anche DOPO il sottocomando
+    monkeypatch.setattr("sertor_cli.commands.index_cmd.build_indexer", _fake_indexer)
+    assert main(["index", str(sample_repo), "-v"]) == 0
+    assert main(["-v", "index", str(sample_repo)]) == 0  # e anche prima
