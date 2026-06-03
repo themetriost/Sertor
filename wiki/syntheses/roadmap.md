@@ -43,7 +43,7 @@ Legenda: ✅ in produzione (master) · 🔜 prossima (Should) · 💤 dopo (Coul
 | FEAT-004 RAG ibrido + reranking | Should | 🔜 da decomporre |
 | FEAT-005 RAG a grafo / GraphRAG | Should | 🔜 da decomporre *(riporta i tool `find_symbol`/`who_calls`/… nel MCP)* |
 | FEAT-006 RAG agentico (multi-step) | Should | 🔜 da decomporre |
-| FEAT-007 Skill: mantenere il wiki (spider/lint) | Should | 🔜 da decomporre |
+| FEAT-007 Skill: mantenere il wiki (lint/indice/distill) | Should (prioritizzata) | 🧪 in lavorazione — decomposta |
 | FEAT-008 Arricchimento bidirezionale Wiki↔RAG | Could | 💤 da decomporre |
 | FEAT-009 Refresh incrementale dell'indice | Could | 💤 da decomporre |
 
@@ -84,6 +84,7 @@ Legenda: ✅ in produzione (master) · 🔜 prossima (Should) · 💤 dopo (Coul
 | Indicizzare il **prototipo** in un corpus separato (`SERTOR_CORPUS=prototype`) | Interrogare prototipo e produzione distintamente col motore nuovo | Riusa CLI; nessun codice nuovo | 💡 idea |
 | **Misurare la pertinenza** (chiudere gli `xfail`) con un ground-truth reale | Trasforma "funziona" in "misurato" (Principio V); confronto provider | Serve un set query→file atteso; baseline = prototipo | 🗣️ in discussione |
 | Promuovere **PowerShell / T-SQL / PL-SQL** da fallback a chunking sintattico | Qualità di chunking migliore per questi linguaggi | Validare i node-type tree-sitter; incrementale (REQ-011) | 💡 idea |
+| Vorrei che la parte di CLI fosse disponibile anche tramite MCP o skill, una volta installato Sertor devo avere la possibilita' di indicizzare/configurare etc etc anche attraverso una agente e anche essendo guidato nelle scelte, una sorta di wizard agentico  | Alto | note | da discutere | | | |
 | <!-- aggiungi una riga: idea | valore | note | stato --> | | | |
 
 ---
