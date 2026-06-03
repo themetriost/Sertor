@@ -67,6 +67,30 @@ def test_azure_requires_complete_config():
         AzureEmbedder(endpoint="", api_key="", deployment="")
 
 
+def _capture_query(seen: dict):
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["params"] = request.url.params
+        return httpx.Response(200, json={"data": [{"index": 0, "embedding": [1.0]}]})
+
+    return httpx.MockTransport(handler)
+
+
+def test_azure_v1_endpoint_omits_api_version():
+    seen: dict = {}
+    client = httpx.Client(transport=_capture_query(seen))
+    emb = AzureEmbedder("https://x.openai.azure.com/openai/v1", "k", "dep", client=client)
+    emb.embed(["a"])
+    assert "api-version" not in seen["params"]      # superficie v1: nessun api-version
+
+
+def test_azure_classic_endpoint_sends_api_version():
+    seen: dict = {}
+    client = httpx.Client(transport=_capture_query(seen))
+    emb = AzureEmbedder("https://x.openai.azure.com", "k", "dep", client=client)
+    emb.embed(["a"])
+    assert seen["params"].get("api-version")        # endpoint classico: api-version inviato
+
+
 def test_azure_sorts_results_by_index():
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(
