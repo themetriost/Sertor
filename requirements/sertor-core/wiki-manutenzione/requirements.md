@@ -17,6 +17,12 @@ pagine concept. Riusa le convenzioni e la struttura già definite nel core
 (`src/sertor_core/wiki/conventions.py`, `structure.py`): frontmatter YAML, wikilink `[[...]]`,
 naming kebab-case, cartelle tematiche, `index.md`/`log.md`.
 
+**Cadenza — manutenzione frequente, non una-tantum.** Il lint (e in generale la manutenzione) è
+pensato per girare **di continuo / a intervalli molto frequenti**, tipicamente **al termine di ogni
+feature** (o prima del merge): deve quindi essere **veloce, idempotente e non distruttivo**, e
+**automatizzabile come gate ricorrente** del flusso di lavoro, con un esito **pass/fail**
+consumabile (così la documentazione non diverge mai a lungo dal codice).
+
 **Ruolo prioritario — il wiki è la documentazione UFFICIALE del progetto.** Deve racchiudere,
 descrivere, collegare e dettagliare **tutti i concetti alla base del progetto**: le **entità di
 business**, le **funzionalità ad alto/medio livello**, le **motivazioni dietro le scelte** e
@@ -164,6 +170,11 @@ file/pagine coinvolte, conteggi, esito) senza segreti.*
 **REQ-052 (Ubiquitous)** *The system shall return the lint outcome as a **structured report**
 (elenco di problemi tipizzati) consumabile a programma (es. da una CI), oltre a una resa leggibile.*
 
+**REQ-053 (Ubiquitous)** *The maintenance operations (lint, index-rebuild, coverage report) shall be
+designed to run **frequentemente e ripetutamente** — es. al termine di ogni feature / prima del
+merge — restando veloci, idempotenti e non distruttive, e shall produce a **pass/fail outcome**
+consumabile come **gate** di automazione (CI / hook di fase / comando ricorrente).*
+
 ### Gruppo G — Il wiki come documentazione ufficiale (prioritario)
 
 **REQ-060 (Ubiquitous)** *The wiki shall act as the project's **official documentation**, covering at
@@ -203,7 +214,8 @@ operazioni LLM-free sono lint, rigenerazione indice e segnalazione coperture/con
 | NFR-04 | **Isolamento dell'LLM** | Solo distillazione e contraddizioni semantiche richiedono un LLM; lint, orfani e index-rebuild sono **LLM-free**. |
 | NFR-05 | **Portabilità** | Funziona su Linux e Windows senza modifiche. |
 | NFR-06 | **Osservabilità** | Log strutturati per ogni operazione (Principio IX). |
-| NFR-07 | **Performance** | Scala linearmente col numero di pagine; nessun limite artificiale. |
+| NFR-07 | **Performance** | Scala linearmente col numero di pagine; **abbastanza veloce da girare al termine di ogni feature** (lint deterministico in pochi secondi su wiki di dimensioni tipiche), così l'esecuzione frequente è pratica. |
+| NFR-08 | **Automazione/cadenza** | Le operazioni di manutenzione sono **idempotenti e non interattive**, integrabili come gate ricorrente (CI / hook di fase) con esito pass/fail. |
 
 ---
 
@@ -247,7 +259,7 @@ operazioni LLM-free sono lint, rigenerazione indice e segnalazione coperture/con
 
 | Priorità | Requisiti | Motivazione |
 |----------|-----------|-------------|
-| **Must** | REQ-001..005 (lint+report), REQ-040/041 (idempotenza), REQ-050..052 (config/osservabilità/report), **REQ-060/061/062 (wiki = documentazione ufficiale: ruolo, sorgenti incl. artifact, link-non-duplica)**, REQ-064 (report coperture mancanti, LLM-free) | Valore centrale: il wiki **è** la documentazione ufficiale, mantenuta coerente e diagnosticabile in modo non distruttivo. |
+| **Must** | REQ-001..005 (lint+report), REQ-040/041 (idempotenza), REQ-050..053 (config/osservabilità/report + **cadenza/gate ricorrente**), **REQ-060/061/062 (wiki = documentazione ufficiale: ruolo, sorgenti incl. artifact, link-non-duplica)**, REQ-064 (report coperture mancanti, LLM-free) | Valore centrale: il wiki **è** la documentazione ufficiale, mantenuta coerente e diagnosticabile in modo non distruttivo, **verificabile a ogni feature**. |
 | **Should** | REQ-010..013 (rigenera indice), REQ-020 (contraddizioni marcate), **REQ-030..033 + REQ-063/065 (distillazione documentale da artifact/discussioni, con LLM)** | Mantiene l'indice allineato e **alimenta la documentazione ufficiale** (prioritaria) distillando gli artifact; richiede LLM. |
 | **Could** | REQ-021/022 (contraddizioni **semantiche** con LLM) | Alto valore ma LLM-dipendente e rumoroso; dopo il resto. |
 | **Won't (ora)** | Auto-fix dei link rotti; crawling esterno; arricchimento Wiki↔RAG (FEAT-008) | Fuori ambito / altre feature. |
@@ -265,6 +277,11 @@ operazioni LLM-free sono lint, rigenerazione indice e segnalazione coperture/con
 - **DA-3 — Distillazione documentale: portata.** *Aggiornata (ruolo prioritario):* la distillazione
   che alimenta la **documentazione ufficiale** (da artifact + discussioni) è **in ambito e Should**
   (non più post-MVP); richiede LLM (REQ-065). Resta da confermare **quanto** è automatica vs assistita.
+- **DA-8 — Meccanismo di attivazione del gate ricorrente.** Il lint "a fine feature" come si innesca:
+  **hook di fase SpecKit** (es. dopo `implement`, via `.specify/extensions.yml`) · **CI** (pre-merge) ·
+  **comando manuale**/skill · o una combinazione? *Direzione proposta:* esporre un'operazione
+  non-interattiva con esito pass/fail (requisito), e **agganciarla a un hook di fase** come default,
+  lasciando CI/manuale possibili. Il *meccanismo* preciso è design. Da confermare.
 - **DA-7 — Modello di contenuto della documentazione ufficiale.** Quale tassonomia/granularità per
   entità di business, funzionalità, decisioni, architettura (es. una pagina per entità? una per
   feature? una pagina-architettura unica?) e **come** il lint verifica la "copertura" (euristica su
