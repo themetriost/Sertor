@@ -2,7 +2,7 @@
 title: Log del Wiki — Produzione Sertor
 type: log
 created: 2026-05-30
-updated: 2026-05-30
+updated: 2026-06-03
 ---
 
 # Registro di Produzione (append-only)
@@ -183,3 +183,19 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
 - **Chiusura MVP:** questa skill chiude il loop FEAT-001/002/003 di Sertor Core — nucleo (ingestione/embedding) + motore baseline (ranking/eval) + skill wiki (creazione/indicizzazione). Wiki stesso diventa creabile e interrogabile con i tool distribuiti.
 - **Index aggiornato:** aggiunto link `[[skill-wiki-feat003]]` in Syntheses; frontmatter sources aggiornato con `specs/003-wiki-creazione/**`.
 - **File toccati:** `wiki/syntheses/skill-wiki-feat003.md` (nuovo), `wiki/index.md`, `wiki/log.md`.
+
+## [2026-06-03] record | Implementazione CLI esecuzione (FEAT-CLI-004)
+
+- **Pagina creata:** `syntheses/cli-esecuzione-feat004.md` documenta il completamento phase 2 di FEAT-CLI-004:
+  - **Stato:** ✅ 17/17 task completati (sottocomandi index/search/wiki), 100 test passed + 2 xfail (soglie baseline, non critiche), ruff clean, Constitution Check 9/9 ✅.
+  - **Pacchetto CLI:** `src/sertor_cli/` con `cli.py` (dispatcher argparse), `commands/` (index, search, wiki), `observability.py` (logging config, exit codes, mapping eccezioni), `output.py` (formatter testo/JSON, anteprime troncate).
+  - **Sottocomandi:** `sertor index <path>` (riusa build_indexer), `sertor search <query>` (riusa build_facade), `sertor wiki index <wiki>` (riusa build_wiki). Flag `--corpus` per collezioni namespaced (prototipo/produzione), `--rebuild`, `-v/--verbose`, `--log-config <file>` per dictConfig YAML/JSON esterno, `--json` per output strutturato, `--full` per risultati non troncati.
+  - **Osservabilità:** logging configurabile via file dictConfig (appender Splunk/ELK/file/syslog senza toccare codice); mapping eccezioni dominio → exit code (IndexNotFoundError=2, LLMNotConfiguredError=3, ValidationError=4); log strutturato core con `log_error()` pre-raise (estensione additiva Principio IX). Formatter JSON interno, zero dipendenze aggiuntive.
+  - **Design Clean Architecture (Principio I):** CLI = adapter sottile su composizione root del core; no import dominio; argparse → build_* → output (zero mutazione core).
+  - **Dipendenze:** solo `sertor-core` (argparse, logging, config sono stdlib); imports lazy per `[azure]` opzionali.
+  - **Processo requisiti:** EARS 26 REQ su esecuzione → spec SpecKit → plan 17 task → implementation incrementale per sottocomando. Decisioni DA-C1..C5 applicate (entry point pubblico, collezioni namespaced, config esterno, output flessibile, zero cloud obbligatorie).
+  - **Significato strategico:** primo entry point eseguibile; prova di design Clean Architecture; abilita dogfooding produzione (indicizzare src/specs/wiki in collezione `production` con `sertor index` + `sertor wiki index`); estendibilità per FEAT-CLI-005/006/007.
+  - **Artefatti:** `src/sertor_cli/**`, `specs/004-cli-esecuzione/{plan,tasks}/*.md`, `tests/test_cli_*.py` (4 file, 100% test).
+  - **Processo git:** branch `spec/004-cli-esecuzione` da master (FEAT-001/002/003 mergiati); commit per fase (requisiti, spec, plan, implementation).
+- **Index aggiornato:** aggiunto link `[[cli-esecuzione-feat004]]` in Syntheses con descrizione.
+- **File toccati:** `wiki/syntheses/cli-esecuzione-feat004.md` (nuovo), `wiki/index.md`, `wiki/log.md`.
