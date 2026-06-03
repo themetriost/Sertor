@@ -193,5 +193,7 @@ manutenzione è garantita dalla delega al `wiki-keeper`, non dal blocco del turn
 
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
+shell commands, and other important information, read the current plan:
+`specs/002-rag-baseline/plan.md` (FEAT-002 — motore RAG vettoriale baseline).
+FEAT-001 (nucleo di retrieval) è in `master`: `specs/001-nucleo-retrieval/plan.md`.
 <!-- SPECKIT END -->
