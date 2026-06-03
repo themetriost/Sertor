@@ -24,6 +24,10 @@ azure = [
     "azure-search-documents>=11.5",
     "azure-core>=1.30",
 ]
+# Server MCP: espone il retrieval del core a un client MCP (es. Claude Code).
+mcp = [
+    "mcp>=1.2",
+]
 dev = [
     "pytest>=8.0",
     "ruff>=0.6",
@@ -34,7 +38,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/sertor_core", "src/sertor_cli"]
+packages = ["src/sertor_core", "src/sertor_cli", "src/sertor_mcp"]
 
 [tool.ruff]
 line-length = 100
