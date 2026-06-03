@@ -21,7 +21,7 @@ description: "Task list — Motore RAG vettoriale baseline (FEAT-002)"
 
 ## Phase 1: Setup
 
-- [ ] T001 Create engine subpackage `src/sertor_core/engines/__init__.py` (docstring: motori RAG/modalità)
+- [x] T001 Create engine subpackage `src/sertor_core/engines/__init__.py` (docstring: motori RAG/modalità)
 
 ---
 
@@ -29,13 +29,13 @@ description: "Task list — Motore RAG vettoriale baseline (FEAT-002)"
 
 **⚠️ CRITICAL**: necessarie a tutte le user story; additive e non-breaking verso FEAT-001.
 
-- [ ] T002 [P] Add `IndexNotFoundError(SertorError)` (campo `collection`, messaggio azionabile) in `src/sertor_core/domain/errors.py` (REQ-009, data-model)
-- [ ] T003 Add `reset(collection: str) -> None` alla porta `VectorStore` in `src/sertor_core/domain/ports.py` (REQ-002)
-- [ ] T004 [P] Implement `reset()` in `src/sertor_core/adapters/vectorstores/chroma.py` (delete_collection idempotente; errori → `VectorStoreError`) (REQ-002)
-- [ ] T005 [P] Implement `reset()` in `src/sertor_core/adapters/vectorstores/azure_search.py` (delete index/documents; errori → `VectorStoreError`) (REQ-002)
-- [ ] T006 [P] Implement `reset()` in `InMemoryStore` mock in `tests/fixtures/mocks.py` (svuota la collezione)
-- [ ] T007 Add `rebuild: bool = False` a `IndexingService.index()` in `src/sertor_core/services/indexing.py`: quando True esegue `store.reset(collection)` **dopo** l'embed e **prima** dell'upsert (atomicità su errore provider, REQ-002/004)
-- [ ] T008 Export `IndexNotFoundError` in `src/sertor_core/__init__.py` (API pubblica)
+- [x] T002 [P] Add `IndexNotFoundError(SertorError)` (campo `collection`, messaggio azionabile) in `src/sertor_core/domain/errors.py` (REQ-009, data-model)
+- [x] T003 Add `reset(collection: str) -> None` alla porta `VectorStore` in `src/sertor_core/domain/ports.py` (REQ-002)
+- [x] T004 [P] Implement `reset()` in `src/sertor_core/adapters/vectorstores/chroma.py` (delete_collection idempotente; errori → `VectorStoreError`) (REQ-002)
+- [x] T005 [P] Implement `reset()` in `src/sertor_core/adapters/vectorstores/azure_search.py` (delete index/documents; errori → `VectorStoreError`) (REQ-002)
+- [x] T006 [P] Implement `reset()` in `InMemoryStore` mock in `tests/fixtures/mocks.py` (svuota la collezione)
+- [x] T007 Add `rebuild: bool = False` a `IndexingService.index()` in `src/sertor_core/services/indexing.py`: quando True esegue `store.reset(collection)` **dopo** l'embed e **prima** dell'upsert (atomicità su errore provider, REQ-002/004)
+- [x] T008 Export `IndexNotFoundError` in `src/sertor_core/__init__.py` (API pubblica)
 
 **Checkpoint**: nucleo esteso (reset/rebuild/errore) → il motore può essere costruito
 
@@ -49,12 +49,12 @@ description: "Task list — Motore RAG vettoriale baseline (FEAT-002)"
 
 ### Tests for User Story 1 ⚠️
 
-- [ ] T009 [P] [US1] Test in `tests/unit/test_baseline_engine.py` (parte index): `index()` produce `IndexReport` con chunks≥documents e `embedding_dim` (REQ-001/003); provider down in index → `EmbeddingError`, indice preesistente intatto (REQ-004) usando un embedder che fallisce
+- [x] T009 [P] [US1] Test in `tests/unit/test_baseline_engine.py` (parte index): `index()` produce `IndexReport` con chunks≥documents e `embedding_dim` (REQ-001/003); provider down in index → `EmbeddingError`, indice preesistente intatto (REQ-004) usando un embedder che fallisce
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] Implement `BaselineEngine.__init__` + `index(root)` in `src/sertor_core/engines/baseline.py`: delega a `IndexingService(...).index(root, rebuild=True)`; log strutturato (operation=index, provider, chunks, dim, tempi) (REQ-001/003/015)
-- [ ] T011 [US1] Add `build_baseline_engine(settings)` in `src/sertor_core/composition.py` (cabla embedder+store+collection_name+default_k+settings) (REQ-012)
+- [x] T010 [US1] Implement `BaselineEngine.__init__` + `index(root)` in `src/sertor_core/engines/baseline.py`: delega a `IndexingService(...).index(root, rebuild=True)`; log strutturato (operation=index, provider, chunks, dim, tempi) (REQ-001/003/015)
+- [x] T011 [US1] Add `build_baseline_engine(settings)` in `src/sertor_core/composition.py` (cabla embedder+store+collection_name+default_k+settings) (REQ-012)
 
 **Checkpoint**: US1 testabile (indicizzazione + rebuild atomico)
 
@@ -68,11 +68,11 @@ description: "Task list — Motore RAG vettoriale baseline (FEAT-002)"
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T012 [P] [US2] Test in `tests/unit/test_baseline_engine.py` (parte query): top-k con campi richiesti (REQ-006/007); `k` dato/override/oversize (REQ-008); indice mancante → `IndexNotFoundError` (REQ-009); provider down → `EmbeddingError` (REQ-010)
+- [x] T012 [P] [US2] Test in `tests/unit/test_baseline_engine.py` (parte query): top-k con campi richiesti (REQ-006/007); `k` dato/override/oversize (REQ-008); indice mancante → `IndexNotFoundError` (REQ-009); provider down → `EmbeddingError` (REQ-010)
 
 ### Implementation for User Story 2
 
-- [ ] T013 [US2] Implement `BaselineEngine.query(query, k=None)` in `src/sertor_core/engines/baseline.py`: se `not store.exists(collection)` → `IndexNotFoundError` (REQ-009); altrimenti embed query (stesso provider) → `store.query(k, doc_type="both")` → `list[RetrievalResult]`; `k` da Settings se assente; log strutturato (REQ-005/006/007/008/010/015)
+- [x] T013 [US2] Implement `BaselineEngine.query(query, k=None)` in `src/sertor_core/engines/baseline.py`: se `not store.exists(collection)` → `IndexNotFoundError` (REQ-009); altrimenti embed query (stesso provider) → `store.query(k, doc_type="both")` → `list[RetrievalResult]`; `k` da Settings se assente; log strutturato (REQ-005/006/007/008/010/015)
 
 **Checkpoint**: US2 testabile (query + errore esplicito su indice mancante)
 
@@ -86,7 +86,7 @@ description: "Task list — Motore RAG vettoriale baseline (FEAT-002)"
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T014 [P] [US3] Integration test in `tests/integration/test_baseline_idempotence.py`: due `index()` consecutivi su `sample_repo` → stesso n. chunk e stessi top-k alla stessa query (SC-003); rebuild rimuove chunk di file non più presenti (REQ-002)
+- [x] T014 [P] [US3] Integration test in `tests/integration/test_baseline_idempotence.py`: due `index()` consecutivi su `sample_repo` → stesso n. chunk e stessi top-k alla stessa query (SC-003); rebuild rimuove chunk di file non più presenti (REQ-002)
 
 > Impl: coperta da T007 (rebuild) + T010; questa fase **verifica** l'idempotenza end-to-end.
 
@@ -102,12 +102,12 @@ description: "Task list — Motore RAG vettoriale baseline (FEAT-002)"
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T015 [P] [US4] Test in `tests/unit/test_evaluation.py`: hit@k coerente con risultati attesi (REQ-011); MRR su ranghi noti; ground-truth vuoto → metriche 0 senza errore
-- [ ] T016 [P] [US4] Quality test (xfail) in `tests/integration/test_baseline_quality.py`: soglia hit@5 vs baseline prototipo, `xfail` finché ground-truth reale assente (SC-002, DA-1/DA-3)
+- [x] T015 [P] [US4] Test in `tests/unit/test_evaluation.py`: hit@k coerente con risultati attesi (REQ-011); MRR su ranghi noti; ground-truth vuoto → metriche 0 senza errore
+- [x] T016 [P] [US4] Quality test (xfail) in `tests/integration/test_baseline_quality.py`: soglia hit@5 vs baseline prototipo, `xfail` finché ground-truth reale assente (SC-002, DA-1/DA-3)
 
 ### Implementation for User Story 4
 
-- [ ] T017 [US4] Implement `evaluate(engine, ground_truth, ks=(1,3,5,10)) -> EvalReport` + `EvalReport` in `src/sertor_core/engines/evaluation.py`: hit-rate@k e MRR@10; pertinente se `RetrievalResult.path ∈ expected_paths` (REQ-011)
+- [x] T017 [US4] Implement `evaluate(engine, ground_truth, ks=(1,3,5,10)) -> EvalReport` + `EvalReport` in `src/sertor_core/engines/evaluation.py`: hit-rate@k e MRR@10; pertinente se `RetrievalResult.path ∈ expected_paths` (REQ-011)
 
 **Checkpoint**: US4 testabile (metriche di qualità)
 
@@ -121,11 +121,11 @@ description: "Task list — Motore RAG vettoriale baseline (FEAT-002)"
 
 ### Tests for User Story 5 ⚠️
 
-- [ ] T018 [P] [US5] Test in `tests/unit/test_baseline_engine.py` (parte mode/config): `engine.name == "baseline"` (REQ-013); `build_baseline_engine` con backend local → embedder Ollama + store Chroma (REQ-012); con backend azure → componenti azure (no modifiche al codice)
+- [x] T018 [P] [US5] Test in `tests/unit/test_baseline_engine.py` (parte mode/config): `engine.name == "baseline"` (REQ-013); `build_baseline_engine` con backend local → embedder Ollama + store Chroma (REQ-012); con backend azure → componenti azure (no modifiche al codice)
 
 ### Implementation for User Story 5
 
-- [ ] T019 [US5] Set `BaselineEngine.name = "baseline"` (attributo di classe) e documentare in docstring che usa solo retrieval vettoriale (no ibrido/grafo/agentico) (REQ-013/014); export `BaselineEngine` + `build_baseline_engine` in `src/sertor_core/__init__.py`
+- [x] T019 [US5] Set `BaselineEngine.name = "baseline"` (attributo di classe) e documentare in docstring che usa solo retrieval vettoriale (no ibrido/grafo/agentico) (REQ-013/014); export `BaselineEngine` + `build_baseline_engine` in `src/sertor_core/__init__.py`
 
 **Checkpoint**: US5 verificata (config provider + identità modalità)
 
@@ -133,8 +133,8 @@ description: "Task list — Motore RAG vettoriale baseline (FEAT-002)"
 
 ## Phase 8: Polish & Cross-Cutting
 
-- [ ] T020 Integration test repo-agnosticità in `tests/integration/test_baseline_two_corpora.py`: indicizza 2 repo distinti (sample_repo + repo tmp) e interroga ciascuno isolatamente (SC-001/SC-005-isolamento)
-- [ ] T021 [P] Run full suite + ruff; aggiorna `src/sertor_core/README.md` con la sezione "Motore baseline" (uso index/query/evaluate)
+- [x] T020 Integration test repo-agnosticità in `tests/integration/test_baseline_two_corpora.py`: indicizza 2 repo distinti (sample_repo + repo tmp) e interroga ciascuno isolatamente (SC-001/SC-005-isolamento)
+- [x] T021 [P] Run full suite + ruff; aggiorna `src/sertor_core/README.md` con la sezione "Motore baseline" (uso index/query/evaluate)
 
 ---
 

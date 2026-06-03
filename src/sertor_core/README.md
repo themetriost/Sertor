@@ -52,6 +52,33 @@ for hit in facade.search_code("validazione input", k=5):
 Ogni risultato espone `text`, `path`, `chunk_id`, `doc_type`, `score`. Indice vuoto → lista vuota
 + warning (nessuna eccezione).
 
+## Motore baseline (modalità RAG vettoriale)
+
+La prima modalità RAG (FEAT-002): un motore sottile sopra il nucleo che indicizza una codebase e la
+interroga per similarità vettoriale.
+
+```python
+from sertor_core import build_baseline_engine, evaluate, IndexNotFoundError
+
+engine = build_baseline_engine()           # cablato da Settings; engine.name == "baseline"
+engine.index("/path/al/repo")              # rebuild-from-scratch idempotente
+hits = engine.query("come si valida un input", k=5)   # top-k per similarità
+
+# Indice non costruito → errore esplicito (non lista vuota):
+try:
+    build_baseline_engine().query("x")
+except IndexNotFoundError as e:
+    print("Costruisci prima l'indice:", e)
+
+# Valutazione della pertinenza (hit-rate@k, MRR@10) su un ground-truth:
+report = evaluate(engine, [("avvio del server", ["web/server.js"])])
+print(report.hit_rate, report.mrr)
+```
+
+Differenze rispetto alla facade del nucleo: il motore **ricostruisce l'indice da zero** a ogni
+`index()` (nessun chunk obsoleto) e su indice mancante **solleva `IndexNotFoundError`** invece di
+restituire una lista vuota. Usa **solo** retrieval vettoriale (nessun ibrido/grafo/agentico).
+
 ## Test con mock (senza cloud né rete)
 
 Il core è esercitabile con adapter mock delle porte:

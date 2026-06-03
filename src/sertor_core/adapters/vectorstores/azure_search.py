@@ -119,6 +119,16 @@ class AzureSearchStore:
                 reason=type(exc).__name__,
             ) from exc
 
+    def reset(self, collection: str) -> None:
+        # Rebuild-from-scratch: svuota l'index eliminando tutti i documenti (idempotente).
+        try:
+            client = self._client(collection)
+            ids = [d["id"] for d in client.search(search_text="*", select=["id"], top=100000)]
+            if ids:
+                client.delete_documents(documents=[{"id": i} for i in ids])
+        except Exception:
+            return  # index assente o vuoto: non è un errore
+
     def exists(self, collection: str) -> bool:
         try:
             return self._client(collection).get_document_count() > 0

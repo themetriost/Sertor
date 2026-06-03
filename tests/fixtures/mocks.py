@@ -98,5 +98,8 @@ class InMemoryStore:
         for cid in ids:
             coll.pop(cid, None)
 
+    def reset(self, collection: str) -> None:
+        self._data.pop(collection, None)   # rebuild-from-scratch (idempotente)
+
     def exists(self, collection: str) -> bool:
         return bool(self._data.get(collection))

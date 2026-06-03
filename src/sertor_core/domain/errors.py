@@ -53,3 +53,15 @@ class VectorStoreError(SertorError):
         self.backend = backend
         self.reason = reason
         super().__init__(f"{message} [backend={backend}, reason={reason}]")
+
+
+class IndexNotFoundError(SertorError):
+    """Si interroga un indice che non esiste ancora (REQ-009 di FEAT-002).
+
+    A livello di motore l'assenza dell'indice è un errore d'uso esplicito (costruire l'indice
+    prima di interrogare), non un risultato vuoto silenzioso.
+    """
+
+    def __init__(self, message: str, *, collection: str):
+        self.collection = collection
+        super().__init__(f"{message} [collection={collection}]")

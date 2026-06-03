@@ -88,3 +88,13 @@ def build_facade(settings: Settings | None = None):
     return RetrievalFacade(
         embedder, store, collection_name(settings, embedder), default_k=settings.default_k
     )
+
+
+def build_baseline_engine(settings: Settings | None = None):
+    """Costruisce il motore RAG vettoriale baseline cablato dalla configurazione (REQ-012)."""
+    from sertor_core.engines.baseline import BaselineEngine
+
+    settings = settings or Settings.load()
+    embedder = build_embedder(settings)
+    store = build_store(settings)
+    return BaselineEngine(embedder, store, collection_name(settings, embedder), settings)
