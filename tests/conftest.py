@@ -7,12 +7,27 @@ quindi vengono creati a runtime per rendere il test di esclusione ripetibile su 
 from __future__ import annotations
 
 import logging
+import os
 import shutil
 from pathlib import Path
 
 import pytest
 
 from tests.fixtures.mocks import FakeEmbedder, FakeLLM, InMemoryStore
+
+
+@pytest.fixture(autouse=True)
+def _isolate_environ():
+    """Isola `os.environ` tra i test.
+
+    `Settings.load()` usa `load_dotenv(override=True)`, che muta `os.environ` in modo permanente
+    leggendo il `.env` dello sviluppatore. Senza ripristino, la config locale (RAG_BACKEND=azure)
+    inquinerebbe i test sui default. Salva e ripristina l'ambiente dopo ogni test.
+    """
+    saved = dict(os.environ)
+    yield
+    os.environ.clear()
+    os.environ.update(saved)
 
 
 @pytest.fixture(autouse=True)
