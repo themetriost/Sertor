@@ -146,3 +146,21 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
   - **Extension strategy:** controllare upstream tree-sitter, identificare node-type, test corpus, fallback dimensionale se no AST.
 - **Index aggiornato:** aggiunto link `[[implementazione-nucleo-retrieval]]` in Syntheses; link `[[tree-sitter-language-pack]]` in Tech.
 - **File toccati:** `wiki/syntheses/implementazione-nucleo-retrieval.md` (nuovo), `wiki/tech/tree-sitter-language-pack.md` (nuovo), `wiki/index.md`.
+
+## [2026-06-03] record | Implementazione FEAT-002 motore baseline
+
+- **Pagina creata:** `syntheses/motore-baseline-feat002.md` documenta il completamento phase 2 (implementation) di FEAT-002:
+  - **Stato:** ✅ 21 task completati (4 US), 67 test passed + 2 xfail (DA-1/DA-3 hit-rate baseline, rinviati a decision gate), ruff clean, Constitution Check 9/9 ✅.
+  - **Libreria motore:** `src/sertor_core/engines/` con `BaselineEngine` (indexing + query top-k similarity), `evaluation.py` (hit_rate@k, MRR@10).
+  - **Decisione chiave 1:** policy di errore ISOLATA dal nucleo — il motore solleva `IndexNotFoundError` su indice mancante (REQ-009 FEAT-002, usabilità CLI), mentre il nucleo resta tollerante `[]`+warning (REQ-028 FEAT-001, composabilità). Motivo: Principio I (core isolation) + struttura consumatore del nucleo.
+  - **Decisione chiave 2:** atomicità rebuild via ordine operazionale — `rebuild=True` esegue embed, poi reset collezione DOPO, poi upsert; se upsert fallisce, indice rimane coerente (vecchia versione intatta).
+  - **Estensioni non-breaking al nucleo:** nuovo metodo `reset(collection)` sulla porta `VectorStore`, flag `rebuild` su `IndexingService.index()`, nuova eccezione `IndexNotFoundError` (tutte validate con Constitution Check 9/9).
+  - **API pubblica:** esportati 6 symbol (`build_baseline_engine`, `BaselineEngine`, `evaluate`, `EvalReport`, `IndexNotFoundError`, `EvaluationConfig`).
+  - **Test suite:** unit (engine init, query, error), integration (E2E ingest→query→ranking), evaluation metrics.
+  - **xfail 2:** `test_precision_at_k_baseline` (DA-1), `test_hit_rate_evaluation_baseline` (DA-3) — metriche rinviate a definizione soglia corpus ground-truth.
+  - **Artefatti:** `src/sertor_core/engines/**`, `specs/002-rag-baseline/{plan,tasks,research}/*.md`, `tests/**`.
+  - **Linkage:** CONSUMA FEAT-001 (nucleo [[implementazione-nucleo-retrieval]]), dipendenza di FEAT-003 (wiki), sertor-cli (import libreria).
+- **Analisi Speckit Analyze:** FR 15/15, 0 critical, Constitution Check 9/9 ✅, SC-005 (isolamento modalità) LOW (banale finché non esistono altre modalità).
+- **Processo git:** branch `spec/002-rag-baseline` allineato a master (merge 5502700) per avere FEAT-001; commit piano (4f159d0), tasks (23641b3), implementazione incrementale.
+- **Index aggiornato:** aggiunto link `[[motore-baseline-feat002]]` in Syntheses; frontmatter sources aggiornato con `specs/002-rag-baseline/**`.
+- **File toccati:** `wiki/syntheses/motore-baseline-feat002.md` (nuovo), `wiki/index.md`, `wiki/log.md`.

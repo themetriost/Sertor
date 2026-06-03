@@ -57,6 +57,13 @@ class VectorStore(Protocol):
         """Rimuove i chunk indicati dalla collezione."""
         ...
 
+    def reset(self, collection: str) -> None:
+        """Svuota/elimina la collezione (per il rebuild-from-scratch idempotente).
+
+        Idempotente: resettare una collezione assente non è un errore.
+        """
+        ...
+
     def exists(self, collection: str) -> bool:
         """True se la collezione esiste ed è inizializzata."""
         ...

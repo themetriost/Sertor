@@ -51,8 +51,13 @@ class IndexingService:
         self._collection = collection
         self._settings = settings
 
-    def index(self, root: Path | str) -> IndexReport:
-        """Esegue la pipeline completa e restituisce un report con i conteggi."""
+    def index(self, root: Path | str, rebuild: bool = False) -> IndexReport:
+        """Esegue la pipeline completa e restituisce un report con i conteggi.
+
+        Con `rebuild=True` ricostruisce l'indice da zero: il `reset` della collezione avviene
+        **dopo** l'embedding e **prima** dell'upsert, così un errore del provider (durante l'embed)
+        lascia l'indice preesistente intatto (atomicità del rebuild, REQ-004/NFR-004 di FEAT-002).
+        """
         started = time.perf_counter()
         documents = discover(root, self._settings)
 
@@ -61,12 +66,16 @@ class IndexingService:
             chunks.extend(chunk_document(doc, self._settings))
 
         if chunks:
-            vectors = self._embedder.embed([c.text for c in chunks])
+            vectors = self._embedder.embed([c.text for c in chunks])  # può fallire: indice intatto
             records = [
                 EmbeddedChunk(chunk_id=c.id, vector=v, payload=_payload(c))
                 for c, v in zip(chunks, vectors, strict=True)
             ]
+            if rebuild:
+                self._store.reset(self._collection)  # scarta l'indice precedente, poi ricostruisce
             self._store.upsert(self._collection, records)
+        elif rebuild:
+            self._store.reset(self._collection)  # corpus vuoto in rebuild: azzera l'indice
 
         report = IndexReport(
             collection=self._collection,

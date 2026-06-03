@@ -105,6 +105,13 @@ class ChromaStore:
                 reason=type(exc).__name__,
             ) from exc
 
+    def reset(self, collection: str) -> None:
+        # Rebuild-from-scratch: elimina la collezione se esiste (idempotente: assente = no-op).
+        try:
+            self._client.delete_collection(name=collection)
+        except Exception:
+            return  # collezione assente o già eliminata: non è un errore
+
     def exists(self, collection: str) -> bool:
         try:
             coll = self._client.get_collection(name=collection)

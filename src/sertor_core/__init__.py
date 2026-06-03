@@ -7,6 +7,7 @@ composition root, senza conoscere i dettagli di store/embeddings.
 from __future__ import annotations
 
 from sertor_core.composition import (
+    build_baseline_engine,
     build_embedder,
     build_facade,
     build_indexer,
@@ -26,14 +27,18 @@ from sertor_core.domain.entities import (
 from sertor_core.domain.errors import (
     ConfigError,
     EmbeddingError,
+    IndexNotFoundError,
     IngestionError,
     SertorError,
     VectorStoreError,
 )
+from sertor_core.engines.baseline import BaselineEngine
+from sertor_core.engines.evaluation import EvalReport, evaluate
 
 __all__ = [
     "build_facade",
     "build_indexer",
+    "build_baseline_engine",
     "build_embedder",
     "build_store",
     "collection_name",
@@ -50,4 +55,8 @@ __all__ = [
     "IngestionError",
     "EmbeddingError",
     "VectorStoreError",
+    "IndexNotFoundError",
+    "BaselineEngine",
+    "evaluate",
+    "EvalReport",
 ]
