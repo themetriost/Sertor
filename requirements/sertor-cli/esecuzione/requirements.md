@@ -83,8 +83,11 @@ di produzione* (indicizzare il repo Sertor stesso con il motore nuovo).
 
 ### Gruppo A — Entry-point e struttura comandi
 
-**REQ-001 (Ubiquitous)** *The CLI shall expose a single command-line entry-point that dispatches to
-the subcommands `index`, `search`, and `wiki index`.*
+**REQ-001 (Ubiquitous)** *The CLI shall expose a single command-line entry-point named `sertor`
+(installed as a console-script in the environment) that dispatches to the subcommands `index`,
+`search`, and `wiki index`.*
+> DA-C1 risolta: comando globale `sertor` via console-script entry-point; la **distribuzione
+> pubblica** (PyPI/git+url) resta fuori ambito.
 
 **REQ-002 (Ubiquitous)** *The CLI shall provide usage/help text for the entry-point and for each
 subcommand, describing arguments and options.*
@@ -112,18 +115,35 @@ partial or corrupted index.*
 **REQ-013 (Ubiquitous)** *The CLI `index` command shall be non-destructive on the target repository:
 it shall not modify or overwrite the user's source files (it only writes to the index store).*
 
+**REQ-014 (Optional feature)** *Where the user selects a corpus namespace (via a `--corpus` option or
+the centralized configuration), the CLI shall index into, and query from, the corresponding
+namespaced collection, so that distinct repositories/corpora (e.g. prototype vs production) remain
+isolated and individually addressable.*
+> DA-C2 risolta: provenienza tramite **collezioni namespaced distinte** (già supportate dal core via
+> `collection_name`); nessuna mescolanza dei corpora.
+
 ### Gruppo C — Comando `search`
 
 **REQ-020 (Event-driven)** *When the user runs `search <query>`, the CLI shall return the top-k most
 relevant results, each including at minimum: file path, document type (code/doc), chunk identifier,
-relevance score, and a text preview.*
+relevance score, and a **truncated** text preview (bounded length), not the full chunk text.*
+> DA-C5 risolta (economia di token): di default l'output usa **anteprime troncate**; un'opzione
+> `--full` restituisce il testo completo del chunk on-demand.
 
 **REQ-021 (Optional feature)** *Where the user specifies a result count (`-k`) and/or a type filter
-(code / doc / combined), the CLI shall honour them; otherwise it shall use the configured defaults.*
+(`--type code|doc|both`), the CLI shall honour them; otherwise it shall use the defaults from the
+core configuration (`default_k` for `k`) and `both` as the default search mode.*
+> DA-C4 risolta: default **ereditati dal core** (Principio VIII); nessun default duplicato nella CLI.
 
 **REQ-022 (Unwanted behaviour)** *If the index does not exist when a search is requested, then the CLI
 shall print a readable error indicating that the index must be built first, and exit non-zero (no
 silent empty result).*
+
+**REQ-023 (Optional feature)** *Where the user requests JSON output (`--json`), the CLI shall print the
+search results as a structured JSON array suitable for programmatic/agent consumption; otherwise it
+shall print human-readable text. In both formats the preview is truncated unless `--full` is given.*
+> DA-C5 risolta: **testo di default + `--json`**; anteprime troncate in entrambi i formati per
+> contenere il consumo di token quando la CLI è usata da un agente.
 
 ### Gruppo D — Comando `wiki index`
 
@@ -156,8 +176,9 @@ emit log events as structured JSON records (one per event) suitable for ingestio
 systems.*
 
 **REQ-052 (Optional feature)** *Where the user provides an external logging configuration
-(`--log-config <file>`), the CLI shall load it so that arbitrary log handlers/appenders (e.g. file,
-syslog, Splunk) can be attached without modifying the code.*
+(`--log-config <file>`) in `dictConfig` form (YAML or JSON), the CLI shall load it so that arbitrary
+log handlers/appenders (e.g. file, syslog, Splunk) can be attached without modifying the code.*
+> DA-C3 risolta: formato **`dictConfig` (YAML/JSON)**.
 
 **REQ-053 (Unwanted behaviour)** *If an operation fails at a core boundary (embeddings, vector store,
 indexing), then the system shall emit a structured log event describing the failure (operation,
@@ -203,8 +224,9 @@ without hardcoded assumptions about its internal structure, language distributio
 - **V-4**: Python ≥ 3.11 (vincolo d'epica).
 
 ### Assunzioni
-- **A-1**: Nell'MVP la CLI si esegue nell'ambiente di sviluppo (modulo eseguibile); il pacchetto
-  installabile e il comando globale `sertor` sono fuori ambito (FEAT-CLI-001 packaging / FEAT-CLI-006).
+- **A-1**: Nell'MVP la CLI espone il comando globale `sertor` tramite **console-script entry-point**
+  (installato nell'ambiente con l'installazione editable del pacchetto); la **distribuzione pubblica**
+  (PyPI/git+url) e l'hardening del packaging restano fuori ambito (FEAT-CLI-006).
 - **A-2**: La configurazione (provider/backend) è **definita** altrove (env/`.env`) e dal core; la CLI
   la **legge**, non la scrive (il wizard interattivo è FEAT-CLI-003, fuori ambito).
 - **A-3**: Il provider reale (Ollama o Azure) è un prerequisito d'**esecuzione**, non di costruzione:
@@ -239,16 +261,16 @@ without hardcoded assumptions about its internal structure, language distributio
 
 ---
 
-## 10. Domande aperte
+## 10. Domande aperte (risolte)
 
-- **DA-C1 — Forma dell'entry-point nell'MVP.** *Proposta:* modulo eseguibile (`python -m sertor_cli`)
-  senza packaging; il comando globale `sertor` arriva con la feature di distribuzione. Da confermare in design.
-- **DA-C2 — Provenienza dei corpora.** Per il dogfooding (prototipo *vs* produzione): collezioni
-  **namespaced distinte** o un'unica collezione con metadato `origin`? *Direzione:* namespacing per
-  corpus (già supportato dal core via `collection_name`). Da fissare in design.
-- **DA-C3 — Formato di `--log-config`.** dictConfig (YAML/JSON) vs fileConfig (INI). Da fissare in design.
-- **DA-C4 — Default di `search`.** Modalità di default (combinata?) e `k` di default: ereditati dal
-  `Settings` del core o esposti come opzioni con default propri? *Direzione:* ereditare dal core
-  (Principio VIII). Da confermare in design.
-- **DA-C5 — Formato di output di `search`.** Testo leggibile vs JSON (per consumo da agente). *Direzione:*
-  testo di default + `--json` opzionale, coerente con `--log-json`. Da confermare in design.
+Chiuse in elicitazione (2026-06-03) e codificate nei requisiti sopra.
+
+- **DA-C1 — Forma dell'entry-point.** *Risolta:* comando globale **`sertor`** via console-script
+  entry-point (REQ-001); distribuzione pubblica (PyPI/git+url) fuori ambito.
+- **DA-C2 — Provenienza dei corpora.** *Risolta:* **collezioni namespaced distinte** (REQ-014); il
+  corpus si seleziona via `--corpus`/configurazione; prototipo e produzione restano isolati.
+- **DA-C3 — Formato di `--log-config`.** *Risolta:* **`dictConfig` (YAML/JSON)** (REQ-052).
+- **DA-C4 — Default di `search`.** *Risolta:* **ereditati dal core** — `k` da `default_k`, modalità
+  di default `both` (REQ-021).
+- **DA-C5 — Output di `search`.** *Risolta:* **testo di default + `--json`**, con **anteprime
+  troncate** in entrambi i formati e `--full` per il testo completo (REQ-020/023).
