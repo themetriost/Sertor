@@ -37,7 +37,8 @@ class Settings:
     """Settaggi del nucleo. Istanziare via `Settings.load()` per leggere env/`.env`."""
 
     # backend & corpus
-    backend: str = "local"                 # local | azure
+    backend: str = "local"                 # local | azure — provider di EMBEDDINGS/LLM
+    store_backend: str = "local"           # local | azure — backend VECTOR STORE (disaccoppiato)
     corpus: str = "default"                # namespace logico della collezione
 
     # embeddings: locale (Ollama)
@@ -85,6 +86,7 @@ class Settings:
         index_dir = os.getenv("SERTOR_INDEX_DIR")
         return cls(
             backend=os.getenv("RAG_BACKEND", "local"),
+            store_backend=os.getenv("SERTOR_STORE_BACKEND", "local"),
             corpus=os.getenv("SERTOR_CORPUS", "default"),
             ollama_host=os.getenv("OLLAMA_HOST", "http://localhost:11434"),
             ollama_embed_model=os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text"),
