@@ -164,3 +164,22 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
 - **Processo git:** branch `spec/002-rag-baseline` allineato a master (merge 5502700) per avere FEAT-001; commit piano (4f159d0), tasks (23641b3), implementazione incrementale.
 - **Index aggiornato:** aggiunto link `[[motore-baseline-feat002]]` in Syntheses; frontmatter sources aggiornato con `specs/002-rag-baseline/**`.
 - **File toccati:** `wiki/syntheses/motore-baseline-feat002.md` (nuovo), `wiki/index.md`, `wiki/log.md`.
+
+## [2026-06-03] record | Implementazione FEAT-003 skill LLM Wiki
+
+- **Pagina creata:** `syntheses/skill-wiki-feat003.md` documenta il completamento phase 2–5 di FEAT-003:
+  - **Stato:** ✅ 21 task completati (US1–US5), 84 test passed + 2 xfail (soglie pertinenza motori standard, non rilevante per wiki), ruff clean, Constitution Check 9/9 ✅.
+  - **Libreria skill:** `src/sertor_core/wiki/` con operazioni `create_wiki()` (struttura non-distruttivo), `record()`/`ingest()`/`distill()`/`query()` (LLM-free eccetto distill), `index_wiki()` (riusa IndexingService del nucleo).
+  - **Convenzioni:** `conventions.py` con enumerazione aree tematiche → cartelle, Brief/SourceBrief, frontmatter YAML, kebab-case, formato log append-only.
+  - **Estensioni additive al nucleo:** porta `LLMProvider` (Protocol metodo generate), adapter LLM Ollama/Azure, eccezione `LLMNotConfiguredError`, chiavi chat in Settings. Non-breaking, testabili con FakeLLM.
+  - **Decisione architetturale chiave:** **idempotenza strutturale (REQ-050/051)** — rieseguire operazione su input invariato → hash file identico (compare content ignorando `updated:`, write only se cambia). `created` preservato, `updated` muta solo a modifica reale; log append-only; index.md/log.md mai riscritti retroattivamente. Conseguenza: SC-002 garantito.
+  - **Indicizzazione DRY (REQ-040/041):** `index_wiki()` riusa `IndexingService(rebuild=True)` del nucleo, zero reimplementazione; id chunk = path relativo (REQ-051); radice vuota → warning, RAG irraggiungibile → errore (REQ-043/045).
+  - **Test suite:** unit (structure, operations, indexing, LLM adapters), integration (ciclo E2E create→record→query→index), error handling (LLMNotConfiguredError, wiki esistente, collisioni path), config/logging; tutti su wiki sandbox in temp (RNF-002/R-W5).
+  - **xfail 2:** threshold pertinenza motori standard (non questa feature).
+  - **Artefatti:** `src/sertor_core/wiki/**`, `src/sertor_core/adapters/llm/**`, `specs/003-wiki-creazione/{plan,tasks,design}/*.md`, `tests/**`.
+  - **Linkage:** CONSUMA FEAT-001 (nucleo), FEAT-002 (baseline), base per future skill surface wiki (FEAT-007/008).
+- **Analisi Speckit Analyze:** FR 13/13, 0 critical, Constitution Check 9/9 ✅.
+- **Processo git:** branch `spec/003-wiki-creazione` allineato a master (merge FEAT-002 in 4564e77); commit per fase (piano 40d437e, tasks 57a4e50, implementazione).
+- **Chiusura MVP:** questa skill chiude il loop FEAT-001/002/003 di Sertor Core — nucleo (ingestione/embedding) + motore baseline (ranking/eval) + skill wiki (creazione/indicizzazione). Wiki stesso diventa creabile e interrogabile con i tool distribuiti.
+- **Index aggiornato:** aggiunto link `[[skill-wiki-feat003]]` in Syntheses; frontmatter sources aggiornato con `specs/003-wiki-creazione/**`.
+- **File toccati:** `wiki/syntheses/skill-wiki-feat003.md` (nuovo), `wiki/index.md`, `wiki/log.md`.
