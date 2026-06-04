@@ -194,7 +194,11 @@ manutenzione è garantita dalla delega al `wiki-keeper`, non dal blocco del turn
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/006-wiki-lint-semantico/plan.md` (FEAT-007 estensione — lint SEMANTICO del wiki: rilevazione
-obsolescenza/contraddizioni/lacune/sommari, provenienza, auto-fix assistito, gate pre-commit).
-Strutturale (Gruppi A–G) in `specs/005-wiki-manutenzione/`. In `master`: FEAT-001/002/003 + CLI + MCP.
+`specs/006-wiki-lint-semantico/plan.md` (FEAT-007 estensione — lint SEMANTICO del wiki). **Scope
+ampliato (in implementazione):** US3 verifica incrementale git-driven (watermark `wiki/.sertor/`,
+mappa entità↔pagine derivata, `GitPort`), US4-scrittura (`apply_fixes` chirurgico solo su pagine
+generated), US5 gate pre-commit/pre-push fuori dal dominio (`run_semantic_gate`, exit≠0/override).
+P1 (rilevazione+provenienza+proposte) già implementato. Re-index reale rinviato a FEAT-009 (solo
+fallback working-tree). Strutturale (Gruppi A–G) in `specs/005-wiki-manutenzione/`. In `master`:
+FEAT-001/002/003 + CLI + MCP.
 <!-- SPECKIT END -->

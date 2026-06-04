@@ -28,6 +28,8 @@ Entità in `src/sertor_core/wiki/semantic.py` (+ estensioni provenienza in `conv
 | `threshold` | Severity | soglia di blocco |
 | `ok` | bool (proprietà) | pass se nessuna issue ha severità ≥ threshold |
 | `llm_calls` | int | osservabilità/costo |
+| `mode` | str (`baseline`\|`incremental`) | **nuovo** — modalità di esecuzione (US3) |
+| `fallbacks` | list[str] | **nuovo** — fallback attivati e segnalati (baseline forzato, working-tree stantio…) (REQ-091/097) |
 
 `render()` leggibile; `ok` consumabile come **gate** (exit ≠ 0 → blocco).
 
@@ -47,9 +49,53 @@ non distruttivo). `distill_artifact` marca `generated`.
 
 Le proposte su pagine **curated** non sono generate (solo segnalazione nell'issue).
 
-## Watermark (US3, fase successiva)
-Commit git dell'ultimo lint semantico completato (persistito sotto la radice wiki o stato dedicato).
+## FixApplication (US4-scrittura)
+| Campo | Tipo | Note |
+|-------|------|------|
+| `proposal` | FixProposal | proposta sorgente applicata |
+| `page` | str | file bersaglio (relativo alla radice wiki) |
+| `outcome` | enum {applied, deleted, refused_curated, skipped_no_match} | esito dell'applicazione |
+| `detail` | str | spiegazione (es. "claim non trovata", "pagina curated: rifiutato") |
+
+`apply_fixes(proposals, root, *, dry_run=False) -> list[FixApplication]`: applica su **working tree**
+**solo** su pagine `generated`; `rewrite_claim` = sostituzione **chirurgica** della claim (preserva il
+resto e il marcatore `generated`); `delete_page` = rimozione file; pagina **curated** → `refused_curated`
+(nessuna scrittura); claim non più presente → `skipped_no_match` (non errore); `dry_run=True` non tocca il
+filesystem. Diff revisionabile via git (Principio VI). (REQ-078/079/080/085)
+
+## Watermark (US3)
+Commit SHA dell'ultimo lint semantico completato, persistito in **`wiki/.sertor/semantic-watermark`**
+(file testuale, una riga). `read_watermark(root) -> str | None` (None se assente → baseline),
+`write_watermark(root, sha)` (non distruttivo). La directory `.sertor/` è **esclusa** dalla scoperta
+pagine del lint e dall'indicizzazione. (FR-018, REQ-089)
+
+## EntityPageMap (US3, derivata)
+Associazione **file/entità di codice → pagine wiki**, **derivata** a ogni run (no indice persistito) dal
+frontmatter `sources:` e dai wikilink/backlink delle pagine. `_entity_page_map(root) -> dict[str, set[str]]`
+(chiave = path/glob di codice, valore = pagine che lo documentano). Un `changed_path` seleziona le pagine
+da ri-verificare. (REQ-090)
+
+## GitPort (porta, dominio)
+`Protocol` in `domain/ports.py`. Metodi:
+- `changed_paths(scope: "staged"|"working"|"since_watermark", watermark: str | None = None) -> list[str]`
+- `head_commit() -> str | None`
+- `renamed_paths() -> list[tuple[str, str]]` (opzionale; per R-M10, può tornare `[]`)
+
+Implementazione concreta **`SubprocessGitAdapter`** in `adapters/git/` (fuori dal dominio). Test con
+`FakeGit` deterministico. (FR-017, Principio I)
+
+## GateOutcome (US5, confine CLI/hook)
+| Campo | Tipo | Note |
+|-------|------|------|
+| `status` | enum {pass, warning, blocked} | esito del gate |
+| `report` | SemanticReport | report sottostante |
+| `applied` | list[FixApplication] | auto-fix applicati alle pagine generated |
+| `override` | bool | True se override esplicito ha forzato il passaggio |
+| `override_record` | str \| None | record tracciabile dell'override (chi/quando/perché), per REQ-095 |
+
+Prodotto da `run_semantic_gate(...)` **fuori dal dominio** (CLI/services): mappa `report.ok`/soglia →
+`status`; `blocked` → exit ≠ 0; `override` → `pass` forzato e **registrato**. (REQ-092..095, finding A1/C1)
 
 ## Riuso
-`maintenance._pages`, `conventions` (frontmatter/slug), `composition.build_facade/build_llm`,
-porta `LLMProvider`.
+`maintenance._pages`, `conventions` (frontmatter/slug/provenance/watermark), `semantic_lint(pages=)`,
+`composition.build_facade/build_llm`, porte `LLMProvider`/`GitPort`.
