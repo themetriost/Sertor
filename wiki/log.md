@@ -2,7 +2,7 @@
 title: Log del Wiki — Produzione Sertor
 type: log
 created: 2026-05-30
-updated: 2026-06-03
+updated: 2026-06-04
 ---
 
 # Registro di Produzione (append-only)
@@ -212,6 +212,22 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
   - **Conformità:** Constitution Check 9/9 (Principi I, IV, VII), Costituzione [[costituzione-v1]] rispettata.
 - **Index aggiornato:** nuova sezione "Experiments" con link a `[[dogfooding-produzione-cli]]`.
 - **File toccati:** `wiki/experiments/dogfooding-produzione-cli.md` (nuovo), `wiki/index.md`, `wiki/log.md`.
+
+## [2026-06-04] record | FEAT-007 lint semantico del wiki
+
+- **Pagina creata:** `syntheses/lint-semantico-feat007.md` documenta l'estensione semantica di FEAT-007:
+  - **Modulo principale:** `semantic_lint(root, llm, facade, *, threshold, k_code, max_pages, pages)` confronta claim wiki col codice reale (via LLM + facade di retrieval) e coerenza interna tra pagine; rileva obsolescenza, contraddizioni, lacune di copertura, sommari stantii.
+  - **Provenienza pagine:** frontmatter `provenance: generated|curated` (default curated, sicuro). Funzioni `read_provenance()`, `mark_provenance()` non-distruttive. `distill_artifact()` marca automaticamente pagine generate.
+  - **Proposte fix:** `propose_fixes()` genera proposte YAML SOLO per pagine `generated` (riscritture chirurgiche, cancellazioni); non scrive file (phase pre-commit dichiarata). Pagine curate: report only.
+  - **Entità:** `Severity` (ordinale) · `SemanticIssueKind` (4 tipi: obsolete-vs-code, internal-contradiction, coverage-gap, stale-summary) · `SemanticIssue` + reasoning LLM · `SemanticReport` (ok su threshold + copertura + pages_without_code_context).
+  - **Robustezza:** parsing JSON difensivo, gate pass/fail su threshold severità con override dichiarato, degradazione gradevole senza LLM (report skipped, severity NONE).
+  - **Requisiti EARS:** Gruppo H, REQ-070..098; P1 (US1 rilevazione + US2 provenienza) implementate; US4 forma "proposta"; US3 watermark + US5 hook pre-commit rinviati (T100-T103).
+  - **Test:** 13 nuovi (test_wiki_semantic_*); mock `ScriptedLLM` per test deterministici. Suite totale 137 verdi, ruff pulito, Constitution Check 9/9 ✅.
+  - **Dogfooding (2026-06-04):** Ollama qwen3:30b-a3b su 6/17 pagine wiki produzione (~85 s/pagina). Risultati: (1) run end-to-end OK; (2) corpus sorgenti locale non indicizzato in nomic (`.index-production` Azure 3072-dim) → controllo obsolescenza degradato a coerenza interna; aggiunta segnalazione esplicita `pages_without_code_context` per trasparenza; (3) modello 30B rumoroso (false positive lievi) → conferma perché auto-fix gated. **Lezione:** FEAT-009 (refresh incrementale) prioritaria per supportare lint semantico completo.
+  - **Conformità:** Constitution Check 9/9; Principi I (core autonomo), VI (non-distruttività), IX (osservabilità) cardine. Phase pre-commit dichiarata, override possibile.
+- **Index aggiornato:** aggiunto link `[[lint-semantico-feat007]]` in Syntheses con descrizione P1+post-MVP.
+- **Roadmap aggiornata:** riga FEAT-007 ora specifica "lint semantico: rilevazione+provenienza implementate (P1); incrementale/auto-fix-write/hook pre-commit da fare".
+- **File toccati:** `wiki/syntheses/lint-semantico-feat007.md` (nuovo), `wiki/index.md`, `wiki/syntheses/roadmap.md`, `wiki/log.md`.
 
 ## [2026-06-03] record | FEAT-007 manutenzione del wiki
 
