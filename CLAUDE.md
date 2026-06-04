@@ -27,10 +27,10 @@ non si modifica più a mano, lo si consulta tramite il **RAG di dogfooding** (ve
 
 Il prototipo è **congelato**: per consultarlo **non** si leggono i file a mano, si **interroga il
 RAG**. Il server MCP **`sertor-rag`** (in `.mcp.json`) è puntato sul **prototipo come corpus**
-(`SERTOR_CORPUS=sertor`) — facciamo *dogfooding* del nostro stesso strumento. Tool: `search_code` /
+(`SERTOR_CORPUS=prototype`) — facciamo *dogfooding* del nostro stesso strumento. Tool: `search_code` /
 `search_docs` / `search_combined` (codice e doc del prototipo), `find_symbol` / `who_calls` /
 `related_docs` (relazioni nel code-graph), `get_context` (fusione codice↔doc). Ricostruzione indici
-dogfood: `SERTOR_CORPUS=sertor python prototype/01-baseline/index.py --provider azure-large`
+dogfood: `SERTOR_CORPUS=prototype python prototype/01-baseline/index.py --provider azure-large`
 (Chroma) e `… prototype/03-graphrag/build_graph.py` (grafo AST).
 
 ## Stack tecnologico
@@ -81,8 +81,8 @@ Sertor/
 ```
 
 Il motore in `prototype/shared/` è **corpus-aware** (env `SERTOR_CORPUS`: `fastapi` = demo del
-prototipo · `sertor` = dogfooding sul prototipo stesso); gli indici sono namespaced per corpus
-(`.index` vs `.index-sertor`), così demo FastAPI e dogfood coesistono senza sovrascriversi.
+prototipo · `prototype` = dogfooding sul prototipo stesso); gli indici sono namespaced per corpus
+(`.index` vs `.index-prototype`), così demo FastAPI e dogfood coesistono senza sovrascriversi.
 
 ## Il nucleo di produzione: `sertor-core` (`src/`)
 

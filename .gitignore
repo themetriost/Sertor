@@ -18,11 +18,11 @@ dist/
 build/
 *.egg-info/
 
-# Vector store / indici locali
+# Vector store / indici locali (namespaced per corpus: .index, .index-sertor, .index-prototype, .index-wiki, ...)
 **/chroma/
 *.chroma
 **/.index/
-**/.index-sertor/
+**/.index-*/
 
 # Log rigenerabili (re-index, ecc.)
 **/*.log
