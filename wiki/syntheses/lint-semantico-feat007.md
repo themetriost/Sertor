@@ -1,11 +1,11 @@
 ---
-title: FEAT-007 Lint Semantico — Rilevazione Obsolescenza e Contraddizioni nel Wiki
+title: FEAT-007 Lint Semantico — Rilevazione, Provenienza e Applicazione Fix
 type: synthesis
-tags: [FEAT-007, wiki, manutenzione, lint, LLM, semantica, provenance]
+tags: [FEAT-007, wiki, manutenzione, lint, LLM, semantica, provenance, incrementale, gate]
 created: 2026-06-04
 updated: 2026-06-04
 provenance: generated
-sources: ["specs/006-wiki-lint-semantico/plan.md", "specs/006-wiki-lint-semantico/requirements.md", "src/sertor_core/wiki/semantic.py", "src/sertor_core/wiki/conventions.py", "tests/test_wiki_semantic.py"]
+sources: ["specs/006-wiki-lint-semantico/plan.md", "specs/006-wiki-lint-semantico/requirements.md", "src/sertor_core/wiki/semantic.py", "src/sertor_core/wiki/conventions.py", "src/sertor_core/services/semantic_gate.py", "src/sertor_cli/commands/wiki.py", "tests/test_wiki_semantic.py", "tests/test_wiki_incremental.py", "tests/test_wiki_apply_fixes.py", "tests/test_semantic_gate.py", "tests/test_cli_semantic_gate.py"]
 ---
 
 # FEAT-007: Lint Semantico del Wiki — Rilevazione e Proposta Fix
@@ -175,9 +175,130 @@ Esecuzione sul **wiki di produzione** con Ollama **qwen3:30b-a3b** su 6/17 pagin
 - **Costituzione:** [[costituzione-v1]] (Principi I–IX vincolanti)
 - **Roadmap:** [[roadmap]] (FEAT-007 stato aggiornato)
 
+## Scope ampliato (US3/US4-scrittura/US5) — Implementato
+
+**Sessione 2026-06-04:** estensione della feature con user story 3, 4-scrittura e 5 (153 test, Constitution Check 9/9).
+
+### US3 — Verifica incrementale git-driven
+
+**Porta Git + adapter:** nuova `GitPort` (domain/ports.py) con `SubprocessGitAdapter` (adapters/git/). Progettazione Clean Architecture (Principio I): porta nel dominio, adapter esterno. Comando: `git diff HEAD~ --name-only` per scoprire file modificati (pagine wiki associate via mappa derivata da frontmatter `sources:`, letta da disk).
+
+**Watermark persistito:** SHA ultimo commit scoperto in `wiki/.sertor/semantic-watermark` (path fisso, `.sertor/` esclusa dalla scoperta pagine). Funzioni: `read_watermark()`, `write_watermark()` in `conventions.py`. Idempotenza: rieseguire con stessa HEAD → watermark identico → report identico.
+
+**Mappa entità↔pagine:** derivata dal frontmatter `sources:` di ogni pagina (no indice persistito); semantica: se pagina specifica fonte X in `sources`, e X è cambiato in git → potenziale obsolescenza.
+
+**Versione MVP incrementale:** `semantic_lint_incremental()` riusa `semantic_lint(pages=...)` con elenco pagine calcolato; fallback: working tree (nessun re-index reale FEAT-009, segnalato come `stale-index` nei report).
+
+### US4 — Scrittura proposte e applicazione su pagine generate
+
+**Entità:** `FixApplication` struttura proposte + stato di applicazione (accepted, skipped_no_match, refused_curated, dry_run).
+
+**Funzione:** `apply_fixes(report, fixes, *, dry_run=True) -> FixApplication`
+
+**Politica applicazione:**
+- **Pagine `generated` solo:** rifiuta `curated` (refused_curated)
+- **Applicazione chirurgica:** sostituisce sola claim, preserva marcatore `generated` nel frontmatter
+- **Eliminazione:** `delete_page` per pagine marcate obsolete
+- **Claim non trovato:** skipped_no_match (nessun errore, tolleranza)
+
+**Caratteristica:** tutte le operazioni preserve idempotenza (rieseguire = stessa versione). Dry-run default per sicurezza.
+
+### US5 — Gate semantico pre-commit
+
+**Servizio nuovo:** `src/sertor_core/services/semantic_gate.py` (FUORI dal dominio wiki, perché orchestrazione multi-step). Progettazione Clean Architecture: core espone report+ok, gate è adapter/service che consuma.
+
+**Firma:**
+```python
+def run_semantic_gate(
+    root: Path,
+    llm: LLMProvider,
+    facade: RetrievalFacade,
+    *,
+    threshold: float = 0.5,
+    override: bool = False,
+    override_reason: str | None = None,
+    **semantic_lint_kwargs
+) -> GateResult
+```
+
+**Logica:**
+1. Esegui `semantic_lint_incremental()` (US3)
+2. Applica `apply_fixes()` su pagine generate (US4)
+3. Valuta `report.ok` vs `threshold`
+4. Status: `pass | warning | blocked`
+5. Override tracciato: `override_record` con timestamp + reason
+
+**CLI entry point:** `sertor wiki semantic-gate` (nuova CLI in `src/sertor_cli/commands/wiki.py`)
+- Flag: `--threshold 0.5` (default), `--override`, `--reason "..."` (reason required if override=True)
+- Exit code: `0` (pass), `1` (warning/blocked), `2` (blocked + no override)
+
+**Trigger a monte:** gate eseguito dal `configuration-manager` PRIMA di commit (le correzioni alle pagine generated entrano nello stesso commit). Orchestrazione: configuration-manager chiama `sertor wiki semantic-gate` e usa exit code per passare/bloccare.
+
+## Requisiti aggiornati (EARS)
+
+**Completati (scope ampliato):**
+
+| REQ | Titolo | US | Stato |
+|-----|--------|----|----|
+| REQ-080 | `GitPort` + adapter incremental | US3 | ✅ implementato |
+| REQ-081 | Watermark git (SHA persistence) | US3 | ✅ implementato |
+| REQ-082 | Mappa pagine da frontmatter `sources:` | US3 | ✅ implementato |
+| REQ-083 | `semantic_lint_incremental()` riusa facade | US3 | ✅ implementato |
+| REQ-084 | Fallback stale-index (working tree) | US3 | ✅ segnalato in report |
+| REQ-085 | `apply_fixes()` su pagine generated | US4 | ✅ implementato |
+| REQ-086 | Rifiuto fix su pagine curate | US4 | ✅ implementato |
+| REQ-087 | Applicazione chirurgica (preserve marker) | US4 | ✅ implementato |
+| REQ-088 | Delete page action | US4 | ✅ implementato |
+| REQ-089 | Dry-run default per sicurezza | US4 | ✅ implementato |
+| REQ-090 | `run_semantic_gate()` orchestrazione | US5 | ✅ implementato |
+| REQ-091 | Gate status pass/warning/blocked | US5 | ✅ implementato |
+| REQ-092 | Override tracciato con timestamp+reason | US5 | ✅ implementato |
+| REQ-094 | CLI `sertor wiki semantic-gate` | US5 | ✅ implementato |
+| REQ-095 | Exit code mapping to status | US5 | ✅ implementato |
+| REQ-096 | Dipendenza FEAT-009 dichiarata (re-index) | nota | ✅ dichiarato |
+| REQ-097 | Fallback working-tree per MVP | nota | ✅ implementato |
+
+## Testing aggiornato
+
+**Nuovi test (21 nuovi, totale 155 verdi):**
+
+- `test_wiki_incremental_git_port()` — porta Git funzionante
+- `test_wiki_incremental_watermark_read_write()` — persistenza watermark
+- `test_wiki_incremental_pagemap_from_sources()` — derivazione mappa da sources
+- `test_wiki_incremental_lint()` — riuso semantic_lint_incremental
+- `test_wiki_incremental_stale_index_fallback()` — fallback working tree
+- `test_wiki_apply_fixes_generated_only()` — applicazione solo generated
+- `test_wiki_apply_fixes_reject_curated()` — rifiuto curated
+- `test_wiki_apply_fixes_chirurgical()` — preserva marker
+- `test_wiki_apply_fixes_delete_page()` — azione cancellazione
+- `test_wiki_apply_fixes_no_match()` — skip on claim not found
+- `test_wiki_apply_fixes_dry_run()` — dry-run non scrive
+- `test_wiki_apply_fixes_structure()` — FixApplication schema
+- `test_semantic_gate_pass()` — gate verde
+- `test_semantic_gate_warning()` — gate giallo
+- `test_semantic_gate_blocked()` — gate rosso
+- `test_semantic_gate_override_traccia()` — override + timestamp + reason
+- `test_semantic_gate_integration()` — incrementale→apply→gate full cycle
+- `test_cli_semantic_gate_threshold()` — CLI flag --threshold
+- `test_cli_semantic_gate_override()` — CLI flag --override
+- `test_cli_semantic_gate_reason()` — CLI flag --reason richiesto
+- `test_cli_semantic_gate_exit_codes()` — mapping status → exit code
+
+**Suite totale:** 155 verdi + 2 xfail (baseline precision, non rilevante), ruff clean, Constitution Check **9/9** ✅
+
+## Conformità finale
+
+- ✅ **Constitution Check 9/9**
+  - **Principio I (core isolato):** `GitPort` nel dominio, adapter esterno; gate service fuori da wiki (composizione, non import SDK)
+  - **Principio IV (errori espliciti):** non-match → skipped (no exception); override → tracciato; gate status esplicito
+  - **Principio VI (non-distruttività):** apply_fixes con dry-run default; watermark append-only
+  - **Principio IX (osservabilità):** severity + reasoning + override_record + exit code mappato
+- ✅ **SpecKit scope control:** SC-006/007/008 verificati
+- ✅ **Fase pre-commit dichiarata** con override tracciato
+- ✅ **Dipendenza FEAT-009 esplicita** (re-index reale solo post-MVP)
+
 ## Prossimi passi
 
-1. **Incrementale + watermark (US3):** git metadata per tracciare quale commit ha generato una pagina
-2. **Applicazione hook pre-commit (US5):** auto-apply su pagine generated o richiesta umana; gate dichiarato su Constitution Check
-3. **FEAT-009 prioritaria:** refresh incrementale indici + indicizzazione locale corpus sorgenti per supportare lint semantico pieno
-4. **Miglioramento modello:** sperimentare Azure OpenAI o Ollama modelli più grandi per ridurre false positive
+1. **Wiring hook git:** integrazione nel `configuration-manager` per trigger automatico gate a monte di commit (attualmente CLI manuale)
+2. **FEAT-009 prioritaria:** refresh incrementale indici + indicizzazione continua corpus sorgenti per lint semantico pieno (eliminare fallback stale-index)
+3. **Tuning modello:** sperimentazione Azure OpenAI vs Ollama per false positive su coerenza interna

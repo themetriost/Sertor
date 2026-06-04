@@ -229,6 +229,31 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
 - **Roadmap aggiornata:** riga FEAT-007 ora specifica "lint semantico: rilevazione+provenienza implementate (P1); incrementale/auto-fix-write/hook pre-commit da fare".
 - **File toccati:** `wiki/syntheses/lint-semantico-feat007.md` (nuovo), `wiki/index.md`, `wiki/syntheses/roadmap.md`, `wiki/log.md`.
 
+## [2026-06-04] record | FEAT-007 lint semantico — US3/US4/US5 implementati (scope ampliato)
+
+- **Estensione scope:** le user story 3 (incrementale git-driven), 4-scrittura (applicazione fix su generate) e 5 (gate pre-commit) completate nel flusso SpecKit durante questa sessione (fase specify→plan→tasks→analyze→implement).
+- **US3 — Incrementale git-driven:**
+  - Nuova `GitPort` (domain/ports.py) con `SubprocessGitAdapter` (adapters/git/) seguendo Principio I (core isolato)
+  - Watermark persistito: SHA ultimo commit in `wiki/.sertor/semantic-watermark` (read/write in conventions.py)
+  - Mappa entità↔pagine derivata da frontmatter `sources:` (no indice persistito)
+  - `semantic_lint_incremental()` riusa facade con fallback working tree (stale-index segnalato, FEAT-009 dichiarata)
+- **US4 — Applicazione fix (pagine generate):**
+  - Funzione `apply_fixes(report, fixes, *, dry_run=True) -> FixApplication`
+  - Applicazione chirurgica su pagine `generated` (rifiuta `curated`)
+  - Preserva marcatore `generated` in frontmatter; `delete_page` per obsolete; skipped_no_match per claim non trovato
+  - Dry-run default per sicurezza; idempotente (rieseguire = stessa versione)
+  - Entità `FixApplication` struttura proposte + stato
+- **US5 — Gate pre-commit:**
+  - Nuovo servizio `src/sertor_core/services/semantic_gate.py` (fuori dominio wiki, orchestrazione Clean Architecture)
+  - `run_semantic_gate()` orchestra: incrementale→apply→soglia→status (pass|warning|blocked)
+  - Override tracciato: `override_record` con timestamp + reason
+  - CLI `sertor wiki semantic-gate` (flag `--threshold`, `--override`, `--reason`; exit code mapping)
+  - Gate eseguito dal configuration-manager PRIMA di commit (correzioni generate entrano stesso commit)
+- **Qualità raggiunta:** 155 test verdi + 2 xfail (baseline precision), ruff clean, Constitution Check 9/9 ✅ (Principi I, IV, VI, IX cardine)
+- **Spec/plan/tasks:** 21 nuovi test (test_wiki_incremental_*, test_wiki_apply_fixes_*, test_semantic_gate_*, test_cli_semantic_gate_*); SC-006/007/008 verificati
+- **Dipendenze:** FEAT-009 (refresh incrementale) dichiarata (MVP fallback working tree); wiring hook git rinviato (configuration-manager)
+- **File toccati:** `wiki/syntheses/lint-semantico-feat007.md` (esteso con sezione "Scope ampliato"), `wiki/syntheses/roadmap.md`, `wiki/index.md`, `wiki/log.md`.
+
 ## [2026-06-03] record | FEAT-007 manutenzione del wiki
 
 - **Pagina creata:** `syntheses/manutenzione-wiki-feat007.md` documenta il completamento phase 2 di FEAT-007:

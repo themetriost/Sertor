@@ -4,7 +4,7 @@ type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
 updated: 2026-06-04
-sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", ".specify/memory/constitution.md"]
+sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", ".specify/memory/constitution.md", "specs/006-wiki-lint-semantico/**"]
 ---
 
 # Roadmap & Piano — Sertor
@@ -43,7 +43,7 @@ Legenda: ✅ in produzione (master) · 🔜 prossima (Should) · 💤 dopo (Coul
 | FEAT-004 RAG ibrido + reranking | Should | 🔜 da decomporre |
 | FEAT-005 RAG a grafo / GraphRAG | Should | 🔜 da decomporre *(riporta i tool `find_symbol`/`who_calls`/… nel MCP)* |
 | FEAT-006 RAG agentico (multi-step) | Should | 🔜 da decomporre |
-| FEAT-007 Skill: mantenere il wiki (lint/indice/distill) | Should (prioritizzata) | ✅ *(lint strutturale + distill completi; semantic lint P1 implementate: rilevazione obsolescenza+provenienza; US3 watermark + US5 hook pre-commit da fare)* |
+| FEAT-007 Skill: mantenere il wiki (lint/indice/distill) | Should (prioritizzata) | ✅ *(strutturale + distill + semantic completi: rilevazione obsolescenza, coerenza interna, lacune, provenienza generata|curata, applicazione fix gated, incrementale git-driven + gate pre-commit; solo wiring hook physico da fare)* |
 | FEAT-008 Arricchimento bidirezionale Wiki↔RAG | Could | 💤 da decomporre |
 | FEAT-009 Refresh incrementale dell'indice | Could | 💤 da decomporre |
 
