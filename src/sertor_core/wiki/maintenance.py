@@ -16,6 +16,7 @@ from sertor_core.observability.logging import log_event
 from sertor_core.wiki.conventions import (
     CATALOG_BEGIN,
     CATALOG_END,
+    STATE_DIR,
     replace_managed_block,
 )
 
@@ -64,7 +65,11 @@ class LintReport:
 
 
 def _pages(root: Path) -> list[Path]:
-    return sorted(p for p in root.rglob("*.md") if p.is_file())
+    # `.sertor/` ospita lo stato del lint (watermark): non è una pagina, va escluso (FR-018).
+    return sorted(
+        p for p in root.rglob("*.md")
+        if p.is_file() and STATE_DIR not in p.relative_to(root).parts
+    )
 
 
 def _summary(text: str) -> str:

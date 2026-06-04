@@ -10,6 +10,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import date
 from enum import StrEnum
+from pathlib import Path
 
 
 class WikiArea(StrEnum):
@@ -157,6 +158,33 @@ def mark_provenance(text: str, value: str) -> str:
         if end != -1:
             return text[:end] + f"\nprovenance: {value}" + text[end:]
     return text
+
+
+# Stato del lint semantico (FEAT-007, US3): cartella esclusa dalla scoperta pagine/indicizzazione.
+STATE_DIR = ".sertor"
+WATERMARK_FILE = "semantic-watermark"
+
+
+def read_watermark(root: Path | str) -> str | None:
+    """SHA dell'ultimo lint semantico completato; `None` se assente (→ baseline, REQ-089).
+
+    Lettura non distruttiva: un file mancante o vuoto non è un errore, significa "nessun baseline".
+    """
+    wm = Path(root) / STATE_DIR / WATERMARK_FILE
+    if not wm.is_file():
+        return None
+    sha = wm.read_text(encoding="utf-8", errors="ignore").strip()
+    return sha or None
+
+
+def write_watermark(root: Path | str, sha: str) -> None:
+    """Persiste lo SHA dell'ultimo lint completato in `<root>/.sertor/semantic-watermark`.
+
+    Crea la cartella di stato se assente; sovrascrive solo il watermark (non tocca altro: FR-018).
+    """
+    state = Path(root) / STATE_DIR
+    state.mkdir(parents=True, exist_ok=True)
+    (state / WATERMARK_FILE).write_text(sha.strip() + "\n", encoding="utf-8")
 
 
 def replace_managed_block(text: str, begin: str, end: str, new_block: str) -> str:

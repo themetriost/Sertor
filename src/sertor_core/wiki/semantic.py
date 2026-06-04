@@ -8,15 +8,22 @@ Senza LLM degrada **senza errore** (report `skipped`). Riusa le convenzioni e `m
 """
 from __future__ import annotations
 
+import fnmatch
 import json
 import logging
+import re
 from dataclasses import dataclass, field
 from enum import IntEnum, StrEnum
 from pathlib import Path
 
-from sertor_core.domain.ports import LLMProvider
+from sertor_core.domain.ports import GitPort, GitScope, LLMProvider
 from sertor_core.observability.logging import log_event
-from sertor_core.wiki.conventions import PROVENANCE_GENERATED, read_provenance
+from sertor_core.wiki.conventions import (
+    PROVENANCE_GENERATED,
+    mark_provenance,
+    read_provenance,
+    read_watermark,
+)
 from sertor_core.wiki.maintenance import _pages, _summary
 
 
@@ -74,6 +81,8 @@ class SemanticReport:
     threshold: Severity = Severity.HIGH
     llm_calls: int = 0
     pages_without_code_context: int = 0   # pagine verificate senza contesto codice (REQ-083/097)
+    mode: str = "baseline"                # "baseline" | "incremental" (US3, REQ-087/088)
+    fallbacks: list[str] = field(default_factory=list)  # degradi segnalati (REQ-091/097)
 
     @property
     def ok(self) -> bool:
@@ -84,8 +93,11 @@ class SemanticReport:
         if self.skipped:
             return "Lint semantico saltato (nessun LLM configurato)."
         head = (f"{len(self.issues)} problemi semantici · {self.pages_checked}/{self.pages_total} "
-                f"pagine · {self.llm_calls} chiamate LLM · {'OK' if self.ok else 'FAIL'}")
+                f"pagine · {self.mode} · {self.llm_calls} chiamate LLM · "
+                f"{'OK' if self.ok else 'FAIL'}")
         lines = [head]
+        if self.fallbacks:
+            lines.append(f"  ⚠ fallback: {', '.join(self.fallbacks)}")
         if self.pages_without_code_context:
             lines.append(
                 f"  ⚠ contesto codice assente per {self.pages_without_code_context}/"
@@ -224,6 +236,109 @@ def semantic_lint(
     return report
 
 
+_SOURCES_RE = re.compile(r"^sources:\s*\[(.*?)\]\s*$", re.MULTILINE)
+
+
+def _parse_sources(text: str) -> list[str]:
+    """Estrae i pattern del campo `sources:` dal frontmatter (es. `["src/**", "specs/001/**"]`)."""
+    m = _SOURCES_RE.search(text)
+    if not m:
+        return []
+    return [s.strip().strip('"').strip("'") for s in m.group(1).split(",") if s.strip()]
+
+
+def _entity_page_map(root: Path | str) -> dict[str, set[str]]:
+    """Associazione **pattern di codice → pagine** che lo documentano, *derivata* dai `sources:`.
+
+    Nessun indice persistito (Principio III, REQ-090): si legge il frontmatter `sources:` di ogni
+    pagina a ogni run. La chiave è il pattern (glob) dichiarato dalla pagina; il valore l'insieme
+    delle pagine che lo citano. Un file di codice cambiato seleziona le pagine i cui pattern lo
+    intercettano (vedi `_pages_for_changes`).
+    """
+    root = Path(root)
+    out: dict[str, set[str]] = {}
+    for p in _pages(root):
+        rel = p.relative_to(root).as_posix()
+        text = p.read_text(encoding="utf-8", errors="ignore")
+        for src in _parse_sources(text):
+            out.setdefault(src, set()).add(rel)
+    return out
+
+
+def _pages_for_changes(emap: dict[str, set[str]], changed: list[str]) -> set[str]:
+    """Pagine da ri-verificare: quelle il cui pattern `sources:` intercetta un path cambiato."""
+    selected: set[str] = set()
+    for path in changed:
+        for pattern, pages in emap.items():
+            # fnmatch: `*` attraversa anche `/`, così `src/sertor_core/**` cattura i file annidati;
+            # un pattern senza glob equivale all'uguaglianza esatta.
+            if path == pattern or fnmatch.fnmatch(path, pattern):
+                selected |= pages
+    return selected
+
+
+def semantic_lint_incremental(
+    root: Path | str,
+    llm: LLMProvider | None,
+    facade=None,
+    git: GitPort | None = None,
+    *,
+    scope: GitScope = "since_watermark",
+    watermark_path: str | None = None,  # simmetria col contratto; lo stato vive in .sertor/
+    threshold: Severity = Severity.HIGH,
+    k_code: int = 5,
+    max_pages: int | None = None,
+) -> SemanticReport:
+    """Verifica semantica **incrementale** git-driven (US3): ri-controlla solo le pagine collegate
+    alle entità del change set, ripiegando su baseline completo se manca lo stato (REQ-087..091).
+
+    Riusa `semantic_lint(pages=…)` per la rilevazione (nessuna logica duplicata). Il re-index reale
+    del corpus è **inattivo** (FEAT-009 assente): il confronto usa il contesto disponibile e segnala
+    `stale-index` (REQ-096/097). A run completato è il **chiamante** a persistere il watermark.
+    """
+    root = Path(root)
+    watermark = read_watermark(root)
+
+    # Senza git utilizzabile o senza baseline pregresso → baseline completo, segnalato (REQ-091).
+    head = git.head_commit() if git is not None else None
+    if git is None or head is None or watermark is None:
+        report = semantic_lint(root, llm, facade, threshold=threshold, k_code=k_code,
+                               max_pages=max_pages)
+        report.mode = "baseline"
+        if not report.skipped:
+            reason = "no-git" if (git is None or head is None) else "no-watermark"
+            report.fallbacks = [reason, "stale-index"]
+        log_event(logging.INFO, "semantic_lint_incremental", mode="baseline",
+                  fallbacks=report.fallbacks, pages_checked=report.pages_checked)
+        return report
+
+    # Incrementale: change set → mappa entità↔pagine → sottoinsieme di pagine (REQ-088/090).
+    changed = git.changed_paths(scope, watermark)
+    emap = _entity_page_map(root)
+    selected = sorted(_pages_for_changes(emap, changed))
+
+    if not selected:
+        # No-op rapido: nessuna pagina collegata alle entità cambiate (REQ-093).
+        total = len(_pages(root))
+        report = SemanticReport(mode="incremental", pages_total=total, threshold=threshold,
+                                fallbacks=["stale-index"])
+        log_event(logging.INFO, "semantic_lint_incremental", mode="incremental", no_op=True,
+                  changed=len(changed), pages_total=total)
+        return report
+
+    report = semantic_lint(root, llm, facade, threshold=threshold, k_code=k_code,
+                           max_pages=max_pages, pages=selected)
+    report.mode = "incremental"
+    # pages_total = pagine del wiki (copertura reale), non solo le selezionate.
+    report.pages_total = len(_pages(root))
+    if not report.skipped:
+        # re-index reale inattivo (FEAT-009 assente, REQ-096/097)
+        report.fallbacks = ["stale-index"]
+    log_event(logging.INFO, "semantic_lint_incremental", mode="incremental",
+              changed=len(changed), selected=len(selected), pages_checked=report.pages_checked)
+    return report
+
+
 _FIX_SYSTEM = (
     "Sei un documentalista. Ti viene data una FRASE obsoleta/errata di una pagina wiki e il CODICE "
     "ATTUALE. Riscrivi SOLO quella frase in modo corretto e conciso, senza aggiungere altro. "
@@ -261,3 +376,71 @@ def propose_fixes(report: SemanticReport, root: Path | str, llm: LLMProvider) ->
                                      proposed_text=proposed, rationale=issue.detail))
     log_event(logging.INFO, "semantic_propose_fixes", proposals=len(proposals))
     return proposals
+
+
+class FixOutcome(StrEnum):
+    APPLIED = "applied"                  # claim riscritta sul working tree
+    DELETED = "deleted"                  # pagina generata obsoleta rimossa
+    REFUSED_CURATED = "refused_curated"  # pagina curata: mai modificata/cancellata (REQ-080)
+    SKIPPED_NO_MATCH = "skipped_no_match"  # claim non più presente nel file (non è un errore)
+
+
+@dataclass(frozen=True)
+class FixApplication:
+    proposal: FixProposal
+    page: str
+    outcome: FixOutcome
+    detail: str = ""
+
+
+def apply_fixes(
+    proposals: list[FixProposal],
+    root: Path | str,
+    *,
+    dry_run: bool = False,
+) -> list[FixApplication]:
+    """Applica le proposte sul **working tree**, SOLO su pagine *generate* (US4-scrittura).
+
+    - `rewrite_claim` → sostituzione **chirurgica** della sola claim (preserva il resto e il
+      marcatore `generated`); claim non più presente → `skipped_no_match` (REQ-078/079).
+    - `delete_page` → rimozione del file (REQ-085).
+    - pagina **curated** → `refused_curated`, **nessuna** scrittura/cancellazione (REQ-080).
+    - `dry_run=True` → calcola gli esiti senza toccare il filesystem (Principio VI).
+
+    Il diff è minimo e revisionabile via git. Non interattiva (integrabile in hook/CI).
+    """
+    root = Path(root)
+    applications: list[FixApplication] = []
+    for prop in proposals:
+        page_path = root / prop.page
+        if not page_path.exists():
+            applications.append(FixApplication(prop, prop.page, FixOutcome.SKIPPED_NO_MATCH,
+                                               "pagina assente"))
+            continue
+        text = page_path.read_text(encoding="utf-8", errors="ignore")
+        if read_provenance(text) != PROVENANCE_GENERATED:
+            applications.append(FixApplication(prop, prop.page, FixOutcome.REFUSED_CURATED,
+                                               "pagina curata a mano: non modificata"))
+            continue
+        if prop.action == FixAction.DELETE_PAGE:
+            if not dry_run:
+                page_path.unlink()
+            applications.append(FixApplication(prop, prop.page, FixOutcome.DELETED,
+                                               "pagina generata obsoleta rimossa"))
+            continue
+        # rewrite_claim: sostituzione chirurgica della claim esatta.
+        claim = prop.issue.claim
+        if not claim or claim not in text:
+            applications.append(FixApplication(prop, prop.page, FixOutcome.SKIPPED_NO_MATCH,
+                                               "claim non trovata nel file"))
+            continue
+        new_text = text.replace(claim, prop.proposed_text, 1)
+        new_text = mark_provenance(new_text, PROVENANCE_GENERATED)  # resta generated (SC-007)
+        if not dry_run:
+            page_path.write_text(new_text, encoding="utf-8")
+        applications.append(FixApplication(prop, prop.page, FixOutcome.APPLIED, "claim riscritta"))
+    log_event(logging.INFO, "semantic_apply_fixes", total=len(applications), dry_run=dry_run,
+              applied=sum(1 for a in applications if a.outcome == FixOutcome.APPLIED),
+              deleted=sum(1 for a in applications if a.outcome == FixOutcome.DELETED),
+              refused=sum(1 for a in applications if a.outcome == FixOutcome.REFUSED_CURATED))
+    return applications

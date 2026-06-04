@@ -82,3 +82,34 @@ class LLMProvider(Protocol):
     def generate(self, prompt: str, system: str | None = None) -> str:
         """Genera testo dal prompt (con un eventuale messaggio di sistema)."""
         ...
+
+
+GitScope = Literal["staged", "working", "since_watermark"]
+
+
+@runtime_checkable
+class GitPort(Protocol):
+    """Astrazione su git per la verifica incrementale del lint semantico (FEAT-007, US3).
+
+    Il dominio (wiki) dipende SOLO da questa porta: NON importa `subprocess` né conosce git
+    (Principio I). L'adapter concreto (`adapters/git/`) la implementa via `subprocess`; i test
+    iniettano un fake deterministico. Tutti i metodi sono best-effort: un repo assente o un comando
+    fallito si traduce in liste vuote / `None`, mai in un'eccezione che rompe il lint (il chiamante
+    degrada a baseline, REQ-091).
+    """
+
+    def changed_paths(self, scope: GitScope, watermark: str | None = None) -> list[str]:
+        """Path (relativi alla radice repo) cambiati nello scope richiesto.
+
+        `staged`/`working` = change set pre-commit; `since_watermark` = commit dal `watermark`
+        a HEAD (pre-push/periodica). `[]` se non determinabile. (REQ-088)
+        """
+        ...
+
+    def head_commit(self) -> str | None:
+        """SHA del commit HEAD, o `None` se non in un repo git (per il watermark, REQ-089)."""
+        ...
+
+    def renamed_paths(self) -> list[tuple[str, str]]:
+        """Coppie (old, new) dei file rinominati nel change set; `[]` se non rilevabili (R-M10)."""
+        ...

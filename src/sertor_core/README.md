@@ -149,6 +149,56 @@ Senza LLM (`llm=None`) il report è `skipped=True` (degrado senza errore) e il l
 operativo. La **provenienza** delle pagine (`provenance: generated|curated` nel frontmatter,
 `read_provenance`/`mark_provenance`) governa cosa l'auto-fix può proporre: le pagine `generated`
 (es. prodotte da `distill_artifact`) sono manutenibili, quelle `curated` ricevono solo proposte.
+
+### Verifica incrementale git-driven (US3)
+
+Dopo un primo baseline, il lint ricontrolla **solo le pagine collegate alle entità cambiate** nel
+change set, restando pratico come gate a ogni commit. La porta `GitPort` (adapter
+`SubprocessGitAdapter`) fornisce i file cambiati; la mappa entità↔pagine è **derivata** dal campo
+`sources:` del frontmatter. Lo stato (watermark = SHA dell'ultimo lint) vive in
+`<wiki>/.sertor/semantic-watermark`.
+
+```python
+from sertor_core.wiki.semantic import semantic_lint_incremental
+from sertor_core.wiki.conventions import write_watermark
+from sertor_core.adapters.git import SubprocessGitAdapter
+
+git = SubprocessGitAdapter(repo_root=".")
+report = semantic_lint_incremental("repo/wiki", build_llm(), build_facade(), git,
+                                   threshold=Severity.HIGH)
+print(report.mode, report.fallbacks)         # "incremental"/"baseline" ; es. ["stale-index"]
+if not report.skipped and report.ok:
+    write_watermark("repo/wiki", git.head_commit())
+```
+
+Senza watermark → **baseline completo** (REQ-087); senza git/watermark valido → fallback baseline
+**segnalato** in `report.fallbacks` (REQ-091). Il re-index incrementale del corpus dipende da FEAT-009
+(non ancora costruita): per ora vale il **fallback working tree**, segnalato come `"stale-index"`
+(REQ-096/097).
+
+### Auto-fix: applicazione su working tree (US4)
+
+`apply_fixes` applica le proposte **solo** su pagine `generated`, in modo **chirurgico** (la sola
+claim) e revisionabile via git; le pagine `curated` sono sempre rifiutate.
+
+```python
+from sertor_core.wiki.semantic import apply_fixes
+apply_fixes(proposals, "repo/wiki", dry_run=True)   # esiti senza scrivere
+apply_fixes(proposals, "repo/wiki")                 # applica (diff revisionabile)
+```
+
+### Gate pre-commit/pre-push (US5)
+
+Il gate vive **fuori dal dominio** (`services.semantic_gate.run_semantic_gate`, esposto da
+`sertor wiki semantic-gate`): esegue l'incrementale, applica gli auto-fix sulle pagine generate e
+mappa l'esito a `pass|warning|blocked`. È il **trigger a monte** del configuration-manager (le
+correzioni entrano nello stesso commit).
+
+```bash
+sertor wiki semantic-gate repo/wiki --threshold high           # blocked → exit ≠ 0
+sertor wiki semantic-gate repo/wiki --override --reason "hotfix"  # procede e REGISTRA l'override
+```
+
 Vedi `specs/006-wiki-lint-semantico/`.
 
 ## CLI `sertor` (esecuzione da riga di comando)

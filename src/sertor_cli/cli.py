@@ -9,7 +9,7 @@ import argparse
 import sys
 
 from sertor_cli import observability
-from sertor_cli.commands import index_cmd, search_cmd, wiki_cmd
+from sertor_cli.commands import index_cmd, search_cmd, semantic_gate_cmd, wiki_cmd
 from sertor_core.domain.errors import SertorError
 
 
@@ -70,6 +70,16 @@ def _build_parser() -> argparse.ArgumentParser:
     p_wiki_index.add_argument("--corpus", help="namespace del corpus")
     p_wiki_index.add_argument("--json", action="store_true", help="output del report in JSON")
     p_wiki_index.set_defaults(func=wiki_cmd.run)
+
+    p_gate = wiki_sub.add_parser("semantic-gate", parents=[common],
+                                 help="gate semantico pre-commit/pre-push del wiki")
+    p_gate.add_argument("wiki_path", help="path della radice del wiki")
+    p_gate.add_argument("--threshold", choices=["info", "low", "medium", "high", "critical"],
+                        default="high", help="severità che blocca il gate (default: high)")
+    p_gate.add_argument("--override", action="store_true",
+                        help="procedi nonostante issue bloccanti (registra l'override)")
+    p_gate.add_argument("--reason", default=None, help="motivazione dell'override (tracciata)")
+    p_gate.set_defaults(func=semantic_gate_cmd.run)
 
     return parser
 

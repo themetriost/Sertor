@@ -72,6 +72,42 @@ class ScriptedLLM:
         return self.responses[idx] if self.responses else "[]"
 
 
+class FakeGit:
+    """`GitPort` finto e deterministico per i test della verifica incrementale (US3).
+
+    Si configura con i path cambiati per scope e lo SHA di HEAD. Nessun repo reale: i test
+    controllano esattamente cosa "è cambiato". `head=None` simula l'assenza di git (→ baseline).
+    """
+
+    name = "fake-git"
+
+    def __init__(
+        self,
+        *,
+        changed: dict[str, list[str]] | list[str] | None = None,
+        head: str | None = "deadbeef",
+        renames: list[tuple[str, str]] | None = None,
+    ):
+        if isinstance(changed, list):
+            # stessa lista per ogni scope (comodo nei test che non distinguono lo scope)
+            self._changed = {s: list(changed) for s in ("staged", "working", "since_watermark")}
+        else:
+            self._changed = {k: list(v) for k, v in (changed or {}).items()}
+        self._head = head
+        self._renames = list(renames or [])
+        self.calls: list[tuple[str, str | None]] = []
+
+    def changed_paths(self, scope: str, watermark: str | None = None) -> list[str]:
+        self.calls.append((scope, watermark))
+        return list(self._changed.get(scope, []))
+
+    def head_commit(self) -> str | None:
+        return self._head
+
+    def renamed_paths(self) -> list[tuple[str, str]]:
+        return list(self._renames)
+
+
 def _cosine(a: list[float], b: list[float]) -> float:
     dot = sum(x * y for x, y in zip(a, b, strict=False))
     na = math.sqrt(sum(x * x for x in a))
