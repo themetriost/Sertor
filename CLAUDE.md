@@ -84,6 +84,61 @@ Il motore in `prototype/shared/` è **corpus-aware** (env `SERTOR_CORPUS`: `fast
 prototipo · `sertor` = dogfooding sul prototipo stesso); gli indici sono namespaced per corpus
 (`.index` vs `.index-sertor`), così demo FastAPI e dogfood coesistono senza sovrascriversi.
 
+## Il nucleo di produzione: `sertor-core` (`src/`)
+
+La produzione vive in `src/sertor_core/` (pacchetto `sertor-core`, `pyproject.toml` a root): una
+libreria di retrieval **importabile**, costruita in **Clean Architecture** sotto i 9 principi della
+costituzione (`.specify/memory/constitution.md`). È **il prodotto** — il CLI/MCP ne sarà un
+consumatore sottile.
+
+**Architettura (le dipendenze puntano verso l'interno):**
+
+```
+domain/         entità (Document, Chunk, RetrievalResult), porte (Protocol), errori — NESSUN import di SDK
+services/       ingestion · chunking (code/markdown/fallback + dispatch) · indexing · retrieval (facade)
+adapters/       embeddings/{ollama,azure} · vectorstores/{chroma,azure_search} — implementano le porte
+engines/        baseline (1ª modalità RAG) + evaluation (hit_rate@k, MRR)
+config/         Settings — config centralizzata (UNICA fonte di default; legge env + .env)
+observability/  logging strutturato
+composition.py  composition root: l'UNICO posto che conosce gli adapter concreti e li cabla da Settings
+```
+
+Regole architetturali da rispettare quando si estende il core:
+- **Il `domain` non importa SDK esterni.** I provider concreti vivono in `adapters/` dietro le porte
+  `Protocol` di `domain/ports.py` (`EmbeddingProvider`, `VectorStore`); structural typing → si mockano
+  senza ereditarietà (vedi `tests/fixtures/mocks.py`).
+- **Si sceglie l'implementazione SOLO in `composition.py`**, in base a `Settings.backend`
+  (`local`→Chroma+Ollama · `azure`→Azure AI Search+Azure OpenAI). Per aggiungere un provider/backend
+  si estende il composition root e gli adapter, **non** i servizi. Gli import degli SDK pesanti sono
+  **lazy** dentro le `build_*` (NFR isolamento dipendenze: l'extra `azure` non serve in locale).
+- **Default solo in `Settings`**, mai hardcodati nei componenti. I consumatori entrano da
+  `build_facade()` / `build_indexer()` / `build_baseline_engine()` (riesportati da `__init__.py`).
+- **Policy errori non uniforme e voluta:** il nucleo è *tollerante* (indice mancante → `[]` + warning,
+  per composabilità); il motore baseline è *strict* (solleva `IndexNotFoundError`, per usabilità del
+  consumatore). Non "uniformare" questa differenza.
+- **Idempotenza:** `engine.index()` fa rebuild-from-scratch; l'`upsert` è idempotente sugli stessi id.
+- Le collezioni sono namespaced per `(corpus, provider)` via `collection_name()` — provider diversi
+  (→ dimensioni vettore diverse) non si mescolano nella stessa collezione.
+
+## Sviluppo (`sertor-core`): build, test, lint
+
+Si usa **`uv`** (il progetto ha `uv.lock`). Anteporre `uv run` esegue nel venv del progetto.
+
+```bash
+uv sync --extra dev                 # crea/sincronizza l'env con le dipendenze di sviluppo
+uv run pytest                       # intera suite (i test cloud/integration partono se l'env c'è)
+uv run pytest -m "not cloud"        # salta i test che richiedono credenziali/servizi cloud
+uv run pytest tests/unit            # solo unit test (veloci, no rete)
+uv run pytest tests/unit/test_baseline_engine.py::test_query_returns_results_with_fields  # singolo test
+uv run ruff check .                 # lint (regole E,F,I,UP,B; line-length 100)
+uv run ruff check --fix .           # lint con autofix
+```
+
+I marker pytest sono definiti in `pyproject.toml`: `cloud` (richiede credenziali Azure/servizi) e
+`integration` (end-to-end). La CI locale gira **senza cloud**: i test devono passare con
+`RAG_BACKEND=local` e adapter mock, senza rete. `pythonpath` include già `src` e root (nessun
+`pip install -e` necessario per i test). Esistono due venv: `.venv-core/` (nucleo) e `.venv/`.
+
 ## Setup ed esecuzione
 
 - **Ambiente / dipendenze:** preferire **`uv`** (fallback `venv` + `pip`). Usare
@@ -168,14 +223,16 @@ cresce a ogni sessione, invece di ricostruire la conoscenza ogni volta.
 - `wiki/sources/` — riassunti di fonti esterne. `wiki/syntheses/` — confronti/sintesi trasversali (creati su richiesta).
 
 ### Operazioni
-- **record** — dopo aver costruito/eseguito qualcosa o preso una decisione: crea/aggiorna
-  la pagina rilevante (es. `experiments/01-baseline.md`), aggiorna i backlink e `index.md`,
-  e appendi una voce a `log.md`.
-- **ingest** — nuova fonte in `raw/`: scrivi un riassunto in `sources/`, integra nelle pagine
-  concept/tech collegate, segnala contraddizioni, aggiorna `index.md` e `log.md`.
-- **query** — domande sul wiki: rispondi citando le pagine; se l'esplorazione è preziosa,
-  archiviala come nuova pagina (le query si cumulano in conoscenza).
-- **lint** — verifica periodica: contraddizioni, claim superati, pagine orfane, cross-ref mancanti.
+> **Fonte operativa unica:** procedure, convenzioni e tassonomia di dettaglio vivono nel
+> **Wiki Playbook** (`.claude/skills/genera-wiki/playbook.md`). Skill `genera-wiki`, comando `/wiki`
+> e agente `wiki-keeper` lo leggono e lo seguono. Qui sotto solo la sintesi.
+
+- **record** — registra lavoro/decisioni svolti: crea/aggiorna le pagine, backlink e `index.md`, voce di `log.md`.
+- **ingest** — acquisisci una fonte esterna (file/PDF/URL) → riassunto in `sources/`, integra nelle pagine collegate, segnala contraddizioni.
+- **query** — rispondi citando le pagine; se l'esplorazione è preziosa, archiviala come nuova pagina.
+- **lint** — verifica di coerenza: frontmatter mancante, wikilink rotti, pagine orfane, claim superati/contraddittori (report; non auto-corregge).
+- **generate-from-diff** — aggiorna solo le pagine impattate dalle modifiche recenti (il `git log/diff` è delegato al `configuration-manager`).
+- **rag-sync** — ri-indicizza `wiki/` nel RAG con corpus dedicato (`SERTOR_CORPUS=wiki`), così il wiki diventa interrogabile via RAG. Solo flusso principale.
 
 ### Convenzioni
 - **Frontmatter YAML** in ogni pagina: `title`, `type`, `tags`, `created`, `updated`, `sources`.
@@ -187,9 +244,17 @@ cresce a ogni sessione, invece di ricostruire la conoscenza ogni volta.
 - Quando una fonte nuova contraddice una pagina, **segnala esplicitamente** la contraddizione.
 
 Per innescare manualmente un consolidamento usa il comando **`/wiki`** (lavora nel flusso
-principale) oppure delega all'agente `wiki-keeper` (in background). Un hook `SessionStart`
-carica lo stato del wiki a inizio sessione. Non c'è più uno `Stop` hook bloccante: la
-manutenzione è garantita dalla delega al `wiki-keeper`, non dal blocco del turno.
+principale) oppure delega all'agente `wiki-keeper` (in background).
+
+**Hook (trigger automatici, vedi `.claude/hooks/wiki-pending-check.ps1`):**
+- `SessionStart` — carica indice + coda log a inizio sessione (contesto iniettato).
+- `Stop` — a fine turno, se rileva lavoro non ancora registrato (file di `src/specs/requirements/.claude`
+  più recenti dell'ultima voce di `log.md`), inietta un **promemoria non bloccante** a delegare al
+  `wiki-keeper`. Non intrappola il turno; si auto-silenzia appena il wiki è aggiornato.
+- `SessionEnd` — riepilogo finale del lavoro non registrato, come rete di sicurezza tra sessioni.
+
+I trigger **non orchestrano da soli** (un hook non può avviare un subagent): rendono *automatica* la
+delega che resta affidata al `wiki-keeper`.
 
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
