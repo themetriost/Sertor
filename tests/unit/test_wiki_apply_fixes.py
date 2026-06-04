@@ -79,3 +79,27 @@ def test_dry_run_does_not_touch_filesystem(wiki_sandbox):
 
     assert apps[0].outcome == FixOutcome.APPLIED            # esito calcolato
     assert p.read_text(encoding="utf-8") == before          # ma nessuna scrittura (Principio VI)
+
+
+def test_rewrite_preserves_line_endings(wiki_sandbox):
+    """Regressione (bug da dogfood): la riscrittura non deve convertire i fine-riga del file."""
+    rel = "concepts/crlf.md"
+    p = wiki_sandbox / "concepts" / "crlf.md"
+    # File con fine-riga CRLF scritto byte-per-byte (no traduzione).
+    content = _GEN.format(t="Crlf", b=f"Intro.\n\n{_CLAIM}\n\nCoda.").replace("\n", "\r\n")
+    p.write_bytes(content.encode("utf-8"))
+    apply_fixes([_rewrite_proposal(rel)], wiki_sandbox)
+
+    raw = p.read_bytes()
+    assert b"\r\n" in raw and b"\n" not in raw.replace(b"\r\n", b"")  # resta CRLF ovunque
+    assert b"Usa Azure come default." in raw                          # claim aggiornata
+    assert b"Intro." in raw and b"Coda." in raw                       # chirurgico
+
+
+def test_rewrite_keeps_lf_only_files_lf(wiki_sandbox):
+    rel = "concepts/lf.md"
+    p = wiki_sandbox / "concepts" / "lf.md"
+    p.write_bytes(_GEN.format(t="Lf", b=f"Intro.\n\n{_CLAIM}\n").encode("utf-8"))  # solo LF
+    apply_fixes([_rewrite_proposal(rel)], wiki_sandbox)
+
+    assert b"\r\n" not in p.read_bytes()                              # niente LF→CRLF su Windows

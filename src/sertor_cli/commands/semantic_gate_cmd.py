@@ -23,21 +23,26 @@ def run(args) -> int:
     llm = build_llm()
     facade = build_facade()
 
+    do_apply = getattr(args, "apply", False)
     outcome = run_semantic_gate(
         args.wiki_path,
         llm=llm,
         facade=facade,
         git=git,
         threshold=threshold,
+        apply=do_apply,
         override=getattr(args, "override", False),
         override_reason=getattr(args, "reason", None),
     )
 
     print(outcome.report.render())
     if outcome.applied:
-        print(f"\nauto-fix applicati: {len(outcome.applied)}")
+        verbo = "applicati" if do_apply else "proposti (dry-run, nessuna scrittura)"
+        print(f"\nauto-fix {verbo}: {len(outcome.applied)}")
         for a in outcome.applied:
             print(f"  [{a.outcome}] {a.page} — {a.detail}")
+        if not do_apply:
+            print("  (usa --apply per scrivere le correzioni sulle pagine generate)")
     if outcome.override_record:
         print(f"\n⚠ OVERRIDE — {outcome.override_record}", file=sys.stderr)
 

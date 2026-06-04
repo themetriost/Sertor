@@ -67,11 +67,25 @@ def test_override_forces_pass_and_records(wiki_sandbox):
     assert "hotfix" in outcome.override_record
 
 
-def test_auto_fix_on_generated_resolves_and_passes(wiki_sandbox):
+def test_apply_resolves_and_passes(wiki_sandbox):
+    p = wiki_sandbox / "concepts" / "gen.md"
     _add(wiki_sandbox, "gen", "Gen", ["src/a/**"], generated=True)
     _watermark(wiki_sandbox)
+    before = p.read_text(encoding="utf-8")
     # ScriptedLLM: 1ª risposta = rilevazione; 2ª = frase riscritta (propose_fixes su generated).
     llm = ScriptedLLM([_detection("high"), "Usa Azure come default."])
-    outcome = run_semantic_gate(wiki_sandbox, llm, git=_incremental_git())
+    outcome = run_semantic_gate(wiki_sandbox, llm, git=_incremental_git(), apply=True)
     assert outcome.status == GateStatus.PASS                   # issue risolta dall'auto-fix
     assert any(a.outcome.value == "applied" for a in outcome.applied)
+    assert p.read_text(encoding="utf-8") != before             # con --apply ha scritto
+
+
+def test_default_proposes_without_writing_and_blocks(wiki_sandbox):
+    p = wiki_sandbox / "concepts" / "gen.md"
+    _add(wiki_sandbox, "gen", "Gen", ["src/a/**"], generated=True)
+    _watermark(wiki_sandbox)
+    before = p.read_text(encoding="utf-8")
+    llm = ScriptedLLM([_detection("high"), "Usa Azure come default."])
+    outcome = run_semantic_gate(wiki_sandbox, llm, git=_incremental_git())  # apply=False (default)
+    assert outcome.status == GateStatus.BLOCKED                # senza scrittura, issue resta aperta
+    assert p.read_text(encoding="utf-8") == before             # default sicuro: NON scrive

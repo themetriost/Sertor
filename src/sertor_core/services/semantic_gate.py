@@ -61,26 +61,31 @@ def run_semantic_gate(
     *,
     scope: GitScope = "since_watermark",
     threshold: Severity = Severity.HIGH,
+    apply: bool = False,
     override: bool = False,
     override_reason: str | None = None,
     persist_watermark: bool = False,
 ) -> GateOutcome:
-    """Esegue il gate: incrementale → auto-fix su generate → valutazione soglia (REQ-092..095).
+    """Esegue il gate: incrementale → (auto-fix su generate) → valutazione soglia (REQ-092..095).
 
-    `override=True` fa procedere anche con issue bloccanti, **registrando** l'override (escape hatch
-    tracciato, non un bypass silenzioso, REQ-095). Con `persist_watermark=True` aggiorna il
-    watermark a fine run riuscito (delegato al chiamante, per non legarlo alla policy di commit).
+    **Default sicuro**: `apply=False` → il gate **non scrive** (rilevazione + proposte in dry-run) e
+    valuta lo status sulle issue rilevate; la scrittura sulle pagine generate avviene **solo** con
+    `apply=True` (flag esplicito `--apply`). Dato il rumore tipico del giudizio LLM, l'auto-apply
+    non è il default. `override=True` fa procedere nonostante issue bloccanti, **registrando**
+    l'override (escape hatch tracciato, REQ-095). Con `persist_watermark=True` aggiorna il watermark
+    a fine run riuscito (delegato al chiamante, per non legarlo alla policy di commit).
     """
     root = Path(root)
     report = semantic_lint_incremental(root, llm, facade, git, scope=scope, threshold=threshold)
 
-    # Senza LLM (semantico saltato) o senza issue: nessun auto-fix, gate passa.
+    # Proposte sempre calcolate; la SCRITTURA avviene solo con apply=True (altrimenti dry-run).
     applied: list[FixApplication] = []
     if not report.skipped and report.issues and llm is not None:
         proposals = propose_fixes(report, root, llm)
-        applied = apply_fixes(proposals, root)
+        applied = apply_fixes(proposals, root, dry_run=not apply)
 
-    remaining = _remaining_issues(report, applied)
+    # Senza scrittura, nessuna issue è risolta: lo status si valuta su tutte le issue rilevate.
+    remaining = _remaining_issues(report, applied) if apply else list(report.issues)
     blocking = any(i.severity >= threshold for i in remaining)
 
     override_record: str | None = None

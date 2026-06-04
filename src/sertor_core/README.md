@@ -190,13 +190,15 @@ apply_fixes(proposals, "repo/wiki")                 # applica (diff revisionabil
 ### Gate pre-commit/pre-push (US5)
 
 Il gate vive **fuori dal dominio** (`services.semantic_gate.run_semantic_gate`, esposto da
-`sertor wiki semantic-gate`): esegue l'incrementale, applica gli auto-fix sulle pagine generate e
-mappa l'esito a `pass|warning|blocked`. È il **trigger a monte** del configuration-manager (le
-correzioni entrano nello stesso commit).
+`sertor wiki semantic-gate`): esegue l'incrementale, valuta l'esito (`pass|warning|blocked`) e —
+**solo con `--apply`** — applica gli auto-fix sulle pagine generate. **Default sicuro: non scrive**
+(rilevazione + proposte in dry-run), perché il giudizio LLM è rumoroso. Con `--apply` è il **trigger
+a monte** del configuration-manager (le correzioni entrano nello stesso commit).
 
 ```bash
-sertor wiki semantic-gate repo/wiki --threshold high           # blocked → exit ≠ 0
-sertor wiki semantic-gate repo/wiki --override --reason "hotfix"  # procede e REGISTRA l'override
+sertor wiki semantic-gate repo/wiki --threshold high             # read-only: blocked → exit ≠ 0
+sertor wiki semantic-gate repo/wiki --apply                      # applica i fix sulle pagine generate
+sertor wiki semantic-gate repo/wiki --override --reason "hotfix"   # procede e REGISTRA l'override
 ```
 
 Vedi `specs/006-wiki-lint-semantico/`.

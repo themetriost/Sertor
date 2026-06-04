@@ -378,6 +378,22 @@ def propose_fixes(report: SemanticReport, root: Path | str, llm: LLMProvider) ->
     return proposals
 
 
+def _detect_newline(path: Path) -> str:
+    """Fine-riga dominante del file (`\\r\\n` o `\\n`), per non alterarlo in riscrittura su Win."""
+    raw = path.read_bytes()
+    return "\r\n" if b"\r\n" in raw else "\n"
+
+
+def _write_preserving_newline(path: Path, text: str, newline: str) -> None:
+    """Scrive `text` (normalizzato a `\\n`) traducendo SOLO al fine-riga originale del file.
+
+    `Path.write_text` su Windows tradurrebbe ogni `\\n` in `\\r\\n`, riscrivendo l'intero file anche
+    per una modifica di una riga: qui fissiamo `newline` esplicito così il diff resta chirurgico.
+    """
+    with open(path, "w", encoding="utf-8", newline=newline) as f:
+        f.write(text)
+
+
 class FixOutcome(StrEnum):
     APPLIED = "applied"                  # claim riscritta sul working tree
     DELETED = "deleted"                  # pagina generata obsoleta rimossa
@@ -437,7 +453,8 @@ def apply_fixes(
         new_text = text.replace(claim, prop.proposed_text, 1)
         new_text = mark_provenance(new_text, PROVENANCE_GENERATED)  # resta generated (SC-007)
         if not dry_run:
-            page_path.write_text(new_text, encoding="utf-8")
+            # preserva il fine-riga del file: niente LF→CRLF a tappeto (diff chirurgico)
+            _write_preserving_newline(page_path, new_text, _detect_newline(page_path))
         applications.append(FixApplication(prop, prop.page, FixOutcome.APPLIED, "claim riscritta"))
     log_event(logging.INFO, "semantic_apply_fixes", total=len(applications), dry_run=dry_run,
               applied=sum(1 for a in applications if a.outcome == FixOutcome.APPLIED),

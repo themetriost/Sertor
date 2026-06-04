@@ -66,13 +66,14 @@ e convenzioni di FEAT-003/007.
 Il dominio dipende **solo** da `GitPort`; `SubprocessGitAdapter` (in `adapters/git/`) usa `subprocess`.
 Test: `FakeGit` deterministico (nessun repo reale). (FR-017, Principio I)
 
-## `run_semantic_gate(root, llm, facade, git, *, threshold=Severity.HIGH, override=False, override_reason=None) -> GateOutcome` (US5 — fuori dal dominio: CLI/services)
+## `run_semantic_gate(root, llm, facade, git, *, threshold=Severity.HIGH, apply=False, override=False, override_reason=None) -> GateOutcome` (US5 — fuori dal dominio: CLI/services)
 
 | # | Precondizione | Comportamento | Esito | Req |
 |---|---------------|---------------|-------|-----|
-| 1 | trigger pre-commit/pre-push | incrementale → `apply_fixes` su generated → valuta `report.ok` vs soglia | correzioni nello **stesso** commit imminente | REQ-092 |
+| 0 | **default `apply=False`** | rilevazione + proposte in **dry-run**, **nessuna scrittura**; status sulle issue rilevate | gate **read-only** (default sicuro: LLM rumoroso) | — |
+| 1 | `apply=True` (flag `--apply`), trigger pre-commit/pre-push | incrementale → `apply_fixes` su generated → valuta issue residue vs soglia | correzioni nello **stesso** commit imminente | REQ-092 |
 | 2 | change set irrilevante | no-op rapido | `GateOutcome(status=pass)` | REQ-093 |
-| 3 | issue ≥ soglia dopo auto-fix | **blocco** | `status=blocked`, **exit ≠ 0** | REQ-094 |
+| 3 | issue ≥ soglia (residue dopo auto-fix se `apply`, altrimenti rilevate) | **blocco** | `status=blocked`, **exit ≠ 0** | REQ-094 |
 | 4 | issue < soglia | passa con **warning** | `status=warning` (non blocca) | REQ-094 |
 | 5 | `override=True` (flag/env) | procede nonostante il blocco, **registra** l'override | `status=pass`, `override_record` valorizzato | REQ-095 |
 

@@ -76,6 +76,8 @@ def _build_parser() -> argparse.ArgumentParser:
     p_gate.add_argument("wiki_path", help="path della radice del wiki")
     p_gate.add_argument("--threshold", choices=["info", "low", "medium", "high", "critical"],
                         default="high", help="severità che blocca il gate (default: high)")
+    p_gate.add_argument("--apply", action="store_true",
+                        help="applica gli auto-fix sulle pagine generate (default: solo proposte)")
     p_gate.add_argument("--override", action="store_true",
                         help="procedi nonostante issue bloccanti (registra l'override)")
     p_gate.add_argument("--reason", default=None, help="motivazione dell'override (tracciata)")
