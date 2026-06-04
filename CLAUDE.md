@@ -194,6 +194,8 @@ manutenzione è garantita dalla delega al `wiki-keeper`, non dal blocco del turn
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/004-cli-esecuzione/plan.md` (CLI `sertor` — esecuzione: index/search/wiki + osservabilità).
-In `master`: FEAT-001/002/003 (nucleo + motore baseline + skill wiki).
+`specs/005-llm-wiki/plan.md` (FEAT-010 — **LLM Wiki end-to-end**: generazione agentica al commit,
+ingest in `ingested_sources/`, manutenzione lint+freschezza con gate human-in-the-loop, retrieval su
+collezioni separate wiki/codice, superfici skill/CLI/MCP, setup `sertor wiki init`; vale anche senza
+codice. Consolida FEAT-003, assorbe FEAT-007). In `master`: FEAT-001/002/003 + CLI + MCP.
 <!-- SPECKIT END -->
