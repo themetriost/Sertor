@@ -39,11 +39,12 @@ Legenda: ✅ in produzione (master) · 🔜 prossima (Should) · 💤 dopo (Coul
 |---|---|---|
 | FEAT-001 Nucleo di retrieval (ingestione, chunking, embeddings, vector store, facade) | Must | ✅ |
 | FEAT-002 Motore RAG vettoriale (baseline) | Must | ✅ |
-| FEAT-003 Skill LLM Wiki (crea + indicizza) | Must | ✅ |
+| FEAT-003 Skill LLM Wiki (crea + indicizza) | Must | ✅ (v1) |
+| **FEAT-010 LLM Wiki e2e (gen + manutenzione + ingest)** | **Must** | **🔜 da decomporre** *(consolidamento [[requisito-llm-wiki-e2e]]; FEAT-003 assorbito, FEAT-007 assorbito)* |
 | FEAT-004 RAG ibrido + reranking | Should | 🔜 da decomporre |
 | FEAT-005 RAG a grafo / GraphRAG | Should | 🔜 da decomporre *(riporta i tool `find_symbol`/`who_calls`/… nel MCP)* |
 | FEAT-006 RAG agentico (multi-step) | Should | 🔜 da decomporre |
-| FEAT-007 Skill: mantenere il wiki (spider/lint) | Should | 🔜 da decomporre |
+| ~~FEAT-007 Skill: mantenere il wiki (spider/lint)~~ | ~~Should~~ | ~~🔜~~ **Assorbito in FEAT-010** *(lint + freschezza in [[requisito-llm-wiki-e2e]]#D-14)* |
 | FEAT-008 Arricchimento bidirezionale Wiki↔RAG | Could | 💤 da decomporre |
 | FEAT-009 Refresh incrementale dell'indice | Could | 💤 da decomporre |
 

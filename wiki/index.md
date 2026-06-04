@@ -56,6 +56,7 @@ _(La produzione inizia ora: questa sezione cresce a ogni sessione.)_
 - **[[motore-baseline-feat002]]** — Implementazione FEAT-002: motore vettoriale baseline (ranking similarity + evaluation hit@k/MRR), 67 test, policy errore isolata, estensioni non-breaking al nucleo, Constitution Check 9/9 ✅.
 - **[[skill-wiki-feat003]]** — Implementazione FEAT-003: skill LLM Wiki (creare/indicizzare), 84 test, operazioni strutturali LLM-free, indicizzazione riusa nucleo, idempotenza strutturale, Constitution Check 9/9 ✅.
 - **[[cli-esecuzione-feat004]]** — Implementazione FEAT-CLI-004: CLI esecuzione (sottocomandi index/search/wiki), osservabilità configurabile, output flessibile, 17 task, 100 test, Constitution Check 9/9 ✅. Primo entry point eseguibile, abilita dogfooding produzione.
+- **[[requisito-llm-wiki-e2e]]** — Requisito e2e dell'LLM Wiki (FEAT-010): elicitazione consolidata dai pattern Karpathy, 17 decisioni, 42 EARS, 10 SC. Consolida FEAT-003, assorbe FEAT-007; READY per design. Modello a due momenti (generazione Karpathy + indicizzazione RAG paritaria), due classi (input vs wiki generato), orchestrazione agentica al commit.
 
 ### Tech (tecnologie e infrastruttura)
 

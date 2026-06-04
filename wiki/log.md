@@ -212,3 +212,16 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
   - **Conformità:** Constitution Check 9/9 (Principi I, IV, VII), Costituzione [[costituzione-v1]] rispettata.
 - **Index aggiornato:** nuova sezione "Experiments" con link a `[[dogfooding-produzione-cli]]`.
 - **File toccati:** `wiki/experiments/dogfooding-produzione-cli.md` (nuovo), `wiki/index.md`, `wiki/log.md`.
+
+## [2026-06-04] record | Requisito e2e dell'LLM Wiki (feature llm-wiki, FEAT-010)
+
+- **Pagina creata:** `syntheses/requisito-llm-wiki-e2e.md` documenta l'elicitazione consolidata del requisito end-to-end:
+  - **Fondazione:** ancorato al pattern LLM Wiki di Andrej Karpathy (gist, 4 apr 2026), adattato alle esigenze Sertor.
+  - **17 decisioni** risolte (D-1..D-17): convenzioni `manual_edited/` e `ingested_sources/` · due momenti (generazione Karpathy a, indicizzazione RAG b) · due classi (input, wiki generato) · verità stratificata (codice/test → comportamento, discussioni/SpecKit/`manual_edited/` → perché) · refresh git-driven al commit + trigger manuale · retrieval puro (wiki+codice indicizzati, input non indicizzati) · orchestrazione agentica al commit via skill client-agnostica · manutenzione (lint + freschezza) con gate human-in-the-loop · no-code support.
+  - **42 requisiti funzionali** (EARS): 12 famiglie, dalla generazione alla manutenzione, all'interrogazione.
+  - **10 criteri di successo**: changeset limitato · input invisibile nel RAG · risultati wiki+codice · gate bloccante · no-code · idempotenza · superfici tripie · binding installato · obsolescenza rilevata · ingest import/compile separati.
+  - **Consolidamento:** assorbe FEAT-003 (struttura/convenzioni/record/distill/idempotenza) con override su ingest e indicizzazione; assorbe FEAT-007 (manutenzione del wiki: lint+freschezza) con switch da auto-fix a human-in-the-loop; FEAT-003 diventa storico, `llm-wiki` è il riferimento canonico.
+  - **Stato:** ✅ READY — approvato per il design SpecKit.
+- **Index aggiornato:** voce [[requisito-llm-wiki-e2e]] in Syntheses con descrizione.
+- **Roadmap aggiornata:** FEAT-010 aggiunto come Must; FEAT-003 marcato v1; FEAT-007 cross-segnato come "assorbito in FEAT-010".
+- **File toccati:** `wiki/syntheses/requisito-llm-wiki-e2e.md` (nuovo), `wiki/index.md`, `wiki/syntheses/roadmap.md`, `wiki/log.md`.
