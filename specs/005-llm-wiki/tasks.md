@@ -15,15 +15,15 @@ versioning), III (no duplicazione), VI (manual_edited mai modificato, idempotenz
 ---
 
 ## Phase 1: Setup
-- [ ] T001 Verifica i pacchetti esistenti `src/sertor_core/wiki/`, `src/sertor_cli/`, `src/sertor_mcp/`; nessun nuovo package.
+- [X] T001 Verifica i pacchetti esistenti `src/sertor_core/wiki/`, `src/sertor_cli/`, `src/sertor_mcp/`; nessun nuovo package.
 
 ## Phase 2: Foundational (blocca tutte le storie)
-- [ ] T002 [P] Definisci `GitPort` (Protocol) in `src/sertor_core/domain/ports.py`: `changed_paths(scope, watermark=None)`, `head_commit()`, `renamed_paths()`.
-- [ ] T003 [P] Implementa `SubprocessGitAdapter(GitPort)` in `src/sertor_core/adapters/git/subprocess_git.py` (+ `__init__.py`); best-effort (errori → `[]`/`None`).
-- [ ] T004 [P] Aggiungi `FakeGit` deterministico in `tests/fixtures/mocks.py` (changed/head/renames preconfigurati, scope-aware).
-- [ ] T005 [P] Estendi `src/sertor_core/wiki/conventions.py`: costanti aree `manual_edited/` e `ingested_sources/`; provenance `generated|manual` (read/mark non distruttivo); cartella di stato `.sertor/` (watermark) esclusa dalla scoperta pagine.
-- [ ] T006 [P] Helper `entity_page_map(root) -> dict[str, set[str]]` (derivato da frontmatter `sources:`/wikilink) in `conventions.py` (o `wiki/_mapping.py`).
-- [ ] T007 [P] Estendi `src/sertor_core/config/settings.py`: insieme **fonti-input** configurabile, **soglia gate**, **gerarchia di autorità**, nomi delle **collezioni separate** (wiki/codice).
+- [X] T002 [P] Definisci `GitPort` (Protocol) in `src/sertor_core/domain/ports.py`: `changed_paths(scope, watermark=None)`, `head_commit()`, `renamed_paths()`.
+- [X] T003 [P] Implementa `SubprocessGitAdapter(GitPort)` in `src/sertor_core/adapters/git/subprocess_git.py` (+ `__init__.py`); best-effort (errori → `[]`/`None`).
+- [X] T004 [P] Aggiungi `FakeGit` deterministico in `tests/fixtures/mocks.py` (changed/head/renames preconfigurati, scope-aware).
+- [X] T005 [P] Estendi `src/sertor_core/wiki/conventions.py`: costanti aree `manual_edited/` e `ingested_sources/`; provenance `generated|manual` (read/mark non distruttivo); cartella di stato `.sertor/` (watermark) esclusa dalla scoperta pagine.
+- [X] T006 [P] Helper `entity_page_map(root) -> dict[str, set[str]]` (derivato da frontmatter `sources:`/wikilink) in `conventions.py` (o `wiki/_mapping.py`).
+- [X] T007 [P] Estendi `src/sertor_core/config/settings.py`: insieme **fonti-input** configurabile, **soglia gate**, **gerarchia di autorità**, nomi delle **collezioni separate** (wiki/codice).
 
 **Checkpoint**: porta+adapter+fake, convenzioni aree/provenance/mappa, Settings pronti.
 
@@ -32,11 +32,11 @@ versioning), III (no duplicazione), VI (manual_edited mai modificato, idempotenz
 ## Phase 3: US2 — Generazione al commit (P1/Must) 🎯 MVP
 **Test indipendente**: con FakeGit+ScriptedLLM, baseline vs incrementale generano set di pagine diversi; `manual_edited/` mai modificato; idempotenza.
 ### Tests
-- [ ] T008 [P] [US2] Test `tests/unit/test_wiki_generation.py`: baseline (no watermark → tutte), incrementale (changeset → solo pagine collegate via EntityPageMap), no-op; `mode`/`fallbacks`; `manual_edited/` compilato ma **file invariato**; fallback `stale-index` segnalato.
-- [ ] T009 [P] [US2] Test idempotenza: re-run con input invariato → stesso esito strutturale (id = path relativo).
+- [X] T008 [P] [US2] Test `tests/unit/test_wiki_generation.py`: baseline (no watermark → tutte), incrementale (changeset → solo pagine collegate via EntityPageMap), no-op; `mode`/`fallbacks`; `manual_edited/` compilato ma **file invariato**; fallback `stale-index` segnalato.
+- [X] T009 [P] [US2] Test idempotenza: re-run con input invariato → stesso esito strutturale (id = path relativo).
 ### Implementation
-- [ ] T010 [US2] Entità `GenerationReport` (mode/pages_written/pages_total/llm_calls/fallbacks) in `src/sertor_core/wiki/generation.py`.
-- [ ] T011 [US2] `generate(root, llm, *, sources, git=None, scope="since_watermark", facade=None, max_pages=None) -> GenerationReport`: legge le fonti-input, compila concetti/sintesi via LLM, incrementale sul changeset; riusa `record`/`distill`/`conventions`; non modifica `manual_edited/`; fallback re-index segnalato.
+- [X] T010 [US2] Entità `GenerationReport` (mode/pages_written/pages_total/llm_calls/fallbacks) in `src/sertor_core/wiki/generation.py`.
+- [X] T011 [US2] `generate(root, llm, *, sources, git=None, scope="since_watermark", facade=None, max_pages=None) -> GenerationReport`: legge le fonti-input, compila concetti/sintesi via LLM, incrementale sul changeset; riusa `record`/`distill`/`conventions`; non modifica `manual_edited/`; fallback re-index segnalato.
 
 **Checkpoint**: generazione eseguibile (baseline + incrementale) con FakeGit.
 
@@ -45,10 +45,10 @@ versioning), III (no duplicazione), VI (manual_edited mai modificato, idempotenz
 ## Phase 4: US4 — Retrieval su collezioni separate (P1/Must) 🎯 MVP
 **Test indipendente**: indicizzato solo il wiki generato; input assenti dai risultati; refresh indipendente.
 ### Tests
-- [ ] T012 [P] [US4] Test `tests/unit/test_wiki_index_separated.py`: indicizza **solo** wiki generato (collezione separata); `manual_edited/`/`ingested_sources/` **non** indicizzati; riferimenti non indicizzati; query congiunta col codice restituisce entrambi (mock store).
+- [X] T012 [P] [US4] Test `tests/unit/test_wiki_index_separated.py`: indicizza **solo** wiki generato (collezione separata); `manual_edited/`/`ingested_sources/` **non** indicizzati; riferimenti non indicizzati; query congiunta col codice restituisce entrambi (mock store).
 ### Implementation
-- [ ] T013 [US4] `index_wiki_generated(root, settings) -> IndexReport` in `src/sertor_core/wiki/indexing.py`: indicizza il solo wiki generato in **collezione separata**; esclude le aree di input e la cartella di stato; refresh indipendente (no rebuild della collezione codice).
-- [ ] T014 [US4] Estendi la facade/composition per la **query congiunta** wiki+codice (collezioni separate) con peso paritario.
+- [X] T013 [US4] `index_wiki_generated(root, settings) -> IndexReport` in `src/sertor_core/wiki/indexing.py`: indicizza il solo wiki generato in **collezione separata**; esclude le aree di input e la cartella di stato; refresh indipendente (no rebuild della collezione codice).
+- [X] T014 [US4] Estendi la facade/composition per la **query congiunta** wiki+codice (collezioni separate) con peso paritario.
 
 **Checkpoint**: MVP retrieval verde (US2+US4).
 
@@ -57,10 +57,10 @@ versioning), III (no duplicazione), VI (manual_edited mai modificato, idempotenz
 ## Phase 5: US1 — Setup `sertor wiki init` (P1/Must) 🎯 MVP
 **Test indipendente**: init crea struttura, installa il binding del trigger, esegue ingest iniziale opz.
 ### Tests
-- [ ] T015 [P] [US1] Test `tests/unit/test_wiki_setup.py`: `init_wiki` crea struttura (riusa `create_wiki`), registra/installa il binding del trigger (mock), ingest iniziale opzionale; idempotente.
+- [X] T015 [P] [US1] Test `tests/unit/test_wiki_setup.py`: `init_wiki` crea struttura (riusa `create_wiki`), registra/installa il binding del trigger (mock), ingest iniziale opzionale; idempotente.
 ### Implementation
-- [ ] T016 [US1] `init_wiki(root, *, install_binding=True, initial_ingest=None) -> SetupReport` in `src/sertor_core/services/wiki_setup.py` (riusa `create_wiki`; binding via porta/astrazione).
-- [ ] T017 [US1] CLI `sertor wiki init <root> [--ingest <path>]` in `src/sertor_cli/` (sottocomando + wiring).
+- [X] T016 [US1] `init_wiki(root, *, install_binding=True, initial_ingest=None) -> SetupReport` in `src/sertor_core/services/wiki_setup.py` (riusa `create_wiki`; binding via porta/astrazione).
+- [X] T017 [US1] CLI `sertor wiki init <root> [--ingest <path>]` in `src/sertor_cli/` (sottocomando + wiring).
 
 **Checkpoint**: MVP completo (US1+US2+US4) — il wiki si inizializza e si genera al commit.
 

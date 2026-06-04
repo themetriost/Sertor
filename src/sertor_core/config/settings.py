@@ -67,6 +67,15 @@ class Settings:
     # ingestione
     exclude_patterns: tuple[str, ...] = _DEFAULT_EXCLUDES
 
+    # wiki (FEAT-010): fonti-input, soglia gate, gerarchia di autorità, collezioni separate
+    wiki_sources: tuple[str, ...] = (
+        "code", "tests", "specs", "discussion_logs", "manual_edited", "ingested_sources",
+    )
+    wiki_gate_threshold: str = "high"
+    wiki_authority: tuple[str, ...] = ("code", "tests", "specs", "manual_edited")
+    wiki_collection: str = "wiki"
+    code_collection: str = "code"
+
     @property
     def embed_provider(self) -> str:
         """Provider di embeddings coerente col backend: azure in cloud, ollama in locale."""
@@ -84,6 +93,8 @@ class Settings:
 
         excludes = _split_env("SERTOR_EXCLUDE_PATTERNS")
         index_dir = os.getenv("SERTOR_INDEX_DIR")
+        wiki_sources = _split_env("SERTOR_WIKI_SOURCES")
+        wiki_authority = _split_env("SERTOR_WIKI_AUTHORITY")
         return cls(
             backend=os.getenv("RAG_BACKEND", "local"),
             store_backend=os.getenv("SERTOR_STORE_BACKEND", "local"),
@@ -103,4 +114,15 @@ class Settings:
             chunk_overlap=int(os.getenv("CHUNK_OVERLAP", "200")),
             default_k=int(os.getenv("DEFAULT_K", "5")),
             exclude_patterns=tuple(excludes) if excludes is not None else _DEFAULT_EXCLUDES,
+            wiki_sources=(
+                tuple(wiki_sources) if wiki_sources is not None
+                else cls.__dataclass_fields__["wiki_sources"].default
+            ),
+            wiki_gate_threshold=os.getenv("SERTOR_WIKI_GATE_THRESHOLD", "high"),
+            wiki_authority=(
+                tuple(wiki_authority) if wiki_authority is not None
+                else cls.__dataclass_fields__["wiki_authority"].default
+            ),
+            wiki_collection=os.getenv("SERTOR_WIKI_COLLECTION", "wiki"),
+            code_collection=os.getenv("SERTOR_CODE_COLLECTION", "code"),
         )

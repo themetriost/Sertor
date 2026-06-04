@@ -9,7 +9,7 @@ import argparse
 import sys
 
 from sertor_cli import observability
-from sertor_cli.commands import index_cmd, search_cmd, wiki_cmd
+from sertor_cli.commands import index_cmd, search_cmd, wiki_cmd, wiki_init_cmd
 from sertor_core.domain.errors import SertorError
 
 
@@ -70,6 +70,13 @@ def _build_parser() -> argparse.ArgumentParser:
     p_wiki_index.add_argument("--corpus", help="namespace del corpus")
     p_wiki_index.add_argument("--json", action="store_true", help="output del report in JSON")
     p_wiki_index.set_defaults(func=wiki_cmd.run)
+
+    p_wiki_init = wiki_sub.add_parser("init", parents=[common],
+                                      help="inizializza un wiki (struttura + binding + ingest)")
+    p_wiki_init.add_argument("root", help="path della radice del wiki da inizializzare")
+    p_wiki_init.add_argument("--ingest", metavar="PATH", default=None,
+                             help="fonte iniziale da importare in ingested_sources/")
+    p_wiki_init.set_defaults(func=wiki_init_cmd.run)
 
     return parser
 

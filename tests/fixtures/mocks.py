@@ -52,6 +52,62 @@ class FakeLLM:
         return f"Sintesi distillata.\n\n{prompt.strip()}"
 
 
+class ScriptedLLM:
+    """Provider LLM scriptato e deterministico: restituisce risposte in sequenza.
+
+    Le risposte sono consumate in ordine; esaurita la lista, ripete l'ultima (o `"[]"` se vuota).
+    Registra `calls` e i `prompts` ricevuti per le asserzioni dei test (nessuna rete).
+    """
+
+    def __init__(self, responses: list[str] | None = None, name: str = "scripted-llm"):
+        self.name = name
+        self.responses = list(responses or [])
+        self.calls = 0
+        self.prompts: list[str] = []
+
+    def generate(self, prompt: str, system: str | None = None) -> str:
+        self.prompts.append(prompt)
+        idx = self.calls
+        self.calls += 1
+        if not self.responses:
+            return "[]"
+        if idx < len(self.responses):
+            return self.responses[idx]
+        return self.responses[-1]  # esaurite: ripete l'ultima
+
+
+class FakeGit:
+    """`GitPort` deterministico e scope-aware per i test (nessun processo, nessuna rete).
+
+    `changed` può essere un dict `scope -> list[path]` (granularità per scope) o una lista unica
+    valida per ogni scope. `head` è lo SHA di HEAD; `renames` le coppie `(old, new)`.
+    """
+
+    def __init__(
+        self,
+        *,
+        changed: dict[str, list[str]] | list[str] | None = None,
+        head: str | None = "deadbeef",
+        renames: list[tuple[str, str]] | None = None,
+    ):
+        self._changed = changed
+        self._head = head
+        self._renames = list(renames or [])
+
+    def changed_paths(self, scope: str, watermark: str | None = None) -> list[str]:
+        if self._changed is None:
+            return []
+        if isinstance(self._changed, dict):
+            return list(self._changed.get(scope, []))
+        return list(self._changed)  # lista unica: vale per ogni scope
+
+    def head_commit(self) -> str | None:
+        return self._head
+
+    def renamed_paths(self) -> list[tuple[str, str]]:
+        return list(self._renames)
+
+
 def _cosine(a: list[float], b: list[float]) -> float:
     dot = sum(x * y for x, y in zip(a, b, strict=False))
     na = math.sqrt(sum(x * x for x in a))

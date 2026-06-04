@@ -11,6 +11,7 @@ from typing import Literal, Protocol, runtime_checkable
 from sertor_core.domain.entities import EmbeddedChunk, RetrievalResult
 
 DocTypeFilter = Literal["code", "doc", "both"]
+GitScope = Literal["staged", "working", "since_watermark"]
 
 
 @runtime_checkable
@@ -81,4 +82,30 @@ class LLMProvider(Protocol):
 
     def generate(self, prompt: str, system: str | None = None) -> str:
         """Genera testo dal prompt (con un eventuale messaggio di sistema)."""
+        ...
+
+
+@runtime_checkable
+class GitPort(Protocol):
+    """Astrazione del versioning (changeset/HEAD) per la generazione incrementale del wiki.
+
+    Il dominio dipende SOLO da questa porta: NON importa `git`/`subprocess` (Principio I). Gli
+    adapter concreti (es. `SubprocessGitAdapter`) vivono fuori dal dominio e sono best-effort
+    (errori → `[]`/`None`, così la generazione ricade sul baseline).
+    """
+
+    def changed_paths(self, scope: GitScope, watermark: str | None = None) -> list[str]:
+        """Path (relativi POSIX) modificati nello scope dato.
+
+        `staged` = staging area; `working` = working tree; `since_watermark` = dal commit
+        `watermark` a HEAD. `[]` se non determinabile (best-effort).
+        """
+        ...
+
+    def head_commit(self) -> str | None:
+        """SHA del commit HEAD (watermark), o `None` se non determinabile."""
+        ...
+
+    def renamed_paths(self) -> list[tuple[str, str]]:
+        """Coppie `(old, new)` dei rename rilevati (best-effort, `[]` se assenti)."""
         ...
