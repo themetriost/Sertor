@@ -192,3 +192,20 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
   - Aggiornati: `.claude/skills/genera-wiki/SKILL.md`, `.claude/commands/wiki.md`, `.claude/agents/wiki-keeper.md`, `.claude/settings.json`, `CLAUDE.md`.
   - Wiki: `wiki/syntheses/sistema-wiki-fonte-unica.md` (nuovo), `wiki/index.md`, `wiki/log.md`.
 - **Benefici:** Regole consolidate, tassonomia univoca, meno duplicazione, manutenzione centralizzata, operazioni ben definite, automazione non-bloccante. Pronto per scalare.
+
+## [2026-06-04] record | Rinomina corpora/indici RAG per chiarezza naming
+
+- **Rinomina effettuata:**
+  - Corpus **prodotto (radice):** `production` → `sertor` (etichetta primaria del prodotto).
+  - Corpus **prototipo (congelato):** `sertor` → `prototype` (risolve fuorvianza).
+  - Indice **prodotto (radice):** `.index-production` (eliminato, stale) → `.index-sertor`.
+  - Indice **prototipo (congelato):** `prototype/01-baseline/.index-sertor` + `prototype/03-graphrag/.index-sertor` → `.index-prototype/`.
+- **Motivazione:** chiarire il naming schema; `sertor` ora etichetta unicamente il corpus del prodotto (radice).
+- **Non distruttivo:** i rename sono nel naming delle cartelle; le collezioni Chroma/grafo risiedono già nei percorsi rinominati (nessuna ri-indicizzazione necessaria). Smoke test del prototipo conferma che `.index-prototype/` è risolto correttamente.
+- **Consequenze operative:**
+  - `.env` (gitignored): `SERTOR_CORPUS=sertor`, `SERTOR_INDEX_DIR=.index-sertor`.
+  - `.mcp.json` (root): `SERTOR_CORPUS=prototype` (update 2026-06-04); MCP per ri-connettersi/reload.
+  - `.gitignore` (root): generalizzato a `**/.index-*/` per coprire entrambi gli indici.
+  - `CLAUDE.md` § "Riferirsi al prototipo": sezione aggiornata (corpus→`prototype`, spiegazione corpus-aware).
+- **Pagina creata:** `wiki/tech/naming-corpora-indici.md` documenta schema, convenzioni, storico.
+- **Index aggiornato:** aggiunto link `[[naming-corpora-indici]]` in sezione Tech; `updated` → 2026-06-04.
