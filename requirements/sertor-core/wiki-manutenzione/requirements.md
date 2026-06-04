@@ -65,7 +65,7 @@ ricevono **solo** una proposta, mai una riscrittura automatica.
 | LSC-7 | Il wiki copre, come **documentazione ufficiale**, le aree fondamentali del progetto: **entità di business, funzionalità (alto/medio livello), motivazioni delle scelte, architettura**; il lint **segnala le aree mancanti**. | FEAT-007 (ruolo prioritario) |
 | LSC-8 | Ogni pagina di documentazione distillata da artifact **rimanda con link** alle fonti (spec/plan/tasks/requirements/epic/costituzione) per il dettaglio, **senza duplicarne** il contenuto. | DA-W1, Principio III |
 | LSC-9 | Con LLM configurato, il **lint semantico** rileva almeno: (a) una pagina/sommario che descrive una **funzionalità non più presente** nel codice (obsolescenza), (b) una **contraddizione semantica** tra pagine, (c) una **lacuna di copertura** (entità/feature/decisione/architettura presente nel codice ma non documentata), (d) un **sommario di indice/pagina viva stantio**; ciascun problema con **severità**. | FEAT-007 (lint semantico) |
-| LSC-10 | L'**auto-fix assistito** applica correzioni **solo** su pagine **marcate come generate dallo strumento**, presentandole come **diff revisionabile**; sulle pagine **curate a mano** (o prive di marcatore) produce **solo una proposta**, senza modificarle. | Principio VI, LSC-9 |
+| LSC-10 | L'**auto-fix assistito** applica correzioni (riscrittura o **cancellazione** di pagine obsolete) **solo** su pagine **generate dalla tooling**, presentandole come **diff revisionabile**; sulle pagine **curate a mano** (o prive di marcatore) produce **solo una proposta** e **non le cancella mai**. Un intervento manuale su una pagina generata la rende **curata**. | Principio VI, LSC-9 |
 | LSC-11 | Senza LLM, il lint semantico è **saltato senza errore** e il lint strutturale resta pienamente operativo con il suo esito pass/fail (degrado controllato). | NFR-04, Principio IV |
 
 ---
@@ -111,7 +111,7 @@ ricevono **solo** una proposta, mai una riscrittura automatica.
 - **Auto-correzione dei link rotti** (richiede giudizio: il lint **segnala**, non ripara).
 - **Riscrittura semantica delle pagine CURATE a mano** (su quelle l'auto-fix produce solo proposte; la riscrittura assistita è ammessa **solo** sulle pagine generate dallo strumento).
 - **Generazione ex-novo** di intere pagine mancanti come parte del lint (le lacune si **segnalano**; la creazione resta la distillazione esplicita, Gruppo D/G).
-- **Re-indicizzazione del corpus di codice** (il lint semantico *consuma* il corpus `production`; mantenerlo aggiornato è responsabilità di FEAT-003/CLI, vedi DA-13).
+- **Re-indicizzazione FULL del corpus di codice** da zero (il lint semantico fa solo un **re-index incrementale del change set** prima del confronto, vedi REQ-096/DA-13; il full re-index resta di FEAT-003/CLI).
 - **Generazione di risposte** / UX-CLI (epica `sertor-cli`).
 
 ---
@@ -265,19 +265,31 @@ non riflette più lo stato corrente della pagina/codice corrispondente.*
 over the indexed corpus (dogfooding).*
 
 **REQ-076 (Ubiquitous — provenienza)** *The system shall record and read the **provenance** of each
-wiki page (un marcatore che distingue le pagine **generate/mantenute dallo strumento** da quelle
-**curate a mano**), così da governare cosa l'auto-fix può modificare.*
+wiki page. Una pagina è **generata** se prodotta dalla tooling/dagli agenti del progetto
+(`wiki-keeper`, `record`/`distill`, `distill_artifact`); è **curata a mano** se mantenuta
+dall'utente (es. le pagine "vive" come la roadmap). La provenienza governa cosa l'auto-fix può
+modificare o cancellare.*
 
-**REQ-077 (Unwanted behaviour — default sicuro)** *If a page has no provenance marker, then the system
-shall treat it as **hand-curated** (default sicuro): l'auto-fix può proporre ma non scrivere.*
+**REQ-077 (Event-driven — auto-marcatura)** *When the tooling produces or updates a page through its
+own pipeline (es. `distill_artifact`/`record`), the system shall mark that page as **generated**, così
+che l'auto-fix possa manutenerla.*
+
+**REQ-077b (Unwanted behaviour — salvaguardia dell'intervento manuale)** *If a human edits a page
+marked **generated**, then the system shall reclassify it as **curated** (l'intervento manuale ha
+precedenza: l'auto-fix non sovrascrive una pagina su cui l'utente ha messo mano).*
+
+**REQ-077c (Unwanted behaviour — default sicuro)** *If a page has no provenance marker (es. pagine
+preesistenti), then the system shall treat it as **curated** by default; una classificazione iniziale
+esplicita può marcare come **generated** le pagine prodotte dalla tooling (vedi DA-9).*
 
 **REQ-078 (Optional feature — proposta)** *Where assisted auto-fix is enabled and an LLM is configured,
 the system shall, for each fixable semantic issue, **generate a proposed correction** (testo + pagina
 bersaglio + motivazione).*
 
 **REQ-079 (Event-driven — applicazione assistita)** *When an assisted auto-fix is applied, the system
-shall write **only** on **tool-generated pages** and shall present the change as a **reviewable diff**
-prima del consolidamento (mai scrittura cieca; l'umano resta nel loop e approva).*
+shall write **only** on **tool-generated pages**, nella working tree/index, così che la modifica entri
+nel **commit imminente**; la modifica resta **revisionabile come diff** (commit/PR) prima del merge
+(mai scrittura cieca; l'umano resta nel loop e approva la PR).*
 
 **REQ-080 (Unwanted behaviour — pagine curate)** *If the target of an auto-fix is a hand-curated page
 (o priva di marcatore), then the system shall **only emit a proposal** in the report and shall NOT
@@ -300,6 +312,71 @@ unchanged wiki and corpus, then the system shall produce an **equivalent set of 
 rilevazione e severità), pur riconoscendo che il **testo** delle proposte/riscritture può variare per
 non determinismo dell'LLM (l'idempotenza è garantita sulla *rilevazione*, non sul testo generato).*
 
+**REQ-085 (Optional feature — cancellazione assistita di pagine generate obsolete)** *Where assisted
+auto-fix is enabled, when a **generated** page is found obsolete and **not meaningfully updatable**,
+the system shall propose its **deletion** as a reviewable change; il consolidamento avviene solo dopo
+revisione. Le pagine **curate a mano non sono mai cancellate** dall'auto-fix.*
+
+**REQ-086 (Event-driven — classificazione iniziale della provenienza)** *When provenance is first
+introduced on an existing wiki, the system shall support a **one-time classification** that marks
+tool/agent-produced pages as **generated** and explicitly hand-maintained living pages (es. roadmap)
+as **curated**, con default sicuro = **curated** in caso di incertezza.*
+
+**REQ-087 (Event-driven — baseline completo alla prima esecuzione)** *When the semantic lint runs with
+no prior state (nessun watermark), the system shall verify **all** pages against the code corpus (full
+baseline), nei limiti di costo (REQ-083).*
+
+**REQ-088 (Event-driven — incrementale guidato da git)** *When a prior watermark exists, the system
+shall determine the code **entities/files changed** in the relevant **change set** — gli elementi
+**staged/working** per un'esecuzione **pre-commit**, oppure i **commit dal watermark** per
+un'esecuzione pre-push/periodica (via git/GitHub) — and shall re-verify **only the wiki pages
+associated** with those changed entities (manutenzione incrementale, non "tutto contro tutto").*
+
+**REQ-089 (Ubiquitous — watermark git)** *The system shall persist the **git reference** (commit) of
+the last completed semantic lint, così da delimitare l'ambito della successiva esecuzione incrementale.*
+
+**REQ-090 (Ubiquitous — mappa entità↔pagine)** *The system shall maintain or derive an association
+between **code entities/files** and the **wiki pages** that document them, so that a change to an entity
+selects the pages to re-verify (riusa backlink/copertura ove possibile).*
+
+**REQ-091 (Unwanted behaviour — fallback se git non disponibile)** *If git history is unavailable or
+the watermark is missing/invalid, then the system shall fall back to a **full baseline** rather than
+skipping verification, segnalandolo nel report.*
+
+**REQ-092 (Event-driven — trigger pre-commit/pre-push, a monte di git)** *When a commit, a push or a PR
+creation is about to occur, the system shall run the (incremental) semantic lint **and** assisted
+auto-fix **before** the version-control operation, so that any fix to generated pages is included in
+the **same** commit; il commit/push effettivo è poi eseguito dal `configuration-manager` (il lint è il
+**trigger a monte**, non lo esegue git stesso).*
+
+**REQ-093 (Unwanted behaviour — niente cambiamenti rilevanti)** *If the pending change set touches no
+entity associated with any wiki page, then the pre-commit semantic run shall be a **fast no-op** (non
+rallenta i commit che non impattano la documentazione).*
+
+**REQ-094 (Unwanted behaviour — blocco sopra soglia)** *If, after auto-fix, open semantic issues remain
+at or above the **configured severity threshold**, then the pre-commit/pre-push gate shall **block** the
+version-control operation and report the blocking issues; issues **below** threshold shall pass with a
+**warning** (non bloccano).*
+
+**REQ-095 (Optional feature — override esplicito e tracciato)** *Where an explicit override is provided,
+the system shall allow the commit/push to proceed despite blocking issues, **recording** the override
+in modo tracciabile (escape hatch dichiarato, non un bypass silenzioso degli hook).*
+
+**REQ-096 (Event-driven — re-index incrementale prima del confronto)** *Before performing the semantic
+verification, the system shall **incrementally re-index** the code files in the change set (git-driven),
+so the comparison uses the **current** code (entità modificate e relativo contesto). Realizza la
+sinergia con FEAT-009 (indicizzazione incrementale).*
+
+**REQ-097 (Unwanted behaviour — fallback se l'incrementale non è disponibile)** *If incremental
+re-indexing is not available, then the system shall degrade gracefully — leggendo direttamente i file
+del change set dalla working tree e **segnalando** che il contesto dell'indice può essere stantio —
+rather than comparing against stale code silently.*
+
+**REQ-098 (Ubiquitous — granularità per affermazione)** *The semantic lint shall judge obsolescence and
+contradictions at the granularity of **individual verifiable claims/paragraphs** (non l'intera pagina),
+so that issues identify the **specific claim** and the assisted auto-fix can be **surgical** (diff
+minimi e revisionabili).*
+
 ---
 
 ## 6. Requisiti non funzionali
@@ -312,8 +389,8 @@ non determinismo dell'LLM (l'idempotenza è garantita sulla *rilevazione*, non s
 | NFR-04 | **Isolamento dell'LLM** | Distillazione **e lint semantico** (incl. contraddizioni semantiche, obsolescenza, lacune, accuratezza sommari) richiedono un LLM; lint strutturale, orfani e index-rebuild sono **LLM-free** e restano operativi senza LLM. |
 | NFR-05 | **Portabilità** | Funziona su Linux e Windows senza modifiche. |
 | NFR-06 | **Osservabilità** | Log strutturati per ogni operazione (Principio IX); il lint semantico registra anche conteggio chiamate LLM e copertura. |
-| NFR-07 | **Performance** | Lint **strutturale** deterministico in pochi secondi (gira a ogni feature). Lint **semantico** è più lento e costoso: pensato per cadenza **meno frequente / on-demand** (non necessariamente a ogni feature), con costo limitato (NFR-09). |
-| NFR-08 | **Automazione/cadenza** | Le operazioni sono **idempotenti e non interattive**, integrabili come gate ricorrente (CI / hook di fase) con esito pass/fail; il gate semantico ha soglia di severità configurabile (REQ-082). |
+| NFR-07 | **Performance** | Lint **strutturale** deterministico in pochi secondi (gira a ogni feature). Lint **semantico** gira **pre-commit/pre-push** ma resta pratico perché **incrementale** (solo le entità del change set, REQ-088) e **no-op** quando il change set non tocca pagine (REQ-093); costo limitato (NFR-09). |
+| NFR-08 | **Automazione/cadenza** | Le operazioni sono **idempotenti e non interattive**, integrabili come **trigger pre-commit/pre-push** (a monte del configuration-manager, REQ-092) o gate CI, con esito pass/fail; il gate semantico **blocca** sopra una soglia di severità configurabile, con override esplicito (REQ-082/094/095). |
 | NFR-09 | **Costo / budget LLM** | Il lint semantico **limita** chiamate/token per esecuzione (campionamento o tetto), espone quanto coperto/non coperto, e non degrada in costi incontrollati su wiki/corpus grandi (REQ-083). |
 | NFR-10 | **Local-first** | Il lint semantico deve poter girare con un **LLM locale** (es. Ollama), non solo cloud (Azure): nessuna dipendenza obbligatoria da servizi a pagamento (coerente con local-first del progetto). |
 
@@ -347,6 +424,8 @@ non determinismo dell'LLM (l'idempotenza è garantita sulla *rilevazione*, non s
 - **D-3**: Gli **artifact** `requirements/**`, `specs/**`, `.specify/memory/constitution.md` come sorgenti della documentazione (in repo, versionati).
 - **D-4**: Il **retrieval del core** sul **corpus `production`** (codice indicizzato, dogfooding) come fonte di verità "codice" per l'obsolescenza e le lacune (Gruppo H). Riusa la capacità RAG già esistente.
 - **D-5**: Il lint **strutturale** (Gruppi A–G, già realizzato in `spec/005-wiki-manutenzione`) che il lint semantico **estende** affiancandone i problemi e l'esito pass/fail.
+- **D-6**: **Git/GitHub** (storia dei commit) come sorgente del "cosa è cambiato" per la verifica incrementale (REQ-088/089). **Sinergia con FEAT-009** (refresh incrementale dell'indice RAG, anch'esso git-driven): condividono il segnale di diff sui sorgenti.
+- **D-7**: **Capacità di re-index incrementale** (FEAT-009) come **prerequisito** per aggiornare il corpus sul change set prima del confronto (REQ-096); con fallback se assente (REQ-097).
 
 ---
 
@@ -361,8 +440,10 @@ non determinismo dell'LLM (l'idempotenza è garantita sulla *rilevazione*, non s
 | R-M5 | **Contaminazione del wiki di produzione** durante i test. | Media | Alto | NFR-03: test su wiki temporaneo isolato. |
 | R-M6 | **Allucinazione "correttiva"**: l'LLM segnala come obsoleto/contraddittorio un contenuto in realtà corretto, o propone una riscrittura che introduce errori. | Alta | Alto | Auto-fix **solo** su pagine generate + **diff revisionabile** con umano nel loop (REQ-079/080); severità + soglia gate (REQ-082); proposta motivata e tracciabile. |
 | R-M7 | **Costo/token incontrollato** del lint semantico su wiki/corpus grandi. | Media | Medio | Limiti/campionamento + report di copertura (REQ-083/NFR-09); cadenza on-demand, non a ogni feature (NFR-07). |
-| R-M8 | **Corpus stantio**: il codice indicizzato non riflette lo stato attuale → falsi "obsoleti" o lacune errate. | Media | Alto | A-5 + DA-13 (garantire freschezza del corpus prima del lint semantico); segnalare l'età/stato del corpus nel report. |
-| R-M9 | **Provenienza errata**: una pagina curata trattata come generata → auto-fix la sovrascrive. | Bassa | Alto | Default sicuro = curata (REQ-077); l'auto-fix scrive solo con marcatore esplicito di provenienza generata (REQ-079). |
+| R-M8 | **Corpus stantio**: il codice indicizzato non riflette lo stato attuale → falsi "obsoleti" o lacune errate. | Media | Alto | **Re-index incrementale del change set prima del confronto** (REQ-096); fallback lettura working tree + segnalazione (REQ-097). |
+| R-M9 | **Provenienza errata**: una pagina curata trattata come generata → auto-fix la sovrascrive/cancella. | Bassa | Alto | Default sicuro = curata (REQ-077c); intervento manuale riclassifica a curata (REQ-077b); cancellazione solo su generate e revisionata (REQ-085). |
+| R-M10 | **Rename/spostamento di entità** non rilevato dal diff git → pagina collegata non ri-verificata (falso "tutto ok") nell'incrementale. | Media | Medio | Rilevazione rename di git; baseline completo periodico/forzabile; fallback completo se watermark invalido (REQ-091). |
+| R-M11 | **Watermark stantio o mappa entità↔pagine incompleta** → l'incrementale salta pagine da verificare. | Media | Medio | Baseline completo forzabile; il report segnala l'ambito coperto vs saltato (REQ-083); mappa derivata e aggiornata al baseline (REQ-090). |
 
 ---
 
@@ -372,7 +453,7 @@ non determinismo dell'LLM (l'idempotenza è garantita sulla *rilevazione*, non s
 |----------|-----------|-------------|
 | **Must** | REQ-001..005 (lint+report), REQ-040/041 (idempotenza), REQ-050..053 (config/osservabilità/report + **cadenza/gate ricorrente**), **REQ-060/061/062 (wiki = documentazione ufficiale: ruolo, sorgenti incl. artifact, link-non-duplica)**, REQ-064 (report coperture mancanti, LLM-free) | Valore centrale: il wiki **è** la documentazione ufficiale, mantenuta coerente e diagnosticabile in modo non distruttivo, **verificabile a ogni feature**. |
 | **Should** | REQ-010..013 (rigenera indice), REQ-020 (contraddizioni marcate), **REQ-030..033 + REQ-063/065 (distillazione documentale da artifact/discussioni, con LLM)**, **REQ-070..077 + REQ-081..084 (lint SEMANTICO: i 4 controlli, verità duplice, provenienza, degrado, severità/gate, limiti di costo, idempotenza della rilevazione)** | Mantiene l'indice allineato, alimenta la documentazione ufficiale e — priorità richiesta dall'utente — verifica la **sostanza** del wiki contro il codice. Il lint semantico è il prossimo incremento (lo strutturale è già fatto). |
-| **Could** | REQ-078..080 (**auto-fix assistito**: proposta + applicazione su diff per le sole pagine generate) | Alto valore ma più rischioso (allucinazioni): dopo che la **rilevazione** semantica ha dimostrato valore; richiede prima il marcatore di provenienza (REQ-076). |
+| **Could** | REQ-078..080 + **REQ-085** (**auto-fix assistito**: proposta + applicazione su diff per le sole pagine generate, incl. **cancellazione** di pagine generate obsolete) | Alto valore ma più rischioso (allucinazioni): dopo che la **rilevazione** semantica ha dimostrato valore; richiede prima il marcatore di provenienza (REQ-076/077/086). |
 | **Won't (ora)** | Auto-fix dei link rotti; riscrittura automatica di pagine curate; generazione ex-novo di pagine mancanti nel lint; crawling esterno; arricchimento Wiki↔RAG (FEAT-008) | Fuori ambito / altre feature. |
 
 > **Nota sull'auto-fix.** L'utente ha richiesto l'auto-fix **assistito**. È classificato **Could** non
@@ -408,27 +489,43 @@ Chiuse in elicitazione (2026-06-03) e codificate nei requisiti.
 - **DA-8 — Trigger del gate.** *Risolta:* la feature espone un'**operazione non-interattiva con esito
   pass/fail** (REQ-053); come **default** la si **aggancia a un hook di fase** (es. dopo `implement`),
   lasciando CI e invocazione manuale possibili. Il meccanismo preciso è design.
+- **DA-9 — Provenienza delle pagine (chi può toccare l'auto-fix).** *Risolta (2026-06-04):* le pagine
+  prodotte dalla **tooling/agenti** (`wiki-keeper`, `record`/`distill`, `distill_artifact`) sono
+  **generate** → l'auto-fix le può **aggiornare** e, se obsolete e non aggiornabili, **cancellare**
+  (assistito, su diff revisionabile). Le pagine **curate a mano** (es. roadmap) sono **proposta-only**
+  e **mai cancellate**. **Salvaguardia:** un intervento manuale su una pagina generata la **riclassifica
+  come curata**. Pagine preesistenti prive di marcatore: **default curate**, con classificazione
+  iniziale che marca come generate quelle prodotte dalla tooling (REQ-076/077/077b/077c/085/086).
+  *(Resta come dettaglio di design l'euristica di classificazione iniziale — vedi DA-9-bis sotto.)*
+- **DA-9-bis — Euristica di classificazione iniziale (design).** Con quale segnale si marcano le ~17
+  pagine esistenti come generate vs curate (es. tracce in `log.md` di `record`/`distill`, o lista
+  esplicita)? Default sicuro = curata; la roadmap è sempre curata.
 
-### Aperte (lint semantico — Gruppo H)
+### Risolte (lint semantico — Gruppo H)
 
-Da chiarire prima/durante lo SpecKit della parte semantica:
+Chiuse in elicitazione (2026-06-04) e codificate nei requisiti. Resta aperto solo il dettaglio di
+**design** DA-9-bis (euristica di classificazione iniziale della provenienza).
 
-- **DA-9 — Provenienza retroattiva.** Come marcare la provenienza delle **pagine wiki già esistenti**?
-  Tutte quelle attuali sono "curate a mano" (default sicuro) finché non marcate? Le pagine prodotte da
-  `distill`/`distill_artifact` vanno marcate **automaticamente** come "generate dallo strumento"?
-  *(Proposta di default: esistenti = curate; future distillazioni = generate.)*
-- **DA-10 — Ampiezza del confronto col codice.** Per l'obsolescenza e le lacune, si confronta **ogni
-  pagina** contro tutto il corpus, oppure si **campiona / si parte dalle pagine sospette**? Qual è il
-  tetto di chiamate/token per esecuzione (NFR-09)? *(Trade-off costo↔completezza.)*
-- **DA-11 — Flusso di approvazione dell'auto-fix.** Dove finiscono i diff proposti: in una **copia di
-  lavoro / branch** da rivedere, o stampati per applicazione manuale? Chi approva e come si consolida
-  (commit)? *(Coerenza con la delega git al configuration-manager.)*
-- **DA-12 — Gate semantico: blocca o avvisa?** La soglia di severità che fa fallire il gate (REQ-082):
-  quali severità bloccano? Il gate semantico è **bloccante** come quello strutturale o solo
-  **informativo** (warning)? Con quale **cadenza** (ogni feature è troppo costoso → on-demand/periodico)?
-- **DA-13 — Freschezza del corpus.** Il lint semantico assume il corpus `production` aggiornato (A-5,
-  R-M8). Va **re-indicizzato prima** del lint semantico (passo esplicito), o il lint **verifica e
-  segnala** l'età/stato del corpus senza re-indicizzare? *(La re-indicizzazione resta fuori ambito,
-  vedi §4.)*
-- **DA-14 — Granularità della rilevazione "obsoleto".** Cosa conta come affermazione verificabile di
-  una pagina? L'intera pagina, i singoli paragrafi/claim, o solo i sommari? Influenza precisione e costo.
+- **DA-10 — Ampiezza del confronto col codice.** *Risolta (2026-06-04):* **baseline completo alla
+  prima esecuzione**, poi **incrementale guidato da git** — si ri-verificano solo le pagine collegate
+  alle **entità cambiate** nei commit intercorsi dall'ultimo lint (watermark git). Richiede watermark,
+  mappa entità↔pagine e fallback completo se git/watermark mancano (REQ-087..091); sinergia con FEAT-009
+  (D-6). *(Resta design: la granularità della mappa entità↔pagine e la gestione dei rename — R-M10.)*
+- **DA-11 — Flusso/innesco dell'auto-fix.** *Risolta (2026-06-04):* l'auto-fix (e il lint semantico
+  incrementale) è un **trigger pre-commit/pre-push** (e pre-PR) che scatta **a monte del
+  `configuration-manager`**. Applica i fix alle pagine **generate** nella working tree, così entrano
+  nello **stesso commit**; il commit/push lo fa poi il configuration-manager e tu rivedi nel **diff/PR**.
+  È **veloce** perché incrementale (solo le entità nel change set) e **no-op** se il change set non
+  tocca pagine; **saltato senza LLM** (REQ-079/088/092/093). *(Resta a DA-12 se un esito negativo
+  **blocca** il commit/push o solo avvisa.)*
+- **DA-12 — Gate semantico: blocca o avvisa?** *Risolta (2026-06-04):* **blocca sopra soglia** — il
+  commit/push si interrompe se restano problemi aperti di severità ≥ soglia **configurabile**; quelli
+  sotto soglia passano con **warning**. Esiste un **override esplicito e tracciato** per i casi limite.
+  Cadenza = pre-commit/pre-push (DA-11), resa pratica dall'incrementalità (REQ-082/094/095).
+- **DA-13 — Freschezza del corpus.** *Risolta (2026-06-04):* **re-index incrementale del change set
+  prima** del confronto (git-driven, sinergia FEAT-009), così il codice di riferimento è corrente
+  (entità + contesto). Fallback alla lettura della working tree con segnalazione se l'incrementale non
+  è disponibile (REQ-096/097, D-7). Il **full re-index** resta fuori ambito.
+- **DA-14 — Granularità della rilevazione "obsoleto".** *Risolta (2026-06-04):* **per affermazione/
+  paragrafo** (claim) — l'issue identifica la frase specifica e l'auto-fix è chirurgico (diff minimi);
+  costo sostenibile grazie all'incrementalità (REQ-098).
