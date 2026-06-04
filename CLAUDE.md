@@ -194,6 +194,7 @@ manutenzione è garantita dalla delega al `wiki-keeper`, non dal blocco del turn
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/005-wiki-manutenzione/plan.md` (FEAT-007 — manutenzione del wiki: lint/indice/documentazione).
-In `master`: FEAT-001/002/003 (nucleo + baseline + skill wiki) + CLI esecuzione + MCP.
+`specs/006-wiki-lint-semantico/plan.md` (FEAT-007 estensione — lint SEMANTICO del wiki: rilevazione
+obsolescenza/contraddizioni/lacune/sommari, provenienza, auto-fix assistito, gate pre-commit).
+Strutturale (Gruppi A–G) in `specs/005-wiki-manutenzione/`. In `master`: FEAT-001/002/003 + CLI + MCP.
 <!-- SPECKIT END -->
