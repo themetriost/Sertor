@@ -178,6 +178,37 @@ I marker pytest sono definiti in `pyproject.toml`: `cloud` (richiede credenziali
 - Nessuna over-engineering: aggiungere astrazioni solo quando un esperimento le richiede.
 - Mantenere ogni esperimento eseguibile in locale senza dipendere da Azure.
 
+## Rituale di step / Definition of Done (regola SEMPRE attiva)
+
+Uno **step** è un'unità di lavoro significativa (una feature, un fix, una decisione, una ricerca,
+un'analisi). **Alla fine di ogni step**, il flusso principale (Claude) esegue — **di propria
+iniziativa, senza che l'utente debba chiederlo** — questa checklist. Sono **azioni da LLM nel loop**:
+le eseguo io, qui, esattamente come già scrivo `wiki/log.md`. **Non** dipendono da hook né da
+automazione *unattended*: la distinzione è netta —
+
+- *automatico unattended* = far scattare qualcosa **quando non c'è nessuno** (timer/evento → script o
+  `claude -p` headless; un hook non ragiona, non avvia un subagent in-loop);
+- *comportamento standing* = ciò che faccio **sistematicamente mentre lavoriamo**, perché è il mio modo
+  di operare. Il rituale qui sotto è di questo secondo tipo: per esso **non esiste alcun limite tecnico**.
+
+1. **Registra** — aggiorna `wiki/log.md` (+ pagine impattate e `index.md`): operazione `record` del
+   playbook. *(già attivo)*
+2. **Lint semantico di allineamento** — verifica che il wiki **non sia andato alla deriva** rispetto
+   alla realtà del progetto (codice in `src/`, `specs/`, `requirements/`, stato git): **segnala
+   esplicitamente ogni claim che il repo contraddice**; correggi su conferma. Va **oltre** il `lint`
+   meccanico (link rotti/orfani/frontmatter): è il confronto *contenuto del wiki ↔ realtà del progetto*.
+3. **\<altre azioni\>** — questa lista è **estendibile**: ogni azione che l'utente chiede di rendere
+   *standing* va aggiunta qui, e da quel momento fa parte del rituale a ogni step.
+
+**Responsabilità & delega.** Che queste azioni **avvengano** a ogni step è responsabilità del flusso
+principale. Eseguirle direttamente oppure **delegarle** (`wiki-keeper` per record/lint,
+`configuration-manager` per git) è solo una scelta per non bloccare il flusso — la delega **non è un
+modo per saltarle**. Gli hook `SessionStart`/`Stop` restano **promemoria vincolanti**, non opzionali.
+
+**Calibra al valore:** modifiche puramente meccaniche o di poco conto non innescano il rituale (vedi
+*regola aurea* del wiki). Lo step è "significativo" quando produce conoscenza, decisioni o codice.
+Vedi [[rituale-step-e-allineamento-wiki]].
+
 ## Git & versionamento (regola SEMPRE attiva)
 
 Questo workspace è un **repo git con remote `origin`** (ci si pusha regolarmente). **Policy di branching durante la fase di prototipo (attuale):** commit e push **direttamente su `master`/`main`** (autorizzato). Al passaggio in produzione si adotterà **SpecKit** e si lavorerà a **branch + PR** (niente più push diretti su main). Convenzione: **un commit dopo ogni step** di lavoro significativo (incluso l'aggiornamento del wiki). Messaggi in stile

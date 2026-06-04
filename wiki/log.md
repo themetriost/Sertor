@@ -209,3 +209,38 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
   - `CLAUDE.md` § "Riferirsi al prototipo": sezione aggiornata (corpus→`prototype`, spiegazione corpus-aware).
 - **Pagina creata:** `wiki/tech/naming-corpora-indici.md` documenta schema, convenzioni, storico.
 - **Index aggiornato:** aggiunto link `[[naming-corpora-indici]]` in sezione Tech; `updated` → 2026-06-04.
+
+## [2026-06-04] record | Rituale di step (Definition of Done) + retrospettiva interazione
+
+- **Problema:** il wiki = documentazione del progetto era in **deriva** rispetto alla realtà di `master`
+  (memoria dava per mergiate FEAT-003/004/MCP/CLI; in realtà solo FEAT-001+002 dopo il reset del 2026-06-04).
+  Nessun meccanismo verificava *contenuto wiki ↔ realtà progetto*.
+- **Decisione (svolta dell'utente):** le azioni semantiche (record + lint di allineamento) sono **lavoro da
+  LLM nel loop**, quindi il flusso principale può/deve farle **come comportamento standing**, senza dipendere
+  da hook/automazione *unattended*. Distinzione codificata: *unattended* (script/headless/cron, "quando non
+  c'è nessuno") vs *standing* ("lo faccio mentre lavoro", nessun limite tecnico).
+- **`CLAUDE.md`:** nuova sezione **"Rituale di step / Definition of Done" (regola SEMPRE attiva)** prima di
+  *Git & versionamento*. Checklist a fine step: (1) record su `log.md`/pagine/`index.md`; (2) **lint semantico
+  di allineamento** wiki↔progetto (oltre al lint meccanico); (3) lista azioni standing **estendibile**. Delega
+  (`wiki-keeper`/`configuration-manager`) = non-bloccare, **non** un modo per saltare il rituale.
+- **Pagina creata:** `syntheses/rituale-step-e-allineamento-wiki.md` — design anti-deriva (due nature dei
+  controlli, vincolo hook, standing vs unattended) + **retrospettiva onesta** sull'interazione (richiesta
+  dall'utente per un blog post): nessun rifiuto esplicito, ma un pattern di deferral/ratifica/caveat che ha
+  *funzionato* come ostruzione; effetto > intento; correttivo = default "fai" invece di "chiedi-poi-forse-fai".
+- **Index aggiornato:** aggiunto `[[rituale-step-e-allineamento-wiki]]` in cima alle Syntheses.
+- **Nota di allineamento (eseguito il rituale stesso):** rilevati ma NON ancora corretti — wikilink rotto
+  storico `[[epica-sertor-cli]]`→`[[epiche-sertor-core-e-cli]]` in `chiusura-prototipo-dogfooding.md`;
+  `__pycache__` fantasma in `src/sertor_cli|sertor_mcp|sertor_core/wiki|adapters/git|adapters/llm` (zero
+  sorgenti); `.mcp.json` punta a server prototipo rotto (manca modulo `mcp` in `.venv`). Da sistemare su richiesta.
+
+## [2026-06-04] lint | Allineamento wiki↔progetto (primo lint semantico del rituale)
+
+- **Eseguito** il punto 2 del nuovo *Rituale di step*: confronto *contenuto wiki ↔ realtà di `master`* (b0703ec).
+- **Esito:** wiki **sostanzialmente allineato** — le pagine versionate descrivono FEAT-001/002 come fatti (vero)
+  e **non** millantano FEAT-003/004/010 come mergiate. Il disallineamento grave era nella **memoria** (dava per
+  mergiate cose rimosse dal `reset` del 2026-06-04), non nelle pagine del wiki.
+- **Corretto:** wikilink rotto `[[epica-sertor-cli]]` → `[[epiche-sertor-core-e-cli]]` in
+  `syntheses/chiusura-prototipo-dogfooding.md` (la pagina target del prototipo è congelata/superata).
+- **Segnalato (fuori scope del lint wiki, da decidere):** `__pycache__` fantasma in
+  `src/{sertor_cli,sertor_mcp,sertor_core/wiki,adapters/git,adapters/llm}` (zero sorgenti, fa *sembrare*
+  presente codice assente); `.mcp.json` punta al server prototipo rotto (`ModuleNotFoundError: mcp` in `.venv`).

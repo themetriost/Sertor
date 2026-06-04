@@ -177,7 +177,7 @@ find_symbol("HybridIndex")
 
 ## Backlink e riferimenti
 
-- **[[epica-sertor-cli]]** — epica di produzione (requirements/sertor-cli/epic.md).
+- **[[epiche-sertor-core-e-cli]]** — epiche di produzione (requirements/sertor-{core,cli}/epic.md).
 - **prototype/wiki/** — wiki storico del prototipo (consultabile via `sertor-rag` tool).
 - **`.mcp.json`** (root) — configurazione del server MCP.
 - **`prototype/shared/config.py`** — implementazione della selezione corpus-aware.
