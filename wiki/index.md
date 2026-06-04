@@ -3,7 +3,7 @@ title: Indice del Wiki — Produzione Sertor
 type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
-updated: 2026-06-03
+updated: 2026-06-04
 sources: ["requirements/sertor-core/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "src/sertor_core/**"]
 ---
 
@@ -37,6 +37,7 @@ _(La produzione inizia ora: questa sezione cresce a ogni sessione.)_
 
 ### Syntheses (sintesi trasversali)
 
+- **[[sistema-wiki-fonte-unica]]** — Consolidamento del wiki (fonte unica playbook + tre interfacce sottili + automazione hook). Tassonomia consolidata; convenzioni esplicite; 6 operazioni (record, ingest, query, lint, generate-from-diff, rag-sync).
 - **[[costituzione-v1]]** — Ratifica Costituzione v1.0.0 (governance, 9 principi vincolanti, gate Constitution Check). Governa design e produzione.
 - **[[chiusura-prototipo-dogfooding]]** — Isolamento del prototipo, motore corpus-aware, RAG di dogfooding su se stesso, MCP ri-puntato.
 - **[[epiche-sertor-core-e-cli]]** — Ristrutturazione: Sertor Core (MVP, capacità RAG + Wiki) primaria; Sertor CLI (distribuzione via CLI) secondaria. Questione aperta DA-W1 su ruolo wiki.
@@ -50,3 +51,4 @@ _(La produzione inizia ora: questa sezione cresce a ogni sessione.)_
 
 - **[[hook-sessionstart-wiki]]** — Hook SessionStart di Claude Code: carica indice + log a inizio sessione. Ruolo 1 di DA-W1 (contesto iniettato).
 - **[[tree-sitter-language-pack]]** — Binding Rust multilingua (305+ lingue), parser robusto, 14 lingue sintattico MVP + 3 fallback, wrapper `_Node` per API metodo-based.
+- **[[naming-corpora-indici]]** — Schema naming chiarificato (dal 2026-06-04): corpus `sertor` (prodotto, radice) vs `prototype` (prototipo, congelato); indici `.index-sertor` (radice) vs `.index-prototype` (prototipo).

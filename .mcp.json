@@ -3,7 +3,7 @@
     "sertor-rag": {
       "command": ".venv/Scripts/python.exe",
       "args": ["prototype/04-agentic-rag/mcp_server.py"],
-      "env": { "PYTHONPATH": "prototype", "SERTOR_CORPUS": "sertor" }
+      "env": { "PYTHONPATH": "prototype", "SERTOR_CORPUS": "prototype" }
     }
   }
 }

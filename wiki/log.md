@@ -2,7 +2,6 @@
 title: Log del Wiki — Produzione Sertor
 type: log
 created: 2026-05-30
-updated: 2026-05-30
 ---
 
 # Registro di Produzione (append-only)
@@ -164,3 +163,49 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
 - **Processo git:** branch `spec/002-rag-baseline` allineato a master (merge 5502700) per avere FEAT-001; commit piano (4f159d0), tasks (23641b3), implementazione incrementale.
 - **Index aggiornato:** aggiunto link `[[motore-baseline-feat002]]` in Syntheses; frontmatter sources aggiornato con `specs/002-rag-baseline/**`.
 - **File toccati:** `wiki/syntheses/motore-baseline-feat002.md` (nuovo), `wiki/index.md`, `wiki/log.md`.
+
+## [2026-06-04] record | Consolidamento sistema wiki (fonte unica + tre interfacce + hook)
+
+- **Pagina creata:** `syntheses/sistema-wiki-fonte-unica.md` documenta il consolidamento architetturale del wiki:
+  - **Visione:** wiki è LLM Wiki Karpathy; fino a oggi regole erano duplicate (skill, comando, agente) → oggi fonte unica con tre interfacce sottili.
+  - **Fonte unica:** nuovo file `.claude/skills/genera-wiki/playbook.md` (identità + tassonomia UNICA + convenzioni frontmatter + 6 operazioni: record, ingest, query, lint, generate-from-diff, rag-sync). È tooling (in `.claude/`), non contenuto wiki.
+  - **Tre interfacce sottili:**
+    1. **Skill** (istruzioni autore da-repo): hyperlink a playbook, no duplicazione regole.
+    2. **Comando** (selector flusso principale `/wiki`): brief + parametri, router verso skill.
+    3. **Agente** (wiki-keeper, subagent Haiku background): legge playbook come prima azione, esegue operazioni senza duplicazione.
+  - **Incoerenze corrette:**
+    - Tassonomia divergente (manual_edited/, ingested_sources/) rimossa; consolidata in sources/.
+    - Residuo prototipo (riferimento 03-graphrag.md in wiki-keeper) rimosso.
+    - `updated` rimosso da frontmatter log.md (file append-only).
+  - **4 nuove operazioni aggiunte al playbook:**
+    - `lint`: coerenza (frontmatter, wikilink rotti, pagine orfane, claim superati) → report, no auto-fix.
+    - `ingest`: file/URL/PDF → sources/ con frontmatter integrato.
+    - `generate-from-diff`: git log/diff delegato al configuration-manager → aggiorna solo pagine impattate.
+    - `rag-sync`: re-indexizza wiki con SERTOR_CORPUS='wiki', backend azure, indice isolato.
+  - **Strato automatico (hook):**
+    - **Script:** `.claude/hooks/wiki-pending-check.ps1` (euristica mtime).
+    - **Modo:** SessionEnd (riepilogo) + Stop (promemoria, non bloccante, guardia anti-loop).
+    - **Registrazione:** `.claude/settings.json` (hook key `wiki-pending-check-stop`, `wiki-pending-check-sessionend`).
+  - **CLAUDE.md aggiornato:** frase "non c'è più uno Stop hook bloccante" corretta (esplicito: non bloccante, promemoria).
+- **File toccati:**
+  - Nuovi: `.claude/skills/genera-wiki/playbook.md`, `.claude/hooks/wiki-pending-check.ps1`.
+  - Aggiornati: `.claude/skills/genera-wiki/SKILL.md`, `.claude/commands/wiki.md`, `.claude/agents/wiki-keeper.md`, `.claude/settings.json`, `CLAUDE.md`.
+  - Wiki: `wiki/syntheses/sistema-wiki-fonte-unica.md` (nuovo), `wiki/index.md`, `wiki/log.md`.
+- **Benefici:** Regole consolidate, tassonomia univoca, meno duplicazione, manutenzione centralizzata, operazioni ben definite, automazione non-bloccante. Pronto per scalare.
+
+## [2026-06-04] record | Rinomina corpora/indici RAG per chiarezza naming
+
+- **Rinomina effettuata:**
+  - Corpus **prodotto (radice):** `production` → `sertor` (etichetta primaria del prodotto).
+  - Corpus **prototipo (congelato):** `sertor` → `prototype` (risolve fuorvianza).
+  - Indice **prodotto (radice):** `.index-production` (eliminato, stale) → `.index-sertor`.
+  - Indice **prototipo (congelato):** `prototype/01-baseline/.index-sertor` + `prototype/03-graphrag/.index-sertor` → `.index-prototype/`.
+- **Motivazione:** chiarire il naming schema; `sertor` ora etichetta unicamente il corpus del prodotto (radice).
+- **Non distruttivo:** i rename sono nel naming delle cartelle; le collezioni Chroma/grafo risiedono già nei percorsi rinominati (nessuna ri-indicizzazione necessaria). Smoke test del prototipo conferma che `.index-prototype/` è risolto correttamente.
+- **Consequenze operative:**
+  - `.env` (gitignored): `SERTOR_CORPUS=sertor`, `SERTOR_INDEX_DIR=.index-sertor`.
+  - `.mcp.json` (root): `SERTOR_CORPUS=prototype` (update 2026-06-04); MCP per ri-connettersi/reload.
+  - `.gitignore` (root): generalizzato a `**/.index-*/` per coprire entrambi gli indici.
+  - `CLAUDE.md` § "Riferirsi al prototipo": sezione aggiornata (corpus→`prototype`, spiegazione corpus-aware).
+- **Pagina creata:** `wiki/tech/naming-corpora-indici.md` documenta schema, convenzioni, storico.
+- **Index aggiornato:** aggiunto link `[[naming-corpora-indici]]` in sezione Tech; `updated` → 2026-06-04.
