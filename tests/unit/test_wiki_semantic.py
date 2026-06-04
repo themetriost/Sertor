@@ -83,10 +83,29 @@ def test_defensive_parsing(wiki_sandbox):
     # Niente JSON → nessuna issue, nessun crash
     assert semantic_lint(wiki_sandbox, ScriptedLLM(["non e' json"]), pages=[rel]).issues == []
     # Array con una voce valida + una malformata (kind mancante) → solo la valida
-    mixed = json.dumps([{"severity": "high"},
-                        {"kind": "obsolete", "claim": "c", "severity": "high"}])
+    valid = {"kind": "obsolete", "claim": "c", "severity": "high", "evidence": "x.py#1"}
+    mixed = json.dumps([{"severity": "high"}, valid])
     issues = semantic_lint(wiki_sandbox, ScriptedLLM([mixed]), pages=[rel]).issues
     assert len(issues) == 1 and issues[0].claim == "c"
+
+
+def test_drops_ungrounded_issues(wiki_sandbox):
+    """Filtro anti-rumore: scarta obsolete senza evidenza e contraddizioni che non citano pagine."""
+    rel = _add(wiki_sandbox, "alpha", "Alpha")
+    noisy = json.dumps([
+        # obsolete senza evidence → drop
+        {"kind": "obsolete", "claim": "a", "severity": "high", "evidence": ""},
+        # contraddizione che cita CODICE → drop
+        {"kind": "semantic_contradiction", "claim": "b", "severity": "high",
+         "evidence": "src/x.py#1"},
+        # contraddizione che cita un'altra PAGINA → keep
+        {"kind": "semantic_contradiction", "claim": "c", "severity": "high",
+         "evidence": "concepts/beta.md"},
+        # obsolete ancorata al codice → keep
+        {"kind": "obsolete", "claim": "d", "severity": "high", "evidence": "src/y.py#2"},
+    ])
+    issues = semantic_lint(wiki_sandbox, ScriptedLLM([noisy]), pages=[rel]).issues
+    assert {i.claim for i in issues} == {"c", "d"}             # solo le due ancorate
 
 
 def test_reports_missing_code_context(wiki_sandbox):

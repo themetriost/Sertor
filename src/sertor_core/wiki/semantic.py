@@ -110,12 +110,22 @@ class SemanticReport:
 
 
 _SYSTEM = (
-    "Sei un revisore della documentazione tecnica. Confronti una PAGINA WIKI con il CODICE ATTUALE "
-    "e con i SOMMARI delle altre pagine, per trovare SOLO problemi reali. Rispondi con un **array "
-    "JSON**; ogni elemento ha i campi: kind (obsolete|semantic_contradiction|coverage_gap|"
-    "stale_summary), claim (la frase ESATTA della pagina interessata; vuota per coverage_gap), "
-    "severity (info|low|medium|high|critical), detail (spiegazione breve), evidence (path del "
-    "codice o pagina). Se non ci sono problemi rispondi []. Non inventare: usa solo il contesto."
+    "Sei un revisore di documentazione tecnica, **conservativo**. Confronti UNA pagina wiki con "
+    "(a) il CODICE ATTUALE fornito e (b) i SOMMARI di altre pagine. Segnala SOLO problemi che puoi "
+    "**dimostrare** con l'evidenza fornita; **nel dubbio NON segnalare** (meglio pochi problemi "
+    "certi che molti incerti). Un fatto corretto (percorso, conteggio, nome) che il contesto NON "
+    "smentisce NON è un problema. L'assenza di codice rilevante NON implica un errore.\n\n"
+    "Tipi (usa il PIÙ specifico, una volta per frase):\n"
+    "- obsolete: una frase della pagina è **contraddetta dal CODICE fornito** (il codice mostra il "
+    "contrario). Se manca codice rilevante, NON usarlo. evidence = path#chunk del codice.\n"
+    "- semantic_contradiction: due affermazioni in **conflitto reale** tra QUESTA pagina e "
+    "**un'altra pagina** dei sommari. evidence = path .md dell'ALTRA pagina. Non per il codice.\n"
+    "- coverage_gap: un'entità **presente nel codice fornito** non documentata. Solo se il codice "
+    "la mostra. claim vuota. evidence = path del codice.\n"
+    "- stale_summary: un sommario/indice non riflette più il contenuto reale della pagina.\n\n"
+    "Severità high/critical SOLO con evidenza forte e diretta; altrimenti low/medium. Rispondi con "
+    "un **array JSON**; campi: kind, claim (frase ESATTA della pagina; vuota per coverage_gap), "
+    "severity (info|low|medium|high|critical), detail, evidence. Nessun problema → []."
 )
 
 
@@ -175,6 +185,20 @@ def _parse_issues(raw: str, page: str) -> list[SemanticIssue]:
     return out
 
 
+def _is_grounded(issue: SemanticIssue) -> bool:
+    """Filtro deterministico anti-rumore: tiene solo le issue **ancorate** a un'evidenza valida.
+
+    Riduce i falsi positivi tipici di un LLM rumoroso: un'`obsolete` deve indicare il **codice** che
+    la smentisce; una `semantic_contradiction` deve citare **un'altra pagina** (`.md`), non il
+    codice né sé stessa. `coverage_gap`/`stale_summary` passano (gestite dal prompt).
+    """
+    if issue.kind == SemanticIssueKind.OBSOLETE:
+        return bool(issue.evidence)
+    if issue.kind == SemanticIssueKind.SEMANTIC_CONTRADICTION:
+        return ".md" in issue.evidence and issue.evidence != issue.page
+    return True
+
+
 def _index_summaries(root: Path, rels: list[str]) -> str:
     lines = []
     for rel in rels:
@@ -215,6 +239,7 @@ def semantic_lint(
     issues: list[SemanticIssue] = []
     calls = 0
     no_ctx = 0
+    dropped = 0
     for rel in targets:
         text = (root / rel).read_text(encoding="utf-8", errors="ignore")
         code_ctx, _ = _code_context(facade, _page_query(text), k_code)
@@ -226,13 +251,17 @@ def semantic_lint(
             f"SOMMARI DELLE ALTRE PAGINE:\n{summaries}\n\n"
             "Restituisci l'array JSON dei problemi (vedi istruzioni di sistema)."
         )
-        issues += _parse_issues(llm.generate(prompt, system=_SYSTEM), rel)
+        parsed = _parse_issues(llm.generate(prompt, system=_SYSTEM), rel)
+        kept = [i for i in parsed if _is_grounded(i)]
+        dropped += len(parsed) - len(kept)
+        issues += kept
         calls += 1
 
     report = SemanticReport(issues=issues, pages_checked=len(targets), pages_total=total,
                             threshold=threshold, llm_calls=calls, pages_without_code_context=no_ctx)
     log_event(logging.INFO, "semantic_lint", pages_checked=len(targets), pages_total=total,
-              issues=len(issues), llm_calls=calls, ok=report.ok, pages_without_code_context=no_ctx)
+              issues=len(issues), dropped_ungrounded=dropped, llm_calls=calls, ok=report.ok,
+              pages_without_code_context=no_ctx)
     return report
 
 
