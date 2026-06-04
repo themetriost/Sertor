@@ -16,12 +16,12 @@ lasciati alla fase successiva (task marcati ⏭️).
 ---
 
 ## Phase 1: Setup
-- [ ] T001 Verifica pacchetto `src/sertor_core/wiki/` (esistente); nessun nuovo package.
+- [X] T001 Verifica pacchetto `src/sertor_core/wiki/` (esistente); nessun nuovo package.
 
 ## Phase 2: Foundational
-- [ ] T002 [P] Definisci entità in `src/sertor_core/wiki/semantic.py`: `Severity` (ordinale), `SemanticIssueKind`, `SemanticIssue`, `SemanticReport` (con `ok`/copertura), `FixProposal` (data-model)
-- [ ] T003 [P] Estendi `src/sertor_core/wiki/conventions.py`: `read_provenance(text)` (default curated) + `mark_provenance(text, value)` (non distruttivo) (REQ-076/077c)
-- [ ] T004 [P] Aggiungi `ScriptedLLM` in `tests/fixtures/mocks.py`: LLM mock che ritorna risposte JSON predefinite in sequenza (deterministico)
+- [X] T002 [P] Definisci entità in `src/sertor_core/wiki/semantic.py`: `Severity` (ordinale), `SemanticIssueKind`, `SemanticIssue`, `SemanticReport` (con `ok`/copertura), `FixProposal` (data-model)
+- [X] T003 [P] Estendi `src/sertor_core/wiki/conventions.py`: `read_provenance(text)` (default curated) + `mark_provenance(text, value)` (non distruttivo) (REQ-076/077c)
+- [X] T004 [P] Aggiungi `ScriptedLLM` in `tests/fixtures/mocks.py`: LLM mock che ritorna risposte JSON predefinite in sequenza (deterministico)
 
 **Checkpoint**: entità + provenienza + mock pronti
 
@@ -29,11 +29,11 @@ lasciati alla fase successiva (task marcati ⏭️).
 
 ## Phase 3: User Story 1 — Rilevazione semantica (P1) 🎯 MVP
 ### Tests
-- [ ] T005 [P] [US1] Test `tests/unit/test_wiki_semantic.py`: con ScriptedLLM, `semantic_lint` produce issue `obsolete` con la **claim** (REQ-071/098), `semantic_contradiction` (072), `coverage_gap` (073), `stale_summary` (074); ogni issue ha severità; **nessuna scrittura** sul wiki (Principio VI)
-- [ ] T006 [P] [US1] Test gate/degrado: `report.ok` falso se issue ≥ soglia, vero altrimenti (REQ-082); `llm=None` → `SemanticReport(skipped=True)` senza errore (REQ-081); copertura `pages_checked/pages_total` e `max_pages` rispettato (REQ-083); parsing difensivo di JSON malformato (voci saltate, no crash)
-- [ ] T007 [P] [US1] Test idempotenza rilevazione: due run con ScriptedLLM identico → stesso insieme issue/severità (REQ-084)
+- [X] T005 [P] [US1] Test `tests/unit/test_wiki_semantic.py`: con ScriptedLLM, `semantic_lint` produce issue `obsolete` con la **claim** (REQ-071/098), `semantic_contradiction` (072), `coverage_gap` (073), `stale_summary` (074); ogni issue ha severità; **nessuna scrittura** sul wiki (Principio VI)
+- [X] T006 [P] [US1] Test gate/degrado: `report.ok` falso se issue ≥ soglia, vero altrimenti (REQ-082); `llm=None` → `SemanticReport(skipped=True)` senza errore (REQ-081); copertura `pages_checked/pages_total` e `max_pages` rispettato (REQ-083); parsing difensivo di JSON malformato (voci saltate, no crash)
+- [X] T007 [P] [US1] Test idempotenza rilevazione: due run con ScriptedLLM identico → stesso insieme issue/severità (REQ-084)
 ### Implementation
-- [ ] T008 [US1] Implementa `semantic_lint(root, llm, facade=None, *, threshold, k_code, max_pages, pages=None) -> SemanticReport` in `semantic.py`: scoperta pagine (riusa `maintenance._pages`), contesto codice via facade, prompt JSON per-claim, parsing difensivo, severità, `ok` su soglia, copertura, log strutturati (REQ-071..075/082/083/098, NFR-06)
+- [X] T008 [US1] Implementa `semantic_lint(root, llm, facade=None, *, threshold, k_code, max_pages, pages=None) -> SemanticReport` in `semantic.py`: scoperta pagine (riusa `maintenance._pages`), contesto codice via facade, prompt JSON per-claim, parsing difensivo, severità, `ok` su soglia, copertura, log strutturati (REQ-071..075/082/083/098, NFR-06)
 
 **Checkpoint**: US1 eseguibile sul wiki reale (baseline)
 
@@ -41,9 +41,9 @@ lasciati alla fase successiva (task marcati ⏭️).
 
 ## Phase 4: User Story 2 — Provenienza (P1)
 ### Tests
-- [ ] T009 [P] [US2] Test `tests/unit/test_wiki_provenance.py`: `read_provenance` default curated; `mark_provenance` inserisce/aggiorna senza distruggere il resto; pagina prodotta da `distill_artifact` risulta **generated**; modifica manuale → riclassifica curated (REQ-076/077/077b/077c)
+- [X] T009 [P] [US2] Test `tests/unit/test_wiki_provenance.py`: `read_provenance` default curated; `mark_provenance` inserisce/aggiorna senza distruggere il resto; pagina prodotta da `distill_artifact` risulta **generated**; modifica manuale → riclassifica curated (REQ-076/077/077b/077c)
 ### Implementation
-- [ ] T010 [US2] Wira la marcatura in `src/sertor_core/wiki/distill.py::distill_artifact` (marca `generated`); implementa la regola di riclassifica (helper) e la classificazione iniziale opzionale (REQ-077/077b/086)
+- [X] T010 [US2] Wira la marcatura in `src/sertor_core/wiki/distill.py::distill_artifact` (marca `generated`); implementa la regola di riclassifica (helper) e la classificazione iniziale opzionale (REQ-077/077b/086)
 
 **Checkpoint**: US2 (provenienza) testabile
 
@@ -51,18 +51,18 @@ lasciati alla fase successiva (task marcati ⏭️).
 
 ## Phase 5: User Story 4 — Proposte di correzione (P2, forma proposta)
 ### Tests
-- [ ] T011 [P] [US4] Test `tests/unit/test_wiki_semantic_fixes.py` (ScriptedLLM): `propose_fixes` genera `FixProposal` per issue su pagine **generated** (rewrite_claim / delete_page) con motivazione (REQ-078/085); su pagine **curated** **nessuna** proposta di modifica (REQ-080); **nessuna scrittura** (Principio VI)
+- [X] T011 [P] [US4] Test `tests/unit/test_wiki_semantic_fixes.py` (ScriptedLLM): `propose_fixes` genera `FixProposal` per issue su pagine **generated** (rewrite_claim / delete_page) con motivazione (REQ-078/085); su pagine **curated** **nessuna** proposta di modifica (REQ-080); **nessuna scrittura** (Principio VI)
 ### Implementation
-- [ ] T012 [US4] Implementa `propose_fixes(report, root, llm) -> list[FixProposal]` in `semantic.py`: filtra per provenienza generated, chiede all'LLM la riscrittura chirurgica della claim o propone la cancellazione; non scrive (REQ-078/080/085)
+- [X] T012 [US4] Implementa `propose_fixes(report, root, llm) -> list[FixProposal]` in `semantic.py`: filtra per provenienza generated, chiede all'LLM la riscrittura chirurgica della claim o propone la cancellazione; non scrive (REQ-078/080/085)
 
 **Checkpoint**: US4 (proposte) testabile
 
 ---
 
 ## Phase 6: Polish & Cross-Cutting
-- [ ] T013 [P] Run full suite + ruff; verifica non-distruttività (rilevazione e proposte non scrivono)
-- [ ] T014 [P] Aggiorna `src/sertor_core/README.md`: sezione "Lint semantico del wiki" allineata a quickstart
-- [ ] T015 Dogfood: esegui `semantic_lint` sul **wiki di produzione** con LLM reale (Azure), riporta il report (SC-005)
+- [X] T013 [P] Run full suite + ruff; verifica non-distruttività (rilevazione e proposte non scrivono)
+- [X] T014 [P] Aggiorna `src/sertor_core/README.md`: sezione "Lint semantico del wiki" allineata a quickstart
+- [X] T015 Dogfood: eseguito `semantic_lint` sul **wiki di produzione** con LLM reale **Ollama qwen3:30b** (Azure chat non configurato) su 6/17 pagine. Esito: il run funziona end-to-end; ha rivelato che il **corpus codice locale non è indicizzato** (collezione nomic vuota; `.index-production` è solo Azure 3072), quindi l'obsolescenza-vs-codice è degradata a coerenza interna → **aggiunta la segnalazione esplicita** `pages_without_code_context` nel report (REQ-083/097). Modello locale rumoroso (contraddizioni dubbie) → conferma auto-fix gated.
 
 ---
 

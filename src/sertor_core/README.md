@@ -127,6 +127,30 @@ distill_artifact("repo/wiki", source="specs/001-nucleo-retrieval/spec.md",
 marcatori del catalogo; `distill_artifact` **crea-se-assente** e non sovrascrive una pagina curata a
 mano. Vedi `specs/005-wiki-manutenzione/` per spec, piano, contratti e quickstart.
 
+## Lint semantico del wiki (con LLM)
+
+Il lint **strutturale** verifica la forma; il lint **semantico** (FEAT-007, Gruppo H) verifica la
+**sostanza**, confrontando le affermazioni del wiki col **codice** (contesto dalla facade di
+retrieval) e con la coerenza interna, a livello di **singola claim**. È **sola lettura**.
+
+```python
+from sertor_core.wiki.semantic import semantic_lint, propose_fixes, Severity
+from sertor_core.composition import build_llm, build_facade
+
+report = semantic_lint("repo/wiki", llm=build_llm(), facade=build_facade(),
+                       threshold=Severity.HIGH, max_pages=None)
+print(report.render())                      # obsolete / semantic_contradiction / coverage_gap / stale_summary
+import sys; sys.exit(0 if report.ok else 1)  # gate: blocca sopra soglia
+
+proposals = propose_fixes(report, "repo/wiki", llm=build_llm())  # solo pagine 'generated', non scrive
+```
+
+Senza LLM (`llm=None`) il report è `skipped=True` (degrado senza errore) e il lint strutturale resta
+operativo. La **provenienza** delle pagine (`provenance: generated|curated` nel frontmatter,
+`read_provenance`/`mark_provenance`) governa cosa l'auto-fix può proporre: le pagine `generated`
+(es. prodotte da `distill_artifact`) sono manutenibili, quelle `curated` ricevono solo proposte.
+Vedi `specs/006-wiki-lint-semantico/`.
+
 ## CLI `sertor` (esecuzione da riga di comando)
 
 Il pacchetto `sertor-cli` espone un comando `sertor` (console-script) che esegue le capacità del core

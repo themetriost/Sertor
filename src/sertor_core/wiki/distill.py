@@ -13,8 +13,10 @@ from sertor_core.domain.errors import LLMNotConfiguredError
 from sertor_core.domain.ports import LLMProvider
 from sertor_core.observability.logging import log_event
 from sertor_core.wiki.conventions import (
+    PROVENANCE_GENERATED,
     Brief,
     WikiArea,
+    mark_provenance,
     page_relpath,
     render_page,
     today_str,
@@ -106,7 +108,9 @@ def distill_artifact(
                             log_appended=False)
 
     page.parent.mkdir(parents=True, exist_ok=True)
-    page.write_text(render_page(brief, created=today, updated=today), encoding="utf-8")
+    # Marca la pagina come 'generated': l'auto-fix del lint semantico potrà manutenerla (REQ-077).
+    rendered = render_page(brief, created=today, updated=today)
+    page.write_text(mark_provenance(rendered, PROVENANCE_GENERATED), encoding="utf-8")
     _add_index_entry(root, relpath, title, _one_line(generated))
     _append_log(root, "record", title, today)
     log_event(logging.INFO, "wiki_distill_artifact", page=relpath, provider=llm.name, changed=True)

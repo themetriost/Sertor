@@ -52,6 +52,26 @@ class FakeLLM:
         return f"Sintesi distillata.\n\n{prompt.strip()}"
 
 
+class ScriptedLLM:
+    """LLM mock che ritorna risposte predefinite in sequenza (deterministico).
+
+    Per i test del lint semantico: si passa una lista di stringhe (tipicamente JSON); ogni
+    `generate` restituisce la successiva. Esaurita la lista, ripete l'ultima (run ripetuti stabili).
+    """
+
+    def __init__(self, responses: list[str], name: str = "scripted-llm"):
+        self.name = name
+        self.responses = list(responses)
+        self.calls = 0
+        self.prompts: list[str] = []
+
+    def generate(self, prompt: str, system: str | None = None) -> str:
+        self.prompts.append(prompt)
+        idx = min(self.calls, len(self.responses) - 1) if self.responses else 0
+        self.calls += 1
+        return self.responses[idx] if self.responses else "[]"
+
+
 def _cosine(a: list[float], b: list[float]) -> float:
     dot = sum(x * y for x, y in zip(a, b, strict=False))
     na = math.sqrt(sum(x * x for x in a))

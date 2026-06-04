@@ -131,6 +131,34 @@ CATALOG_BEGIN = "<!-- sertor:catalog -->"
 CATALOG_END = "<!-- /sertor:catalog -->"
 
 
+# Provenienza della pagina (FEAT-007 semantico): governa cosa l'auto-fix può modificare/cancellare.
+PROVENANCE_GENERATED = "generated"
+PROVENANCE_CURATED = "curated"
+_PROVENANCE_RE = re.compile(r"^provenance:\s*(\S+)\s*$", re.MULTILINE)
+
+
+def read_provenance(text: str) -> str:
+    """Provenienza dal frontmatter; **default `curated`** se assente (default sicuro, REQ-077c)."""
+    m = _PROVENANCE_RE.search(text)
+    value = m.group(1).strip() if m else ""
+    return PROVENANCE_GENERATED if value == PROVENANCE_GENERATED else PROVENANCE_CURATED
+
+
+def mark_provenance(text: str, value: str) -> str:
+    """Inserisce/aggiorna la riga `provenance:` nel frontmatter, in modo non distruttivo (REQ-076).
+
+    Aggiorna la riga se presente; altrimenti la inserisce dentro il blocco frontmatter `--- … ---`.
+    Se non c'è frontmatter, restituisce il testo invariato (non inventa struttura).
+    """
+    if _PROVENANCE_RE.search(text):
+        return _PROVENANCE_RE.sub(f"provenance: {value}", text, count=1)
+    if text.startswith("---\n"):
+        end = text.find("\n---", 4)
+        if end != -1:
+            return text[:end] + f"\nprovenance: {value}" + text[end:]
+    return text
+
+
 def replace_managed_block(text: str, begin: str, end: str, new_block: str) -> str:
     """Sostituisce il contenuto fra i marcatori `begin`/`end` con `new_block` (non distruttivo).
 
