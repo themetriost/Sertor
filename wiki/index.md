@@ -39,7 +39,8 @@ _(La produzione inizia ora: questa sezione cresce a ogni sessione.)_
 
 - **[[rituale-step-e-allineamento-wiki]]** — Rituale di step (Definition of Done) per impedire la deriva wiki↔progetto: a ogni step → record + lint semantico di allineamento + azioni standing estendibili. Distinzione unattended vs standing behavior; retrospettiva onesta sull'interazione del 2026-06-04. Fonte unica = `CLAUDE.md` (plugin step-ritual cancellato, riesportazione a backlog).
 - **[[sistema-wiki-fonte-unica]]** — Consolidamento del wiki (fonte unica playbook + tre interfacce sottili + automazione hook). Tassonomia consolidata; convenzioni esplicite; 6 operazioni (record, ingest, query, lint, generate-from-diff, rag-sync).
-- **[[costituzione-v1]]** — Ratifica Costituzione v1.0.0 (governance, 9 principi vincolanti, gate Constitution Check). Governa design e produzione.
+- **[[costituzione-v1]]** — Ratifica Costituzione v1.0.0 (2026-05-31) → v1.1.0 (2026-06-05, aggiunto Principio X host-agnostico); 10 principi vincolanti, gate Constitution Check. Governa design e produzione.
+- **[[missione-visione-host-agnosticita]]** — Mission/Vision canonizzate in README.md; Principio X come vincolo operativo; backlog: refactor host-agnostico di skill wiki/playbook/rituale.
 - **[[chiusura-prototipo-dogfooding]]** — Isolamento del prototipo, motore corpus-aware, RAG di dogfooding su se stesso, MCP ri-puntato.
 - **[[epiche-sertor-core-e-cli]]** — Ristrutturazione: Sertor Core (MVP, capacità RAG + Wiki) primaria; Sertor CLI (distribuzione via CLI) secondaria. Questione aperta DA-W1 su ruolo wiki.
 - **[[ruolo-wiki-da-w1]]** — DA-W1 risolta: il wiki è CORPUS + SUPERFICIE; identità, autorità, confine MVP, ruoli 1–3.

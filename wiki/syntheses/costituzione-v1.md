@@ -1,13 +1,13 @@
 ---
-title: Costituzione di Sertor v1.0.0 (ratificata)
+title: Costituzione di Sertor v1.0.0 (ratificata) → v1.1.0 (emendata 2026-06-05)
 type: synthesis
-tags: [costituzione, governance, clean-code, clean-architecture, produzione]
+tags: [costituzione, governance, clean-code, clean-architecture, produzione, principio-x, host-agnostico]
 created: 2026-05-31
-updated: 2026-05-31
+updated: 2026-06-05
 sources: [".specify/memory/constitution.md", ".specify/templates/plan-template.md"]
 ---
 
-# Costituzione di Sertor v1.0.0 (ratificata)
+# Costituzione di Sertor v1.0.0 (ratificata) → v1.1.0 (emendata 2026-06-05)
 
 ## Cosa
 
@@ -15,6 +15,11 @@ Ratificata il **2026-05-31** la **Costituzione di Sertor v1.0.0** in
 [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md). È la **fonte unica dei
 principi vincolanti** che governano il design, l'architettura e la governance di produzione di Sertor
 (core + CLI).
+
+**Emendamento v1.1.0 (2026-06-05):** aggiunto il **Principio X — Capacità host-agnostiche** per
+codificare operativamente la Mission (Sertor installabile su qualsiasi progetto ospite) e generalizzare
+il confine repo-agnostico da core-libreria a tutte le capacità (motori RAG, skill wiki, rituali).
+Vedi [[missione-visione-host-agnosticita]].
 
 ## Origine
 
@@ -34,7 +39,7 @@ Derivata da zero (ignorando le bozze del prototipo, fase di exploration). Fonti:
   intercambiabili via config" → **Dependency Rule** + **Plugin Architecture**; "production-grade" →
   **disciplina Clean Code**.
 
-## I 9 principi (vincolanti)
+## I 10 principi (vincolanti)
 
 ### I. Core a dipendenze verso l'interno
 **NON-NEGOZIABILE.** La libreria core è il prodotto. Non importa SDK provider (Azure/OpenAI) né CLI.
@@ -82,6 +87,15 @@ Retrieval, creazione embeddings, indicizzazione emettono **log strutturati:** op
 scelto, conteggi (doc/chunk), dimensione embedding, tempi, errori. **Nessun segreto nei log.**
 → **FEAT-001 REQ-031, FEAT-002 NFR-007, FEAT-003 RNF-004**
 
+### X. Capacità host-agnostiche (NUOVO 2026-06-05)
+Ogni capacità di Sertor — nucleo, motori RAG, indicizzazione, skill wiki, rituali di orchestrazione —
+**MUST essere disaccoppiata dal dominio/struttura dell'ospite**. L'ospite si configura, non si presume.
+Nessuna assunzione hardcoded su percorsi, nomi, strutture cartelle ospite; ciò che varia fra ospiti
+vive in configurazione, non nel corpo della capacità. Il dogfooding è strumentale: **non è licenza
+per violare il confine**. **Test non-negoziabile:** una capacità opera su ospiti diversi (code+doc,
+solo-doc, solo-code) senza modifiche al corpo — solo cambiando config.
+→ **Mission (README), REQ-E1, CS-5, Principio I generalizzato**
+
 ## Sezioni aggiuntive nella Costituzione
 
 - **Sicurezza, segreti e provenienza** (REQ-E5): no hardcoded secret, `.env` only,
@@ -109,13 +123,20 @@ A partire dal prossimo step di design:
 - **Principle I** e **IV** sono gate non-negoziabili (falliscono Constitution Check se non soddisfatti).
 - Semplifica discussioni future: "questo non soddisfa Principle X" chiude il dibattito.
 
+## Versioning e emendamenti
+
+- **v1.0.0** — 2026-05-31, ratificata (9 principi).
+- **v1.1.0** — 2026-06-05, emendamento MINOR (aggiunto Principio X — host-agnosticità).
+  Documento: [`../.specify/memory/constitution.md`](../../.specify/memory/constitution.md).
+
 ## Riferimenti
 
-- **Fonte unica:** [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md) (v1.0.0)
+- **Fonte unica:** [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md) (v1.1.0)
 - **Template planning:** [`.specify/templates/plan-template.md`](../../.specify/templates/plan-template.md)
-  (Constitution Check integrato)
+  (Constitution Check integrato, gate "X — Host-agnostico" aggiunto)
 - **Requisiti allineati:**
   - [[epiche-sertor-core-e-cli]] — structure epiche
   - [[decomposizione-must-core]] — come i Must plasmano da Principle I–IX
   - [[ruolo-wiki-da-w1]] — vi contribuisce Principle VII (leggibilità, comunicazione)
   - [[hook-sessionstart-wiki]] — realizzazione di osservabilità (Principle IX, contesto iniettato)
+  - [[missione-visione-host-agnosticita]] — Principio X come traduzione operativa di Mission/Vision
