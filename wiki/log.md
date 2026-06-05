@@ -298,6 +298,24 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
 - **Contenuto:** pagina creata `wiki/syntheses/rituale-step-e-allineamento-wiki.md` § 5 *"Fonte unica del rituale: CLAUDE.md come autorità (decisione 2026-06-05)"* — reframe, vincolo, decisione, backlog differito.
 - **File toccati:** `wiki/syntheses/rituale-step-e-allineamento-wiki.md` (nuova sezione 5, rinumerate sezioni seguenti a 6+, tag `fonte-unica` aggiunto a frontmatter), `wiki/log.md` (voce corrente).
 
+## [2026-06-05] record | FEAT-003-D nucleo wiki deterministico implementato (SpecKit)
+
+- **Milestone:** Completamento della **metà deterministica** del LLM Wiki (FEAT-003-D, decomposizione di FEAT-003 lungo confine record/LLM). Implementazione via SpecKit completo (specify → clarify → plan → tasks → implement) completata il 2026-06-05.
+- **Libreria:** sottopacchetto `src/sertor_core/wiki_tools/` (11 moduli: profile, frontmatter, contracts, scan, structure, lint, collect, registry, indexing, __main__, __init__).
+- **Configurazione:** `wiki.config.toml` (profilo host di Sertor, UNICA fonte di specificità dell'ospite — Principio X + VIII).
+- **Operazioni meccaniche:** US1–US5 complete (scan mtime-based, structure idempotente, lint meccanico, enumerazione + registri idempotenti, orchestrazione indicizzazione).
+- **CLI:** `sertor-wiki-tools` (console-script registrato in `pyproject.toml`); operazioni: scan, lint, structure, validate, collect, index.
+- **Contratti:** dataclass puri + serializzazione JSON versionata (`wiki.scan/1`, `wiki.lint/1`, `wiki.structure/1`, `wiki.index/1`, etc.); consumati da hook refactorizzato, skill, FEAT-003-N.
+- **Test:** 8 test suite, 44 verdi, ruff clean, Constitution Check 10/10 ✅ (all principi inclusi NON-NEGOZIABILI I/IV/X).
+- **Offline garantito:** zero nuove dipendenze esterne (solo stdlib); import lazy del facade di retrieval (US5) → operazioni wiki_tools non dipendono da vector store.
+- **Host-agnostico (Principio X):** SC-001 dimostra — **stesso codice immodificato** esegue operazioni su Sertor ("code+doc") e ospite finto `doc_only_host` ("solo-doc"), differendo **solo** per config.
+- **Fixture nuova:** `tests/fixtures/doc_only_host/` (ospite finto per prova SC-001).
+- **Punti aperti segnalati:** (1) import package-root non lazy (`sertor_core/__init__.py` importa eagerly composition → chromadb); offline-import garantito solo a livello wiki_tools; (2) link rotto reale nel wiki: `[[architettura-attuale]]` in `syntheses/chiusura-prototipo-dogfooding.md` → pagina inesistente (scoperto dal lint).
+- **Branch:** `spec/006-nucleo-wiki-deterministico` | Commit: `4ac4eaa` (non su master, nessuna PR ancora).
+- **Pagina creata:** `wiki/syntheses/nucleo-wiki-deterministico-feat003d.md` (sintesi completa, Constitution Check 10/10, linkage a [[costituzione-v1]], [[missione-visione-host-agnosticita]]).
+- **Link rotto corretto (scoperto dal lint):** `[[architettura-attuale]]` in `syntheses/chiusura-prototipo-dogfooding.md` → pagina inesistente rimossa, testo generalizzato a "concetto di architettura da `prototype/wiki/`".
+- **File toccati:** Nuova pagina `wiki/syntheses/nucleo-wiki-deterministico-feat003d.md`, aggiornati `wiki/index.md` (timestamp + link), `wiki/syntheses/chiusura-prototipo-dogfooding.md` (link rotto corretto), `wiki/log.md` (voce corrente).
+
 ## [2026-06-05] record | Mission/Vision canonizzate (README) + Costituzione v1.1.0 (Principio X host-agnostico)
 
 - **README.md (nuovo):** formalizzazione di Vision ("la conoscenza viva e interrogabile, ovunque, senza lock-in") e Mission ("Sertor framework installabile su qualsiasi progetto: indicizzazione + RAG + LLM Wiki, disaccoppiati dal dominio ospite"). Tre profili ospite: code+doc, solo-doc, solo-code. Sottolinea che disaccoppiamento è vincolo, non aspirazione.

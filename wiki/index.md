@@ -3,7 +3,7 @@ title: Indice del Wiki — Produzione Sertor
 type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
-updated: 2026-06-05 (voce log aggiunta: PR #11 ritirata + consolidamento FEAT-010 in FEAT-003)
+updated: 2026-06-05 (FEAT-003-D implementato + nucleo wiki deterministico registrato)
 sources: ["requirements/sertor-core/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "src/sertor_core/**", "CLAUDE.md"]
 ---
 
@@ -37,6 +37,7 @@ _(La produzione inizia ora: questa sezione cresce a ogni sessione.)_
 
 ### Syntheses (sintesi trasversali)
 
+- **[[nucleo-wiki-deterministico-feat003d]]** — Implementazione FEAT-003-D (metà deterministica del wiki LLM): 11 moduli, 8 test, zero LLM, host-agnostico (Principio X), guidato da `wiki.config.toml`, contratti JSON versionati. Constitution Check 10/10 ✅. Offline per costruzione.
 - **[[rituale-step-e-allineamento-wiki]]** — Rituale di step (Definition of Done) per impedire la deriva wiki↔progetto: a ogni step → record + lint semantico di allineamento + azioni standing estendibili. Distinzione unattended vs standing behavior; retrospettiva onesta sull'interazione del 2026-06-04. Fonte unica = `CLAUDE.md` (plugin step-ritual cancellato, riesportazione a backlog).
 - **[[sistema-wiki-fonte-unica]]** — Consolidamento del wiki (fonte unica playbook + tre interfacce sottili + automazione hook). Tassonomia consolidata; convenzioni esplicite; 6 operazioni (record, ingest, query, lint, generate-from-diff, rag-sync).
 - **[[costituzione-v1]]** — Ratifica Costituzione v1.0.0 (2026-05-31) → v1.1.0 (2026-06-05, aggiunto Principio X host-agnostico); 10 principi vincolanti, gate Constitution Check. Governa design e produzione.

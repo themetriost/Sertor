@@ -162,8 +162,7 @@ find_symbol("HybridIndex")
 2. **Wiki:** il wiki storico del prototipo (`prototype/wiki/`) è **congelato**. Il nuovo
    wiki (`wiki/`) è il centro di documentazione di produzione. Se serve riferire un
    concetto o tecnologia dal prototipo, si linkano le pagine di produzione e si cita il
-   MCP (es. `[[architettura-attuale]] (referenza storica da prototype/wiki)`, accedi via
-   `sertor-rag`).
+   MCP (es. concetto di architettura da `prototype/wiki/`, accedi via `sertor-rag`).
 
 3. **Test e validazione:** il corpus di dogfooding funge da **automated acceptance test**
    per il motore RAG. Ogni modifica al pipeline di ingestion, embedding, ranking dovrebbe
