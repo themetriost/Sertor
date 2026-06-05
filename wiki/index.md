@@ -54,6 +54,6 @@ _(La produzione inizia ora: questa sezione cresce a ogni sessione.)_
 ### Tech (tecnologie e infrastruttura)
 
 - **[[hook-sessionstart-wiki]]** — Hook SessionStart di Claude Code: carica indice + log a inizio sessione. Ruolo 1 di DA-W1 (contesto iniettato).
-- **[[tree-sitter-language-pack]]** — Binding Rust multilingua (305+ lingue), parser robusto, 14 lingue sintattico MVP + 3 fallback, wrapper `_Node` per API metodo-based.
+- **[[tree-sitter-language-pack]]** — Binding Rust multilingua (305+ lingue), parser robusto, set MVP 14 lingue (10 sintattico + 4 fallback: PowerShell, Bash, T-SQL, PL/SQL), wrapper `_Node` per API metodo-based.
 - **[[naming-corpora-indici]]** — Schema naming chiarificato (dal 2026-06-04): corpus `sertor` (prodotto, radice) vs `prototype` (prototipo, congelato); indici `.index-sertor` (radice) vs `.index-prototype` (prototipo).
 - **[[pulizia-pycache-e-diagnosi-mcp]]** — Cleanup del 2026-06-05: rimossi 16 dir `__pycache__` fantasma, diagnosi architetturale che solo `sertor_core` vive su master (CLI/MCP/wiki su branch), decisione su `.mcp.json` rotto (aspetta merge `feat/mcp-sertor-core`).

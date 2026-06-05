@@ -22,7 +22,7 @@ Completamento della **metà deterministica** del wiki LLM (FEAT-003 decomporta i
 - **Trama US1–US5 + CLI:** ✅ Implementate (11 moduli, 8 test, 44 verdi).
 - **Code quality:** ✅ ruff clean.
 - **Constitution Check:** ✅ PASS su **tutti e 10 i principi**, inclusi i NON-NEGOZIABILI (I, IV, X); Complexity Tracking vuoto.
-- **Branch:** `spec/006-nucleo-wiki-deterministico` | **Commit:** `4ac4eaa` (non ancora su master, no PR).
+- **Branch:** `spec/006-nucleo-wiki-deterministico` (commit impl. `4ac4eaa`) → **mergiata su `master`** via **PR #13** (merge `17569da`, 2026-06-05); branch conservato. Fix post-test inclusi: CLI forza UTF-8 e correzione di link rotti scoperti dal lint stesso.
 - **Console-script:** `sertor-wiki-tools` (entry-point via `__main__.py`, registrato in `pyproject.toml`).
 
 ## Architettura Realizzata

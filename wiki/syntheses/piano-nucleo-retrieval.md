@@ -74,7 +74,7 @@ Consolidate in `specs/001-nucleo-retrieval/research.md`. Estratto:
 
 | Decisione | Risolve | Soluzione MVP |
 |-----------|---------|---|
-| **R1: Chunking sintattico multilinguaggio** | REQ-006/007/009 | `tree-sitter-language-pack` wheel precompilati (305+ linguaggi, Win/Linux nativo); set MVP: 10 sintattici + 3 fallback (PowerShell, T-SQL, PL/SQL) al 1° rilascio, migliorabili incrementalmente (REQ-011). Dispatcher parametrizzato per linguaggio. |
+| **R1: Chunking sintattico multilinguaggio** | REQ-006/007/009 | `tree-sitter-language-pack` wheel precompilati (305+ linguaggi, Win/Linux nativo); set MVP: 10 sintattici + 4 fallback (PowerShell, Bash, T-SQL, PL/SQL) al 1° rilascio, migliorabili incrementalmente (REQ-011). Dispatcher parametrizzato per linguaggio. |
 | **R2: Astrazione minimale vector store** | REQ-017/019/027 | Porta `VectorStore`: `upsert(chunks, vectors)`, `query(vector, k, filter)`, `delete(ids)`, `count()`. Namespacing per collezione = `{corpus}-{provider}-{dim}`, non directory separate. Backend: Chroma embedded (default), Azure AI Search (extra opzionale). |
 | **R3: Provider embeddings intercambiabili** | REQ-012/013/014/015/016 | Porta `EmbeddingProvider`: `embed(texts) -> list[vector]`, proprietà `dim`/`name`/`batch_size`. Adapter: Ollama (REST locale), Azure OpenAI (REST cloud, extra). Local-only via config (`RAG_BACKEND=local`). Errori strutturati (`EmbeddingError` retriable). |
 | **R4: ID stabili & idempotenza** | REQ-004/010, NFR-02 | `doc_id` = path relativo POSIX dalla radice repo; `chunk_id` = `{doc_id}#{ordinale}` stabile. Re-run → stessi ID → idempotenza (già testata nel prototipo). Mitiga rischio R-N3. |
@@ -121,14 +121,14 @@ Specifici in `specs/001-nucleo-retrieval/contracts/`:
 
 **MVP (FEAT-001/002):**
 - Ingestione repo-agnostica (REQ-001/002/003).
-- Chunking 14 linguaggi (10 sintattico, 3 fallback).
+- Chunking 14 linguaggi (10 sintattico, 4 fallback).
 - Embeddings Ollama locale (defalt).
 - Vector store Chroma embedded.
 - Full re-index idempotente.
 - Facade + test.
 
 **Post-MVP (FEAT-004/005/006/007, backlog):**
-- Estensione linguaggi (PowerShell, T-SQL, PL/SQL sintattico).
+- Estensione linguaggi (PowerShell, Bash, T-SQL, PL/SQL sintattico).
 - Re-index incrementale (FEAT-009, soddisfa sorgenti dinamiche FEAT-007).
 - Formati non-testo (PDF, DOCX).
 - Reranking, ibrido, grafo, agentico.
