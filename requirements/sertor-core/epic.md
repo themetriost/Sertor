@@ -120,7 +120,7 @@ produzione: testato, configurabile, repo-agnostico, osservabile, riusabile come 
 |----|---------|--------------------|-------------------|-------|
 | FEAT-001 | **Nucleo di retrieval condiviso** (ingestione repo-agnostica, chunking code-aware, embeddings multi-provider, astrazione vector store, facade di retrieval) | Fondazione production-grade su cui poggiano tutti i motori | **Must** | [decomposta](nucleo-retrieval/requirements.md) |
 | FEAT-002 | **Motore RAG vettoriale (baseline)** production-grade | La capacità minima di "creare un RAG" interrogabile | **Must** | [decomposta](rag-baseline/requirements.md) |
-| FEAT-003 | **Skill: creare/indicizzare l'LLM Wiki** (indicizza il progetto in MD, documenta in continuo, archivia/distilla conversazioni) | Conoscenza persistente e cumulativa del progetto | **Must** | [decomposta](wiki-creazione/requirements.md) |
+| FEAT-003 | **Skill: creare/indicizzare l'LLM Wiki** (indicizza il progetto in MD, documenta in continuo, archivia/distilla conversazioni) | Conoscenza persistente e cumulativa del progetto | **Must** | consolida FEAT-010 (e2e); **in progress** (vince 010) — [decomposta](wiki-creazione/requirements.md) |
 | FEAT-004 | **Motore RAG ibrido + reranking** (dense + lessicale/BM25 + reranking) | Qualità di retrieval superiore al baseline | **Should** | da decomporre |
 | FEAT-005 | **Motore RAG a grafo** (code-graph AST / GraphRAG) | Retrieval strutturale/relazionale; non richiede vector DB | **Should** | da decomporre |
 | FEAT-006 | **Motore RAG agentico** (retrieval iterativo/multi-step, query planning) | Risposte composite su domande complesse | **Should** | da decomporre |
@@ -132,6 +132,15 @@ produzione: testato, configurabile, repo-agnostico, osservabile, riusabile come 
 > **vettoriale** funzionante poggiato sul **nucleo condiviso**, e **(2)** la **creazione di un LLM Wiki**.
 > Ibrido/grafo/agentico e la manutenzione/arricchimento del wiki seguono come incrementi (Should/Could),
 > riusando il nucleo. Le quattro modalità RAG restano tutte parte del **core** della visione.
+
+> **Decomposizione di FEAT-003 (2026-06-05) — refactor host-agnostico lungo il confine meccanico↔giudizio:**
+> - **FEAT-003-D — Nucleo wiki deterministico host-agnostico** (config `wiki.config.toml` + `wiki_tools`:
+>   profile/structure/scan/collect/lint-meccanico/index-log mechanics/idempotenza — REQ-001..006, REQ-011/012,
+>   REQ-050/051, FR-006-meccanico, FR-009/010/011). **Zero LLM.** → portata avanti via **SpecKit**
+>   (branch+PR, Constitution Check, gate **Principio X**).
+> - **FEAT-003-N — Operazioni wiki assistite da LLM** (record-contenuto, distill, generazione, ingest-compile,
+>   lint semantico, giudizio verità/obsolescenza, gate al commit human-in-the-loop). → tracciata come
+>   **TODO collaborativo** in [`wiki-llm/TODO.md`](wiki-llm/TODO.md), affrontata passo-passo (non SpecKit).
 
 ## 9. Decisioni risolte
 

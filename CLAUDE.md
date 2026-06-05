@@ -87,7 +87,7 @@ prototipo · `prototype` = dogfooding sul prototipo stesso); gli indici sono nam
 ## Il nucleo di produzione: `sertor-core` (`src/`)
 
 La produzione vive in `src/sertor_core/` (pacchetto `sertor-core`, `pyproject.toml` a root): una
-libreria di retrieval **importabile**, costruita in **Clean Architecture** sotto i 9 principi della
+libreria di retrieval **importabile**, costruita in **Clean Architecture** sotto i principi della
 costituzione (`.specify/memory/constitution.md`). È **il prodotto** — il CLI/MCP ne sarà un
 consumatore sottile.
 
@@ -178,6 +178,44 @@ I marker pytest sono definiti in `pyproject.toml`: `cloud` (richiede credenziali
 - Nessuna over-engineering: aggiungere astrazioni solo quando un esperimento le richiede.
 - Mantenere ogni esperimento eseguibile in locale senza dipendere da Azure.
 
+## Rituale di step / Definition of Done (regola SEMPRE attiva)
+
+Uno **step** è un'unità di lavoro significativa (una feature, un fix, una decisione, una ricerca,
+un'analisi). **Alla fine di ogni step**, il flusso principale (Claude) esegue — **di propria
+iniziativa, senza che l'utente debba chiederlo** — questa checklist. Sono **azioni da LLM nel loop**:
+le eseguo io, qui, esattamente come già scrivo `wiki/log.md`. **Non** dipendono da hook né da
+automazione *unattended*: la distinzione è netta —
+
+- *automatico unattended* = far scattare qualcosa **quando non c'è nessuno** (timer/evento → script o
+  `claude -p` headless; un hook non ragiona, non avvia un subagent in-loop);
+- *comportamento standing* = ciò che faccio **sistematicamente mentre lavoriamo**, perché è il mio modo
+  di operare. Il rituale qui sotto è di questo secondo tipo: per esso **non esiste alcun limite tecnico**.
+
+1. **Registra** — aggiorna `wiki/log.md` (+ pagine impattate e `index.md`): operazione `record` del
+   playbook. *(già attivo)*
+2. **Lint semantico di allineamento** — verifica che il wiki **non sia andato alla deriva** rispetto
+   alla realtà del progetto (codice in `src/`, `specs/`, `requirements/`, stato git): **segnala
+   esplicitamente ogni claim che il repo contraddice**; correggi su conferma. Va **oltre** il `lint`
+   meccanico (link rotti/orfani/frontmatter): è il confronto *contenuto del wiki ↔ realtà del progetto*.
+   **È giudizio, non trascrizione: resta nel flusso principale (Opus) e NON si delega a Haiku** — il
+   flusso principale ha già il contesto dello step, mentre un agente lo rileggerebbe a freddo (più
+   costoso e più lossy). Se in casi pesanti va proprio delegato, usa un override `sonnet`
+   per-invocazione, **mai** il default Haiku del `wiki-keeper`.
+3. **\<altre azioni\>** — questa lista è **estendibile**: ogni azione che l'utente chiede di rendere
+   *standing* va aggiunta qui, e da quel momento fa parte del rituale a ogni step.
+
+**Responsabilità & delega.** Che queste azioni **avvengano** a ogni step è responsabilità del flusso
+principale. Eseguirle direttamente oppure **delegarle** è solo una scelta per non bloccare il flusso —
+la delega **non è un modo per saltarle**. **Confine di delega netto:** il `record` (trascrizione
+strutturata: pagine, backlink, `index.md`, voce di `log.md`) si delega al `wiki-keeper` (Haiku),
+perché è lavoro di forma rette dal brief; il **lint semantico** (punto 2, giudizio) **resta nel flusso
+principale**, non a Haiku. Git si delega al `configuration-manager`. Gli hook `SessionStart`/`Stop`
+restano **promemoria vincolanti**, non opzionali.
+
+**Calibra al valore:** modifiche puramente meccaniche o di poco conto non innescano il rituale (vedi
+*regola aurea* del wiki). Lo step è "significativo" quando produce conoscenza, decisioni o codice.
+Vedi [[rituale-step-e-allineamento-wiki]].
+
 ## Git & versionamento (regola SEMPRE attiva)
 
 Questo workspace è un **repo git con remote `origin`** (ci si pusha regolarmente). **Policy di branching durante la fase di prototipo (attuale):** commit e push **direttamente su `master`/`main`** (autorizzato). Al passaggio in produzione si adotterà **SpecKit** e si lavorerà a **branch + PR** (niente più push diretti su main). Convenzione: **un commit dopo ogni step** di lavoro significativo (incluso l'aggiornamento del wiki). Messaggi in stile
@@ -259,6 +297,6 @@ delega che resta affidata al `wiki-keeper`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/002-rag-baseline/plan.md` (FEAT-002 — motore RAG vettoriale baseline).
-FEAT-001 (nucleo di retrieval) è in `master`: `specs/001-nucleo-retrieval/plan.md`.
+`specs/006-nucleo-wiki-deterministico/plan.md` (FEAT-003-D — nucleo wiki deterministico host-agnostico).
+In `master`: FEAT-001 `specs/001-nucleo-retrieval/plan.md`, FEAT-002 `specs/002-rag-baseline/plan.md`.
 <!-- SPECKIT END -->

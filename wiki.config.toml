@@ -1,0 +1,57 @@
+# Profilo host del LLM Wiki di Sertor (dogfooding di FEAT-003-D).
+#
+# UNICA fonte di specificità dell'ospite (Principio X / VIII): il nucleo deterministico
+# `sertor_core.wiki_tools` legge SOLO questo file — nessun path/nome/lingua/tassonomia è
+# hard-coded nel codice. Per portare la capacità su un altro progetto basta un file diverso.
+
+profile = "code+doc"
+language = "it"
+root = "wiki"
+index_file = "index.md"
+log_file = "log.md"
+
+source_dirs = ["src", "specs", "requirements", ".claude"]
+exclude = [
+    ".git", ".venv*", "venv", "__pycache__",
+    ".ruff_cache", ".pytest_cache", ".mypy_cache",
+    "node_modules", ".index*",
+]
+frontmatter_required = ["title", "type", "tags", "created", "updated"]
+frontmatter_optional = ["sources"]
+
+[[taxonomy]]
+name = "concepts"
+dir = "concepts"
+type = "concept"
+
+[[taxonomy]]
+name = "tech"
+dir = "tech"
+type = "tech"
+
+[[taxonomy]]
+name = "experiments"
+dir = "experiments"
+type = "experiment"
+
+[[taxonomy]]
+name = "sources"
+dir = "sources"
+type = "source"
+
+[[taxonomy]]
+name = "syntheses"
+dir = "syntheses"
+type = "synthesis"
+
+[roles]
+curator = "wiki-keeper"
+vcs = "configuration-manager"
+
+[rag]
+enabled = true
+corpus = "wiki"
+
+[strings]
+pending = "Lavoro non ancora registrato nel wiki: {n} file più recenti dell'ultima voce di log."
+clean = "Wiki allineato: nessun file più recente dell'ultima voce di log."

@@ -209,3 +209,129 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
   - `CLAUDE.md` § "Riferirsi al prototipo": sezione aggiornata (corpus→`prototype`, spiegazione corpus-aware).
 - **Pagina creata:** `wiki/tech/naming-corpora-indici.md` documenta schema, convenzioni, storico.
 - **Index aggiornato:** aggiunto link `[[naming-corpora-indici]]` in sezione Tech; `updated` → 2026-06-04.
+
+## [2026-06-04] record | Rituale di step (Definition of Done) + retrospettiva interazione
+
+- **Problema:** il wiki = documentazione del progetto era in **deriva** rispetto alla realtà di `master`
+  (memoria dava per mergiate FEAT-003/004/MCP/CLI; in realtà solo FEAT-001+002 dopo il reset del 2026-06-04).
+  Nessun meccanismo verificava *contenuto wiki ↔ realtà progetto*.
+- **Decisione (svolta dell'utente):** le azioni semantiche (record + lint di allineamento) sono **lavoro da
+  LLM nel loop**, quindi il flusso principale può/deve farle **come comportamento standing**, senza dipendere
+  da hook/automazione *unattended*. Distinzione codificata: *unattended* (script/headless/cron, "quando non
+  c'è nessuno") vs *standing* ("lo faccio mentre lavoro", nessun limite tecnico).
+- **`CLAUDE.md`:** nuova sezione **"Rituale di step / Definition of Done" (regola SEMPRE attiva)** prima di
+  *Git & versionamento*. Checklist a fine step: (1) record su `log.md`/pagine/`index.md`; (2) **lint semantico
+  di allineamento** wiki↔progetto (oltre al lint meccanico); (3) lista azioni standing **estendibile**. Delega
+  (`wiki-keeper`/`configuration-manager`) = non-bloccare, **non** un modo per saltare il rituale.
+- **Pagina creata:** `syntheses/rituale-step-e-allineamento-wiki.md` — design anti-deriva (due nature dei
+  controlli, vincolo hook, standing vs unattended) + **retrospettiva onesta** sull'interazione (richiesta
+  dall'utente per un blog post): nessun rifiuto esplicito, ma un pattern di deferral/ratifica/caveat che ha
+  *funzionato* come ostruzione; effetto > intento; correttivo = default "fai" invece di "chiedi-poi-forse-fai".
+- **Index aggiornato:** aggiunto `[[rituale-step-e-allineamento-wiki]]` in cima alle Syntheses.
+- **Nota di allineamento (eseguito il rituale stesso):** rilevati ma NON ancora corretti — wikilink rotto
+  storico `[[epica-sertor-cli]]`→`[[epiche-sertor-core-e-cli]]` in `chiusura-prototipo-dogfooding.md`;
+  `__pycache__` fantasma in `src/sertor_cli|sertor_mcp|sertor_core/wiki|adapters/git|adapters/llm` (zero
+  sorgenti); `.mcp.json` punta a server prototipo rotto (manca modulo `mcp` in `.venv`). Da sistemare su richiesta.
+
+## [2026-06-04] lint | Allineamento wiki↔progetto (primo lint semantico del rituale)
+
+- **Eseguito** il punto 2 del nuovo *Rituale di step*: confronto *contenuto wiki ↔ realtà di `master`* (b0703ec).
+- **Esito:** wiki **sostanzialmente allineato** — le pagine versionate descrivono FEAT-001/002 come fatti (vero)
+  e **non** millantano FEAT-003/004/010 come mergiate. Il disallineamento grave era nella **memoria** (dava per
+  mergiate cose rimosse dal `reset` del 2026-06-04), non nelle pagine del wiki.
+- **Corretto:** wikilink rotto `[[epica-sertor-cli]]` → `[[epiche-sertor-core-e-cli]]` in
+  `syntheses/chiusura-prototipo-dogfooding.md` (la pagina target del prototipo è congelata/superata).
+- **Segnalato (fuori scope del lint wiki, da decidere):** `__pycache__` fantasma in
+  `src/{sertor_cli,sertor_mcp,sertor_core/wiki,adapters/git,adapters/llm}` (zero sorgenti, fa *sembrare*
+  presente codice assente); `.mcp.json` punta al server prototipo rotto (`ModuleNotFoundError: mcp` in `.venv`).
+- **RISOLTO il 2026-06-05** → voce successiva.
+
+## [2026-06-05] record | Pulizia pycache fantasma + diagnosi .mcp.json
+
+- **Cleanup eseguito:**
+  - Rimozione di 16 dir `__pycache__` da `src/sertor_core/` (bytecode `.pyc` residui da checkout di altri branch).
+  - Pulizia di 6 directory vuote rimaste: `src/sertor_cli/`, `src/sertor_cli/commands/`, `src/sertor_core/adapters/{git,llm}/`, `src/sertor_core/wiki/`, `src/sertor_mcp/`.
+  - Tutti i `.pyc` sono gitignored → niente da committare, nessun file sorgente toccato.
+
+- **Diagnosi architetturale (critico per wiki allineamento):**
+  - Su `master` (HEAD a4640b8) **esiste SOLO** `src/sertor_core/` (domain, services, adapters, engines, config, observability, composition).
+  - **NON su master** (vivono su branch):
+    - `src/sertor_cli/` → branch sconosciuto.
+    - `src/sertor_mcp/` → branch `feat/mcp-sertor-core` (PR #12 aperta).
+    - `src/sertor_core/wiki/` → branch `spec/005-llm-wiki` (PR #11 aperta, parte di FEAT-010).
+  - I `.pyc` fantasma facevano *sembrare* presente codice che esiste solo su branch — spiega la confusione precedente.
+
+- **Diagnosi .mcp.json:**
+  - Server `prototype/04-agentic-rag/mcp_server.py` è **rotto**: carica tutti e 4 gli approcci RAG (01–04) con dipendenze inconciliabili.
+  - Due venv complementari: `.venv/` ha `chromadb` ma manca `mcp`; `.venv-core/` ha `mcp` ma manca stack retrieval.
+  - Risultato: `ModuleNotFoundError` all'avvio.
+
+- **Decisione (presa da utente):** NON rianimare il vecchio server agentico. Rimane **known-broken, pendente**:
+  - Causa: server prototipo = exploration phase, bassa priorità su `master`.
+  - Soluzione: `.mcp.json` sarà ri-puntato a nuovo `sertor_mcp` (branch `feat/mcp-sertor-core`) **quando sarà mergiato su master** (post-FEAT-010 presumibilmente).
+
+- **Pagina creata:** `tech/pulizia-pycache-e-diagnosi-mcp.md` documenta il cleanup, diagnosi, decisione e conseguenze operative.
+
+- **Aggiornamenti:**
+  - `wiki/index.md` (updated → 2026-06-05, aggiunto link a nuova pagina tech in sezione Tech).
+  - `wiki/log.md` (voce corrente).
+
+- **Stato finale:** flag segnalazioni 2026-06-04 CHIUSI (pycache risolto, .mcp.json con decisione documentata).
+
+## [2026-06-05] record | Confine di delega del rituale: lint semantico resta in casa
+
+- **Precisazione documentata:** `syntheses/rituale-step-e-allineamento-wiki.md` — nuova sezione 4a *Confine di delega*.
+- **Contenuto:** chiarimento netto su quale azione delegare a `wiki-keeper` (Haiku) vs mantenere nel flusso principale (Opus):
+  - ✅ **record** → delegabile: trascrizione strutturata (brief → pagine/backlink/log), lavoro di forma retto dal playbook.
+  - ❌ **lint semantico di allineamento** → NON delegabile: richiede giudizio e contesto dello step appena completato. Re-leggere a freddo per delegare = token costosi + rischio di giudizi lossy. Flusso principale ha già la visione.
+- **Motivo tecnico:** distinzione tra "lavoro di forma" (token-efficiente da delegare) e "giudizio" (loss di contesto se delegato). Se casi pesanti richiedono override, usare `sonnet` per-invocazione, non il default Haiku.
+- **Conseguenza operativa:** rituale rimane **integralmente responsabilità del flusso principale**; delega = non-bloccare, non scappare. **Qualità del brief** (input a wiki-keeper) è la leva cruciale: brief povero → wiki disallineato silenziosamente.
+- **File toccati:** `wiki/syntheses/rituale-step-e-allineamento-wiki.md` (frontmatter updated 2026-06-05, sezione 4a aggiunta, tag `delega` aggiunto).
+- **Index aggiornato:** nessun link nuovo (già presente [[rituale-step-e-allineamento-wiki]]), solo update timestamp.
+
+## [2026-06-05] record | Fonte unica del rituale = CLAUDE.md (plugin step-ritual cancellato, riesportazione a backlog)
+
+- **Riconoscimento chiave:** il Rituale di step viveva in due posti fino al 2026-06-05: (1) `CLAUDE.md` istanza operativa concreta, (2) `plugins/step-ritual/` principio astratto/portabile. Non erano "copie derivate" ma **due livelli di astrazione**.
+- **Vincolo decisivo:** il rituale è standing behavior (azione LLM nel loop). Standing behavior NON può vivere in un plugin/asset non garantito in contesto. La versione operativa (autorità) **deve** stare in `CLAUDE.md` e solo lì, finché il rituale evolve.
+- **Decisione (utente):** **fonte unica = `CLAUDE.md`.** Plugin `plugins/step-ritual/` e `.claude-plugin/marketplace.json` **cancellati** (untracked, mai committati → zero seconde copie, zero deriva).
+- **Backlog differito (non abbandonato):** quando sezione *"Rituale di step"* in `CLAUDE.md` sarà matura/stabile, riesportarla come plugin portabile repository-agnostico (asset riusabile, coerente col goal toolset enterprise). Ridecidere nome, collocamento, if Sertor consume via dogfooding oppure esporta.
+- **Contenuto:** pagina creata `wiki/syntheses/rituale-step-e-allineamento-wiki.md` § 5 *"Fonte unica del rituale: CLAUDE.md come autorità (decisione 2026-06-05)"* — reframe, vincolo, decisione, backlog differito.
+- **File toccati:** `wiki/syntheses/rituale-step-e-allineamento-wiki.md` (nuova sezione 5, rinumerate sezioni seguenti a 6+, tag `fonte-unica` aggiunto a frontmatter), `wiki/log.md` (voce corrente).
+
+## [2026-06-05] record | FEAT-003-D nucleo wiki deterministico implementato (SpecKit)
+
+- **Milestone:** Completamento della **metà deterministica** del LLM Wiki (FEAT-003-D, decomposizione di FEAT-003 lungo confine record/LLM). Implementazione via SpecKit completo (specify → clarify → plan → tasks → implement) completata il 2026-06-05.
+- **Libreria:** sottopacchetto `src/sertor_core/wiki_tools/` (11 moduli: profile, frontmatter, contracts, scan, structure, lint, collect, registry, indexing, __main__, __init__).
+- **Configurazione:** `wiki.config.toml` (profilo host di Sertor, UNICA fonte di specificità dell'ospite — Principio X + VIII).
+- **Operazioni meccaniche:** US1–US5 complete (scan mtime-based, structure idempotente, lint meccanico, enumerazione + registri idempotenti, orchestrazione indicizzazione).
+- **CLI:** `sertor-wiki-tools` (console-script registrato in `pyproject.toml`); operazioni: scan, lint, structure, validate, collect, index.
+- **Contratti:** dataclass puri + serializzazione JSON versionata (`wiki.scan/1`, `wiki.lint/1`, `wiki.structure/1`, `wiki.index/1`, etc.); consumati da hook refactorizzato, skill, FEAT-003-N.
+- **Test:** 8 test suite, 44 verdi, ruff clean, Constitution Check 10/10 ✅ (all principi inclusi NON-NEGOZIABILI I/IV/X).
+- **Offline garantito:** zero nuove dipendenze esterne (solo stdlib); import lazy del facade di retrieval (US5) → operazioni wiki_tools non dipendono da vector store.
+- **Host-agnostico (Principio X):** SC-001 dimostra — **stesso codice immodificato** esegue operazioni su Sertor ("code+doc") e ospite finto `doc_only_host` ("solo-doc"), differendo **solo** per config.
+- **Fixture nuova:** `tests/fixtures/doc_only_host/` (ospite finto per prova SC-001).
+- **Punti aperti segnalati:** (1) import package-root non lazy (`sertor_core/__init__.py` importa eagerly composition → chromadb); offline-import garantito solo a livello wiki_tools; (2) link rotto reale nel wiki: `[[architettura-attuale]]` in `syntheses/chiusura-prototipo-dogfooding.md` → pagina inesistente (scoperto dal lint).
+- **Branch:** `spec/006-nucleo-wiki-deterministico` | Commit: `4ac4eaa` (non su master, nessuna PR ancora).
+- **Pagina creata:** `wiki/syntheses/nucleo-wiki-deterministico-feat003d.md` (sintesi completa, Constitution Check 10/10, linkage a [[costituzione-v1]], [[missione-visione-host-agnosticita]]).
+- **Link rotto corretto (scoperto dal lint):** `[[architettura-attuale]]` in `syntheses/chiusura-prototipo-dogfooding.md` → pagina inesistente rimossa, testo generalizzato a "concetto di architettura da `prototype/wiki/`".
+- **File toccati:** Nuova pagina `wiki/syntheses/nucleo-wiki-deterministico-feat003d.md`, aggiornati `wiki/index.md` (timestamp + link), `wiki/syntheses/chiusura-prototipo-dogfooding.md` (link rotto corretto), `wiki/log.md` (voce corrente).
+
+## [2026-06-05] record | Mission/Vision canonizzate (README) + Costituzione v1.1.0 (Principio X host-agnostico)
+
+- **README.md (nuovo):** formalizzazione di Vision ("la conoscenza viva e interrogabile, ovunque, senza lock-in") e Mission ("Sertor framework installabile su qualsiasi progetto: indicizzazione + RAG + LLM Wiki, disaccoppiati dal dominio ospite"). Tre profili ospite: code+doc, solo-doc, solo-code. Sottolinea che disaccoppiamento è vincolo, non aspirazione.
+- **Emendamento Costituzione v1.0.0 → v1.1.0 (MINOR):** aggiunto **Principio X — Capacità host-agnostiche** (la portabilità è un vincolo, non un'aspirazione). Ogni capacità (core, motori RAG, skill wiki, rituali) MUST essere disaccoppiata da dominio/struttura ospite; l'ospite si configura, non si presume. Dogfooding strumentale, non licenza a violare. Test non-negoziabile: capacità operabile su ospiti diversi senza modifiche al corpo. Generalizza Principio I da core-libreria a TUTTE le capacità.
+- **Conseguenza/backlog:** Principio X identifica una **tensione contemporanea** — skill wiki, playbook, rituale today sono Sertor-coupled (citate `wiki/`, `log.md`, agenti, `.claude/`). Refactor host-agnostico (parametrizzazione su path/config) è **differito post-MVP** (quando FEAT-003/FEAT-010 merger). Ispirazione: skill di Transcriptio (parametrizzate). Non è difetto, è evoluzione naturale prototipo → framework.
+- **Pagina creata:** `wiki/syntheses/missione-visione-host-agnosticita.md` — lega README (pitch), Principio X (vincolo), backlog (azione differita). Backlink a [[costituzione-v1]] e [[rituale-step-e-allineamento-wiki]].
+- **Aggiornamenti wiki:** `wiki/syntheses/costituzione-v1.md` (10 principi, v1.1.0, sezione Versioning, link nuova pagina); `wiki/index.md` (voce costituzione aggiornata, link [[missione-visione-host-agnosticita]] aggiunto).
+- **Corretto CLAUDE.md:** "9 principi" → "i principi" (drift-proof).
+- **File toccati (wiki):** `wiki/syntheses/missione-visione-host-agnosticita.md` (nuovo), `wiki/syntheses/costituzione-v1.md` (frontmatter+10 principi+versioning+link), `wiki/index.md` (updated=2026-06-05, link aggiunti).
+
+## [2026-06-05] record | PR #11 ritirata; requisiti FEAT-010 consolidati in FEAT-003 (in progress) + FEAT-004 su master
+
+- **PR #11 ritirata:** branch `spec/005-llm-wiki` chiuso con `gh pr close` (non eliminato; congelato come riferimento leggibile). Contenuto: 100+ file, ~10k righe, 4 feature (FEAT-003 wiki, FEAT-004 CLI, FEAT-010 e2e, server MCP + adapter + ~25 test), costruito PRIMA del Principio X (host-agnostico) → **Sertor-coupled, non production-grade**. PR status: CLOSED.
+- **FEAT-010 consolidato in FEAT-003:** file `requirements/sertor-core/wiki-creazione/requirements.md` (master) è ora il **documento consolidato** "LLM Wiki (creazione + end-to-end) — FEAT-003 ⊕ FEAT-010", **Stato: in progress**. In conflitto **vince FEAT-010** (D-10). Assorbiti invariati Gruppi A/B/D/F di FEAT-003; superati C (ingest → import in `ingested_sources/`, FR-030/031) e E (indicizzazione → collezioni separate, FR-008..011/023/024); aggiunti 42 FR net-new, 17 decisioni D-1..D-17, criteri, tabella tracciabilità.
+- **FEAT-004 (CLI esecuzione) portato su master:** `requirements/sertor-cli/esecuzione/requirements.md` + riga epic CLI.
+- **Motivo:** salvare solo i requisiti (non spec/codice) e ritirare il ramo morto; il codice FEAT-010/MCP/CLI verrà RIFATTO host-agnostico (Principio X).
+- **Domanda aperta preservata** (§13 doc FEAT-003): FR-004 trigger esatto hook Stop/SessionEnd vs comando `/wiki` vs entrambi — differito a design.
+- **Consequenze:** `requirements/sertor-core/epic.md` riga FEAT-003 aggiornata (stato in progress, vince FEAT-010); confine net-new FEAT-010 vs FEAT-003 storico tracciato; backlog di azioni post-MVP chiaro.
+- **File toccati (requirements):** `requirements/sertor-core/wiki-creazione/requirements.md` (consolidato), `requirements/sertor-cli/esecuzione/requirements.md` (nuovo), `requirements/sertor-core/epic.md` (FEAT-003 riga aggiornata).

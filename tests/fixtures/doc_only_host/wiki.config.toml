@@ -1,0 +1,33 @@
+# Fake "doc-only" host profile — prova di host-agnosticità (Principio X / SC-001).
+#
+# Lo STESSO nucleo deterministico gira su questo ospite cambiando SOLO questo file:
+# radice diversa (`knowledge/`), source-dir diversa (`docs/`), lingua diversa (`en`),
+# tassonomia diversa rispetto a Sertor.
+
+profile = "doc-only"
+language = "en"
+root = "knowledge"
+index_file = "index.md"
+log_file = "changelog.md"
+
+source_dirs = ["docs"]
+exclude = [".git", "node_modules", ".cache"]
+frontmatter_required = ["title", "type", "tags", "created", "updated"]
+frontmatter_optional = ["sources"]
+
+[[taxonomy]]
+name = "guides"
+dir = "guides"
+type = "guide"
+
+[[taxonomy]]
+name = "reference"
+dir = "reference"
+type = "reference"
+
+[rag]
+enabled = false
+
+[strings]
+pending = "Unrecorded work in the wiki: {n} files newer than the last changelog entry."
+clean = "Wiki in sync: no files newer than the last changelog entry."
