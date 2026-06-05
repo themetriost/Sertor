@@ -98,12 +98,18 @@ da solo la creazione/ingestione del RAG: serve sempre un **comando esplicito** s
 
 | ID | Feature | Valore / obiettivo | Priorità (MoSCoW) | Stato |
 |----|---------|--------------------|-------------------|-------|
-| FEAT-001 | **CLI installabile** (pacchetto `uv`/`pip`, entry-point `sertor`, struttura comandi, principio install≠run) | Spina dorsale: senza il CLI nessuna capacità è raggiungibile | **Must** | da decomporre |
+| FEAT-001 | **CLI installabile** (pacchetto `uv`/`pip`, entry-point `sertor`, struttura comandi, principio install≠run) | Spina dorsale: senza il CLI nessuna capacità è raggiungibile | **Must** | parz. → backbone/comandi in `esecuzione`; packaging rinviato |
 | FEAT-002 | **Installazione selettiva delle capacità del core** (motori RAG + skill wiki) su un repo target | Portare il core su un progetto, a scelta, senza eseguirlo | **Must** | da decomporre |
-| FEAT-003 | **Configurazione** (provider LLM obbligatorio default cloud + Ollama; vector DB condizionale a scelta Chroma vs PGVector/MongoDB Azure) | Adatta le capacità all'ambiente target senza toccare codice | **Should** | da decomporre |
-| FEAT-004 | **Comando di creazione/esecuzione del RAG** (ingestione/indicizzazione, separato dall'install) | Costruire/aggiornare gli indici su richiesta esplicita | **Should** | da decomporre |
+| FEAT-003 | **Configurazione** (provider LLM obbligatorio default cloud + Ollama; vector DB condizionale a scelta Chroma vs PGVector/MongoDB Azure) | Adatta le capacità all'ambiente target senza toccare codice | **Should** | parz. → lettura config in `esecuzione`; wizard rinviato |
+| FEAT-004 | **Comando di creazione/esecuzione del RAG** (ingestione/indicizzazione, separato dall'install) | Costruire/aggiornare gli indici su richiesta esplicita | **Should** | decomposta → `esecuzione` |
 | FEAT-005 | **Setup configurazione di governance** (skill/agenti di fase + skill gestione requisiti) | Replicare la configurazione di lavoro su altri repo | **Should** | da decomporre |
 | FEAT-006 | **Distribuzione pubblica su PyPI** (versioning pubblico, licenza, hardening supply-chain) | Apertura a utenti esterni | **Won't (per ora)** | rinviata |
+
+> **Feature decomposta:** `esecuzione` (`requirements/sertor-cli/esecuzione/requirements.md`) — taglio
+> **run-centrico**: entry-point + comandi `index`/`search`/`wiki index` + osservabilità a runtime +
+> lettura della configurazione. Copre la parte eseguibile di FEAT-001, tutta FEAT-004 e la lettura
+> config di FEAT-003. Restano fuori: packaging/distribuzione, install selettivo su altri repo (FEAT-002),
+> wizard di configurazione, governance (FEAT-005).
 
 > **Nota sull'MVP della CLI:** il primo taglio (Must) rende il pacchetto **installabile** e capace di
 > **installare selettivamente** le capacità del core su un repo. Configurazione (FEAT-003), esecuzione
