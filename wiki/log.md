@@ -244,3 +244,36 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
 - **Segnalato (fuori scope del lint wiki, da decidere):** `__pycache__` fantasma in
   `src/{sertor_cli,sertor_mcp,sertor_core/wiki,adapters/git,adapters/llm}` (zero sorgenti, fa *sembrare*
   presente codice assente); `.mcp.json` punta al server prototipo rotto (`ModuleNotFoundError: mcp` in `.venv`).
+- **RISOLTO il 2026-06-05** → voce successiva.
+
+## [2026-06-05] record | Pulizia pycache fantasma + diagnosi .mcp.json
+
+- **Cleanup eseguito:**
+  - Rimozione di 16 dir `__pycache__` da `src/sertor_core/` (bytecode `.pyc` residui da checkout di altri branch).
+  - Pulizia di 6 directory vuote rimaste: `src/sertor_cli/`, `src/sertor_cli/commands/`, `src/sertor_core/adapters/{git,llm}/`, `src/sertor_core/wiki/`, `src/sertor_mcp/`.
+  - Tutti i `.pyc` sono gitignored → niente da committare, nessun file sorgente toccato.
+
+- **Diagnosi architetturale (critico per wiki allineamento):**
+  - Su `master` (HEAD a4640b8) **esiste SOLO** `src/sertor_core/` (domain, services, adapters, engines, config, observability, composition).
+  - **NON su master** (vivono su branch):
+    - `src/sertor_cli/` → branch sconosciuto.
+    - `src/sertor_mcp/` → branch `feat/mcp-sertor-core` (PR #12 aperta).
+    - `src/sertor_core/wiki/` → branch `spec/005-llm-wiki` (PR #11 aperta, parte di FEAT-010).
+  - I `.pyc` fantasma facevano *sembrare* presente codice che esiste solo su branch — spiega la confusione precedente.
+
+- **Diagnosi .mcp.json:**
+  - Server `prototype/04-agentic-rag/mcp_server.py` è **rotto**: carica tutti e 4 gli approcci RAG (01–04) con dipendenze inconciliabili.
+  - Due venv complementari: `.venv/` ha `chromadb` ma manca `mcp`; `.venv-core/` ha `mcp` ma manca stack retrieval.
+  - Risultato: `ModuleNotFoundError` all'avvio.
+
+- **Decisione (presa da utente):** NON rianimare il vecchio server agentico. Rimane **known-broken, pendente**:
+  - Causa: server prototipo = exploration phase, bassa priorità su `master`.
+  - Soluzione: `.mcp.json` sarà ri-puntato a nuovo `sertor_mcp` (branch `feat/mcp-sertor-core`) **quando sarà mergiato su master** (post-FEAT-010 presumibilmente).
+
+- **Pagina creata:** `tech/pulizia-pycache-e-diagnosi-mcp.md` documenta il cleanup, diagnosi, decisione e conseguenze operative.
+
+- **Aggiornamenti:**
+  - `wiki/index.md` (updated → 2026-06-05, aggiunto link a nuova pagina tech in sezione Tech).
+  - `wiki/log.md` (voce corrente).
+
+- **Stato finale:** flag segnalazioni 2026-06-04 CHIUSI (pycache risolto, .mcp.json con decisione documentata).

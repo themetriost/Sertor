@@ -3,7 +3,7 @@ title: Indice del Wiki — Produzione Sertor
 type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
-updated: 2026-06-04
+updated: 2026-06-05
 sources: ["requirements/sertor-core/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "src/sertor_core/**"]
 ---
 
@@ -53,3 +53,4 @@ _(La produzione inizia ora: questa sezione cresce a ogni sessione.)_
 - **[[hook-sessionstart-wiki]]** — Hook SessionStart di Claude Code: carica indice + log a inizio sessione. Ruolo 1 di DA-W1 (contesto iniettato).
 - **[[tree-sitter-language-pack]]** — Binding Rust multilingua (305+ lingue), parser robusto, 14 lingue sintattico MVP + 3 fallback, wrapper `_Node` per API metodo-based.
 - **[[naming-corpora-indici]]** — Schema naming chiarificato (dal 2026-06-04): corpus `sertor` (prodotto, radice) vs `prototype` (prototipo, congelato); indici `.index-sertor` (radice) vs `.index-prototype` (prototipo).
+- **[[pulizia-pycache-e-diagnosi-mcp]]** — Cleanup del 2026-06-05: rimossi 16 dir `__pycache__` fantasma, diagnosi architetturale che solo `sertor_core` vive su master (CLI/MCP/wiki su branch), decisione su `.mcp.json` rotto (aspetta merge `feat/mcp-sertor-core`).
