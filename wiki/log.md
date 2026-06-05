@@ -277,3 +277,23 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
   - `wiki/log.md` (voce corrente).
 
 - **Stato finale:** flag segnalazioni 2026-06-04 CHIUSI (pycache risolto, .mcp.json con decisione documentata).
+
+## [2026-06-05] record | Confine di delega del rituale: lint semantico resta in casa
+
+- **Precisazione documentata:** `syntheses/rituale-step-e-allineamento-wiki.md` — nuova sezione 4a *Confine di delega*.
+- **Contenuto:** chiarimento netto su quale azione delegare a `wiki-keeper` (Haiku) vs mantenere nel flusso principale (Opus):
+  - ✅ **record** → delegabile: trascrizione strutturata (brief → pagine/backlink/log), lavoro di forma retto dal playbook.
+  - ❌ **lint semantico di allineamento** → NON delegabile: richiede giudizio e contesto dello step appena completato. Re-leggere a freddo per delegare = token costosi + rischio di giudizi lossy. Flusso principale ha già la visione.
+- **Motivo tecnico:** distinzione tra "lavoro di forma" (token-efficiente da delegare) e "giudizio" (loss di contesto se delegato). Se casi pesanti richiedono override, usare `sonnet` per-invocazione, non il default Haiku.
+- **Conseguenza operativa:** rituale rimane **integralmente responsabilità del flusso principale**; delega = non-bloccare, non scappare. **Qualità del brief** (input a wiki-keeper) è la leva cruciale: brief povero → wiki disallineato silenziosamente.
+- **File toccati:** `wiki/syntheses/rituale-step-e-allineamento-wiki.md` (frontmatter updated 2026-06-05, sezione 4a aggiunta, tag `delega` aggiunto).
+- **Index aggiornato:** nessun link nuovo (già presente [[rituale-step-e-allineamento-wiki]]), solo update timestamp.
+
+## [2026-06-05] record | Fonte unica del rituale = CLAUDE.md (plugin step-ritual cancellato, riesportazione a backlog)
+
+- **Riconoscimento chiave:** il Rituale di step viveva in due posti fino al 2026-06-05: (1) `CLAUDE.md` istanza operativa concreta, (2) `plugins/step-ritual/` principio astratto/portabile. Non erano "copie derivate" ma **due livelli di astrazione**.
+- **Vincolo decisivo:** il rituale è standing behavior (azione LLM nel loop). Standing behavior NON può vivere in un plugin/asset non garantito in contesto. La versione operativa (autorità) **deve** stare in `CLAUDE.md` e solo lì, finché il rituale evolve.
+- **Decisione (utente):** **fonte unica = `CLAUDE.md`.** Plugin `plugins/step-ritual/` e `.claude-plugin/marketplace.json` **cancellati** (untracked, mai committati → zero seconde copie, zero deriva).
+- **Backlog differito (non abbandonato):** quando sezione *"Rituale di step"* in `CLAUDE.md` sarà matura/stabile, riesportarla come plugin portabile repository-agnostico (asset riusabile, coerente col goal toolset enterprise). Ridecidere nome, collocamento, if Sertor consume via dogfooding oppure esporta.
+- **Contenuto:** pagina creata `wiki/syntheses/rituale-step-e-allineamento-wiki.md` § 5 *"Fonte unica del rituale: CLAUDE.md come autorità (decisione 2026-06-05)"* — reframe, vincolo, decisione, backlog differito.
+- **File toccati:** `wiki/syntheses/rituale-step-e-allineamento-wiki.md` (nuova sezione 5, rinumerate sezioni seguenti a 6+, tag `fonte-unica` aggiunto a frontmatter), `wiki/log.md` (voce corrente).

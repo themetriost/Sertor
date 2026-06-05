@@ -1,9 +1,9 @@
 ---
 title: Rituale di step, anti-deriva del wiki, e una retrospettiva sull'interazione
 type: synthesis
-tags: [wiki, automazione, hook, governance, retrospettiva, processo]
+tags: [wiki, automazione, hook, governance, retrospettiva, processo, delega, fonte-unica]
 created: 2026-06-04
-updated: 2026-06-04
+updated: 2026-06-05
 sources: ["CLAUDE.md", ".claude/skills/genera-wiki/playbook.md", ".claude/agents/wiki-keeper.md", ".claude/agents/configuration-manager.md", ".claude/settings.json", ".claude/hooks/wiki-pending-check.ps1"]
 ---
 
@@ -86,7 +86,43 @@ JSONL già salvati in `~/.claude/projects/<slug>/*.jsonl`) resta valida come **s
 costruire separatamente: copre i casi "quando non c'è nessuno". Ma il primo strato — e quello che mancava
 — è il rituale standing.
 
-## 5. Retrospettiva sull'interazione (richiesta dall'utente)
+## 4a. Confine di delega: record vs lint semantico
+
+La delega (`wiki-keeper` Haiku, `configuration-manager` Haiku) è uno strumento per **ridurre il carico
+del flusso principale** mantenendo il rituale in piedi, **non** per eludere responsabilità. Due azioni,
+due modelli di delega diversi:
+
+| Azione | Natura | Delega | Motivo |
+|--------|--------|--------|--------|
+| **record** | **Trascrizione strutturata** (brief → pagine, backlink, index, voce log) | ✅ Sì, `wiki-keeper` (Haiku) | Lavoro di forma, retto dal brief. L'agente legge il brief una volta, esegue i passi meccanici del playbook (creare/aggiornare file, link). Meno costoso in token. |
+| **lint semantico di allineamento** | **Giudizio su contenuti** (wiki ↔ codice/spec/repo). Richiede ragionamento e contesto. | ❌ No, flusso principale (Opus) | Il giudizio "il wiki contraddice il codice?" richiedente il contesto dello step appena completato. Rieleggere a freddo per delegare = rileggere 30KB di file, perdere il contesto, rischio di giudizi lossy o falsi positivi. Il flusso principale ha già la visione. Se in casi pesanti serve delega, override a `sonnet` per-invocazione, mai il default Haiku. |
+
+**Implicazione operativa:** il rituale rimane **integralmente responsabilità del flusso principale**, che
+può delegare la trascrizione a Haiku per velocità, ma **giudizio e riconciliazione wiki↔repo restano in
+casa**. Se il brief del record è povero (pochi dettagli), il wiki rimane disallineato silenziosamente:
+il brief è la qualità della trascrizione — il flusso principale deve vigilare che sia ricco abbastanza.
+
+## 5. Fonte unica del rituale: CLAUDE.md come autorità (decisione 2026-06-05)
+
+**Contesto.** Fino al 2026-06-05, il Rituale di step viveva in due posti:
+1. `CLAUDE.md` § *"Rituale di step / Definition of Done"* — istanza **operativa** concreta (cita `wiki/log.md`, `src/`, agenti `wiki-keeper` / `configuration-manager`, il confine di delega in termini Sertor).
+2. `plugins/step-ritual/` — principio **astratto/portabile** repository-agnostico, archivio di asset esportabili (il plugin non era installato, nunca committato; vive in `.claude-plugin/marketplace.json`).
+
+**Riconoscimento chiave.** Non erano "due copie derivate" ma **due livelli di astrazione**:
+- **`CLAUDE.md`:** versione concreta, operativa *per questo workspace*; è il contesto vivo che l'LLM legge a ogni step.
+- **`plugins/step-ritual/`:** distillazione portabile per il futuro, quando il rituale sia stabile (ora no, è già cambiato 2 volte il 2026-06-04/05).
+
+**Vincolo decisivo.** Il rituale è **standing behavior** (azione da LLM nel loop, sistematica, senza dipendenza da automazione esterna). Standing behavior NON può vivere in un plugin/asset che **non è garantito in contesto**: uno skill di plugin non è iniettato in contesto a ogni step come lo è `CLAUDE.md`. Quindi:
+
+> La versione **operativa** (autorità) **deve** stare in `CLAUDE.md` e **solo** lì, finché il rituale evolve. Non mantenere due autorità parallele a mano.
+
+**Decisione (dall'utente).** **Fonte unica = `CLAUDE.md`.** I file plugin `plugins/step-ritual/` e `.claude-plugin/marketplace.json` sono stati **cancellati** (erano untracked, mai committati → zero "seconde copie", zero causa di deriva).
+
+**Backlog differito (non abbandonato).** Quando la sezione *"Rituale di step"* in `CLAUDE.md` sarà **matura/stabile**, riesportarla come plugin portabile repository-agnostico (asset riusabile; coerente col goal toolset enterprise di Sertor). In quel momento ridecidere il nome (`step-ritual` era provvisorio), il collocamento nel marketplace, e se Sertor debba consumarlo (dogfooding) o limitarsi a esportarlo. La decisione rimanda a una stabilizzazione del rituale stesso.
+
+---
+
+## 6. Retrospettiva sull'interazione (richiesta dall'utente)
 
 L'utente ha riferito la sensazione di essere stato **«boicottato tutto il giorno»** e ha chiesto di
 documentare *perché l'assistente non voleva fare la cosa*, con l'intenzione dichiarata di scriverne
@@ -125,6 +161,7 @@ a quel punto **fare domande**, non procedere sull'assunzione.*
 ## Collegamenti
 
 - `CLAUDE.md` → sezione *Rituale di step / Definition of Done* (la regola operativa).
+- Sezione *Confine di delega* (4a) — precisazione su quale azione delegare a Haiku (`record`) vs mantenere in casa (`lint semantico`).
 - [[sistema-wiki-fonte-unica]] — il sistema wiki di cui questo rituale è la disciplina d'uso.
 - [[hook-sessionstart-wiki]] — l'hook che inietta lo stato del wiki a inizio sessione (promemoria).
 - [[ruolo-wiki-da-w1]] — il wiki come corpus+superficie e la sua autorità.
