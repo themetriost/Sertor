@@ -307,3 +307,13 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
 - **Aggiornamenti wiki:** `wiki/syntheses/costituzione-v1.md` (10 principi, v1.1.0, sezione Versioning, link nuova pagina); `wiki/index.md` (voce costituzione aggiornata, link [[missione-visione-host-agnosticita]] aggiunto).
 - **Corretto CLAUDE.md:** "9 principi" → "i principi" (drift-proof).
 - **File toccati (wiki):** `wiki/syntheses/missione-visione-host-agnosticita.md` (nuovo), `wiki/syntheses/costituzione-v1.md` (frontmatter+10 principi+versioning+link), `wiki/index.md` (updated=2026-06-05, link aggiunti).
+
+## [2026-06-05] record | PR #11 ritirata; requisiti FEAT-010 consolidati in FEAT-003 (in progress) + FEAT-004 su master
+
+- **PR #11 ritirata:** branch `spec/005-llm-wiki` chiuso con `gh pr close` (non eliminato; congelato come riferimento leggibile). Contenuto: 100+ file, ~10k righe, 4 feature (FEAT-003 wiki, FEAT-004 CLI, FEAT-010 e2e, server MCP + adapter + ~25 test), costruito PRIMA del Principio X (host-agnostico) → **Sertor-coupled, non production-grade**. PR status: CLOSED.
+- **FEAT-010 consolidato in FEAT-003:** file `requirements/sertor-core/wiki-creazione/requirements.md` (master) è ora il **documento consolidato** "LLM Wiki (creazione + end-to-end) — FEAT-003 ⊕ FEAT-010", **Stato: in progress**. In conflitto **vince FEAT-010** (D-10). Assorbiti invariati Gruppi A/B/D/F di FEAT-003; superati C (ingest → import in `ingested_sources/`, FR-030/031) e E (indicizzazione → collezioni separate, FR-008..011/023/024); aggiunti 42 FR net-new, 17 decisioni D-1..D-17, criteri, tabella tracciabilità.
+- **FEAT-004 (CLI esecuzione) portato su master:** `requirements/sertor-cli/esecuzione/requirements.md` + riga epic CLI.
+- **Motivo:** salvare solo i requisiti (non spec/codice) e ritirare il ramo morto; il codice FEAT-010/MCP/CLI verrà RIFATTO host-agnostico (Principio X).
+- **Domanda aperta preservata** (§13 doc FEAT-003): FR-004 trigger esatto hook Stop/SessionEnd vs comando `/wiki` vs entrambi — differito a design.
+- **Consequenze:** `requirements/sertor-core/epic.md` riga FEAT-003 aggiornata (stato in progress, vince FEAT-010); confine net-new FEAT-010 vs FEAT-003 storico tracciato; backlog di azioni post-MVP chiaro.
+- **File toccati (requirements):** `requirements/sertor-core/wiki-creazione/requirements.md` (consolidato), `requirements/sertor-cli/esecuzione/requirements.md` (nuovo), `requirements/sertor-core/epic.md` (FEAT-003 riga aggiornata).
