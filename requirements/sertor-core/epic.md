@@ -133,6 +133,15 @@ produzione: testato, configurabile, repo-agnostico, osservabile, riusabile come 
 > Ibrido/grafo/agentico e la manutenzione/arricchimento del wiki seguono come incrementi (Should/Could),
 > riusando il nucleo. Le quattro modalità RAG restano tutte parte del **core** della visione.
 
+> **Decomposizione di FEAT-003 (2026-06-05) — refactor host-agnostico lungo il confine meccanico↔giudizio:**
+> - **FEAT-003-D — Nucleo wiki deterministico host-agnostico** (config `wiki.config.toml` + `wiki_tools`:
+>   profile/structure/scan/collect/lint-meccanico/index-log mechanics/idempotenza — REQ-001..006, REQ-011/012,
+>   REQ-050/051, FR-006-meccanico, FR-009/010/011). **Zero LLM.** → portata avanti via **SpecKit**
+>   (branch+PR, Constitution Check, gate **Principio X**).
+> - **FEAT-003-N — Operazioni wiki assistite da LLM** (record-contenuto, distill, generazione, ingest-compile,
+>   lint semantico, giudizio verità/obsolescenza, gate al commit human-in-the-loop). → tracciata come
+>   **TODO collaborativo** in [`wiki-llm/TODO.md`](wiki-llm/TODO.md), affrontata passo-passo (non SpecKit).
+
 ## 9. Decisioni risolte
 
 ### DA-W1 (risolta 2026-05-31) — Ruolo di prodotto dell'LLM Wiki
