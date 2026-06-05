@@ -297,6 +297,6 @@ delega che resta affidata al `wiki-keeper`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/002-rag-baseline/plan.md` (FEAT-002 — motore RAG vettoriale baseline).
-FEAT-001 (nucleo di retrieval) è in `master`: `specs/001-nucleo-retrieval/plan.md`.
+`specs/006-nucleo-wiki-deterministico/plan.md` (FEAT-003-D — nucleo wiki deterministico host-agnostico).
+In `master`: FEAT-001 `specs/001-nucleo-retrieval/plan.md`, FEAT-002 `specs/002-rag-baseline/plan.md`.
 <!-- SPECKIT END -->

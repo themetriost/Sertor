@@ -23,6 +23,18 @@ dalle superfici sottili (skill, hook) e dalla metà LLM (FEAT-003-N), che vi cos
 
 Vincolo architetturale dominante: **Principio X** della costituzione (host-agnostico, NON-NEGOZIABILE).
 
+## Clarifications
+
+### Session 2026-06-05
+
+- Q: Su quale segnale si basa la "ricerca di lavoro pendente" — tempo di modifica del file (mtime) o
+  watermark git? → A: **mtime** (host-agnostico, nessuna dipendenza da git; coerente con l'hook attuale;
+  funziona anche su ospiti non-git). Il refresh *git-driven* al commit (watermark) è competenza della
+  **metà LLM/agentica** (FEAT-003-N), non di questo nucleo.
+- Q: Target di performance/scala quantitativi? → A: **rinviati a `/speckit-plan`**; assunzione di base:
+  le operazioni scalano **linearmente** col numero di file Markdown e completano **in locale senza rete**
+  (coerente con RNF-007 del documento consolidato).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 — Configura, non presumere: stesso nucleo su ospiti diversi (Priority: P1)
@@ -164,9 +176,10 @@ del wiki lascia invariata la collezione delle sorgenti.
   con contenuto minimo valido, **senza sovrascrivere** un wiki preesistente. *(REQ-001, REQ-002)*
 - **FR-004**: Il sistema MUST validare che le pagine rispettino le convenzioni: presenza dei campi frontmatter
   richiesti, formato dei wikilink, naming, collocazione tematica. *(REQ-003, REQ-004, REQ-005)*
-- **FR-005**: Il sistema MUST eseguire una **ricerca di lavoro pendente** confrontando le modifiche recenti delle
-  cartelle-sorgente (con le esclusioni della config) rispetto all'ultima voce del registro, e riportarne il conteggio
-  e un messaggio nella lingua configurata. *(sostituisce la logica dell'hook attuale)*
+- **FR-005**: Il sistema MUST eseguire una **ricerca di lavoro pendente** confrontando le **modifiche recenti
+  (mtime)** delle cartelle-sorgente (con le esclusioni della config) rispetto al timestamp dell'ultima voce del
+  registro, e riportarne il conteggio e un messaggio nella lingua configurata. **Si basa su mtime, non su git**
+  (host-agnostico). *(sostituisce la logica dell'hook attuale)*
 - **FR-006**: Il sistema MUST eseguire un **lint strutturale** del wiki rilevando link interni rotti, pagine orfane e
   frontmatter mancante/incompleto, **senza** valutazioni semantiche di contenuto. *(FR-006, parte meccanica)*
 - **FR-007**: Il sistema MUST **enumerare** le pagine del wiki con i loro metadati (mappa strutturata, senza il corpo)
