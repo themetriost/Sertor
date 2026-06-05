@@ -197,13 +197,20 @@ automazione *unattended*: la distinzione è netta —
    alla realtà del progetto (codice in `src/`, `specs/`, `requirements/`, stato git): **segnala
    esplicitamente ogni claim che il repo contraddice**; correggi su conferma. Va **oltre** il `lint`
    meccanico (link rotti/orfani/frontmatter): è il confronto *contenuto del wiki ↔ realtà del progetto*.
+   **È giudizio, non trascrizione: resta nel flusso principale (Opus) e NON si delega a Haiku** — il
+   flusso principale ha già il contesto dello step, mentre un agente lo rileggerebbe a freddo (più
+   costoso e più lossy). Se in casi pesanti va proprio delegato, usa un override `sonnet`
+   per-invocazione, **mai** il default Haiku del `wiki-keeper`.
 3. **\<altre azioni\>** — questa lista è **estendibile**: ogni azione che l'utente chiede di rendere
    *standing* va aggiunta qui, e da quel momento fa parte del rituale a ogni step.
 
 **Responsabilità & delega.** Che queste azioni **avvengano** a ogni step è responsabilità del flusso
-principale. Eseguirle direttamente oppure **delegarle** (`wiki-keeper` per record/lint,
-`configuration-manager` per git) è solo una scelta per non bloccare il flusso — la delega **non è un
-modo per saltarle**. Gli hook `SessionStart`/`Stop` restano **promemoria vincolanti**, non opzionali.
+principale. Eseguirle direttamente oppure **delegarle** è solo una scelta per non bloccare il flusso —
+la delega **non è un modo per saltarle**. **Confine di delega netto:** il `record` (trascrizione
+strutturata: pagine, backlink, `index.md`, voce di `log.md`) si delega al `wiki-keeper` (Haiku),
+perché è lavoro di forma rette dal brief; il **lint semantico** (punto 2, giudizio) **resta nel flusso
+principale**, non a Haiku. Git si delega al `configuration-manager`. Gli hook `SessionStart`/`Stop`
+restano **promemoria vincolanti**, non opzionali.
 
 **Calibra al valore:** modifiche puramente meccaniche o di poco conto non innescano il rituale (vedi
 *regola aurea* del wiki). Lo step è "significativo" quando produce conoscenza, decisioni o codice.
