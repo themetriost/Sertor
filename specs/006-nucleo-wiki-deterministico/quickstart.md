@@ -16,9 +16,13 @@ index_file = "index.md"
 log_file = "log.md"
 
 [[taxonomy]]
-name = "concepts"; dir = "concepts"; type = "concept"
+name = "concepts"
+dir = "concepts"
+type = "concept"
 [[taxonomy]]
-name = "tech"; dir = "tech"; type = "tech"
+name = "tech"
+dir = "tech"
+type = "tech"
 # … experiments / syntheses / sources …
 
 source_dirs = ["src", "specs", "requirements", ".claude"]

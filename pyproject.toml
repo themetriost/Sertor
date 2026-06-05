@@ -14,6 +14,9 @@ dependencies = [
     "tree-sitter-language-pack>=0.7",
 ]
 
+[project.scripts]
+sertor-wiki-tools = "sertor_core.wiki_tools.__main__:main"
+
 [project.optional-dependencies]
 # Backend cloud: dipendenze pesanti isolate (NFR-04). Importate lazy dagli adapter.
 azure = [
