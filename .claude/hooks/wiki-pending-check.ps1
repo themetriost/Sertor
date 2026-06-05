@@ -53,14 +53,14 @@ $pending = [int]$scan.pending
 # --- output per evento (riusa il message localizzato del contratto) ---
 if ($Mode -eq 'Stop') {
     $msg = "$($scan.message) Per la regola aurea (vedi CLAUDE.md, sezione Wiki): valuta di " +
-           "delegare al wiki-keeper (operazione record) o eseguire /wiki."
+           "delegare al wiki-curator (operazione record) o eseguire /wiki."
     $out = @{ hookSpecificOutput = @{ hookEventName = 'Stop'; additionalContext = $msg } }
     $out | ConvertTo-Json -Compress -Depth 5
     exit 0
 }
 else {
     $msg = "Wiki: $pending file modificati non risultano ancora registrati. " +
-           "Alla prossima sessione esegui /wiki record (o delega al wiki-keeper)."
+           "Alla prossima sessione esegui /wiki record (o delega al wiki-curator)."
     $out = @{ systemMessage = $msg }
     $out | ConvertTo-Json -Compress -Depth 5
     exit 0

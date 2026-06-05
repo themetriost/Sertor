@@ -3,7 +3,7 @@ title: Indice del Wiki — Produzione Sertor
 type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
-updated: 2026-06-05 (FEAT-003-D implementato + nucleo wiki deterministico registrato)
+updated: 2026-06-05 (ponte D→N: layer agentico host-agnostico + rename author/curator)
 sources: ["requirements/sertor-core/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "src/sertor_core/**", "CLAUDE.md"]
 ---
 
@@ -37,6 +37,7 @@ _(La produzione inizia ora: questa sezione cresce a ogni sessione.)_
 
 ### Syntheses (sintesi trasversali)
 
+- **[[ponte-d-n-host-agnostico]]** — Primo step FEAT-003-N (ponte D→N): il layer agentico (playbook + skill + comando + agente) reso host-agnostico (legge `wiki.config.toml`) e poggiato sulla CLI `sertor-wiki-tools` per il meccanico; all'LLM resta il giudizio. Rename coerente: `genera-wiki`→`wiki-author`, `playbook.md`→`wiki-playbook.md`, `wiki-keeper`→`wiki-curator` (+Bash). Tabella confine D↔N; scope leggero (zero codice).
 - **[[nucleo-wiki-deterministico-feat003d]]** — Implementazione FEAT-003-D (metà deterministica del wiki LLM): 11 moduli, 8 test, zero LLM, host-agnostico (Principio X), guidato da `wiki.config.toml`, contratti JSON versionati. Constitution Check 10/10 ✅. Offline per costruzione.
 - **[[rituale-step-e-allineamento-wiki]]** — Rituale di step (Definition of Done) per impedire la deriva wiki↔progetto: a ogni step → record + lint semantico di allineamento + azioni standing estendibili. Distinzione unattended vs standing behavior; retrospettiva onesta sull'interazione del 2026-06-04. Fonte unica = `CLAUDE.md` (plugin step-ritual cancellato, riesportazione a backlog).
 - **[[sistema-wiki-fonte-unica]]** — Consolidamento del wiki (fonte unica playbook + tre interfacce sottili + automazione hook). Tassonomia consolidata; convenzioni esplicite; 6 operazioni (record, ingest, query, lint, generate-from-diff, rag-sync).

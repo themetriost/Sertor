@@ -335,3 +335,17 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
 - **Domanda aperta preservata** (§13 doc FEAT-003): FR-004 trigger esatto hook Stop/SessionEnd vs comando `/wiki` vs entrambi — differito a design.
 - **Consequenze:** `requirements/sertor-core/epic.md` riga FEAT-003 aggiornata (stato in progress, vince FEAT-010); confine net-new FEAT-010 vs FEAT-003 storico tracciato; backlog di azioni post-MVP chiaro.
 - **File toccati (requirements):** `requirements/sertor-core/wiki-creazione/requirements.md` (consolidato), `requirements/sertor-cli/esecuzione/requirements.md` (nuovo), `requirements/sertor-core/epic.md` (FEAT-003 riga aggiornata).
+
+## [2026-06-05] record | Ponte D→N: layer agentico wiki host-agnostico + rename author/curator (FEAT-003-N step 1)
+
+- **Step:** primo passo di FEAT-003-N (metà di giudizio del Wiki LLM). Trasformato il layer agentico perché poggi sul nucleo deterministico `wiki_tools` (FEAT-003-D) per il meccanico e resti solo il giudizio; reso **host-agnostico** (Principio X); **rename coerente** delle 4 entità. Scope deciso con l'utente: **leggero** (zero codice in `sertor_core`).
+- **Rename (author/curator):** skill `genera-wiki`→**`wiki-author`** (cartella spostata), playbook `playbook.md`→**`wiki-playbook.md`**, agente `wiki-keeper`→**`wiki-curator`** (+ tool **`Bash`** così può chiamare la CLI), comando `/wiki` invariato.
+- **Playbook riscritto** (`.claude/skills/wiki-author/wiki-playbook.md`): §0 host-agnostico (tutto da `wiki.config.toml`), §2 confine deterministico↔giudizio con tabella CLI, ogni operazione delega il meccanico a `sertor-wiki-tools` (scan/lint/validate/collect/index/structure); ruoli da `[roles].curator`/`[roles].vcs` invece dei nomi letterali; nota sui write-back log/indice ancora LLM-authored.
+- **Superfici sottili aggiornate:** `wiki-author/SKILL.md`, `commands/wiki.md`, `agents/wiki-curator.md` (frontmatter `tools: …, Bash`).
+- **Config/glue:** `wiki.config.toml` `[roles].curator = "wiki-curator"`; `wiki-pending-check.ps1` e `settings.json` (promemoria → `wiki-curator`); `CLAUDE.md` (tutti i riferimenti: `wiki-keeper`→`wiki-curator`, `genera-wiki`→`wiki-author`, path playbook, nota CLI meccanica, rag-sync via CLI).
+- **Confine D↔N (clarity richiesta):** `lint`/`validate`/`index`/`structure` = 100% meccanico (CLI); `record`/`ingest`/`query`/`generate-from-diff` = meccanico (collect/scan) + giudizio (corpo, perché, contraddizioni, pagine impattate). Lint **semantico** resta giudizio (Opus), futuro N5.
+- **4 scoperte tracciate:** (1) la CLI non espone i write-back (`append_log`/`upsert_index` solo Python); (2) disallineamento identità/formato (rel_path vs slug `[[foo]]`, riga piatta vs sezioni curate); (3) → log/indice restano LLM-authored; (4) hook ancora con stringhe (parametrizzazione = codice, deferita).
+- **Verifica:** CLI col config rinominato OK — `scan` 6 pending, `lint`/`validate` 0 broken/0 orphans, `collect` 16 pagine. Nessun nome vecchio nei file tooling (residui solo in `log.md` storico e artefatti SpecKit datati).
+- **Pagine wiki:** nuova `syntheses/ponte-d-n-host-agnostico.md`; aggiornate `sistema-wiki-fonte-unica.md` (rename + sezione Evoluzione), `rituale-step-e-allineamento-wiki.md`, `tech/hook-sessionstart-wiki.md`, `index.md`.
+- **Tracker:** `requirements/sertor-core/wiki-llm/TODO.md` (step ponte D→N segnato fatto).
+- **Fuori scope/prossimi:** scope "completo" (write-back in CLI + riconciliazione formato index), FR-004 (trigger), operazioni di contenuto N1/N2/N5.

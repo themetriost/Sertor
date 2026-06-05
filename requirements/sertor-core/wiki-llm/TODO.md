@@ -11,6 +11,16 @@
 > **Principio X** (host-agnostico — nessuna assunzione dell'ospite hardcoded; tutto ciò che varia va in config).
 > Riusa il nucleo deterministico **FEAT-003-D** (`wiki_tools`) per il bookkeeping (DRY, FR-002).
 
+## Ponte D→N — FATTO (2026-06-05)
+
+Step 0, prerequisito a N1-N8: il layer agentico (playbook + skill + comando + agente) è stato reso
+**host-agnostico** (legge `wiki.config.toml`, Principio X) e **poggiato sulla CLI `sertor-wiki-tools`**
+per il meccanico; all'LLM resta il giudizio. Rename coerente: skill `genera-wiki`→`wiki-author`,
+playbook→`wiki-playbook.md`, agente `wiki-keeper`→`wiki-curator` (+`Bash`), comando `/wiki` invariato.
+Scope leggero (zero codice). Dettagli + confine D↔N: `wiki/syntheses/ponte-d-n-host-agnostico.md`.
+**Deferito (scope "completo"):** esporre i write-back (`append_log`/`upsert_index`) in CLI + riconciliare
+identità/formato dell'index curato → sblocca l'offload totale di `record`.
+
 ## Stato delle operazioni
 
 | # | Operazione (giudizio LLM) | Requisiti | Stato | Note |
