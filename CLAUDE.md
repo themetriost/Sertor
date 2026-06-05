@@ -197,17 +197,19 @@ automazione *unattended*: la distinzione è netta —
    alla realtà del progetto (codice in `src/`, `specs/`, `requirements/`, stato git): **segnala
    esplicitamente ogni claim che il repo contraddice**; correggi su conferma. Va **oltre** il `lint`
    meccanico (link rotti/orfani/frontmatter): è il confronto *contenuto del wiki ↔ realtà del progetto*.
+   **Metodo ripetibile:** operazione `lint`, livello B (semantico) del playbook — estrai claim → ground truth
+   (git via VCS, RAG/`Read`+`Grep`, test) → giudizio → report con severità → correggi su conferma.
    **È giudizio, non trascrizione: resta nel flusso principale (Opus) e NON si delega a Haiku** — il
    flusso principale ha già il contesto dello step, mentre un agente lo rileggerebbe a freddo (più
    costoso e più lossy). Se in casi pesanti va proprio delegato, usa un override `sonnet`
-   per-invocazione, **mai** il default Haiku del `wiki-keeper`.
+   per-invocazione, **mai** il default Haiku del `wiki-curator`.
 3. **\<altre azioni\>** — questa lista è **estendibile**: ogni azione che l'utente chiede di rendere
    *standing* va aggiunta qui, e da quel momento fa parte del rituale a ogni step.
 
 **Responsabilità & delega.** Che queste azioni **avvengano** a ogni step è responsabilità del flusso
 principale. Eseguirle direttamente oppure **delegarle** è solo una scelta per non bloccare il flusso —
 la delega **non è un modo per saltarle**. **Confine di delega netto:** il `record` (trascrizione
-strutturata: pagine, backlink, `index.md`, voce di `log.md`) si delega al `wiki-keeper` (Haiku),
+strutturata: pagine, backlink, `index.md`, voce di `log.md`) si delega al `wiki-curator` (Haiku),
 perché è lavoro di forma rette dal brief; il **lint semantico** (punto 2, giudizio) **resta nel flusso
 principale**, non a Haiku. Git si delega al `configuration-manager`. Gli hook `SessionStart`/`Stop`
 restano **promemoria vincolanti**, non opzionali.
@@ -246,8 +248,8 @@ cresce a ogni sessione, invece di ricostruire la conoscenza ogni volta.
 > prese, concetti/tecnologie approfonditi e fonti ingerite. Modifiche puramente meccaniche e di
 > poco conto non richiedono una voce.
 
-> **Delega (non bloccante):** l'aggiornamento del wiki va **delegato all'agente `wiki-keeper`**
-> (modello Haiku, vedi `.claude/agents/wiki-keeper.md`), lanciato **in background** durante o
+> **Delega (non bloccante):** l'aggiornamento del wiki va **delegato all'agente `wiki-curator`**
+> (modello Haiku, vedi `.claude/agents/wiki-curator.md`), lanciato **in background** durante o
 > dopo un'attività di progetto, così il flusso principale non si blocca sul bookkeeping.
 > Passagli un brief autocontenuto (cosa è stato fatto, file/percorsi, numeri/esiti, commit).
 > Quando l'agente ha finito, includi le modifiche al wiki nel commit dello step. Per attività
@@ -262,15 +264,16 @@ cresce a ogni sessione, invece di ricostruire la conoscenza ogni volta.
 
 ### Operazioni
 > **Fonte operativa unica:** procedure, convenzioni e tassonomia di dettaglio vivono nel
-> **Wiki Playbook** (`.claude/skills/genera-wiki/playbook.md`). Skill `genera-wiki`, comando `/wiki`
-> e agente `wiki-keeper` lo leggono e lo seguono. Qui sotto solo la sintesi.
+> **Wiki Playbook** (`.claude/skills/wiki-author/wiki-playbook.md`). Skill `wiki-author`, comando `/wiki`
+> e agente `wiki-curator` lo leggono e lo seguono. Qui sotto solo la sintesi. Il **meccanico** (scan,
+> lint, collect, index, structure) è la CLI `sertor-wiki-tools` (host-agnostica, da `wiki.config.toml`).
 
 - **record** — registra lavoro/decisioni svolti: crea/aggiorna le pagine, backlink e `index.md`, voce di `log.md`.
 - **ingest** — acquisisci una fonte esterna (file/PDF/URL) → riassunto in `sources/`, integra nelle pagine collegate, segnala contraddizioni.
 - **query** — rispondi citando le pagine; se l'esplorazione è preziosa, archiviala come nuova pagina.
 - **lint** — verifica di coerenza: frontmatter mancante, wikilink rotti, pagine orfane, claim superati/contraddittori (report; non auto-corregge).
 - **generate-from-diff** — aggiorna solo le pagine impattate dalle modifiche recenti (il `git log/diff` è delegato al `configuration-manager`).
-- **rag-sync** — ri-indicizza `wiki/` nel RAG con corpus dedicato (`SERTOR_CORPUS=wiki`), così il wiki diventa interrogabile via RAG. Solo flusso principale.
+- **rag-sync** — ri-indicizza il wiki nel RAG con corpus dedicato (via `sertor-wiki-tools index`, corpus da `[rag]` in config), così il wiki diventa interrogabile via RAG. Solo flusso principale.
 
 ### Convenzioni
 - **Frontmatter YAML** in ogni pagina: `title`, `type`, `tags`, `created`, `updated`, `sources`.
@@ -282,17 +285,17 @@ cresce a ogni sessione, invece di ricostruire la conoscenza ogni volta.
 - Quando una fonte nuova contraddice una pagina, **segnala esplicitamente** la contraddizione.
 
 Per innescare manualmente un consolidamento usa il comando **`/wiki`** (lavora nel flusso
-principale) oppure delega all'agente `wiki-keeper` (in background).
+principale) oppure delega all'agente `wiki-curator` (in background).
 
 **Hook (trigger automatici, vedi `.claude/hooks/wiki-pending-check.ps1`):**
 - `SessionStart` — carica indice + coda log a inizio sessione (contesto iniettato).
 - `Stop` — a fine turno, se rileva lavoro non ancora registrato (file di `src/specs/requirements/.claude`
   più recenti dell'ultima voce di `log.md`), inietta un **promemoria non bloccante** a delegare al
-  `wiki-keeper`. Non intrappola il turno; si auto-silenzia appena il wiki è aggiornato.
+  `wiki-curator`. Non intrappola il turno; si auto-silenzia appena il wiki è aggiornato.
 - `SessionEnd` — riepilogo finale del lavoro non registrato, come rete di sicurezza tra sessioni.
 
 I trigger **non orchestrano da soli** (un hook non può avviare un subagent): rendono *automatica* la
-delega che resta affidata al `wiki-keeper`.
+delega che resta affidata al `wiki-curator`.
 
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,

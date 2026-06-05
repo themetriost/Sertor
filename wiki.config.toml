@@ -45,7 +45,7 @@ dir = "syntheses"
 type = "synthesis"
 
 [roles]
-curator = "wiki-keeper"
+curator = "wiki-curator"
 vcs = "configuration-manager"
 
 [rag]

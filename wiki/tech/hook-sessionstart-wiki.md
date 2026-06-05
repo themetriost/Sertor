@@ -64,7 +64,7 @@ Quindi ricarica lo stato del wiki **ogni volta che la sessione (ri)parte o viene
 
 6. **Stampa un promemoria**:
    ```powershell
-   Write-Host "`nPromemoria: aggiornamenti del wiki vanno delegati all'agente wiki-keeper." -ForegroundColor Yellow
+   Write-Host "`nPromemoria: aggiornamenti del wiki vanno delegati all'agente wiki-curator." -ForegroundColor Yellow
    ```
 
 # Effetto ed effetti collaterali

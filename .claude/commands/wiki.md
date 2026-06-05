@@ -3,23 +3,28 @@ description: Consolida nel wiki locale il lavoro della sessione (record/ingest/q
 argument-hint: "[operazione e/o ambito, es. 'lint', 'ingest https://...', 'rag-sync', 'esperimento 01']"
 ---
 
-Mantieni il **wiki locale** in `wiki/`. Ambito/operazione richiesti: $ARGUMENTS
+Mantieni l'**LLM Wiki** del progetto. Ambito/operazione richiesti: $ARGUMENTS
 (se vuoto, considera il lavoro rilevante svolto in questa sessione → operazione `record`).
 
-**Fonte di verità unica:** leggi `.claude/skills/genera-wiki/playbook.md` e **seguilo**. Definisce
-tassonomia, convenzioni e le 6 operazioni. Non reinventare le regole qui.
+**Fonte di verità unica:** leggi `.claude/skills/wiki-author/wiki-playbook.md` e **seguilo**. Definisce
+host-agnosticità, tassonomia, convenzioni e le operazioni. Non reinventare le regole qui.
+
+**Host-agnostico:** radice, tassonomia, frontmatter, ruoli e cartelle-sorgente vengono da
+`wiki.config.toml`. Il **meccanico** (inventario, lint, scan, index) lo fa la CLI `sertor-wiki-tools`:
+chiamala via Bash invece di Glob/Grep a mano. A te resta il **giudizio** (cosa scrivere, contraddizioni).
 
 Procedi così:
 
-1. Leggi il **playbook**, poi `wiki/index.md` e la coda di `wiki/log.md` per lo stato attuale.
+1. Leggi il **playbook**, poi l'indice e la coda del log del wiki (nomi-file da config) per lo stato
+   attuale; usa `uv run sertor-wiki-tools collect --json` per l'inventario meccanico delle pagine.
 2. **Determina l'operazione** da `$ARGUMENTS` o dal lavoro di sessione, tra:
    `record` · `ingest` · `query` · `lint` · `generate-from-diff` · `rag-sync`.
-3. **Esegui la procedura corrispondente** del playbook (input → passi → output), rispettandone i vincoli
-   — in particolare: `generate-from-diff` delega `git log/diff` al `configuration-manager`; `rag-sync`
-   gira solo nel flusso principale (lancia l'indexer di `sertor_core`).
-4. Aggiorna i cross-reference e `wiki/index.md`, e appendi a `wiki/log.md` la voce
+3. **Esegui la procedura corrispondente** del playbook (input → passi → output), rispettandone i vincoli —
+   in particolare: il flusso principale ha **Bash** per le op pesanti; `generate-from-diff` delega
+   `git log/diff` al ruolo VCS (`[roles].vcs`); `rag-sync` lancia `sertor-wiki-tools index`.
+4. Aggiorna i cross-reference e l'indice, e appendi al log la voce
    `## [YYYY-MM-DD] <operazione> | <titolo>` (data odierna).
-5. Segnala esplicitamente contraddizioni o pagine orfane.
+5. Segnala esplicitamente contraddizioni o pagine orfane (le orfane le trova `sertor-wiki-tools lint`).
 
-Mantieni le pagine concise e interlinkate. Non toccare `prototype/` né le fonti originali.
+Mantieni le pagine concise e interlinkate. Non toccare le fonti originali né i wiki esclusi via `exclude`.
 Al termine, riassumi in 2-3 righe cosa hai aggiornato.

@@ -4,7 +4,7 @@ type: synthesis
 tags: [wiki, automazione, hook, governance, retrospettiva, processo, delega, fonte-unica]
 created: 2026-06-04
 updated: 2026-06-05
-sources: ["CLAUDE.md", ".claude/skills/genera-wiki/playbook.md", ".claude/agents/wiki-keeper.md", ".claude/agents/configuration-manager.md", ".claude/settings.json", ".claude/hooks/wiki-pending-check.ps1"]
+sources: ["CLAUDE.md", ".claude/skills/wiki-author/wiki-playbook.md", ".claude/agents/wiki-curator.md", ".claude/agents/configuration-manager.md", ".claude/settings.json", ".claude/hooks/wiki-pending-check.ps1"]
 ---
 
 # Rituale di step, anti-deriva del wiki, e una retrospettiva sull'interazione
@@ -77,7 +77,7 @@ Codificato in `CLAUDE.md` come **Definition of Done** di ogni step significativo
    (`src/`, `specs/`, `requirements/`, stato git) e segnala ogni claim contraddetto dal repo.
 3. **\<altre azioni\>** — lista estendibile: ciò che l'utente chiede di rendere standing si aggiunge qui.
 
-La **delega** (`wiki-keeper`, `configuration-manager`) resta un'opzione per non bloccare il flusso, **non**
+La **delega** (`wiki-curator`, `configuration-manager`) resta un'opzione per non bloccare il flusso, **non**
 un modo per saltare il rituale. La responsabilità che le azioni *avvengano* è del flusso principale.
 
 L'architettura *unattended* complementare (script deterministico a `SessionStart`, gate semantico
@@ -88,13 +88,13 @@ costruire separatamente: copre i casi "quando non c'è nessuno". Ma il primo str
 
 ## 4a. Confine di delega: record vs lint semantico
 
-La delega (`wiki-keeper` Haiku, `configuration-manager` Haiku) è uno strumento per **ridurre il carico
+La delega (`wiki-curator` Haiku, `configuration-manager` Haiku) è uno strumento per **ridurre il carico
 del flusso principale** mantenendo il rituale in piedi, **non** per eludere responsabilità. Due azioni,
 due modelli di delega diversi:
 
 | Azione | Natura | Delega | Motivo |
 |--------|--------|--------|--------|
-| **record** | **Trascrizione strutturata** (brief → pagine, backlink, index, voce log) | ✅ Sì, `wiki-keeper` (Haiku) | Lavoro di forma, retto dal brief. L'agente legge il brief una volta, esegue i passi meccanici del playbook (creare/aggiornare file, link). Meno costoso in token. |
+| **record** | **Trascrizione strutturata** (brief → pagine, backlink, index, voce log) | ✅ Sì, `wiki-curator` (Haiku) | Lavoro di forma, retto dal brief. L'agente legge il brief una volta, esegue i passi meccanici del playbook (creare/aggiornare file, link). Meno costoso in token. |
 | **lint semantico di allineamento** | **Giudizio su contenuti** (wiki ↔ codice/spec/repo). Richiede ragionamento e contesto. | ❌ No, flusso principale (Opus) | Il giudizio "il wiki contraddice il codice?" richiedente il contesto dello step appena completato. Rieleggere a freddo per delegare = rileggere 30KB di file, perdere il contesto, rischio di giudizi lossy o falsi positivi. Il flusso principale ha già la visione. Se in casi pesanti serve delega, override a `sonnet` per-invocazione, mai il default Haiku. |
 
 **Implicazione operativa:** il rituale rimane **integralmente responsabilità del flusso principale**, che
@@ -105,7 +105,7 @@ il brief è la qualità della trascrizione — il flusso principale deve vigilar
 ## 5. Fonte unica del rituale: CLAUDE.md come autorità (decisione 2026-06-05)
 
 **Contesto.** Fino al 2026-06-05, il Rituale di step viveva in due posti:
-1. `CLAUDE.md` § *"Rituale di step / Definition of Done"* — istanza **operativa** concreta (cita `wiki/log.md`, `src/`, agenti `wiki-keeper` / `configuration-manager`, il confine di delega in termini Sertor).
+1. `CLAUDE.md` § *"Rituale di step / Definition of Done"* — istanza **operativa** concreta (cita `wiki/log.md`, `src/`, agenti `wiki-curator` / `configuration-manager`, il confine di delega in termini Sertor).
 2. `plugins/step-ritual/` — principio **astratto/portabile** repository-agnostico, archivio di asset esportabili (il plugin non era installato, nunca committato; vive in `.claude-plugin/marketplace.json`).
 
 **Riconoscimento chiave.** Non erano "due copie derivate" ma **due livelli di astrazione**:

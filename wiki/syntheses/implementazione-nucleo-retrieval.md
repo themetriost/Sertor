@@ -55,7 +55,7 @@ Implementato esattamente secondo Clean Architecture in `src/sertor_core/`:
 
 - **`services/chunking_service.py`:**
   - Dispatcher per linguaggio → chunker sintattico (`tree-sitter`) o fallback dimensionale.
-  - **Chunking sintattico (14 linguaggi MVP):** Python, JavaScript, TypeScript, Java, C#, Go, C, C++, PHP, Ruby, Bash, PowerShell, T-SQL, PL/SQL.
+  - **Set MVP (14 linguaggi):** 10 con chunking **sintattico** (Python, JavaScript, TypeScript, Java, C#, Go, C, C++, PHP, Ruby) + 4 in **fallback dimensionale** al 1° rilascio (PowerShell, Bash, T-SQL, PL/SQL).
   - Parsing AST, navigazione nodi, slice del sorgente in byte, preservazione metadata (linea, simbolo, node_type).
   - **Fallback dimensionale:** chunk per Markdown, linguaggi non riconosciuti, dimensione ~1k token.
 
@@ -151,12 +151,12 @@ Implementato esattamente secondo Clean Architecture in `src/sertor_core/`:
 | C++ | `cpp` | FunctionDefinition, ClassSpecifier | Sì |
 | PHP | `php` | FunctionDeclaration, ClassDeclaration | Sì |
 | Ruby | `ruby` | MethodDefinition, ClassDefinition | Sì |
-| Bash | `bash` | FunctionDefinition | Sì |
+| Bash | fallback (dimensionale) | — | Sì |
 | PowerShell | fallback (dimensionale) | — | Sì |
 | T-SQL | fallback (dimensionale) | — | Sì |
 | PL/SQL | fallback (dimensionale) | — | Sì |
 
-**Nota:** PowerShell, T-SQL, PL/SQL sono nel `tree-sitter-language-pack` ma i node-type non sono ancora validati (grammatica presente, pero tree-sitter AST non è completamente stabile). Deciso di usare fallback dimensionale al 1° rilascio per mitigare rischio R-N2. Sintattico valido per i 10 sopra.
+**Nota:** PowerShell, Bash, T-SQL, PL/SQL sono nel `tree-sitter-language-pack` ma non sono chunkati sintatticamente al 1° rilascio: PowerShell e i dialetti SQL hanno node-type non ancora validati (grammatica presente, AST upstream non stabile), Bash non è (ancora) mappato in `code.py` → tutti e 4 vanno in fallback dimensionale (mitigazione rischio R-N2). Sintattico valido per i 10 sopra.
 
 ### Wrapper `_Node` (Critical Decision)
 
@@ -216,8 +216,8 @@ Questo consente codice leggibile nel traversal AST, evitando di invocare metodi 
 
 ✅ **Implementato:**
 - tree-sitter binding con wrapper `_Node` per API metodi.
-- 10 linguaggi sintattico MVP (Python, JS/TS, Java, C#, Go, C/C++, PHP, Ruby, Bash).
-- 3 fallback dimensionali (PowerShell, T-SQL, PL/SQL, future extensible).
+- 10 linguaggi sintattico MVP (Python, JS/TS, Java, C#, Go, C/C++, PHP, Ruby).
+- 4 fallback dimensionali (PowerShell, Bash, T-SQL, PL/SQL, future extensible).
 - Dispatcher linguaggio in `services/chunking_service.py`.
 
 ### R2: Astrazione Vector Store
@@ -304,7 +304,7 @@ Analisi SpecKit `/speckit-analyze` → ✅ **PASS 100%**:
 
 1. **FEAT-002 (RAG baseline):** ranking/valutazione pertinenza su retrieval_facade.
 2. **FEAT-003 (Wiki skill):** ingestion skill, distillazione (record/ingest/query/lint), indicizzazione nel RAG.
-3. **Estensione linguaggi (post-MVP):** PowerShell, T-SQL, PL/SQL sintattico (dopo validazione AST).
+3. **Estensione linguaggi (post-MVP):** PowerShell, Bash, T-SQL, PL/SQL sintattico (dopo validazione AST / mappatura in `code.py`).
 4. **Refresh incrementale (FEAT-009):** dettato dalle sorgenti dinamiche di FEAT-007 (post-MVP).
 
 ---

@@ -11,6 +11,16 @@
 > **Principio X** (host-agnostico — nessuna assunzione dell'ospite hardcoded; tutto ciò che varia va in config).
 > Riusa il nucleo deterministico **FEAT-003-D** (`wiki_tools`) per il bookkeeping (DRY, FR-002).
 
+## Ponte D→N — FATTO (2026-06-05)
+
+Step 0, prerequisito a N1-N8: il layer agentico (playbook + skill + comando + agente) è stato reso
+**host-agnostico** (legge `wiki.config.toml`, Principio X) e **poggiato sulla CLI `sertor-wiki-tools`**
+per il meccanico; all'LLM resta il giudizio. Rename coerente: skill `genera-wiki`→`wiki-author`,
+playbook→`wiki-playbook.md`, agente `wiki-keeper`→`wiki-curator` (+`Bash`), comando `/wiki` invariato.
+Scope leggero (zero codice). Dettagli + confine D↔N: `wiki/syntheses/ponte-d-n-host-agnostico.md`.
+**Deferito (scope "completo"):** esporre i write-back (`append_log`/`upsert_index`) in CLI + riconciliare
+identità/formato dell'index curato → sblocca l'offload totale di `record`.
+
 ## Stato delle operazioni
 
 | # | Operazione (giudizio LLM) | Requisiti | Stato | Note |
@@ -19,7 +29,7 @@
 | N2 | **distillazione** di sessione/conversazione → pagina | REQ-030/031 | ☐ da fare | richiede LLM configurato; input già pre-elaborato |
 | N3 | **generazione** wiki (contenuto in linguaggio naturale, link concettuali) | FR-008 | ☐ da fare | momento (a) Karpathy; aggiornabile incrementalmente |
 | N4 | **ingest — compile** (input esterno → pagine-concetto) | FR-030/031 (parte compile) | ☐ da fare | l'*import* in `ingested_sources/` lo fa D |
-| N5 | **lint semantico** (contraddizioni, claim superati, coverage di senso) | FR-006 (parte semantica) | ☐ da fare | il lint *meccanico* (link rotti/orfani/frontmatter) lo fa D |
+| N5 | **lint semantico** (contraddizioni, claim superati, coverage di senso) | FR-006 (parte semantica) | ◑ in corso | **metodo documentato (variante b, 2026-06-05):** procedura+tassonomia nel playbook (`lint` livello B), ground truth via git/RAG/test, host-agnostico, zero codice. Provato sul wiki reale (2 derive corrette). Deferito (c): probe deterministici in `wiki_tools` |
 | N6 | **gerarchia di verità / autorità / obsolescenza** (giudizio) | FR-012..017 | ☐ da fare | la *rilevazione* dei segnali (mtime/git vs pagina) la fa D |
 | N7 | **gate al commit** (decisione human-in-the-loop: blocca/avvisa/ignora) | FR-035..038, FR-041/042 | ☐ da fare | il *calcolo* dei segnali lo fa D |
 | N8 | **orchestrazione agentica / trigger** (quando/come l'agente popola) | FR-001..005 | ☐ da fare | dipende dal contratto trigger portabile (FR-027, lato D) |

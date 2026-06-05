@@ -165,19 +165,19 @@ tree-sitter-language-pack contiene grammatiche per 305+ linguaggi. In FEAT-001, 
 | **PHP** | `php` | `function_declaration`, `method_declaration`, `class_declaration` | ✅ namespace | Dimensionale |
 | **Ruby** | `ruby` | `method_definition`, `class_definition` | ✅ nested | Dimensionale |
 
-### 3 Fallback Dimensionali (Validazione In Sospeso)
+### 4 Fallback Dimensionali (Validazione In Sospeso)
 
-tree-sitter-language-pack contiene grammatiche per **PowerShell**, **T-SQL**, **PL/SQL**, ma:
+tree-sitter-language-pack contiene grammatiche per **PowerShell**, **Bash**, **T-SQL**, **PL/SQL**, ma (PowerShell/SQL: node-type non validati; Bash: non ancora mappato in `code.py`):
 
 - **Grammatica presente:** sì.
 - **Validazione AST:** in-progress upstream tree-sitter.
 - **Node-type stabile:** no ancora.
 
-**Decisione FEAT-001 (R-N2):** usare fallback **dimensionale** per questi 3, rimandare sintattico a post-MVP.
+**Decisione FEAT-001 (R-N2):** usare fallback **dimensionale** per questi 4, rimandare sintattico a post-MVP.
 
 ```python
 # Fallback dimensionale (chunk per size, no AST)
-FALLBACK_LANGUAGES = {"powershell", "sql", "tsql", "plsql"}
+FALLBACK_LANGUAGES = {"powershell", "bash", "sql", "tsql", "plsql"}
 
 def chunk_document(doc: Document) -> list[Chunk]:
     if doc.language.lower() in FALLBACK_LANGUAGES:
