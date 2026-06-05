@@ -87,7 +87,7 @@ prototipo · `prototype` = dogfooding sul prototipo stesso); gli indici sono nam
 ## Il nucleo di produzione: `sertor-core` (`src/`)
 
 La produzione vive in `src/sertor_core/` (pacchetto `sertor-core`, `pyproject.toml` a root): una
-libreria di retrieval **importabile**, costruita in **Clean Architecture** sotto i 9 principi della
+libreria di retrieval **importabile**, costruita in **Clean Architecture** sotto i principi della
 costituzione (`.specify/memory/constitution.md`). È **il prodotto** — il CLI/MCP ne sarà un
 consumatore sottile.
 

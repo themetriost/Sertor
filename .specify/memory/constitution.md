@@ -1,10 +1,16 @@
 <!--
 SYNC IMPACT REPORT — Costituzione di Sertor
 ============================================
-Versione: (template non versionato) → 1.0.0   [ratifica iniziale]
-Tipo di bump: iniziale (MAJOR 1.0.0)
+Versione: 1.0.0 → 1.1.0
+Tipo di bump: MINOR (nuovo principio aggiunto)
 
-Principi (9, tutti aggiunti in questa ratifica):
+Modifiche di questo emendamento (2026-06-05):
+  + Principio X — Capacità host-agnostiche (la portabilità è un vincolo, non un'aspirazione)
+  ~ Intro: scope allargato dal "core + CLI" a "tutte le capacità + veicoli (CLI, MCP)"
+  Motivazione: codifica la mission (Sertor installabile su QUALSIASI progetto: code+doc,
+  solo-doc, solo-code) e generalizza il Principio I a tutte le capacità (skill e LLM Wiki incluse).
+
+Principi (10):
   I.    Il core a dipendenze verso l'interno (la libreria è il prodotto)
   II.   Provider e backend intercambiabili dietro boundary; local-first
   III.  Semplicità giustificata (YAGNI) e unità piccole
@@ -14,26 +20,28 @@ Principi (9, tutti aggiunti in questa ratifica):
   VII.  Leggibilità come comunicazione; lascia il codice più pulito
   VIII. Configurabilità centralizzata del core
   IX.   Osservabilità: ogni operazione a runtime è loggata
-
-Sezioni aggiunte:
-  - Sicurezza, segreti e provenienza
-  - Governance
+  X.    Capacità host-agnostiche (NUOVO)
 
 Template dipendenti:
-  ✅ .specify/templates/plan-template.md  — sezione "Constitution Check" allineata ai 9 principi
+  ✅ .specify/templates/plan-template.md  — aggiunto gate "X — Host-agnostico" + rif. versione → v1.1.0
   ✅ .specify/templates/spec-template.md  — nessuna modifica necessaria (resta agnostico)
   ✅ .specify/templates/tasks-template.md — nessuna modifica necessaria (resta agnostico)
 
-Tracciabilità: ogni principio cita i requisiti/criteri Sertor che codifica
-  (REQ-E*, CS, OBJ, SC, REQ-*).
+Artefatti correlati:
+  ✅ README.md (radice) — Vision/Mission: fonte del Principio X (creato in questo step)
+Tracciabilità: ogni principio cita i requisiti/criteri Sertor che codifica (REQ-E*, CS, OBJ, SC, REQ-*).
 Fonti d'ispirazione: wiki "Clean Code" e "Clean Architecture" (Transcriptio).
-Follow-up TODO: nessuno.
+Follow-up TODO: refactor host-agnostico delle skill wiki / playbook / rituale (oggi Sertor-coupled),
+  per conformità al Principio X — vedi backlog.
 -->
+
 
 # Costituzione di Sertor
 
-Principi vincolanti per la costruzione del **core** (motori RAG + skill LLM Wiki) e del suo veicolo
-**CLI**. Le parole chiave **MUST / SHOULD / MUST NOT** sono usate in senso RFC-2119.
+Principi vincolanti per la costruzione delle **capacità** di Sertor (motori RAG, indicizzazione, skill
+LLM Wiki) e dei loro veicoli (**CLI**, **MCP**). Sertor è un framework **installabile su qualsiasi
+progetto** ospite: i principi valgono per ogni capacità, non solo per il core (vedi Principio X). Le
+parole chiave **MUST / SHOULD / MUST NOT** sono usate in senso RFC-2119.
 
 ## Core Principles
 
@@ -151,6 +159,24 @@ extra.
 *Razionale:* Clean Code (error handling con contesto) + Clean Architecture (Humble Object: logica
 osservabile separata dal glue); FEAT-001 REQ-031, FEAT-002 NFR-007, FEAT-003 RNF-004.
 
+### X. Capacità host-agnostiche (la portabilità è un vincolo, non un'aspirazione)
+
+Ogni capacità di Sertor — nucleo di retrieval, motori RAG, indicizzazione, skill LLM Wiki e gli
+strumenti che le orchestrano — MUST essere **disaccoppiata dal dominio e dalla struttura del progetto
+ospite**. L'ospite è un **consumatore**: si **configura**, non si **presume**. Il corpo di una
+capacità MUST NOT incorporare assunzioni specifiche di un progetto (percorsi fissi, nomi di dominio,
+struttura di cartelle dell'ospite); ciò che varia fra ospiti MUST vivere nella
+**configurazione/istanziazione**, non nel codice della capacità. Il **dogfooding** (Sertor applicato
+a sé stesso) è strumentale e MUST NOT essere usato come licenza per violare questo confine.
+**Test non-negoziabile:** una capacità MUST poter operare su un progetto-ospite diverso (code+doc,
+solo-doc, solo-code) senza modifiche al suo corpo — solo cambiando configurazione.
+
+*Razionale:* è la traduzione operativa della **mission** (Sertor installabile su qualsiasi progetto) e
+**generalizza il Principio I** — finora scoped al solo core-libreria ("la libreria è il prodotto,
+repo-agnostico") — a **tutte** le capacità, incluse skill e LLM Wiki. Senza questo principio il
+dogfooding tenderebbe a far sedimentare assunzioni Sertor-specifiche dentro capacità che devono
+restare portabili. Fonti: README (Vision/Mission), REQ-E1/CS-5.
+
 ## Sicurezza, segreti e provenienza
 
 I segreti (chiavi API, credenziali) MUST NOT essere scritti in file versionati; transitano solo via
@@ -176,4 +202,4 @@ principio, vince il principio (o il principio viene prima emendato).
 - **Conformità:** il RAG di dogfooding sul prototipo è il riferimento di "cosa è buono"; le nuove
   capacità sono riviste rispetto a questi principi.
 
-**Version**: 1.0.0 | **Ratified**: 2026-05-31 | **Last Amended**: 2026-05-31
+**Version**: 1.1.0 | **Ratified**: 2026-05-31 | **Last Amended**: 2026-06-05
