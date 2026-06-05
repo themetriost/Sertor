@@ -367,3 +367,11 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
 - **CLAUDE.md:** il lint semantico per-step (rituale, punto 2 della DoD) ora rimanda al **metodo del playbook (livello B)** → stesso metodo per la passata per-step (stretta) e per quella on-demand `/wiki lint` (larga).
 - **Tracker:** `requirements/sertor-core/wiki-llm/TODO.md` N5 → **◑ in corso** (metodo documentato variante b; provato sul wiki reale con 2 derive corrette). Deferito **(c)**: probe deterministici in `wiki_tools`.
 - **File toccati:** `.claude/skills/wiki-author/wiki-playbook.md`, `CLAUDE.md`, `requirements/sertor-core/wiki-llm/TODO.md`.
+
+## [2026-06-05] record | Pagina d'architettura del Wiki LLM + roadmap; sessione mergiata (PR #14)
+
+- **Mergiato:** ponte D→N + fix hook Stop + lint semantico (4 commit) su `origin/master` via **PR #14** (merge `4be79e7`).
+- **Nuova pagina** `syntheses/architettura-wiki-llm.md`: vista d'insieme dell'architettura dopo il ponte D→N, come **pagina d'ingresso** che unifica [[nucleo-wiki-deterministico-feat003d]] + [[ponte-d-n-host-agnostico]] + [[sistema-wiki-fonte-unica]]. Contiene **schemi**: architettura a strati (config → nucleo deterministico CLI → 4 entità agentiche → hook), confine D↔N per operazione, lint a due livelli, e **grafo di dipendenze della roadmap**.
+- **Roadmap** (nuovo contenuto): tabella con natura (codice/giudizio/decisione), priorità, dipendenze e — punto chiave di processo — **EARS sul lato D** (soprattutto `sertor_mcp`), **build sul lato N** (i requisiti di outcome esistono già). Prossimo passo raccomandato: `requirements` a livello feature su `sertor_mcp` (5a).
+- **Aggiornato** `wiki/index.md` (voce 🗺️ in cima alle sintesi + updated).
+- **Lint:** strutturale pulito (0 broken/orphans).
