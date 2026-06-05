@@ -139,14 +139,41 @@ Input: un path locale (file/PDF) o un URL.
    conoscenza) e aggiorna l'indice + voce di log `query`. Altrimenti nessuna scrittura.
 
 ### `lint` — verifica di coerenza
-Il **meccanico è 100% della CLI**: esegui
-`uv run sertor-wiki-tools lint --json` **e** `uv run sertor-wiki-tools validate --json` e interpreta i
-contratti `wiki.lint/1` (wikilink rotti, orfani, frontmatter mancante, naming). **Non** rifare Glob/Grep a
-mano. Produci un **report** + (opzionale) voce di log `lint`. **Non auto-correggere** di default: proponi e
-correggi solo su conferma o se il brief lo richiede.
+Il lint ha **due livelli**: strutturale (meccanico, CLI) e semantico (giudizio, LLM). Eseguili in quest'ordine
+(il primo è la baseline del secondo). **Non auto-correggere** di default: produci un **report con severità** e
+correggi **solo su conferma** (o se il brief lo richiede). Voce di log `lint` (opzionale ma consigliata se correggi).
 
-> Il **lint semantico** (contraddizioni, claim superati, coverage di senso) è **giudizio**, non meccanico:
-> resta all'LLM e di norma al flusso principale (ha il contesto dello step). Non è coperto dalla CLI.
+**A) Lint strutturale — 100% meccanico (CLI).** Esegui `uv run sertor-wiki-tools lint --json` **e**
+`… validate --json`; interpreta i contratti `wiki.lint/1` (wikilink rotti, orfani, frontmatter mancante,
+naming). **Non** rifare Glob/Grep a mano. È autorevole sui link: se la CLI dice 0 broken, i link sono a posto.
+
+**B) Lint semantico — giudizio (LLM, flusso principale).** Verifica che il wiki **non sia derivato** dalla
+realtà del progetto. È **giudizio**: resta all'LLM e **di norma al flusso principale (Opus)**, che ha il
+contesto; **non si delega al `curator` (Haiku)** la parte di giudizio (vedi §7 e il rituale in `CLAUDE.md`).
+Procedura ripetibile:
+
+1. **Baseline** = il report di (A).
+2. **Estrai i claim verificabili** dalle pagine (usa `collect` per l'inventario): conteggi (test, moduli,
+   lingue…), stati (`mergiata`, `in progress`, branch/PR/commit), versioni, date, percorsi/simboli citati come
+   esistenti, nomi di entità. *(Per fan-out su molte pagine puoi delegare l'ESTRAZIONE a reader; il giudizio resta tuo.)*
+3. **Recupera la ground truth dal repo** — appòggiati agli strumenti **già disponibili**, non reinventarli:
+   - **git** (stato/PR/branch/commit) → **delega al ruolo VCS** (`[roles].vcs`); le operazioni git non si eseguono qui.
+   - **esistenza file/simboli, valori nel codice** → il **RAG dell'ospite** se configurato (server MCP del corpus
+     codice: `search_code`/`find_symbol`/`search_docs`); **altrimenti** ispezione diretta (`Read`/`Grep`).
+   - **conteggi build/test** → il tool dell'ospite (es. `uv run pytest --collect-only -q`).
+4. **Confronta claim ↔ ground truth → giudica.** Un claim è una **deriva** se il repo lo contraddice. Tassonomia
+   dei controlli: *stato git/PR/branch superato* · *numeri incoerenti col codice* · *file/simboli citati ma assenti*
+   · *date/versioni vecchie* · *contraddizioni tra pagine* · *claim più vecchi delle `sources`* · *coverage* (cose
+   reali del progetto non ancora documentate).
+5. **Report con severità** (Alto/Medio/Basso/Info) + proposta di correzione per ciascun finding. **Scarta i falsi
+   positivi** (es. un reader che segnala link "inesistenti" già smentiti dalla CLI).
+6. **Correggi su conferma.** Aggiorna **solo le pagine attive** (stato corrente); **non riscrivere** il registro
+   storico (`log.md`) né gli artefatti datati. Appendi una voce di log `lint`.
+
+**Host-agnostico (degradazione per profilo).** I probe disponibili dipendono dall'ospite: su un host **solo-doc**
+non ci sono test/simboli di codice → salta i probe di codice e tieni i controlli su date/contraddizioni/coverage;
+su **solo-code** salta i controlli doc-specifici. git è quasi sempre disponibile; il RAG è un **acceleratore se
+c'è**, mai un prerequisito (fallback su `Read`/`Grep`). Non assumere `pytest`/`src/`: derivali da `source_dirs`/profilo.
 
 ### `generate-from-diff` — aggiorna dalle modifiche recenti (flusso principale)
 Evita di rileggere l'intero repo: aggiorna solo ciò che è cambiato.

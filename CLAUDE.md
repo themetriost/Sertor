@@ -197,6 +197,8 @@ automazione *unattended*: la distinzione è netta —
    alla realtà del progetto (codice in `src/`, `specs/`, `requirements/`, stato git): **segnala
    esplicitamente ogni claim che il repo contraddice**; correggi su conferma. Va **oltre** il `lint`
    meccanico (link rotti/orfani/frontmatter): è il confronto *contenuto del wiki ↔ realtà del progetto*.
+   **Metodo ripetibile:** operazione `lint`, livello B (semantico) del playbook — estrai claim → ground truth
+   (git via VCS, RAG/`Read`+`Grep`, test) → giudizio → report con severità → correggi su conferma.
    **È giudizio, non trascrizione: resta nel flusso principale (Opus) e NON si delega a Haiku** — il
    flusso principale ha già il contesto dello step, mentre un agente lo rileggerebbe a freddo (più
    costoso e più lossy). Se in casi pesanti va proprio delegato, usa un override `sonnet`
