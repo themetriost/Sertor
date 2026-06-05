@@ -65,7 +65,7 @@ Completamento della **metà deterministica** del wiki LLM (FEAT-003 decomporta i
 **`frontmatter.py` — Parse e validazione frontmatter:**
 - Estrae YAML dal frontmatter (regex robusta, stdlib solo).
 - Valida campi richiesti/opzionali.
-- Estrae wikilink uscenti (`[[name]]` + alias `[[name|testo]]`) per il lint.
+- Estrae i wikilink uscenti (sintassi a doppie parentesi quadre, con alias dopo la barra `|`) per il lint.
 
 #### US3 — Lint strutturale (Priority P2)
 
@@ -207,19 +207,17 @@ Lo **stesso nucleo** produce scansioni/lint coerenti con questa config, senza ca
 
 ## Punti Aperti Segnalati
 
-### (1) Import Package-Root Non Lazy
+### (1) Import package-root — VERIFICATO NON-PROBLEMA (2026-06-05)
 
-**Osservazione:** `sertor_core/__init__.py` importa eagerly `composition` → `chromadb`. Offline-import è garantito solo a livello operazioni `wiki_tools` (non importa `composition`). 
+Si era temuto che `sertor_core/__init__.py` (importando `composition`) caricasse `chromadb` a ogni import. **Verifica empirica:** `import sertor_core` e `import sertor_core.wiki_tools.scan` **non** caricano `chromadb` (gli SDK pesanti sono importati lazy *dentro* le `build_*`, Clean Architecture). Chromadb si carica solo invocando l'operazione `index`. Nessun intervento necessario.
 
-**Impatto:** Se un consumatore vuole importare solo `from sertor_core.wiki_tools import scan` senza dipendenze di retrieval, fallisce perché `__init__.py` di `sertor_core` non è lazy.
+### (2) Link rotti scoperti dal lint — CORRETTI (2026-06-05)
 
-**Soluzione:** Rinviata a post-MVP (refactor `__init__.py` per lazy-loading di moduli pesanti, o marcare le operazioni wiki come "importabili indipendentemente").
+Il lint dello strumento ha scoperto link rotti reali (auto-referenziale): in `syntheses/chiusura-prototipo-dogfooding.md` un wikilink al target `architettura-attuale` (pagina inesistente) — corretto. Nota: il lint meccanico segnala anche i wikilink usati come *esempi* dentro code-span (la sintassi documentata): limitazione nota → possibile miglioria futura = ignorare i code-span.
 
-### (2) Link Rotto Reale nel Wiki: `[[architettura-attuale]]`
+### (3) CLI: crash su console non-UTF-8 — CORRETTO (2026-06-05)
 
-**Scoperto dal lint durante il testing:** pagina `syntheses/chiusura-prototipo-dogfooding.md` contiene un wikilink `[[architettura-attuale]]` che **punta a una pagina inesistente** nel wiki di produzione.
-
-**Status:** Segnalato, da correggere (non è ambito di FEAT-003-D, è un artefatto di storia precedente).
+`collect` crashava (`UnicodeEncodeError` su `→`) stampando JSON su console Windows cp1252. Risolto forzando UTF-8 su stdout/stderr nella CLI (host-agnostico: niente crash sull'ospite).
 
 ## Conformità Costituzionale
 
