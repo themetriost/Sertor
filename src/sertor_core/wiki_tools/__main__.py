@@ -90,6 +90,14 @@ def _human(op: str, result) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     """Punto d'ingresso del console-script. Ritorna l'exit code."""
+    # Output UTF-8 stabile su QUALSIASI console (es. Windows cp1252 non sa codificare → — e i
+    # contenuti del wiki contengono caratteri non-ASCII). Host-agnostico: niente crash sull'ospite.
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
+        except (AttributeError, ValueError):  # stream non riconfigurabile (es. redirezione): ok
+            pass
+
     args = _build_parser().parse_args(argv)
     try:
         profile = load_profile(args.config, root_override=args.root)
