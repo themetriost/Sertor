@@ -52,9 +52,12 @@ $pending = [int]$scan.pending
 
 # --- output per evento (riusa il message localizzato del contratto) ---
 if ($Mode -eq 'Stop') {
+    # NB: per l'evento Stop l'harness NON ammette hookSpecificOutput.additionalContext (valido solo per
+    # UserPromptSubmit/PostToolUse/PostToolBatch). Il messaggio non bloccante va in systemMessage (top-level),
+    # come fa il ramo SessionEnd. Vedi schema hook di Claude Code.
     $msg = "$($scan.message) Per la regola aurea (vedi CLAUDE.md, sezione Wiki): valuta di " +
            "delegare al wiki-curator (operazione record) o eseguire /wiki."
-    $out = @{ hookSpecificOutput = @{ hookEventName = 'Stop'; additionalContext = $msg } }
+    $out = @{ systemMessage = $msg }
     $out | ConvertTo-Json -Compress -Depth 5
     exit 0
 }
