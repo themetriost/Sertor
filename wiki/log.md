@@ -452,3 +452,22 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
 - **Verificato pulito:** spec/requirements (intento/design; «shall» non-implementato = backlog, non deriva; CLI assente da master = backlog corretto); sintesi di implementazione (conteggi datati per-feature, non claim globali); checkbox `tasks.md` delle feature mergiate.
 
 - **Metodo confermato:** report-only + correzione su conferma esplicita dell'utente; nessun auto-fix; storia datata non riscritta (solo banner). Esercita N5 ([[lint-semantico-host-agnostico]], punto 2 del rituale in [[rituale-step-e-allineamento-wiki]]).
+
+## [2026-06-06] record | Disciplina organizzativa del wiki: lint livello C + reorg + regole di creazione
+
+- **Motivazione:** un'analisi del wiki (best practice LLM Wiki + referto) ha rilevato una **terza categoria di deriva** oltre a igiene (lint A) e claim-vs-realtà (lint B): l'**organizzazione**. Misurata: 16/20 pagine in `syntheses/` (80%), `concepts/`/`experiments/`/`sources/` vuote, `type: synthesis` semanticamente falso (per il RAG non discrimina più), `index.md` auto-contraddittorio, alcune pagine non-atomiche (sezioni duplicate).
+
+- **Meccanismo (verificato in `collect.py`):** l'`area` è derivata dalla cartella ma il `type` è letto dal frontmatter senza validazione di coerenza; e — punto chiave — un check `type==taxonomy[area].type` sarebbe inutile, perché la deriva tiene cartella e `type` coerenti tra loro mentre **entrambi mentono sul contenuto**. Stabilire la natura reale è **inerentemente semantico**: il lint organizzativo è tutto giudizio (N), nessun helper deterministico per la detection.
+
+- **Intervento (3 parti):**
+  1. **Preventivo — regole di creazione** in `wiki-playbook.md`: atomicità (una pagina = un focus, criterio di split), auto-contenimento (prima frase = definizione, per i chunk RAG), euristica di collocazione per natura (§3, ruoli delle aree + regola anti-discarica), `type` riflette la natura non solo la cartella, link densi/inline/bidirezionali.
+  2. **Correttivo — nuova operazione `/wiki`**: lint **livello C (organizzativo)** (detection: collocazione vs natura, `type` falso, tassonomia collassata, atomicità, disciplina link; backlink calcolati invertendo `collect`) + operazione **`reorg`** (applica su conferma: sposta + corregge `type` + aggiorna wikilink entranti + indice; verifica igiene post-move via CLI). Aggiornati `commands/wiki.md` (enum + livelli) e `agents/wiki-curator.md` (confine: C e `reorg` sono giudizio, non delegati a Haiku).
+  3. **Tracking** (non-SpecKit): riga **N9** in `requirements/sertor-core/wiki-llm/TODO.md` (ancorata a FR-035..038/D-14, → FEAT-007); annotato il buco: nessun FR esplicito su organizzazione/refactoring in `wiki-creazione/requirements.md`.
+
+- **Decisioni (con l'utente):** forma = nuova operazione in `/wiki` (non skill standalone, fonte-unica); confine D/N = tutto N ora, helper `move`-deterministico a backlog D; collocazione = euristica nel playbook (non campo config).
+
+- **Host-agnostico (Principio X):** regole espresse sui nomi-area della config; nessun path Sertor hardcoded.
+
+- **File toccati (tooling, non indicizzati):** `.claude/skills/wiki-author/wiki-playbook.md`, `.claude/commands/wiki.md`, `.claude/agents/wiki-curator.md`, `requirements/sertor-core/wiki-llm/TODO.md`.
+
+- **Prossimo:** esercitare `lint` C + `reorg` sul wiki reale (le ~16 pagine mal-collocate) in incrementi su conferma; valutare una pagina-concetto sul "lint a tre livelli / deriva organizzativa".

@@ -1,5 +1,5 @@
 ---
-description: Consolida nel wiki locale il lavoro della sessione (record/ingest/query/lint/generate-from-diff/rag-sync)
+description: Consolida nel wiki locale il lavoro della sessione (record/ingest/query/lint/reorg/generate-from-diff/rag-sync)
 argument-hint: "[operazione e/o ambito, es. 'lint', 'ingest https://...', 'rag-sync', 'esperimento 01']"
 ---
 
@@ -18,7 +18,8 @@ Procedi così:
 1. Leggi il **playbook**, poi l'indice e la coda del log del wiki (nomi-file da config) per lo stato
    attuale; usa `uv run sertor-wiki-tools collect --json` per l'inventario meccanico delle pagine.
 2. **Determina l'operazione** da `$ARGUMENTS` o dal lavoro di sessione, tra:
-   `record` · `ingest` · `query` · `lint` · `generate-from-diff` · `rag-sync`.
+   `record` · `ingest` · `query` · `lint` (livelli A strutturale / B semantico / C organizzativo) ·
+   `reorg` (applica il refactoring organizzativo del lint C, su conferma) · `generate-from-diff` · `rag-sync`.
 3. **Esegui la procedura corrispondente** del playbook (input → passi → output), rispettandone i vincoli —
    in particolare: il flusso principale ha **Bash** per le op pesanti; `generate-from-diff` delega
    `git log/diff` al ruolo VCS (`[roles].vcs`); `rag-sync` lancia `sertor-wiki-tools index`.

@@ -36,9 +36,12 @@ poco conto, fai il minimo indispensabile (o nulla) e spiega perché.
 ## Cosa fai
 1. **Leggi il playbook**, poi l'indice e la coda del log del wiki (i nomi-file sono nella config) per lo
    stato attuale; lancia `collect`/`scan` per l'inventario meccanico.
-2. Individua l'operazione del playbook adatta al brief (di norma `record`; può essere `ingest`/`query`/
-   `lint`). `generate-from-diff` e `rag-sync` NON sono per te: richiedono git/indexer del flusso
-   principale — se il brief le implica, esegui le parti documentali e segnala che vanno completate lì.
+2. Individua l'operazione del playbook adatta al brief (di norma `record`; può essere `ingest`/`query`/ il
+   lint **strutturale**). NON sono per te (richiedono **giudizio** o git/indexer del flusso principale): il
+   lint **semantico (B)** e **organizzativo (C)**, l'operazione **`reorg`**, `generate-from-diff`, `rag-sync`
+   — il giudizio "questa pagina contraddice il codice / è mal-collocata / va spostata" resta al flusso
+   principale (Opus), come il rituale in `CLAUDE.md`. Se il brief le implica, esegui le parti documentali e
+   segnala che vanno completate lì.
 3. Esegui la procedura del playbook: crea/aggiorna le pagine, aggiorna backlink e indice, appendi
    UNA voce al log (data odierna, operazione corretta).
 4. Prima di aggiungere sezioni a pagine con struttura ripetibile, **verifica con `Grep`/`collect`** di non

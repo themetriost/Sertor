@@ -33,6 +33,7 @@ identità/formato dell'index curato → sblocca l'offload totale di `record`.
 | N6 | **gerarchia di verità / autorità / obsolescenza** (giudizio) | FR-012..017 | ☐ da fare | la *rilevazione* dei segnali (mtime/git vs pagina) la fa D |
 | N7 | **gate al commit** (decisione human-in-the-loop: blocca/avvisa/ignora) | FR-035..038, FR-041/042 | ☐ da fare | il *calcolo* dei segnali lo fa D |
 | N8 | **orchestrazione agentica / trigger** (quando/come l'agente popola) | FR-001..005 | ☐ da fare | dipende dal contratto trigger portabile (FR-027, lato D) |
+| N9 | **lint organizzativo + reorg** (collocazione per natura, atomicità, coerenza `type`↔natura, disciplina link inline/backlink) | FR-035..038 (manutenzione, D-14); → FEAT-007 | ◑ in corso | **terza categoria di deriva** oltre igiene (A) e claim (B): l'*organizzazione*. Tutto **giudizio** — natura/collocazione non sono deterministiche (cartella e `type` concordano ma mentono sul contenuto). **Metodo documentato (2026-06-06):** `lint` livello C + op `reorg` nel playbook; detection via `collect` + backlink calcolati, apply su conferma via `Read`/`Edit`. Backlog (c): helper deterministico `move`-con-link in `wiki_tools`. Nota: **nessun FR esplicito** su organizzazione/refactoring in `../wiki-creazione/requirements.md` → agganciato a FR-035..038/FEAT-007 |
 
 ## Domanda aperta da chiudere insieme
 - **FR-004 — trigger esatto del popolamento:** hook `Stop`/`SessionEnd`, comando `/wiki`, o entrambi?

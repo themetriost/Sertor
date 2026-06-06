@@ -80,6 +80,32 @@ Le aree sono quelle in `[[taxonomy]]`. Nel profilo Sertor:
 - Eventuali wiki **congelati/da non toccare** (su Sertor: `prototype/wiki/`) sono **fuori** dalla `root`
   ed esclusi via `exclude`: non si modificano, si consultano semmai via RAG.
 
+### Collocazione — scegliere l'area dalla natura della pagina
+
+Un wiki è un **grafo, non un albero**: la cartella serve solo a dare a ogni pagina **una casa**, il valore
+sta nei link. L'area si sceglie dalla **natura logica** del contenuto, **non** dalla fase/progetto (cartelle
+per fase — `sprint-3/`, `fase-azure/` — invecchiano male). Ruoli delle aree (profilo Sertor; su un altro
+ospite valgono i ruoli analoghi della sua `[[taxonomy]]`):
+
+- **concepts/** — astrazioni, pattern, idee (un concetto RAG, una tecnica). Evergreen.
+- **tech/** — una tecnologia/strumento/infra concreta (una libreria, un servizio). Evergreen.
+- **experiments/** — il **record datato** di un'attività/step/feature svolta (l'implementazione di FEAT-X,
+  uno spike, una sessione). È il diario di un lavoro, non un'astrazione.
+- **sources/** — il riassunto di una **fonte esterna** ingerita (paper, blog, PR, doc di terzi).
+- **syntheses/** — un **confronto trasversale** fra più concetti/esperimenti (A-vs-B, una sintesi che
+  attraversa pagine). È la categoria **più rara**, **non** il default.
+
+**Regola anti-discarica:** se non sai dove mettere una pagina, di solito è perché **non è atomica** (parla
+di troppe cose) o perché **manca una categoria** — è un *segnale*, non un buco da tappare con `syntheses/`.
+Nessuna area va usata come `misc/`. In dubbio fra due aree, scegli la più specifica alla natura; una pagina
+è `syntheses/` **solo** se è davvero un confronto fra più concetti, altrimenti quasi mai.
+
+**`type` riflette la natura, non solo la cartella.** Il `type` del frontmatter deve descrivere **cos'è
+davvero** la pagina e coincidere con l'area che la ospita. Attenzione: cartella e `type` possono essere
+*coerenti tra loro ma entrambi falsi* rispetto al contenuto (es. un record in `syntheses/` con
+`type: synthesis`). Questo disallineamento **natura↔collocazione** è invisibile al lint meccanico (vede solo
+la stringa) ed è il bersaglio del **lint livello C** (§5).
+
 ## 4. Convenzioni
 
 **Frontmatter YAML** in ogni pagina (eccetto i file append-only). I campi attesi sono in
@@ -104,14 +130,35 @@ sources: ["<path o URL>", ...]
   scegliere in silenzio. Se tocca una decisione o una fonte autorevole umana, **chiedi all'utente**.
 - **Niente over-doc:** non documentare il banale o le modifiche meccaniche. Calibra al valore.
 
+**Atomicità — una pagina, un concetto.** È la regola più importante per un LLM Wiki: pagine atomiche si
+linkano meglio, si riusano in più contesti e si **chunkano puliti** per il RAG (una pagina che parla di tre
+cose produce chunk ambigui e link generici). Criterio di **split**: se sviluppando una pagina emergono **due
+focus distinti** (due "cos'è"), crea **due pagine** collegate da wikilink reciproci invece di accatastare.
+Sotto la pressione dell'append è qui che si cede — sezioni duplicate ("Note di processo" ×2, due blocchi di
+stato) sono il sintomo: *ricuci o splitta*, non appendere.
+
+**Auto-contenimento — la prima frase definisce.** Il RAG recupera una pagina **fuori dal suo contesto**: la
+**prima frase** deve dire *cos'è* il soggetto senza presupporre nulla ("**X è …**"), prima dei dettagli — il
+primo chunk dev'essere autosufficiente. Evita aperture che rimandano ("Questo concetto è stato approfondito
+in…").
+
+**Link densi, inline e bidirezionali.** Quasi tutto il valore di un wiki sta nei **link**, non nelle
+cartelle. Linka **al punto di menzione** (inline), non in una sezione "vedi anche" in fondo: il link
+contestuale dice *perché* due pagine sono connesse. Preferisci link **specifici** alla pagina giusta
+piuttosto che a pagine-contenitore (densità ≠ qualità). I `[[wikilink]]` danno i **backlink** gratis
+(segnale di rilevanza per umano e RAG); una pagina **orfana** (zero link entranti) è invisibile alla
+navigazione — è uno *smell*, falla linkare. Linkare in avanti una pagina **non ancora esistente** è una
+*feature* (marca un nodo da creare), non un errore.
+
 **File append-only** (il log): **non** portano `updated` nel frontmatter (sarebbe sempre stale); il loro
 stato è dato dall'ultima voce.
 
 ## 5. Operazioni
 
 Ogni operazione = **input → passi → output** (pagine toccate + UNA voce di log). Le operazioni
-documentali (`record`, `ingest`, `query`, `lint`) sono eseguibili anche dal `curator` in background;
-`generate-from-diff` e `rag-sync` richiedono il **flusso principale** (vedi note).
+documentali (`record`, `ingest`, `query`, e il lint **strutturale**) sono eseguibili anche dal `curator` in
+background; il lint **semantico/organizzativo**, `reorg`, `generate-from-diff` e `rag-sync` richiedono il
+**flusso principale** (vedi note).
 
 > **Write-back log/indice:** oggi le scritture su indice e log sono **a cura dell'LLM** (formato curato:
 > sezioni raggruppate, riga `- **[[slug]]** — summary`, voci di log multi-bullet). Il deterministico
@@ -140,9 +187,11 @@ Input: un path locale (file/PDF) o un URL.
    conoscenza) e aggiorna l'indice + voce di log `query`. Altrimenti nessuna scrittura.
 
 ### `lint` — verifica di coerenza
-Il lint ha **due livelli**: strutturale (meccanico, CLI) e semantico (giudizio, LLM). Eseguili in quest'ordine
-(il primo è la baseline del secondo). **Non auto-correggere** di default: produci un **report con severità** e
-correggi **solo su conferma** (o se il brief lo richiede). Voce di log `lint` (opzionale ma consigliata se correggi).
+Il lint ha **tre livelli**: **A** strutturale (meccanico, CLI: igiene), **B** semantico (giudizio, LLM:
+*claim ↔ realtà del repo*) e **C** organizzativo (giudizio, LLM: *collocazione/atomicità/link*). A è la
+baseline; B e C sono ortogonali (puoi lanciarli insieme o separati). **Non auto-correggere** di default:
+produci un **report con severità** e correggi **solo su conferma** (o se il brief lo richiede); l'applicazione
+del refactoring organizzativo è l'operazione `reorg`. Voce di log `lint` (opzionale ma consigliata se correggi).
 
 **Ambito: cosa lintare (`[[audit]]`).** Il lint **non** è solo sul wiki: copre i target dichiarati in
 `[[audit]]` (config). Ogni target = `paths` (glob dell'ospite) + `kind` (profilo universale qui sotto).
@@ -200,6 +249,45 @@ nella rilevazione, non nella correzione automatica). **Caveat di automazione:** 
 (lato deterministico, cfr. `generate-from-diff` e il contratto-trigger, oggi non cablato). Finché non è cablata:
 il warning al commit copre A e **ricorda di lanciare B incrementale** (`/wiki lint` sul changeset).
 
+**C) Lint organizzativo — giudizio (LLM, flusso principale).** Verifica che il wiki sia un **grafo ben
+organizzato**, non solo igienicamente sano. È **tutto giudizio**: collocazione e natura di una pagina **non
+sono deterministiche** — cartella e `type` possono concordare tra loro e **mentire entrambi** sul contenuto,
+quindi nessun controllo meccanico le coglie. Resta al flusso principale (Opus), **non** al `curator`. Si
+applica al solo `kind` `wiki`, **on-demand** (non al commit). Inventario di partenza: `collect`
+(rel_path/area/`type`/tags/wikilink); i **backlink non sono esposti** dalla CLI → **calcolali invertendo** i
+`wikilinks` di `collect`. Controlli:
+
+1. **Collocazione vs natura** — la natura reale della pagina non corrisponde all'area che la ospita (es. un
+   record di feature in `syntheses/`). Riferimento: l'euristica di collocazione in §3.
+2. **`type` semanticamente falso** — `type` coerente con la cartella ma non col contenuto (deriva
+   natura↔collocazione).
+3. **Tassonomia collassata** — un'area usata come discarica (quota sproporzionata di pagine, specie in
+   un'area "rara" come `syntheses/`) mentre altre aree dichiarate restano vuote pur esistendo contenuto che
+   le riempirebbe.
+4. **Atomicità** — pagine con più focus o sezioni duplicate (candidate a split; vedi §4).
+5. **Disciplina dei link** — link relegati a "vedi anche" invece che inline; pagine centrali ma debolmente
+   connesse (pochi backlink).
+
+Esito = **report con severità + proposta** per finding (sposta a `<area>` · correggi `type` · splitta ·
+aggiungi link inline), **nessun auto-fix**. L'applicazione su conferma è l'operazione `reorg`.
+
+### `reorg` — applica il refactoring organizzativo (flusso principale; NON il curator)
+Applica, **su conferma esplicita** dell'utente, le proposte del **lint livello C**. È **più distruttivo**
+della correzione-claim (sposta file, riscrive link) → **mai automatico, mai bloccante, un incremento per
+volta**. È **giudizio** (cosa spostare/dove/se splittare) + meccanica via `Read`/`Edit`: **non si delega al
+`curator`**.
+1. Parti dal report del lint livello C e **concorda con l'utente** le pagine da trattare.
+2. Per ogni pagina: **spostala** nell'area corretta (nuovo path), **correggi il `type`** nel frontmatter, e
+   **aggiorna tutti i wikilink entranti** (dai backlink calcolati a §5-C) perché area/slug cambiano; aggiorna
+   l'indice (riga `- **[[slug]]** — summary` nella sezione giusta).
+3. **Verifica l'igiene post-move:** `uv run sertor-wiki-tools lint --json` **e** `… validate --json` →
+   attesi **0 link rotti / 0 orfani / 0 naming**. Se no, ripara prima di proseguire.
+4. Appendi una voce di log `reorg` (pagine spostate da→a, `type` corretti).
+
+> **Backlog (meccanica deterministica):** un comando `move`-con-aggiornamento-link sicuro in `wiki_tools`
+> (FEAT-003-D) renderebbe il passo 2 meno fragile dell'`Edit` a mano — da fare **solo se** l'approccio manuale
+> si rivela rumoroso. La **rilevazione** (livello C) resta comunque giudizio, non deterministica.
+
 ### `generate-from-diff` — aggiorna dalle modifiche recenti (flusso principale)
 Evita di rileggere l'intero repo: aggiorna solo ciò che è cambiato.
 1. Ancora il punto di partenza con `uv run sertor-wiki-tools scan --json` (file pendenti via mtime) e/o
@@ -230,7 +318,7 @@ Append al log (nome-file da config), una voce per operazione, con la **data odie
 ## [YYYY-MM-DD] <operazione> | <titolo>
 - <bullet sintetici: pagine create/aggiornate, decisioni, esiti, commit se noti>
 ```
-`<operazione>` ∈ `setup` · `record` · `ingest` · `query` · `lint` · `generate-from-diff` · `rag-sync`.
+`<operazione>` ∈ `setup` · `record` · `ingest` · `query` · `lint` · `reorg` · `generate-from-diff` · `rag-sync`.
 
 ## 7. Limiti & deleghe
 
