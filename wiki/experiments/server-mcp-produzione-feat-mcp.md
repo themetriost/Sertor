@@ -1,6 +1,6 @@
 ---
 title: Server MCP di Produzione (FEAT-MCP) — Avvio e Requisiti
-type: synthesis
+type: experiment
 tags: [feature, mcp, server, produzione, retrieval, superficie-finale, enabler, feat-mcp]
 created: 2026-06-06
 updated: 2026-06-06

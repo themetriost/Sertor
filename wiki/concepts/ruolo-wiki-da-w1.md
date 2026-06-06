@@ -1,13 +1,13 @@
 ---
 title: DA-W1 — Ruolo di prodotto dell'LLM Wiki (corpus × superficie)
-type: synthesis
+type: concept
 tags: [wiki, rag, da-w1, prodotto, requisiti]
 created: 2026-05-31
 updated: 2026-05-31
 sources: [requirements/sertor-core/epic.md]
 ---
 
-# Contesto
+# DA-W1 — Ruolo di prodotto dell'LLM Wiki (corpus × superficie)
 
 **DA-W1** è la domanda di prodotto, aperta nell'epica primaria `requirements/sertor-core/epic.md`, su **COME il wiki viene usato nel prodotto Sertor** e come si relaziona al RAG e all'MCP.
 

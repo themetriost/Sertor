@@ -1,6 +1,6 @@
 ---
 title: Chiusura del Prototipo e RAG di Dogfooding
-type: synthesis
+type: experiment
 tags: [produzione, prototipo, isolamento, dogfooding, mcp, corpus-aware]
 created: 2026-05-30
 updated: 2026-05-30

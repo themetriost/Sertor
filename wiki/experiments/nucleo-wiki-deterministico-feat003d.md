@@ -1,6 +1,6 @@
 ---
 title: Nucleo Wiki Deterministico Host-Agnostico — FEAT-003-D
-type: synthesis
+type: experiment
 tags: [FEAT-003-D, wiki-deterministico, host-agnostico, implementation, completed, python, cli]
 created: 2026-06-05
 updated: 2026-06-05

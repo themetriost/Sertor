@@ -1,6 +1,6 @@
 ---
 title: Ponte D→N — layer agentico host-agnostico sul nucleo deterministico
-type: synthesis
+type: experiment
 tags: [wiki, host-agnostico, principio-x, feat-003-n, tooling, confine-deterministico-giudizio]
 created: 2026-06-05
 updated: 2026-06-05

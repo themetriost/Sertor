@@ -1,6 +1,6 @@
 ---
 title: Implementazione FEAT-002 Motore Baseline
-type: synthesis
+type: experiment
 tags: [feat-002, motore-baseline, rag-vettoriale, ranking, valutazione]
 created: 2026-06-03
 updated: 2026-06-03

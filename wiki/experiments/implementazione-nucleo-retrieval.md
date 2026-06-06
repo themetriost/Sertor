@@ -1,6 +1,6 @@
 ---
 title: Implementazione FEAT-001 — Nucleo di Retrieval Condiviso
-type: synthesis
+type: experiment
 tags: [FEAT-001, nucleo-retrieval, implementation, completed, python, tree-sitter]
 created: 2026-06-03
 updated: 2026-06-03

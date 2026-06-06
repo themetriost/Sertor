@@ -1,6 +1,6 @@
 ---
 title: Decomposizione dei Must di sertor-core + decisioni di ambito MVP
-type: synthesis
+type: experiment
 tags: [requisiti, sertor-core, decomposizione, mvp, ears]
 created: 2026-05-31
 updated: 2026-05-31

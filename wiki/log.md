@@ -471,3 +471,25 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
 - **File toccati (tooling, non indicizzati):** `.claude/skills/wiki-author/wiki-playbook.md`, `.claude/commands/wiki.md`, `.claude/agents/wiki-curator.md`, `requirements/sertor-core/wiki-llm/TODO.md`.
 
 - **Prossimo:** esercitare `lint` C + `reorg` sul wiki reale (le ~16 pagine mal-collocate) in incrementi su conferma; valutare una pagina-concetto sul "lint a tre livelli / deriva organizzativa".
+
+## [2026-06-06] reorg | Primo refactoring organizzativo del wiki (lint C esercitato)
+
+- **Trigger:** richiesta utente "esercita sul wiki reale" — prima esecuzione end-to-end di `lint` livello C + `reorg` sul wiki di produzione.
+
+- **Report lint C:** tassonomia collassata (16/20 in `syntheses/`, `concepts/`/`experiments/`/`sources/` vuote), 13 pagine con `type: synthesis` semanticamente falso, 12 pagine mal-collocate, `rituale-step` non-atomica, `ruolo-wiki-da-w1` con H1 non descrittivo (`# Contesto`).
+
+- **Increment applicato (alta confidenza, link-safe):**
+  - **9 record → `experiments/`** (type→experiment): implementazione-nucleo-retrieval, motore-baseline-feat002, nucleo-wiki-deterministico-feat003d, server-mcp-produzione-feat-mcp, piano-nucleo-retrieval, ponte-d-n-host-agnostico, chiusura-prototipo-dogfooding, decomposizione-must-core, epiche-sertor-core-e-cli.
+  - **3 fondamenti → `concepts/`** (type→concept): costituzione-v1, missione-visione-host-agnosticita, ruolo-wiki-da-w1.
+  - **Indice ristrutturato** per area (Concepts/Experiments/Syntheses/Tech); rimosso il placeholder auto-contraddittorio ("la produzione inizia ora"); corretto "lint a due livelli" → "tre livelli" nel sommario di architettura-wiki-llm.
+  - **Fix auto-contenimento:** H1 di ruolo-wiki-da-w1 da `# Contesto` al titolo descrittivo.
+
+- **Sicurezza del move:** i wikilink sono `[[slug]]` (indipendenti dalla cartella) e i link relativi puntano a `../../requirements|specs` (stessa profondità per tutte le aree) → spostare tra cartelle non rompe nulla. **Verificato:** `lint`/`validate` post-move = 0 link rotti / 0 orfani / 0 frontmatter / 0 naming.
+
+- **Distribuzione:** da 16/0/0/4 (syntheses/concepts/experiments/tech) a **4/3/9/4**; `type` ↔ area coerenti ovunque.
+
+- **Restano in `syntheses/` (viste integrative):** architettura-wiki-llm, sistema-wiki-fonte-unica, lint-semantico-host-agnostico, rituale-step-e-allineamento-wiki.
+
+- **Increment successivi (proposti, non applicati):** (a) split di `rituale-step` (concetto rituale-di-step ↔ retrospettiva-2026-06-04); (b) aggiornare il corpo di `architettura-wiki-llm` (sezione "lint a due livelli" → tre livelli A/B/C); (c) verificare sezioni duplicate in server-mcp-produzione-feat-mcp.
+
+- **Esercita N9** ([[lint-semantico-host-agnostico]] livello C, [[rituale-step-e-allineamento-wiki]]): prima prova del metodo su contenuti reali, con esito pulito.

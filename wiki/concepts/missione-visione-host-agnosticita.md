@@ -1,6 +1,6 @@
 ---
 title: Mission, Vision e Principio X — Host-agnosticità come vincolo
-type: synthesis
+type: concept
 tags: [missione, visione, host-agnostico, principio-x, disaccoppiamento, costituzione]
 created: 2026-06-05
 updated: 2026-06-05

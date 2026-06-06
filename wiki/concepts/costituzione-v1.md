@@ -1,6 +1,6 @@
 ---
 title: Costituzione di Sertor v1.0.0 (ratificata) → v1.1.0 (emendata 2026-06-05)
-type: synthesis
+type: concept
 tags: [costituzione, governance, clean-code, clean-architecture, produzione, principio-x, host-agnostico]
 created: 2026-05-31
 updated: 2026-06-05

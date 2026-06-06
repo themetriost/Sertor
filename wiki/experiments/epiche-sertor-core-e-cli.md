@@ -1,6 +1,6 @@
 ---
 title: Epiche Sertor — Ristrutturazione (Core MVP + CLI Secondaria)
-type: synthesis
+type: experiment
 tags: [produzione, epiche, architettura, backlog]
 created: 2026-05-30
 updated: 2026-05-30

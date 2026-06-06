@@ -3,7 +3,7 @@ title: Indice del Wiki — Produzione Sertor
 type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
-updated: 2026-06-06 (Lint audit globale eseguito su intero repo: 1 deriva ALTA corretta su [[pulizia-pycache-e-diagnosi-mcp]] + riflesso nell'indice)
+updated: 2026-06-06 (Reorg organizzativo (lint C): 9 record → experiments/, 3 fondamenti → concepts/, type corretti, indice ristrutturato per area)
 sources: ["requirements/sertor-core/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "src/sertor_core/**", "CLAUDE.md"]
 ---
 
@@ -22,37 +22,44 @@ cumulativo: cresce a ogni sessione secondo lo schema in [`../CLAUDE.md`](../CLAU
 
 ## Come è organizzato
 
+L'area si sceglie dalla **natura** della pagina (non dalla fase): vedi l'euristica di collocazione nel
+playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
+
 | Cartella | Contenuto |
 |----------|-----------|
-| `concepts/` | Concetti |
-| `tech/` | Tecnologie e strumenti |
-| `experiments/` | Una pagina per attività/esperimento di produzione |
-| `sources/` | Riassunti di fonti esterne |
-| `syntheses/` | Confronti e sintesi trasversali |
+| `concepts/` | Astrazioni, fondamenta, principi (evergreen) |
+| `tech/` | Tecnologie, strumenti, infrastruttura (evergreen) |
+| `experiments/` | Record datati di un'attività/step/feature svolta |
+| `sources/` | Riassunti di fonti esterne ingerite |
+| `syntheses/` | Viste d'insieme e confronti trasversali (la categoria più rara) |
 | [`log.md`](log.md) | Registro append-only di tutto ciò che facciamo |
 
 ## Pagine
 
-_(La produzione inizia ora: questa sezione cresce a ogni sessione.)_
+### Concepts (fondamenta e astrazioni)
 
-### Syntheses (sintesi trasversali)
-
-- **[[architettura-wiki-llm]]** — 🗺️ **Vista d'insieme + roadmap.** Architettura del Wiki LLM dopo il ponte D→N: nucleo deterministico (`wiki_tools`) + layer agentico (4 entità host-agnostiche) + hook, separati dal confine D (meccanico) ↔ N (giudizio); una sola config. Schemi a strati, confine per operazione, lint a due livelli. **Roadmap** con grafo di dipendenze e priorità (5a `sertor_mcp`, 1a scope completo, FR-004, N1-N8). Pagina d'ingresso all'architettura.
-- **[[lint-semantico-host-agnostico]]** — 🔍 **Estensione del lint a audit globale.** Problema: requisiti/spec/tracker rimangono fuori dalla rete di anti-deriva. Soluzione: 4 `kind` di artefatti (`wiki`/`requirements`/`spec`/`tracker`) dichiarati in config `[[audit]]` con profili universali nel playbook. Per ogni `kind`, tassonomia di coerenza (cosa conta come deriva?) e procedura ripetibile. Host-agnostico: stesso metodo, diverse config ospite. Motivo: la rete di anti-deriva è globale, non solo wiki.
-- **[[server-mcp-produzione-feat-mcp]]** — ✅ **FEAT-MCP implementata** (Server MCP di produzione): flusso SpecKit completo (requirements→specify→clarify→plan→analyze→implement) finito 2026-06-06. 3 tool (`search_code`/`search_docs`/`search_combined`), facade memoizzata, 6 test verdi (registrazione, formato, filtro, troncamento, degrado, errore), Constitution Check 10/10. Scoperta: facade del core logga già il retrieval (Principio IX ✅); degrado "indice mancante→[]" è policy tollerante ereditata dal core. `.mcp.json` rimontato su server produzione, corpus `sertor`. Acceptance T023/T024 (validazione live + dogfood index) fuori dal codice, richiedono entry-point indicizzazione.
-- **[[ponte-d-n-host-agnostico]]** — Primo step FEAT-003-N (ponte D→N): il layer agentico (playbook + skill + comando + agente) reso host-agnostico (legge `wiki.config.toml`) e poggiato sulla CLI `sertor-wiki-tools` per il meccanico; all'LLM resta il giudizio. Rename coerente: `genera-wiki`→`wiki-author`, `playbook.md`→`wiki-playbook.md`, `wiki-keeper`→`wiki-curator` (+Bash). Tabella confine D↔N; scope leggero (zero codice).
-- **[[nucleo-wiki-deterministico-feat003d]]** — Implementazione FEAT-003-D (metà deterministica del wiki LLM): 11 moduli, 8 test, zero LLM, host-agnostico (Principio X), guidato da `wiki.config.toml`, contratti JSON versionati. Constitution Check 10/10 ✅. Offline per costruzione.
-- **[[rituale-step-e-allineamento-wiki]]** — Rituale di step (Definition of Done) per impedire la deriva wiki↔progetto: a ogni step → record + lint semantico di allineamento + azioni standing estendibili. Distinzione unattended vs standing behavior; retrospettiva onesta sull'interazione del 2026-06-04. Fonte unica = `CLAUDE.md` (plugin step-ritual cancellato, riesportazione a backlog).
-- **[[sistema-wiki-fonte-unica]]** — Consolidamento del wiki (fonte unica playbook + tre interfacce sottili + automazione hook). Tassonomia consolidata; convenzioni esplicite; 6 operazioni (record, ingest, query, lint, generate-from-diff, rag-sync).
 - **[[costituzione-v1]]** — Ratifica Costituzione v1.0.0 (2026-05-31) → v1.1.0 (2026-06-05, aggiunto Principio X host-agnostico); 10 principi vincolanti, gate Constitution Check. Governa design e produzione.
 - **[[missione-visione-host-agnosticita]]** — Mission/Vision canonizzate in README.md; Principio X come vincolo operativo; backlog: refactor host-agnostico di skill wiki/playbook/rituale.
-- **[[chiusura-prototipo-dogfooding]]** — Isolamento del prototipo, motore corpus-aware, RAG di dogfooding su se stesso, MCP ri-puntato.
-- **[[epiche-sertor-core-e-cli]]** — Ristrutturazione: Sertor Core (MVP, capacità RAG + Wiki) primaria; Sertor CLI (distribuzione via CLI) secondaria. Questione aperta DA-W1 su ruolo wiki.
 - **[[ruolo-wiki-da-w1]]** — DA-W1 risolta: il wiki è CORPUS + SUPERFICIE; identità, autorità, confine MVP, ruoli 1–3.
+
+### Experiments (record di attività/step/feature)
+
+- **[[epiche-sertor-core-e-cli]]** — Ristrutturazione: Sertor Core (MVP, capacità RAG + Wiki) primaria; Sertor CLI (distribuzione via CLI) secondaria. Questione aperta DA-W1 su ruolo wiki.
 - **[[decomposizione-must-core]]** — Decomposizione dei 3 Must (FEAT-001/002/003); 6 decisioni di ambito MVP; nuova FEAT-009 su refresh incrementale.
+- **[[chiusura-prototipo-dogfooding]]** — Isolamento del prototipo, motore corpus-aware, RAG di dogfooding su se stesso, MCP ri-puntato.
 - **[[piano-nucleo-retrieval]]** — Piano SpecKit FEAT-001: architettura Clean, decisioni R1–R8, Constitution Check ✅ (Principi I+IV), modello dati, contratti, scope MVP vs post-MVP.
 - **[[implementazione-nucleo-retrieval]]** — Completamento FEAT-001: libreria `sertor-core` prod-ready, 53 test, chunking 14 lingue, embeddings multi-provider, facade retrieval, Constitution Check 9/9 ✅.
 - **[[motore-baseline-feat002]]** — Implementazione FEAT-002: motore vettoriale baseline (ranking similarity + evaluation hit@k/MRR), 67 test, policy errore isolata, estensioni non-breaking al nucleo, Constitution Check 9/9 ✅.
+- **[[nucleo-wiki-deterministico-feat003d]]** — Implementazione FEAT-003-D (metà deterministica del wiki LLM): 11 moduli, 8 test, zero LLM, host-agnostico (Principio X), guidato da `wiki.config.toml`, contratti JSON versionati. Constitution Check 10/10 ✅. Offline per costruzione.
+- **[[ponte-d-n-host-agnostico]]** — Primo step FEAT-003-N (ponte D→N): il layer agentico (playbook + skill + comando + agente) reso host-agnostico (legge `wiki.config.toml`) e poggiato sulla CLI `sertor-wiki-tools` per il meccanico; all'LLM resta il giudizio. Rename coerente: `genera-wiki`→`wiki-author`, `playbook.md`→`wiki-playbook.md`, `wiki-keeper`→`wiki-curator` (+Bash). Tabella confine D↔N; scope leggero (zero codice).
+- **[[server-mcp-produzione-feat-mcp]]** — ✅ **FEAT-MCP implementata** (Server MCP di produzione): flusso SpecKit completo (requirements→specify→clarify→plan→analyze→implement) finito 2026-06-06. 3 tool (`search_code`/`search_docs`/`search_combined`), facade memoizzata, 6 test verdi, Constitution Check 10/10. `.mcp.json` rimontato su server produzione, corpus `sertor`.
+
+### Syntheses (viste d'insieme e sintesi trasversali)
+
+- **[[architettura-wiki-llm]]** — 🗺️ **Vista d'insieme + roadmap.** Architettura del Wiki LLM dopo il ponte D→N: nucleo deterministico (`wiki_tools`) + layer agentico (4 entità host-agnostiche) + hook, separati dal confine D (meccanico) ↔ N (giudizio); una sola config. Schemi a strati, confine per operazione, lint a tre livelli (A strutturale / B semantico / C organizzativo). **Roadmap** con grafo di dipendenze e priorità. Pagina d'ingresso all'architettura.
+- **[[sistema-wiki-fonte-unica]]** — Consolidamento del wiki (fonte unica playbook + tre interfacce sottili + automazione hook). Tassonomia consolidata; convenzioni esplicite; operazioni del playbook.
+- **[[lint-semantico-host-agnostico]]** — 🔍 **Estensione del lint a audit globale.** 4 `kind` di artefatti (`wiki`/`requirements`/`spec`/`tracker`) dichiarati in config `[[audit]]` con profili universali nel playbook; per ogni `kind`, tassonomia di coerenza e procedura ripetibile. Host-agnostico: la rete di anti-deriva è globale, non solo wiki.
+- **[[rituale-step-e-allineamento-wiki]]** — Rituale di step (Definition of Done) per impedire la deriva wiki↔progetto: a ogni step → record + lint semantico di allineamento + azioni standing estendibili. Distinzione unattended vs standing behavior; retrospettiva sull'interazione del 2026-06-04. Fonte unica = `CLAUDE.md`. *(Pagina non-atomica: candidata a split concetto↔retrospettiva.)*
 
 ### Tech (tecnologie e infrastruttura)
 
