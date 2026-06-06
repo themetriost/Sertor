@@ -511,3 +511,13 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
 - **Indice:** ristrutturato (rituale→Concepts, +retrospettiva in Experiments, +lint-organizzativo in Syntheses). Distribuzione: concepts 4 / experiments 10 / syntheses 4 / tech 4 (22 pagine).
 
 - **Verifica:** `lint`/`validate` = 0 link rotti / 0 orfani / 0 frontmatter / 0 naming.
+
+## [2026-06-06] record | Prossimi step pianificati (backlog di sessione)
+
+Annotati i prossimi passi concordati, da affrontare in sessioni successive:
+
+1. **Strategia di scrittura dei log** — definire una linea guida esplicita su *come* si scrivono le voci di `log.md`: granularità, lunghezza, cosa va nel log (append-only, datato) vs cosa va nelle pagine (evergreen); evitare la deriva verso voci troppo verbose. Da codificare nel playbook (§6 Voce di log).
+
+2. **Ulteriore refining della scrittura del wiki — orientata ai tipi** — affinare la tassonomia/convenzioni distinguendo meglio le nature delle pagine: **entità**, **concetti**, **procedure**, **configurazioni**, ecc. (oltre l'attuale concept/tech/experiment/source/synthesis). Valutare se servono nuovi `type`/aree o solo linee guida di stile per ciascuna natura, mantenendo l'host-agnosticità (config-driven).
+
+3. **Revisione puntuale di `CLAUDE.md` e `.claude/skills/wiki-author/wiki-playbook.md`** — passata mirata sui due file di governance: coerenza interna, ridondanze, allineamento con lo stato reale (lint a tre livelli, reorg, regole di creazione appena aggiunte), eliminazione di eventuali sezioni stantie o duplicate.
