@@ -411,3 +411,26 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
 - **Roadmap successiva:** specify (contratti MCP) → plan (task) → analyze (Constitution Check, atteso ✅) → implement (coding, test, binding).
 - **Nuova pagina wiki:** `syntheses/server-mcp-produzione-feat-mcp.md` — visione d'insieme, requisiti sommati, rischi, domande aperte, legami architetturali, checklist.
 - **Aggiornamenti:** `wiki/index.md` (timestamp + link a [[server-mcp-produzione-feat-mcp]] in Syntheses), `wiki/log.md` (voce corrente).
+
+## [2026-06-06] record | Lint semantico esteso a audit globale (host-agnostico)
+
+- **Motivazione:** il 2026-06-04 il flusso principale ha lavorato su dati stantii in `requirements/sertor-core/wiki-llm/TODO.md` senza verificarli — nessun controllo di coerenza su artefatti non-wiki. Il lint finora copriva solo il wiki, lasciando fuori il monte (requirements/spec/tracker) da cui gli agenti attingono. Questa è una **buco critico**: la rete anti-deriva deve essere globale.
+
+- **Decisione:** formalizzare l'estensione del lint semantico a una **audit globale host-agnostica**.
+
+- **Implementazione (tre parti):**
+  1. **Config (`wiki.config.toml`):** nuova sezione `[[audit]]` con 4 `kind` di artefatti (wiki, requirements, spec, tracker) e `paths` glob ospite-specifici. Regola matching: primo glob che matcha vince → `**/TODO.md` ricade in `tracker` anche sotto `requirements/`.
+  2. **Playbook (`.claude/skills/wiki-author/wiki-playbook.md`):** riscritta operazione `lint` livello B (semantico); tabella profilo universale che per ogni `kind` definisce cosa conta come "deriva" (es. per `requirements`: solo claim di STATO, non intento; un «shall X» non-implementato = backlog, NON deriva; per `tracker`: checkbox contraddetti = deriva diretta). Procedura ripetibile a 6 step (baseline → estrai claim → ground truth via VCS/RAG/Grep → giudica → report → correggi su conferma).
+  3. **CLAUDE.md e rituale:** il lint semantico è il punto 2 della Definition of Done, eseguito dal flusso principale (Opus, non delegato a Haiku) a ogni step.
+
+- **Host-agnostico (Principio X):** la tassonomia di coerenza (profili di `kind`) è codificata nel playbook; i file specifici dell'ospite (`[[audit]].paths`) in config. Stessa implementazione, due ospiti diversi → due reti di audit, zero replica.
+
+- **Metodo, non auto-fix:** il valore sta nella **rilevazione** (warning NON bloccante), non nella correzione automatica. Un esperimento passato di auto-fix LLM si era rivelato troppo rumoroso. Default: report-only, correggi su conferma esplicita.
+
+- **Stato:** ◑ metodo documentato (2026-06-06); ◑ config estesa (wiki.config.toml); ◑ playbook recritto (§5.4); ☐ automazione al commit (FR-004 trigger differito).
+
+- **File toccati:**
+  - Nuova pagina: `wiki/syntheses/lint-semantico-host-agnostico.md` (problema, soluzione, tassonomia, collegamenti).
+  - Aggiornati: `wiki/index.md` (timestamp + link a [[lint-semantico-host-agnostico]] in Syntheses), `wiki/log.md` (voce corrente).
+
+- **Collegamento architettura:** [[architettura-wiki-llm]] item "N5 lint semantico — metodo documentato (variante b)"; [[rituale-step-e-allineamento-wiki]] punto 2 (lint di allineamento); [[ponte-d-n-host-agnostico]] confine D↔N.

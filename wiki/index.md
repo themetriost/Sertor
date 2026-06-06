@@ -3,7 +3,7 @@ title: Indice del Wiki — Produzione Sertor
 type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
-updated: 2026-06-06 (FEAT-MCP implementata: SpecKit completo, codice finito, 6 test verdi)
+updated: 2026-06-06 (Lint semantico esteso a audit globale: 4 kind + profili universali host-agnostici)
 sources: ["requirements/sertor-core/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "src/sertor_core/**", "CLAUDE.md"]
 ---
 
@@ -38,6 +38,7 @@ _(La produzione inizia ora: questa sezione cresce a ogni sessione.)_
 ### Syntheses (sintesi trasversali)
 
 - **[[architettura-wiki-llm]]** — 🗺️ **Vista d'insieme + roadmap.** Architettura del Wiki LLM dopo il ponte D→N: nucleo deterministico (`wiki_tools`) + layer agentico (4 entità host-agnostiche) + hook, separati dal confine D (meccanico) ↔ N (giudizio); una sola config. Schemi a strati, confine per operazione, lint a due livelli. **Roadmap** con grafo di dipendenze e priorità (5a `sertor_mcp`, 1a scope completo, FR-004, N1-N8). Pagina d'ingresso all'architettura.
+- **[[lint-semantico-host-agnostico]]** — 🔍 **Estensione del lint a audit globale.** Problema: requisiti/spec/tracker rimangono fuori dalla rete di anti-deriva. Soluzione: 4 `kind` di artefatti (`wiki`/`requirements`/`spec`/`tracker`) dichiarati in config `[[audit]]` con profili universali nel playbook. Per ogni `kind`, tassonomia di coerenza (cosa conta come deriva?) e procedura ripetibile. Host-agnostico: stesso metodo, diverse config ospite. Motivo: la rete di anti-deriva è globale, non solo wiki.
 - **[[server-mcp-produzione-feat-mcp]]** — ✅ **FEAT-MCP implementata** (Server MCP di produzione): flusso SpecKit completo (requirements→specify→clarify→plan→analyze→implement) finito 2026-06-06. 3 tool (`search_code`/`search_docs`/`search_combined`), facade memoizzata, 6 test verdi (registrazione, formato, filtro, troncamento, degrado, errore), Constitution Check 10/10. Scoperta: facade del core logga già il retrieval (Principio IX ✅); degrado "indice mancante→[]" è policy tollerante ereditata dal core. `.mcp.json` rimontato su server produzione, corpus `sertor`. Acceptance T023/T024 (validazione live + dogfood index) fuori dal codice, richiedono entry-point indicizzazione.
 - **[[ponte-d-n-host-agnostico]]** — Primo step FEAT-003-N (ponte D→N): il layer agentico (playbook + skill + comando + agente) reso host-agnostico (legge `wiki.config.toml`) e poggiato sulla CLI `sertor-wiki-tools` per il meccanico; all'LLM resta il giudizio. Rename coerente: `genera-wiki`→`wiki-author`, `playbook.md`→`wiki-playbook.md`, `wiki-keeper`→`wiki-curator` (+Bash). Tabella confine D↔N; scope leggero (zero codice).
 - **[[nucleo-wiki-deterministico-feat003d]]** — Implementazione FEAT-003-D (metà deterministica del wiki LLM): 11 moduli, 8 test, zero LLM, host-agnostico (Principio X), guidato da `wiki.config.toml`, contratti JSON versionati. Constitution Check 10/10 ✅. Offline per costruzione.
