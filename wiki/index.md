@@ -3,7 +3,7 @@ title: Indice del Wiki — Produzione Sertor
 type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
-updated: 2026-06-06 (Lint semantico esteso a audit globale: 4 kind + profili universali host-agnostici)
+updated: 2026-06-06 (Lint audit globale eseguito su intero repo: 1 deriva ALTA corretta su [[pulizia-pycache-e-diagnosi-mcp]] + riflesso nell'indice)
 sources: ["requirements/sertor-core/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "src/sertor_core/**", "CLAUDE.md"]
 ---
 
@@ -59,4 +59,4 @@ _(La produzione inizia ora: questa sezione cresce a ogni sessione.)_
 - **[[hook-sessionstart-wiki]]** — Hook SessionStart di Claude Code: carica indice + log a inizio sessione. Ruolo 1 di DA-W1 (contesto iniettato).
 - **[[tree-sitter-language-pack]]** — Binding Rust multilingua (305+ lingue), parser robusto, set MVP 14 lingue (10 sintattico + 4 fallback: PowerShell, Bash, T-SQL, PL/SQL), wrapper `_Node` per API metodo-based.
 - **[[naming-corpora-indici]]** — Schema naming chiarificato (dal 2026-06-04): corpus `sertor` (prodotto, radice) vs `prototype` (prototipo, congelato); indici `.index-sertor` (radice) vs `.index-prototype` (prototipo).
-- **[[pulizia-pycache-e-diagnosi-mcp]]** — Cleanup del 2026-06-05: rimossi 16 dir `__pycache__` fantasma, diagnosi architetturale che solo `sertor_core` vive su master (CLI/MCP/wiki su branch), decisione su `.mcp.json` rotto (aspetta merge `feat/mcp-sertor-core`).
+- **[[pulizia-pycache-e-diagnosi-mcp]]** — Cleanup del 2026-06-05: rimossi 16 dir `__pycache__` fantasma + diagnosi architetturale. ⚠️ **Diagnosi superata il 2026-06-06**: `sertor_mcp` (PR #15) e `wiki_tools`/FEAT-003-D (PR #13) sono ora **su master**, e `.mcp.json` è **ri-puntato alla produzione** (`sertor_mcp.server`, corpus `sertor`); su branch resta solo la CLI. La pagina ha un banner che lo segnala.

@@ -434,3 +434,21 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
   - Aggiornati: `wiki/index.md` (timestamp + link a [[lint-semantico-host-agnostico]] in Syntheses), `wiki/log.md` (voce corrente).
 
 - **Collegamento architettura:** [[architettura-wiki-llm]] item "N5 lint semantico — metodo documentato (variante b)"; [[rituale-step-e-allineamento-wiki]] punto 2 (lint di allineamento); [[ponte-d-n-host-agnostico]] confine D↔N.
+
+## [2026-06-06] lint | Audit globale on-demand su intero repo (4 kind)
+
+- **Trigger:** richiesta utente `/wiki lint deterministico e semantico su intero repo` — primo esercizio del metodo di lint host-agnostico (esteso il 2026-06-06) su **tutti** i target `[[audit]]`, non incrementale sul changeset.
+
+- **Ambito:** 20 pagine wiki + 9 tracker + 7 requirements + 28 spec ≈ 64 documenti. Ground truth: git (delega `configuration-manager`, read-only), `src/` + `pytest --collect-only`, `.mcp.json`.
+
+- **Livello A (strutturale, CLI):** ✅ pulito — 0 link rotti / orfane / frontmatter mancante / naming su tutto il wiki.
+
+- **Livello B (semantico) — findings:**
+  - 🔴 **ALTO** — `wiki/tech/pulizia-pycache-e-diagnosi-mcp.md`: diagnosi datata 2026-06-05 con claim architetturali al presente ora contraddetti da master (`sertor_mcp` su master via PR #15; `wiki_tools`/FEAT-003-D su master via PR #13; `.mcp.json` ri-puntato a `sertor_mcp.server`/corpus `sertor`; solo CLI resta su branch). **Corretto** con banner "Superato il 2026-06-06" (corpo storico invariato).
+  - 🟡 **MEDIO** — `wiki/index.md` riga 62: il sommario propagava lo stesso claim stantio. **Corretto** (sommario marcato come diagnosi superata).
+  - 🟢 **BASSO** — `requirements/sertor-core/wiki-llm/TODO.md` (N5): sottostimava il progresso (mancava l'estensione audit-globale del 2026-06-06). **Corretto** (nota su PR #16).
+  - ℹ️ **INFO (no-azione)** — `requirements/sertor-core/epic.md`: colonna "Stato=decomposta" traccia la decomposizione, non l'implementazione → falso positivo, nessuna deriva.
+
+- **Verificato pulito:** spec/requirements (intento/design; «shall» non-implementato = backlog, non deriva; CLI assente da master = backlog corretto); sintesi di implementazione (conteggi datati per-feature, non claim globali); checkbox `tasks.md` delle feature mergiate.
+
+- **Metodo confermato:** report-only + correzione su conferma esplicita dell'utente; nessun auto-fix; storia datata non riscritta (solo banner). Esercita N5 ([[lint-semantico-host-agnostico]], punto 2 del rituale in [[rituale-step-e-allineamento-wiki]]).

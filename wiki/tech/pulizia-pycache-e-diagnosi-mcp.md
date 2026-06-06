@@ -3,11 +3,22 @@ title: Pulizia pycache fantasma e diagnosi .mcp.json (2026-06-05)
 type: tech
 tags: [cleanup, diagnostica, mcp, architettura, branch, master]
 created: 2026-06-05
-updated: 2026-06-05
+updated: 2026-06-06
 sources: ["master (HEAD a4640b8)", ".mcp.json", "src/sertor_core/**"]
 ---
 
 # Pulizia pycache fantasma e diagnosi MCP (2026-06-05)
+
+> **⚠️ Superato il 2026-06-06 (diagnosi storica).** Questa pagina fotografa lo stato a `master @ a4640b8`
+> (2026-06-05). **Da allora la realtà è cambiata** — le rettifiche, per evitare che un agente legga claim
+> stantii al presente:
+> - **`src/sertor_mcp/` è ora su master** (FEAT-MCP, **PR #15 mergiata**) — non più "solo su branch / PR non mergiata".
+> - **Il nucleo wiki deterministico è su master** come `src/sertor_core/wiki_tools/` (FEAT-003-D, **PR #13 mergiata**).
+> - **`.mcp.json` è stato ri-puntato alla produzione**: ora invoca `sertor_mcp.server` con `SERTOR_CORPUS=sertor`
+>   (non più il server prototipo rotto; lo status "inerte, da riprendere post-merge" non vale più).
+> - Su branch resta **solo la CLI** (`src/sertor_cli/`); MCP e wiki-core sono mergiati.
+>
+> Il corpo sottostante è lasciato **invariato** come registro della diagnosi alla sua data.
 
 ## Contesto
 
