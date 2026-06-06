@@ -3,7 +3,7 @@ title: Architettura del Wiki LLM — stato e roadmap
 type: synthesis
 tags: [architettura, wiki-llm, host-agnostico, principio-x, roadmap, feat-003, deterministico-vs-giudizio]
 created: 2026-06-05
-updated: 2026-06-05
+updated: 2026-06-06
 sources: [
   "src/sertor_core/wiki_tools/**",
   "wiki.config.toml",
@@ -47,7 +47,7 @@ in **una sola config** (`wiki.config.toml`) — host-agnosticità, **Principio X
                    │
 ┌──────────────────────────────────────────────────────────────────┐
 │  LAYER AGENTICO — 4 entità host-agnostiche (leggono la config)    │   GIUDIZIO (N)
-│   ▸ wiki-playbook.md   fonte unica: regole · tassonomia · 6 op.   │
+│   ▸ wiki-playbook.md   fonte unica: regole · tassonomia · 7 op.   │
 │   ▸ wiki-author (skill)     autore: genera/aggiorna dal repo       │
 │   ▸ /wiki (comando)         dispatcher manuale, flusso principale  │
 │   ▸ wiki-curator (agente Haiku, +Bash)   bookkeeping in background │
@@ -73,6 +73,8 @@ ingest                collect · lint                   riassunto · contraddizi
 query                 collect · index (RAG)            risposta · se archiviare
 lint  (A strutturale) lint · validate = 100% D         —
 lint  (B semantico)   baseline + ground truth          è davvero una deriva?  ← N5
+lint  (C organizzativo) collect (+ backlink invertiti) natura·collocazione·atomicità?  ← N9
+reorg                 move via Edit · lint post-move   cosa spostare/dove/splittare  ← N9
 generate-from-diff    scan · git(→VCS)                 pagine impattate · update
 rag-sync              index = 100% D                   —
 structure             structure init = 100% D          —
@@ -81,19 +83,22 @@ structure             structure init = 100% D          —
 Nota: i **write-back** (voce di log, riga d'indice) sono **ancora scritti dall'LLM** — la CLI non li
 espone e il formato curato non combacia col deterministico. Chiuderlo = evoluzione **1a** (roadmap).
 
-## Il lint a due livelli (N5, metodo formalizzato)
+## Il lint a tre livelli (N5 + N9)
 
 ```
-A) strutturale  → sertor-wiki-tools lint + validate     (D, autorevole sui link)
-B) semantico    → 1. baseline (A)
-   (giudizio,      2. estrai claim verificabili dalle pagine
-    flusso          3. ground truth:  git→VCS · RAG-ospite o Read/Grep · pytest
-    principale,     4. confronta claim ↔ realtà → giudica (deriva?)
-    NON Haiku)      5. report con severità (NON auto-fix)
-                    6. correggi su conferma  ·  log `lint`
+A) strutturale   → sertor-wiki-tools lint + validate    (D, autorevole sui link)
+B) semantico     → claim ↔ realtà del repo (codice/test/git)             (N · N5)
+   (giudizio,       baseline → estrai claim → ground truth (git→VCS · RAG/Read/Grep · pytest)
+    flusso          → confronta → report con severità → correggi su conferma
+    principale,     esteso il 2026-06-06 ad audit globale su 4 kind (wiki/requirements/spec/tracker)
+    NON Haiku)
+C) organizzativo → collocazione · atomicità · type↔natura · disciplina link  (N · N9)
+                    detection via collect + backlink invertiti; applica con `reorg` su conferma
 ```
 Host-agnostico: i probe degradano per profilo (solo-doc → niente probe di codice; il RAG è acceleratore
-se c'è, mai prerequisito). Provato il 2026-06-05 → 2 derive reali corrette.
+se c'è, mai prerequisito). Esercitati su contenuti reali: B → derive corrette (2026-06-05/06); C → reorg
+del 2026-06-06 (`syntheses/` da 16/20 a una distribuzione 4/3/9/4). Dettagli:
+[[lint-semantico-host-agnostico]] · [[lint-organizzativo-e-reorg]].
 
 ## Stato attuale
 
@@ -102,9 +107,10 @@ se c'è, mai prerequisito). Provato il 2026-06-05 → 2 derive reali corrette.
 | Nucleo deterministico `wiki_tools` (FEAT-003-D) | ✅ mergiato (PR #13) |
 | Ponte D→N (layer agentico host-agnostico + rename author/curator) | ✅ mergiato (PR #14) |
 | Fix hook Stop (systemMessage schema-valido) | ✅ mergiato (PR #14) |
-| N5 lint semantico — metodo documentato (variante b) | ◑ in corso (metodo sì; probe deterministici no) |
+| `sertor_mcp` (RAG dell'ospite, FEAT-MCP) | ✅ mergiato (PR #15); `.mcp.json` ri-puntato alla produzione (corpus `sertor`) |
+| N5 lint semantico — metodo + audit globale 4 `kind` (PR #16) | ◑ in corso (metodo sì, esercitato; probe deterministici no) |
+| N9 lint organizzativo + `reorg` — metodo + esercitato (reorg 2026-06-06) | ◑ in corso |
 | N1-N4, N6-N8 (operazioni di giudizio) | ☐ da fare |
-| `sertor_mcp` (RAG dell'ospite) | ☐ da fare (oggi `.mcp.json` punta al prototipo, rotto) |
 
 ## Roadmap
 
@@ -117,12 +123,12 @@ Grafo delle dipendenze (cosa sblocca cosa):
                        ├─► 2a  FR-004 (trigger: hook/comando/headless) ─────────► N8 orchestrazione
                        ├─► 3   Operazioni di contenuto: N1 · N2 · N3 · N4
                        ├─► 4   N6 verità/autorità/obsolescenza · N7 gate al commit
-                       └─► 5a  sertor_mcp (RAG ospite) ─► N5 probe-RAG · dogfood produzione · agente Azure
+                       └─► ✅ 5a sertor_mcp (RAG ospite, PR #15) ─► resta: indice corpus `sertor` → N5 probe-RAG · dogfood · agente Azure
 ```
 
 | # | Evoluzione | Natura | Requisiti? | Priorità | Dipende da |
 |---|---|---|---|---|---|
-| **5a** | `sertor_mcp` — RAG dell'ospite | **codice** (componente) | ✅ **EARS/SpecKit** (massima leva) | Alta | — |
+| **5a** | `sertor_mcp` — RAG dell'ospite | **codice** (componente) | ✅ **FATTO** (PR #15, SpecKit completo) | — | — |
 | **1a** | Scope completo: write-back in CLI + riconciliazione formato index | **codice** (D) | ✅ EARS leggero / spec | Media | FEAT-003-D |
 | **2a** | FR-004: chiudere il trigger (hook vs comando vs headless) | **decisione** | ❌ (chiude requisito esistente §13) | Media | — |
 | **3a** | N1 record-contenuto (autorship) | giudizio (N) | ❌ build, non spec | Media | 1a (migliora) |
@@ -138,5 +144,6 @@ sul lato D** (componenti/contratti con "done" testabile, soprattutto `sertor_mcp
 costruisce il metodo, non si spec-a** (i requisiti di outcome esistono già in
 `requirements/sertor-core/wiki-creazione/requirements.md`).
 
-**Prossimo passo raccomandato:** `requirements` a livello feature su **`sertor_mcp`** (5a) — è l'enabler che
-rende "vero" il probe-RAG del lint semantico, abilita il dogfood di produzione e l'entry-point dell'agente.
+**Prossimo passo raccomandato:** 5a (`sertor_mcp`) è **fatta** (PR #15, `.mcp.json` su produzione); resta da
+costruire l'**indice del corpus `sertor`** — è ciò che rende "vero" il probe-RAG del lint semantico (N5) e
+abilita il dogfood di produzione.

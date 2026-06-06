@@ -3,7 +3,7 @@ title: Indice del Wiki — Produzione Sertor
 type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
-updated: 2026-06-06 (Reorg organizzativo (lint C): 9 record → experiments/, 3 fondamenti → concepts/, type corretti, indice ristrutturato per area)
+updated: 2026-06-06 (Doc lint C/reorg + split rituale↔retrospettiva + architettura-wiki-llm allineata + ricucito server-mcp)
 sources: ["requirements/sertor-core/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "src/sertor_core/**", "CLAUDE.md"]
 ---
 
@@ -41,6 +41,7 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 - **[[costituzione-v1]]** — Ratifica Costituzione v1.0.0 (2026-05-31) → v1.1.0 (2026-06-05, aggiunto Principio X host-agnostico); 10 principi vincolanti, gate Constitution Check. Governa design e produzione.
 - **[[missione-visione-host-agnosticita]]** — Mission/Vision canonizzate in README.md; Principio X come vincolo operativo; backlog: refactor host-agnostico di skill wiki/playbook/rituale.
 - **[[ruolo-wiki-da-w1]]** — DA-W1 risolta: il wiki è CORPUS + SUPERFICIE; identità, autorità, confine MVP, ruoli 1–3.
+- **[[rituale-step-e-allineamento-wiki]]** — Rituale di step (Definition of Done): a ogni step → record + lint di allineamento + azioni standing estendibili. Standing behavior vs automazione unattended; fonte unica = `CLAUDE.md`. *(Retrospettiva estratta in [[retrospettiva-interazione-2026-06-04]].)*
 
 ### Experiments (record di attività/step/feature)
 
@@ -53,13 +54,14 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 - **[[nucleo-wiki-deterministico-feat003d]]** — Implementazione FEAT-003-D (metà deterministica del wiki LLM): 11 moduli, 8 test, zero LLM, host-agnostico (Principio X), guidato da `wiki.config.toml`, contratti JSON versionati. Constitution Check 10/10 ✅. Offline per costruzione.
 - **[[ponte-d-n-host-agnostico]]** — Primo step FEAT-003-N (ponte D→N): il layer agentico (playbook + skill + comando + agente) reso host-agnostico (legge `wiki.config.toml`) e poggiato sulla CLI `sertor-wiki-tools` per il meccanico; all'LLM resta il giudizio. Rename coerente: `genera-wiki`→`wiki-author`, `playbook.md`→`wiki-playbook.md`, `wiki-keeper`→`wiki-curator` (+Bash). Tabella confine D↔N; scope leggero (zero codice).
 - **[[server-mcp-produzione-feat-mcp]]** — ✅ **FEAT-MCP implementata** (Server MCP di produzione): flusso SpecKit completo (requirements→specify→clarify→plan→analyze→implement) finito 2026-06-06. 3 tool (`search_code`/`search_docs`/`search_combined`), facade memoizzata, 6 test verdi, Constitution Check 10/10. `.mcp.json` rimontato su server produzione, corpus `sertor`.
+- **[[retrospettiva-interazione-2026-06-04]]** — Retrospettiva onesta sull'interazione del 2026-06-04 (pattern di ostruzione percepito, radici plausibili, correttivo adottato); separata dal design del rituale per atomicità.
 
 ### Syntheses (viste d'insieme e sintesi trasversali)
 
 - **[[architettura-wiki-llm]]** — 🗺️ **Vista d'insieme + roadmap.** Architettura del Wiki LLM dopo il ponte D→N: nucleo deterministico (`wiki_tools`) + layer agentico (4 entità host-agnostiche) + hook, separati dal confine D (meccanico) ↔ N (giudizio); una sola config. Schemi a strati, confine per operazione, lint a tre livelli (A strutturale / B semantico / C organizzativo). **Roadmap** con grafo di dipendenze e priorità. Pagina d'ingresso all'architettura.
 - **[[sistema-wiki-fonte-unica]]** — Consolidamento del wiki (fonte unica playbook + tre interfacce sottili + automazione hook). Tassonomia consolidata; convenzioni esplicite; operazioni del playbook.
 - **[[lint-semantico-host-agnostico]]** — 🔍 **Estensione del lint a audit globale.** 4 `kind` di artefatti (`wiki`/`requirements`/`spec`/`tracker`) dichiarati in config `[[audit]]` con profili universali nel playbook; per ogni `kind`, tassonomia di coerenza e procedura ripetibile. Host-agnostico: la rete di anti-deriva è globale, non solo wiki.
-- **[[rituale-step-e-allineamento-wiki]]** — Rituale di step (Definition of Done) per impedire la deriva wiki↔progetto: a ogni step → record + lint semantico di allineamento + azioni standing estendibili. Distinzione unattended vs standing behavior; retrospettiva sull'interazione del 2026-06-04. Fonte unica = `CLAUDE.md`. *(Pagina non-atomica: candidata a split concetto↔retrospettiva.)*
+- **[[lint-organizzativo-e-reorg]]** — 🧭 **Lint livello C (organizzativo) + reorg.** La terza categoria di deriva (collocazione, atomicità, coerenza `type`↔natura, disciplina link) oltre igiene (A) e claim (B). Perché è tutto giudizio (cartella e `type` mentono insieme sul contenuto); principio "grafo non albero"; esercizio 2026-06-06 (`syntheses/` da 16/20 a 4/3/9/4, 0 link rotti).
 
 ### Tech (tecnologie e infrastruttura)
 

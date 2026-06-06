@@ -1,5 +1,5 @@
 ---
-title: Server MCP di Produzione (FEAT-MCP) — Avvio e Requisiti
+title: Server MCP di Produzione (FEAT-MCP) — record di feature (completata)
 type: experiment
 tags: [feature, mcp, server, produzione, retrieval, superficie-finale, enabler, feat-mcp]
 created: 2026-06-06
@@ -7,11 +7,11 @@ updated: 2026-06-06
 sources: ["requirements/sertor-core/mcp/requirements.md", "requirements/sertor-core/epic.md"]
 ---
 
-# Server MCP di Produzione — Avvio della Feature FEAT-MCP
+# Server MCP di Produzione (FEAT-MCP) — record di feature
 
 ## Sommario
 
-Avviata la feature **FEAT-MCP** (Server MCP di produzione, `sertor_mcp`) seguendo il **flusso SpecKit completo**. La feature è stata decomposta a livello di **requisiti EARS** (`requirements/sertor-core/mcp/requirements.md`, elicitazione del 2026-06-06), con **roadmap di fasi successive** (specify → plan → tasks → implement). FEAT-MCP è l'**enabler critico** di tre capacità di produzione:
+**FEAT-MCP** (Server MCP di produzione, `sertor_mcp`) è **completata** (2026-06-06) seguendo il **flusso SpecKit completo** (requirements → specify → clarify → plan → analyze → implement): EARS in `requirements/sertor-core/mcp/requirements.md`, spec in `specs/007-mcp-sertor-core/`, codice in `src/sertor_mcp/`, **mergiata su master (PR #15)**. FEAT-MCP è l'**enabler critico** di tre capacità di produzione:
 
 1. **Probe-RAG del lint semantico del wiki** (FEAT-003-N / N5), che oggi degrada a fallback `Read`/`Grep`;
 2. **Dogfood di produzione** (interrogare Sertor su se stesso: `src/`, `specs/`, `requirements/`, `wiki/`);
@@ -108,23 +108,6 @@ Decomposti in **7 gruppi funzionali + 2 domande aperte** (vedi `requirements/ser
 
 ---
 
-## Roadmap: prossimi step (variante D↔N deterministico↔giudizio)
-
-La feature segue il **flusso SpecKit completo**:
-
-1. **Requirements** ✅ (elicitazione 2026-06-06, EARS in `mcp/requirements.md`)
-2. **Specify** (decisioni di design, contratti, modello dati MCP)
-3. **Clarify** (chiarimento di vincoli/assumzioni)
-4. **Plan** (piano di implementazione a livello task)
-5. **Analyze** (Constitution Check sui requisiti; dovrebbe essere ✅ per Principio I+X)
-6. **Implement** (coding su `src/sertor_mcp/`, test, integration con `.mcp.json`)
-
-**Blocchi/sequenza consigliata:**
-- **Aggancio facade** (REQ-010) **→** **3 tool** (REQ-001..006) **→** **formato** (REQ-040..042);
-- Poi **config/corpus** (REQ-020..022) **→** **avvio/binding** (REQ-030..032) **→** **degrado** (REQ-050..051) **→** **extra isolato** (REQ-060).
-
----
-
 ## Legami architetturali
 
 ### Dipendenze (a monte)
@@ -141,25 +124,6 @@ La feature segue il **flusso SpecKit completo**:
 
 ### Legato a
 - **[[naming-corpora-indici]]**: riconciliazione naming corpus `sertor` (non legacy).
-
----
-
-## Note di processo
-
-### SpecKit completo, non "merge-sorgenti-orfani"
-
-La decisione di seguire SpecKit full invece di mergere il branch già implementato riflette il vincolo di **tracciabilità**:
-- Requisiti → spec → plan → task → codice (catena visibile);
-- NON: codice → estrai requisiti (post-hoc).
-
-Questo vale **specialmente per il nucleo di produzione**, dove ogni feature è modello per le capacità downstream (wiki, CLI, agenti).
-
-### Riconciliazione corpus naming critica (DA-MCP1 / R-02)
-
-Il cambio `production` → `sertor` è **non banale**:
-- Codice del core di produzione usa `"sertor"` come default corpus;
-- Server del prototipo usa `"production"` e il branch feature potrebbe ereditare.
-- **REQ-021** lo formalizza: il server **deve** riconciliare a `"sertor"` (non legacy).
 
 ---
 

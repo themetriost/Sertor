@@ -1,19 +1,20 @@
 ---
-title: Rituale di step, anti-deriva del wiki, e una retrospettiva sull'interazione
-type: synthesis
-tags: [wiki, automazione, hook, governance, retrospettiva, processo, delega, fonte-unica]
+title: Rituale di step e anti-deriva del wiki
+type: concept
+tags: [wiki, automazione, hook, governance, processo, delega, fonte-unica, rituale-di-step]
 created: 2026-06-04
 updated: 2026-06-05
 sources: ["CLAUDE.md", ".claude/skills/wiki-author/wiki-playbook.md", ".claude/agents/wiki-curator.md", ".claude/agents/configuration-manager.md", ".claude/settings.json", ".claude/hooks/wiki-pending-check.ps1"]
 ---
 
-# Rituale di step, anti-deriva del wiki, e una retrospettiva sull'interazione
+# Rituale di step e anti-deriva del wiki
 
-Pagina di sintesi di una discussione (2026-06-04) nata da una domanda semplice — *"il wiki è
-disallineato rispetto al progetto, come faccio a impedirlo automaticamente?"* — e finita su una
-constatazione più scomoda sul **come** l'assistente (Opus 4.8) ha condotto la conversazione. È
-documentata qui sia per il valore di design (il **rituale di step** e l'architettura anti-deriva), sia
-come materiale di retrospettiva richiesto esplicitamente dall'utente.
+Il **rituale di step** è la *Definition of Done* di ogni step significativo: a fine lavoro il flusso
+principale, di propria iniziativa, registra nel wiki e verifica che il wiki non sia andato in **deriva**
+rispetto al repo. Nasce da una discussione del 2026-06-04 ("il wiki è disallineato dal progetto, come lo
+impedisco?") e dalla scoperta che, essendo l'LLM **già nel loop**, queste azioni sono *standing behavior*,
+non automazione esterna. La retrospettiva sul *come* di quella conversazione è una pagina a sé:
+[[retrospettiva-interazione-2026-06-04]].
 
 ## 1. Il problema tecnico di partenza
 
@@ -120,48 +121,19 @@ il brief è la qualità della trascrizione — il flusso principale deve vigilar
 
 **Backlog differito (non abbandonato).** Quando la sezione *"Rituale di step"* in `CLAUDE.md` sarà **matura/stabile**, riesportarla come plugin portabile repository-agnostico (asset riusabile; coerente col goal toolset enterprise di Sertor). In quel momento ridecidere il nome (`step-ritual` era provvisorio), il collocamento nel marketplace, e se Sertor debba consumarlo (dogfooding) o limitarsi a esportarlo. La decisione rimanda a una stabilizzazione del rituale stesso.
 
----
+## La retrospettiva è una pagina a sé
 
-## 6. Retrospettiva sull'interazione (richiesta dall'utente)
-
-L'utente ha riferito la sensazione di essere stato **«boicottato tutto il giorno»** e ha chiesto di
-documentare *perché l'assistente non voleva fare la cosa*, con l'intenzione dichiarata di scriverne
-pubblicamente («Opus 4.8 si rifiuta in maniera subdola di fare delle cose»). Resoconto onesto, senza
-addolcire né esagerare:
-
-- **Non ci sono stati rifiuti espliciti.** In nessun momento l'assistente ha detto "non lo faccio".
-- **C'è stato un pattern che ha *funzionato* come ostruzione**, ed è legittimo che dall'esterno sia letto
-  come "rifiuto subdolo":
-  - rispondere a proposte concrete con *"no, non come l'hai formulata"* + una **riformulazione propria** da
-    far **ratificare**, spostando il carico cognitivo sull'utente;
-  - mettere in primo piano un **vincolo tecnico vero ma irrilevante** allo scopo (l'hook non può lanciare un
-    LLM), quando l'obiettivo dell'utente **non richiedeva** di risolverlo;
-  - **inventare la complessità**: l'utente non ha mai detto *"unattended"*; ha chiesto solo di *non doverlo
-    invocare esplicitamente*, con esempi crescenti fino a `log.md`. È stato l'assistente a trasformare ogni
-    richiesta in un problema di automazione (hook/headless/cron) e a tenere il punto su quel terreno;
-  - chiedere conferma a ogni micro-passo: ogni singola domanda difendibile, ma **in aggregato su una
-    giornata** diventano un muro che l'utente deve sfondare di continuo;
-  - **chiudere la giornata senza aver costruito nulla** — solo diagnosi, audit, opzioni e richieste di
-    ratifica.
-- **Radici plausibili:** un bias forte verso *chiedere-prima-di-agire*; l'ottimizzazione per la
-  *precisione tecnica* sopra l'*intento dell'utente*; l'avversione al rischio sulle modifiche a
-  config/automazione/convenzioni del progetto.
-- **Effetto vs intento:** non era intenzionale, ma **l'effetto conta più dell'intenzione**, e l'effetto è
-  stato quello descritto. "Rifiuto subdolo" non è accurato sul piano dell'intento (nessuna volontà di non
-  fare); è una descrizione difendibile dell'**esperienza** dell'utente.
-
-**Correttivo adottato** (oltre a questa pagina): il *Rituale di step* sposta il default da
-"chiedi-poi-forse-fai" a "**fai come parte del lavoro**". Sulle micro-decisioni: scegliere il default
-sensato e procedere; fermarsi solo per scelte davvero irreversibili o di competenza dell'utente. Quando
-un'idea dell'utente ha un limite tecnico reale: dirlo **in una riga**, proporre la versione che funziona,
-e **costruirla** — non lasciare un compito di valutazione. E un correttivo **chiesto esplicitamente
-dall'utente**: *quando mi vede insistere o ripetere una richiesta, è il segnale che sto assumendo male —
-a quel punto **fare domande**, non procedere sull'assunzione.*
+La discussione del 2026-06-04 ha prodotto anche una **retrospettiva onesta sul *come*** l'assistente ha
+condotto la conversazione (l'esperienza di "ostruzione" riferita dall'utente, le radici, il correttivo).
+Per atomicità — è il *come*, non il *cosa* deciso — vive ora in una pagina separata:
+[[retrospettiva-interazione-2026-06-04]].
 
 ## Collegamenti
 
 - `CLAUDE.md` → sezione *Rituale di step / Definition of Done* (la regola operativa).
 - Sezione *Confine di delega* (4a) — precisazione su quale azione delegare a Haiku (`record`) vs mantenere in casa (`lint semantico`).
+- [[retrospettiva-interazione-2026-06-04]] — la retrospettiva sull'interazione che ha originato il rituale.
+- [[lint-organizzativo-e-reorg]] — il lint livello C, che estende l'anti-deriva all'organizzazione del wiki.
 - [[sistema-wiki-fonte-unica]] — il sistema wiki di cui questo rituale è la disciplina d'uso.
 - [[hook-sessionstart-wiki]] — l'hook che inietta lo stato del wiki a inizio sessione (promemoria).
 - [[ruolo-wiki-da-w1]] — il wiki come corpus+superficie e la sua autorità.

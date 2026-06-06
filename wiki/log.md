@@ -493,3 +493,21 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
 - **Increment successivi (proposti, non applicati):** (a) split di `rituale-step` (concetto rituale-di-step ↔ retrospettiva-2026-06-04); (b) aggiornare il corpo di `architettura-wiki-llm` (sezione "lint a due livelli" → tre livelli A/B/C); (c) verificare sezioni duplicate in server-mcp-produzione-feat-mcp.
 
 - **Esercita N9** ([[lint-semantico-host-agnostico]] livello C, [[rituale-step-e-allineamento-wiki]]): prima prova del metodo su contenuti reali, con esito pulito.
+
+## [2026-06-06] record | Documentazione lint C/reorg + sistemati i 3 follow-up
+
+- **Trigger:** richiesta utente — documentare il nuovo step di `reorg` e chiudere i 3 increment lasciati aperti dal reorg precedente.
+
+- **Documentazione del nuovo step:** nuova pagina **[[lint-organizzativo-e-reorg]]** (syntheses): le tre categorie di deriva (A igiene / B claim / C organizzazione), perché C è interamente giudizio (cartella e `type` mentono *insieme* sul contenuto → nessun check deterministico le coglie), principio "grafo non albero", prevenzione (regole di creazione) vs correzione (lint C + `reorg`), esercizio 2026-06-06 (16/20→4/3/9/4, 0 link rotti), host-agnostico, tracking N9.
+
+- **(a) Split di `rituale-step` (era non-atomica):** la pagina mescolava il *design* del rituale e la *retrospettiva* dell'interazione. Separata in due pagine atomiche: **[[rituale-step-e-allineamento-wiki]]** (concept, ricucito, prima frase = definizione) + **[[retrospettiva-interazione-2026-06-04]]** (experiment). Slug del concetto invariato → i 6 inbound restano intatti.
+
+- **(b) `architettura-wiki-llm` allineata:** "lint a **due** livelli" → **tre** (A/B/C, con `reorg`); tabella confine D↔N estesa a lint C + reorg; "6 op" → 7; **corretta deriva adiacente**: `sertor_mcp` da "☐ da fare, .mcp.json rotto" a "✅ PR #15, .mcp.json su produzione"; roadmap 5a marcata fatta.
+
+- **(c) `server-mcp-produzione-feat-mcp` ricucito:** la pagina era cresciuta per append con sezioni ridondanti. Rimossi: la roadmap pre-implementazione (contraddetta dal completamento) e la sezione "Note di processo" duplicata; sommario/titolo aggiornati a "completata".
+
+- **Dogfooding:** il lint **A** ha pizzicato due `[[slug]]`/`[[link]]` scritti come esempi in prosa (collisione notazionale `[[...]]`, la stessa di `[[audit]]`) → corretti. Il livello strutturale fa da rete al livello organizzativo.
+
+- **Indice:** ristrutturato (rituale→Concepts, +retrospettiva in Experiments, +lint-organizzativo in Syntheses). Distribuzione: concepts 4 / experiments 10 / syntheses 4 / tech 4 (22 pagine).
+
+- **Verifica:** `lint`/`validate` = 0 link rotti / 0 orfani / 0 frontmatter / 0 naming.
