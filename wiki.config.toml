@@ -44,6 +44,26 @@ name = "syntheses"
 dir = "syntheses"
 type = "synthesis"
 
+# Audit del lint: COSA controllare e di che `kind`. `paths` = glob specifici dell'ospite;
+# `kind` = profilo universale definito nel playbook (wiki|requirements|spec|tracker) — è il "come".
+# Regola: il PRIMO [[audit]] che matcha un file vince (metti i paths più specifici prima), così
+# TODO.md / tasks.md / checklists ricadono in `tracker` anche se stanno sotto requirements/specs.
+[[audit]]
+paths = ["**/TODO.md", "specs/**/tasks.md", "specs/**/checklists/*.md"]
+kind = "tracker"
+
+[[audit]]
+paths = ["requirements/**/*.md"]
+kind = "requirements"
+
+[[audit]]
+paths = ["specs/**/*.md"]
+kind = "spec"
+
+[[audit]]
+paths = ["wiki/**/*.md"]
+kind = "wiki"
+
 [roles]
 curator = "wiki-curator"
 vcs = "configuration-manager"
