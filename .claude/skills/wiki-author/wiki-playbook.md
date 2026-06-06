@@ -17,6 +17,7 @@ varia tra progetti vive in **`wiki.config.toml`** alla radice dell'ospite — **
 | `[[taxonomy]]` | le aree logiche (cartella → tipo frontmatter) |
 | `frontmatter_required` / `_optional` | i campi di frontmatter attesi |
 | `source_dirs`, `exclude` | da dove leggere il lavoro dell'ospite e cosa ignorare |
+| `[[audit]]` | cosa sottoporre al lint e di che `kind` (wiki/requirements/spec/tracker) — vedi op. `lint` |
 | `[roles]` | i nomi degli agenti: `curator` (questo wiki), `vcs` (git) |
 | `[rag]`, `[strings]`, `language` | corpus RAG, messaggi localizzati, lingua |
 
@@ -143,12 +144,28 @@ Il lint ha **due livelli**: strutturale (meccanico, CLI) e semantico (giudizio, 
 (il primo è la baseline del secondo). **Non auto-correggere** di default: produci un **report con severità** e
 correggi **solo su conferma** (o se il brief lo richiede). Voce di log `lint` (opzionale ma consigliata se correggi).
 
+**Ambito: cosa lintare (`[[audit]]`).** Il lint **non** è solo sul wiki: copre i target dichiarati in
+`[[audit]]` (config). Ogni target = `paths` (glob dell'ospite) + `kind` (profilo universale qui sotto).
+**Prima regola che matcha vince** (i `paths` più specifici vanno prima): così `TODO.md`/`tasks.md`/
+`checklists` ricadono in `tracker` anche se stanno sotto `requirements/`/`specs/`. Il `kind` determina
+**quali livelli** si applicano e **cosa conta come deriva** — è ciò che evita i falsi positivi (non trattare
+l'*intento* come *stato*; gerarchia di autorità: codice/test = comportamento, requisiti/spec = perché).
+
+| `kind` | Liv. A (strutturale) | Liv. B (semantico) — cos'è "deriva" | Azione default |
+|---|---|---|---|
+| `wiki` | **sì** (CLI: wikilink/frontmatter/orfani/naming) | claim descrittivo contraddetto da codice/test · contraddizioni tra pagine · coverage · sommario stantio | report |
+| `requirements` | no (niente wikilink/frontmatter) | **solo claim di STATO** (implementato/mergiato/conteggi/ID); un «*shall X*» non ancora in codice = **backlog, NON deriva** | report |
+| `spec` | no | come `requirements` + coerenza col codice **se** lo stato dichiara "implementato" | report |
+| `tracker` | no | **tabelle/checkbox di stato** ("FATTO/da fare", `[x]`/`[ ]`) contraddette dalla realtà = **deriva diretta** | report |
+
 **A) Lint strutturale — 100% meccanico (CLI).** Esegui `uv run sertor-wiki-tools lint --json` **e**
 `… validate --json`; interpreta i contratti `wiki.lint/1` (wikilink rotti, orfani, frontmatter mancante,
 naming). **Non** rifare Glob/Grep a mano. È autorevole sui link: se la CLI dice 0 broken, i link sono a posto.
 
-**B) Lint semantico — giudizio (LLM, flusso principale).** Verifica che il wiki **non sia derivato** dalla
-realtà del progetto. È **giudizio**: resta all'LLM e **di norma al flusso principale (Opus)**, che ha il
+**B) Lint semantico — giudizio (LLM, flusso principale).** Verifica che gli **artefatti dichiarati in
+`[[audit]]`** (non solo il wiki: anche `requirements`/`spec`/`tracker`) **non siano derivati** dalla realtà
+del progetto, applicando il **profilo del `kind`** (tabella sopra). È **giudizio**: resta all'LLM e **di
+norma al flusso principale (Opus)**, che ha il
 contesto; **non si delega al `curator` (Haiku)** la parte di giudizio (vedi §7 e il rituale in `CLAUDE.md`).
 Procedura ripetibile:
 
@@ -174,6 +191,14 @@ Procedura ripetibile:
 non ci sono test/simboli di codice → salta i probe di codice e tieni i controlli su date/contraddizioni/coverage;
 su **solo-code** salta i controlli doc-specifici. git è quasi sempre disponibile; il RAG è un **acceleratore se
 c'è**, mai un prerequisito (fallback su `Read`/`Grep`). Non assumere `pytest`/`src/`: derivali da `source_dirs`/profilo.
+
+**Al commit (comportamento-obiettivo: A + B incrementale).** Al commit gira il livello **A** (strutturale, sui
+target `wiki`) **e** il livello **B** **solo sugli artefatti del changeset** (incrementale, mai l'intero repo),
+per ogni `kind`; esito = **report + warning NON bloccante** (mai blocco, mai auto-fix — lezione: il valore sta
+nella rilevazione, non nella correzione automatica). **Caveat di automazione:** A al commit è meccanico
+(hook/CLI); **B al commit è un giudizio LLM** → la sua esecuzione automatica dipende dall'orchestrazione/trigger
+(lato deterministico, cfr. `generate-from-diff` e il contratto-trigger, oggi non cablato). Finché non è cablata:
+il warning al commit copre A e **ricorda di lanciare B incrementale** (`/wiki lint` sul changeset).
 
 ### `generate-from-diff` — aggiorna dalle modifiche recenti (flusso principale)
 Evita di rileggere l'intero repo: aggiorna solo ciò che è cambiato.
