@@ -3,7 +3,7 @@ title: Indice del Wiki — Produzione Sertor
 type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
-updated: 2026-06-05 (ponte D→N: layer agentico host-agnostico + rename author/curator)
+updated: 2026-06-06 (FEAT-MCP implementata: SpecKit completo, codice finito, 6 test verdi)
 sources: ["requirements/sertor-core/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "src/sertor_core/**", "CLAUDE.md"]
 ---
 
@@ -37,6 +37,8 @@ _(La produzione inizia ora: questa sezione cresce a ogni sessione.)_
 
 ### Syntheses (sintesi trasversali)
 
+- **[[architettura-wiki-llm]]** — 🗺️ **Vista d'insieme + roadmap.** Architettura del Wiki LLM dopo il ponte D→N: nucleo deterministico (`wiki_tools`) + layer agentico (4 entità host-agnostiche) + hook, separati dal confine D (meccanico) ↔ N (giudizio); una sola config. Schemi a strati, confine per operazione, lint a due livelli. **Roadmap** con grafo di dipendenze e priorità (5a `sertor_mcp`, 1a scope completo, FR-004, N1-N8). Pagina d'ingresso all'architettura.
+- **[[server-mcp-produzione-feat-mcp]]** — ✅ **FEAT-MCP implementata** (Server MCP di produzione): flusso SpecKit completo (requirements→specify→clarify→plan→analyze→implement) finito 2026-06-06. 3 tool (`search_code`/`search_docs`/`search_combined`), facade memoizzata, 6 test verdi (registrazione, formato, filtro, troncamento, degrado, errore), Constitution Check 10/10. Scoperta: facade del core logga già il retrieval (Principio IX ✅); degrado "indice mancante→[]" è policy tollerante ereditata dal core. `.mcp.json` rimontato su server produzione, corpus `sertor`. Acceptance T023/T024 (validazione live + dogfood index) fuori dal codice, richiedono entry-point indicizzazione.
 - **[[ponte-d-n-host-agnostico]]** — Primo step FEAT-003-N (ponte D→N): il layer agentico (playbook + skill + comando + agente) reso host-agnostico (legge `wiki.config.toml`) e poggiato sulla CLI `sertor-wiki-tools` per il meccanico; all'LLM resta il giudizio. Rename coerente: `genera-wiki`→`wiki-author`, `playbook.md`→`wiki-playbook.md`, `wiki-keeper`→`wiki-curator` (+Bash). Tabella confine D↔N; scope leggero (zero codice).
 - **[[nucleo-wiki-deterministico-feat003d]]** — Implementazione FEAT-003-D (metà deterministica del wiki LLM): 11 moduli, 8 test, zero LLM, host-agnostico (Principio X), guidato da `wiki.config.toml`, contratti JSON versionati. Constitution Check 10/10 ✅. Offline per costruzione.
 - **[[rituale-step-e-allineamento-wiki]]** — Rituale di step (Definition of Done) per impedire la deriva wiki↔progetto: a ogni step → record + lint semantico di allineamento + azioni standing estendibili. Distinzione unattended vs standing behavior; retrospettiva onesta sull'interazione del 2026-06-04. Fonte unica = `CLAUDE.md` (plugin step-ritual cancellato, riesportazione a backlog).

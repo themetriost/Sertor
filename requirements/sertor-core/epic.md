@@ -127,6 +127,7 @@ produzione: testato, configurabile, repo-agnostico, osservabile, riusabile come 
 | FEAT-007 | **Skill: mantenere il wiki vivo** (spider/lint: rigenera indice, valida link, rileva orfani/contraddizioni, distilla raw→concept) | Tiene il wiki coerente e aggiornato (idempotente) | **Should** | da decomporre |
 | FEAT-008 | **Arricchimento bidirezionale Wiki↔RAG** (wiki → parte documentale del RAG; sorgenti → parte codice del RAG + fondamenta del wiki) | Loop virtuoso doc/codice che migliora retrieval e documentazione | **Could** | da decomporre |
 | FEAT-009 | **Manutenzione/refresh incrementale dell'indice RAG sui sorgenti** (aggiorna l'indice solo sui file cambiati, senza full re-index) | Tiene il RAG fresco su repo grandi senza ricostruire tutto; pendant per i sorgenti di FEAT-007 (wiki) | **Could** | da decomporre |
+| FEAT-MCP | **Server MCP di produzione** (`sertor_mcp`): espone il retrieval del core come tool MCP a un client (es. Claude Code); superficie sottile su `build_facade`, host-agnostica; sostituisce il server del prototipo | Superficie finale del core: rende il RAG usabile nativamente da un agente LLM; enabler del probe-RAG del lint wiki, del dogfood di produzione e dell'agente Azure | **Should** | [decomposta](mcp/requirements.md) |
 
 > **Nota sull'MVP (Must):** la prima release del core deve dimostrare **(1)** la creazione di un RAG
 > **vettoriale** funzionante poggiato sul **nucleo condiviso**, e **(2)** la **creazione di un LLM Wiki**.

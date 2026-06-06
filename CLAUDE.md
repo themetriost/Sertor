@@ -300,6 +300,7 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/006-nucleo-wiki-deterministico/plan.md` (FEAT-003-D — nucleo wiki deterministico host-agnostico).
-In `master`: FEAT-001 `specs/001-nucleo-retrieval/plan.md`, FEAT-002 `specs/002-rag-baseline/plan.md`.
+`specs/007-mcp-sertor-core/plan.md` (FEAT-MCP — server MCP di produzione, espone il retrieval del core
+come tool MCP; consumatore sottile, host-agnostico). In `master`: FEAT-001 `specs/001-nucleo-retrieval/plan.md`,
+FEAT-002 `specs/002-rag-baseline/plan.md`, FEAT-003-D `specs/006-nucleo-wiki-deterministico/plan.md`.
 <!-- SPECKIT END -->
