@@ -375,3 +375,17 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
 - **Roadmap** (nuovo contenuto): tabella con natura (codice/giudizio/decisione), priorità, dipendenze e — punto chiave di processo — **EARS sul lato D** (soprattutto `sertor_mcp`), **build sul lato N** (i requisiti di outcome esistono già). Prossimo passo raccomandato: `requirements` a livello feature su `sertor_mcp` (5a).
 - **Aggiornato** `wiki/index.md` (voce 🗺️ in cima alle sintesi + updated).
 - **Lint:** strutturale pulito (0 broken/orphans).
+
+## [2026-06-06] record | Avvio feature FEAT-MCP (Server MCP di produzione)
+
+- **Feature avviata:** FEAT-MCP (epica sertor-core §8) con **flusso SpecKit completo** (requirements → specify → plan → tasks → implement).
+- **Requisiti decompositi:** `requirements/sertor-core/mcp/requirements.md` (57 REQ funzionali EARS + 8 RNF, 7 rischi, 4 DA aperte con default assunto, 8 CS).
+- **Priorità:** **Should** (enabler critico di 3 cose: probe-RAG del lint semantico N5, dogfood di produzione, entry-point agente Azure).
+- **Scope MVP onesto:** 3 tool baseline (`search_code`, `search_docs`, `search_combined`) perché il core ha solo FEAT-001+002 (vettoriale). Fuori scope: tool di grafo (FEAT-005) e reranking ibrido vero (FEAT-004), registrabili non-breaking quando arrivano (REQ-061).
+- **Scoperta importante:** esiste già un'implementazione di riferimento su branch NON mergiato `feat/mcp-sertor-core` (commit `53b8e43`): `src/sertor_mcp/server.py` + `tests/`, pulita, testata, compatibile con `master` (build_facade/Settings/RetrievalFacade/RetrievalResult con `score` verificati).
+- **Decisione di processo:** NON merge dei soli sorgenti (codice orfano senza spec); si usa come **RIFERIMENTO** durante implement. Master rimane pulito da sorgenti MCP/CLI orfani.
+- **Riconciliazione naming critico (DA-MCP1/R-02):** il branch usa `SERTOR_CORPUS=production` (legacy); i requisiti e il prodotto usano `sertor`. REQ-021 formalizza: il server **deve** riconciliare a `sertor` senza hard-code.
+- **Binding `.mcp.json` pendente (REQ-031/CS-7):** dopo merge implement, `.mcp.json` sarà ri-puntato da `prototype/04-agentic-rag/mcp_server.py` (rotto) a `python -m sertor_mcp.server`.
+- **Roadmap successiva:** specify (contratti MCP) → plan (task) → analyze (Constitution Check, atteso ✅) → implement (coding, test, binding).
+- **Nuova pagina wiki:** `syntheses/server-mcp-produzione-feat-mcp.md` — visione d'insieme, requisiti sommati, rischi, domande aperte, legami architetturali, checklist.
+- **Aggiornamenti:** `wiki/index.md` (timestamp + link a [[server-mcp-produzione-feat-mcp]] in Syntheses), `wiki/log.md` (voce corrente).
