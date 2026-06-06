@@ -160,3 +160,29 @@ nucleo/CLI per la build dell'indice.
 - Commit per gruppo logico (delegato al `configuration-manager`).
 - Verificare che i test falliscano prima dell'implementazione dove applicabile.
 - Non reintrodurre lo stack morto del branch (CLI/wiki): solo `sertor_mcp` + test.
+
+---
+
+## Esito implementazione (2026-06-06)
+
+**Codice completo e testato.** `src/sertor_mcp/{__init__,server}.py` + `tests/unit/test_mcp_server.py`
+(6 test verdi: 3 tool registrati, formato, filtro per tipo, troncamento anteprima, indice mancante→`[]`,
+errore propagato+ripresa). `pyproject.toml` (extra `mcp` + package), `.mcp.json` (binding produzione,
+`SERTOR_CORPUS=sertor`), `.env.example` (nota). Ruff pulito; suite non-cloud 116 passed.
+
+- **T001–T022: FATTI.**
+- **Nota T007 (osservabilità):** scoperto che la **facade del core logga già** `retrieve`/`no_index`
+  (provider/k/results/elapsed); quindi RNF-004 è coperto dal nucleo. Aggiunto comunque un log di
+  **superficie per-tool** (`op=mcp.search_*`) per nominare il tool nel log. Nessuna logica duplicata.
+- **Nota FR-012:** il degrado "indice mancante → `[]` + warning" è ereditato **dalla facade** (che
+  ritorna `[]` e logga `no_index`); il server non aggiunge gestione, coerente col layer sottile.
+- **Binding venv:** sia `.venv` sia `.venv-core` importano `mcp` + `sertor_mcp` → `.mcp.json`
+  (`.venv-core`) è valido.
+
+**Acceptance fuori dal codice della feature (non bloccanti, richiedono decisione):**
+- **T023 (validazione live completa):** unit OK; la prova end-to-end con un client MCP reale richiede
+  un indice del corpus `sertor`.
+- **T024 (dogfood index):** **NON eseguito** — la *creazione* dell'indice è fuori ambito (la feature
+  *consuma* un indice). Inoltre con `.env` `RAG_BACKEND=azure` la build degli embeddings sarebbe **a
+  pagamento (Azure)** e dipende dall'entry-point di indicizzazione (CLI non su master): da decidere
+  con l'owner (cfr. memoria "dogfood di produzione").
