@@ -376,6 +376,28 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
 - **Aggiornato** `wiki/index.md` (voce 🗺️ in cima alle sintesi + updated).
 - **Lint:** strutturale pulito (0 broken/orphans).
 
+## [2026-06-06] record | FEAT-MCP implementata (SpecKit completo, codice finito)
+
+- **Milestone:** Completamento della feature **FEAT-MCP** (Server MCP di produzione, `sertor_mcp`), flusso SpecKit **completo** con implementazione finita il **2026-06-06**.
+- **Ciclo SpecKit:** requirements ✅ (`requirements/sertor-core/mcp/requirements.md`, 57 REQ + 8 RNF) → specify ✅ (`specs/007-mcp-sertor-core/spec.md`, Constitution Check 10/10) → clarify ✅ (research) → plan ✅ (`specs/007-mcp-sertor-core/plan.md`) → analyze ✅ (requirements.md checklist, Constitution riconciliato) → **implement** ✅ (codice).
+- **Codice:** `src/sertor_mcp/{__init__,server}.py` — FastMCP("sertor-rag"), 3 tool (`search_code`/`search_docs`/`search_combined`), facade memoizzata, formattatore con troncamento anteprima a 300 car.
+- **Test:** `tests/unit/test_mcp_server.py`, **6 test verdi**: tool registrati, formato stabile, filtro per tipo, anteprima troncata, indice mancante→`[]` (degrado pulito), errore propagato+ripresa server.
+- **Config & binding:** `pyproject.toml` extra `mcp` isolato (REQ-060); `.mcp.json` rimontato su server produzione (`python -m sertor_mcp.server`, `SERTOR_CORPUS=sertor`), sostituendo il server del prototipo rotto.
+- **Scoperte cruciali:**
+  - **Osservabilità (Principio IX):** la facade del core logga **già** `retrieve`/`no_index` (provider/k/results/elapsed); RNF-004 coperto dal nucleo. Aggiunto comunque log di superficie per-tool (nominare il tool in contesto MCP). Nessuna duplicazione.
+  - **Degrado indice mancante:** `[]` + warning è **policy tollerante e voluta del core** per composabilità; non è null silenzioso, è stato osservato/loggato/segnalato. Ereditato dal server (consumatore sano). Coerente con CLAUDE.md "policy errori non uniforme e voluta".
+  - **Naming corpus:** DA-MCP1 risolto. Server non hardcoded; legge da `Settings`/`SERTOR_CORPUS` env. Binding imposta `sertor` (non legacy `production`). REQ-021 ✅.
+- **Constitution Check:** 10/10 ✅, Principi I/IV/X NON-NEGOZIABILI superati (Principio I: layer sottile, core non modificato; IV: errori espliciti; X: host-agnostico).
+- **Suite test:** 116 passed (non-cloud, include le 6 del server).
+- **Ruff:** pulito.
+- **Acceptance fuori dal codice della feature (richiedono decisione/setup esterno):**
+  - **T023 (validazione live con client MCP reale):** richiede un indice del corpus `sertor`.
+  - **T024 (dogfood index):** creazione indice è fuori ambito (feature *consuma*, non crea); inoltre `.env` `RAG_BACKEND=azure` comporterebbe costo (Azure embeddings), dipende da entry-point indicizzazione (CLI non su master).
+- **Pagina wiki aggiornata:** `syntheses/server-mcp-produzione-feat-mcp.md` — da "avvio/requisiti" a "implementata/completata", con sezioni Flusso SpecKit, Implementazione (struttura, dettagli, test), Scoperte, Note di processo, Stato, Roadmap successiva.
+- **Index aggiornato:** entry `[[server-mcp-produzione-feat-mcp]]` con summary completo; timestamp updated.
+- **Commit:** delegato al configuration-manager (feat(mcp): implementazione SpecKit completo, 3 tool, Constitution Check 10/10, .mcp.json rimontato).
+- **Roadmap:** item 5a di [[architettura-wiki-llm]] **realizzato**. Prossimi: FEAT-005 (GraphRAG, tool grafo), FEAT-004 (Hybrid), dogfood indice, agente Azure.
+
 ## [2026-06-06] record | Avvio feature FEAT-MCP (Server MCP di produzione)
 
 - **Feature avviata:** FEAT-MCP (epica sertor-core §8) con **flusso SpecKit completo** (requirements → specify → plan → tasks → implement).

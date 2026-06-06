@@ -163,20 +163,118 @@ Il cambio `production` → `sertor` è **non banale**:
 
 ---
 
-## Stato e timestamp
+## Flusso SpecKit: completamento (2026-06-06)
 
-- **Stato:** in progress (requirements ✅, specify in agenda).
-- **Elicitazione:** 2026-06-06.
-- **Requisiti:** `requirements/sertor-core/mcp/requirements.md` (57 REQ + 8 RNF, 7 rischi, 4 DA).
-- **Epica:** `requirements/sertor-core/epic.md` §8, priorità **Should**.
-- **Riferimento:** branch `feat/mcp-sertor-core` (commit `53b8e43`, codice di riferimento, non per merge diretto).
+La feature ha attraversato l'intero ciclo SpecKit **completo** e la **implementazione è finita**:
+
+1. **Requirements** ✅: `requirements/sertor-core/mcp/requirements.md` (57 REQ funzionali + 8 RNF, 7 rischi, 4 DA con default).
+2. **Specify** ✅: `specs/007-mcp-sertor-core/spec.md` + contratti (`contracts/mcp-tools.md`); Constitution Check **10/10 ✅** (Principi I, IV, X NON-NEGOZIABILI superati).
+3. **Clarify** ✅: `specs/007-mcp-sertor-core/research.md` (analisi corpus-aware, binding).
+4. **Plan** ✅: `specs/007-mcp-sertor-core/plan.md` (strategy, complexity tracking); Constitution Check pre-phase confirmato.
+5. **Analyze** ✅: `specs/007-mcp-sertor-core/checklists/requirements.md` + Constitution Check riconciliato (descrizione nota VI sul Principio IV: policy errori non uniforme e voluta, coerente col core).
+6. **Implement** ✅: **codice finito** (2026-06-06).
 
 ---
 
-## Checklist successiva
+## Implementazione: codice finito
 
-- [ ] Specify: decisioni su contratti MCP, modello dati tool, struttura `sertor_mcp/`;
-- [ ] Clarify: conferma DA-MCP1..4, vincoli aggiuntivi;
-- [ ] Plan: scomposizione in user story e task;
-- [ ] Analyze: Constitution Check (atteso ✅ Principi I/X);
-- [ ] Implement: coding, test, `.mcp.json` puntato a `python -m sertor_mcp.server`.
+### Struttura e file
+
+```
+src/sertor_mcp/
+├── __init__.py          # docstring di scopo (layer sottile, Principio I)
+└── server.py            # FastMCP("sertor-rag") con 3 tool + formattatore + logging
+
+tests/unit/
+└── test_mcp_server.py   # 6 test: tool registrati, formato, filtro, troncamento, indice mancante, errore
+```
+
+### Dettagli implementativi
+
+**Server core (`server.py`):**
+- **Istanza MCP:** `FastMCP("sertor-rag")` con instructions che guidano la scelta del tool (code/doc/combined).
+- **Facade memoizzata:** `build_facade(Settings.load())` costruita **una volta** con `@lru_cache(maxsize=1)`.
+- **Formattatore:** `_fmt(RetrievalResult)` normalizza il testo e **tronca l'anteprima** a `_PREVIEW` (300 car) con marcatore `"…"`.
+- **Tre tool registrati:**
+  - `search_code(query, k=5)`: ristretti al codice.
+  - `search_docs(query, k=5)`: ristretti alla documentazione.
+  - `search_combined(query, k=6)`: codice + doc insieme.
+- **Log di superficie:** `log_event(logging.INFO, f"mcp.{tool}", k=k, results=len(results))` per nominare il tool (la **facade del core logga già** `retrieve`/`no_index` a livello di providers/store); nessuna duplicazione.
+- **main():** avvia `mcp.run()` (stdio).
+
+**Test (`test_mcp_server.py`, 6 test verdi):**
+- ✅ `test_three_search_tools_registered()`: i 3 tool appaiono in `list_tools()`.
+- ✅ `test_tool_returns_formatted_dicts()`: formato stabile `{path, source, chunk, score, preview}`.
+- ✅ `test_tool_filters_by_type()`: `search_code` → tutti `source=="code"`, etc.
+- ✅ `test_preview_is_truncated()`: anteprima troncata oltre soglia.
+- ✅ `test_missing_index_returns_empty_without_crash()`: indice assente → `[]` (degrado pulito, **nessun crash**).
+- ✅ `test_internal_error_propagates_then_server_recovers()`: errore reale → propagato + recupero (server vivo).
+
+**Config e binding:**
+- `pyproject.toml`: extra opzionale `mcp = ["mcp>=1.2"]`; `"src/sertor_mcp"` nei packages del wheel (REQ-060, isolamento dipendenze).
+- `.mcp.json` (binding): `python -m sertor_mcp.server` con env `SERTOR_CORPUS=sertor` (sostituisce il server del prototipo rotto).
+- `.env.example`: nota su `SERTOR_CORPUS=sertor` per il dogfood.
+
+### Lint e test
+
+- **Ruff:** ✅ pulito (`uv run ruff check src/sertor_mcp tests/unit/test_mcp_server.py`).
+- **Suite non-cloud:** ✅ 116 passed (le 6 del server verde, + suite core).
+- **Binding venv:** entrambi `.venv` e `.venv-core` importano `mcp` + `sertor_mcp` → `.mcp.json` valido.
+
+---
+
+## Scoperte cruciali
+
+### Osservabilità: il core logga già (Principio IX confermato)
+
+**Gap iniziale sospetto:** il piano menzionava "osservabilità (RNF-004)" come possibile lacuna. 
+
+**Verità rilevata:** la **facade del core logga già** le operazioni di `retrieve` (provider, k, numero risultati, elapsed) e anche il warning `no_index` quando l'indice manca. **Il Principio IX è già coperto dal nucleo.** Non era necessario duplicare a livello server. 
+
+**Scelta implementativa:** aggiunto comunque un log di **superficie per-tool** (`op=mcp.search_*`) per nominare quale tool è stato invocato nel contesto MCP, senza logiche di retrieval duplicate. ✅ Coerente.
+
+### Degrado pulito: ereditato dalla policy del core
+
+**Comportamento "indice mancante → `[]` + warning":** non è silenzioso né inghiottito. È la **policy tollerante e voluta** della facade (per composabilità del core), ben diversa da un null silenzioso. Lo stato è osservato, loggato e segnalato — nessuno stato parziale.
+
+**Allineamento con il design progettuale** (CLAUDE.md): il core ha una "policy errori non uniforme e voluta" — la facade è tollerante (per composabilità), il motore baseline è strict (per usabilità del consumatore). Il server è un consumatore sano del nucleo, non il motore, quindi eredita il comportamento tollerante.
+
+### Corpus naming `sertor` riconciliato
+
+**DA-MCP1 (naming corpus legacy):** Risolto. Il server **non hardcoded** il corpus; legge da `Settings` (che la legge da `SERTOR_CORPUS` env). Il binding `.mcp.json` imposta `SERTOR_CORPUS=sertor` (non `production`), **sostituendo il legacy** del prototipo. REQ-021 ✅.
+
+---
+
+## Note di processo: SpecKit completo vs merge-sorgenti-orfani
+
+La scelta di seguire **SpecKit completo** invece di mergere il branch `feat/mcp-sertor-core` è stata **strategica e verificata**:
+- **Input:** branch con codice pulito (`server.py` + test).
+- **Decisione:** usare come **RIFERIMENTO** durante implement, non come merge diretto.
+- **Motivo:** tracciabilità da requisiti → spec → plan → tasks → codice (catena visibile), coerente col vincolo di governance (FEAT-010 dismesso, FEAT-003 consolidato). 
+- **Esito:** codice finale conforme a spec, test ✅, Constitution Check superato, nessun codice orfano su master.
+
+---
+
+## Stato e timestamp
+
+- **Stato:** ✅ **COMPLETATO** (implementation finita 2026-06-06).
+- **Elicitazione requisiti:** 2026-06-06.
+- **Requisiti:** `requirements/sertor-core/mcp/requirements.md` (57 REQ + 8 RNF, 7 rischi, 4 DA).
+- **Spec:** `specs/007-mcp-sertor-core/spec.md` + plan + analyze ✅.
+- **Codice:** `src/sertor_mcp/{__init__,server}.py` + `tests/unit/test_mcp_server.py` (6 test verdi, ruff pulito).
+- **Config:** `pyproject.toml` (extra + package), `.mcp.json` (binding), `.env.example`.
+- **Suite test:** 116 passed (non-cloud).
+- **Constitution Check:** 10/10 ✅ (Principi I, IV, X NON-NEGOZIABILI superati).
+- **Acceptance note:** T023 (validazione live con client MCP) e T024 (dogfood index) NON eseguiti — richiedono un indice del corpus `sertor` (fuori dal codice della feature; creazione dipende da entry-point CLI).
+
+---
+
+## Prossimi step della roadmap
+
+Dopo FEAT-MCP ✅:
+
+1. **[[architettura-wiki-llm]]** item **5a** (enabler RAG): COMPLETATO (il server MCP è il primo step della superficie finale).
+2. **FEAT-005** (GraphRAG): estensione del server con tool di grafo (`find_symbol`, `who_calls`, `related_docs`, `get_context`), registrabili non-breaking (REQ-061).
+3. **FEAT-004** (Hybrid RAG + reranking): tool aggiuntivo o variante per ricerca ibrida.
+4. **Dogfood di produzione:** indice del corpus `sertor` per esercitare la suite end-to-end (blocca la valutazione completa di FEAT-MCP e il lint semantico N5 con probe-RAG).
+5. **Agente Azure:** entry-point di invocazione dei tool del server MCP.
