@@ -553,3 +553,12 @@ Risolto uno smell architetturale segnalato dal proprietario: i moduli `ops/` rim
 - **Disambiguazione collaterale:** negli header dei moduli «indice» → «playbook» (`wiki-playbook.md`), così non collide più con «indice del wiki» (`index.md`); il punto 1 di `record` ora dice esplicitamente "indice del wiki (`index.md`)".
 - **N1:** il metodo è ora nella foglia (aggiornato tracker + diagramma in [[architettura-wiki-llm]] e nota in [[sistema-wiki-fonte-unica]]).
 - **Verifica:** lint A = 0/0/0/0.
+
+## [2026-06-07] record | page-craft ampliato all'anatomia completa (host-agnostico)
+
+Arricchita la pagina-foglia `.claude/skills/wiki-author/page-craft.md` (metodo N1) sulla base di contenuti forniti dal proprietario, resi **host-agnostici**.
+
+- **Aggiunto:** §1 *Struttura della pagina* (titolo univoco · lead · TOC · sezioni gerarchiche · "vedi anche" · fonti · metadati) · §2 *Tipo di contenuti* (piramide rovesciata, concreto/azionabile, auto-contenuta-non-ridondante, stile diretto, aggiornabilità) · §4 *Tipo di link* (3 categorie: contestuali inline / navigazione strutturale / esterni-riferimenti + regole pratiche) · **checklist** finale. Mantenuto §3 *livello di significato* + esempio male→bene.
+- **Host-agnostico (Principio X):** neutralizzati gli assunti d'ospite — TOC automatico, campi stato/owner, gerarchie genitore/figlio, redirect a catena → marcati "se l'host lo prevede / da config"; esempi `[[wikilink]]`/`concepts/`/frontmatter tenuti come *profilo Sertor*.
+- **Tensione risolta:** lo schema fornito metteva i link in "Vedi anche", la regola del wiki è link inline → integrati come **categorie distinte** (contestuali inline ≠ navigazione), con nota che "Vedi anche" non sostituisce l'inline (smell del lint C).
+- **DAG preservato:** la foglia non rimanda *all'insù* al playbook (solo a `wiki.config.toml`, verso il basso).
