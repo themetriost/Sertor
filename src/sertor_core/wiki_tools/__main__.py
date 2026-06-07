@@ -74,7 +74,8 @@ def _human(op: str, result) -> str:
         return (
             f"broken_links={len(data['broken_links'])} orphans={len(data['orphans'])} "
             f"missing_frontmatter={len(data['missing_frontmatter'])} "
-            f"naming_violations={len(data['naming_violations'])}"
+            f"naming_violations={len(data['naming_violations'])} "
+            f"stubs={len(data.get('stubs', []))}"
         )
     if op == "collect":
         return f"pages={len(data['pages'])} root={data['root']}"

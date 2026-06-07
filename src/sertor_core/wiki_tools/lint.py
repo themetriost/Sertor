@@ -61,9 +61,12 @@ def lint(profile: WikiProfile) -> LintResult:
 
     broken_links: list[dict] = []
     missing_frontmatter: list[dict] = []
+    stubs: list[str] = []
 
     for rel_path, text in pages.items():
         fields = parse_frontmatter(text)
+        if str(fields.get("status", "")).strip().lower() == "stub":
+            stubs.append(rel_path)
         missing = missing_required(fields, profile.frontmatter_required)
         if missing:
             missing_frontmatter.append({"page": rel_path, "missing": missing})
@@ -80,6 +83,7 @@ def lint(profile: WikiProfile) -> LintResult:
         broken_links=sorted(broken_links, key=lambda d: (d["page"], d["target"])),
         orphans=orphans,
         missing_frontmatter=sorted(missing_frontmatter, key=lambda d: d["page"]),
+        stubs=sorted(stubs),
     )
     log_event(
         logging.INFO,
@@ -88,5 +92,6 @@ def lint(profile: WikiProfile) -> LintResult:
         broken_links=len(result.broken_links),
         orphans=len(result.orphans),
         missing_frontmatter=len(result.missing_frontmatter),
+        stubs=len(result.stubs),
     )
     return result

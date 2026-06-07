@@ -95,3 +95,25 @@ def test_lint_no_wiki_dir_is_clean(tmp_path, missing_root):
     cfg.write_text(_CONFIG, encoding="utf-8")
     res = lint(load_profile(cfg))  # wiki/ assente: nessuna pagina
     assert res.orphans == []
+
+
+def test_stub_is_wanted_not_broken_nor_orphan(tmp_path):
+    # Un forward-link risolto a uno stub (status: stub) è intenzionale: il link NON è broken, lo
+    # stub NON è orfano (lo linka chi l'ha motivato), e compare nella worklist `stubs`.
+    p = _clean_wiki(tmp_path)
+    wiki = tmp_path / "wiki"
+    # rag punta in avanti a un nodo da creare, realizzato come stub.
+    (wiki / "concepts" / "rag.md").write_text(
+        _FM.format(t="RAG") + "\nVedi [[chunking]] e [[futuro]].\n", "utf-8"
+    )
+    stub_fm = (
+        "---\ntitle: Futuro\ntype: concept\ntags: [x]\n"
+        "created: 2026-01-01\nupdated: 2026-01-02\nstatus: stub\n---\n"
+    )
+    (wiki / "concepts" / "futuro.md").write_text(stub_fm + "\n> 🚧 STUB\n", "utf-8")
+
+    res = lint(p)
+    assert res.broken_links == []  # [[futuro]] risolve allo stub
+    assert "concepts/futuro.md" not in res.orphans  # linkato da rag
+    assert res.stubs == ["concepts/futuro.md"]  # worklist dei nodi da riempire
+    assert res.schema == "wiki.lint/1"  # additivo, nessun bump

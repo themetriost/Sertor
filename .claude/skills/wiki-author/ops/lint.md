@@ -32,6 +32,8 @@ naming). **Non** rifare Glob/Grep a mano. È autorevole sui link: se la CLI dice
 Nota sui **forward-link**: un `[[…]]` verso un nodo da creare **non** va lasciato a vuoto (sarebbe `broken`,
 indistinguibile da un refuso) → si crea una pagina-**stub** (`status: stub`, vedi `../page-craft.md`), così il
 link risolve. Quindi: target con file (anche stub) = ok; target senza file = `broken` (refuso da correggere).
+Il `lint` espone gli stub nel campo **`stubs`** del contratto (worklist dei *nodi da riempire*), distinto dai
+difetti: uno stub non è un errore, è un nodo voluto in attesa di contenuto.
 
 **B) Lint semantico — giudizio (LLM, flusso principale).** Verifica che gli **artefatti dichiarati in
 `[[audit]]`** (non solo il wiki: anche `requirements`/`spec`/`tracker`) **non siano derivati** dalla realtà

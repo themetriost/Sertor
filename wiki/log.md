@@ -610,3 +610,12 @@ Chiusa la tensione di sistema tra playbook ("forward-link = feature") e lint A d
 - **Grounding:** verificato con uno stub usa-e-getta che `validate`/`lint` restano verdi (il campo extra `status` non disturba; lo stub non è orphan perché il forward-link che lo motiva è il suo arco entrante).
 - **Documentato:** regola in `page-craft.md` (disciplina dei link), nota in `wiki-playbook.md` §4 e in `ops/lint.md` (livello A); `status` aggiunto a `frontmatter_optional` in `wiki.config.toml`.
 - **Gravy deferito (richiede codice, → branch+PR):** estendere `wiki_tools` perché il `lint` riporti gli **stub** come categoria a sé (worklist "nodi da riempire"), invece di doverli cercare a mano. Non necessario alla separazione voluto↔rotto, che la convenzione già garantisce.
+
+## [2026-06-07] record | lint riporta gli stub come worklist (codice, FEAT-003-D)
+
+Implementato il "gravy" deferito della convenzione stub: il `lint` deterministico ora **espone gli stub come categoria a sé**, non più solo da cercare a mano. Prima vera task di **codice** della sessione → su **branch + PR** (non master), come da policy di produzione.
+
+- **Codice (`src/sertor_core/wiki_tools/`):** campo **additivo** `stubs: list[str]` in `LintResult` (contratto `wiki.lint/1` invariato — è dichiarato forward-compatible); `lint()` popola gli stub dalle pagine con frontmatter `status: stub`; l'output umano della CLI mostra `stubs=N`.
+- **Test:** nuovo `test_stub_is_wanted_not_broken_nor_orphan` — uno stub linkato da un forward-link **non** è broken né orfano e compare in `stubs`. Suite lint 6/6 verde (l'unico rosso della suite, `test_settings`, è ambientale: `RAG_BACKEND=azure` nel `.env`, pre-esistente).
+- **Doc allineati** (stesso branch): `ops/lint.md` e `page-craft.md` annotano il campo `stubs`.
+- **Constitution Check:** additivo, zero nuove dipendenze, deterministico/offline, test verdi, leggibile → PASS.

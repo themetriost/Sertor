@@ -107,7 +107,8 @@ Regole pratiche sui link:
   `> 🚧 STUB`. Così il link **risolve** (lint A verde) e il nodo è *voluto*; al contrario un `[[…]]` senza
   pagina né stub resta **broken** — è così che si separa il **nodo intenzionale** dal **refuso**. Lo stub ha
   ≥1 link entrante (quello che l'ha motivato) → non è orfano; **riempilo appena possibile** (uno stub
-  lasciato a lungo è uno *smell* del lint C).
+  lasciato a lungo è uno *smell* del lint C). Il lint A li elenca nel campo **`stubs`** (worklist dei nodi
+  da riempire), separati dai difetti.
 - **Non sovra-linkare:** troppi link rendono il testo illeggibile e svuotano di valore quelli importanti
   (densità ≠ qualità). Preferisci link **specifici** alla pagina giusta, non a pagine-contenitore.
 - **Niente link circolari inutili** né — *dove l'host ha i redirect* — redirect a catena.
