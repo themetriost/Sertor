@@ -39,7 +39,7 @@ sessione.
 
 - **Doppio ruolo (DA-W1):** il wiki è insieme **corpus** (interrogabile via RAG) e **superficie**
   (indice navigabile iniettato a inizio sessione). Vedi la pagina del wiki (profilo Sertor:
-  `wiki/concepts/ruolo-wiki-da-w1.md`).
+  `wiki/concepts/wiki-role-da-w1.md`).
 - **Cumulativo:** cresce a ogni sessione; non si riparte da zero.
 - **Idempotente:** se una pagina è già accurata, **non riscriverla**. Niente modifiche inutili.
 - **Self-contained:** ogni pagina è scritta perché un agente la riprenda senza il contesto della chat.

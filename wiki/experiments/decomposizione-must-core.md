@@ -139,4 +139,4 @@ Tutti i §10 dei tre documenti (`nucleo-retrieval/requirements.md`, `rag-baselin
   - `requirements/sertor-core/nucleo-retrieval/requirements.md` — FEAT-001
   - `requirements/sertor-core/rag-baseline/requirements.md` — FEAT-002
   - `requirements/sertor-core/wiki-creazione/requirements.md` — FEAT-003
-- **Collega:** [[epiche-sertor-core-e-cli|epiche-sertor-core-e-cli]], [[wiki-role-da-w1|ruolo-wiki-da-w1]]
+- **Collega:** [[epiche-sertor-core-e-cli]], [[wiki-role-da-w1]]

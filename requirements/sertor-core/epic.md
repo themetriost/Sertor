@@ -159,8 +159,8 @@ vi si accede e che forma hanno i risultati). Il wiki si colloca su **entrambi**.
 | **Ruolo 1 (contesto iniettato)** | **Competenza dell'host** (es. hook `SessionStart` di Claude Code, già funzionante), **non** capacità di prodotto nell'MVP. Sertor **espone** il wiki (indice/pagine); l'host decide *cosa/quando* iniettare. Non preclude un futuro "context payload" generato da sertor. |
 
 > Approfondimento del modello **corpus × superficie** e della meccanica dell'**hook SessionStart** (la
-> prova vivente del ruolo 1): nel wiki di produzione, `wiki/syntheses/ruolo-wiki-da-w1.md` e
-> `wiki/tech/hook-sessionstart-wiki.md`.
+> prova vivente del ruolo 1): nel wiki di produzione, `wiki/concepts/wiki-role-da-w1.md` e
+> `wiki/tech/sessionstart-hook.md`.
 
 ### DA-2 (risolta 2026-05-31) — Confine "Must" del wiki
 
