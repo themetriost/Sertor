@@ -12,7 +12,7 @@ sources: ["src/sertor_core/**", "CLAUDE.md", "specs/001-nucleo-retrieval/**"]
 Il **retrieval core** (`sertor-core`, pacchetto `src/sertor_core/`) è la **libreria di retrieval
 importabile** che costituisce *il prodotto* Sertor: ingerisce un repository qualunque (codice + doc), lo
 **chunka**, ne calcola gli **embedding**, li persiste in un **vector store** ed espone una **facade di
-retrieval unica**. CLI, server MCP e wiki-tools sono **consumatori sottili** (thin consumer) che la
+retrieval unica**. CLI, server MCP e wiki-tools sono **[[thin-consumer|consumatori sottili]]** che la
 importano — non è il core a dipendere da loro.
 
 È costruito in **Clean Architecture** sotto la [[costituzione-v1|Costituzione]] (Principio I, non

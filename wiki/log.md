@@ -582,3 +582,12 @@ Avviata la chiusura del finding di coverage (wiki record-pesante, concept-legger
 - **Nuova convenzione codificata** (playbook §4): pagine-**entità/concetto** con slug+titolo **in inglese** (`retrieval-core`), corpo discorsivo in italiano; record restano italiani; pagine esistenti rinominate opportunisticamente.
 - **Tensione segnalata:** il playbook dice "forward-link a pagina inesistente = feature", ma il lint A della CLI flagga i wikilink senza target come broken → ho usato "consumatori sottili" in testo piano (non `[[thin-consumer]]`) per non rompere il lint. Da riconciliare (prossimo concept candidato: `thin-consumer`).
 - **Verifica:** lint+validate 0/0/0/0.
+
+## [2026-06-07] record | Secondo concept di dominio: thin-consumer (+ chiusa la tensione forward-link)
+
+Secondo concept di dominio del coverage gap: il pattern **thin-consumer** (consumatore sottile).
+
+- **Nuova pagina:** `concepts/thin-consumer.md` (concept evergreen, slug+titolo EN, corpo IT) — le interfacce (CLI, server MCP, tool) espongono il [[retrieval-core]] importandolo e cablandolo dalle factory `build_*`, senza reimplementare logica; il prodotto è la libreria, l'interfaccia un guscio sottile (host-agnostico, Principio X). Ancorata al codice: `sertor_mcp/server.py` usa `build_facade(Settings.load())` (verificato).
+- **Chiusa l'istanza della tensione forward-link:** in [[retrieval-core]] il testo piano "consumatori sottili" è ora il wikilink `[[thin-consumer|…]]` (prima evitato per non rompere il lint A). La tensione *di sistema* (playbook dice forward-link=feature, CLI lo flagga broken) resta aperta come decisione.
+- **Connettività:** [[retrieval-core]] e il record [[server-mcp-produzione-feat-mcp]] linkano il nuovo concept; aggiunto all'indice. server-mcp non è più a 0 backlink.
+- **Verifica:** lint+validate 0/0/0/0.

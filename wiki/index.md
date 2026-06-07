@@ -39,6 +39,7 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 ### Concepts (fondamenta e astrazioni)
 
 - **[[retrieval-core]]** — Il **nucleo di retrieval** importabile (`sertor-core`), *il prodotto*: architettura Clean (domain/services/adapters/engines + porte `Protocol`), composition root guidato da `Settings`, backend `local`/`azure`, policy errori tollerante↔strict, collezioni namespaced per `(corpus, provider)`. CLI/MCP/wiki ne sono consumatori sottili.
+- **[[thin-consumer]]** — Il pattern per cui le interfacce (CLI, server MCP, tool) espongono il [[retrieval-core]] importandolo e cablandolo dalle factory `build_*`, **senza reimplementare logica**: il prodotto è la libreria, l'interfaccia è un guscio sottile (host-agnostico, Principio X). Esempio realizzato: il server MCP.
 - **[[costituzione-v1]]** — Ratifica Costituzione v1.0.0 (2026-05-31) → v1.1.0 (2026-06-05, aggiunto Principio X host-agnostico); 10 principi vincolanti, gate Constitution Check. Governa design e produzione.
 - **[[missione-visione-host-agnosticita]]** — Mission/Vision canonizzate in README.md; Principio X come vincolo operativo; backlog: refactor host-agnostico di skill wiki/playbook/rituale.
 - **[[ruolo-wiki-da-w1]]** — DA-W1 risolta: il wiki è CORPUS + SUPERFICIE; identità, autorità, confine MVP, ruoli 1–3.
