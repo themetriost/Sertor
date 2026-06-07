@@ -131,6 +131,11 @@ sources: ["<path o URL>", ...]
 - **Wikilink** `[[nome-pagina]]` (senza `.md`); alias con `[[nome-pagina|testo mostrato]]`. Mantieni i
   cross-reference aggiornati: una pagina nuova va linkata dall'indice e dalle pagine correlate.
 - **Naming** file: kebab-case descrittivo (`azure-ai-search.md`). `validate` lo verifica per te.
+  - **Lingua del nome (profilo Sertor):** le pagine-**entità/concetto** (`concepts/`, `tech/`) hanno
+    **slug e titolo in inglese** (`retrieval-core`, `thin-consumer`), mentre il **corpo discorsivo resta in
+    italiano**. I **record** (`experiments/`) restano in italiano descrittivo (sono eventi, non entità). Le
+    pagine esistenti con slug italiano si rinominano **opportunisticamente** (quando le si tocca), non in
+    blocco.
 - **Nuova vs aggiorna:** crea una pagina nuova per un concetto/entità nuovo; **aggiorna** quella
   esistente altrimenti. Una pagina per concetto reale, mai duplicati (usa `collect` per controllare).
 - **Contraddizioni:** quando una fonte/codice contraddice una pagina, **segnalalo esplicitamente** — non

@@ -572,3 +572,13 @@ Lint a tre livelli su tutto il wiki (22 pagine) alla luce delle nuove convenzion
 - **🟡 Connettività:** `server-mcp-produzione-feat-mcp` aveva 0 backlink → aggiunto wikilink entrante da [[architettura-wiki-llm]] (tabella stato).
 - **Igiene post-move:** lint+validate = 0/0/0/0 (il lint A ha pizzicato una collisione `[[audit]]` introdotta in un lead, corretta — conferma del livello A come rete del C).
 - **Finding di COVERAGE rimasto (da affrontare a parte):** il wiki è **record-pesante e concept-leggero** — molti `experiment` orbitano attorno a concetti evergreen senza pagina propria (es. `piano-` + `implementazione-nucleo-retrieval` ma nessun `concepts/nucleo-retrieval`). Proposta separata: mappa record→concetti-mancanti, creazione pagine-concetto per distillazione (una a una).
+
+## [2026-06-07] record | Primo concept di dominio: retrieval-core (coverage gap)
+
+Avviata la chiusura del finding di coverage (wiki record-pesante, concept-leggero): creato il primo **concept di dominio del prodotto**, distillato dai record + codice reale.
+
+- **Nuova pagina:** `concepts/retrieval-core.md` (concept evergreen) — architettura Clean di `sertor-core` (domain/services/adapters/engines + porte `Protocol`, composition root da `Settings`, backend local/azure, policy errori tollerante↔strict, idempotenza, collezioni namespaced). **Ancorata al codice reale** (`src/sertor_core/**` + CLAUDE.md), non al piano: il record `piano-nucleo-retrieval` descrive una struttura di design divergente (`domain/ports/` dir, `*_service.py`) → nel concept la struttura è quella vera (`ports.py`, `services/chunking/`, `services/retrieval.py`).
+- **Backlink:** i record `piano-` e `implementazione-nucleo-retrieval` ora linkano [[retrieval-core]] inline; aggiunto all'indice (Concepts). Il record `piano-` segnala la divergenza piano↔codice rimandando al concept per l'architettura corrente.
+- **Nuova convenzione codificata** (playbook §4): pagine-**entità/concetto** con slug+titolo **in inglese** (`retrieval-core`), corpo discorsivo in italiano; record restano italiani; pagine esistenti rinominate opportunisticamente.
+- **Tensione segnalata:** il playbook dice "forward-link a pagina inesistente = feature", ma il lint A della CLI flagga i wikilink senza target come broken → ho usato "consumatori sottili" in testo piano (non `[[thin-consumer]]`) per non rompere il lint. Da riconciliare (prossimo concept candidato: `thin-consumer`).
+- **Verifica:** lint+validate 0/0/0/0.
