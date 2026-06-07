@@ -1,0 +1,8 @@
+# Operazione `structure` — bootstrap della struttura (idempotente)
+
+> **Modulo operazione.** Esecutore: **curator/CLI** (puro meccanico, nessun giudizio).
+> Per il **substrato condiviso** (tassonomia §3) vedi l'indice `wiki-playbook.md`. Qui solo la procedura.
+
+Su un ospite nuovo (o per riparare cartelle/file speciali mancanti): `uv run sertor-wiki-tools structure
+init`. Crea le cartelle della tassonomia + index + log con seed minimo; **non sovrascrive** ciò che esiste
+(contratto `wiki.structure/1`: `created` / `skipped_existing`). Nessun giudizio: puro meccanico.

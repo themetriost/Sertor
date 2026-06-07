@@ -521,3 +521,14 @@ Annotati i prossimi passi concordati, da affrontare in sessioni successive:
 2. **Ulteriore refining della scrittura del wiki — orientata ai tipi** — affinare la tassonomia/convenzioni distinguendo meglio le nature delle pagine: **entità**, **concetti**, **procedure**, **configurazioni**, ecc. (oltre l'attuale concept/tech/experiment/source/synthesis). Valutare se servono nuovi `type`/aree o solo linee guida di stile per ciascuna natura, mantenendo l'host-agnosticità (config-driven).
 
 3. **Revisione puntuale di `CLAUDE.md` e `.claude/skills/wiki-author/wiki-playbook.md`** — passata mirata sui due file di governance: coerenza interna, ridondanze, allineamento con lo stato reale (lint a tre livelli, reorg, regole di creazione appena aggiunte), eliminazione di eventuali sezioni stantie o duplicate.
+
+## [2026-06-07] record | Modularizzazione del playbook (opzione C, step #3)
+
+Eseguita l'**opzione C** decisa nell'analisi `playbook-flussi-e-modularizzazione.md` (è la forma concreta dello step #3 — revisione di `wiki-playbook.md`). Trigger considerato scattato: il blocco `lint` B/C pesava ~85 righe su 331.
+
+- **Cosa:** `wiki-playbook.md` non è più monolitico → **indice + substrato condiviso** (host-agnosticità, identità, confine D↔N, tassonomia, convenzioni §4, voce di log §6, limiti §7) + **tabella di dispatch** (§5) verso 8 moduli `ops/<operazione>.md` (stessa cartella): `record · ingest · query · lint · reorg · generate-from-diff · rag-sync · structure`. I wrapper fanno `Read` **solo del modulo** dell'operazione invocata (on-demand).
+- **File:** creati `.claude/skills/wiki-author/ops/{record,ingest,query,lint,reorg,generate-from-diff,rag-sync,structure}.md`; aggiornati `wiki-playbook.md` (nota di testa + §5 → indice), `SKILL.md`, `commands/wiki.md`, `agents/wiki-curator.md` (pattern di caricamento on-demand).
+- **Perché C e non B (skill):** le skill sono un costrutto dell'host → violano il Principio X e duplicano il substrato; C resta `.md` portabile e DRY. Razionale completo nell'analisi.
+- **Guadagno misurato:** `record` carica 168 (indice) + 9 (modulo) = 177 righe vs 331; `lint` 168 + 78 = 246 solo quando serve.
+- **Wiki:** nota di evoluzione 2026-06-07 su [[sistema-wiki-fonte-unica]] (corretta deriva: era "file unico / 6 operazioni" → ora "indice + moduli / 8 operazioni"); summary aggiornato in `index.md`; nota "ESEGUITO" nell'analisi di design.
+- **Verifica:** `lint --json` = 0 link rotti / 0 orfani / 0 frontmatter / 0 naming.

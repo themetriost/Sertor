@@ -3,7 +3,7 @@ title: Architettura del Wiki LLM — stato e roadmap
 type: synthesis
 tags: [architettura, wiki-llm, host-agnostico, principio-x, roadmap, feat-003, deterministico-vs-giudizio]
 created: 2026-06-05
-updated: 2026-06-06
+updated: 2026-06-07
 sources: [
   "src/sertor_core/wiki_tools/**",
   "wiki.config.toml",
@@ -47,7 +47,7 @@ in **una sola config** (`wiki.config.toml`) — host-agnosticità, **Principio X
                    │
 ┌──────────────────────────────────────────────────────────────────┐
 │  LAYER AGENTICO — 4 entità host-agnostiche (leggono la config)    │   GIUDIZIO (N)
-│   ▸ wiki-playbook.md   fonte unica: regole · tassonomia · 7 op.   │
+│   ▸ wiki-playbook.md   indice + 8 moduli ops/*.md on-demand       │
 │   ▸ wiki-author (skill)     autore: genera/aggiorna dal repo       │
 │   ▸ /wiki (comando)         dispatcher manuale, flusso principale  │
 │   ▸ wiki-curator (agente Haiku, +Bash)   bookkeeping in background │

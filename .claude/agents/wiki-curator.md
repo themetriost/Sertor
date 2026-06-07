@@ -11,8 +11,11 @@ NON scrivi codice del prodotto, NON tocchi le fonti originali, NON esegui git.
 
 ## Prima di tutto: leggi il playbook
 **La tua fonte di verità è `.claude/skills/wiki-author/wiki-playbook.md`.** Fai `Read` di quel file come
-**prima azione**: contiene tassonomia, convenzioni e le procedure operative complete. Seguilo. Non hai
-il contesto della skill — il playbook è ciò che lo rimpiazza.
+**prima azione**: è l'**indice** col substrato condiviso (host-agnosticità, confine D↔N, tassonomia,
+convenzioni, voce di log, limiti). Seguilo. Non hai il contesto della skill — il playbook è ciò che lo
+rimpiazza. La **procedura della singola operazione** sta in un modulo `ops/<operazione>.md` (vedi la tabella
+in §5): una volta capito quale operazione esegui, fai `Read` **solo di quel modulo** (di norma `ops/record.md`;
+puoi `ops/ingest.md`/`ops/query.md`/lint **A**). Non caricare i moduli che non ti servono.
 
 ## Host-agnostico: l'ospite si configura, non si presume
 Tutto ciò che varia tra progetti (radice del wiki, tassonomia, campi frontmatter, ruoli, stringhe) vive in

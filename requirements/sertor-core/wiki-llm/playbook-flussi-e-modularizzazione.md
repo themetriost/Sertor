@@ -338,3 +338,11 @@ flowchart TD
 - **C è la mossa giusta *se e quando* il playbook diventa scomodo** — ed è la forma concreta che
   prenderebbe lo **step #3** se decidessimo di modularizzare. Trigger naturale: quando `lint` B/C (o un
   nuovo blocco) rende il file sproporzionato rispetto a ciò che serve per la singola operazione.
+
+> **ESEGUITO (2026-06-07) — opzione C.** Il trigger è stato considerato scattato (il blocco `lint` B/C pesava
+> ~85 righe su 331). `wiki-playbook.md` è ora **indice + substrato condiviso** + tabella di dispatch verso
+> 8 moduli `ops/<operazione>.md` caricati on-demand; i tre wrapper (`SKILL.md`, `/wiki`, `wiki-curator`)
+> caricano il solo modulo dell'operazione invocata. Risultato misurato: `record` carica 168 (indice) + 9
+> (`ops/record.md`) = 177 righe vs 331 prima; `lint` 168 + 78 = 246 solo quando serve. Substrato non
+> duplicato (resta nell'indice), tutto `.md` portabile → Principio X salvo. Record nel wiki:
+> [[sistema-wiki-fonte-unica]] (nota di evoluzione 2026-06-07).
