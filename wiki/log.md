@@ -619,3 +619,13 @@ Implementato il "gravy" deferito della convenzione stub: il `lint` deterministic
 - **Test:** nuovo `test_stub_is_wanted_not_broken_nor_orphan` — uno stub linkato da un forward-link **non** è broken né orfano e compare in `stubs`. Suite lint 6/6 verde (l'unico rosso della suite, `test_settings`, è ambientale: `RAG_BACKEND=azure` nel `.env`, pre-esistente).
 - **Doc allineati** (stesso branch): `ops/lint.md` e `page-craft.md` annotano il campo `stubs`.
 - **Constitution Check:** additivo, zero nuove dipendenze, deterministico/offline, test verdi, leggibile → PASS.
+
+## [2026-06-07] record | Creata la guida di livello-grafo: wiki-craft (gemella di page-craft)
+
+Aggiunta la pagina-foglia **`wiki-craft.md`** (governance, in `.claude/`), il gemello a livello-grafo di `page-craft`: *page-craft* = com'è fatta **una** pagina; *wiki-craft* = **cosa merita di essere una pagina** e **come l'insieme tiene insieme**.
+
+- **Contenuto:** quando creare una pagina (test del link/nome, anti-frammentazione) · archetipi (Diátaxis: entità/how-to/reference/spiegazione/hub) · pagine di struttura (home/hub/overview/glossario/categorie) · i due assi (gerarchia + rete) · igiene a livello wiki (SSoT, no orfani/dead-end, naming, coerenza>completezza, crescita per refactoring) · modello mentale "grafo + impalcatura".
+- **Host-agnostica (Principio X):** principi universali; mappatura/esempi = profilo Sertor. Mapping esplicitato: aree *per natura* (concepts/tech/experiments/sources/syntheses) che **tagliano** gli archetipi; `index.md` = home+hub globale; `tags` = categorie; albero volutamente piatto, valore nella rete. Sertor non usa tutti gli archetipi (no how-to/hub per-area).
+- **Riconciliazione col playbook §3:** "grafo non albero" resta valido; wiki-craft aggiunge la sfumatura che anche un albero *piatto* è un asse-punto-fermo, da tenere basso non abolire.
+- **Wiring (foglia, linkata verso il basso):** playbook §3 + `ops/record`, `ops/ingest`, `ops/reorg` (crescita per refactoring), `ops/lint` livello C (criteri di grafo). Peer-link reciproco con `page-craft`.
+- **Possibili follow-up (segnalati, non agiti):** `index.md` fa home+hub insieme ed è lungo (tende all'hub); nessun hub/overview per-area.

@@ -2,8 +2,8 @@
 
 > **Modulo operazione.** Esecutore: **curator OK** (Haiku in background) o flusso principale.
 > Per il **substrato condiviso** (confine D↔N §2, tassonomia §3, voce di log §6) vedi il playbook
-> `wiki-playbook.md`; per **come si scrive una pagina** vedi [`../page-craft.md`](../page-craft.md).
-> Qui solo la procedura specifica.
+> `wiki-playbook.md`; per **come si scrive una pagina** [`../page-craft.md`](../page-craft.md), per **se una
+> cosa merita una pagina** (e che archetipo) [`../wiki-craft.md`](../wiki-craft.md). Qui solo la procedura specifica.
 
 Input: un path locale (file/PDF) o un URL.
 

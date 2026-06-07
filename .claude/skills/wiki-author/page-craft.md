@@ -4,6 +4,8 @@
 > contenuto, significato, link. È **linkata da** chi crea o riscrive pagine (`ops/record.md`,
 > `ops/ingest.md`, `ops/query.md`, e il giudizio di `ops/lint.md` livello C e `ops/reorg.md`). È una
 > **foglia**: non dipende da altri documenti del sistema — le operazioni la referenziano, non viceversa.
+> Per il livello *sopra* — *cosa merita di essere una pagina* e come l'insieme tiene insieme (archetipi,
+> pagine di struttura, i due assi, igiene del grafo): la pagina gemella [`wiki-craft.md`](wiki-craft.md).
 >
 > **Host-agnostica (Principio X).** I principi qui valgono su qualunque host; ciò che *varia* — campi del
 > frontmatter, sintassi dei link, e l'esistenza di costrutti come TOC automatico, tag, stato/owner, redirect

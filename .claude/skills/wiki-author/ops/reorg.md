@@ -3,7 +3,8 @@
 > **Modulo operazione.** Esecutore: **solo flusso principale** (NON il curator).
 > Per il **substrato condiviso** (confine D↔N §2, tassonomia §3, voce di log §6) vedi il playbook
 > `wiki-playbook.md`; lo stato-bersaglio di una pagina (collocazione, atomicità, link) è
-> [`../page-craft.md`](../page-craft.md). Qui solo la procedura specifica.
+> [`../page-craft.md`](../page-craft.md); la *crescita per refactoring* del grafo (spezza in entità+hub,
+> fondi le micro-pagine) è [`../wiki-craft.md`](../wiki-craft.md). Qui solo la procedura specifica.
 
 Applica, **su conferma esplicita** dell'utente, le proposte del **lint livello C** (`ops/lint.md`). È **più
 distruttivo** della correzione-claim (sposta file, riscrive link) → **mai automatico, mai bloccante, un

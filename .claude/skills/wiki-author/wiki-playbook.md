@@ -113,6 +113,11 @@ davvero** la pagina e coincidere con l'area che la ospita. Attenzione: cartella 
 `type: synthesis`). Questo disallineamento **natura↔collocazione** è invisibile al lint meccanico (vede solo
 la stringa) ed è il bersaglio del **lint livello C** (modulo [`ops/lint.md`](ops/lint.md)).
 
+**Livello-grafo → [`page-craft.md`](page-craft.md) (la singola pagina) e [`wiki-craft.md`](wiki-craft.md)
+(l'insieme).** *Quando* una cosa merita una pagina (test del link/nome), gli **archetipi** di pagina, le
+pagine di struttura (home/hub/overview) e i due assi di navigazione stanno in `wiki-craft.md` — la guida di
+livello-grafo, gemella di `page-craft.md`.
+
 ## 4. Convenzioni
 
 **Frontmatter YAML** in ogni pagina (eccetto i file append-only). I campi attesi sono in
