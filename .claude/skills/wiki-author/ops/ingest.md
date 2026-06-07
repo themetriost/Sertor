@@ -8,7 +8,9 @@ Input: un path locale (file/PDF) o un URL.
 
 1. Acquisisci la fonte: `Read` per file/PDF locali; `WebFetch` per URL/PDF remoti. **Non modificare** la
    fonte originale.
-2. Scrivi un riassunto in `sources/<slug>.md` con frontmatter (`sources:` = path/URL d'origine).
+2. Scrivi un riassunto in `sources/<slug>.md` con frontmatter (`sources:` = path/URL d'origine). Applica il
+   **livello di significato** (indice §4): distilla le tesi/risultati riusabili della fonte, non parafrasarla
+   linearmente; cattura *cosa aggiunge o contraddice* rispetto a ciò che già sai.
 3. Integra/linka i concetti collegati nelle pagine `concepts/`/`tech/`; **segnala contraddizioni** con le
    pagine esistenti (giudizio).
 4. Aggiorna l'indice e appendi una voce di log `ingest`.

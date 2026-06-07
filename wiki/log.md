@@ -532,3 +532,13 @@ Eseguita l'**opzione C** decisa nell'analisi `playbook-flussi-e-modularizzazione
 - **Guadagno misurato:** `record` carica 168 (indice) + 9 (modulo) = 177 righe vs 331; `lint` 168 + 78 = 246 solo quando serve.
 - **Wiki:** nota di evoluzione 2026-06-07 su [[sistema-wiki-fonte-unica]] (corretta deriva: era "file unico / 6 operazioni" → ora "indice + moduli / 8 operazioni"); summary aggiornato in `index.md`; nota "ESEGUITO" nell'analisi di design.
 - **Verifica:** `lint --json` = 0 link rotti / 0 orfani / 0 frontmatter / 0 naming.
+
+## [2026-06-07] record | N1 record-contenuto — metodo "livello di significato"
+
+Codificato il metodo di scrittura del *contenuto* di una pagina (la metà di giudizio di `record`, nodo N1), oltre alle convenzioni sintattiche già presenti.
+
+- **Dove (DRY):** nuovo blocco «**Il livello di significato — cosa scrivere, non solo come**» nel substrato condiviso del playbook (§4 Convenzioni), così è riusabile da tutte le operazioni che producono contenuto (`record`, `ingest`, `generate`, `reorg`) invece di duplicarlo in `ops/record.md`.
+- **Cosa:** 5 regole — distilla-non-trascrivi · cattura il *perché* + le alternative scartate · astrazione coerente con l'area (evergreen vs stato datato) · verità ancorata (rovescio attivo del lint B) · densità di significato — + un **esempio male→bene** (reranking cross-encoder).
+- **Moduli:** `ops/record.md` punto 2 riscritto come "giudizio di contenuto" che richiama §4; `ops/ingest.md` punto 2 idem per i riassunti di fonte.
+- **Stato N1:** ☐→◑ (metodo documentato, da esercitare) in `requirements/sertor-core/wiki-llm/TODO.md` e nella tabella di [[architettura-wiki-llm]].
+- **Origine:** discusso col proprietario (era "il punto 2 di record.md troppo asciutto sul lato contenuto/LLM/significato").

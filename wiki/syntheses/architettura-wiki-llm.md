@@ -110,7 +110,8 @@ del 2026-06-06 (`syntheses/` da 16/20 a una distribuzione 4/3/9/4). Dettagli:
 | `sertor_mcp` (RAG dell'ospite, FEAT-MCP) | ✅ mergiato (PR #15); `.mcp.json` ri-puntato alla produzione (corpus `sertor`) |
 | N5 lint semantico — metodo + audit globale 4 `kind` (PR #16) | ◑ in corso (metodo sì, esercitato; probe deterministici no) |
 | N9 lint organizzativo + `reorg` — metodo + esercitato (reorg 2026-06-06) | ◑ in corso |
-| N1-N4, N6-N8 (operazioni di giudizio) | ☐ da fare |
+| N1 record-contenuto — metodo «livello di significato» (playbook §4) | ◑ in corso (metodo sì, da esercitare) |
+| N2-N4, N6-N8 (operazioni di giudizio) | ☐ da fare |
 
 ## Roadmap
 

@@ -25,7 +25,7 @@ identità/formato dell'index curato → sblocca l'offload totale di `record`.
 
 | # | Operazione (giudizio LLM) | Requisiti | Stato | Note |
 |---|---|---|---|---|
-| N1 | **record — contenuto** (sintetizzare il *perché*, scrivere la pagina) | REQ-010 | ☐ da fare | il *dove/come* (file, frontmatter, index, log) lo fa D |
+| N1 | **record — contenuto** (sintetizzare il *perché*, scrivere la pagina) | REQ-010 | ◑ in corso | il *dove/come* (file, frontmatter, index, log) lo fa D. **Metodo documentato (2026-06-07):** blocco «livello di significato» nel playbook §4 (distilla-non-trascrivi · perché+alternative scartate · astrazione per area · verità ancorata · densità · esempio male→bene), condiviso con `ingest`/`generate`/`reorg`; `ops/record.md` punto 2 lo richiama. Resta: esercitarlo e (se utile) la distillazione N2 |
 | N2 | **distillazione** di sessione/conversazione → pagina | REQ-030/031 | ☐ da fare | richiede LLM configurato; input già pre-elaborato |
 | N3 | **generazione** wiki (contenuto in linguaggio naturale, link concettuali) | FR-008 | ☐ da fare | momento (a) Karpathy; aggiornabile incrementalmente |
 | N4 | **ingest — compile** (input esterno → pagine-concetto) | FR-030/031 (parte compile) | ☐ da fare | l'*import* in `ingested_sources/` lo fa D |

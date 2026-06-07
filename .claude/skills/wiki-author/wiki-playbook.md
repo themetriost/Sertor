@@ -157,6 +157,33 @@ piuttosto che a pagine-contenitore (densità ≠ qualità). I `[[wikilink]]` dan
 navigazione — è uno *smell*, falla linkare. Linkare in avanti una pagina **non ancora esistente** è una
 *feature* (marca un nodo da creare), non un errore.
 
+**Il livello di significato — *cosa* scrivere, non solo come.** Le regole sopra sono la *forma*; questo è la
+*sostanza*. Una pagina cattura **conoscenza distillata e riusabile**, non la cronaca di ciò che è successo
+(quella sta nel log). Scrivi perché un **LLM futuro**, che la recupera *a freddo* via RAG, possa agire su di
+essa. Vale per ogni operazione che produce contenuto (`record`, `ingest`, `generate`, `reorg`):
+
+- **Distilla, non trascrivere.** La pagina risponde a «cosa serve sapere a chi riprende», non «cosa abbiamo
+  fatto passo-passo». Il diario cronologico è il log; la pagina è ciò che *resta*.
+- **Cattura il *perché* e le alternative scartate.** Una decisione senza razionale e senza le opzioni
+  rifiutate verrà **ri-litigata**. Scrivi: cosa si è deciso · perché · cosa si è scartato e perché.
+- **Astrazione coerente con l'area.** Una pagina `concept`/`tech` è **evergreen**: il claim centrale è
+  atemporale, **niente stato volatile** (PR#, "in corso", conteggi) nel corpo — invecchia e diventa deriva
+  (lint B). Lo stato datato vive in `experiments`. Il *perché* generalizza; il *cosa* situato sta nel record.
+- **Verità ancorata.** Scrivi solo claim **veri al momento della scrittura e ancorabili** (codice/test/git/
+  fonte). Ciò che non puoi fondare non è contenuto: è un'ipotesi → marcala come tale (è il rovescio attivo
+  del lint B).
+- **Densità di significato.** Ogni frase porta informazione; taglia il filler. *Compila una volta*: scrivi
+  perché non vada riscritta.
+
+*Esempio — la stessa nozione, scritta male → bene:*
+- ✗ «Oggi abbiamo discusso a lungo del reranking e alla fine, dopo vari tentativi, abbiamo deciso di usare il
+  cross-encoder che sembrava andare meglio degli altri nei test.» — *diario, vago, non ancorato, nessun
+  perché riusabile.*
+- ✓ «Il **reranking cross-encoder** ri-ordina i top-k del retrieval valutando la coppia (query, chunk)
+  insieme: più accurato del bi-encoder ma costa O(k) inferenze → si applica **solo ai candidati**, non
+  all'indice. Preferito a BM25+rerank perché [motivo]; scartato il reranking LLM-as-judge per latenza/costo
+  sproporzionati al guadagno.» — *definisce, dà il trade-off e il perché, è atemporale e ancorabile.*
+
 **File append-only** (il log): **non** portano `updated` nel frontmatter (sarebbe sempre stale); il loro
 stato è dato dall'ultima voce.
 
