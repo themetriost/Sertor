@@ -137,10 +137,10 @@ sources: ["<path o URL>", ...]
   scegliere in silenzio. Se tocca una decisione o una fonte autorevole umana, **chiedi all'utente**.
 - **Niente over-doc:** non documentare il banale o le modifiche meccaniche. Calibra al valore.
 
-**Com'è fatta *dentro* una pagina → [`pagina-ben-fatta.md`](pagina-ben-fatta.md).** Le regole qui sopra sono
+**Com'è fatta *dentro* una pagina → [`page-craft.md`](page-craft.md).** Le regole qui sopra sono
 il *formato* (frontmatter, naming, wikilink, quando creare/aggiornare). Il **page-craft** — atomicità,
 auto-contenimento, disciplina dei link e soprattutto il **livello di significato** (*cosa* scrivere, non solo
-come) — vive nella pagina di riferimento `pagina-ben-fatta.md`, **linkata dalle operazioni** che creano o
+come) — vive nella pagina di riferimento `page-craft.md`, **linkata dalle operazioni** che creano o
 riscrivono pagine (`record`, `ingest`, lint **C**, `reorg`). È una foglia: le operazioni la referenziano
 senza che questo file dipenda da loro.
 
@@ -151,7 +151,7 @@ stato è dato dall'ultima voce.
 
 Ogni operazione = **input → passi → output** (pagine toccate + UNA voce di log) e segue il **substrato
 condiviso** di questo file (confine D↔N §2, tassonomia §3, convenzioni §4, voce di log §6, limiti §7);
-chi crea o riscrive pagine segue inoltre il page-craft in [`pagina-ben-fatta.md`](pagina-ben-fatta.md).
+chi crea o riscrive pagine segue inoltre il page-craft in [`page-craft.md`](page-craft.md).
 La **procedura specifica** di ciascuna operazione vive in un **modulo `ops/<operazione>.md`** (stessa
 cartella di questo file): **`Read` solo il modulo dell'operazione che ti serve** — non caricarli tutti
 (progressive disclosure). Le operazioni documentali (`record`, `ingest`, `query`, lint **A**) sono

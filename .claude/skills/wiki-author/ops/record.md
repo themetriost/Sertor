@@ -2,14 +2,14 @@
 
 > **Modulo operazione.** Esecutore: **curator OK** (Haiku in background) o flusso principale.
 > Per il **substrato condiviso** (confine D↔N §2, tassonomia §3, voce di log §6) vedi il playbook
-> `wiki-playbook.md`; per **come si scrive una pagina** vedi [`../pagina-ben-fatta.md`](../pagina-ben-fatta.md).
+> `wiki-playbook.md`; per **come si scrive una pagina** vedi [`../page-craft.md`](../page-craft.md).
 > Qui solo la procedura specifica.
 
 1. Inventario meccanico: `uv run sertor-wiki-tools collect --json` (cosa esiste già) + leggi l'indice del
    wiki (`index.md`).
 2. **Scrivi/aggiorna la/e pagina/e — giudizio di contenuto.** Decidi *nuova-vs-aggiorna* (il `collect` del
    passo 1 serve a non duplicare un concetto già presente). Scegli l'area dalla **natura** della pagina
-   (tassonomia: playbook §3) e scrivila secondo [`../pagina-ben-fatta.md`](../pagina-ben-fatta.md) — in
+   (tassonomia: playbook §3) e scrivila secondo [`../page-craft.md`](../page-craft.md) — in
    particolare il **livello di significato**: distilla il *perché* dello step (non il diario, che è il log),
    cattura le decisioni con le **alternative scartate**, tieni il claim al **livello di astrazione dell'area**
    (evergreen in `concepts/`/`tech/`, stato datato in `experiments/`). **Giudizio:** cosa è conoscenza

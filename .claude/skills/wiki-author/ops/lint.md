@@ -3,7 +3,7 @@
 > **Modulo operazione.** Esecutore: **A** = curator OK · **B/C** = solo flusso principale (Opus).
 > Per il **substrato condiviso** (confine D↔N §2, tassonomia §3, voce di log §6) vedi il playbook
 > `wiki-playbook.md`; il lint **C** giudica contro **come dev'essere una pagina** →
-> [`../pagina-ben-fatta.md`](../pagina-ben-fatta.md). Qui solo la procedura specifica.
+> [`../page-craft.md`](../page-craft.md). Qui solo la procedura specifica.
 
 Il lint ha **tre livelli**: **A** strutturale (meccanico, CLI: igiene), **B** semantico (giudizio, LLM:
 *claim ↔ realtà del repo*) e **C** organizzativo (giudizio, LLM: *collocazione/atomicità/link*). A è la
@@ -83,9 +83,9 @@ applica al solo `kind` `wiki`, **on-demand** (non al commit). Inventario di part
 3. **Tassonomia collassata** — un'area usata come discarica (quota sproporzionata di pagine, specie in
    un'area "rara" come `syntheses/`) mentre altre aree dichiarate restano vuote pur esistendo contenuto che
    le riempirebbe.
-4. **Atomicità** — pagine con più focus o sezioni duplicate (candidate a split; vedi `pagina-ben-fatta.md` §1).
+4. **Atomicità** — pagine con più focus o sezioni duplicate (candidate a split; vedi `page-craft.md` §1).
 5. **Disciplina dei link** — link relegati a "vedi anche" invece che inline; pagine centrali ma debolmente
-   connesse (pochi backlink). Vedi `pagina-ben-fatta.md` §3.
+   connesse (pochi backlink). Vedi `page-craft.md` §3.
 
 Esito = **report con severità + proposta** per finding (sposta a `<area>` · correggi `type` · splitta ·
 aggiungi link inline), **nessun auto-fix**. L'applicazione su conferma è l'operazione `reorg` (`ops/reorg.md`).

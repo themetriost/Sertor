@@ -35,7 +35,7 @@ Il wiki di produzione (cartella `wiki/`) è un **LLM Wiki** in stile Karpathy co
 >
 > **Completamento (2026-06-07) — page-craft in una pagina-foglia.** Il "come si scrive una pagina"
 > (atomicità, auto-contenimento, link, **livello di significato**) è stato estratto dal playbook §4 in un
-> documento dedicato `.claude/skills/wiki-author/pagina-ben-fatta.md`, **linkato da** `record`/`ingest`/
+> documento dedicato `.claude/skills/wiki-author/page-craft.md`, **linkato da** `record`/`ingest`/
 > `query`/lint C/`reorg`. Motivo: i moduli `ops/` rimandavano *su* al playbook §4 mentre il playbook §5
 > rimandava *giù* ai moduli → **dipendenza circolare**. La conoscenza riusabile diventa una **foglia** (non
 > dipende da nessuno) che indice e moduli linkano *verso il basso*; il grafo torna un DAG. Disambiguato anche

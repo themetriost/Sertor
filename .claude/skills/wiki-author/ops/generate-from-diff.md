@@ -3,7 +3,7 @@
 > **Modulo operazione.** Esecutore: **solo flusso principale**.
 > Per il **substrato condiviso** (confine D↔N §2, tassonomia §3, voce di log §6) vedi il playbook
 > `wiki-playbook.md`; le pagine aggiornate devono restare conformi a
-> [`../pagina-ben-fatta.md`](../pagina-ben-fatta.md). Qui solo la procedura specifica.
+> [`../page-craft.md`](../page-craft.md). Qui solo la procedura specifica.
 
 Evita di rileggere l'intero repo: aggiorna solo ciò che è cambiato.
 
