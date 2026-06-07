@@ -591,3 +591,13 @@ Secondo concept di dominio del coverage gap: il pattern **thin-consumer** (consu
 - **Chiusa l'istanza della tensione forward-link:** in [[retrieval-core]] il testo piano "consumatori sottili" è ora il wikilink `[[thin-consumer|…]]` (prima evitato per non rompere il lint A). La tensione *di sistema* (playbook dice forward-link=feature, CLI lo flagga broken) resta aperta come decisione.
 - **Connettività:** [[retrieval-core]] e il record [[server-mcp-produzione-feat-mcp]] linkano il nuovo concept; aggiunto all'indice. server-mcp non è più a 0 backlink.
 - **Verifica:** lint+validate 0/0/0/0.
+
+## [2026-06-07] record | Coverage concepts: vector-retrieval, dogfooding, deterministic-vs-judgment
+
+Completato il giro di **concept di dominio** che chiude il coverage gap (wiki record-pesante → ora i concetti evergreen hanno casa). Tre nuove pagine (slug+titolo EN, corpo IT, ancorate al codice/realtà):
+
+- **`concepts/vector-retrieval.md`** — la 1ª modalità RAG: embed query → similarity top-k via il motore baseline (`engines/baseline.py`); policy *strict* (`IndexNotFoundError`) vs nucleo tollerante; valutazione hit-rate@k/MRR@10 (`engines/evaluation.py`). Backlink da [[motore-baseline-feat002]] e [[retrieval-core]].
+- **`concepts/dogfooding.md`** — interrogare il progetto col proprio RAG (server MCP `sertor-rag` su corpus `prototype`/`sertor`); validazione continua + contesto ancorato (versante retrieval della disciplina anti-deriva). Backlink da [[chiusura-prototipo-dogfooding]].
+- **`concepts/deterministic-vs-judgment.md`** — il confine meccanico (codice, zero LLM) ↔ giudizio (LLM); principio trasversale (wiki D↔N + delega). Backlink da [[architettura-wiki-llm]] e [[ponte-d-n-host-agnostico]] (che prima ridefinivano il confine, ora lo linkano).
+- **Indice:** 3 voci aggiunte nella sezione Concepts. **Verifica:** lint+validate 0/0/0/0.
+- **Stato coverage:** i 5 concept candidati (retrieval-core · thin-consumer · vector-retrieval · dogfooding · deterministic-vs-judgment) sono fatti. Concepts ora 9 (4 governance + 5 dominio).

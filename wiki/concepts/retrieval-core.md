@@ -61,7 +61,7 @@ src/sertor_core/
   dimensionale e splitter Markdown, smistati da un dispatcher.
 - **Embeddings multi-provider** e **vector store astratto** — dietro le rispettive porte, scelti da config.
 - **Facade di retrieval unificata** + motore [[motore-baseline-feat002|baseline]] (retrieval vettoriale con
-  ranking per similarità) e valutazione (hit_rate@k, MRR).
+  [[vector-retrieval|retrieval vettoriale]]) e valutazione (hit_rate@k, MRR).
 
 ## Vedi anche
 - Design e implementazione (record datati): [[piano-nucleo-retrieval]] · [[implementazione-nucleo-retrieval]].

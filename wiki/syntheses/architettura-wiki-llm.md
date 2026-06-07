@@ -62,8 +62,8 @@ in **una sola config** (`wiki.config.toml`) — host-agnosticità, **Principio X
 
 ## Il confine D↔N, per operazione
 
-Ogni operazione del playbook separa il meccanico (chiamata CLI) dal giudizio (LLM). Sintesi (tabella
-completa in [[ponte-d-n-host-agnostico]]):
+Ogni operazione del playbook applica il [[deterministic-vs-judgment|confine deterministico↔giudizio]]:
+separa il meccanico (chiamata CLI) dal giudizio (LLM). Sintesi (tabella completa in [[ponte-d-n-host-agnostico]]):
 
 ```
 operazione            D — meccanico (CLI)              N — giudizio (LLM)
