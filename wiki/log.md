@@ -601,3 +601,12 @@ Completato il giro di **concept di dominio** che chiude il coverage gap (wiki re
 - **`concepts/deterministic-vs-judgment.md`** — il confine meccanico (codice, zero LLM) ↔ giudizio (LLM); principio trasversale (wiki D↔N + delega). Backlink da [[architettura-wiki-llm]] e [[ponte-d-n-host-agnostico]] (che prima ridefinivano il confine, ora lo linkano).
 - **Indice:** 3 voci aggiunte nella sezione Concepts. **Verifica:** lint+validate 0/0/0/0.
 - **Stato coverage:** i 5 concept candidati (retrieval-core · thin-consumer · vector-retrieval · dogfooding · deterministic-vs-judgment) sono fatti. Concepts ora 9 (4 governance + 5 dominio).
+
+## [2026-06-07] record | Risolta la tensione forward-link: convenzione "stub" (zero codice)
+
+Chiusa la tensione di sistema tra playbook ("forward-link = feature") e lint A della CLI (che flaggava i `[[…]]` senza target come `broken`). Scelta: **opzione (c) stub**, realizzata **per convenzione** senza toccare il codice di produzione.
+
+- **Convenzione:** un forward-link verso un nodo da creare si realizza come **stub** — file reale nell'area giusta, frontmatter completo + `status: stub` + corpo `> 🚧 STUB`. Così il link **risolve** (lint A verde) e il nodo è *voluto*; un `[[…]]` senza pagina né stub resta `broken` = **refuso**. È la separazione voluto↔rotto, ottenuta dall'esistenza-o-meno del file (nessuna euristica, nessun giudizio).
+- **Grounding:** verificato con uno stub usa-e-getta che `validate`/`lint` restano verdi (il campo extra `status` non disturba; lo stub non è orphan perché il forward-link che lo motiva è il suo arco entrante).
+- **Documentato:** regola in `page-craft.md` (disciplina dei link), nota in `wiki-playbook.md` §4 e in `ops/lint.md` (livello A); `status` aggiunto a `frontmatter_optional` in `wiki.config.toml`.
+- **Gravy deferito (richiede codice, → branch+PR):** estendere `wiki_tools` perché il `lint` riporti gli **stub** come categoria a sé (worklist "nodi da riempire"), invece di doverli cercare a mano. Non necessario alla separazione voluto↔rotto, che la convenzione già garantisce.

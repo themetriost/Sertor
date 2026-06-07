@@ -99,8 +99,15 @@ I link sono ciò che trasforma un insieme di pagine in una vera wiki. Tre catego
 Regole pratiche sui link:
 - Il **testo del link descrive la destinazione** («vedi la guida al deploy»), mai «clicca qui».
 - **Niente orfani né dead-end:** ogni pagina dovrebbe essere raggiungibile da almeno un'altra e a sua volta
-  puntare a qualcosa (gli orfani li trova il lint A). Linkare in avanti una pagina **non ancora esistente** è
-  una *feature* (marca un nodo da creare), non un errore.
+  puntare a qualcosa (gli orfani li trova il lint A).
+- **Forward-link → crea uno *stub*.** Linkare in avanti un nodo **non ancora scritto** è una *feature* (marca
+  un nodo da creare), ma **non** lasciare un `[[…]]` a vuoto: il lint A lo segnalerebbe come **broken** (per
+  lo strumento un target inesistente è indistinguibile da un refuso). Realizza invece il nodo come **stub** —
+  un **file reale** nell'area giusta, con frontmatter completo, `status: stub` e un corpo segnaposto
+  `> 🚧 STUB`. Così il link **risolve** (lint A verde) e il nodo è *voluto*; al contrario un `[[…]]` senza
+  pagina né stub resta **broken** — è così che si separa il **nodo intenzionale** dal **refuso**. Lo stub ha
+  ≥1 link entrante (quello che l'ha motivato) → non è orfano; **riempilo appena possibile** (uno stub
+  lasciato a lungo è uno *smell* del lint C).
 - **Non sovra-linkare:** troppi link rendono il testo illeggibile e svuotano di valore quelli importanti
   (densità ≠ qualità). Preferisci link **specifici** alla pagina giusta, non a pagine-contenitore.
 - **Niente link circolari inutili** né — *dove l'host ha i redirect* — redirect a catena.

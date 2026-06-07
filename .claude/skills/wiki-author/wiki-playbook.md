@@ -128,6 +128,10 @@ sources: ["<path o URL>", ...]
 ---
 ```
 
+- **Stub (nodo da creare):** un forward-link si realizza creando una pagina-**stub** — file reale nell'area
+  giusta, frontmatter completo + `status: stub` (campo opzionale) e corpo `> 🚧 STUB` — così il link risolve
+  e il lint A resta verde; un `[[…]]` senza pagina né stub resta `broken` (= refuso). Dettaglio in
+  [`page-craft.md`](page-craft.md).
 - **Wikilink** `[[nome-pagina]]` (senza `.md`); alias con `[[nome-pagina|testo mostrato]]`. Mantieni i
   cross-reference aggiornati: una pagina nuova va linkata dall'indice e dalle pagine correlate.
 - **Naming** file: kebab-case descrittivo (`azure-ai-search.md`). `validate` lo verifica per te.

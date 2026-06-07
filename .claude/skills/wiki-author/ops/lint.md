@@ -29,6 +29,9 @@ l'*intento* come *stato*; gerarchia di autorità: codice/test = comportamento, r
 **A) Lint strutturale — 100% meccanico (CLI).** Esegui `uv run sertor-wiki-tools lint --json` **e**
 `… validate --json`; interpreta i contratti `wiki.lint/1` (wikilink rotti, orfani, frontmatter mancante,
 naming). **Non** rifare Glob/Grep a mano. È autorevole sui link: se la CLI dice 0 broken, i link sono a posto.
+Nota sui **forward-link**: un `[[…]]` verso un nodo da creare **non** va lasciato a vuoto (sarebbe `broken`,
+indistinguibile da un refuso) → si crea una pagina-**stub** (`status: stub`, vedi `../page-craft.md`), così il
+link risolve. Quindi: target con file (anche stub) = ok; target senza file = `broken` (refuso da correggere).
 
 **B) Lint semantico — giudizio (LLM, flusso principale).** Verifica che gli **artefatti dichiarati in
 `[[audit]]`** (non solo il wiki: anche `requirements`/`spec`/`tracker`) **non siano derivati** dalla realtà
