@@ -638,3 +638,13 @@ Lint a tutte le lenti su 27 pagine. **page-craft** e **wiki-craft** giudicano il
 - **Blast radius esterno:** aggiornati `CLAUDE.md` (`[[step-ritual]]`) e `requirements/sertor-core/epic.md` (menzione `corpus-index-naming`). **Lasciata** la spec mergiata `specs/007-mcp-sertor-core/research.md` (artefatto datato, riferimenti già stale di suo).
 - **Minori:** lead-che-definiscono per `tree-sitter-language-pack` ed `epiche-sertor-core-e-cli`; rimosso da tree-sitter un `sources` inesistente (`adapters/chunkers/syntactic_chunker.py`); +1 backlink a [[pulizia-pycache-e-diagnosi-mcp]] da [[server-mcp-produzione-feat-mcp]] (era a 0).
 - **Verifica:** lint+validate **0/0/0/0** (zero broken = rename corretto); pycache backlink 1.
+
+## [2026-06-07] record | Priorità prossima sessione: la funzione di log del wiki
+
+Deciso con l'utente che la **priorità della prossima sessione** è migliorare la **funzione di log** del wiki (`log.md`). Scope concordato:
+
+1. **Strategia di scrittura** *(certo, giudizio)* — come si scrivono le voci di `log.md`: granularità, lunghezza, cosa va nel log (datato/append-only) vs nelle pagine (evergreen), evitare la deriva verso voci verbose. → da codificare nel **playbook §6 (Voce di log)**. È il backlog #1 già annotato il 2026-06-06.
+3. **Struttura/manutenzione** *(certo)* — il `log.md` cresce indefinitamente (append-only): valutare rotazione / partizionamento per periodo / indicizzazione-sommari; gestire dimensione e navigabilità.
+2. **Write-back deterministico `append_log`** *(da discutere — "capiamo bene" prima)* — eventuale cablaggio di `append_log` di `wiki_tools` nella CLI (oggi le voci le scrive l'LLM a mano; formato deterministico diverso). Se si procede → codice, branch+PR (scope completo deferito di FEAT-003-N).
+
+NB: si parla del log del **wiki**, non del logging runtime/osservabilità del codice. Checkpoint di ripresa aggiornato in memoria.
