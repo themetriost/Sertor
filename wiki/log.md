@@ -542,3 +542,14 @@ Codificato il metodo di scrittura del *contenuto* di una pagina (la metà di giu
 - **Moduli:** `ops/record.md` punto 2 riscritto come "giudizio di contenuto" che richiama §4; `ops/ingest.md` punto 2 idem per i riassunti di fonte.
 - **Stato N1:** ☐→◑ (metodo documentato, da esercitare) in `requirements/sertor-core/wiki-llm/TODO.md` e nella tabella di [[architettura-wiki-llm]].
 - **Origine:** discusso col proprietario (era "il punto 2 di record.md troppo asciutto sul lato contenuto/LLM/significato").
+
+## [2026-06-07] record | Page-craft estratto in pagina-foglia (rompe la dipendenza circolare)
+
+Risolto uno smell architetturale segnalato dal proprietario: i moduli `ops/` rimandavano al playbook §4 mentre il playbook §5 rimandava ai moduli → dipendenza **bidirezionale/circolare**.
+
+- **Fix:** il page-craft ("come si scrive una pagina": atomicità · auto-contenimento · link · **livello di significato**) è stato **estratto** dal playbook §4 nella pagina-foglia `.claude/skills/wiki-author/pagina-ben-fatta.md`. È una **foglia** (non dipende da nessuno); indice e moduli la linkano *verso il basso* → il grafo torna un DAG.
+- **Linkata da:** `ops/record.md`, `ops/ingest.md`, `ops/query.md` (quando archivia), `ops/lint.md` (livello C), `ops/reorg.md`; richiamata anche dal playbook §4/§5.
+- **Playbook §4:** resta solo il *formato* (frontmatter, naming, wikilink, nuova-vs-aggiorna, contraddizioni, append-only) + puntatore alla foglia.
+- **Disambiguazione collaterale:** negli header dei moduli «indice» → «playbook» (`wiki-playbook.md`), così non collide più con «indice del wiki» (`index.md`); il punto 1 di `record` ora dice esplicitamente "indice del wiki (`index.md`)".
+- **N1:** il metodo è ora nella foglia (aggiornato tracker + diagramma in [[architettura-wiki-llm]] e nota in [[sistema-wiki-fonte-unica]]).
+- **Verifica:** lint A = 0/0/0/0.

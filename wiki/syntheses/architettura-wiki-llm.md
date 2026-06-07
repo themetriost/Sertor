@@ -47,7 +47,7 @@ in **una sola config** (`wiki.config.toml`) — host-agnosticità, **Principio X
                    │
 ┌──────────────────────────────────────────────────────────────────┐
 │  LAYER AGENTICO — 4 entità host-agnostiche (leggono la config)    │   GIUDIZIO (N)
-│   ▸ wiki-playbook.md   indice + 8 moduli ops/*.md on-demand       │
+│   ▸ wiki-playbook.md   indice + moduli ops/ + pagina-ben-fatta    │
 │   ▸ wiki-author (skill)     autore: genera/aggiorna dal repo       │
 │   ▸ /wiki (comando)         dispatcher manuale, flusso principale  │
 │   ▸ wiki-curator (agente Haiku, +Bash)   bookkeeping in background │

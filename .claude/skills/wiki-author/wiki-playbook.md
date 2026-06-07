@@ -137,52 +137,12 @@ sources: ["<path o URL>", ...]
   scegliere in silenzio. Se tocca una decisione o una fonte autorevole umana, **chiedi all'utente**.
 - **Niente over-doc:** non documentare il banale o le modifiche meccaniche. Calibra al valore.
 
-**Atomicità — una pagina, un concetto.** È la regola più importante per un LLM Wiki: pagine atomiche si
-linkano meglio, si riusano in più contesti e si **chunkano puliti** per il RAG (una pagina che parla di tre
-cose produce chunk ambigui e link generici). Criterio di **split**: se sviluppando una pagina emergono **due
-focus distinti** (due "cos'è"), crea **due pagine** collegate da wikilink reciproci invece di accatastare.
-Sotto la pressione dell'append è qui che si cede — sezioni duplicate ("Note di processo" ×2, due blocchi di
-stato) sono il sintomo: *ricuci o splitta*, non appendere.
-
-**Auto-contenimento — la prima frase definisce.** Il RAG recupera una pagina **fuori dal suo contesto**: la
-**prima frase** deve dire *cos'è* il soggetto senza presupporre nulla ("**X è …**"), prima dei dettagli — il
-primo chunk dev'essere autosufficiente. Evita aperture che rimandano ("Questo concetto è stato approfondito
-in…").
-
-**Link densi, inline e bidirezionali.** Quasi tutto il valore di un wiki sta nei **link**, non nelle
-cartelle. Linka **al punto di menzione** (inline), non in una sezione "vedi anche" in fondo: il link
-contestuale dice *perché* due pagine sono connesse. Preferisci link **specifici** alla pagina giusta
-piuttosto che a pagine-contenitore (densità ≠ qualità). I `[[wikilink]]` danno i **backlink** gratis
-(segnale di rilevanza per umano e RAG); una pagina **orfana** (zero link entranti) è invisibile alla
-navigazione — è uno *smell*, falla linkare. Linkare in avanti una pagina **non ancora esistente** è una
-*feature* (marca un nodo da creare), non un errore.
-
-**Il livello di significato — *cosa* scrivere, non solo come.** Le regole sopra sono la *forma*; questo è la
-*sostanza*. Una pagina cattura **conoscenza distillata e riusabile**, non la cronaca di ciò che è successo
-(quella sta nel log). Scrivi perché un **LLM futuro**, che la recupera *a freddo* via RAG, possa agire su di
-essa. Vale per ogni operazione che produce contenuto (`record`, `ingest`, `generate`, `reorg`):
-
-- **Distilla, non trascrivere.** La pagina risponde a «cosa serve sapere a chi riprende», non «cosa abbiamo
-  fatto passo-passo». Il diario cronologico è il log; la pagina è ciò che *resta*.
-- **Cattura il *perché* e le alternative scartate.** Una decisione senza razionale e senza le opzioni
-  rifiutate verrà **ri-litigata**. Scrivi: cosa si è deciso · perché · cosa si è scartato e perché.
-- **Astrazione coerente con l'area.** Una pagina `concept`/`tech` è **evergreen**: il claim centrale è
-  atemporale, **niente stato volatile** (PR#, "in corso", conteggi) nel corpo — invecchia e diventa deriva
-  (lint B). Lo stato datato vive in `experiments`. Il *perché* generalizza; il *cosa* situato sta nel record.
-- **Verità ancorata.** Scrivi solo claim **veri al momento della scrittura e ancorabili** (codice/test/git/
-  fonte). Ciò che non puoi fondare non è contenuto: è un'ipotesi → marcala come tale (è il rovescio attivo
-  del lint B).
-- **Densità di significato.** Ogni frase porta informazione; taglia il filler. *Compila una volta*: scrivi
-  perché non vada riscritta.
-
-*Esempio — la stessa nozione, scritta male → bene:*
-- ✗ «Oggi abbiamo discusso a lungo del reranking e alla fine, dopo vari tentativi, abbiamo deciso di usare il
-  cross-encoder che sembrava andare meglio degli altri nei test.» — *diario, vago, non ancorato, nessun
-  perché riusabile.*
-- ✓ «Il **reranking cross-encoder** ri-ordina i top-k del retrieval valutando la coppia (query, chunk)
-  insieme: più accurato del bi-encoder ma costa O(k) inferenze → si applica **solo ai candidati**, non
-  all'indice. Preferito a BM25+rerank perché [motivo]; scartato il reranking LLM-as-judge per latenza/costo
-  sproporzionati al guadagno.» — *definisce, dà il trade-off e il perché, è atemporale e ancorabile.*
+**Com'è fatta *dentro* una pagina → [`pagina-ben-fatta.md`](pagina-ben-fatta.md).** Le regole qui sopra sono
+il *formato* (frontmatter, naming, wikilink, quando creare/aggiornare). Il **page-craft** — atomicità,
+auto-contenimento, disciplina dei link e soprattutto il **livello di significato** (*cosa* scrivere, non solo
+come) — vive nella pagina di riferimento `pagina-ben-fatta.md`, **linkata dalle operazioni** che creano o
+riscrivono pagine (`record`, `ingest`, lint **C**, `reorg`). È una foglia: le operazioni la referenziano
+senza che questo file dipenda da loro.
 
 **File append-only** (il log): **non** portano `updated` nel frontmatter (sarebbe sempre stale); il loro
 stato è dato dall'ultima voce.
@@ -190,7 +150,8 @@ stato è dato dall'ultima voce.
 ## 5. Operazioni — indice (caricamento on-demand)
 
 Ogni operazione = **input → passi → output** (pagine toccate + UNA voce di log) e segue il **substrato
-condiviso** di questo file (confine D↔N §2, tassonomia §3, convenzioni §4, voce di log §6, limiti §7).
+condiviso** di questo file (confine D↔N §2, tassonomia §3, convenzioni §4, voce di log §6, limiti §7);
+chi crea o riscrive pagine segue inoltre il page-craft in [`pagina-ben-fatta.md`](pagina-ben-fatta.md).
 La **procedura specifica** di ciascuna operazione vive in un **modulo `ops/<operazione>.md`** (stessa
 cartella di questo file): **`Read` solo il modulo dell'operazione che ti serve** — non caricarli tutti
 (progressive disclosure). Le operazioni documentali (`record`, `ingest`, `query`, lint **A**) sono

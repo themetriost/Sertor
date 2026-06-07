@@ -1,8 +1,8 @@
 # Operazione `rag-sync` — re-indicizza il wiki nel RAG
 
 > **Modulo operazione.** Esecutore: **solo flusso principale** (NON il curator).
-> Per il **substrato condiviso** (confine D↔N §2, tassonomia §3, convenzioni §4, voce di log §6)
-> vedi l'indice `wiki-playbook.md`. Qui solo la procedura specifica.
+> Per il **substrato condiviso** (confine D↔N §2, voce di log §6) vedi il playbook
+> `wiki-playbook.md`. Qui solo la procedura specifica.
 
 Rende il wiki interrogabile via RAG (ruolo "corpus" di DA-W1).
 

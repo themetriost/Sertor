@@ -32,6 +32,14 @@ Il wiki di produzione (cartella `wiki/`) è un **LLM Wiki** in stile Karpathy co
 > sono `record · ingest · query · lint (A/B/C) · reorg · generate-from-diff · rag-sync · structure` — il
 > corpo più sotto, datato 2026-06-04, ne cita ancora 6 (prima di `reorg`/`structure`). Razionale e
 > alternative scartate (A monolite, B skill): `requirements/sertor-core/wiki-llm/playbook-flussi-e-modularizzazione.md`.
+>
+> **Completamento (2026-06-07) — page-craft in una pagina-foglia.** Il "come si scrive una pagina"
+> (atomicità, auto-contenimento, link, **livello di significato**) è stato estratto dal playbook §4 in un
+> documento dedicato `.claude/skills/wiki-author/pagina-ben-fatta.md`, **linkato da** `record`/`ingest`/
+> `query`/lint C/`reorg`. Motivo: i moduli `ops/` rimandavano *su* al playbook §4 mentre il playbook §5
+> rimandava *giù* ai moduli → **dipendenza circolare**. La conoscenza riusabile diventa una **foglia** (non
+> dipende da nessuno) che indice e moduli linkano *verso il basso*; il grafo torna un DAG. Disambiguato anche
+> «indice» negli `ops/` (= `wiki-playbook.md`) da «indice del wiki» (= `index.md`).
 
 ## Architettura
 
