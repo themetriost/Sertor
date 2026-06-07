@@ -38,7 +38,8 @@ codebase*. La conoscenza si **compila una volta** e si tiene aggiornata, invece 
 sessione.
 
 - **Doppio ruolo (DA-W1):** il wiki è insieme **corpus** (interrogabile via RAG) e **superficie**
-  (indice navigabile iniettato a inizio sessione). Vedi la pagina `ruolo-wiki-da-w1` del wiki.
+  (indice navigabile iniettato a inizio sessione). Vedi la pagina del wiki (profilo Sertor:
+  `wiki/concepts/ruolo-wiki-da-w1.md`).
 - **Cumulativo:** cresce a ogni sessione; non si riparte da zero.
 - **Idempotente:** se una pagina è già accurata, **non riscriverla**. Niente modifiche inutili.
 - **Self-contained:** ogni pagina è scritta perché un agente la riprenda senza il contesto della chat.
@@ -110,7 +111,7 @@ Nessuna area va usata come `misc/`. In dubbio fra due aree, scegli la più speci
 davvero** la pagina e coincidere con l'area che la ospita. Attenzione: cartella e `type` possono essere
 *coerenti tra loro ma entrambi falsi* rispetto al contenuto (es. un record in `syntheses/` con
 `type: synthesis`). Questo disallineamento **natura↔collocazione** è invisibile al lint meccanico (vede solo
-la stringa) ed è il bersaglio del **lint livello C** (§5).
+la stringa) ed è il bersaglio del **lint livello C** (modulo [`ops/lint.md`](ops/lint.md)).
 
 ## 4. Convenzioni
 
@@ -192,7 +193,11 @@ Append al log (nome-file da config), una voce per operazione, con la **data odie
 ## [YYYY-MM-DD] <operazione> | <titolo>
 - <bullet sintetici: pagine create/aggiornate, decisioni, esiti, commit se noti>
 ```
-`<operazione>` ∈ `setup` · `record` · `ingest` · `query` · `lint` · `reorg` · `generate-from-diff` · `rag-sync`.
+`<operazione>` ∈ `setup` · `structure` · `record` · `ingest` · `query` · `lint` · `reorg` ·
+`generate-from-diff` · `rag-sync` — l'insieme delle operazioni di §5 più `setup` (bootstrap generico di
+sessione/governance, distinto da `structure` che è il bootstrap della *struttura* del wiki). `structure`
+lascia una voce **solo se ha creato qualcosa** (`created` non vuoto); se è tutto `skipped_existing`,
+niente voce (idempotente + regola anti-banale).
 
 ## 7. Limiti & deleghe
 
