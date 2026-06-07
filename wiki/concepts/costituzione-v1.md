@@ -3,11 +3,16 @@ title: Costituzione di Sertor v1.0.0 (ratificata) → v1.1.0 (emendata 2026-06-0
 type: concept
 tags: [costituzione, governance, clean-code, clean-architecture, produzione, principio-x, host-agnostico]
 created: 2026-05-31
-updated: 2026-06-05
+updated: 2026-06-07
 sources: [".specify/memory/constitution.md", ".specify/templates/plan-template.md"]
 ---
 
 # Costituzione di Sertor v1.0.0 (ratificata) → v1.1.0 (emendata 2026-06-05)
+
+La **Costituzione di Sertor** è il documento di governance che codifica i principi vincolanti del
+progetto (Clean Architecture, qualità del codice e l'host-agnosticità del **Principio X**) sotto cui
+operano SpecKit e gli agenti; un **Constitution Check** ne fa da gate al design. Ratificata v1.0.0 il
+2026-05-31, emendata a v1.1.0 il 2026-06-05.
 
 ## Cosa
 

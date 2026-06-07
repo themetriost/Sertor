@@ -562,3 +562,13 @@ Arricchita la pagina-foglia `.claude/skills/wiki-author/page-craft.md` (metodo N
 - **Host-agnostico (Principio X):** neutralizzati gli assunti d'ospite — TOC automatico, campi stato/owner, gerarchie genitore/figlio, redirect a catena → marcati "se l'host lo prevede / da config"; esempi `[[wikilink]]`/`concepts/`/frontmatter tenuti come *profilo Sertor*.
 - **Tensione risolta:** lo schema fornito metteva i link in "Vedi anche", la regola del wiki è link inline → integrati come **categorie distinte** (contestuali inline ≠ navigazione), con nota che "Vedi anche" non sostituisce l'inline (smell del lint C).
 - **DAG preservato:** la foglia non rimanda *all'insù* al playbook (solo a `wiki.config.toml`, verso il basso).
+
+## [2026-06-07] reorg | Lint C approfondito alla luce di page-craft — reorg + lead + connettività
+
+Lint a tre livelli su tutto il wiki (22 pagine) alla luce delle nuove convenzioni (`page-craft.md`). Baseline A pulita. Applicati i finding C/B concordati col proprietario:
+
+- **🔴 Collocazione vs natura (reorg):** `pulizia-pycache-e-diagnosi-mcp` spostata `tech/` → `experiments/`, `type: tech` → `experiment`. Era un **record datato di diagnosi** (lo dichiara: "diagnosi storica"), non una tecnologia — caso da manuale di cartella+`type` concordi ma falsi sulla natura. Riga di `index.md` spostata di sezione.
+- **🟡 Lead che definiscono (page-craft §1.2):** riscritta la prima frase di `costituzione-v1`, `missione-visione-host-agnosticita`, `lint-semantico-host-agnostico`, `naming-corpora-indici` (aprivano con date/eventi/processo invece di «X è…»); aggiunto lead a `motore-baseline-feat002` (apriva con "Data completamento").
+- **🟡 Connettività:** `server-mcp-produzione-feat-mcp` aveva 0 backlink → aggiunto wikilink entrante da [[architettura-wiki-llm]] (tabella stato).
+- **Igiene post-move:** lint+validate = 0/0/0/0 (il lint A ha pizzicato una collisione `[[audit]]` introdotta in un lead, corretta — conferma del livello A come rete del C).
+- **Finding di COVERAGE rimasto (da affrontare a parte):** il wiki è **record-pesante e concept-leggero** — molti `experiment` orbitano attorno a concetti evergreen senza pagina propria (es. `piano-` + `implementazione-nucleo-retrieval` ma nessun `concepts/nucleo-retrieval`). Proposta separata: mappa record→concetti-mancanti, creazione pagine-concetto per distillazione (una a una).

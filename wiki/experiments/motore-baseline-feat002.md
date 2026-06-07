@@ -3,11 +3,15 @@ title: Implementazione FEAT-002 Motore Baseline
 type: experiment
 tags: [feat-002, motore-baseline, rag-vettoriale, ranking, valutazione]
 created: 2026-06-03
-updated: 2026-06-03
+updated: 2026-06-07
 sources: ["specs/002-rag-baseline/plan.md", "specs/002-rag-baseline/tasks.md", "src/sertor_core/engines/**", "tests/**"]
 ---
 
 # FEAT-002: Motore Baseline (RAG Vettoriale)
+
+Il **motore baseline** (FEAT-002) è la prima modalità RAG di `sertor-core`: retrieval **vettoriale** con
+ranking per similarità sopra il nucleo (FEAT-001), più una **valutazione** (hit_rate@k, MRR). Questo
+record ne documenta l'implementazione.
 
 ## Stato: ✅ Completato
 

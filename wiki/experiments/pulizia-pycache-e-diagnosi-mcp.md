@@ -1,9 +1,9 @@
 ---
 title: Pulizia pycache fantasma e diagnosi .mcp.json (2026-06-05)
-type: tech
-tags: [cleanup, diagnostica, mcp, architettura, branch, master]
+type: experiment
+tags: [cleanup, diagnostica, mcp, architettura, branch, master, diagnosi-storica]
 created: 2026-06-05
-updated: 2026-06-06
+updated: 2026-06-07
 sources: ["master (HEAD a4640b8)", ".mcp.json", "src/sertor_core/**"]
 ---
 

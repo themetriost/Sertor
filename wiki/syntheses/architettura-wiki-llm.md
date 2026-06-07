@@ -107,7 +107,7 @@ del 2026-06-06 (`syntheses/` da 16/20 a una distribuzione 4/3/9/4). Dettagli:
 | Nucleo deterministico `wiki_tools` (FEAT-003-D) | ✅ mergiato (PR #13) |
 | Ponte D→N (layer agentico host-agnostico + rename author/curator) | ✅ mergiato (PR #14) |
 | Fix hook Stop (systemMessage schema-valido) | ✅ mergiato (PR #14) |
-| `sertor_mcp` (RAG dell'ospite, FEAT-MCP) | ✅ mergiato (PR #15); `.mcp.json` ri-puntato alla produzione (corpus `sertor`) |
+| [[server-mcp-produzione-feat-mcp|`sertor_mcp`]] (RAG dell'ospite, FEAT-MCP) | ✅ mergiato (PR #15); `.mcp.json` ri-puntato alla produzione (corpus `sertor`) |
 | N5 lint semantico — metodo + audit globale 4 `kind` (PR #16) | ◑ in corso (metodo sì, esercitato; probe deterministici no) |
 | N9 lint organizzativo + `reorg` — metodo + esercitato (reorg 2026-06-06) | ◑ in corso |
 | N1 record-contenuto — metodo «livello di significato» (playbook §4) | ◑ in corso (metodo sì, da esercitare) |
