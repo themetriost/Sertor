@@ -1,5 +1,5 @@
 ---
-title: Rituale di step e anti-deriva del wiki
+title: Step ritual & wiki anti-drift
 type: concept
 tags: [wiki, automazione, hook, governance, processo, delega, fonte-unica, rituale-di-step]
 created: 2026-06-04
@@ -7,7 +7,7 @@ updated: 2026-06-05
 sources: ["CLAUDE.md", ".claude/skills/wiki-author/wiki-playbook.md", ".claude/agents/wiki-curator.md", ".claude/agents/configuration-manager.md", ".claude/settings.json", ".claude/hooks/wiki-pending-check.ps1"]
 ---
 
-# Rituale di step e anti-deriva del wiki
+# Step ritual & wiki anti-drift
 
 Il **rituale di step** è la *Definition of Done* di ogni step significativo: a fine lavoro il flusso
 principale, di propria iniziativa, registra nel wiki e verifica che il wiki non sia andato in **deriva**
@@ -135,5 +135,5 @@ Per atomicità — è il *come*, non il *cosa* deciso — vive ora in una pagina
 - [[retrospettiva-interazione-2026-06-04]] — la retrospettiva sull'interazione che ha originato il rituale.
 - [[lint-organizzativo-e-reorg]] — il lint livello C, che estende l'anti-deriva all'organizzazione del wiki.
 - [[sistema-wiki-fonte-unica]] — il sistema wiki di cui questo rituale è la disciplina d'uso.
-- [[hook-sessionstart-wiki]] — l'hook che inietta lo stato del wiki a inizio sessione (promemoria).
-- [[ruolo-wiki-da-w1]] — il wiki come corpus+superficie e la sua autorità.
+- [[sessionstart-hook]] — l'hook che inietta lo stato del wiki a inizio sessione (promemoria).
+- [[wiki-role-da-w1]] — il wiki come corpus+superficie e la sua autorità.

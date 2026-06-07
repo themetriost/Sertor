@@ -1,5 +1,5 @@
 ---
-title: Hook SessionStart 'Carico lo stato del wiki'
+title: SessionStart hook ('Carico lo stato del wiki')
 type: tech
 tags: [hook, claude-code, wiki, contesto, da-w1]
 created: 2026-05-31
@@ -88,7 +88,7 @@ Il wiki prepara il **terreno** prima di qualunque query. Usa la **SUPERFICIE STR
 del wiki (l'indice = mappa navigabile) in modalità **PUSH**, e a farlo è l'**HOST** (Claude Code),
 non il RAG/MCP.
 
-Conferma la decisione [[ruolo-wiki-da-w1]]:
+Conferma la decisione [[wiki-role-da-w1]]:
 
 - **Ruolo 1 (contesto iniettato)** = competenza dell'HOST, non della core di Sertor nel MVP.
 - **MVP Sertor** = espone wiki ben strutturato (`wiki/index.md`, `wiki/log.md` interlinkati);

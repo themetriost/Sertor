@@ -42,7 +42,7 @@ Decomposte le 3 feature **Must** dell'epica primaria [[epiche-sertor-core-e-cli|
 - Indicizzazione nel RAG (via FEAT-001/002)
 - Struttura directory fissa (concepts/, tech/, experiments/, sources/, syntheses/)
 - Dipendenza su FEAT-001 per indicizzazione post-creazione
-- **Perimetro MVP vincolato da [[ruolo-wiki-da-w1|DA-W1/DA-2]]:** creare + indicizzare; niente spider/superficie nativa
+- **Perimetro MVP vincolato da [[wiki-role-da-w1|DA-W1/DA-2]]:** creare + indicizzare; niente spider/superficie nativa
 
 ---
 
@@ -139,4 +139,4 @@ Tutti i §10 dei tre documenti (`nucleo-retrieval/requirements.md`, `rag-baselin
   - `requirements/sertor-core/nucleo-retrieval/requirements.md` — FEAT-001
   - `requirements/sertor-core/rag-baseline/requirements.md` — FEAT-002
   - `requirements/sertor-core/wiki-creazione/requirements.md` — FEAT-003
-- **Collega:** [[epiche-sertor-core-e-cli|epiche-sertor-core-e-cli]], [[ruolo-wiki-da-w1|ruolo-wiki-da-w1]]
+- **Collega:** [[epiche-sertor-core-e-cli|epiche-sertor-core-e-cli]], [[wiki-role-da-w1|ruolo-wiki-da-w1]]

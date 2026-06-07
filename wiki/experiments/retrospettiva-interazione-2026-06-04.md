@@ -10,7 +10,7 @@ sources: ["CLAUDE.md"]
 # Retrospettiva sull'interazione del 2026-06-04 (Opus 4.8)
 
 Questa è la **retrospettiva onesta** di una discussione del 2026-06-04, separata (per atomicità) dalla
-pagina di design [[rituale-step-e-allineamento-wiki]] che ne è l'esito costruttivo: il *come* l'assistente
+pagina di design [[step-ritual]] che ne è l'esito costruttivo: il *come* l'assistente
 ha condotto la conversazione è cosa diversa dal *cosa* è stato deciso.
 
 L'utente ha riferito la sensazione di essere stato **«boicottato tutto il giorno»** e ha chiesto di
@@ -49,5 +49,5 @@ a quel punto **fare domande**, non procedere sull'assunzione.*
 
 ## Collegamenti
 
-- [[rituale-step-e-allineamento-wiki]] — la soluzione di design (il rituale di step) nata da questa discussione.
+- [[step-ritual]] — la soluzione di design (il rituale di step) nata da questa discussione.
 - `CLAUDE.md` → sezione *Rituale di step / Definition of Done* (il correttivo codificato).

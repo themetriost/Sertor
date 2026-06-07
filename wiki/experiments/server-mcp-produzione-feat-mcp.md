@@ -32,7 +32,7 @@ Entrambi sono **librerie Python riusabili**, ma manca la **superficie finale** c
 Nel **prototipo** (`prototype/04-agentic-rag/mcp_server.py`) esiste un server MCP funzionante. Però:
 - Punta al motore del prototipo (i 4 approcci RAG sperimentali);
 - Interroga il **corpus congelato** (FastAPI, non la produzione);
-- `.mcp.json` di `master` lo referenzia, ma è **rotto** operativamente (ModuleNotFoundError, dipendenze inconciliabili).
+- `.mcp.json` di `master` lo referenzia, ma è **rotto** operativamente (ModuleNotFoundError, dipendenze inconciliabili) — diagnosi datata in [[pulizia-pycache-e-diagnosi-mcp]].
 
 ### Soluzione: FEAT-MCP (surface sottile su `sertor_core`)
 
@@ -115,7 +115,7 @@ Decomposti in **7 gruppi funzionali + 2 domande aperte** (vedi `requirements/ser
 - **[[motore-baseline-feat002]]** (FEAT-002): il motore su cui la facade si appoggia.
 
 ### Abilita (a valle)
-- **[[rituale-step-e-allineamento-wiki]]** (FEAT-003-N, N5): il probe-RAG del lint semantico anziché fallback `Read`/`Grep`.
+- **[[step-ritual]]** (FEAT-003-N, N5): il probe-RAG del lint semantico anziché fallback `Read`/`Grep`.
 - **[[architettura-wiki-llm]]** (roadmap item 5a): FEAT-MCP è il primo step della superficie finale.
 - **Agente Azure** (futuro): entry-point di invocazione dei tool.
 
@@ -123,7 +123,7 @@ Decomposti in **7 gruppi funzionali + 2 domande aperte** (vedi `requirements/ser
 - **[[chiusura-prototipo-dogfooding]]**: il server del prototipo, rotto, che `.mcp.json` referenzia.
 
 ### Legato a
-- **[[naming-corpora-indici]]**: riconciliazione naming corpus `sertor` (non legacy).
+- **[[corpus-index-naming]]**: riconciliazione naming corpus `sertor` (non legacy).
 
 ---
 

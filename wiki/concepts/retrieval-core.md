@@ -15,7 +15,7 @@ importabile** che costituisce *il prodotto* Sertor: ingerisce un repository qual
 retrieval unica**. CLI, server MCP e wiki-tools sono **[[thin-consumer|consumatori sottili]]** che la
 importano — non è il core a dipendere da loro.
 
-È costruito in **Clean Architecture** sotto la [[costituzione-v1|Costituzione]] (Principio I, non
+È costruito in **Clean Architecture** sotto la [[constitution|Costituzione]] (Principio I, non
 negoziabile): **le dipendenze puntano verso l'interno**.
 
 ## Architettura a strati
@@ -51,12 +51,12 @@ src/sertor_core/
 - **Idempotenza.** `engine.index()` fa rebuild-from-scratch; l'`upsert` è idempotente sugli stessi `id`
   (`doc_id` = path relativo POSIX, `chunk_id` = `{doc_id}#{ordinale}`).
 - **Collezioni namespaced per `(corpus, provider)`** via `collection_name()`: provider con dimensioni-vettore
-  diverse non si mescolano. Vedi [[naming-corpora-indici]].
+  diverse non si mescolano. Vedi [[corpus-index-naming]].
 
 ## Capacità
 
 - **Ingestione repo-agnostica** — layout arbitrario, estensioni note, fallback testuale (Principio X,
-  [[missione-visione-host-agnosticita]]).
+  [[mission-vision]]).
 - **Chunking code-aware** — sintattico multi-linguaggio via [[tree-sitter-language-pack]], più fallback
   dimensionale e splitter Markdown, smistati da un dispatcher.
 - **Embeddings multi-provider** e **vector store astratto** — dietro le rispettive porte, scelti da config.

@@ -28,7 +28,7 @@ Vista d'insieme dell'**LLM Wiki** di Sertor dopo il ponte D→N. Per i dettagli 
 Il wiki LLM è diviso da una linea sola: **ciò che è meccanico** (dove/come scrivere, parsing, scan, link)
 sta nel **nucleo deterministico** (codice, zero LLM); **ciò che è giudizio** (cosa scrivere, il perché, è
 una contraddizione?, è obsoleto?) sta nel **layer agentico** (LLM). Tutto ciò che varia tra progetti vive
-in **una sola config** (`wiki.config.toml`) — host-agnosticità, **Principio X**. Vedi [[costituzione-v1]].
+in **una sola config** (`wiki.config.toml`) — host-agnosticità, **Principio X**. Vedi [[constitution]].
 
 ## Architettura a strati
 
@@ -140,7 +140,7 @@ Grafo delle dipendenze (cosa sblocca cosa):
 | **4b** | N7 gate al commit (human-in-the-loop) | misto | ◑ solo metà-D | Bassa | 2a |
 | **1b** | N5 variante (c): probe deterministici in `wiki_tools` | codice (D) | ◑ EARS-abile, valore incerto | Bassa | N5 |
 
-**Principio di processo** (vedi [[costituzione-v1]] e la regola "calibra al valore"): **EARS è il bisturi
+**Principio di processo** (vedi [[constitution]] e la regola "calibra al valore"): **EARS è il bisturi
 sul lato D** (componenti/contratti con "done" testabile, soprattutto `sertor_mcp`); **sul lato N si
 costruisce il metodo, non si spec-a** (i requisiti di outcome esistono già in
 `requirements/sertor-core/wiki-creazione/requirements.md`).

@@ -1,5 +1,5 @@
 ---
-title: DA-W1 — Ruolo di prodotto dell'LLM Wiki (corpus × superficie)
+title: Wiki role (DA-W1) — corpus × surface
 type: concept
 tags: [wiki, rag, da-w1, prodotto, requisiti]
 created: 2026-05-31
@@ -7,7 +7,7 @@ updated: 2026-05-31
 sources: [requirements/sertor-core/epic.md]
 ---
 
-# DA-W1 — Ruolo di prodotto dell'LLM Wiki (corpus × superficie)
+# Wiki role (DA-W1) — corpus × surface
 
 **DA-W1** è la domanda di prodotto, aperta nell'epica primaria `requirements/sertor-core/epic.md`, su **COME il wiki viene usato nel prodotto Sertor** e come si relaziona al RAG e all'MCP.
 
@@ -60,7 +60,7 @@ La STESSA superficie (RAG) può stare sopra **PIÙ corpora** (codice + wiki).
 ### 1. **Contesto iniettato (push)**
 
 Il wiki prepara il contesto dell'agente **PRIMA di qualunque query** (oggi: hook `SessionStart`
-di Claude Code, vedi pagina dedicata [[hook-sessionstart-wiki]]).
+di Claude Code, vedi pagina dedicata [[sessionstart-hook]]).
 
 Usa la superficie **strutturata** in modalità **PUSH**: mappa e log recente vengono iniettati
 automaticamente in sessione.
@@ -128,4 +128,4 @@ Sblocca:
 Riferimenti:
 - `requirements/sertor-core/epic.md` §9 (DA-W1, DA-2 risolte) e §6 (R-5 mitigato).
 - [[epiche-sertor-core-e-cli]] (stato e sequenza prioritaria).
-- [[hook-sessionstart-wiki]] (prova vivente del ruolo 1 oggi, implementato nell'host).
+- [[sessionstart-hook]] (prova vivente del ruolo 1 oggi, implementato nell'host).

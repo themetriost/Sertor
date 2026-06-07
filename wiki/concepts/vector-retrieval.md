@@ -45,4 +45,4 @@ la baseline di riferimento.
 
 ## Vedi anche
 - Realizzazione e record datato: [[motore-baseline-feat002]]. Fondazione: [[retrieval-core]]. Collezioni e
-  isolamento per corpus: [[naming-corpora-indici]].
+  isolamento per corpus: [[corpus-index-naming]].

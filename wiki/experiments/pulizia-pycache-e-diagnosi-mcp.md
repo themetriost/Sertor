@@ -90,6 +90,6 @@ Il server MCP puntato da `.mcp.json` è **rotto** perché:
 
 ## Linkage
 
-- [[naming-corpora-indici]] — schema corpus `sertor` (prodotto) vs `prototype` (dogfooding), indici isolati.
-- [[rituale-step-e-allineamento-wiki]] — il lint semantico che ha rilevato questi problemi.
+- [[corpus-index-naming]] — schema corpus `sertor` (prodotto) vs `prototype` (dogfooding), indici isolati.
+- [[step-ritual]] — il lint semantico che ha rilevato questi problemi.
 - `CLAUDE.md` § "Riferirsi al prototipo" — updated per corpus `prototype`.

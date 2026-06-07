@@ -291,7 +291,7 @@ FEAT-003-N **costruisce sopra:**
 
 ## Linkage
 
-- **Dipende da:** [[costituzione-v1]] (Principio X), [[sistema-wiki-fonte-unica]] (playbook consolidato)
-- **Precede:** [[missione-visione-host-agnosticita|Missione/Vision host-agnosticità]] (realizzazione concreta)
+- **Dipende da:** [[constitution]] (Principio X), [[sistema-wiki-fonte-unica]] (playbook consolidato)
+- **Precede:** [[mission-vision|Missione/Vision host-agnosticità]] (realizzazione concreta)
 - **Collabora con (futuro):** FEAT-003-N (LLM Wiki, giudizio semantico)
 - **Consumata da:** Hook `wiki-pending-check.ps1` (refactorizzato come thin wrapper CLI)

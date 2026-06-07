@@ -120,7 +120,7 @@ src/sertor_core/engines/
 ### Upstream (dipende da)
 - **[[implementazione-nucleo-retrieval]]** (FEAT-001) — `IndexingService`, `retrieval_facade`, `VectorStore`, chunking/embeddings.
 - **[[piano-nucleo-retrieval]]** — architettura e decisioni R1–R8.
-- **[[costituzione-v1]]** — Principi I+IV NON-NEGOZIABILI (core isolation, error handling esplicito).
+- **[[constitution]]** — Principi I+IV NON-NEGOZIABILI (core isolation, error handling esplicito).
 
 ### Downstream (usato da)
 - **FEAT-003 (Wiki creazione)** — userà `BaselineEngine.query()` per ingestione wiki nel RAG.

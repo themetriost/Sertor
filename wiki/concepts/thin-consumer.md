@@ -22,7 +22,7 @@ superficie esterna è un **adattatore in uscita** che dipende dal core, mai il c
 - **Il prodotto è la libreria, non l'interfaccia.** Mettere la logica nel core e tenere sottili le interfacce
   significa che CLI, MCP e qualunque host futuro **condividono lo stesso comportamento** (stessi risultati,
   stessa config, stessi errori) invece di divergere.
-- **Host-agnosticità (Principio X, [[missione-visione-host-agnosticita]]).** Un'interfaccia sottile non
+- **Host-agnosticità (Principio X, [[mission-vision]]).** Un'interfaccia sottile non
   incatena il core a un host specifico: aggiungere una nuova superficie = scrivere un nuovo guscio, non
   toccare il core.
 - **Niente duplicazione di logica** = niente deriva fra interfacce, e una sola superficie da testare in
@@ -52,4 +52,4 @@ Non conosce gli adapter concreti né gli SDK: quelli restano dietro le porte, sc
   è un entry sottile sopra `sertor_core.wiki_tools`, guidato da `wiki.config.toml`.
 
 ## Vedi anche
-- Ciò che consumano: [[retrieval-core]]. Vincolo che lo motiva: [[costituzione-v1]] (dipendenze verso l'interno).
+- Ciò che consumano: [[retrieval-core]]. Vincolo che lo motiva: [[constitution]] (dipendenze verso l'interno).

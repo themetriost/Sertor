@@ -7,14 +7,13 @@ updated: 2026-06-03
 sources: [
   "https://github.com/tree-sitter/tree-sitter",
   "https://pypi.org/project/tree-sitter-language-pack/",
-  "src/sertor_core/adapters/chunkers/syntactic_chunker.py",
   "src/sertor_core/services/chunking/code.py"
 ]
 ---
 
 # tree-sitter-language-pack — Binding Rust e Grammar Multilingua
 
-Tecnologia fondamentale per [[implementazione-nucleo-retrieval|FEAT-001 (Nucleo Retrieval)]], usata per chunking sintattico code-aware su 14 linguaggi MVP. Approfondimento: architettura del binding Rust, quirk dell'API Python, strategie di parsing robusto.
+**tree-sitter-language-pack** è il pacchetto che porta in Python le grammatiche **tree-sitter** precompilate per centinaia di linguaggi: in Sertor è la base del **chunking sintattico code-aware** del [[retrieval-core]] (FEAT-001). Approfondimento: architettura del binding Rust, quirk dell'API Python, strategie di parsing robusto.
 
 ## Overview
 

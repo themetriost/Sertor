@@ -309,4 +309,4 @@ Analisi SpecKit `/speckit-analyze` → ✅ **PASS 100%**:
 
 ---
 
-**Cross-refs:** [[piano-nucleo-retrieval|piano FEAT-001]] · [[costituzione-v1|Costituzione v1.0.0]] · [[decomposizione-must-core|Decomposizione Must]] · [[tree-sitter-language-pack|tech/tree-sitter-language-pack]]
+**Cross-refs:** [[piano-nucleo-retrieval|piano FEAT-001]] · [[constitution|Costituzione v1.0.0]] · [[decomposizione-must-core|Decomposizione Must]] · [[tree-sitter-language-pack|tech/tree-sitter-language-pack]]

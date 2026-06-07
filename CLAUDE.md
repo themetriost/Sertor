@@ -216,7 +216,7 @@ restano **promemoria vincolanti**, non opzionali.
 
 **Calibra al valore:** modifiche puramente meccaniche o di poco conto non innescano il rituale (vedi
 *regola aurea* del wiki). Lo step è "significativo" quando produce conoscenza, decisioni o codice.
-Vedi [[rituale-step-e-allineamento-wiki]].
+Vedi [[step-ritual]].
 
 ## Git & versionamento (regola SEMPRE attiva)
 

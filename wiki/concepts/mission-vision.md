@@ -1,5 +1,5 @@
 ---
-title: Mission, Vision e Principio X — Host-agnosticità come vincolo
+title: Mission, vision & Principle X (host-agnosticity)
 type: concept
 tags: [missione, visione, host-agnostico, principio-x, disaccoppiamento, costituzione]
 created: 2026-06-05
@@ -7,7 +7,7 @@ updated: 2026-06-07
 sources: ["README.md", ".specify/memory/constitution.md"]
 ---
 
-# Mission, Vision e Principio X — Host-agnosticità come vincolo
+# Mission, vision & Principle X (host-agnosticity)
 
 La **missione** e la **visione** di Sertor — col **Principio X** (host-agnosticità) che ne discende come
 vincolo non negoziabile — definiscono *cosa* costruisce il progetto e *perché*: un framework di retrieval
@@ -18,7 +18,7 @@ vincolo non negoziabile — definiscono *cosa* costruisce il progetto e *perché
 Formalizzazione di Mission e Vision di Sertor nel nuovo [`README.md`](../../README.md) di radice,
 accoppiata all'emendamento costituzionale che aggiunge il **Principio X** ("Capacità host-agnostiche")
 come vincolo operativo. Questo documento lega i tre artefatti: il pitch pubblico (README) e il
-vincolo architetturale (Principio X → [[costituzione-v1]]) che lo rende esecutivo.
+vincolo architetturale (Principio X → [[constitution]]) che lo rende esecutivo.
 
 ## Vision: Il mondo che vogliamo
 
@@ -109,8 +109,8 @@ La testata nel Principio X ora impedisce che il dogfooding diventi lock-in silen
 
 ## Allineamento
 
-- **[[costituzione-v1]]** — il nuovo Principio X e la versione v1.1.0 sono autorità di design.
-- **[[rituale-step-e-allineamento-wiki]]** — il lint semantico di allineamento dovrà comprendere
+- **[[constitution]]** — il nuovo Principio X e la versione v1.1.0 sono autorità di design.
+- **[[step-ritual]]** — il lint semantico di allineamento dovrà comprendere
   "questa skill/capacità contiene assunzioni hardcoded sull'ospite?" come nuova domanda.
 - **README.md** — fonte di verità della Vision e della Mission; questa pagina sintesi rimanda.
 

@@ -43,10 +43,10 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 - **[[thin-consumer]]** — Il pattern per cui le interfacce (CLI, server MCP, tool) espongono il [[retrieval-core]] importandolo e cablandolo dalle factory `build_*`, **senza reimplementare logica**: il prodotto è la libreria, l'interfaccia è un guscio sottile (host-agnostico, Principio X). Esempio realizzato: il server MCP.
 - **[[dogfooding]]** — Interrogare il progetto stesso col proprio RAG: Sertor indicizza il proprio codice/doc come corpus e li consulta coi suoi tool (server MCP `sertor-rag`) invece di leggerli a mano. Validazione continua + contesto ancorato.
 - **[[deterministic-vs-judgment]]** — Il confine **meccanico** (codice, zero LLM, testabile) ↔ **giudizio** (LLM: cosa scrivere, è una contraddizione?). Principio trasversale: massimizza il deterministico, riserva all'LLM solo il giudizio; guida anche la delega.
-- **[[costituzione-v1]]** — Ratifica Costituzione v1.0.0 (2026-05-31) → v1.1.0 (2026-06-05, aggiunto Principio X host-agnostico); 10 principi vincolanti, gate Constitution Check. Governa design e produzione.
-- **[[missione-visione-host-agnosticita]]** — Mission/Vision canonizzate in README.md; Principio X come vincolo operativo; backlog: refactor host-agnostico di skill wiki/playbook/rituale.
-- **[[ruolo-wiki-da-w1]]** — DA-W1 risolta: il wiki è CORPUS + SUPERFICIE; identità, autorità, confine MVP, ruoli 1–3.
-- **[[rituale-step-e-allineamento-wiki]]** — Rituale di step (Definition of Done): a ogni step → record + lint di allineamento + azioni standing estendibili. Standing behavior vs automazione unattended; fonte unica = `CLAUDE.md`. *(Retrospettiva estratta in [[retrospettiva-interazione-2026-06-04]].)*
+- **[[constitution]]** — Ratifica Costituzione v1.0.0 (2026-05-31) → v1.1.0 (2026-06-05, aggiunto Principio X host-agnostico); 10 principi vincolanti, gate Constitution Check. Governa design e produzione.
+- **[[mission-vision]]** — Mission/Vision canonizzate in README.md; Principio X come vincolo operativo; backlog: refactor host-agnostico di skill wiki/playbook/rituale.
+- **[[wiki-role-da-w1]]** — DA-W1 risolta: il wiki è CORPUS + SUPERFICIE; identità, autorità, confine MVP, ruoli 1–3.
+- **[[step-ritual]]** — Rituale di step (Definition of Done): a ogni step → record + lint di allineamento + azioni standing estendibili. Standing behavior vs automazione unattended; fonte unica = `CLAUDE.md`. *(Retrospettiva estratta in [[retrospettiva-interazione-2026-06-04]].)*
 
 ### Experiments (record di attività/step/feature)
 
@@ -71,6 +71,6 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 
 ### Tech (tecnologie e infrastruttura)
 
-- **[[hook-sessionstart-wiki]]** — Hook SessionStart di Claude Code: carica indice + log a inizio sessione. Ruolo 1 di DA-W1 (contesto iniettato).
+- **[[sessionstart-hook]]** — Hook SessionStart di Claude Code: carica indice + log a inizio sessione. Ruolo 1 di DA-W1 (contesto iniettato).
 - **[[tree-sitter-language-pack]]** — Binding Rust multilingua (305+ lingue), parser robusto, set MVP 14 lingue (10 sintattico + 4 fallback: PowerShell, Bash, T-SQL, PL/SQL), wrapper `_Node` per API metodo-based.
-- **[[naming-corpora-indici]]** — Schema naming chiarificato (dal 2026-06-04): corpus `sertor` (prodotto, radice) vs `prototype` (prototipo, congelato); indici `.index-sertor` (radice) vs `.index-prototype` (prototipo).
+- **[[corpus-index-naming]]** — Schema naming chiarificato (dal 2026-06-04): corpus `sertor` (prodotto, radice) vs `prototype` (prototipo, congelato); indici `.index-sertor` (radice) vs `.index-prototype` (prototipo).
