@@ -521,3 +521,101 @@ Annotati i prossimi passi concordati, da affrontare in sessioni successive:
 2. **Ulteriore refining della scrittura del wiki — orientata ai tipi** — affinare la tassonomia/convenzioni distinguendo meglio le nature delle pagine: **entità**, **concetti**, **procedure**, **configurazioni**, ecc. (oltre l'attuale concept/tech/experiment/source/synthesis). Valutare se servono nuovi `type`/aree o solo linee guida di stile per ciascuna natura, mantenendo l'host-agnosticità (config-driven).
 
 3. **Revisione puntuale di `CLAUDE.md` e `.claude/skills/wiki-author/wiki-playbook.md`** — passata mirata sui due file di governance: coerenza interna, ridondanze, allineamento con lo stato reale (lint a tre livelli, reorg, regole di creazione appena aggiunte), eliminazione di eventuali sezioni stantie o duplicate.
+
+## [2026-06-07] record | Modularizzazione del playbook (opzione C, step #3)
+
+Eseguita l'**opzione C** decisa nell'analisi `playbook-flussi-e-modularizzazione.md` (è la forma concreta dello step #3 — revisione di `wiki-playbook.md`). Trigger considerato scattato: il blocco `lint` B/C pesava ~85 righe su 331.
+
+- **Cosa:** `wiki-playbook.md` non è più monolitico → **indice + substrato condiviso** (host-agnosticità, identità, confine D↔N, tassonomia, convenzioni §4, voce di log §6, limiti §7) + **tabella di dispatch** (§5) verso 8 moduli `ops/<operazione>.md` (stessa cartella): `record · ingest · query · lint · reorg · generate-from-diff · rag-sync · structure`. I wrapper fanno `Read` **solo del modulo** dell'operazione invocata (on-demand).
+- **File:** creati `.claude/skills/wiki-author/ops/{record,ingest,query,lint,reorg,generate-from-diff,rag-sync,structure}.md`; aggiornati `wiki-playbook.md` (nota di testa + §5 → indice), `SKILL.md`, `commands/wiki.md`, `agents/wiki-curator.md` (pattern di caricamento on-demand).
+- **Perché C e non B (skill):** le skill sono un costrutto dell'host → violano il Principio X e duplicano il substrato; C resta `.md` portabile e DRY. Razionale completo nell'analisi.
+- **Guadagno misurato:** `record` carica 168 (indice) + 9 (modulo) = 177 righe vs 331; `lint` 168 + 78 = 246 solo quando serve.
+- **Wiki:** nota di evoluzione 2026-06-07 su [[sistema-wiki-fonte-unica]] (corretta deriva: era "file unico / 6 operazioni" → ora "indice + moduli / 8 operazioni"); summary aggiornato in `index.md`; nota "ESEGUITO" nell'analisi di design.
+- **Verifica:** `lint --json` = 0 link rotti / 0 orfani / 0 frontmatter / 0 naming.
+
+## [2026-06-07] record | N1 record-contenuto — metodo "livello di significato"
+
+Codificato il metodo di scrittura del *contenuto* di una pagina (la metà di giudizio di `record`, nodo N1), oltre alle convenzioni sintattiche già presenti.
+
+- **Dove (DRY):** nuovo blocco «**Il livello di significato — cosa scrivere, non solo come**» nel substrato condiviso del playbook (§4 Convenzioni), così è riusabile da tutte le operazioni che producono contenuto (`record`, `ingest`, `generate`, `reorg`) invece di duplicarlo in `ops/record.md`.
+- **Cosa:** 5 regole — distilla-non-trascrivi · cattura il *perché* + le alternative scartate · astrazione coerente con l'area (evergreen vs stato datato) · verità ancorata (rovescio attivo del lint B) · densità di significato — + un **esempio male→bene** (reranking cross-encoder).
+- **Moduli:** `ops/record.md` punto 2 riscritto come "giudizio di contenuto" che richiama §4; `ops/ingest.md` punto 2 idem per i riassunti di fonte.
+- **Stato N1:** ☐→◑ (metodo documentato, da esercitare) in `requirements/sertor-core/wiki-llm/TODO.md` e nella tabella di [[architettura-wiki-llm]].
+- **Origine:** discusso col proprietario (era "il punto 2 di record.md troppo asciutto sul lato contenuto/LLM/significato").
+
+## [2026-06-07] record | Page-craft estratto in pagina-foglia (rompe la dipendenza circolare)
+
+Risolto uno smell architetturale segnalato dal proprietario: i moduli `ops/` rimandavano al playbook §4 mentre il playbook §5 rimandava ai moduli → dipendenza **bidirezionale/circolare**.
+
+- **Fix:** il page-craft ("come si scrive una pagina": atomicità · auto-contenimento · link · **livello di significato**) è stato **estratto** dal playbook §4 nella pagina-foglia `.claude/skills/wiki-author/pagina-ben-fatta.md`. È una **foglia** (non dipende da nessuno); indice e moduli la linkano *verso il basso* → il grafo torna un DAG.
+- **Linkata da:** `ops/record.md`, `ops/ingest.md`, `ops/query.md` (quando archivia), `ops/lint.md` (livello C), `ops/reorg.md`; richiamata anche dal playbook §4/§5.
+- **Playbook §4:** resta solo il *formato* (frontmatter, naming, wikilink, nuova-vs-aggiorna, contraddizioni, append-only) + puntatore alla foglia.
+- **Disambiguazione collaterale:** negli header dei moduli «indice» → «playbook» (`wiki-playbook.md`), così non collide più con «indice del wiki» (`index.md`); il punto 1 di `record` ora dice esplicitamente "indice del wiki (`index.md`)".
+- **N1:** il metodo è ora nella foglia (aggiornato tracker + diagramma in [[architettura-wiki-llm]] e nota in [[sistema-wiki-fonte-unica]]).
+- **Verifica:** lint A = 0/0/0/0.
+
+## [2026-06-07] record | page-craft ampliato all'anatomia completa (host-agnostico)
+
+Arricchita la pagina-foglia `.claude/skills/wiki-author/page-craft.md` (metodo N1) sulla base di contenuti forniti dal proprietario, resi **host-agnostici**.
+
+- **Aggiunto:** §1 *Struttura della pagina* (titolo univoco · lead · TOC · sezioni gerarchiche · "vedi anche" · fonti · metadati) · §2 *Tipo di contenuti* (piramide rovesciata, concreto/azionabile, auto-contenuta-non-ridondante, stile diretto, aggiornabilità) · §4 *Tipo di link* (3 categorie: contestuali inline / navigazione strutturale / esterni-riferimenti + regole pratiche) · **checklist** finale. Mantenuto §3 *livello di significato* + esempio male→bene.
+- **Host-agnostico (Principio X):** neutralizzati gli assunti d'ospite — TOC automatico, campi stato/owner, gerarchie genitore/figlio, redirect a catena → marcati "se l'host lo prevede / da config"; esempi `[[wikilink]]`/`concepts/`/frontmatter tenuti come *profilo Sertor*.
+- **Tensione risolta:** lo schema fornito metteva i link in "Vedi anche", la regola del wiki è link inline → integrati come **categorie distinte** (contestuali inline ≠ navigazione), con nota che "Vedi anche" non sostituisce l'inline (smell del lint C).
+- **DAG preservato:** la foglia non rimanda *all'insù* al playbook (solo a `wiki.config.toml`, verso il basso).
+
+## [2026-06-07] reorg | Lint C approfondito alla luce di page-craft — reorg + lead + connettività
+
+Lint a tre livelli su tutto il wiki (22 pagine) alla luce delle nuove convenzioni (`page-craft.md`). Baseline A pulita. Applicati i finding C/B concordati col proprietario:
+
+- **🔴 Collocazione vs natura (reorg):** `pulizia-pycache-e-diagnosi-mcp` spostata `tech/` → `experiments/`, `type: tech` → `experiment`. Era un **record datato di diagnosi** (lo dichiara: "diagnosi storica"), non una tecnologia — caso da manuale di cartella+`type` concordi ma falsi sulla natura. Riga di `index.md` spostata di sezione.
+- **🟡 Lead che definiscono (page-craft §1.2):** riscritta la prima frase di `costituzione-v1`, `missione-visione-host-agnosticita`, `lint-semantico-host-agnostico`, `naming-corpora-indici` (aprivano con date/eventi/processo invece di «X è…»); aggiunto lead a `motore-baseline-feat002` (apriva con "Data completamento").
+- **🟡 Connettività:** `server-mcp-produzione-feat-mcp` aveva 0 backlink → aggiunto wikilink entrante da [[architettura-wiki-llm]] (tabella stato).
+- **Igiene post-move:** lint+validate = 0/0/0/0 (il lint A ha pizzicato una collisione `[[audit]]` introdotta in un lead, corretta — conferma del livello A come rete del C).
+- **Finding di COVERAGE rimasto (da affrontare a parte):** il wiki è **record-pesante e concept-leggero** — molti `experiment` orbitano attorno a concetti evergreen senza pagina propria (es. `piano-` + `implementazione-nucleo-retrieval` ma nessun `concepts/nucleo-retrieval`). Proposta separata: mappa record→concetti-mancanti, creazione pagine-concetto per distillazione (una a una).
+
+## [2026-06-07] record | Primo concept di dominio: retrieval-core (coverage gap)
+
+Avviata la chiusura del finding di coverage (wiki record-pesante, concept-leggero): creato il primo **concept di dominio del prodotto**, distillato dai record + codice reale.
+
+- **Nuova pagina:** `concepts/retrieval-core.md` (concept evergreen) — architettura Clean di `sertor-core` (domain/services/adapters/engines + porte `Protocol`, composition root da `Settings`, backend local/azure, policy errori tollerante↔strict, idempotenza, collezioni namespaced). **Ancorata al codice reale** (`src/sertor_core/**` + CLAUDE.md), non al piano: il record `piano-nucleo-retrieval` descrive una struttura di design divergente (`domain/ports/` dir, `*_service.py`) → nel concept la struttura è quella vera (`ports.py`, `services/chunking/`, `services/retrieval.py`).
+- **Backlink:** i record `piano-` e `implementazione-nucleo-retrieval` ora linkano [[retrieval-core]] inline; aggiunto all'indice (Concepts). Il record `piano-` segnala la divergenza piano↔codice rimandando al concept per l'architettura corrente.
+- **Nuova convenzione codificata** (playbook §4): pagine-**entità/concetto** con slug+titolo **in inglese** (`retrieval-core`), corpo discorsivo in italiano; record restano italiani; pagine esistenti rinominate opportunisticamente.
+- **Tensione segnalata:** il playbook dice "forward-link a pagina inesistente = feature", ma il lint A della CLI flagga i wikilink senza target come broken → ho usato "consumatori sottili" in testo piano (non `[[thin-consumer]]`) per non rompere il lint. Da riconciliare (prossimo concept candidato: `thin-consumer`).
+- **Verifica:** lint+validate 0/0/0/0.
+
+## [2026-06-07] record | Secondo concept di dominio: thin-consumer (+ chiusa la tensione forward-link)
+
+Secondo concept di dominio del coverage gap: il pattern **thin-consumer** (consumatore sottile).
+
+- **Nuova pagina:** `concepts/thin-consumer.md` (concept evergreen, slug+titolo EN, corpo IT) — le interfacce (CLI, server MCP, tool) espongono il [[retrieval-core]] importandolo e cablandolo dalle factory `build_*`, senza reimplementare logica; il prodotto è la libreria, l'interfaccia un guscio sottile (host-agnostico, Principio X). Ancorata al codice: `sertor_mcp/server.py` usa `build_facade(Settings.load())` (verificato).
+- **Chiusa l'istanza della tensione forward-link:** in [[retrieval-core]] il testo piano "consumatori sottili" è ora il wikilink `[[thin-consumer|…]]` (prima evitato per non rompere il lint A). La tensione *di sistema* (playbook dice forward-link=feature, CLI lo flagga broken) resta aperta come decisione.
+- **Connettività:** [[retrieval-core]] e il record [[server-mcp-produzione-feat-mcp]] linkano il nuovo concept; aggiunto all'indice. server-mcp non è più a 0 backlink.
+- **Verifica:** lint+validate 0/0/0/0.
+
+## [2026-06-07] record | Coverage concepts: vector-retrieval, dogfooding, deterministic-vs-judgment
+
+Completato il giro di **concept di dominio** che chiude il coverage gap (wiki record-pesante → ora i concetti evergreen hanno casa). Tre nuove pagine (slug+titolo EN, corpo IT, ancorate al codice/realtà):
+
+- **`concepts/vector-retrieval.md`** — la 1ª modalità RAG: embed query → similarity top-k via il motore baseline (`engines/baseline.py`); policy *strict* (`IndexNotFoundError`) vs nucleo tollerante; valutazione hit-rate@k/MRR@10 (`engines/evaluation.py`). Backlink da [[motore-baseline-feat002]] e [[retrieval-core]].
+- **`concepts/dogfooding.md`** — interrogare il progetto col proprio RAG (server MCP `sertor-rag` su corpus `prototype`/`sertor`); validazione continua + contesto ancorato (versante retrieval della disciplina anti-deriva). Backlink da [[chiusura-prototipo-dogfooding]].
+- **`concepts/deterministic-vs-judgment.md`** — il confine meccanico (codice, zero LLM) ↔ giudizio (LLM); principio trasversale (wiki D↔N + delega). Backlink da [[architettura-wiki-llm]] e [[ponte-d-n-host-agnostico]] (che prima ridefinivano il confine, ora lo linkano).
+- **Indice:** 3 voci aggiunte nella sezione Concepts. **Verifica:** lint+validate 0/0/0/0.
+- **Stato coverage:** i 5 concept candidati (retrieval-core · thin-consumer · vector-retrieval · dogfooding · deterministic-vs-judgment) sono fatti. Concepts ora 9 (4 governance + 5 dominio).
+
+## [2026-06-07] record | Risolta la tensione forward-link: convenzione "stub" (zero codice)
+
+Chiusa la tensione di sistema tra playbook ("forward-link = feature") e lint A della CLI (che flaggava i `[[…]]` senza target come `broken`). Scelta: **opzione (c) stub**, realizzata **per convenzione** senza toccare il codice di produzione.
+
+- **Convenzione:** un forward-link verso un nodo da creare si realizza come **stub** — file reale nell'area giusta, frontmatter completo + `status: stub` + corpo `> 🚧 STUB`. Così il link **risolve** (lint A verde) e il nodo è *voluto*; un `[[…]]` senza pagina né stub resta `broken` = **refuso**. È la separazione voluto↔rotto, ottenuta dall'esistenza-o-meno del file (nessuna euristica, nessun giudizio).
+- **Grounding:** verificato con uno stub usa-e-getta che `validate`/`lint` restano verdi (il campo extra `status` non disturba; lo stub non è orphan perché il forward-link che lo motiva è il suo arco entrante).
+- **Documentato:** regola in `page-craft.md` (disciplina dei link), nota in `wiki-playbook.md` §4 e in `ops/lint.md` (livello A); `status` aggiunto a `frontmatter_optional` in `wiki.config.toml`.
+- **Gravy deferito (richiede codice, → branch+PR):** estendere `wiki_tools` perché il `lint` riporti gli **stub** come categoria a sé (worklist "nodi da riempire"), invece di doverli cercare a mano. Non necessario alla separazione voluto↔rotto, che la convenzione già garantisce.
+
+## [2026-06-07] record | lint riporta gli stub come worklist (codice, FEAT-003-D)
+
+Implementato il "gravy" deferito della convenzione stub: il `lint` deterministico ora **espone gli stub come categoria a sé**, non più solo da cercare a mano. Prima vera task di **codice** della sessione → su **branch + PR** (non master), come da policy di produzione.
+
+- **Codice (`src/sertor_core/wiki_tools/`):** campo **additivo** `stubs: list[str]` in `LintResult` (contratto `wiki.lint/1` invariato — è dichiarato forward-compatible); `lint()` popola gli stub dalle pagine con frontmatter `status: stub`; l'output umano della CLI mostra `stubs=N`.
+- **Test:** nuovo `test_stub_is_wanted_not_broken_nor_orphan` — uno stub linkato da un forward-link **non** è broken né orfano e compare in `stubs`. Suite lint 6/6 verde (l'unico rosso della suite, `test_settings`, è ambientale: `RAG_BACKEND=azure` nel `.env`, pre-esistente).
+- **Doc allineati** (stesso branch): `ops/lint.md` e `page-craft.md` annotano il campo `stubs`.
+- **Constitution Check:** additivo, zero nuove dipendenze, deterministico/offline, test verdi, leggibile → PASS.

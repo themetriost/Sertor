@@ -3,11 +3,15 @@ title: Mission, Vision e Principio X — Host-agnosticità come vincolo
 type: concept
 tags: [missione, visione, host-agnostico, principio-x, disaccoppiamento, costituzione]
 created: 2026-06-05
-updated: 2026-06-05
+updated: 2026-06-07
 sources: ["README.md", ".specify/memory/constitution.md"]
 ---
 
 # Mission, Vision e Principio X — Host-agnosticità come vincolo
+
+La **missione** e la **visione** di Sertor — col **Principio X** (host-agnosticità) che ne discende come
+vincolo non negoziabile — definiscono *cosa* costruisce il progetto e *perché*: un framework di retrieval
++ wiki **installabile su qualsiasi progetto**, senza lock-in sull'ospite.
 
 ## Cosa
 

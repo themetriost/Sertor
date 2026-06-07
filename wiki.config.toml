@@ -17,7 +17,7 @@ exclude = [
     "node_modules", ".index*",
 ]
 frontmatter_required = ["title", "type", "tags", "created", "updated"]
-frontmatter_optional = ["sources"]
+frontmatter_optional = ["sources", "status"]
 
 [[taxonomy]]
 name = "concepts"

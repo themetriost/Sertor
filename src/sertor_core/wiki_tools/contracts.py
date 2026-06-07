@@ -50,12 +50,18 @@ class StructureResult:
 
 @dataclass(frozen=True)
 class LintResult:
-    """`wiki.lint/1` — difetti strutturali (FR-006); usato anche da `validate`."""
+    """`wiki.lint/1` — difetti strutturali (FR-006); usato anche da `validate`.
+
+    `stubs` elenca le pagine-segnaposto (frontmatter `status: stub`) da riempire: NON sono difetti
+    (un forward-link risolto a uno stub è intenzionale, non `broken`), ma una worklist di nodi voluti.
+    Campo additivo, forward-compatible (i consumatori più vecchi lo ignorano).
+    """
 
     broken_links: list[dict] = field(default_factory=list)
     orphans: list[str] = field(default_factory=list)
     missing_frontmatter: list[dict] = field(default_factory=list)
     naming_violations: list[dict] = field(default_factory=list)
+    stubs: list[str] = field(default_factory=list)
     schema: str = "wiki.lint/1"
 
     def to_dict(self) -> dict:

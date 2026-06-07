@@ -14,7 +14,7 @@ sources: [
 
 # Implementazione FEAT-001 — Nucleo di Retrieval Condiviso
 
-Completamento della libreria installabile **`sertor-core`** (fase di produzione) secondo il [[piano-nucleo-retrieval|piano SpecKit FEAT-001]]. Implementazione end-to-end di ingestione repo-agnostica, chunking sintattico multilingue, embeddings intercambiabili, retrieval facade.
+Completamento della libreria installabile **`sertor-core`** (il [[retrieval-core]], fase di produzione) secondo il [[piano-nucleo-retrieval|piano SpecKit FEAT-001]]. Implementazione end-to-end di ingestione repo-agnostica, chunking sintattico multilingue, embeddings intercambiabili, retrieval facade.
 
 ## Stato Generale
 

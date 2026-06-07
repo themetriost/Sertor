@@ -3,7 +3,7 @@ title: Lint Semantico Host-Agnostico — estensione a controllo globale
 type: synthesis
 tags: [lint, semantico, host-agnostico, anti-deriva, audit, requirements, spec, tracker, principio-x, n5]
 created: 2026-06-06
-updated: 2026-06-06
+updated: 2026-06-07
 sources: [
   "wiki.config.toml",
   ".claude/skills/wiki-author/wiki-playbook.md",
@@ -14,6 +14,11 @@ sources: [
 ---
 
 # Lint Semantico Host-Agnostico — Anti-deriva oltre il wiki
+
+Il **lint semantico** (livello B) è il controllo anti-deriva che verifica che i **claim** di un artefatto
+non siano contraddetti dalla **realtà del repo** (codice, test, stato git). Questa pagina ne descrive
+l'estensione da "solo wiki" a un **audit globale** su 4 `kind` di artefatti (`wiki`/`requirements`/`spec`/
+`tracker`), dichiarati nella sezione `audit` della config.
 
 ## Problema reale che risolve
 

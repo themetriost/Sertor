@@ -11,7 +11,7 @@ sources: ["requirements/sertor-core/mcp/requirements.md", "requirements/sertor-c
 
 ## Sommario
 
-**FEAT-MCP** (Server MCP di produzione, `sertor_mcp`) è **completata** (2026-06-06) seguendo il **flusso SpecKit completo** (requirements → specify → clarify → plan → analyze → implement): EARS in `requirements/sertor-core/mcp/requirements.md`, spec in `specs/007-mcp-sertor-core/`, codice in `src/sertor_mcp/`, **mergiata su master (PR #15)**. FEAT-MCP è l'**enabler critico** di tre capacità di produzione:
+**FEAT-MCP** (Server MCP di produzione, `sertor_mcp`, un [[thin-consumer|consumatore sottile]] del [[retrieval-core]]) è **completata** (2026-06-06) seguendo il **flusso SpecKit completo** (requirements → specify → clarify → plan → analyze → implement): EARS in `requirements/sertor-core/mcp/requirements.md`, spec in `specs/007-mcp-sertor-core/`, codice in `src/sertor_mcp/`, **mergiata su master (PR #15)**. FEAT-MCP è l'**enabler critico** di tre capacità di produzione:
 
 1. **Probe-RAG del lint semantico del wiki** (FEAT-003-N / N5), che oggi degrada a fallback `Read`/`Grep`;
 2. **Dogfood di produzione** (interrogare Sertor su se stesso: `src/`, `specs/`, `requirements/`, `wiki/`);

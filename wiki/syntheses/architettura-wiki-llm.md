@@ -3,7 +3,7 @@ title: Architettura del Wiki LLM — stato e roadmap
 type: synthesis
 tags: [architettura, wiki-llm, host-agnostico, principio-x, roadmap, feat-003, deterministico-vs-giudizio]
 created: 2026-06-05
-updated: 2026-06-06
+updated: 2026-06-07
 sources: [
   "src/sertor_core/wiki_tools/**",
   "wiki.config.toml",
@@ -47,7 +47,7 @@ in **una sola config** (`wiki.config.toml`) — host-agnosticità, **Principio X
                    │
 ┌──────────────────────────────────────────────────────────────────┐
 │  LAYER AGENTICO — 4 entità host-agnostiche (leggono la config)    │   GIUDIZIO (N)
-│   ▸ wiki-playbook.md   fonte unica: regole · tassonomia · 7 op.   │
+│   ▸ wiki-playbook.md   indice + moduli ops/ + page-craft          │
 │   ▸ wiki-author (skill)     autore: genera/aggiorna dal repo       │
 │   ▸ /wiki (comando)         dispatcher manuale, flusso principale  │
 │   ▸ wiki-curator (agente Haiku, +Bash)   bookkeeping in background │
@@ -62,8 +62,8 @@ in **una sola config** (`wiki.config.toml`) — host-agnosticità, **Principio X
 
 ## Il confine D↔N, per operazione
 
-Ogni operazione del playbook separa il meccanico (chiamata CLI) dal giudizio (LLM). Sintesi (tabella
-completa in [[ponte-d-n-host-agnostico]]):
+Ogni operazione del playbook applica il [[deterministic-vs-judgment|confine deterministico↔giudizio]]:
+separa il meccanico (chiamata CLI) dal giudizio (LLM). Sintesi (tabella completa in [[ponte-d-n-host-agnostico]]):
 
 ```
 operazione            D — meccanico (CLI)              N — giudizio (LLM)
@@ -107,10 +107,11 @@ del 2026-06-06 (`syntheses/` da 16/20 a una distribuzione 4/3/9/4). Dettagli:
 | Nucleo deterministico `wiki_tools` (FEAT-003-D) | ✅ mergiato (PR #13) |
 | Ponte D→N (layer agentico host-agnostico + rename author/curator) | ✅ mergiato (PR #14) |
 | Fix hook Stop (systemMessage schema-valido) | ✅ mergiato (PR #14) |
-| `sertor_mcp` (RAG dell'ospite, FEAT-MCP) | ✅ mergiato (PR #15); `.mcp.json` ri-puntato alla produzione (corpus `sertor`) |
+| [[server-mcp-produzione-feat-mcp|`sertor_mcp`]] (RAG dell'ospite, FEAT-MCP) | ✅ mergiato (PR #15); `.mcp.json` ri-puntato alla produzione (corpus `sertor`) |
 | N5 lint semantico — metodo + audit globale 4 `kind` (PR #16) | ◑ in corso (metodo sì, esercitato; probe deterministici no) |
 | N9 lint organizzativo + `reorg` — metodo + esercitato (reorg 2026-06-06) | ◑ in corso |
-| N1-N4, N6-N8 (operazioni di giudizio) | ☐ da fare |
+| N1 record-contenuto — metodo «livello di significato» (playbook §4) | ◑ in corso (metodo sì, da esercitare) |
+| N2-N4, N6-N8 (operazioni di giudizio) | ☐ da fare |
 
 ## Roadmap
 

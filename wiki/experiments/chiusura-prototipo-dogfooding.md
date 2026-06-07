@@ -12,7 +12,7 @@ sources: []
 ## Motivazione e contesto
 
 La fase di **prototipo** (4 motori RAG su FastAPI, test, corpus esterno FastAPI in `raw/`)
-è stata conclusa il 2026-05-30. Razionale:
+è stata conclusa il 2026-05-30, aprendo il [[dogfooding]] (interrogare il prototipo col proprio RAG). Razionale:
 
 1. **Confine netto prototipo ↔ produzione:** il prototipo era una fase **esplorativa**,
    con focus su validazione di tecnologie e approcci RAG diversi (baseline, hybrid+reranking,

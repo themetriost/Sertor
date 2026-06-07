@@ -13,7 +13,7 @@ Primo step della traccia collaborativa **FEAT-003-N** (la metà *di giudizio* de
 non ricrea — il layer agentico del wiki perché: (1) poggi sul **nucleo deterministico** `wiki_tools`
 (FEAT-003-D) per il meccanico, (2) sia **host-agnostico** (Principio X), (3) abbia **nomi coerenti**.
 Scope deciso con l'utente: **leggero** (solo prosa/config/glue, zero codice in `sertor_core`). Vedi
-[[nucleo-wiki-deterministico-feat003d]], [[sistema-wiki-fonte-unica]], [[costituzione-v1]].
+[[nucleo-wiki-deterministico-feat003d]], [[sistema-wiki-fonte-unica]], [[costituzione-v1]], [[deterministic-vs-judgment]].
 
 ## Il confine D ↔ N (la clarity, esito di questo step)
 

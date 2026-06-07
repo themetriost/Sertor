@@ -15,8 +15,9 @@ sources: [
 
 # Piano SpecKit FEAT-001 — Nucleo di Retrieval Condiviso
 
-Sintesi degli artefatti di design generati da SpecKit `/speckit-plan` per [[decomposizione-must-core|FEAT-001]]:
-la fondazione production-grade di retrieval, shared da tutti i motori RAG (FEAT-002/004/005/006) e dalle skill wiki (FEAT-003).
+Sintesi degli artefatti di design generati da SpecKit `/speckit-plan` per [[decomposizione-must-core|FEAT-001]] — il
+[[retrieval-core]]: la fondazione production-grade di retrieval, shared da tutti i motori RAG (FEAT-002/004/005/006) e dalle skill wiki (FEAT-003).
+*(NB: questo è il design al 2026-06-03; la struttura finale a codice differisce in alcuni nomi — vedi [[retrieval-core]] per l'architettura corrente.)*
 
 ## Visione
 

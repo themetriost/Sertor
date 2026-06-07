@@ -3,11 +3,15 @@ title: Naming Schema — Corpora e Indici RAG
 type: tech
 tags: [architettura, corpus, indice, naming, prodotto, prototipo]
 created: 2026-06-04
-updated: 2026-06-04
+updated: 2026-06-07
 sources: ["CLAUDE.md", "prototype/shared/config.py", ".mcp.json"]
 ---
 
 # Naming Schema — Corpora e Indici RAG
+
+Il **naming di corpora e indici** è la convenzione con cui Sertor tiene separati i dati RAG di prodotto e
+di prototipo: il **corpus** (cosa si indicizza) e l'**indice** (dove vivono i vettori) sono assi
+ortogonali, namespaced per `(corpus, provider)`, così demo e dogfood non si sovrascrivono.
 
 ## Contesto e motivazione
 

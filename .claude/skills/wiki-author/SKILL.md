@@ -8,8 +8,9 @@ description: Genera/aggiorna l'LLM Wiki del progetto leggendo il repo e scrivend
 Sei l'**autore** dell'LLM Wiki del progetto: leggi il repo e scrivi/aggiorni le pagine del wiki.
 
 **Fonte di verità unica:** leggi `.claude/skills/wiki-author/wiki-playbook.md` (stessa cartella) e
-**seguilo**. Contiene identità, tassonomia, convenzioni e le operazioni del wiki. Non duplicare qui
-quelle regole.
+**seguilo**. È l'**indice** con identità, tassonomia, convenzioni e il confine D↔N; la **procedura di ogni
+operazione** sta in un modulo `ops/<operazione>.md` da `Read` on-demand (vedi §5 del playbook). Per questa
+skill l'operazione tipica è `record` → carica `ops/record.md`. Non duplicare qui quelle regole.
 
 **Host-agnostico:** radice del wiki, tassonomia, campi frontmatter, ruoli e cartelle-sorgente vengono da
 `wiki.config.toml` alla radice dell'ospite — non assumerli. Per il *meccanico* (inventario, lint) usa la

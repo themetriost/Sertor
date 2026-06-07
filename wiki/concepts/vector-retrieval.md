@@ -1,0 +1,48 @@
+---
+title: Vector retrieval
+type: concept
+tags: [vector-retrieval, dense-retrieval, rag, baseline, embeddings, valutazione, sertor-core]
+created: 2026-06-07
+updated: 2026-06-07
+sources: ["src/sertor_core/engines/baseline.py", "src/sertor_core/engines/evaluation.py", "CLAUDE.md"]
+---
+
+# Vector retrieval
+
+Il **vector retrieval** (retrieval vettoriale, o *dense* retrieval) è la **prima modalità RAG** di Sertor:
+la query viene trasformata in **embedding** e confrontata per **similarità** coi vettori dei chunk nel vector
+store, restituendo i **top-k** più vicini. Nel [[retrieval-core]] è realizzato dal **motore baseline**
+(`engines/baseline.py`); è la modalità più semplice, su cui le altre (ibrida, reranking, grafo) si
+innesteranno.
+
+## Come funziona
+
+Il motore baseline (`BaselineEngine`) ha due operazioni:
+
+- `index(root)` — ingerisce e indicizza un repository (rebuild-from-scratch, idempotente): chunking →
+  embedding → upsert nel vector store.
+- `query(testo, k)` — calcola l'embedding della query e fa **similarity search** sui top-k, restituendo
+  `list[RetrievalResult]` (chunk + `score` di similarità).
+
+## Policy d'errore *strict* (non come il nucleo)
+
+A differenza del nucleo, che è **tollerante** (indice mancante → `[]` + warning, per composabilità), il
+motore baseline è **strict**: se l'indice non esiste solleva `IndexNotFoundError` invece di restituire una
+lista vuota — perché per il **consumatore finale** un indice assente è un errore d'uso, non un risultato
+valido. È la differenza voluta descritta in [[retrieval-core]].
+
+## Valutazione
+
+«Una feature senza misura non esiste»: il modulo `engines/evaluation.py` misura la qualità del retrieval su
+un **ground-truth esterno** (query → file attesi) e produce un `EvalReport` con **hit-rate@k** (per ogni k)
+e **MRR@10**. Serve a confrontare modalità/provider su numeri, non impressioni.
+
+## Cosa NON è
+
+Non è retrieval **ibrido** (BM25 + dense), né **reranking**, né **GraphRAG**, né **agentic**: quelle sono
+modalità RAG successive (post-MVP) che si appoggeranno allo stesso [[retrieval-core]]. Il vector retrieval è
+la baseline di riferimento.
+
+## Vedi anche
+- Realizzazione e record datato: [[motore-baseline-feat002]]. Fondazione: [[retrieval-core]]. Collezioni e
+  isolamento per corpus: [[naming-corpora-indici]].

@@ -3,7 +3,7 @@ title: Sistema Wiki — Fonte Unica + Tre Interfacce
 type: synthesis
 tags: [wiki, governance, tooling, fonte-unica, architecture]
 created: 2026-06-04
-updated: 2026-06-05
+updated: 2026-06-07
 sources: [".claude/skills/wiki-author/wiki-playbook.md", ".claude/skills/wiki-author/SKILL.md", ".claude/commands/wiki.md", ".claude/agents/wiki-curator.md", ".claude/hooks/wiki-pending-check.ps1", ".claude/settings.json", "CLAUDE.md"]
 ---
 
@@ -21,6 +21,25 @@ Il wiki di produzione (cartella `wiki/`) è un **LLM Wiki** in stile Karpathy co
 > **`wiki-author`**, playbook `playbook.md`→**`wiki-playbook.md`**, agente `wiki-keeper`→**`wiki-curator`**
 > (+ `Bash`), comando `/wiki` invariato. I nomi/percorsi *vecchi* citati più sotto sono il record datato
 > 2026-06-04; quelli correnti sono questi. Dettagli e confine D↔N: [[ponte-d-n-host-agnostico]].
+
+> **Evoluzione (2026-06-07) — modularizzazione del playbook (opzione C).** La "fonte unica" **non è più un
+> file monolitico**: `wiki-playbook.md` è diventato un **indice** col substrato condiviso (host-agnosticità,
+> identità, confine D↔N, tassonomia, convenzioni, voce di log, limiti) + una tabella di dispatch verso
+> **moduli `ops/<operazione>.md`** (stessa cartella), caricati **on-demand** dai wrapper (`Read` del solo
+> modulo dell'operazione invocata). Scopo: **progressive disclosure** (invocare `record` carica ~177 righe
+> invece di 331) **senza** duplicare il substrato (DRY) e **senza** trasformare le operazioni in skill (che
+> violerebbe il Principio X — le skill sono un costrutto dell'host). **NB:** le **8** operazioni correnti
+> sono `record · ingest · query · lint (A/B/C) · reorg · generate-from-diff · rag-sync · structure` — il
+> corpo più sotto, datato 2026-06-04, ne cita ancora 6 (prima di `reorg`/`structure`). Razionale e
+> alternative scartate (A monolite, B skill): `requirements/sertor-core/wiki-llm/playbook-flussi-e-modularizzazione.md`.
+>
+> **Completamento (2026-06-07) — page-craft in una pagina-foglia.** Il "come si scrive una pagina"
+> (atomicità, auto-contenimento, link, **livello di significato**) è stato estratto dal playbook §4 in un
+> documento dedicato `.claude/skills/wiki-author/page-craft.md`, **linkato da** `record`/`ingest`/
+> `query`/lint C/`reorg`. Motivo: i moduli `ops/` rimandavano *su* al playbook §4 mentre il playbook §5
+> rimandava *giù* ai moduli → **dipendenza circolare**. La conoscenza riusabile diventa una **foglia** (non
+> dipende da nessuno) che indice e moduli linkano *verso il basso*; il grafo torna un DAG. Disambiguato anche
+> «indice» negli `ops/` (= `wiki-playbook.md`) da «indice del wiki» (= `index.md`).
 
 ## Architettura
 
