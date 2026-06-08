@@ -183,7 +183,7 @@ I marker pytest sono definiti in `pyproject.toml`: `cloud` (richiede credenziali
 Uno **step** è un'unità di lavoro significativa (una feature, un fix, una decisione, una ricerca,
 un'analisi). **Alla fine di ogni step**, il flusso principale (Claude) esegue — **di propria
 iniziativa, senza che l'utente debba chiederlo** — questa checklist. Sono **azioni da LLM nel loop**:
-le eseguo io, qui, esattamente come già scrivo `wiki/log.md`. **Non** dipendono da hook né da
+le eseguo io, qui, esattamente come già scrivo le voci di log. **Non** dipendono da hook né da
 automazione *unattended*: la distinzione è netta —
 
 - *automatico unattended* = far scattare qualcosa **quando non c'è nessuno** (timer/evento → script o
@@ -191,7 +191,8 @@ automazione *unattended*: la distinzione è netta —
 - *comportamento standing* = ciò che faccio **sistematicamente mentre lavoriamo**, perché è il mio modo
   di operare. Il rituale qui sotto è di questo secondo tipo: per esso **non esiste alcun limite tecnico**.
 
-1. **Registra** — aggiorna `wiki/log.md` (+ pagine impattate e `index.md`): operazione `record` del
+1. **Registra** — appende la voce nel log (con la rotazione attiva, il **file del giorno**
+   `wiki/log/<data>.md` via `append-log`) + pagine impattate e `index.md`: operazione `record` del
    playbook. *(già attivo)*
 2. **Distilla le entità** — non lasciare la conoscenza durevole **sepolta nel record datato**: identifica le
    **entità/concetti** che lo step ha toccato o fatto emergere (entità di dominio, porte, adapter, servizi,
@@ -217,7 +218,7 @@ automazione *unattended*: la distinzione è netta —
 **Responsabilità & delega.** Che queste azioni **avvengano** a ogni step è responsabilità del flusso
 principale. Eseguirle direttamente oppure **delegarle** è solo una scelta per non bloccare il flusso —
 la delega **non è un modo per saltarle**. **Confine di delega netto:** il `record` (trascrizione
-strutturata: pagine, backlink, `index.md`, voce di `log.md`) si delega al `wiki-curator` (Haiku),
+strutturata: pagine, backlink, `index.md`, voce di log) si delega al `wiki-curator` (Haiku),
 perché è lavoro di forma rette dal brief; la **distillazione** (punto 2) e il **lint semantico** (punto 3),
 essendo **giudizio**, **restano nel flusso principale**, non a Haiku. Git si delega al `configuration-manager`. Gli hook `SessionStart`/`Stop`
 restano **promemoria vincolanti**, non opzionali.
@@ -266,7 +267,7 @@ cresce a ogni sessione, invece di ricostruire la conoscenza ogni volta.
 ### Struttura
 - `prototype/raw/` — corpus **immutabile** del prototipo (FastAPI). Nuove fonti di produzione andranno in un `raw/` a root quando servirà.
 - `wiki/index.md` — catalogo globale (link + summary). **Leggilo per primo**; aggiornalo a ogni modifica.
-- `wiki/log.md` — registro **append-only** di tutto ciò che facciamo.
+- `wiki/log/` — registro **append-only**, un file per giorno (`YYYY-MM-DD.md`, rotazione FEAT-008); scritto via `append-log`.
 - `wiki/concepts/` — concetti RAG. `wiki/tech/` — tecnologie. `wiki/experiments/` — un file per esperimento.
 - `wiki/sources/` — riassunti di fonti esterne. `wiki/syntheses/` — confronti/sintesi trasversali (creati su richiesta).
 
@@ -276,7 +277,7 @@ cresce a ogni sessione, invece di ricostruire la conoscenza ogni volta.
 > e agente `wiki-curator` lo leggono e lo seguono. Qui sotto solo la sintesi. Il **meccanico** (scan,
 > lint, collect, index, structure) è la CLI `sertor-wiki-tools` (host-agnostica, da `wiki.config.toml`).
 
-- **record** — registra lavoro/decisioni svolti: crea/aggiorna le pagine, backlink e `index.md`, voce di `log.md`.
+- **record** — registra lavoro/decisioni svolti: crea/aggiorna le pagine, backlink e `index.md`, voce di log (file del giorno via `append-log`).
 - **distill** — estrae le **entità/concetti durevoli** che un lavoro fa emergere in pagine proprie (`concepts/`/`tech/`), assottigliando i record datati che le contenevano. Giudizio → flusso principale; parte del rituale di step (punto 2).
 - **ingest** — acquisisci una fonte esterna (file/PDF/URL) → riassunto in `sources/`, integra nelle pagine collegate, segnala contraddizioni.
 - **query** — rispondi citando le pagine; se l'esplorazione è preziosa, archiviala come nuova pagina.
@@ -301,7 +302,7 @@ principale) oppure delega all'agente `wiki-curator` (in background).
 **Hook (trigger automatici, vedi `.claude/hooks/wiki-pending-check.ps1`):**
 - `SessionStart` — carica indice + coda log a inizio sessione (contesto iniettato).
 - `Stop` — a fine turno, se rileva lavoro non ancora registrato (file di `src/specs/requirements/.claude`
-  più recenti dell'ultima voce di `log.md`), inietta un **promemoria non bloccante** a delegare al
+  più recenti dell'ultima voce di log), inietta un **promemoria non bloccante** a delegare al
   `wiki-curator`. Non intrappola il turno; si auto-silenzia appena il wiki è aggiornato.
 - `SessionEnd` — riepilogo finale del lavoro non registrato, come rete di sicurezza tra sessioni.
 

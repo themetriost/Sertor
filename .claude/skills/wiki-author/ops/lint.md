@@ -59,7 +59,7 @@ Procedura ripetibile:
 5. **Report con severità** (Alto/Medio/Basso/Info) + proposta di correzione per ciascun finding. **Scarta i falsi
    positivi** (es. un reader che segnala link "inesistenti" già smentiti dalla CLI).
 6. **Correggi su conferma.** Aggiorna **solo le pagine attive** (stato corrente); **non riscrivere** il registro
-   storico (`log.md`) né gli artefatti datati. Appendi una voce di log `lint`.
+   storico del log né gli artefatti datati. Appendi una voce di log `lint`.
 
 **Host-agnostico (degradazione per profilo).** I probe disponibili dipendono dall'ospite: su un host **solo-doc**
 non ci sono test/simboli di codice → salta i probe di codice e tieni i controlli su date/contraddizioni/coverage;

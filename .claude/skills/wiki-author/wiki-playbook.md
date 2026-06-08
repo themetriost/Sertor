@@ -19,7 +19,7 @@ varia tra progetti vive in **`wiki.config.toml`** alla radice dell'ospite — **
 
 | Chiave config | Cosa definisce |
 |---|---|
-| `root`, `index_file`, `log_file` | dove vive il wiki e i suoi due file speciali |
+| `root`, `index_file`, `log_file`, `log_dir` | dove vive il wiki e i suoi file speciali (`log_dir` ⇒ rotazione del log a un file per giorno, FEAT-008) |
 | `[[taxonomy]]` | le aree logiche (cartella → tipo frontmatter) |
 | `frontmatter_required` / `_optional` | i campi di frontmatter attesi |
 | `source_dirs`, `exclude` | da dove leggere il lavoro dell'ospite e cosa ignorare |
@@ -77,7 +77,7 @@ Le aree sono quelle in `[[taxonomy]]`. Nel profilo Sertor:
 ```
 <root>/             (es. wiki/)
 ├─ <index_file>     catalogo globale (link + summary di una riga). LEGGILO PER PRIMO.
-├─ <log_file>       registro append-only di tutto ciò che facciamo
+├─ <log_dir>/       registro append-only, un file per giorno (rotazione; o <log_file> unico se off)
 ├─ concepts/        concetti (RAG, chunking, embeddings, ...)
 ├─ tech/            tecnologie e strumenti
 ├─ experiments/     una pagina per attività/esperimento
@@ -188,14 +188,17 @@ eseguibili anche dal `curator` in background; il lint **B/C**, `distill`, `reorg
 | `rag-sync` | [`ops/rag-sync.md`](ops/rag-sync.md) | re-indicizza il wiki nel RAG (ruolo "corpus" di DA-W1) | solo Opus |
 | `structure` | [`ops/structure.md`](ops/structure.md) | bootstrap idempotente della struttura | curator/CLI |
 
-> **Write-back log/indice:** oggi le scritture su indice e log sono **a cura dell'LLM** (formato curato:
-> sezioni raggruppate, riga `- **[[slug]]** — summary`, voci di log multi-bullet). Il deterministico
-> espone già `append_log`/`upsert_index` come funzioni, ma con identità/formato diversi (path POSIX, riga
-> piatta) → non ancora cablati nella CLI. Per ora scrivi log/indice **a mano**, seguendo §6.
+> **Write-back log/indice.** Il **log** è **cablato in CLI** (FEAT-008): l'LLM compone il **corpo curato**
+> della voce (§6) e `append-log` la **piazza** nel file del giorno (rotazione) — confine D↔N netto, niente
+> scrittura a mano del log. L'**indice** globale resta invece **LLM-authored** (riga `- **[[slug]]** —
+> summary`, sezioni raggruppate): `upsert_index` esiste ma con formato piatto, non cablato → l'indice si
+> scrive **a mano**.
 
 ## 6. Voce di log
 
-Append al log (nome-file da config), una voce per operazione, con la **data odierna**:
+Append al log, una voce per operazione, con la **data odierna**. Con la **rotazione** (`log_dir`) la voce va
+nel **file del giorno** (`<log_dir>/YYYY-MM-DD.md`) e il **piazzamento** lo fa `append-log` (CLI, FEAT-008) a
+cui passi il **corpo curato**; senza `log_dir`, un unico file di log (back-compat). Formato:
 ```
 ## [YYYY-MM-DD] <operazione> | <titolo>
 <lead: 1–2 frasi col perché/trigger dello step>

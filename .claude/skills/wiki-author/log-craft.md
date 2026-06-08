@@ -12,7 +12,9 @@
 > delle operazioni, la sintassi dei link, il formato dell'heading — viene dal profilo (`wiki.config.toml`) e
 > dal playbook §6. Gli esempi concreti (`[[wikilink]]`, `record`, `lint A`) sono il **profilo Sertor**.
 
-Il log è l'**unico artefatto append-only** del wiki: cresce a ogni step e non si riscrive. È un *diario
+Il log è l'artefatto **append-only** del wiki: non si riscrive. Con la rotazione è **un file per giorno**
+(`log/YYYY-MM-DD.md`); la voce la scrive `append-log` — tu componi il **corpo curato**, il deterministico la
+**piazza** nel file del giorno (FEAT-008). È un *diario
 datato*, non una pagina. Una voce ben fatta ha tre qualità: sta dalla **parte giusta del confine
 log↔pagina**, ha un'**anatomia** prevedibile, ed è **densa** (niente deriva verso il dump).
 

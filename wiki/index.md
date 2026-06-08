@@ -32,7 +32,7 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 | `experiments/` | Record datati di un'attività/step/feature svolta |
 | `sources/` | Riassunti di fonti esterne ingerite |
 | `syntheses/` | Viste d'insieme e confronti trasversali (la categoria più rara) |
-| [`log.md`](log.md) | Registro append-only di tutto ciò che facciamo |
+| [`log/`](log/index.md) | Registro append-only, **un file per giorno** (rotazione, FEAT-008) |
 
 ## Pagine
 
