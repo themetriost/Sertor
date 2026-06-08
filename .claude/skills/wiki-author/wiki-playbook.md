@@ -168,12 +168,13 @@ chi crea o riscrive pagine segue inoltre il page-craft in [`page-craft.md`](page
 La **procedura specifica** di ciascuna operazione vive in un **modulo `ops/<operazione>.md`** (stessa
 cartella di questo file): **`Read` solo il modulo dell'operazione che ti serve** — non caricarli tutti
 (progressive disclosure). Le operazioni documentali (`record`, `ingest`, `query`, lint **A**) sono
-eseguibili anche dal `curator` in background; il lint **B/C**, `reorg`, `generate-from-diff` e `rag-sync`
-richiedono il **flusso principale** (Opus).
+eseguibili anche dal `curator` in background; il lint **B/C**, `distill`, `reorg`, `generate-from-diff` e
+`rag-sync` richiedono il **flusso principale** (Opus).
 
 | Operazione | Modulo (`Read` on-demand) | Cosa fa | Esecutore |
 |---|---|---|---|
 | `record` | [`ops/record.md`](ops/record.md) | registra lavoro/decisione svolti | curator OK |
+| `distill` | [`ops/distill.md`](ops/distill.md) | estrae le entità/concetti durevoli in pagine proprie; assottiglia i record datati | solo Opus |
 | `ingest` | [`ops/ingest.md`](ops/ingest.md) | acquisisci una fonte esterna → `sources/` | curator OK |
 | `query` | [`ops/query.md`](ops/query.md) | rispondi a una domanda sul wiki (archivia se prezioso) | curator OK |
 | `lint` | [`ops/lint.md`](ops/lint.md) | coerenza a 3 livelli: A strutturale · B semantico · C organizzativo | A: curator · B/C: solo Opus |
@@ -195,7 +196,7 @@ Append al log (nome-file da config), una voce per operazione, con la **data odie
 <lead: 1–2 frasi col perché/trigger dello step>
 - **<etichetta>:** <fatto saliente o puntatore [[pagina]], una riga>
 ```
-`<operazione>` ∈ `setup` · `structure` · `record` · `ingest` · `query` · `lint` · `reorg` ·
+`<operazione>` ∈ `setup` · `structure` · `record` · `distill` · `ingest` · `query` · `lint` · `reorg` ·
 `generate-from-diff` · `rag-sync` — l'insieme delle operazioni di §5 più `setup` (bootstrap generico di
 sessione/governance, distinto da `structure` che è il bootstrap della *struttura* del wiki). `structure`
 lascia una voce **solo se ha creato qualcosa** (`created` non vuoto); se è tutto `skipped_existing`,

@@ -47,6 +47,31 @@ nei record `experiments`); Riferimento → di solito `tech` o una sezione, non u
 procedure-strumento vivono in `.claude/`, sono *tooling*) né hub per-area. Va bene: usa solo gli archetipi
 che servono, non forzarli.
 
+### La lente di prodotto — quali entità di una **codebase** meritano una pagina
+
+Gli archetipi sopra sono generali; quando l'ospite è **codice** (il caso di Sertor) la domanda «cosa merita
+una pagina?» (§1) si specializza. I costrutti del codice che hanno **identità propria** e sono **referenziati
+da più punti** diventano pagine-entità; gli altri restano paragrafi dentro la pagina del loro contenitore.
+
+| Costrutto del codice | Archetipo | Area (profilo Sertor) | Esempio |
+|---|---|---|---|
+| **Entità di dominio** (un tipo del modello) | Entità/Concetto | `concepts` | `Document`, `Chunk`, `RetrievalResult` |
+| **Porta / contratto** (Protocol, interfaccia) | Entità/Concetto | `concepts` | `EmbeddingProvider`, `VectorStore` |
+| **Adapter / implementazione concreta** | Entità/Concetto | `tech` | adapter Chroma, provider Ollama |
+| **Servizio / orchestratore** | Entità/Concetto | `concepts` | dispatcher di chunking, facade di retrieval |
+| **Decisione architetturale** (il *perché* di una scelta) | Spiegazione/ADR | `syntheses` (+ datato in `experiments`) | wrapper `_Node`, policy errori non-uniforme |
+| **Tecnologia / libreria esterna** | Entità/Concetto | `tech` | `tree-sitter-language-pack` |
+
+**Anti-frammentazione (vale doppio sul codice).** *Non* una pagina per ogni classe o funzione: la gran parte
+del codice è dettaglio implementativo, non entità. Il filtro resta §1 — un costrutto diventa pagina solo se
+ha un **nome stabile** con cui ci si riferisce ad esso e se **più pagine** avrebbero bisogno di linkarlo. Una
+porta sì (la citano l'entità, l'adapter, la composition); un metodo privato no.
+
+**Distillazione (operazione `distill`).** Estrarre queste entità dal record datato di un lavoro — invece di
+lasciarle sepolte nel diario di sessione — è il compito dell'operazione `distill` (`ops/distill.md`, parte del
+rituale di step): il record `experiment` resta l'**evento** (cosa, quando, esito, puntatori), le entità vivono
+in pagine proprie.
+
 ## 3. Le pagine di struttura (l'impalcatura)
 
 Non descrivono contenuto: **tengono insieme la rete**.

@@ -43,7 +43,8 @@ sono ciò che trasforma un insieme di pagine in una *wiki*.
   collegate, non una. Le pagine atomiche si linkano meglio, si riusano in più contesti e si **chunkano
   puliti** per il RAG. Sotto la pressione dell'append è qui che si cede (sezioni duplicate, due blocchi di
   stato): *ricuci o splitta*, non appendere. (*Se* una cosa meriti una pagina a sé — il criterio di split vs.
-  anti-frammentazione — sta in [`wiki-craft.md`](wiki-craft.md) §1.)
+  anti-frammentazione, e la *lente di prodotto* su quali entità di codice estrarre — sta in
+  [`wiki-craft.md`](wiki-craft.md) §1–§2.)
 - **Piramide rovesciata** — prima l'informazione più importante, poi i dettagli, poi i casi limite. Il
   lettore deve poter fermarsi a metà e aver già capito l'essenziale.
 - **Concreto e azionabile** — esempi, snippet, comandi, tabelle. Una procedura va scritta come **lista

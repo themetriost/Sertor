@@ -193,7 +193,14 @@ automazione *unattended*: la distinzione è netta —
 
 1. **Registra** — aggiorna `wiki/log.md` (+ pagine impattate e `index.md`): operazione `record` del
    playbook. *(già attivo)*
-2. **Lint semantico di allineamento** — verifica che il wiki **non sia andato alla deriva** rispetto
+2. **Distilla le entità** — non lasciare la conoscenza durevole **sepolta nel record datato**: identifica le
+   **entità/concetti** che lo step ha toccato o fatto emergere (entità di dominio, porte, adapter, servizi,
+   decisioni, tecnologie) e dà a ciascuna — se ha **identità propria** ed è **referenziata da più punti** —
+   una **pagina propria** ricca e ben fatta in `concepts/`/`tech/` (page-craft + lente di prodotto di
+   wiki-craft); il record `experiment` resta **magro** e vi *punta*. È l'operazione `distill` del playbook
+   (N2). **È giudizio → resta nel flusso principale (Opus), non a Haiku**, come il lint semantico. Calibra al
+   valore: uno step che non tocca entità durevoli non la innesca.
+3. **Lint semantico di allineamento** — verifica che il wiki **non sia andato alla deriva** rispetto
    alla realtà del progetto (codice in `src/`, `specs/`, `requirements/`, stato git): **segnala
    esplicitamente ogni claim che il repo contraddice**; correggi su conferma. Va **oltre** il `lint`
    meccanico (link rotti/orfani/frontmatter): è il confronto *contenuto del wiki ↔ realtà del progetto*.
@@ -203,15 +210,15 @@ automazione *unattended*: la distinzione è netta —
    flusso principale ha già il contesto dello step, mentre un agente lo rileggerebbe a freddo (più
    costoso e più lossy). Se in casi pesanti va proprio delegato, usa un override `sonnet`
    per-invocazione, **mai** il default Haiku del `wiki-curator`.
-3. **\<altre azioni\>** — questa lista è **estendibile**: ogni azione che l'utente chiede di rendere
+4. **\<altre azioni\>** — questa lista è **estendibile**: ogni azione che l'utente chiede di rendere
    *standing* va aggiunta qui, e da quel momento fa parte del rituale a ogni step.
 
 **Responsabilità & delega.** Che queste azioni **avvengano** a ogni step è responsabilità del flusso
 principale. Eseguirle direttamente oppure **delegarle** è solo una scelta per non bloccare il flusso —
 la delega **non è un modo per saltarle**. **Confine di delega netto:** il `record` (trascrizione
 strutturata: pagine, backlink, `index.md`, voce di `log.md`) si delega al `wiki-curator` (Haiku),
-perché è lavoro di forma rette dal brief; il **lint semantico** (punto 2, giudizio) **resta nel flusso
-principale**, non a Haiku. Git si delega al `configuration-manager`. Gli hook `SessionStart`/`Stop`
+perché è lavoro di forma rette dal brief; la **distillazione** (punto 2) e il **lint semantico** (punto 3),
+essendo **giudizio**, **restano nel flusso principale**, non a Haiku. Git si delega al `configuration-manager`. Gli hook `SessionStart`/`Stop`
 restano **promemoria vincolanti**, non opzionali.
 
 **Calibra al valore:** modifiche puramente meccaniche o di poco conto non innescano il rituale (vedi
@@ -269,6 +276,7 @@ cresce a ogni sessione, invece di ricostruire la conoscenza ogni volta.
 > lint, collect, index, structure) è la CLI `sertor-wiki-tools` (host-agnostica, da `wiki.config.toml`).
 
 - **record** — registra lavoro/decisioni svolti: crea/aggiorna le pagine, backlink e `index.md`, voce di `log.md`.
+- **distill** — estrae le **entità/concetti durevoli** che un lavoro fa emergere in pagine proprie (`concepts/`/`tech/`), assottigliando i record datati che le contenevano. Giudizio → flusso principale; parte del rituale di step (punto 2).
 - **ingest** — acquisisci una fonte esterna (file/PDF/URL) → riassunto in `sources/`, integra nelle pagine collegate, segnala contraddizioni.
 - **query** — rispondi citando le pagine; se l'esplorazione è preziosa, archiviala come nuova pagina.
 - **lint** — verifica di coerenza a tre livelli: A strutturale (CLI: frontmatter/wikilink rotti/orfani/naming), B semantico (claim ↔ realtà del repo), C organizzativo (collocazione/atomicità/link). Report con severità; non auto-corregge.
@@ -282,7 +290,7 @@ cresce a ogni sessione, invece di ricostruire la conoscenza ogni volta.
 - **Backlink** in stile wikilink `[[nome-pagina]]` (compatibile Obsidian); i link relativi
   Markdown vanno bene per la navigazione da editor/GitHub. Mantieni i cross-reference aggiornati.
 - **Naming** file: kebab-case descrittivo (es. `azure-ai-search.md`, `hybrid-search.md`).
-- **Voce di log**: `## [YYYY-MM-DD] <operazione> | <titolo>` (operazione ∈ setup/structure/record/ingest/query/lint/reorg/generate-from-diff/rag-sync; elenco autorevole nel playbook §6).
+- **Voce di log**: `## [YYYY-MM-DD] <operazione> | <titolo>` (operazione ∈ setup/structure/record/distill/ingest/query/lint/reorg/generate-from-diff/rag-sync; elenco autorevole nel playbook §6).
 - Crea una **nuova** pagina per un concetto/entità nuovo; **aggiorna** quella esistente altrimenti.
 - Quando una fonte nuova contraddice una pagina, **segnala esplicitamente** la contraddizione.
 
