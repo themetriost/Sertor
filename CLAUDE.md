@@ -198,7 +198,8 @@ automazione *unattended*: la distinzione è netta —
    decisioni, tecnologie) e dà a ciascuna — se ha **identità propria** ed è **referenziata da più punti** —
    una **pagina propria** ricca e ben fatta in `concepts/`/`tech/` (page-craft + lente di prodotto di
    wiki-craft); il record `experiment` resta **magro** e vi *punta*. È l'operazione `distill` del playbook
-   (N2). **È giudizio → resta nel flusso principale (Opus), non a Haiku**, come il lint semantico. Calibra al
+   (N2). **È giudizio → resta nel flusso principale (Opus), non a Haiku**, come il lint semantico. Il **caso
+   tipico** è una **feature appena implementata** (il record nasce magro, le entità in pagine). Calibra al
    valore: uno step che non tocca entità durevoli non la innesca.
 3. **Lint semantico di allineamento** — verifica che il wiki **non sia andato alla deriva** rispetto
    alla realtà del progetto (codice in `src/`, `specs/`, `requirements/`, stato git): **segnala

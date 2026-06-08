@@ -9,7 +9,8 @@
 La distillazione è il **duale** di `record`: se `record` cattura l'**evento datato**, `distill` ne estrae la
 **conoscenza durevole** in pagine-entità proprie, così non resta sepolta nel diario di sessione. Si esegue
 come **secondo tempo del rituale di step** (subito dopo `record`, vedi `CLAUDE.md`) e, su richiesta, **sul
-backlog** — per distillare un vecchio record già grasso.
+backlog** — per distillare un vecchio record già grasso. Il **caso tipico** è una **feature appena
+implementata**: il suo record nasce *magro per costruzione* (evento + esito + puntatori), le entità in pagine.
 
 1. **Materiale di partenza.** Il lavoro appena svolto (codice toccato + il record `experiment` appena
    scritto) oppure — in modalità backlog — una pagina grassa esistente da distillare. `collect --json` per
@@ -26,6 +27,9 @@ backlog** — per distillare un vecchio record già grasso.
    ricca, **non duplicare** (idempotenza).
 5. **Assottiglia la sorgente.** Rimuovi dal record/pagina-grassa la conoscenza-entità migrata e sostituiscila
    con **puntatori** `[[entità]]`. Il record `experiment` resta **evento + esito + link**, non un trattato —
-   è lo stesso confine di [`../log-craft.md`](../log-craft.md) §1 (log↔pagina), applicato a record↔entità.
+   è lo stesso confine di [`../log-craft.md`](../log-craft.md) §1 (log↔pagina), applicato a record↔entità. Non
+   duplicare gli **artefatti di processo** che vivono altrove (spec/plan/tasks/Constitution Check, tabelle di
+   rischi/decisioni, hash git): **citali**, non ricopiarli — l'esito sta in una riga. E non trascrivere il
+   **codice** in snippet (è la prima fonte di deriva): descrivi e cita il file (vedi [`../page-craft.md`](../page-craft.md)).
 6. **Backlink + indice + voce di log.** Linka le nuove pagine dall'indice e dalle correlate; appendi UNA voce
    di log `distill` (formato: playbook §6; come si scrive: [`../log-craft.md`](../log-craft.md)).

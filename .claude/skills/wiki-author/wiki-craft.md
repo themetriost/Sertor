@@ -72,6 +72,16 @@ lasciarle sepolte nel diario di sessione — è il compito dell'operazione `dist
 rituale di step): il record `experiment` resta l'**evento** (cosa, quando, esito, puntatori), le entità vivono
 in pagine proprie.
 
+**Cosa mettere — e cosa no — per archetipo (due tagli ricorrenti su una codebase):**
+- **Pagina `tech` (tecnologia esterna):** cattura *come l'ospite la usa* — il binding, il wrapper, le scelte
+  di versione/config — **non** il tutorial generico della tecnologia (quello sta nella sua doc ufficiale:
+  **linkala**, non ricopiarla). Il tutorial copiato è filler che gonfia e invecchia, e non è ciò che serve a
+  chi riprende il *tuo* progetto.
+- **Record `experiment` (feature/attività):** è **evento + esito + puntatori**, non un trattato. Non duplica
+  gli **artefatti di processo** che vivono altrove (profilo Sertor: `specs/`/`requirements/` — Constitution
+  Check, tabelle di task/rischi/decisioni, hash git): li **cita**. L'esito sta in una riga (test · check ·
+  merge); il *cosa è* va nelle pagine-entità, non nel diario.
+
 ## 3. Le pagine di struttura (l'impalcatura)
 
 Non descrivono contenuto: **tengono insieme la rete**.

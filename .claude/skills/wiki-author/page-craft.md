@@ -52,6 +52,11 @@ sono ciò che trasforma un insieme di pagine in una *wiki*.
 - **Auto-contenuta ma non ridondante** — spiega il necessario, ma per i concetti che hanno già una loro
   pagina **linka, non ricopiare**: l'informazione duplicata invecchia in due posti diversi (è la *Single
   Source of Truth* a livello di grafo → [`wiki-craft.md`](wiki-craft.md) §5).
+- **Il codice non si ricopia: si descrive e si cita.** Uno **snippet** è una *copia* del codice che diverge
+  appena il codice cambia → è la **prima fonte di deriva** (la trova il lint B; nei dump grassi è quasi sempre
+  lo snippet a essere stantio o fabbricato). Descrivi l'**interfaccia** e il **comportamento** e **cita il
+  file** (`path`); usa uno snippet **solo** per illustrare un *concetto stabile*, mai l'implementazione
+  corrente. Vale anche per nomi di file, simboli e firme: **citali, non trascriverli a mano**.
 - **Stile neutro e diretto** — frasi brevi, voce attiva, niente muri di testo; elenchi e tabelle quando i
   dati sono strutturati.
 - **Aggiornabilità** — le informazioni che cambiano (versioni, owner, URL) vanno in **un punto solo e ben
