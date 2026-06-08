@@ -37,7 +37,7 @@ def _profile(tmp_path: Path):
 def test_append_log_writes_formatted_entry(tmp_path):
     p = _profile(tmp_path)
     wrote = append_log(p, "record", "Prima voce", on_date=date(2026, 6, 5))
-    assert wrote is True
+    assert wrote.written is True
     content = p.log_path.read_text("utf-8")
     assert "## [2026-06-05] record | Prima voce" in content
 
@@ -50,7 +50,7 @@ def test_append_log_is_idempotent(tmp_path):
     mtime_first = p.log_path.stat().st_mtime_ns
 
     wrote2 = append_log(p, "record", "X", on_date=date(2026, 6, 5))
-    assert wrote2 is False
+    assert wrote2.written is False
     assert p.log_path.read_text("utf-8") == first  # contenuto identico
     assert p.log_path.stat().st_mtime_ns == mtime_first  # nessun timestamp modificato
 

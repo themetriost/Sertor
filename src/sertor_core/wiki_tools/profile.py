@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 import tomllib
 from dataclasses import dataclass, field
+from datetime import date
 from pathlib import Path
 
 from sertor_core.domain.errors import ConfigError
@@ -24,6 +25,7 @@ _DEFAULT_FRONTMATTER_REQUIRED = ("title", "type", "tags", "created", "updated")
 _DEFAULT_FRONTMATTER_OPTIONAL = ("sources",)
 _DEFAULT_WIKILINK_STYLE = "[[name]]"
 _DEFAULT_LOG_FORMAT = "## [{date}] {op} | {title}"
+_DEFAULT_LOG_INDEX_FILE = "index.md"
 
 
 @dataclass(frozen=True)
@@ -46,6 +48,8 @@ class WikiProfile:
     taxonomy: list[TaxonomyEntry]
     index_file: str = _DEFAULT_INDEX_FILE
     log_file: str = _DEFAULT_LOG_FILE
+    log_dir: str = ""  # vuoto = file-unico (back-compat); valorizzato = rotazione giornaliera
+    log_index_file: str = _DEFAULT_LOG_INDEX_FILE
     source_dirs: list[str] = field(default_factory=list)
     exclude: list[str] = field(default_factory=list)
     frontmatter_required: list[str] = field(
@@ -72,6 +76,25 @@ class WikiProfile:
     @property
     def log_path(self) -> Path:
         return self.root_path / self.log_file
+
+    @property
+    def rotation_enabled(self) -> bool:
+        """True se la rotazione del log è attiva (`log_dir` configurato)."""
+        return bool(self.log_dir)
+
+    @property
+    def log_dir_path(self) -> Path:
+        """Directory delle partizioni giornaliere (relativa alla radice del wiki)."""
+        return self.root_path / self.log_dir
+
+    def partition_path(self, day: date) -> Path:
+        """File di partizione del giorno `day` (`<log_dir>/YYYY-MM-DD.md`)."""
+        return self.log_dir_path / f"{day.isoformat()}.md"
+
+    @property
+    def log_index_path(self) -> Path:
+        """Indice delle partizioni, dentro la directory di log."""
+        return self.log_dir_path / self.log_index_file
 
     def existing_taxonomy(self) -> list[TaxonomyEntry]:
         """Voci di tassonomia la cui cartella esiste sul disco (dir assente → warning+skip)."""
@@ -163,6 +186,8 @@ def load_profile(config_path: str | Path, root_override: str | Path | None = Non
         taxonomy=taxonomy,
         index_file=str(data.get("index_file") or _DEFAULT_INDEX_FILE),
         log_file=str(data.get("log_file") or _DEFAULT_LOG_FILE),
+        log_dir=str(data.get("log_dir") or ""),
+        log_index_file=str(data.get("log_index_file") or _DEFAULT_LOG_INDEX_FILE),
         source_dirs=_coerce_str_list(data.get("source_dirs"), "source_dirs"),
         exclude=_coerce_str_list(data.get("exclude"), "exclude"),
         frontmatter_required=(
