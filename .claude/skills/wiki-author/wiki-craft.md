@@ -79,16 +79,17 @@ L'errore classico è averne **uno solo**: solo albero (rigido, devi già sapere 
 (ti perdi, nessun punto fermo).
 
 **Profilo Sertor.** L'albero è **volutamente piatto** — un livello di aree + `index.md` come home/hub — e il
-grosso del valore sta nella **rete** dei `[[wikilink]]`. È coerente col «un wiki è un grafo, non un albero»
-del playbook §3: la cartella dà solo *una casa*, i link danno il *significato*. Qui la sfumatura: anche un
-albero piatto è un asse — serve come punto fermo, non va abolito, solo tenuto basso.
+grosso del valore sta nella **rete** dei `[[wikilink]]`. È il senso di «un wiki è un grafo, non un albero»: la
+cartella dà solo *una casa*, i link danno il *significato* (la **collocazione** per natura — quale casa — sta
+nel playbook §3). Qui la sfumatura: anche un albero piatto è un asse — serve come punto fermo, non va abolito,
+solo tenuto basso.
 
 ## 5. Igiene a livello wiki
 
 - **Una sola pagina canonica per concetto** (Single Source of Truth). Se la stessa cosa è spiegata in due
   posti, prima o poi divergono: le altre **linkano, non ricopiano**.
-- **Niente orfani né dead-end** — ogni nodo nella rete (gli orfani li trova il `lint` A; la disciplina dei
-  link a livello di pagina è in [`page-craft.md`](page-craft.md)).
+- **Niente orfani né dead-end** — ogni nodo dev'essere nella rete; la **disciplina dei link** che lo
+  garantisce sta a livello di pagina → [`page-craft.md`](page-craft.md) §4 (gli orfani li trova il lint A).
 - **Naming coerente e prevedibile** — convenzioni stabili sui titoli/slug, così si indovina dove sta una
   cosa e come linkarla (profilo Sertor: kebab-case; entità/concetti in inglese — vedi playbook §4).
 - **Coerenza > completezza** — meglio poche pagine vive e aggiornate che cento morte: una pagina **obsoleta**

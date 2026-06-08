@@ -89,9 +89,10 @@ Le aree sono quelle in `[[taxonomy]]`. Nel profilo Sertor:
 
 ### Collocazione — scegliere l'area dalla natura della pagina
 
-Un wiki è un **grafo, non un albero**: la cartella serve solo a dare a ogni pagina **una casa**, il valore
-sta nei link. L'area si sceglie dalla **natura logica** del contenuto, **non** dalla fase/progetto (cartelle
-per fase — `sprint-3/`, `fase-azure/` — invecchiano male). Ruoli delle aree (profilo Sertor; su un altro
+L'area si sceglie dalla **natura logica** del contenuto, **non** dalla fase/progetto (cartelle
+per fase — `sprint-3/`, `fase-azure/` — invecchiano male): la cartella dà solo **una casa**, il valore sta nei
+link. Il *perché* — «un wiki è un grafo, non un albero» e i due assi di navigazione — sta in
+[`wiki-craft.md`](wiki-craft.md) §4. Ruoli delle aree (profilo Sertor; su un altro
 ospite valgono i ruoli analoghi della sua `[[taxonomy]]`):
 
 - **concepts/** — astrazioni, pattern, idee (un concetto RAG, una tecnica). Evergreen.
@@ -133,10 +134,8 @@ sources: ["<path o URL>", ...]
 ---
 ```
 
-- **Stub (nodo da creare):** un forward-link si realizza creando una pagina-**stub** — file reale nell'area
-  giusta, frontmatter completo + `status: stub` (campo opzionale) e corpo `> 🚧 STUB` — così il link risolve
-  e il lint A resta verde; un `[[…]]` senza pagina né stub resta `broken` (= refuso). Dettaglio in
-  [`page-craft.md`](page-craft.md).
+- **Stub (nodo da creare):** un forward-link a una pagina non ancora scritta si realizza come **stub**, non
+  come `[[…]]` a vuoto (che il lint A segnala `broken`). Meccanismo e regole in [`page-craft.md`](page-craft.md) §4.
 - **Wikilink** `[[nome-pagina]]` (senza `.md`); alias con `[[nome-pagina|testo mostrato]]`. Mantieni i
   cross-reference aggiornati: una pagina nuova va linkata dall'indice e dalle pagine correlate.
 - **Naming** file: kebab-case descrittivo (`azure-ai-search.md`). `validate` lo verifica per te.
