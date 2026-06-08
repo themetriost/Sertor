@@ -43,6 +43,11 @@ sessione.
 - **Cumulativo:** cresce a ogni sessione; non si riparte da zero.
 - **Idempotente:** se una pagina è già accurata, **non riscriverla**. Niente modifiche inutili.
 - **Self-contained:** ogni pagina è scritta perché un agente la riprenda senza il contesto della chat.
+- **Coerente per costruzione (anti-deriva auto-inflitta):** quando una modifica (al codice, alle regole o
+  a un'altra pagina) rende **stale** una pagina, riallinearla **fa parte dello stesso lavoro** — non è
+  un'operazione separata da chiedere. La deriva che *tu* introduci si corregge **nello stesso step**, di
+  default e senza richiesta esplicita; quella *preesistente* che soltanto scopri può diventare worklist del
+  `lint`. *(L'ospite può codificarlo nel proprio rituale; profilo Sertor: `CLAUDE.md`, rituale di step.)*
 
 ## 2. Nucleo deterministico vs giudizio (il confine)
 
