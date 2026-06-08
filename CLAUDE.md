@@ -227,6 +227,16 @@ restano **promemoria vincolanti**, non opzionali.
 *regola aurea* del wiki). Lo step è "significativo" quando produce conoscenza, decisioni o codice.
 Vedi [[step-ritual]].
 
+**Quando registrare (VINCOLANTE): nello stesso momento del commit.** La voce di log **non è
+posticipabile**: si scrive **insieme al commit** dello step — un passo non è "chiuso" finché commit **e**
+voce di log non sono **entrambi** fatti. Con `sertor-wiki-tools append-log` (corpo curato da stdin) è **un
+comando**: non c'è attrito che giustifichi il rinvio. **Cosa si registra:** ogni step *significativo*,
+**incluse le evoluzioni di tooling/governance** (sistema-wiki, `CLAUDE.md`, playbook) — il log registra
+*cosa abbiamo fatto*, non solo i contenuti del wiki; «il tooling non è una *pagina*» **non** significa «il
+tooling non si *logga*». Resta esente **solo** il triviale/meccanico. Il promemoria dello `Stop` hook è una
+**rete di sicurezza**: se scatta, vuol dire che ho già mancato il momento giusto (il commit) — non è il
+meccanismo che fa la registrazione.
+
 ## Git & versionamento (regola SEMPRE attiva)
 
 Questo workspace è un **repo git con remote `origin`** (ci si pusha regolarmente). **Policy di branching durante la fase di prototipo (attuale):** commit e push **direttamente su `master`/`main`** (autorizzato). Al passaggio in produzione si adotterà **SpecKit** e si lavorerà a **branch + PR** (niente più push diretti su main). Convenzione: **un commit dopo ogni step** di lavoro significativo (incluso l'aggiornamento del wiki). Messaggi in stile
