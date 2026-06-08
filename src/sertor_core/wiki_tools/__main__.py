@@ -149,9 +149,10 @@ def _human(op: str, result) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     """Punto d'ingresso del console-script. Ritorna l'exit code."""
-    # Output UTF-8 stabile su QUALSIASI console (es. Windows cp1252 non sa codificare → — e i
-    # contenuti del wiki contengono caratteri non-ASCII). Host-agnostico: niente crash sull'ospite.
-    for stream in (sys.stdout, sys.stderr):
+    # I/O UTF-8 stabile su QUALSIASI console (es. Windows cp1252 non sa codificare → e i contenuti
+    # del wiki contengono caratteri non-ASCII). stdout/stderr per l'output; **stdin** per il corpo
+    # curato di `append-log` (altrimenti il body verrebbe decodificato in cp1252 → mojibake).
+    for stream in (sys.stdin, sys.stdout, sys.stderr):
         try:
             stream.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
         except (AttributeError, ValueError):  # stream non riconfigurabile (es. redirezione): ok

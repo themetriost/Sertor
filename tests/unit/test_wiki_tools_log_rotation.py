@@ -191,6 +191,21 @@ def test_migrate_idempotent_and_non_destructive(tmp_path):
     assert p.log_path.is_file()  # monolitico non cancellato (non distruttivo)
 
 
+def test_collect_and_lint_exclude_log_partitions(tmp_path):
+    # Le partizioni di log non sono pagine: collect/lint non devono enumerarle né flaggarle
+    # (regressione da attivazione: le wikilink-esempio nelle vecchie voci → falsi 'broken').
+    from sertor_core.wiki_tools.collect import collect
+    from sertor_core.wiki_tools.lint import lint
+
+    p = _profile(tmp_path)
+    append_log(p, "record", "voce", on_date=date(2026, 6, 8),
+               body="esempio di sintassi [[wikilink-finto]] dentro una voce di log")
+    rels = {pg["rel_path"] for pg in collect(p).pages}
+    assert not any(r.startswith("log/") for r in rels)  # partizioni + indice-log esclusi
+    broken = lint(p).broken_links
+    assert not any(b.get("page", "").startswith("log/") for b in broken)
+
+
 def test_migrate_requires_rotation(tmp_path):
     cfg = tmp_path / "wiki.config.toml"
     cfg.write_text(_CONFIG_SINGLE, encoding="utf-8")

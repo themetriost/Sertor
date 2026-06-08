@@ -31,11 +31,15 @@ def iter_pages(profile: WikiProfile) -> Iterator[tuple[str, Path]]:
     if not root.is_dir():
         return
     reserved = {profile.index_file, profile.log_file}
+    log_dir = profile.log_dir  # directory delle partizioni di log (append-only, non pagine)
     pages: list[tuple[str, Path]] = []
     for path in root.rglob("*.md"):
         rel = path.relative_to(root)
         # Indice e registro stanno alla radice del wiki: non sono pagine di contenuto.
         if len(rel.parts) == 1 and rel.name in reserved:
+            continue
+        # Le partizioni di log (rotazione, FEAT-008) sono file append-only, non pagine: escludile.
+        if log_dir and rel.parts[0] == log_dir:
             continue
         pages.append((rel.as_posix(), path))
     pages.sort(key=lambda t: t[0])
