@@ -31,15 +31,21 @@ da hook/skill/agente senza parsing fragile.
 
 | Operazione | Cosa fa (meccanico) | Contratto |
 |---|---|---|
-| `scan` | conta i file delle `source_dirs` più recenti dell'ultima voce di log (lavoro pendente; anchor su **mtime**, non git → vale su ospiti senza git) | `wiki.scan/1` |
+| `scan` | conta i file delle `source_dirs` più recenti dell'ultima voce di log (lavoro pendente; anchor su **mtime**, non git → vale su ospiti senza git; in **rotazione** l'anchor è la **partizione più recente**) | `wiki.scan/1` |
 | `structure init` | crea tassonomia + index + log (idempotente, non-distruttivo) | `wiki.structure/1` |
 | `validate` | frontmatter mancante + naming non kebab-case | `wiki.lint/1` |
 | `lint` | wikilink rotti + pagine orfane + frontmatter + stub | `wiki.lint/1` |
 | `collect` | enumera le pagine + metadati (path, area, type, title, tags, wikilink) **senza corpo** | `wiki.collect/1` |
 | `index` | re-indicizza il wiki nel RAG (collezione isolata) **riusando la facade del core** (`build_indexer`, import **lazy** → le altre op restano offline) | `wiki.index/1` |
+| `append-log` | appende una voce di log nel file del giorno (**rotazione** a un file per data); accetta il **corpo curato** dall'LLM e ne fa solo il piazzamento (idempotente sull'heading) | `wiki.append_log/1` |
+| `migrate` | splitta retroattivamente il log monolitico in partizioni giornaliere (una-tantum, idempotente, non distruttivo) | `wiki.migrate/1` |
 
-Il modulo `registry.py` fornisce inoltre la meccanica idempotente di append-voce-log e inserimento-riga-indice
-(oggi i write-back *curati* li scrive ancora l'LLM — vedi il backlog in [[architettura-wiki-llm]]).
+**Write-back del log curato + rotazione (FEAT-008).** Il modulo `registry.py` fa la meccanica idempotente di
+append della voce di log e di inserimento-riga-indice. Il write-back del log (`append-log`) riceve il **corpo
+curato** dall'LLM (formato [[deterministic-vs-judgment|log-craft]]) e si limita al **piazzamento** nella
+partizione della data — confine deterministico↔giudizio netto. Con `log_dir` configurato la rotazione è
+**implicita** (la voce va nel file della sua data); senza, vale la modalità a file unico (back-compat).
+L'indice globale del wiki resta invece LLM-authored (backlog in [[architettura-wiki-llm]]).
 
 ## Proprietà di fondo
 

@@ -686,3 +686,13 @@ Continuato il distilling sul backlog di pagine/record grassi, sempre **dal codic
 - **Assottigliati** 3 record a evento+esito+puntatori: `motore-baseline-feat002`, `nucleo-wiki-deterministico-feat003d`, `server-mcp-produzione-feat-mcp`.
 - **Cablaggio:** `index.md` (+2 tech, descrittori record aggiornati); `thin-consumer` punta alle entità.
 - **Verifica:** lint A = 0/0/0/0.
+
+## [2026-06-08] record | FEAT-008 meccanica del log — implementata (PR #18)
+
+Implementata via flusso SpecKit completo la meccanica del log di [[wiki-tools]] (rotazione + `append_log`
+curato + `migrate`), su branch `spec/008-meccanica-log`; **PR #18** aperta (non mergiata).
+
+- **Cosa:** rotazione a un file/giorno (implicita), `append-log` curato in CLI (corpo dall'LLM, piazzamento deterministico), `migrate` dello storico; contratti `wiki.append_log/1`/`wiki.migrate/1`, `wiki.scan/1` invariato.
+- **Wiki:** distillato in [[wiki-tools]]; record datato [[meccanica-log-feat008]].
+- **Esito:** 22 unit test verdi + smoke CLI; ruff pulito; Constitution Check 10/10.
+- **Deferito (post-merge):** attivazione (`log_dir = "log"` + `migrate` sul `log.md` reale).
