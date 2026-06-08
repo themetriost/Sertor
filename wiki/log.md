@@ -672,3 +672,17 @@ esplicita (regola codificata in memoria).
 - **`sistema-wiki-fonte-unica.md`**: banner di testa **8 → 9** operazioni correnti (+`distill`).
 - **`architettura-wiki-llm.md`**: `distill` aggiunto alla tabella confine D↔N; **N2 distillazione** da `☐/❌ build` a **✅ fatto** (Stato attuale + roadmap).
 - **Verifica:** lint A = 0/0/0/0.
+
+## [2026-06-08] distill | Backlog distillazione: tree-sitter + FEAT-002/003-D/MCP
+
+Continuato il distilling sul backlog di pagine/record grassi, sempre **dal codice reale**.
+
+- **Riscritta** `tech/tree-sitter-language-pack` (335→~55 righe): rimosse parti **fabbricate**
+  (`adapters/chunkers/syntactic_chunker.py` inesistente, `FALLBACK_LANGUAGES` inventato, `_Node` non reale);
+  allineata a `code.py` (API a metodi, wrapper `_Node` vero, byte-range UTF-8).
+- **Estratte** (`tech/`): [[wiki-tools]] (nucleo deterministico del wiki, FEAT-003-D) · [[mcp-server]] (server
+  MCP `sertor-rag`, FEAT-MCP).
+- **FEAT-002:** nessuna pagina nuova — [[vector-retrieval]] già copre le entità (verificato vs `baseline.py`/`evaluation.py`).
+- **Assottigliati** 3 record a evento+esito+puntatori: `motore-baseline-feat002`, `nucleo-wiki-deterministico-feat003d`, `server-mcp-produzione-feat-mcp`.
+- **Cablaggio:** `index.md` (+2 tech, descrittori record aggiornati); `thin-consumer` punta alle entità.
+- **Verifica:** lint A = 0/0/0/0.

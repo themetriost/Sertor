@@ -3,7 +3,7 @@ title: Indice del Wiki — Produzione Sertor
 type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
-updated: 2026-06-08 (distill FEAT-001 → 4 pagine-entità del nucleo: domain-model, ports-adapters, chunking-dispatch, indexing-and-retrieval)
+updated: 2026-06-08 (distill FEAT-001/002/003-D/MCP + tree-sitter → pagine-entità: domain-model · ports-adapters · chunking-dispatch · indexing-and-retrieval · wiki-tools · mcp-server)
 sources: ["requirements/sertor-core/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "src/sertor_core/**", "CLAUDE.md"]
 ---
 
@@ -59,10 +59,10 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 - **[[chiusura-prototipo-dogfooding]]** — Isolamento del prototipo, motore corpus-aware, RAG di dogfooding su se stesso, MCP ri-puntato.
 - **[[piano-nucleo-retrieval]]** — Piano SpecKit FEAT-001: architettura Clean, decisioni R1–R8, Constitution Check ✅ (Principi I+IV), modello dati, contratti, scope MVP vs post-MVP.
 - **[[implementazione-nucleo-retrieval]]** — Record datato del completamento FEAT-001 (2026-06-03): 53 test, ruff clean, Constitution Check 9/9 ✅. **Distillato** (2026-06-08): l'architettura è migrata nelle 4 pagine-entità del nucleo; qui resta l'evento + esito.
-- **[[motore-baseline-feat002]]** — Implementazione FEAT-002: motore vettoriale baseline (ranking similarity + evaluation hit@k/MRR), 67 test, policy errore isolata, estensioni non-breaking al nucleo, Constitution Check 9/9 ✅.
-- **[[nucleo-wiki-deterministico-feat003d]]** — Implementazione FEAT-003-D (metà deterministica del wiki LLM): 11 moduli, 8 test, zero LLM, host-agnostico (Principio X), guidato da `wiki.config.toml`, contratti JSON versionati. Constitution Check 10/10 ✅. Offline per costruzione.
+- **[[motore-baseline-feat002]]** — Record FEAT-002 (2026-06-03): 67 test, Constitution 9/9 ✅, estensioni non-breaking al nucleo. **Distillato** (2026-06-08): entità in [[vector-retrieval]]/[[indexing-and-retrieval]].
+- **[[nucleo-wiki-deterministico-feat003d]]** — Record FEAT-003-D (2026-06-05, PR #13): 11 moduli, 44 test, Constitution 10/10 ✅, SC-001 host-agnosticità dimostrata. **Distillato** (2026-06-08): entità in [[wiki-tools]].
 - **[[ponte-d-n-host-agnostico]]** — Primo step FEAT-003-N (ponte D→N): il layer agentico (playbook + skill + comando + agente) reso host-agnostico (legge `wiki.config.toml`) e poggiato sulla CLI `sertor-wiki-tools` per il meccanico; all'LLM resta il giudizio. Rename coerente: `genera-wiki`→`wiki-author`, `playbook.md`→`wiki-playbook.md`, `wiki-keeper`→`wiki-curator` (+Bash). Tabella confine D↔N; scope leggero (zero codice).
-- **[[server-mcp-produzione-feat-mcp]]** — ✅ **FEAT-MCP implementata** (Server MCP di produzione): flusso SpecKit completo (requirements→specify→clarify→plan→analyze→implement) finito 2026-06-06. 3 tool (`search_code`/`search_docs`/`search_combined`), facade memoizzata, 6 test verdi, Constitution Check 10/10. `.mcp.json` rimontato su server produzione, corpus `sertor`.
+- **[[server-mcp-produzione-feat-mcp]]** — Record FEAT-MCP (2026-06-06, PR #15): SpecKit completo, 6 test, Constitution 10/10 ✅, `.mcp.json` ri-puntato alla produzione (corpus `sertor`). **Distillato** (2026-06-08): entità in [[mcp-server]].
 - **[[pulizia-pycache-e-diagnosi-mcp]]** — Record del 2026-06-05: rimossi 16 dir `__pycache__` fantasma + diagnosi architetturale di `.mcp.json`. ⚠️ **Diagnosi superata il 2026-06-06** (banner nella pagina): `sertor_mcp` (PR #15) e `wiki_tools`/FEAT-003-D (PR #13) sono su master, `.mcp.json` ri-puntato alla produzione. *(Spostata da `tech/` a `experiments/`: è un record datato, non una tecnologia.)*
 - **[[retrospettiva-interazione-2026-06-04]]** — Retrospettiva onesta sull'interazione del 2026-06-04 (pattern di ostruzione percepito, radici plausibili, correttivo adottato); separata dal design del rituale per atomicità.
 
@@ -76,5 +76,7 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 ### Tech (tecnologie e infrastruttura)
 
 - **[[sessionstart-hook]]** — Hook SessionStart di Claude Code: carica indice + log a inizio sessione. Ruolo 1 di DA-W1 (contesto iniettato).
-- **[[tree-sitter-language-pack]]** — Binding Rust multilingua (305+ lingue), parser robusto; in Sertor è la base del [[chunking-dispatch|chunking sintattico]] (10 linguaggi validati; altri → fallback dimensionale), wrapper `_Node` per l'API metodo-based. ⚠️ *Pagina datata 2026-06-03, gonfia e con riferimenti stantii: da ripassare (distill/lint-B).*
+- **[[tree-sitter-language-pack]]** — Il binding Python (wheel precompilato) delle grammatiche tree-sitter, base del [[chunking-dispatch|chunking sintattico]]: API **a metodi** (non attributi) avvolta dal wrapper `_Node`, byte-range UTF-8, righe 0→1-based. *(Distillato 2026-06-08, allineato a `code.py`.)*
+- **[[wiki-tools]]** — Il nucleo **deterministico** del wiki (`sertor-wiki-tools`): `scan`/`lint`/`validate`/`collect`/`structure`/`index`, contratti JSON versionati, host-agnostico via `wiki.config.toml`, zero LLM/rete (stdlib). È la metà **D** del confine D↔N.
+- **[[mcp-server]]** — Il server MCP `sertor-rag` (`sertor_mcp`): la superficie che espone la facade del core come 3 tool (`search_code/docs/combined`), facade memoizzata, formato citabile `path#chunk`, trasporto stdio. Esempio canonico di [[thin-consumer]].
 - **[[corpus-index-naming]]** — Schema naming chiarificato (dal 2026-06-04): corpus `sertor` (prodotto, radice) vs `prototype` (prototipo, congelato); indici `.index-sertor` (radice) vs `.index-prototype` (prototipo).
