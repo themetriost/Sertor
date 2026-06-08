@@ -192,13 +192,21 @@ richiedono il **flusso principale** (Opus).
 Append al log (nome-file da config), una voce per operazione, con la **data odierna**:
 ```
 ## [YYYY-MM-DD] <operazione> | <titolo>
-- <bullet sintetici: pagine create/aggiornate, decisioni, esiti, commit se noti>
+<lead: 1–2 frasi col perché/trigger dello step>
+- **<etichetta>:** <fatto saliente o puntatore [[pagina]], una riga>
 ```
 `<operazione>` ∈ `setup` · `structure` · `record` · `ingest` · `query` · `lint` · `reorg` ·
 `generate-from-diff` · `rag-sync` — l'insieme delle operazioni di §5 più `setup` (bootstrap generico di
 sessione/governance, distinto da `structure` che è il bootstrap della *struttura* del wiki). `structure`
 lascia una voce **solo se ha creato qualcosa** (`created` non vuoto); se è tutto `skipped_existing`,
 niente voce (idempotente + regola anti-banale).
+
+**Com'è fatta una buona voce → [`log-craft.md`](log-craft.md).** Le regole qui sopra sono la *convenzione*
+(grammatica dell'heading, vocabolario delle operazioni, regola anti-banale). Il **log-craft** — il confine
+log↔pagina (cosa va nel log datato vs nella pagina evergreen), l'anatomia della voce (lead + bullet piatti +
+riga d'esito), la **granularità** e l'**anti-deriva** (no dump del contenuto, no liste-file, no aggettivi) —
+vive nella pagina-foglia gemella di [`page-craft.md`](page-craft.md), linkata dalle operazioni che appendono
+una voce (`record`, `ingest`, `lint`, `reorg`, …).
 
 ## 7. Limiti & deleghe
 

@@ -16,4 +16,4 @@
    (evergreen in `concepts/`/`tech/`, stato datato in `experiments/`). **Giudizio:** cosa è conoscenza
    riusabile vs cronaca, e *quali* backlink dicono **perché** due pagine si connettono.
 3. Aggiorna i backlink e l'indice (link + summary di una riga).
-4. Appendi una voce di log `record`.
+4. Appendi una voce di log `record` (formato: playbook §6; come si scrive bene: [`../log-craft.md`](../log-craft.md)).
