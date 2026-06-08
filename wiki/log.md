@@ -661,3 +661,14 @@ ancorate al **codice reale** (non al record, già stantio).
 - **Cablaggio:** [[retrieval-core]] punta giù alle 4 entità; `index.md` aggiornato.
 - **Segnalato (backlog):** `tech/tree-sitter-language-pack` è gonfio e in parte **fabbricato** (`adapters/chunkers/syntactic_chunker.py` inesistente, `FALLBACK_LANGUAGES` inventato) → da ripassare con distill/lint-B.
 - **Verifica:** lint A = 0/0/0/0.
+
+## [2026-06-08] record | Allineate le pagine rese stale dall'introduzione di distill
+
+L'aggiunta dell'operazione `distill` (e l'esercizio del pilota) aveva reso stale alcune pagine evergreen:
+allineate **nello stesso step**, come dovere standing — la deriva che creiamo si corregge senza richiesta
+esplicita (regola codificata in memoria).
+
+- **`step-ritual.md`** §4: aggiunto il **punto 2 "Distilla le entità"** (rinumerato lint→3, altre→4).
+- **`sistema-wiki-fonte-unica.md`**: banner di testa **8 → 9** operazioni correnti (+`distill`).
+- **`architettura-wiki-llm.md`**: `distill` aggiunto alla tabella confine D↔N; **N2 distillazione** da `☐/❌ build` a **✅ fatto** (Stato attuale + roadmap).
+- **Verifica:** lint A = 0/0/0/0.

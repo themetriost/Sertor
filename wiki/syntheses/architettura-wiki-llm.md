@@ -69,6 +69,7 @@ separa il meccanico (chiamata CLI) dal giudizio (LLM). Sintesi (tabella completa
 operazione            D — meccanico (CLI)              N — giudizio (LLM)
 ─────────────────────────────────────────────────────────────────────────────
 record                collect                          perché · corpo · backlink · nuova-vs-aggiorna
+distill               collect                          quali entità estrarre · cosa assottigliare  ← N2
 ingest                collect · lint                   riassunto · contraddizioni
 query                 collect · index (RAG)            risposta · se archiviare
 lint  (A strutturale) lint · validate = 100% D         —
@@ -110,8 +111,9 @@ del 2026-06-06 (`syntheses/` da 16/20 a una distribuzione 4/3/9/4). Dettagli:
 | [[server-mcp-produzione-feat-mcp|`sertor_mcp`]] (RAG dell'ospite, FEAT-MCP) | ✅ mergiato (PR #15); `.mcp.json` ri-puntato alla produzione (corpus `sertor`) |
 | N5 lint semantico — metodo + audit globale 4 `kind` (PR #16) | ◑ in corso (metodo sì, esercitato; probe deterministici no) |
 | N9 lint organizzativo + `reorg` — metodo + esercitato (reorg 2026-06-06) | ◑ in corso |
-| N1 record-contenuto — metodo «livello di significato» (playbook §4) | ◑ in corso (metodo sì, da esercitare) |
-| N2-N4, N6-N8 (operazioni di giudizio) | ☐ da fare |
+| N1 record-contenuto — metodo «livello di significato» (page-craft) | ◑ in corso (metodo sì, da esercitare) |
+| N2 distillazione — operazione `distill` + standing nel rituale (esercitata su FEAT-001, 2026-06-08) | ✅ fatto |
+| N3-N4, N6-N8 (operazioni di giudizio) | ☐ da fare |
 
 ## Roadmap
 
@@ -133,7 +135,7 @@ Grafo delle dipendenze (cosa sblocca cosa):
 | **1a** | Scope completo: write-back in CLI + riconciliazione formato index | **codice** (D) | ✅ EARS leggero / spec | Media | FEAT-003-D |
 | **2a** | FR-004: chiudere il trigger (hook vs comando vs headless) | **decisione** | ❌ (chiude requisito esistente §13) | Media | — |
 | **3a** | N1 record-contenuto (autorship) | giudizio (N) | ❌ build, non spec | Media | 1a (migliora) |
-| **3b** | N2 distillazione sessione→pagina | giudizio (N) | ❌ build | Media | — |
+| **3b** | N2 distillazione sessione→pagina — operazione `distill` + rituale | giudizio (N) | ✅ **FATTO** (2026-06-08, pilota FEAT-001) | — | — |
 | **3c** | N3 generazione dal repo (Karpathy) | giudizio (N) | ❌ build | Bassa | — |
 | **3d** | N4 ingest compile | giudizio (N) | ❌ build | Bassa | — |
 | **4a** | N6 verità/autorità/obsolescenza | misto (D segnali + N decisione) | ◑ solo metà-D | Bassa | — |

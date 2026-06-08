@@ -74,9 +74,12 @@ Codificato in `CLAUDE.md` come **Definition of Done** di ogni step significativo
 *Rituale di step / Definition of Done*). A fine di ogni step, di propria iniziativa:
 
 1. **Registra** — `record` su `wiki/log.md` + pagine + `index.md`.
-2. **Lint semantico di allineamento** — confronta il contenuto del wiki con la realtà del progetto
+2. **Distilla le entità** — estrai in pagine proprie le entità/concetti durevoli che lo step ha fatto
+   emergere (operazione `distill`, N2); il record datato resta magro e vi punta. Giudizio → flusso
+   principale. *(Aggiunto 2026-06-08.)*
+3. **Lint semantico di allineamento** — confronta il contenuto del wiki con la realtà del progetto
    (`src/`, `specs/`, `requirements/`, stato git) e segnala ogni claim contraddetto dal repo.
-3. **\<altre azioni\>** — lista estendibile: ciò che l'utente chiede di rendere standing si aggiunge qui.
+4. **\<altre azioni\>** — lista estendibile: ciò che l'utente chiede di rendere standing si aggiunge qui.
 
 La **delega** (`wiki-curator`, `configuration-manager`) resta un'opzione per non bloccare il flusso, **non**
 un modo per saltare il rituale. La responsabilità che le azioni *avvengano* è del flusso principale.
