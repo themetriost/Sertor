@@ -3,7 +3,7 @@ title: Indice del Wiki — Produzione Sertor
 type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
-updated: 2026-06-06 (Doc lint C/reorg + split rituale↔retrospettiva + architettura-wiki-llm allineata + ricucito server-mcp)
+updated: 2026-06-08 (distill FEAT-001 → 4 pagine-entità del nucleo: domain-model, ports-adapters, chunking-dispatch, indexing-and-retrieval)
 sources: ["requirements/sertor-core/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "src/sertor_core/**", "CLAUDE.md"]
 ---
 
@@ -38,7 +38,11 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 
 ### Concepts (fondamenta e astrazioni)
 
-- **[[retrieval-core]]** — Il **nucleo di retrieval** importabile (`sertor-core`), *il prodotto*: architettura Clean (domain/services/adapters/engines + porte `Protocol`), composition root guidato da `Settings`, backend `local`/`azure`, policy errori tollerante↔strict, collezioni namespaced per `(corpus, provider)`. CLI/MCP/wiki ne sono consumatori sottili.
+- **[[retrieval-core]]** — Il **nucleo di retrieval** importabile (`sertor-core`), *il prodotto*: architettura Clean (domain/services/adapters/engines + porte `Protocol`), composition root guidato da `Settings`, backend `local`/`azure`, policy errori tollerante↔strict, collezioni namespaced per `(corpus, provider)`. CLI/MCP/wiki ne sono consumatori sottili. *Scomposto nelle 4 pagine-entità sotto.*
+- **[[domain-model]]** — Le **entità dati pure** del nucleo (`Document`, `Chunk`/`ChunkMetadata`, `EmbeddedChunk`, `RetrievalResult`, `IndexReport`; enum `DocType`/`ChunkerKind`): nessun SDK nel dominio, id stabili (path POSIX, `doc_id#index`) → idempotenza del rebuild.
+- **[[ports-adapters]]** — Le due **porte** `Protocol` (`EmbeddingProvider`, `VectorStore`) e gli **adapter** che le implementano (Ollama/Azure · Chroma/Azure Search); il composition root sceglie da `Settings` con import lazy. Structural typing → mockabili.
+- **[[chunking-dispatch]]** — Il **chunking** `Document`→`Chunk`: dispatch per tipo/lingua (markdown / sintattico tree-sitter / fallback dimensionale), 10 linguaggi sintattici, esclusione deliberata R-N2 di PowerShell/SQL, id stabile `doc_id#index`.
+- **[[indexing-and-retrieval]]** — Le **due pipeline**: indicizzazione (ingest→chunk→embed→store, atomicità del rebuild) e la **facade** `search_code/docs/combined`, tollerante su indice assente (`[]`+warning). Punto d'ingresso dei consumatori via `build_facade()`.
 - **[[vector-retrieval]]** — La **prima modalità RAG**: retrieval vettoriale (embed query → similarity top-k) realizzato dal motore baseline; policy errore *strict* (`IndexNotFoundError`) + valutazione hit-rate@k/MRR@10. Non è ibrido/reranking/grafo (post-MVP).
 - **[[thin-consumer]]** — Il pattern per cui le interfacce (CLI, server MCP, tool) espongono il [[retrieval-core]] importandolo e cablandolo dalle factory `build_*`, **senza reimplementare logica**: il prodotto è la libreria, l'interfaccia è un guscio sottile (host-agnostico, Principio X). Esempio realizzato: il server MCP.
 - **[[dogfooding]]** — Interrogare il progetto stesso col proprio RAG: Sertor indicizza il proprio codice/doc come corpus e li consulta coi suoi tool (server MCP `sertor-rag`) invece di leggerli a mano. Validazione continua + contesto ancorato.
@@ -54,7 +58,7 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 - **[[decomposizione-must-core]]** — Decomposizione dei 3 Must (FEAT-001/002/003); 6 decisioni di ambito MVP; nuova FEAT-009 su refresh incrementale.
 - **[[chiusura-prototipo-dogfooding]]** — Isolamento del prototipo, motore corpus-aware, RAG di dogfooding su se stesso, MCP ri-puntato.
 - **[[piano-nucleo-retrieval]]** — Piano SpecKit FEAT-001: architettura Clean, decisioni R1–R8, Constitution Check ✅ (Principi I+IV), modello dati, contratti, scope MVP vs post-MVP.
-- **[[implementazione-nucleo-retrieval]]** — Completamento FEAT-001: libreria `sertor-core` prod-ready, 53 test, chunking 14 lingue, embeddings multi-provider, facade retrieval, Constitution Check 9/9 ✅.
+- **[[implementazione-nucleo-retrieval]]** — Record datato del completamento FEAT-001 (2026-06-03): 53 test, ruff clean, Constitution Check 9/9 ✅. **Distillato** (2026-06-08): l'architettura è migrata nelle 4 pagine-entità del nucleo; qui resta l'evento + esito.
 - **[[motore-baseline-feat002]]** — Implementazione FEAT-002: motore vettoriale baseline (ranking similarity + evaluation hit@k/MRR), 67 test, policy errore isolata, estensioni non-breaking al nucleo, Constitution Check 9/9 ✅.
 - **[[nucleo-wiki-deterministico-feat003d]]** — Implementazione FEAT-003-D (metà deterministica del wiki LLM): 11 moduli, 8 test, zero LLM, host-agnostico (Principio X), guidato da `wiki.config.toml`, contratti JSON versionati. Constitution Check 10/10 ✅. Offline per costruzione.
 - **[[ponte-d-n-host-agnostico]]** — Primo step FEAT-003-N (ponte D→N): il layer agentico (playbook + skill + comando + agente) reso host-agnostico (legge `wiki.config.toml`) e poggiato sulla CLI `sertor-wiki-tools` per il meccanico; all'LLM resta il giudizio. Rename coerente: `genera-wiki`→`wiki-author`, `playbook.md`→`wiki-playbook.md`, `wiki-keeper`→`wiki-curator` (+Bash). Tabella confine D↔N; scope leggero (zero codice).
@@ -72,5 +76,5 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 ### Tech (tecnologie e infrastruttura)
 
 - **[[sessionstart-hook]]** — Hook SessionStart di Claude Code: carica indice + log a inizio sessione. Ruolo 1 di DA-W1 (contesto iniettato).
-- **[[tree-sitter-language-pack]]** — Binding Rust multilingua (305+ lingue), parser robusto, set MVP 14 lingue (10 sintattico + 4 fallback: PowerShell, Bash, T-SQL, PL/SQL), wrapper `_Node` per API metodo-based.
+- **[[tree-sitter-language-pack]]** — Binding Rust multilingua (305+ lingue), parser robusto; in Sertor è la base del [[chunking-dispatch|chunking sintattico]] (10 linguaggi validati; altri → fallback dimensionale), wrapper `_Node` per l'API metodo-based. ⚠️ *Pagina datata 2026-06-03, gonfia e con riferimenti stantii: da ripassare (distill/lint-B).*
 - **[[corpus-index-naming]]** — Schema naming chiarificato (dal 2026-06-04): corpus `sertor` (prodotto, radice) vs `prototype` (prototipo, congelato); indici `.index-sertor` (radice) vs `.index-prototype` (prototipo).

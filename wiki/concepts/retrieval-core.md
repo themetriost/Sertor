@@ -63,6 +63,13 @@ src/sertor_core/
 - **Facade di retrieval unificata** + motore [[motore-baseline-feat002|baseline]] (retrieval vettoriale con
   [[vector-retrieval|retrieval vettoriale]]) e valutazione (hit_rate@k, MRR).
 
+## Le pagine-entità (dettaglio)
+Il nucleo, scomposto nelle sue entità durevoli (distillate dal codice reale):
+- [[domain-model]] — le entità dati (`Document`, `Chunk`, `RetrievalResult`, …) e l'idempotenza degli id.
+- [[ports-adapters]] — le porte `EmbeddingProvider`/`VectorStore` e gli adapter cablati dal composition root.
+- [[chunking-dispatch]] — il dispatch markdown/sintattico/fallback e i 10 linguaggi sintattici.
+- [[indexing-and-retrieval]] — le due pipeline (ingest→chunk→embed→store) e la facade `search_code/docs/combined`.
+
 ## Vedi anche
 - Design e implementazione (record datati): [[piano-nucleo-retrieval]] · [[implementazione-nucleo-retrieval]].
 - Decomposizione dei requisiti: [[decomposizione-must-core]].

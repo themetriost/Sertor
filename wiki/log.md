@@ -648,3 +648,16 @@ Deciso con l'utente che la **priorità della prossima sessione** è migliorare l
 2. **Write-back deterministico `append_log`** *(da discutere — "capiamo bene" prima)* — eventuale cablaggio di `append_log` di `wiki_tools` nella CLI (oggi le voci le scrive l'LLM a mano; formato deterministico diverso). Se si procede → codice, branch+PR (scope completo deferito di FEAT-003-N).
 
 NB: si parla del log del **wiki**, non del logging runtime/osservabilità del codice. Checkpoint di ripresa aggiornato in memoria.
+
+## [2026-06-08] distill | FEAT-001: 4 pagine-entità del nucleo + record assottigliato
+
+Primo esercizio reale dell'operazione `distill` (introdotta in giornata nel rituale). Il record `experiment`
+di FEAT-001 (~312 righe) teneva la conoscenza-entità durevole **sepolta e drifted**: estratta in pagine-entità
+ancorate al **codice reale** (non al record, già stantio).
+
+- **Estratte** (`concepts/`): [[domain-model]] · [[ports-adapters]] · [[chunking-dispatch]] · [[indexing-and-retrieval]] — da `domain/entities.py`, `domain/ports.py`, `composition.py`, `services/`.
+- **Assottigliato:** `implementazione-nucleo-retrieval` da ~312 righe a **evento + esito + puntatori**.
+- **Deriva corretta nel record:** citava `domain/ports/` (cartella), `ollama_provider.py`, facade `ingest_repository`/`retrieve`, "14 lingue" → realtà: `ports.py` (file unico), `adapters/embeddings/ollama.py`, facade `search_code/docs/combined`, **10** lingue sintattiche (+ fallback).
+- **Cablaggio:** [[retrieval-core]] punta giù alle 4 entità; `index.md` aggiornato.
+- **Segnalato (backlog):** `tech/tree-sitter-language-pack` è gonfio e in parte **fabbricato** (`adapters/chunkers/syntactic_chunker.py` inesistente, `FALLBACK_LANGUAGES` inventato) → da ripassare con distill/lint-B.
+- **Verifica:** lint A = 0/0/0/0.
