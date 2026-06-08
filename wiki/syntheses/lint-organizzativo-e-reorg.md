@@ -74,7 +74,7 @@ resta un *nice-to-have*, non un prerequisito.
 
 ## Host-agnostico e tracking
 
-Le regole vivono nel playbook (espresse sui nomi-area della config, **Principio X** — vedi [[costituzione-v1]]);
+Le regole vivono nel playbook (espresse sui nomi-area della config, **Principio X** — vedi [[constitution]]);
 nessun path hardcoded. Tracciato come **N9** in `requirements/sertor-core/wiki-llm/TODO.md` (FEAT-003-N,
 ancorato a FR-035..038/FEAT-007). È il punto 2 del rituale di step esteso all'organizzazione — vedi
-[[rituale-step-e-allineamento-wiki]] e la mappa in [[architettura-wiki-llm]].
+[[step-ritual]] e la mappa in [[architettura-wiki-llm]].

@@ -30,7 +30,7 @@ La domanda discriminante: *posso calcolarlo senza interpretare il significato?*
   [[architettura-wiki-llm]] e del ponte [[ponte-d-n-host-agnostico|D→N]].
 - **Nella delega:** il meccanico si **delega** (il bookkeeping del wiki a un agente curatore, le operazioni
   git a un agente VCS); il giudizio **resta al flusso principale**. È la stessa linea del
-  [[rituale-step-e-allineamento-wiki|rituale di step]].
+  [[step-ritual|rituale di step]].
 
 ## Perché
 
@@ -39,4 +39,4 @@ rende il comportamento testabile senza LLM, e mantiene la capacità **portabile*
 da un host LLM specifico). All'LLM si chiede solo ciò che solo un LLM può fare.
 
 ## Vedi anche
-- Applicazioni: [[architettura-wiki-llm]] · [[ponte-d-n-host-agnostico]] · [[rituale-step-e-allineamento-wiki]].
+- Applicazioni: [[architettura-wiki-llm]] · [[ponte-d-n-host-agnostico]] · [[step-ritual]].

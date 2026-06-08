@@ -18,7 +18,7 @@ di retrieval, invece di leggerli a mano. *Usiamo il nostro stesso strumento* —
 Il server MCP `sertor-rag` (un [[thin-consumer|consumatore sottile]] del [[retrieval-core]], dichiarato in
 `.mcp.json`) è puntato su un **corpus del progetto**; un agente interroga via `search_code` / `search_docs`
 / `search_combined` invece di Glob/Grep manuali. I corpora sono **isolati** per ambito (vedi
-[[naming-corpora-indici]]): `prototype` (il prototipo congelato) e `sertor` (la produzione). Richiede che il
+[[corpus-index-naming]]): `prototype` (il prototipo congelato) e `sertor` (la produzione). Richiede che il
 corpus sia stato **indicizzato** prima dell'uso.
 
 ## Perché
@@ -32,4 +32,4 @@ corpus sia stato **indicizzato** prima dell'uso.
 
 ## Vedi anche
 - La superficie che lo abilita: [[server-mcp-produzione-feat-mcp]]. L'isolamento dei corpora:
-  [[naming-corpora-indici]]. Il record d'avvio (isolamento prototipo + setup): [[chiusura-prototipo-dogfooding]].
+  [[corpus-index-naming]]. Il record d'avvio (isolamento prototipo + setup): [[chiusura-prototipo-dogfooding]].

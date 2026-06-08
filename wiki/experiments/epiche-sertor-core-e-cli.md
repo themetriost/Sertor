@@ -9,6 +9,9 @@ sources: [requirements/sertor-core/epic.md, requirements/sertor-cli/epic.md]
 
 # Ristrutturazione Epiche: Sertor Core (Primaria) + Sertor CLI (Secondaria)
 
+Questo record fissa la **ristrutturazione delle epiche** di Sertor: il [[retrieval-core|Sertor Core]]
+(capacità RAG + Wiki) diventa l'epica **primaria** e la CLI l'epica **secondaria** (canale di distribuzione).
+
 ## Razionale della ristrutturazione
 
 La **visione di prodotto** è stata ridefinita: il valore core di Sertor non risiede nella CLI

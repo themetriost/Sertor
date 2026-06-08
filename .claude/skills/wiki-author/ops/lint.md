@@ -2,8 +2,9 @@
 
 > **Modulo operazione.** Esecutore: **A** = curator OK · **B/C** = solo flusso principale (Opus).
 > Per il **substrato condiviso** (confine D↔N §2, tassonomia §3, voce di log §6) vedi il playbook
-> `wiki-playbook.md`; il lint **C** giudica contro **come dev'essere una pagina** →
-> [`../page-craft.md`](../page-craft.md). Qui solo la procedura specifica.
+> `wiki-playbook.md`; il lint **C** giudica contro **come dev'essere una pagina**
+> ([`../page-craft.md`](../page-craft.md)) e **come dev'essere l'insieme** ([`../wiki-craft.md`](../wiki-craft.md)).
+> Qui solo la procedura specifica.
 
 Il lint ha **tre livelli**: **A** strutturale (meccanico, CLI: igiene), **B** semantico (giudizio, LLM:
 *claim ↔ realtà del repo*) e **C** organizzativo (giudizio, LLM: *collocazione/atomicità/link*). A è la
@@ -74,7 +75,8 @@ nella rilevazione, non nella correzione automatica). **Caveat di automazione:** 
 il warning al commit copre A e **ricorda di lanciare B incrementale** (`/wiki lint` sul changeset).
 
 **C) Lint organizzativo — giudizio (LLM, flusso principale).** Verifica che il wiki sia un **grafo ben
-organizzato**, non solo igienicamente sano. È **tutto giudizio**: collocazione e natura di una pagina **non
+organizzato** (criteri in [`../wiki-craft.md`](../wiki-craft.md): archetipi, pagine di struttura, due assi,
+SSoT, no frammentazione), non solo igienicamente sano. È **tutto giudizio**: collocazione e natura di una pagina **non
 sono deterministiche** — cartella e `type` possono concordare tra loro e **mentire entrambi** sul contenuto,
 quindi nessun controllo meccanico le coglie. Resta al flusso principale (Opus), **non** al `curator`. Si
 applica al solo `kind` `wiki`, **on-demand** (non al commit). Inventario di partenza: `collect`

@@ -4,6 +4,8 @@
 > contenuto, significato, link. È **linkata da** chi crea o riscrive pagine (`ops/record.md`,
 > `ops/ingest.md`, `ops/query.md`, e il giudizio di `ops/lint.md` livello C e `ops/reorg.md`). È una
 > **foglia**: non dipende da altri documenti del sistema — le operazioni la referenziano, non viceversa.
+> Per il livello *sopra* — *cosa merita di essere una pagina* e come l'insieme tiene insieme (archetipi,
+> pagine di struttura, i due assi, igiene del grafo): la pagina gemella [`wiki-craft.md`](wiki-craft.md).
 >
 > **Host-agnostica (Principio X).** I principi qui valgono su qualunque host; ciò che *varia* — campi del
 > frontmatter, sintassi dei link, e l'esistenza di costrutti come TOC automatico, tag, stato/owner, redirect
@@ -39,15 +41,22 @@ sono ciò che trasforma un insieme di pagine in una *wiki*.
 
 - **Una pagina = un concetto.** Se ti accorgi di descrivere due argomenti distinti, sono **due pagine**
   collegate, non una. Le pagine atomiche si linkano meglio, si riusano in più contesti e si **chunkano
-  puliti** per il RAG. Criterio di **split**: due "cos'è" distinti → due pagine con wikilink reciproci. Sotto
-  la pressione dell'append è qui che si cede (sezioni duplicate, due blocchi di stato): *ricuci o splitta*,
-  non appendere.
+  puliti** per il RAG. Sotto la pressione dell'append è qui che si cede (sezioni duplicate, due blocchi di
+  stato): *ricuci o splitta*, non appendere. (*Se* una cosa meriti una pagina a sé — il criterio di split vs.
+  anti-frammentazione, e la *lente di prodotto* su quali entità di codice estrarre — sta in
+  [`wiki-craft.md`](wiki-craft.md) §1–§2.)
 - **Piramide rovesciata** — prima l'informazione più importante, poi i dettagli, poi i casi limite. Il
   lettore deve poter fermarsi a metà e aver già capito l'essenziale.
 - **Concreto e azionabile** — esempi, snippet, comandi, tabelle. Una procedura va scritta come **lista
   numerata** di passi.
 - **Auto-contenuta ma non ridondante** — spiega il necessario, ma per i concetti che hanno già una loro
-  pagina **linka, non ricopiare**: l'informazione duplicata invecchia in due posti diversi.
+  pagina **linka, non ricopiare**: l'informazione duplicata invecchia in due posti diversi (è la *Single
+  Source of Truth* a livello di grafo → [`wiki-craft.md`](wiki-craft.md) §5).
+- **Il codice non si ricopia: si descrive e si cita.** Uno **snippet** è una *copia* del codice che diverge
+  appena il codice cambia → è la **prima fonte di deriva** (la trova il lint B; nei dump grassi è quasi sempre
+  lo snippet a essere stantio o fabbricato). Descrivi l'**interfaccia** e il **comportamento** e **cita il
+  file** (`path`); usa uno snippet **solo** per illustrare un *concetto stabile*, mai l'implementazione
+  corrente. Vale anche per nomi di file, simboli e firme: **citali, non trascriverli a mano**.
 - **Stile neutro e diretto** — frasi brevi, voce attiva, niente muri di testo; elenchi e tabelle quando i
   dati sono strutturati.
 - **Aggiornabilità** — le informazioni che cambiano (versioni, owner, URL) vanno in **un punto solo e ben

@@ -39,10 +39,15 @@ sessione.
 
 - **Doppio ruolo (DA-W1):** il wiki è insieme **corpus** (interrogabile via RAG) e **superficie**
   (indice navigabile iniettato a inizio sessione). Vedi la pagina del wiki (profilo Sertor:
-  `wiki/concepts/ruolo-wiki-da-w1.md`).
+  `wiki/concepts/wiki-role-da-w1.md`).
 - **Cumulativo:** cresce a ogni sessione; non si riparte da zero.
 - **Idempotente:** se una pagina è già accurata, **non riscriverla**. Niente modifiche inutili.
 - **Self-contained:** ogni pagina è scritta perché un agente la riprenda senza il contesto della chat.
+- **Coerente per costruzione (anti-deriva auto-inflitta):** quando una modifica (al codice, alle regole o
+  a un'altra pagina) rende **stale** una pagina, riallinearla **fa parte dello stesso lavoro** — non è
+  un'operazione separata da chiedere. La deriva che *tu* introduci si corregge **nello stesso step**, di
+  default e senza richiesta esplicita; quella *preesistente* che soltanto scopri può diventare worklist del
+  `lint`. *(L'ospite può codificarlo nel proprio rituale; profilo Sertor: `CLAUDE.md`, rituale di step.)*
 
 ## 2. Nucleo deterministico vs giudizio (il confine)
 
@@ -89,9 +94,10 @@ Le aree sono quelle in `[[taxonomy]]`. Nel profilo Sertor:
 
 ### Collocazione — scegliere l'area dalla natura della pagina
 
-Un wiki è un **grafo, non un albero**: la cartella serve solo a dare a ogni pagina **una casa**, il valore
-sta nei link. L'area si sceglie dalla **natura logica** del contenuto, **non** dalla fase/progetto (cartelle
-per fase — `sprint-3/`, `fase-azure/` — invecchiano male). Ruoli delle aree (profilo Sertor; su un altro
+L'area si sceglie dalla **natura logica** del contenuto, **non** dalla fase/progetto (cartelle
+per fase — `sprint-3/`, `fase-azure/` — invecchiano male): la cartella dà solo **una casa**, il valore sta nei
+link. Il *perché* — «un wiki è un grafo, non un albero» e i due assi di navigazione — sta in
+[`wiki-craft.md`](wiki-craft.md) §4. Ruoli delle aree (profilo Sertor; su un altro
 ospite valgono i ruoli analoghi della sua `[[taxonomy]]`):
 
 - **concepts/** — astrazioni, pattern, idee (un concetto RAG, una tecnica). Evergreen.
@@ -113,6 +119,11 @@ davvero** la pagina e coincidere con l'area che la ospita. Attenzione: cartella 
 `type: synthesis`). Questo disallineamento **natura↔collocazione** è invisibile al lint meccanico (vede solo
 la stringa) ed è il bersaglio del **lint livello C** (modulo [`ops/lint.md`](ops/lint.md)).
 
+**Livello-grafo → [`page-craft.md`](page-craft.md) (la singola pagina) e [`wiki-craft.md`](wiki-craft.md)
+(l'insieme).** *Quando* una cosa merita una pagina (test del link/nome), gli **archetipi** di pagina, le
+pagine di struttura (home/hub/overview) e i due assi di navigazione stanno in `wiki-craft.md` — la guida di
+livello-grafo, gemella di `page-craft.md`.
+
 ## 4. Convenzioni
 
 **Frontmatter YAML** in ogni pagina (eccetto i file append-only). I campi attesi sono in
@@ -128,10 +139,8 @@ sources: ["<path o URL>", ...]
 ---
 ```
 
-- **Stub (nodo da creare):** un forward-link si realizza creando una pagina-**stub** — file reale nell'area
-  giusta, frontmatter completo + `status: stub` (campo opzionale) e corpo `> 🚧 STUB` — così il link risolve
-  e il lint A resta verde; un `[[…]]` senza pagina né stub resta `broken` (= refuso). Dettaglio in
-  [`page-craft.md`](page-craft.md).
+- **Stub (nodo da creare):** un forward-link a una pagina non ancora scritta si realizza come **stub**, non
+  come `[[…]]` a vuoto (che il lint A segnala `broken`). Meccanismo e regole in [`page-craft.md`](page-craft.md) §4.
 - **Wikilink** `[[nome-pagina]]` (senza `.md`); alias con `[[nome-pagina|testo mostrato]]`. Mantieni i
   cross-reference aggiornati: una pagina nuova va linkata dall'indice e dalle pagine correlate.
 - **Naming** file: kebab-case descrittivo (`azure-ai-search.md`). `validate` lo verifica per te.
@@ -164,12 +173,13 @@ chi crea o riscrive pagine segue inoltre il page-craft in [`page-craft.md`](page
 La **procedura specifica** di ciascuna operazione vive in un **modulo `ops/<operazione>.md`** (stessa
 cartella di questo file): **`Read` solo il modulo dell'operazione che ti serve** — non caricarli tutti
 (progressive disclosure). Le operazioni documentali (`record`, `ingest`, `query`, lint **A**) sono
-eseguibili anche dal `curator` in background; il lint **B/C**, `reorg`, `generate-from-diff` e `rag-sync`
-richiedono il **flusso principale** (Opus).
+eseguibili anche dal `curator` in background; il lint **B/C**, `distill`, `reorg`, `generate-from-diff` e
+`rag-sync` richiedono il **flusso principale** (Opus).
 
 | Operazione | Modulo (`Read` on-demand) | Cosa fa | Esecutore |
 |---|---|---|---|
 | `record` | [`ops/record.md`](ops/record.md) | registra lavoro/decisione svolti | curator OK |
+| `distill` | [`ops/distill.md`](ops/distill.md) | estrae le entità/concetti durevoli in pagine proprie; assottiglia i record datati | solo Opus |
 | `ingest` | [`ops/ingest.md`](ops/ingest.md) | acquisisci una fonte esterna → `sources/` | curator OK |
 | `query` | [`ops/query.md`](ops/query.md) | rispondi a una domanda sul wiki (archivia se prezioso) | curator OK |
 | `lint` | [`ops/lint.md`](ops/lint.md) | coerenza a 3 livelli: A strutturale · B semantico · C organizzativo | A: curator · B/C: solo Opus |
@@ -188,13 +198,21 @@ richiedono il **flusso principale** (Opus).
 Append al log (nome-file da config), una voce per operazione, con la **data odierna**:
 ```
 ## [YYYY-MM-DD] <operazione> | <titolo>
-- <bullet sintetici: pagine create/aggiornate, decisioni, esiti, commit se noti>
+<lead: 1–2 frasi col perché/trigger dello step>
+- **<etichetta>:** <fatto saliente o puntatore [[pagina]], una riga>
 ```
-`<operazione>` ∈ `setup` · `structure` · `record` · `ingest` · `query` · `lint` · `reorg` ·
+`<operazione>` ∈ `setup` · `structure` · `record` · `distill` · `ingest` · `query` · `lint` · `reorg` ·
 `generate-from-diff` · `rag-sync` — l'insieme delle operazioni di §5 più `setup` (bootstrap generico di
 sessione/governance, distinto da `structure` che è il bootstrap della *struttura* del wiki). `structure`
 lascia una voce **solo se ha creato qualcosa** (`created` non vuoto); se è tutto `skipped_existing`,
 niente voce (idempotente + regola anti-banale).
+
+**Com'è fatta una buona voce → [`log-craft.md`](log-craft.md).** Le regole qui sopra sono la *convenzione*
+(grammatica dell'heading, vocabolario delle operazioni, regola anti-banale). Il **log-craft** — il confine
+log↔pagina (cosa va nel log datato vs nella pagina evergreen), l'anatomia della voce (lead + bullet piatti +
+riga d'esito), la **granularità** e l'**anti-deriva** (no dump del contenuto, no liste-file, no aggettivi) —
+vive nella pagina-foglia gemella di [`page-craft.md`](page-craft.md), linkata dalle operazioni che appendono
+una voce (`record`, `ingest`, `lint`, `reorg`, …).
 
 ## 7. Limiti & deleghe
 

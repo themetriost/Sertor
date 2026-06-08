@@ -53,7 +53,8 @@ class LintResult:
     """`wiki.lint/1` — difetti strutturali (FR-006); usato anche da `validate`.
 
     `stubs` elenca le pagine-segnaposto (frontmatter `status: stub`) da riempire: NON sono difetti
-    (un forward-link risolto a uno stub è intenzionale, non `broken`), ma una worklist di nodi voluti.
+    (un forward-link risolto a uno stub è intenzionale, non `broken`), ma una worklist di nodi
+    voluti.
     Campo additivo, forward-compatible (i consumatori più vecchi lo ignorano).
     """
 
@@ -96,6 +97,38 @@ class IndexResult:
     documents: int
     regenerated: bool
     schema: str = "wiki.index/1"
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    def to_json(self) -> str:
+        return _to_json(self.to_dict())
+
+
+@dataclass(frozen=True)
+class AppendLogResult:
+    """`wiki.append_log/1` — esito del write-back di una voce di log (FR-005/007)."""
+
+    written: bool
+    partition: str | None
+    created: bool
+    schema: str = "wiki.append_log/1"
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    def to_json(self) -> str:
+        return _to_json(self.to_dict())
+
+
+@dataclass(frozen=True)
+class MigrateResult:
+    """`wiki.migrate/1` — esito dello split retroattivo del log monolitico (FR-009)."""
+
+    migrated_entries: int
+    created: list[str] = field(default_factory=list)
+    skipped: list[str] = field(default_factory=list)
+    schema: str = "wiki.migrate/1"
 
     def to_dict(self) -> dict:
         return asdict(self)

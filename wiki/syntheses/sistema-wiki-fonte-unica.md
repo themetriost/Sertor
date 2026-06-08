@@ -28,8 +28,8 @@ Il wiki di produzione (cartella `wiki/`) è un **LLM Wiki** in stile Karpathy co
 > **moduli `ops/<operazione>.md`** (stessa cartella), caricati **on-demand** dai wrapper (`Read` del solo
 > modulo dell'operazione invocata). Scopo: **progressive disclosure** (invocare `record` carica ~177 righe
 > invece di 331) **senza** duplicare il substrato (DRY) e **senza** trasformare le operazioni in skill (che
-> violerebbe il Principio X — le skill sono un costrutto dell'host). **NB:** le **8** operazioni correnti
-> sono `record · ingest · query · lint (A/B/C) · reorg · generate-from-diff · rag-sync · structure` — il
+> violerebbe il Principio X — le skill sono un costrutto dell'host). **NB:** le **9** operazioni correnti
+> sono `record · distill · ingest · query · lint (A/B/C) · reorg · generate-from-diff · rag-sync · structure` — il
 > corpo più sotto, datato 2026-06-04, ne cita ancora 6 (prima di `reorg`/`structure`). Razionale e
 > alternative scartate (A monolite, B skill): `requirements/sertor-core/wiki-llm/playbook-flussi-e-modularizzazione.md`.
 >

@@ -56,7 +56,7 @@ Così anche `specs/007-mcp-sertor-core/tasks.md` cade in tracker anche se sta so
 
 | `kind` | Cosa conta come "deriva" | Azione | Note |
 |---|---|---|---|
-| `wiki` | Claim descrittivo **contraddetto da codice/test**; contraddizioni tra pagine; sommario stantio; coverage | report | [[architettura-wiki-llm]], [[rituale-step-e-allineamento-wiki]] |
+| `wiki` | Claim descrittivo **contraddetto da codice/test**; contraddizioni tra pagine; sommario stantio; coverage | report | [[architettura-wiki-llm]], [[step-ritual]] |
 | `requirements` | **Solo claim di STATO** (`implementato`, `mergiato`, conteggi, ID); **NON** `«shall X»` non-implementato (= backlog, autorità: codice=comportamento, requisiti=perché) | report | tassonomia: stato git/PR/branch superato, numeri incoerenti, ID inesistenti |
 | `spec` | Come `requirements` + coerenza col **codice SE lo stato dichiara "implementato"** | report | idem + verifica signature/funzioni se implementate |
 | `tracker` | **Tabelle/checkbox di stato** (`FATTO`/`da fare`, `[x]`/`[ ]`) **contraddette dalla realtà** = **deriva diretta** | report | verità = progresso effettivo (commit, PR, test) |
@@ -111,9 +111,9 @@ Vedi [[architettura-wiki-llm]] item **"2a FR-004: chiudere il trigger"**.
 ## Collegamento all'architettura
 
 - **[[architettura-wiki-llm]]** — mappa il lint a due livelli nello schema D↔N, item "N5 lint semantico — metodo documentato (variante b)".
-- **[[rituale-step-e-allineamento-wiki]]** — il lint semantico è il punto 2 della Definition of Done, eseguito dal flusso principale (Opus, non Haiku) a ogni step.
+- **[[step-ritual]]** — il lint semantico è il punto 2 della Definition of Done, eseguito dal flusso principale (Opus, non Haiku) a ogni step.
 - **[[ponte-d-n-host-agnostico]]** — il confine operazionale: lint A è 100% D (CLI), lint B è giudizio N (LLM).
-- **[[costituzione-v1]]** — Principio X (host-agnosticità) e Principio I (isolamento core) garantiscono che il metodo resti astratto e portabile.
+- **[[constitution]]** — Principio X (host-agnosticità) e Principio I (isolamento core) garantiscono che il metodo resti astratto e portabile.
 - **Config audit** — la sezione `wiki.config.toml` che mappa artefatti ospite a `kind` universali (documento di configurazione).
 
 ## Stato (2026-06-06)

@@ -71,7 +71,7 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
   - **Hook `SessionStart`:** PowerShell inline in `.claude/settings.json`, attiva a inizio sessione/resume/compact.
   - **Payload:** indice wiki intero + ultime 20 righe di log, iniettate in contesto (sola lettura).
   - **Rilevanza DA-W1:** prova empirica di ruolo 1 (contesto iniettato); competenza dell'host, non MVP Sertor.
-- **Index aggiornato:** sezione Syntheses con `[[ruolo-wiki-da-w1]]`; nuova sezione Tech con `[[hook-sessionstart-wiki]]`.
+- **Index aggiornato:** sezione Syntheses con `[[wiki-role-da-w1]]`; nuova sezione Tech con `[[sessionstart-hook]]`.
 - **Epica sertor-core `epic.md`:** §9 (DA-W1, DA-2 risolte) e §6 (R-5 mitigato).
 
 ## [2026-05-31] record | Decomposizione Must sertor-core + decisioni di ambito MVP
@@ -97,7 +97,7 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
   - **9 principi vincolanti:** (I) core a dipendenze interne; (II) provider intercambiabili; (III) semplicità YAGNI; (IV) gestione errori esplicita; (V) testabilità misurata; (VI) idempotenza/non-distruttività; (VII) leggibilità; (VIII) config centralizzata; (IX) osservabilità via log strutturati.
   - **Principle I e IV NON-NEGOZIABILI:** gate Constitution Check del planning.
   - **Governance attivata:** branch + PR (niente più push diretti); Constitution Check in Phase 0–1; semantic versioning per emendamenti.
-- **Index aggiornato:** aggiunto link `[[costituzione-v1]]` in testa a Syntheses; source `.specify/memory/constitution.md` aggiunta.
+- **Index aggiornato:** aggiunto link `[[constitution]]` in testa a Syntheses; source `.specify/memory/constitution.md` aggiunta.
 - **File toccati:** `wiki/syntheses/costituzione-v1.md` (nuovo), `wiki/index.md`, `wiki/log.md`.
 
 ## [2026-06-03] record | Piano SpecKit FEAT-001 nucleo-retrieval
@@ -208,7 +208,7 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
   - `.gitignore` (root): generalizzato a `**/.index-*/` per coprire entrambi gli indici.
   - `CLAUDE.md` § "Riferirsi al prototipo": sezione aggiornata (corpus→`prototype`, spiegazione corpus-aware).
 - **Pagina creata:** `wiki/tech/naming-corpora-indici.md` documenta schema, convenzioni, storico.
-- **Index aggiornato:** aggiunto link `[[naming-corpora-indici]]` in sezione Tech; `updated` → 2026-06-04.
+- **Index aggiornato:** aggiunto link `[[corpus-index-naming]]` in sezione Tech; `updated` → 2026-06-04.
 
 ## [2026-06-04] record | Rituale di step (Definition of Done) + retrospettiva interazione
 
@@ -227,7 +227,7 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
   controlli, vincolo hook, standing vs unattended) + **retrospettiva onesta** sull'interazione (richiesta
   dall'utente per un blog post): nessun rifiuto esplicito, ma un pattern di deferral/ratifica/caveat che ha
   *funzionato* come ostruzione; effetto > intento; correttivo = default "fai" invece di "chiedi-poi-forse-fai".
-- **Index aggiornato:** aggiunto `[[rituale-step-e-allineamento-wiki]]` in cima alle Syntheses.
+- **Index aggiornato:** aggiunto `[[step-ritual]]` in cima alle Syntheses.
 - **Nota di allineamento (eseguito il rituale stesso):** rilevati ma NON ancora corretti — wikilink rotto
   storico `[[epica-sertor-cli]]`→`[[epiche-sertor-core-e-cli]]` in `chiusura-prototipo-dogfooding.md`;
   `__pycache__` fantasma in `src/sertor_cli|sertor_mcp|sertor_core/wiki|adapters/git|adapters/llm` (zero
@@ -287,7 +287,7 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
 - **Motivo tecnico:** distinzione tra "lavoro di forma" (token-efficiente da delegare) e "giudizio" (loss di contesto se delegato). Se casi pesanti richiedono override, usare `sonnet` per-invocazione, non il default Haiku.
 - **Conseguenza operativa:** rituale rimane **integralmente responsabilità del flusso principale**; delega = non-bloccare, non scappare. **Qualità del brief** (input a wiki-keeper) è la leva cruciale: brief povero → wiki disallineato silenziosamente.
 - **File toccati:** `wiki/syntheses/rituale-step-e-allineamento-wiki.md` (frontmatter updated 2026-06-05, sezione 4a aggiunta, tag `delega` aggiunto).
-- **Index aggiornato:** nessun link nuovo (già presente [[rituale-step-e-allineamento-wiki]]), solo update timestamp.
+- **Index aggiornato:** nessun link nuovo (già presente [[step-ritual]]), solo update timestamp.
 
 ## [2026-06-05] record | Fonte unica del rituale = CLAUDE.md (plugin step-ritual cancellato, riesportazione a backlog)
 
@@ -312,7 +312,7 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
 - **Fixture nuova:** `tests/fixtures/doc_only_host/` (ospite finto per prova SC-001).
 - **Punti aperti segnalati:** (1) import package-root non lazy (`sertor_core/__init__.py` importa eagerly composition → chromadb); offline-import garantito solo a livello wiki_tools; (2) link rotto reale nel wiki: `[[architettura-attuale]]` in `syntheses/chiusura-prototipo-dogfooding.md` → pagina inesistente (scoperto dal lint).
 - **Branch:** `spec/006-nucleo-wiki-deterministico` | Commit: `4ac4eaa` (non su master, nessuna PR ancora).
-- **Pagina creata:** `wiki/syntheses/nucleo-wiki-deterministico-feat003d.md` (sintesi completa, Constitution Check 10/10, linkage a [[costituzione-v1]], [[missione-visione-host-agnosticita]]).
+- **Pagina creata:** `wiki/syntheses/nucleo-wiki-deterministico-feat003d.md` (sintesi completa, Constitution Check 10/10, linkage a [[constitution]], [[mission-vision]]).
 - **Link rotto corretto (scoperto dal lint):** `[[architettura-attuale]]` in `syntheses/chiusura-prototipo-dogfooding.md` → pagina inesistente rimossa, testo generalizzato a "concetto di architettura da `prototype/wiki/`".
 - **File toccati:** Nuova pagina `wiki/syntheses/nucleo-wiki-deterministico-feat003d.md`, aggiornati `wiki/index.md` (timestamp + link), `wiki/syntheses/chiusura-prototipo-dogfooding.md` (link rotto corretto), `wiki/log.md` (voce corrente).
 
@@ -321,8 +321,8 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
 - **README.md (nuovo):** formalizzazione di Vision ("la conoscenza viva e interrogabile, ovunque, senza lock-in") e Mission ("Sertor framework installabile su qualsiasi progetto: indicizzazione + RAG + LLM Wiki, disaccoppiati dal dominio ospite"). Tre profili ospite: code+doc, solo-doc, solo-code. Sottolinea che disaccoppiamento è vincolo, non aspirazione.
 - **Emendamento Costituzione v1.0.0 → v1.1.0 (MINOR):** aggiunto **Principio X — Capacità host-agnostiche** (la portabilità è un vincolo, non un'aspirazione). Ogni capacità (core, motori RAG, skill wiki, rituali) MUST essere disaccoppiata da dominio/struttura ospite; l'ospite si configura, non si presume. Dogfooding strumentale, non licenza a violare. Test non-negoziabile: capacità operabile su ospiti diversi senza modifiche al corpo. Generalizza Principio I da core-libreria a TUTTE le capacità.
 - **Conseguenza/backlog:** Principio X identifica una **tensione contemporanea** — skill wiki, playbook, rituale today sono Sertor-coupled (citate `wiki/`, `log.md`, agenti, `.claude/`). Refactor host-agnostico (parametrizzazione su path/config) è **differito post-MVP** (quando FEAT-003/FEAT-010 merger). Ispirazione: skill di Transcriptio (parametrizzate). Non è difetto, è evoluzione naturale prototipo → framework.
-- **Pagina creata:** `wiki/syntheses/missione-visione-host-agnosticita.md` — lega README (pitch), Principio X (vincolo), backlog (azione differita). Backlink a [[costituzione-v1]] e [[rituale-step-e-allineamento-wiki]].
-- **Aggiornamenti wiki:** `wiki/syntheses/costituzione-v1.md` (10 principi, v1.1.0, sezione Versioning, link nuova pagina); `wiki/index.md` (voce costituzione aggiornata, link [[missione-visione-host-agnosticita]] aggiunto).
+- **Pagina creata:** `wiki/syntheses/missione-visione-host-agnosticita.md` — lega README (pitch), Principio X (vincolo), backlog (azione differita). Backlink a [[constitution]] e [[step-ritual]].
+- **Aggiornamenti wiki:** `wiki/syntheses/costituzione-v1.md` (10 principi, v1.1.0, sezione Versioning, link nuova pagina); `wiki/index.md` (voce costituzione aggiornata, link [[mission-vision]] aggiunto).
 - **Corretto CLAUDE.md:** "9 principi" → "i principi" (drift-proof).
 - **File toccati (wiki):** `wiki/syntheses/missione-visione-host-agnosticita.md` (nuovo), `wiki/syntheses/costituzione-v1.md` (frontmatter+10 principi+versioning+link), `wiki/index.md` (updated=2026-06-05, link aggiunti).
 
@@ -433,7 +433,7 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
   - Nuova pagina: `wiki/syntheses/lint-semantico-host-agnostico.md` (problema, soluzione, tassonomia, collegamenti).
   - Aggiornati: `wiki/index.md` (timestamp + link a [[lint-semantico-host-agnostico]] in Syntheses), `wiki/log.md` (voce corrente).
 
-- **Collegamento architettura:** [[architettura-wiki-llm]] item "N5 lint semantico — metodo documentato (variante b)"; [[rituale-step-e-allineamento-wiki]] punto 2 (lint di allineamento); [[ponte-d-n-host-agnostico]] confine D↔N.
+- **Collegamento architettura:** [[architettura-wiki-llm]] item "N5 lint semantico — metodo documentato (variante b)"; [[step-ritual]] punto 2 (lint di allineamento); [[ponte-d-n-host-agnostico]] confine D↔N.
 
 ## [2026-06-06] lint | Audit globale on-demand su intero repo (4 kind)
 
@@ -451,7 +451,7 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
 
 - **Verificato pulito:** spec/requirements (intento/design; «shall» non-implementato = backlog, non deriva; CLI assente da master = backlog corretto); sintesi di implementazione (conteggi datati per-feature, non claim globali); checkbox `tasks.md` delle feature mergiate.
 
-- **Metodo confermato:** report-only + correzione su conferma esplicita dell'utente; nessun auto-fix; storia datata non riscritta (solo banner). Esercita N5 ([[lint-semantico-host-agnostico]], punto 2 del rituale in [[rituale-step-e-allineamento-wiki]]).
+- **Metodo confermato:** report-only + correzione su conferma esplicita dell'utente; nessun auto-fix; storia datata non riscritta (solo banner). Esercita N5 ([[lint-semantico-host-agnostico]], punto 2 del rituale in [[step-ritual]]).
 
 ## [2026-06-06] record | Disciplina organizzativa del wiki: lint livello C + reorg + regole di creazione
 
@@ -492,7 +492,7 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
 
 - **Increment successivi (proposti, non applicati):** (a) split di `rituale-step` (concetto rituale-di-step ↔ retrospettiva-2026-06-04); (b) aggiornare il corpo di `architettura-wiki-llm` (sezione "lint a due livelli" → tre livelli A/B/C); (c) verificare sezioni duplicate in server-mcp-produzione-feat-mcp.
 
-- **Esercita N9** ([[lint-semantico-host-agnostico]] livello C, [[rituale-step-e-allineamento-wiki]]): prima prova del metodo su contenuti reali, con esito pulito.
+- **Esercita N9** ([[lint-semantico-host-agnostico]] livello C, [[step-ritual]]): prima prova del metodo su contenuti reali, con esito pulito.
 
 ## [2026-06-06] record | Documentazione lint C/reorg + sistemati i 3 follow-up
 
@@ -500,7 +500,7 @@ Voci in ordine cronologico. Formato: `## [YYYY-MM-DD] <operazione> | <titolo>`
 
 - **Documentazione del nuovo step:** nuova pagina **[[lint-organizzativo-e-reorg]]** (syntheses): le tre categorie di deriva (A igiene / B claim / C organizzazione), perché C è interamente giudizio (cartella e `type` mentono *insieme* sul contenuto → nessun check deterministico le coglie), principio "grafo non albero", prevenzione (regole di creazione) vs correzione (lint C + `reorg`), esercizio 2026-06-06 (16/20→4/3/9/4, 0 link rotti), host-agnostico, tracking N9.
 
-- **(a) Split di `rituale-step` (era non-atomica):** la pagina mescolava il *design* del rituale e la *retrospettiva* dell'interazione. Separata in due pagine atomiche: **[[rituale-step-e-allineamento-wiki]]** (concept, ricucito, prima frase = definizione) + **[[retrospettiva-interazione-2026-06-04]]** (experiment). Slug del concetto invariato → i 6 inbound restano intatti.
+- **(a) Split di `rituale-step` (era non-atomica):** la pagina mescolava il *design* del rituale e la *retrospettiva* dell'interazione. Separata in due pagine atomiche: **[[step-ritual]]** (concept, ricucito, prima frase = definizione) + **[[retrospettiva-interazione-2026-06-04]]** (experiment). Slug del concetto invariato → i 6 inbound restano intatti.
 
 - **(b) `architettura-wiki-llm` allineata:** "lint a **due** livelli" → **tre** (A/B/C, con `reorg`); tabella confine D↔N estesa a lint C + reorg; "6 op" → 7; **corretta deriva adiacente**: `sertor_mcp` da "☐ da fare, .mcp.json rotto" a "✅ PR #15, .mcp.json su produzione"; roadmap 5a marcata fatta.
 
@@ -619,3 +619,80 @@ Implementato il "gravy" deferito della convenzione stub: il `lint` deterministic
 - **Test:** nuovo `test_stub_is_wanted_not_broken_nor_orphan` — uno stub linkato da un forward-link **non** è broken né orfano e compare in `stubs`. Suite lint 6/6 verde (l'unico rosso della suite, `test_settings`, è ambientale: `RAG_BACKEND=azure` nel `.env`, pre-esistente).
 - **Doc allineati** (stesso branch): `ops/lint.md` e `page-craft.md` annotano il campo `stubs`.
 - **Constitution Check:** additivo, zero nuove dipendenze, deterministico/offline, test verdi, leggibile → PASS.
+
+## [2026-06-07] record | Creata la guida di livello-grafo: wiki-craft (gemella di page-craft)
+
+Aggiunta la pagina-foglia **`wiki-craft.md`** (governance, in `.claude/`), il gemello a livello-grafo di `page-craft`: *page-craft* = com'è fatta **una** pagina; *wiki-craft* = **cosa merita di essere una pagina** e **come l'insieme tiene insieme**.
+
+- **Contenuto:** quando creare una pagina (test del link/nome, anti-frammentazione) · archetipi (Diátaxis: entità/how-to/reference/spiegazione/hub) · pagine di struttura (home/hub/overview/glossario/categorie) · i due assi (gerarchia + rete) · igiene a livello wiki (SSoT, no orfani/dead-end, naming, coerenza>completezza, crescita per refactoring) · modello mentale "grafo + impalcatura".
+- **Host-agnostica (Principio X):** principi universali; mappatura/esempi = profilo Sertor. Mapping esplicitato: aree *per natura* (concepts/tech/experiments/sources/syntheses) che **tagliano** gli archetipi; `index.md` = home+hub globale; `tags` = categorie; albero volutamente piatto, valore nella rete. Sertor non usa tutti gli archetipi (no how-to/hub per-area).
+- **Riconciliazione col playbook §3:** "grafo non albero" resta valido; wiki-craft aggiunge la sfumatura che anche un albero *piatto* è un asse-punto-fermo, da tenere basso non abolire.
+- **Wiring (foglia, linkata verso il basso):** playbook §3 + `ops/record`, `ops/ingest`, `ops/reorg` (crescita per refactoring), `ops/lint` livello C (criteri di grafo). Peer-link reciproco con `page-craft`.
+- **Possibili follow-up (segnalati, non agiti):** `index.md` fa home+hub insieme ed è lungo (tende all'hub); nessun hub/overview per-area.
+
+## [2026-06-07] reorg | Lint approfondito (page-craft + wiki-craft) + rename EN dei 6 slug italiani
+
+Lint a tutte le lenti su 27 pagine. **page-craft** e **wiki-craft** giudicano il wiki **sano**: 0 orfani, 0 dead-end, SSoT ok (D↔N canonico in [[deterministic-vs-judgment]]), due assi coerenti col profilo piatto. L'unico finding sistematico era la **coerenza di naming** (convenzione EN); l'utente ha scelto di rinominare tutte e 6.
+
+- **Rename EN (slug + titolo, corpo IT):** `costituzione-v1`→`constitution` · `missione-visione-host-agnosticita`→`mission-vision` · `ruolo-wiki-da-w1`→`wiki-role-da-w1` · `rituale-step-e-allineamento-wiki`→`step-ritual` · `naming-corpora-indici`→`corpus-index-naming` · `hook-sessionstart-wiki`→`sessionstart-hook`. Tutti i wikilink entranti aggiornati (~34) in wiki + `index.md` + `log.md`.
+- **Blast radius esterno:** aggiornati `CLAUDE.md` (`[[step-ritual]]`) e `requirements/sertor-core/epic.md` (menzione `corpus-index-naming`). **Lasciata** la spec mergiata `specs/007-mcp-sertor-core/research.md` (artefatto datato, riferimenti già stale di suo).
+- **Minori:** lead-che-definiscono per `tree-sitter-language-pack` ed `epiche-sertor-core-e-cli`; rimosso da tree-sitter un `sources` inesistente (`adapters/chunkers/syntactic_chunker.py`); +1 backlink a [[pulizia-pycache-e-diagnosi-mcp]] da [[server-mcp-produzione-feat-mcp]] (era a 0).
+- **Verifica:** lint+validate **0/0/0/0** (zero broken = rename corretto); pycache backlink 1.
+
+## [2026-06-07] record | Priorità prossima sessione: la funzione di log del wiki
+
+Deciso con l'utente che la **priorità della prossima sessione** è migliorare la **funzione di log** del wiki (`log.md`). Scope concordato:
+
+1. **Strategia di scrittura** *(certo, giudizio)* — come si scrivono le voci di `log.md`: granularità, lunghezza, cosa va nel log (datato/append-only) vs nelle pagine (evergreen), evitare la deriva verso voci verbose. → da codificare nel **playbook §6 (Voce di log)**. È il backlog #1 già annotato il 2026-06-06.
+3. **Struttura/manutenzione** *(certo)* — il `log.md` cresce indefinitamente (append-only): valutare rotazione / partizionamento per periodo / indicizzazione-sommari; gestire dimensione e navigabilità.
+2. **Write-back deterministico `append_log`** *(da discutere — "capiamo bene" prima)* — eventuale cablaggio di `append_log` di `wiki_tools` nella CLI (oggi le voci le scrive l'LLM a mano; formato deterministico diverso). Se si procede → codice, branch+PR (scope completo deferito di FEAT-003-N).
+
+NB: si parla del log del **wiki**, non del logging runtime/osservabilità del codice. Checkpoint di ripresa aggiornato in memoria.
+
+## [2026-06-08] distill | FEAT-001: 4 pagine-entità del nucleo + record assottigliato
+
+Primo esercizio reale dell'operazione `distill` (introdotta in giornata nel rituale). Il record `experiment`
+di FEAT-001 (~312 righe) teneva la conoscenza-entità durevole **sepolta e drifted**: estratta in pagine-entità
+ancorate al **codice reale** (non al record, già stantio).
+
+- **Estratte** (`concepts/`): [[domain-model]] · [[ports-adapters]] · [[chunking-dispatch]] · [[indexing-and-retrieval]] — da `domain/entities.py`, `domain/ports.py`, `composition.py`, `services/`.
+- **Assottigliato:** `implementazione-nucleo-retrieval` da ~312 righe a **evento + esito + puntatori**.
+- **Deriva corretta nel record:** citava `domain/ports/` (cartella), `ollama_provider.py`, facade `ingest_repository`/`retrieve`, "14 lingue" → realtà: `ports.py` (file unico), `adapters/embeddings/ollama.py`, facade `search_code/docs/combined`, **10** lingue sintattiche (+ fallback).
+- **Cablaggio:** [[retrieval-core]] punta giù alle 4 entità; `index.md` aggiornato.
+- **Segnalato (backlog):** `tech/tree-sitter-language-pack` è gonfio e in parte **fabbricato** (`adapters/chunkers/syntactic_chunker.py` inesistente, `FALLBACK_LANGUAGES` inventato) → da ripassare con distill/lint-B.
+- **Verifica:** lint A = 0/0/0/0.
+
+## [2026-06-08] record | Allineate le pagine rese stale dall'introduzione di distill
+
+L'aggiunta dell'operazione `distill` (e l'esercizio del pilota) aveva reso stale alcune pagine evergreen:
+allineate **nello stesso step**, come dovere standing — la deriva che creiamo si corregge senza richiesta
+esplicita (regola codificata in memoria).
+
+- **`step-ritual.md`** §4: aggiunto il **punto 2 "Distilla le entità"** (rinumerato lint→3, altre→4).
+- **`sistema-wiki-fonte-unica.md`**: banner di testa **8 → 9** operazioni correnti (+`distill`).
+- **`architettura-wiki-llm.md`**: `distill` aggiunto alla tabella confine D↔N; **N2 distillazione** da `☐/❌ build` a **✅ fatto** (Stato attuale + roadmap).
+- **Verifica:** lint A = 0/0/0/0.
+
+## [2026-06-08] distill | Backlog distillazione: tree-sitter + FEAT-002/003-D/MCP
+
+Continuato il distilling sul backlog di pagine/record grassi, sempre **dal codice reale**.
+
+- **Riscritta** `tech/tree-sitter-language-pack` (335→~55 righe): rimosse parti **fabbricate**
+  (`adapters/chunkers/syntactic_chunker.py` inesistente, `FALLBACK_LANGUAGES` inventato, `_Node` non reale);
+  allineata a `code.py` (API a metodi, wrapper `_Node` vero, byte-range UTF-8).
+- **Estratte** (`tech/`): [[wiki-tools]] (nucleo deterministico del wiki, FEAT-003-D) · [[mcp-server]] (server
+  MCP `sertor-rag`, FEAT-MCP).
+- **FEAT-002:** nessuna pagina nuova — [[vector-retrieval]] già copre le entità (verificato vs `baseline.py`/`evaluation.py`).
+- **Assottigliati** 3 record a evento+esito+puntatori: `motore-baseline-feat002`, `nucleo-wiki-deterministico-feat003d`, `server-mcp-produzione-feat-mcp`.
+- **Cablaggio:** `index.md` (+2 tech, descrittori record aggiornati); `thin-consumer` punta alle entità.
+- **Verifica:** lint A = 0/0/0/0.
+
+## [2026-06-08] record | FEAT-008 meccanica del log — implementata (PR #18)
+
+Implementata via flusso SpecKit completo la meccanica del log di [[wiki-tools]] (rotazione + `append_log`
+curato + `migrate`), su branch `spec/008-meccanica-log`; **PR #18** aperta (non mergiata).
+
+- **Cosa:** rotazione a un file/giorno (implicita), `append-log` curato in CLI (corpo dall'LLM, piazzamento deterministico), `migrate` dello storico; contratti `wiki.append_log/1`/`wiki.migrate/1`, `wiki.scan/1` invariato.
+- **Wiki:** distillato in [[wiki-tools]]; record datato [[meccanica-log-feat008]].
+- **Esito:** 22 unit test verdi + smoke CLI; ruff pulito; Constitution Check 10/10.
+- **Deferito (post-merge):** attivazione (`log_dir = "log"` + `migrate` sul `log.md` reale).

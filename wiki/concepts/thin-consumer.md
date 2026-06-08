@@ -22,7 +22,7 @@ superficie esterna è un **adattatore in uscita** che dipende dal core, mai il c
 - **Il prodotto è la libreria, non l'interfaccia.** Mettere la logica nel core e tenere sottili le interfacce
   significa che CLI, MCP e qualunque host futuro **condividono lo stesso comportamento** (stessi risultati,
   stessa config, stessi errori) invece di divergere.
-- **Host-agnosticità (Principio X, [[missione-visione-host-agnosticita]]).** Un'interfaccia sottile non
+- **Host-agnosticità (Principio X, [[mission-vision]]).** Un'interfaccia sottile non
   incatena il core a un host specifico: aggiungere una nuova superficie = scrivere un nuovo guscio, non
   toccare il core.
 - **Niente duplicazione di logica** = niente deriva fra interfacce, e una sola superficie da testare in
@@ -42,14 +42,14 @@ Non conosce gli adapter concreti né gli SDK: quelli restano dietro le porte, sc
 
 ## Esempi (profilo Sertor)
 
-- **Server MCP** ([[server-mcp-produzione-feat-mcp]]) — l'esempio canonico già realizzato: `src/sertor_mcp/`
-  ottiene la facade con `build_facade(Settings.load())` (memoizzata) ed espone 3 tool
-  (`search_code`/`search_docs`/`search_combined`) mappando i `RetrievalResult` sul protocollo MCP. Nessuna
-  logica di retrieval propria.
+- **[[mcp-server|Server MCP `sertor-rag`]]** — l'esempio canonico già realizzato: ottiene la facade con
+  `build_facade(Settings.load())` (memoizzata) ed espone 3 tool (`search_code`/`search_docs`/`search_combined`)
+  mappando i `RetrievalResult` sul protocollo MCP. Nessuna logica di retrieval propria. *(Record datato:
+  [[server-mcp-produzione-feat-mcp]].)*
 - **CLI `sertor`** — il CLI di distribuzione (in arrivo) è un thin consumer analogo: importa il core, non
   dipende dagli adapter Azure (extra opzionale).
-- **`sertor-wiki-tools`** — la CLI del nucleo wiki deterministico ([[nucleo-wiki-deterministico-feat003d]])
-  è un entry sottile sopra `sertor_core.wiki_tools`, guidato da `wiki.config.toml`.
+- **[[wiki-tools|`sertor-wiki-tools`]]** — la CLI del nucleo wiki deterministico è un entry sottile sopra
+  `sertor_core.wiki_tools`, guidato da `wiki.config.toml`.
 
 ## Vedi anche
-- Ciò che consumano: [[retrieval-core]]. Vincolo che lo motiva: [[costituzione-v1]] (dipendenze verso l'interno).
+- Ciò che consumano: [[retrieval-core]]. Vincolo che lo motiva: [[constitution]] (dipendenze verso l'interno).

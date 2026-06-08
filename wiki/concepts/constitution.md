@@ -1,5 +1,5 @@
 ---
-title: Costituzione di Sertor v1.0.0 (ratificata) → v1.1.0 (emendata 2026-06-05)
+title: Sertor constitution (v1.0.0 → v1.1.0)
 type: concept
 tags: [costituzione, governance, clean-code, clean-architecture, produzione, principio-x, host-agnostico]
 created: 2026-05-31
@@ -7,7 +7,7 @@ updated: 2026-06-07
 sources: [".specify/memory/constitution.md", ".specify/templates/plan-template.md"]
 ---
 
-# Costituzione di Sertor v1.0.0 (ratificata) → v1.1.0 (emendata 2026-06-05)
+# Sertor constitution (v1.0.0 → v1.1.0)
 
 La **Costituzione di Sertor** è il documento di governance che codifica i principi vincolanti del
 progetto (Clean Architecture, qualità del codice e l'host-agnosticità del **Principio X**) sotto cui
@@ -24,7 +24,7 @@ principi vincolanti** che governano il design, l'architettura e la governance di
 **Emendamento v1.1.0 (2026-06-05):** aggiunto il **Principio X — Capacità host-agnostiche** per
 codificare operativamente la Mission (Sertor installabile su qualsiasi progetto ospite) e generalizzare
 il confine repo-agnostico da core-libreria a tutte le capacità (motori RAG, skill wiki, rituali).
-Vedi [[missione-visione-host-agnosticita]].
+Vedi [[mission-vision]].
 
 ## Origine
 
@@ -142,6 +142,6 @@ A partire dal prossimo step di design:
 - **Requisiti allineati:**
   - [[epiche-sertor-core-e-cli]] — structure epiche
   - [[decomposizione-must-core]] — come i Must plasmano da Principle I–IX
-  - [[ruolo-wiki-da-w1]] — vi contribuisce Principle VII (leggibilità, comunicazione)
-  - [[hook-sessionstart-wiki]] — realizzazione di osservabilità (Principle IX, contesto iniettato)
-  - [[missione-visione-host-agnosticita]] — Principio X come traduzione operativa di Mission/Vision
+  - [[wiki-role-da-w1]] — vi contribuisce Principle VII (leggibilità, comunicazione)
+  - [[sessionstart-hook]] — realizzazione di osservabilità (Principle IX, contesto iniettato)
+  - [[mission-vision]] — Principio X come traduzione operativa di Mission/Vision

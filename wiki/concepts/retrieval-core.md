@@ -15,7 +15,7 @@ importabile** che costituisce *il prodotto* Sertor: ingerisce un repository qual
 retrieval unica**. CLI, server MCP e wiki-tools sono **[[thin-consumer|consumatori sottili]]** che la
 importano — non è il core a dipendere da loro.
 
-È costruito in **Clean Architecture** sotto la [[costituzione-v1|Costituzione]] (Principio I, non
+È costruito in **Clean Architecture** sotto la [[constitution|Costituzione]] (Principio I, non
 negoziabile): **le dipendenze puntano verso l'interno**.
 
 ## Architettura a strati
@@ -51,17 +51,24 @@ src/sertor_core/
 - **Idempotenza.** `engine.index()` fa rebuild-from-scratch; l'`upsert` è idempotente sugli stessi `id`
   (`doc_id` = path relativo POSIX, `chunk_id` = `{doc_id}#{ordinale}`).
 - **Collezioni namespaced per `(corpus, provider)`** via `collection_name()`: provider con dimensioni-vettore
-  diverse non si mescolano. Vedi [[naming-corpora-indici]].
+  diverse non si mescolano. Vedi [[corpus-index-naming]].
 
 ## Capacità
 
 - **Ingestione repo-agnostica** — layout arbitrario, estensioni note, fallback testuale (Principio X,
-  [[missione-visione-host-agnosticita]]).
+  [[mission-vision]]).
 - **Chunking code-aware** — sintattico multi-linguaggio via [[tree-sitter-language-pack]], più fallback
   dimensionale e splitter Markdown, smistati da un dispatcher.
 - **Embeddings multi-provider** e **vector store astratto** — dietro le rispettive porte, scelti da config.
 - **Facade di retrieval unificata** + motore [[motore-baseline-feat002|baseline]] (retrieval vettoriale con
   [[vector-retrieval|retrieval vettoriale]]) e valutazione (hit_rate@k, MRR).
+
+## Le pagine-entità (dettaglio)
+Il nucleo, scomposto nelle sue entità durevoli (distillate dal codice reale):
+- [[domain-model]] — le entità dati (`Document`, `Chunk`, `RetrievalResult`, …) e l'idempotenza degli id.
+- [[ports-adapters]] — le porte `EmbeddingProvider`/`VectorStore` e gli adapter cablati dal composition root.
+- [[chunking-dispatch]] — il dispatch markdown/sintattico/fallback e i 10 linguaggi sintattici.
+- [[indexing-and-retrieval]] — le due pipeline (ingest→chunk→embed→store) e la facade `search_code/docs/combined`.
 
 ## Vedi anche
 - Design e implementazione (record datati): [[piano-nucleo-retrieval]] · [[implementazione-nucleo-retrieval]].

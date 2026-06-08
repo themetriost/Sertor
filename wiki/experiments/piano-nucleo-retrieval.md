@@ -96,7 +96,7 @@ Entità di dominio in `specs/001-nucleo-retrieval/data-model.md`:
 
 ## Constitution Check (Principio I + IV NON-NEGOZIABILI)
 
-✅ **PASS** su tutti e 9 i principi della [[costituzione-v1|Costituzione di Sertor v1.0.0]]:
+✅ **PASS** su tutti e 9 i principi della [[constitution|Costituzione di Sertor v1.0.0]]:
 
 - **I — Dipendenze verso l'interno (✅ NON-NEGOZIABILE):** Domain puro (no SDK provider); adapters dipendono da porte; composition.py wiring via config. Core mockabile senza cloud/CLI.
 - **II — Boundary & local-first:** ✅ Ollama/Azure dietro porta; Chroma/Azure dietro porta; default locale, cloud via extra.

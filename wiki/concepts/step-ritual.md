@@ -1,5 +1,5 @@
 ---
-title: Rituale di step e anti-deriva del wiki
+title: Step ritual & wiki anti-drift
 type: concept
 tags: [wiki, automazione, hook, governance, processo, delega, fonte-unica, rituale-di-step]
 created: 2026-06-04
@@ -7,7 +7,7 @@ updated: 2026-06-05
 sources: ["CLAUDE.md", ".claude/skills/wiki-author/wiki-playbook.md", ".claude/agents/wiki-curator.md", ".claude/agents/configuration-manager.md", ".claude/settings.json", ".claude/hooks/wiki-pending-check.ps1"]
 ---
 
-# Rituale di step e anti-deriva del wiki
+# Step ritual & wiki anti-drift
 
 Il **rituale di step** è la *Definition of Done* di ogni step significativo: a fine lavoro il flusso
 principale, di propria iniziativa, registra nel wiki e verifica che il wiki non sia andato in **deriva**
@@ -74,9 +74,12 @@ Codificato in `CLAUDE.md` come **Definition of Done** di ogni step significativo
 *Rituale di step / Definition of Done*). A fine di ogni step, di propria iniziativa:
 
 1. **Registra** — `record` su `wiki/log.md` + pagine + `index.md`.
-2. **Lint semantico di allineamento** — confronta il contenuto del wiki con la realtà del progetto
+2. **Distilla le entità** — estrai in pagine proprie le entità/concetti durevoli che lo step ha fatto
+   emergere (operazione `distill`, N2); il record datato resta magro e vi punta. Giudizio → flusso
+   principale. *(Aggiunto 2026-06-08.)*
+3. **Lint semantico di allineamento** — confronta il contenuto del wiki con la realtà del progetto
    (`src/`, `specs/`, `requirements/`, stato git) e segnala ogni claim contraddetto dal repo.
-3. **\<altre azioni\>** — lista estendibile: ciò che l'utente chiede di rendere standing si aggiunge qui.
+4. **\<altre azioni\>** — lista estendibile: ciò che l'utente chiede di rendere standing si aggiunge qui.
 
 La **delega** (`wiki-curator`, `configuration-manager`) resta un'opzione per non bloccare il flusso, **non**
 un modo per saltare il rituale. La responsabilità che le azioni *avvengano* è del flusso principale.
@@ -135,5 +138,5 @@ Per atomicità — è il *come*, non il *cosa* deciso — vive ora in una pagina
 - [[retrospettiva-interazione-2026-06-04]] — la retrospettiva sull'interazione che ha originato il rituale.
 - [[lint-organizzativo-e-reorg]] — il lint livello C, che estende l'anti-deriva all'organizzazione del wiki.
 - [[sistema-wiki-fonte-unica]] — il sistema wiki di cui questo rituale è la disciplina d'uso.
-- [[hook-sessionstart-wiki]] — l'hook che inietta lo stato del wiki a inizio sessione (promemoria).
-- [[ruolo-wiki-da-w1]] — il wiki come corpus+superficie e la sua autorità.
+- [[sessionstart-hook]] — l'hook che inietta lo stato del wiki a inizio sessione (promemoria).
+- [[wiki-role-da-w1]] — il wiki come corpus+superficie e la sua autorità.

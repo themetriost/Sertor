@@ -9,16 +9,19 @@ from __future__ import annotations
 
 import argparse
 import sys
+from datetime import date
+from pathlib import Path
 
 from sertor_core.domain.errors import ConfigError, SertorError
 from sertor_core.wiki_tools.collect import collect
 from sertor_core.wiki_tools.contracts import ErrorResult
 from sertor_core.wiki_tools.lint import lint
 from sertor_core.wiki_tools.profile import load_profile
+from sertor_core.wiki_tools.registry import append_log, migrate_log
 from sertor_core.wiki_tools.scan import scan
 from sertor_core.wiki_tools.structure import init_structure, validate
 
-_OPS = ("scan", "structure", "validate", "lint", "collect", "index")
+_OPS = ("scan", "structure", "validate", "lint", "collect", "index", "append-log", "migrate")
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -43,10 +46,45 @@ def _build_parser() -> argparse.ArgumentParser:
         "--json", action="store_true",
         help="emette il contratto JSON su stdout (altrimenti output umano sintetico)",
     )
+    parser.add_argument(
+        "--entry-op", default=None,
+        help="operazione della voce di log (per 'append-log': record|lint|distill|...)",
+    )
+    parser.add_argument(
+        "--title", default=None, help="titolo della voce di log (per 'append-log')",
+    )
+    parser.add_argument(
+        "--date", default=None,
+        help="data della voce YYYY-MM-DD (per 'append-log'; default: oggi)",
+    )
+    parser.add_argument(
+        "--body-file", default=None,
+        help="file col corpo curato della voce (per 'append-log'; altrimenti letto da stdin)",
+    )
     return parser
 
 
-def _run(op: str, subcommand: str | None, profile):
+def _parse_date(value: str | None) -> date | None:
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError as exc:
+        raise ConfigError(f"data non valida (atteso YYYY-MM-DD): {value}") from exc
+
+
+def _read_body(args) -> str | None:
+    """Corpo curato della voce: da `--body-file`, altrimenti da stdin se non è un terminale."""
+    if args.body_file:
+        return Path(args.body_file).read_text(encoding="utf-8")
+    if not sys.stdin.isatty():
+        data = sys.stdin.read()
+        return data if data.strip() else None
+    return None
+
+
+def _run(args, profile):
+    op = args.op
     if op == "scan":
         return scan(profile)
     if op == "lint":
@@ -56,13 +94,24 @@ def _run(op: str, subcommand: str | None, profile):
     if op == "collect":
         return collect(profile)
     if op == "structure":
-        if subcommand not in (None, "init"):
-            raise ConfigError(f"sotto-comando 'structure {subcommand}' non supportato (usa 'init')")
+        if args.subcommand not in (None, "init"):
+            raise ConfigError(
+                f"sotto-comando 'structure {args.subcommand}' non supportato (usa 'init')"
+            )
         return init_structure(profile)
     if op == "index":
         from sertor_core.wiki_tools.indexing import index_wiki
 
         return index_wiki(profile)
+    if op == "append-log":
+        if not args.entry_op or not args.title:
+            raise ConfigError("append-log richiede --entry-op e --title")
+        return append_log(
+            profile, args.entry_op, args.title,
+            on_date=_parse_date(args.date), body=_read_body(args),
+        )
+    if op == "migrate":
+        return migrate_log(profile)
     raise ConfigError(f"operazione non supportata: {op}")  # pragma: no cover
 
 
@@ -86,6 +135,15 @@ def _human(op: str, result) -> str:
             f"collection={data['collection']} documents={data['documents']} "
             f"regenerated={data['regenerated']}"
         )
+    if op == "append-log":
+        return (
+            f"written={data['written']} partition={data['partition']} created={data['created']}"
+        )
+    if op == "migrate":
+        return (
+            f"migrated_entries={data['migrated_entries']} created={len(data['created'])} "
+            f"skipped={len(data['skipped'])}"
+        )
     return result.to_json()  # pragma: no cover
 
 
@@ -102,7 +160,7 @@ def main(argv: list[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     try:
         profile = load_profile(args.config, root_override=args.root)
-        result = _run(args.op, args.subcommand, profile)
+        result = _run(args, profile)
     except SertorError as exc:
         error = ErrorResult(error=type(exc).__name__, message=str(exc))
         if args.json:

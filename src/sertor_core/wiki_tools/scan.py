@@ -26,16 +26,37 @@ def _is_excluded(rel_parts: tuple[str, ...], patterns: list[str]) -> bool:
     return False
 
 
-def _anchor_mtime(log_path: Path) -> float | None:
-    """mtime dell'ultima voce di registro: il mtime del file di log (None se assente/vuoto)."""
-    if not log_path.is_file():
+def _file_mtime(path: Path) -> float | None:
+    """mtime di un file non vuoto (None se assente/vuoto/illeggibile)."""
+    if not path.is_file():
         return None
     try:
-        if log_path.stat().st_size == 0:
+        if path.stat().st_size == 0:
             return None
-        return log_path.stat().st_mtime
+        return path.stat().st_mtime
     except OSError:
         return None
+
+
+def _latest_log_mtime(profile: WikiProfile) -> float | None:
+    """Àncora temporale dell'ultima voce di registro.
+
+    Rotazione attiva → mtime della **partizione più recente** (max sui file `YYYY-MM-DD.md`,
+    escluso l'indice). Modalità file-unico (back-compat) → mtime del registro unico. In entrambi i
+    casi: assente/vuoto → `None` (tutto pendente). Il contratto `wiki.scan/1` resta invariato.
+    """
+    if profile.rotation_enabled:
+        log_dir = profile.log_dir_path
+        if not log_dir.is_dir():
+            return None
+        mtimes = [
+            m
+            for p in log_dir.glob("*.md")
+            if p.name != profile.log_index_file
+            and (m := _file_mtime(p)) is not None
+        ]
+        return max(mtimes) if mtimes else None
+    return _file_mtime(profile.log_path)
 
 
 def scan(profile: WikiProfile) -> ScanResult:
@@ -44,7 +65,7 @@ def scan(profile: WikiProfile) -> ScanResult:
     `anchor` assente (registro mancante/vuoto) → tutto è pendente. `message` proviene dalle
     `strings` localizzate del profilo (`{n}` sostituito col conteggio).
     """
-    anchor = _anchor_mtime(profile.log_path)
+    anchor = _latest_log_mtime(profile)
     anchor_iso = (
         datetime.fromtimestamp(anchor).isoformat(timespec="seconds")
         if anchor is not None
