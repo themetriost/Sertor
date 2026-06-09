@@ -3,8 +3,8 @@ title: wiki-tools (nucleo deterministico del wiki)
 type: tech
 tags: [wiki-tools, cli, deterministico, host-agnostico, wiki, sertor-core, contracts]
 created: 2026-06-08
-updated: 2026-06-08
-sources: ["src/sertor_core/wiki_tools/**", "wiki.config.toml"]
+updated: 2026-06-09
+sources: ["src/sertor_core/wiki_tools/registry.py", "src/sertor_core/wiki_tools/**", "wiki.config.toml"]
 ---
 
 # wiki-tools (nucleo deterministico del wiki)
@@ -37,15 +37,16 @@ da hook/skill/agente senza parsing fragile.
 | `lint` | wikilink rotti + pagine orfane + frontmatter + stub | `wiki.lint/1` |
 | `collect` | enumera le pagine + metadati (path, area, type, title, tags, wikilink) **senza corpo** | `wiki.collect/1` |
 | `index` | re-indicizza il wiki nel RAG (collezione isolata) **riusando la facade del core** (`build_indexer`, import **lazy** → le altre op restano offline) | `wiki.index/1` |
-| `append-log` | appende una voce di log nel file del giorno (**rotazione** a un file per data); accetta il **corpo curato** dall'LLM e ne fa solo il piazzamento (idempotente sull'heading) | `wiki.append_log/1` |
+| `append-log` | appende una voce di log nel file del giorno (**rotazione** a un file per data); accetta il **corpo curato** dall'LLM e ne fa solo il piazzamento (idempotente) | `wiki.append_log/1` |
 | `migrate` | splitta retroattivamente il log monolitico in partizioni giornaliere (una-tantum, idempotente, non distruttivo) | `wiki.migrate/1` |
 
-**Write-back del log curato + rotazione (FEAT-008).** Il modulo `registry.py` fa la meccanica idempotente di
-append della voce di log e di inserimento-riga-indice. Il write-back del log (`append-log`) riceve il **corpo
-curato** dall'LLM (formato [[deterministic-vs-judgment|log-craft]]) e si limita al **piazzamento** nella
-partizione della data — confine deterministico↔giudizio netto. Con `log_dir` configurato la rotazione è
-**implicita** (la voce va nel file della sua data); senza, vale la modalità a file unico (back-compat).
-L'indice globale del wiki resta invece LLM-authored (backlog in [[architettura-wiki-llm]]).
+**Write-back del log curato + rotazione (FEAT-008).** L'op `append-log` riceve il **corpo curato** dall'LLM
+(formato [[deterministic-vs-judgment|log-craft]]) e ne fa solo il **piazzamento** nella partizione della
+data, rigenerando l'indice delle partizioni di log (`update_log_index`) — confine deterministico↔giudizio
+netto. Con `log_dir` configurato la rotazione è **implicita** (la voce va nel file della sua data); senza,
+vale la modalità a file unico (back-compat). Il modulo `registry.py` espone *anche* `upsert_index`
+(inserimento idempotente della riga link+sommario nell'indice globale `index.md`), ma **non è cablato in
+un'op della CLI**: per ora la riga di `index.md` resta **LLM-authored** (backlog in [[architettura-wiki-llm]]).
 
 ## Proprietà di fondo
 

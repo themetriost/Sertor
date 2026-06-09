@@ -1,102 +1,50 @@
 ---
-title: SessionStart hook ('Carico lo stato del wiki')
+title: SessionStart hook
 type: tech
 tags: [hook, claude-code, wiki, contesto, da-w1]
 created: 2026-05-31
-updated: 2026-05-31
-sources: [.claude/settings.json]
+updated: 2026-06-09
+sources: [".claude/settings.json"]
 ---
 
-# Cos'è e dove
+# SessionStart hook
 
-**Hook `SessionStart`** di Claude Code, definito in `.claude/settings.json`.
+Il **SessionStart hook** inietta lo **stato del wiki** nel contesto della sessione al suo avvio. È un
+comando PowerShell **inline** (non uno script separato) dichiarato in `.claude/settings.json`
+(`statusMessage` = "Carico lo stato del wiki", timeout 15s). È la prova empirica del ruolo *"contesto
+iniettato"* del wiki ([[wiki-role-da-w1]]): l'**host** (Claude Code) spinge la mappa del wiki davanti al
+modello in modalità *push*, prima di qualunque query e senza passare dal RAG.
 
-È un **COMANDO POWERSHELL INLINE** (non uno script a parte) che si esegue **all'avvio di ogni
-sessione**. Parametri:
-- Shell: `powershell`
-- Timeout: `15` secondi
-- Status message: `"Carico lo stato del wiki"`
+## Cosa fa
 
-# Quando si attiva
+Si esegue all'**avvio** della sessione e — come si osserva dai `system-reminder` — anche su **resume** e
+**compact**. In sola lettura: legge i file del wiki e ne stampa il contenuto su STDOUT, che l'harness
+**inietta nel contesto** come primo blocco prima del turno dell'utente. Non scrive nulla. Nel dettaglio:
+forza l'output in UTF-8 (accenti delle pagine italiane), risolve la radice da `$env:CLAUDE_PROJECT_DIR`,
+stampa l'intero `wiki/index.md` (la mappa del wiki) e infine un promemoria a delegare gli aggiornamenti al
+`wiki-curator`. Il comando esatto vive in `.claude/settings.json` (non trascritto qui: una copia nel wiki
+divergerebbe al primo ritocco).
 
-All'**AVVIO** di una sessione e — come si osserva dai `system-reminder` in conversation — anche su:
-- **RESUME** (ripresa dopo pausa)
-- **COMPACT** (compattazione del contesto)
+Il payload è **piccolo e curato** per scelta: l'indice (la struttura navigabile) e — quando disponibile —
+la coda del log recente, **non** chunk casuali né l'intero wiki (troppo rumoroso per il contesto iniziale).
 
-Quindi ricarica lo stato del wiki **ogni volta che la sessione (ri)parte o viene compattata**.
+## ⚠️ Gap noto: la coda del log non viene più iniettata
 
-# Cosa fa, passo per passo
+Il comando tenta di leggere `wiki/log.md` e, se esiste, ne stampa le ultime 20 righe. Ma con la rotazione
+del log (FEAT-008) **`wiki/log.md` non esiste più**: i log sono partizionati per giorno in
+`wiki/log/<data>.md`. La guardia `if (Test-Path $log)` è quindi sempre falsa → **la sezione "coda del log"
+è un no-op silenzioso**: oggi l'hook inietta solo `index.md`. Per ripristinare l'iniezione del log il
+comando andrebbe aggiornato a leggere la partizione più recente di `wiki/log/`. *(Disallineamento tra
+l'hook e la rotazione del log; vale come bug, non come comportamento voluto.)*
 
-1. **Forza UTF-8**:
-   ```powershell
-   [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-   ```
-   Assicura che l'output sia decodificato correttamente. Essenziale per gli accenti delle pagine
-   italiane (non si corrompono).
+## Perché è rilevante per DA-W1
 
-2. **Calcola la radice del progetto**:
-   ```powershell
-   $d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }
-   ```
-   La radice è fornita dall'harness di Claude Code (fallback alla cartella corrente se non set).
+Conferma la decisione [[wiki-role-da-w1]]: il **ruolo 1 (contesto iniettato)** è competenza dell'**host**,
+non del core di Sertor. L'MVP di Sertor si limita a esporre un wiki ben strutturato (`index.md` + log
+interlinkati con wikilink); è l'host a iniettarlo così com'è. I ruoli 2 e 3 (query precisa via RAG,
+ingestion) sono quelli che competono al core.
 
-3. **Calcola i path del wiki**:
-   ```powershell
-   $idx = Join-Path $d "wiki/index.md"
-   $log = Join-Path $d "wiki/log.md"
-   ```
-
-4. **Se `index.md` esiste**: stampa il contenuto intero:
-   ```powershell
-   if (Test-Path $idx) {
-       Write-Host "=== WIKI INDEX ===" -ForegroundColor Cyan
-       Get-Content -Raw $idx
-   }
-   ```
-
-5. **Se `log.md` esiste**: stampa le ULTIME **20 RIGHE**:
-   ```powershell
-   if (Test-Path $log) {
-       Write-Host "=== WIKI LOG (coda) ===" -ForegroundColor Cyan
-       Get-Content -Tail 20 $log
-   }
-   ```
-
-6. **Stampa un promemoria**:
-   ```powershell
-   Write-Host "`nPromemoria: aggiornamenti del wiki vanno delegati all'agente wiki-curator." -ForegroundColor Yellow
-   ```
-
-# Effetto ed effetti collaterali
-
-Lo **STDOUT dell'hook viene INIETTATO nel contesto della sessione** all'avvio (è ciò che compare
-in alto nella conversazione prima del primo turno dell'utente).
-
-**È SOLA LETTURA**: legge `index.md` e `log.md` e stampa, non scrive nulla.
-
-**Payload piccolo e curato**:
-- Indice (la MAPPA/struttura del wiki)
-- Coda del log (attività recente, ultime 20 righe)
-- **NON** chunk casuali del wiki
-- **NON** l'intero wiki (troppo rumoroso)
-
-# Perché è rilevante per DA-W1 (ruolo 1)
-
-È la **prova empirica** del *"contesto iniettato"* come ruolo del wiki.
-
-Il wiki prepara il **terreno** prima di qualunque query. Usa la **SUPERFICIE STRUTTURATA**
-del wiki (l'indice = mappa navigabile) in modalità **PUSH**, e a farlo è l'**HOST** (Claude Code),
-non il RAG/MCP.
-
-Conferma la decisione [[wiki-role-da-w1]]:
-
-- **Ruolo 1 (contesto iniettato)** = competenza dell'HOST, non della core di Sertor nel MVP.
-- **MVP Sertor** = espone wiki ben strutturato (`wiki/index.md`, `wiki/log.md` interlinkati);
-  l'host li inietta così come sono.
-- **Superficie strutturata** = il wiki è speciale perché ha indice, log, wikilink; l'host
-  la sfrutta direttamente senza intermediazione RAG.
-
-Nel MVP, il ruolo 1 è **già funzionante** (se qualcuno lanciava Claude Code su questo workspace,
-vedrebbe l'indice e il log a inizio sessione). Questo allinea il presente con la decisione
-di DA-W1: ruoli 2 e 3 (query precisa, ingestion) sono prioritari; ruolo 1 poggia su
-infrastructura dell'host, non su feature Sertor.
+## Vedi anche
+- [[wiki-role-da-w1]] — il wiki come corpus + superficie e la ripartizione dei ruoli host/core.
+- [[step-ritual]] — il rituale di step, di cui questo hook è il promemoria d'avvio.
+- [[meccanica-log-feat008]] — la rotazione del log che ha reso obsoleto `wiki/log.md`.

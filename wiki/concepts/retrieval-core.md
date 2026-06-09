@@ -3,8 +3,8 @@ title: Retrieval core
 type: concept
 tags: [retrieval-core, sertor-core, clean-architecture, porte-adapter, retrieval, architettura]
 created: 2026-06-07
-updated: 2026-06-07
-sources: ["src/sertor_core/**", "CLAUDE.md", "specs/001-nucleo-retrieval/**"]
+updated: 2026-06-09
+sources: ["src/sertor_core/composition.py", "src/sertor_core/**", "CLAUDE.md", "specs/001-nucleo-retrieval/**"]
 ---
 
 # Retrieval core
@@ -37,9 +37,11 @@ src/sertor_core/
 - **`adapters/` implementa le porte.** I provider concreti — Ollama/Azure per gli embedding, Chroma/Azure
   AI Search per il vector store — vivono qui dietro le porte. Gli SDK pesanti sono importati **lazy** nelle
   factory, così l'extra `azure` non serve in locale.
-- **`composition.py` è l'unico cablaggio.** Sceglie l'implementazione in base a `Settings.backend`
-  (`local` → Chroma + Ollama · `azure` → Azure AI Search + Azure OpenAI). Per aggiungere un provider si
-  estendono composition root e adapters, **non** i servizi.
+- **`composition.py` è l'unico cablaggio.** Sceglie le implementazioni da **due manopole distinte** di
+  `Settings`: l'**embedder** da `embed_provider` (`azure` → Azure OpenAI · altrimenti Ollama) e lo **store**
+  da `store_backend` (`azure` → Azure AI Search · altrimenti Chroma). Le due sono **combinabili** — es.
+  embeddings Azure + store Chroma locale, la combinazione del dogfood `sertor`. Per aggiungere un provider si
+  estendono composition root e adapters, **non** i servizi. Vedi [[ports-adapters]].
 
 ## Principi che lo governano
 

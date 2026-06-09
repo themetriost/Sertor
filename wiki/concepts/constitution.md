@@ -1,18 +1,19 @@
 ---
-title: Sertor constitution (v1.0.0 → v1.1.0)
+title: Costituzione di Sertor
 type: concept
 tags: [costituzione, governance, clean-code, clean-architecture, produzione, principio-x, host-agnostico]
 created: 2026-05-31
-updated: 2026-06-07
+updated: 2026-06-09
 sources: [".specify/memory/constitution.md", ".specify/templates/plan-template.md"]
 ---
 
-# Sertor constitution (v1.0.0 → v1.1.0)
+# Costituzione di Sertor
 
-La **Costituzione di Sertor** è il documento di governance che codifica i principi vincolanti del
+La **Costituzione di Sertor** è il documento di governance che codifica i **10 principi vincolanti** del
 progetto (Clean Architecture, qualità del codice e l'host-agnosticità del **Principio X**) sotto cui
-operano SpecKit e gli agenti; un **Constitution Check** ne fa da gate al design. Ratificata v1.0.0 il
-2026-05-31, emendata a v1.1.0 il 2026-06-05.
+operano SpecKit e gli agenti; un **Constitution Check** ne fa da gate al design. Fonte unica:
+`.specify/memory/constitution.md`. Ratificata v1.0.0 il 2026-05-31, emendata a v1.1.0 il 2026-06-05
+(aggiunta del Principio X).
 
 ## Cosa
 
@@ -107,26 +108,27 @@ solo-doc, solo-code) senza modifiche al corpo — solo cambiando config.
   provenance tracking su corpus.
 - **Governance:** branch + PR post-ratifica, Constitution Check gate in planning, semantic versioning.
 
-## Governance dopo la ratifica
+## Governance
 
-A partire dal prossimo step di design:
+In produzione la costituzione impone:
 
-- **Branching:** niente più push diretti su `master`/`main`; tutti gli step su branch feature,
+- **Branching:** niente push diretti su `master`/`main` per il codice di feature; ogni feature su branch +
   PR con review (almeno un approver).
 - **Gate Constitution Check:** incluso in [`plan.md`](../../.specify/templates/plan-template.md)
   (Phase 0 e Phase 1). Domande-checkpoint:
   - ✓ Il design rispetta il Principle I (core indipendente)?
   - ✓ Sono testati Principle IV (errori espliciti) e VI (idempotenza)?
   - ✓ Provider intercambiabili? Log strutturati?
-- **Emendamenti:** modifiche ai 9 principi via PR + semantic versioning (`v1.0.0` → `v1.1.0` minor,
+- **Emendamenti:** modifiche ai 10 principi via PR + semantic versioning (`v1.0.0` → `v1.1.0` minor,
   `v2.0.0` breaking).
-- **Responsabilità:** DRI di costituzione = design lead (inizialmente tu).
+- **Responsabilità:** DRI di costituzione = design lead.
 
-## Impatto immediato
+## Perché vincola
 
-- Vincola il **design dei Must (FEAT-001/002/003)** della fase imminente.
-- **Principle I** e **IV** sono gate non-negoziabili (falliscono Constitution Check se non soddisfatti).
-- Semplifica discussioni future: "questo non soddisfa Principle X" chiude il dibattito.
+- Vincola il **design di ogni feature** via il gate Constitution Check in `plan.md`.
+- **Principio I** e **IV** sono gate non-negoziabili (falliscono il Check se non soddisfatti).
+- Chiude i dibattiti di design su basi condivise: "questo non soddisfa il Principio X" è un argomento, non
+  un'opinione.
 
 ## Versioning e emendamenti
 

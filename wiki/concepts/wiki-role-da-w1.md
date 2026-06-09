@@ -3,20 +3,21 @@ title: Wiki role (DA-W1) — corpus × surface
 type: concept
 tags: [wiki, rag, da-w1, prodotto, requisiti]
 created: 2026-05-31
-updated: 2026-05-31
-sources: [requirements/sertor-core/epic.md]
+updated: 2026-06-09
+sources: [requirements/sertor-core/epic.md, wiki.config.toml, .claude/skills/wiki-author/ops/rag-sync.md]
 ---
 
 # Wiki role (DA-W1) — corpus × surface
 
-**DA-W1** è la domanda di prodotto, aperta nell'epica primaria `requirements/sertor-core/epic.md`, su **COME il wiki viene usato nel prodotto Sertor** e come si relaziona al RAG e all'MCP.
+Nel prodotto Sertor il wiki ha una doppia natura: è insieme **corpus** (contenuto ingeribile nel RAG) e
+**superficie** (struttura navigabile per indice/backlink). Corpus e superficie sono **assi ortogonali**:
+lo stesso contenuto è raggiungibile da più superfici, e la stessa superficie può stare sopra più corpora.
+Capire questa ortogonalità è ciò che permette di decidere *cosa* l'MVP del wiki deve fare e cosa no.
 
-Risolta in discussione il **2026-05-31**.
-
-È propedeutica alla decomposizione delle feature wiki del core:
-- **FEAT-003** (Must): creare/indicizzare nel RAG
-- **FEAT-007** (Should): spider/lint e manutenzione
-- **FEAT-008** (Could): arricchimento bidirezionale
+> **Origine.** È la risposta a **DA-W1**, la domanda di prodotto aperta in `requirements/sertor-core/epic.md`
+> su come il wiki si relaziona a RAG/MCP (risolta in elicitazione, 2026-05-31). Propedeutica alla
+> decomposizione delle feature wiki: FEAT-003 (Must, creare/indicizzare), FEAT-007 (Should, manutenzione),
+> FEAT-008 (Could, arricchimento bidirezionale).
 
 ## Il modello concettuale: due assi ortogonali
 
@@ -34,9 +35,11 @@ Il nodo è che **wiki** e **RAG-sui-sorgenti** sono **DUE LAYER DI CONOSCENZA** 
 
 **CORPUS** = l'insieme dei CONTENUTI che un sistema di retrieval ha ingerito e indicizzato.
 Dire *"il wiki è nel corpus del RAG"* significa, letteralmente, che i file `.md` del wiki sono
-tra i documenti ingeriti e spezzati in chunk. **Già verificato:** interrogando il RAG di
-dogfooding con `search_docs`, tornano pagine del wiki (`log.md`, `index.md`, `syntheses/...`).
-Quindi è **GIÀ ATTIVO**.
+tra i documenti ingeriti e spezzati in chunk. Il meccanismo esiste: l'operazione **`rag-sync`**
+indicizza il wiki in un **corpus dedicato** (`[rag] corpus = "wiki"` in `wiki.config.toml`), separato dal
+corpus del codice. Nota: il dogfood di produzione `sertor` indicizza `src/`, `specs/`, `requirements/`,
+`.claude/` (`source_dirs`) — **non** `wiki/`; il wiki-come-corpus è quindi un indice a sé, attivo solo
+dopo un `rag-sync`.
 
 **SUPERFICIE** (di accesso / retrieval surface) = l'INTERFACCIA con cui si raggiunge la
 conoscenza: quali operazioni e che FORMA hanno i risultati. Esempi:
@@ -48,8 +51,8 @@ conoscenza: quali operazioni e che FORMA hanno i risultati. Esempi:
 
 |  | Superficie semantica/RAG | Superficie wiki-nativa |
 |---|---|---|
-| **Corpus codice** | ✓ Attiva (chunk di codice nel RAG) | ✗ N/A (codice senza indice/backlink) |
-| **Corpus wiki** | ✓ Già attiva (chunk nel RAG) | ◇ Da costruire (indice→pagina→backlink) |
+| **Corpus codice** | ✓ Attiva (chunk di codice nel RAG, dogfood `sertor`) | ✗ N/A (codice senza indice/backlink) |
+| **Corpus wiki** | ◇ Disponibile via `rag-sync` (corpus `wiki` separato) | ◇ Da costruire (indice→pagina→backlink) |
 
 Intuizione: **corpus e superficie sono ORTOGONALI** (cosa × come). Lo STESSO contenuto (il wiki)
 può essere raggiunto da **DUE superfici** (chunk semantici OPPURE pagine navigabili).
@@ -77,7 +80,8 @@ segui i link, naviga per data/sezione).
 
 Il wiki → parte documentale del RAG, quindi **corpus** del sistema di retrieval.
 
-**GIÀ ATTIVO** nel dogfood.
+Realizzato dall'operazione **`rag-sync`** (indice dedicato, corpus `wiki`). È il confine **Must** di
+FEAT-003: creare le pagine e poterle indicizzare.
 
 ## Le decisioni (DA-W1 risolta 2026-05-31)
 

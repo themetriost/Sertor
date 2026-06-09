@@ -3,17 +3,17 @@ title: Vector retrieval
 type: concept
 tags: [vector-retrieval, dense-retrieval, rag, baseline, embeddings, valutazione, sertor-core]
 created: 2026-06-07
-updated: 2026-06-07
+updated: 2026-06-09
 sources: ["src/sertor_core/engines/baseline.py", "src/sertor_core/engines/evaluation.py", "CLAUDE.md"]
 ---
 
 # Vector retrieval
 
-Il **vector retrieval** (retrieval vettoriale, o *dense* retrieval) è la **prima modalità RAG** di Sertor:
-la query viene trasformata in **embedding** e confrontata per **similarità** coi vettori dei chunk nel vector
-store, restituendo i **top-k** più vicini. Nel [[retrieval-core]] è realizzato dal **motore baseline**
-(`engines/baseline.py`); è la modalità più semplice, su cui le altre (ibrida, reranking, grafo) si
-innesteranno.
+Il **vector retrieval** (retrieval vettoriale, o *dense* retrieval) è la **modalità RAG di riferimento** di
+Sertor: la query viene trasformata in **embedding** e confrontata per **similarità** coi vettori dei chunk nel
+vector store, restituendo i **top-k** più vicini. Nel [[retrieval-core]] è realizzato dal **motore baseline**
+(`engines/baseline.py`); è la modalità più semplice, la baseline da cui si diramano le modalità successive
+(ibrida, reranking, grafo).
 
 ## Come funziona
 
@@ -21,8 +21,8 @@ Il motore baseline (`BaselineEngine`) ha due operazioni:
 
 - `index(root)` — ingerisce e indicizza un repository (rebuild-from-scratch, idempotente): chunking →
   embedding → upsert nel vector store.
-- `query(testo, k)` — calcola l'embedding della query e fa **similarity search** sui top-k, restituendo
-  `list[RetrievalResult]` (chunk + `score` di similarità).
+- `query(query, k=None)` — calcola l'embedding della query e fa **similarity search** sui top-k (se `k` è
+  omesso usa il default da `Settings`), restituendo `list[RetrievalResult]` (chunk + `score` di similarità).
 
 ## Policy d'errore *strict* (non come il nucleo)
 

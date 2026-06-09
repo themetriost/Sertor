@@ -63,22 +63,10 @@ il naming è stato **riconciliato per chiarezza**.
 ## Implicazioni di implementazione
 
 ### File di configurazione
-- **`.env` (gitignored):**
-  ```bash
-  SERTOR_CORPUS=sertor              # prodotto
-  SERTOR_INDEX_DIR=.index-sertor
-  RAG_BACKEND=local                 # oppure azure
-  ```
-
-- **`.mcp.json` (root):**
-  ```json
-  {
-    "env": {
-      "PYTHONPATH": "prototype",
-      "SERTOR_CORPUS": "prototype"
-    }
-  }
-  ```
+- **`.env`** (gitignored) — il prodotto: `SERTOR_CORPUS=sertor`, `SERTOR_INDEX_DIR=.index-sertor`, più i
+  selettori di backend `RAG_BACKEND` / `SERTOR_STORE_BACKEND`.
+- **`.mcp.json`** (root) — il server `sertor-rag` per il dogfood: imposta `SERTOR_CORPUS` sul corpus da
+  servire e il `PYTHONPATH` corrispondente.
 
 ### Legge e loaders
 - **`prototype/shared/config.py`:** selettore `SERTOR_CORPUS` (`fastapi` | `prototype`); percorsi indici funzione del corpus.
@@ -90,21 +78,13 @@ il naming è stato **riconciliato per chiarezza**.
 - **Naming collezioni Chroma:** per backend Chroma, collezione = `<corpus>__<provider>` (es. `sertor__ollama`, `prototype__azure-large`). Il provider include il modello: l'indice dogfood di produzione è `sertor__azure_text_embedding_3_large` (FEAT-009, 191 doc / 1578 chunk, dim 3072).
 - **Namespacing logico:** `SERTOR_CORPUS` isola comportamento senza duplicare config.
 
-## Storico delle modifiche
-
-| Data | Operazione | Dettagli |
-|------|-----------|----------|
-| 2026-05-30 | Isolamento prototipo | Corpus `sertor` introdotto per dogfooding (indice `.index-sertor` in prototipo). |
-| 2026-06-04 | Rinomina chiarificatrice | Corpus `sertor` → prodotto (radice); corpus `prototype` → prototipo. Indice `.index-production` rimosso; `.index-sertor` → `.index-sertor` (radice per prodotto). Cartelle prototipo `.index-sertor` → `.index-prototype`. |
-| 2026-06-09 | Indice dogfood costruito | Corpus `sertor` indicizzato per la **prima volta** (191 doc / 1578 chunk) in `.index-sertor/`, collezione `sertor__azure_text_embedding_3_large`. Embeddings Azure + store Chroma locale, abilitato da FEAT-009 (`store_backend` disaccoppiato). |
-
 ## Legami e riferimenti
+
+La cronologia datata delle rinomine e della costruzione dell'indice dogfood vive nei record:
+[[store-backend-disaccoppiato-feat009]] (indice `sertor` costruito) e nei log di `wiki/log/`.
+
 
 - **[[chiusura-prototipo-dogfooding]]** — architettura di isolamento (record dal 30-05; nota: indici rinominati il 04-06).
 - **`prototype/shared/config.py`** — selezione corpus-aware.
 - **`.mcp.json`** — configurazione dogfooding (SERTOR_CORPUS=prototype).
-- **`CLAUDE.md`** § "Riferirsi al prototipo" — updated 2026-06-04 con corpus `prototype`.
-
----
-
-**Creato:** 2026-06-04 | **Stato:** IMPLEMENTATO (cartelle rinominate, non distruttivo)
+- **`CLAUDE.md`** § "Riferirsi al prototipo" — corpus `prototype` per il dogfood.

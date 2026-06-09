@@ -3,7 +3,7 @@ title: Chunking e dispatch (Document → Chunk)
 type: concept
 tags: [chunking, tree-sitter, dispatch, code-aware, markdown, fallback, sertor-core]
 created: 2026-06-08
-updated: 2026-06-08
+updated: 2026-06-09
 sources: [
   "src/sertor_core/services/chunking/dispatch.py",
   "src/sertor_core/services/chunking/code.py",
@@ -37,6 +37,11 @@ funzione/metodo/classe diventa un chunk coerente con metadati strutturali (`symb
 righe **1-based**); il codice a livello modulo (import, costanti) è raggruppato in chunk propri; le unità
 troppo grandi sono sotto-divise per righe (`max_chars`, default 1600). Il `qualname` ricostruisce la gerarchia
 (`Classe.metodo`) navigando classi annidate.
+
+> **Nota sul mapping dei nomi.** Il raw chunk di `code.py` espone il campo **`symbol_kind`**; è il dispatcher
+> a rinominarlo in **`node_type`** quando costruisce il [[domain-model|`ChunkMetadata`]] (`dispatch.py`,
+> `node_type=raw.get("symbol_kind")`). Chi legge `code.py` cerca `symbol_kind`, chi legge i metadati trova
+> `node_type`: stesso dato, due nomi ai due lati del dispatch.
 
 **Solo i linguaggi con node-type validati sono chunkati sintatticamente** — i 10 di `_LANG`: Python,
 JavaScript, TypeScript, Java, C#, Go, C, C++, PHP, Ruby. Per gli altri `code_chunks` ritorna `None` e il
