@@ -214,7 +214,24 @@ automazione *unattended*: la distinzione è netta —
    flusso principale ha già il contesto dello step, mentre un agente lo rileggerebbe a freddo (più
    costoso e più lossy). Se in casi pesanti va proprio delegato, usa un override `sonnet`
    per-invocazione, **mai** il default Haiku del `wiki-curator`.
-4. **\<altre azioni\>** — questa lista è **estendibile**: ogni azione che l'utente chiede di rendere
+4. **Executive Summary della roadmap** — a inizio sessione il contesto deve aprirsi con un **riassunto
+   executive** dello stato di prodotto. Vive in testa a `wiki/syntheses/roadmap.md`, tra i marker
+   `<!-- EXEC:START -->` e `<!-- EXEC:END -->`, ed è **responsabilità del flusso principale** tenerlo
+   vero. **Forma (vincolante):** *executive* — sta in una schermata, scansionabile, basta a un agente
+   che riprende **a freddo** per sapere «dove siamo e cosa fare adesso»; niente narrazione/storia (sta
+   nei record/log). Tre bucket in quest'ordine: **🔄 IN PROGRESS** (per ogni voce, in dettaglio: *cosa* ·
+   *dove* (branch/`specs/`/file) · *prossimo passo concreto* · *blocco/decisione aperta*) · **📋 PLANNED**
+   (deciso ma non iniziato, una riga, per priorità) · **✅ DONE** (capacità su `master`, una riga, solo le
+   rilevanti — non un changelog). **Quando:** nello stesso commit dello step, ogni volta che lo step
+   **cambia lo stato di una capacità** (planned→in progress→done; cambia il *prossimo passo* o si
+   scioglie/apre un blocco di un IN PROGRESS; una voce entra/esce dal PLANNED); gli step che non toccano
+   lo stato di prodotto **non** lo innescano. **Confine:** è **giudizio** ancorato alla realtà del repo
+   (git, `specs/`, `src/`) → resta nel **flusso principale (Opus)**, non a Haiku, come distill e lint
+   semantico; il blocco executive e la mappa-feature sottostante **non devono contraddirsi**. **Iniezione
+   (non è compito del rituale):** il SessionStart hook estrae il blocco tra i marker e lo stampa (in
+   contesto + a schermo) insieme a indice e coda del log — l'hook *trasporta*, il rituale tiene il
+   *contenuto* vero.
+5. **\<altre azioni\>** — questa lista è **estendibile**: ogni azione che l'utente chiede di rendere
    *standing* va aggiunta qui, e da quel momento fa parte del rituale a ogni step.
 
 **Responsabilità & delega.** Che queste azioni **avvengano** a ogni step è responsabilità del flusso
