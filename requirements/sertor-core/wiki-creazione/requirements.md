@@ -15,6 +15,16 @@
 > FEAT-010 (`spec/005-llm-wiki:requirements/sertor-core/llm-wiki/requirements.md`) era in stato
 > **READY — approvato per il design** (iterazione 13; tutti i temi T0–T7 risolti, 2026-06-04).
 
+> ⛔ **RIMOZIONE PER DESIGN (2026-06-09)** — Le convenzioni a cartelle d'input **`manual_edited/`** e
+> **`ingested_sources/`** sono **eliminate dallo scope** (semplificazione; allinea il piano alla realtà,
+> dove il wiki ha già consolidato tutto in `sources/`). **Modello risultante:** le fonti esterne tornano
+> a `sources/` (riassunti, semantica Karpathy originale); l'autoring umano avviene nelle pagine normali
+> del wiki (nessuna cartella-input immutabile); il retrieval si semplifica (indicizzato = wiki generato +
+> codice, nessuna cartella-input da escludere). **Autorità sul "perché"** = discussioni/SpecKit (non più
+> `manual_edited`). Dettaglio normativo e impatto: **D-18** (§12). Voci marcate `⛔ DELETED BY DESIGN`
+> sotto: D-1, D-6, D-11; semplificate: D-7, D-4, D-5, D-9; FR-007/015/016/020/021/030/031 eliminate,
+> FR-001/009/012/013/017/022/023 riformulate; SC-002 obsoleto, SC-010 riformulato; R-06 decaduto.
+
 ---
 
 ## Tabella di tracciabilità (FEAT-003 → consolidato)
@@ -23,7 +33,7 @@
 |---|---|---|
 | A — Inizializzazione struttura | REQ-001..006 | **Assorbito invariato** (FEAT-010 D-10) |
 | B — Operazione record | REQ-010..013 | **Assorbito invariato** (FEAT-010 D-10) |
-| C — Operazione ingest | REQ-020..023 | **Superato** da FR-030/FR-031 (FEAT-010 D-11); la semantica `ingest` è ridefinita: import in `ingested_sources/` senza auto-compilazione |
+| C — Operazione ingest | REQ-020..023 | **Riattivato (2026-06-09, D-18)**: l'override FR-030/FR-031 è stato rimosso per design; torna operativa la semantica Karpathy (ingest scrive un riassunto in `sources/`) |
 | D — Distillazione | REQ-030..033 | **Assorbito invariato** (FEAT-010 D-10) |
 | E — Indicizzazione RAG | REQ-040..045 | **Superato** da FR-008..011, FR-023/024 (FEAT-010 D-3/D-7); il modello cambia: collezioni separate, query congiunta, scope retrieval = wiki generato + codice |
 | F — Idempotenza trasversale | REQ-050..051 | **Assorbito invariato** (FEAT-010 D-10, SC-006) |
@@ -103,7 +113,7 @@ domanda: i cross-reference ci sono già, le contraddizioni sono già state segna
 - Sertor punta a interrogare wiki **+ codice insieme** tramite **collezioni separate** interrogate
   congiuntamente (D-3): estensione del pattern.
 - Per Sertor la *source of truth* è **stratificata** (D-4): **codice/test** per il comportamento,
-  **discussioni/SpecKit/`manual_edited`** per il perché.
+  **discussioni/SpecKit** per il perché. *(2026-06-09, D-18: rimosso `manual_edited`.)*
 
 ---
 
@@ -117,12 +127,12 @@ domanda: i cross-reference ci sono già, le contraddizioni sono già state segna
   che unisce i due layer (D-2).
 - **Wiki generato**: le cartelle `concepts/`, `tech/`, `experiments/`, `syntheses/` + `index.md`,
   `log.md` — scritti e mantenuti dall'automazione.
-- **manual_edited/**: cartella di input versionata per documentazione umana autorevole; l'LLM la
-  legge e compila ma **non la modifica**.
-- **ingested_sources/**: punto d'ingresso per sorgenti **non versionabili** (paper, contenuti web);
-  **non è un output** di pagine-riassunto.
-- **Verità stratificata**: codice+test = autorità sul comportamento; discussioni/SpecKit/
-  `manual_edited` = autorità sul perché.
+- ~~**manual_edited/**~~ · ~~**ingested_sources/**~~ — ⛔ **DELETED BY DESIGN (2026-06-09, D-18)**: le
+  due cartelle-input sono eliminate. Le fonti esterne sono riassunte in **`sources/`** (ingest, pattern
+  Karpathy); l'autoring umano avviene nelle pagine normali del wiki.
+- **sources/**: pagine-riassunto delle fonti esterne ingerite (semantica Karpathy; output dell'ingest).
+- **Verità stratificata**: codice+test = autorità sul comportamento; discussioni/SpecKit = autorità
+  sul perché.
 
 ---
 
@@ -146,7 +156,8 @@ domanda: i cross-reference ci sono già, le contraddizioni sono già state segna
 
 1. Generazione/manutenzione **agentica** del wiki (skill che riusa FEAT-003 come primitive), invocata
    **al commit** (incrementale sul changeset), **on-demand** e **periodica**.
-2. **Ingest** di documentazione esterna in `ingested_sources/` (creazione/on-demand/update).
+2. **Ingest** di documentazione esterna → **riassunto in `sources/`** (creazione/on-demand/update).
+   *(2026-06-09, D-18: era "import in `ingested_sources/`".)*
 3. **Inizializzazione della struttura wiki**: directory tematiche e file fondamentali con contenuto
    iniziale conforme alle convenzioni.
 4. **Convenzioni obbligatorie**: frontmatter YAML, wikilink `[[nome-pagina]]`, naming kebab-case,
@@ -157,10 +168,9 @@ domanda: i cross-reference ci sono già, le contraddizioni sono già state segna
 7. **Manutenzione**: lint strutturale (link rotti, orfani, copertura/cross-ref) + verifica di
    freschezza.
 8. **Gate al commit** human-in-the-loop (blocca/avvisa/propone/override tracciato).
-9. **Retrieval** via RAG su **collezioni separate** wiki/codice (query congiunta); input non
-   indicizzati.
+9. **Retrieval** via RAG su **collezioni separate** wiki/codice (query congiunta).
 10. **Superfici**: skill (primaria) + CLI + MCP; comando di **setup** `sertor wiki init`.
-11. Convenzione **`manual_edited/`** (input umano versionato, immutabile, compilato).
+11. ~~Convenzione **`manual_edited/`**~~ — ⛔ **DELETED BY DESIGN (2026-06-09, D-18)**.
 12. Funzionamento anche su **progetti senza codice**.
 13. **Idempotenza**: ogni operazione di creazione/reindicizzazione eseguita più volte sullo stesso
     input produce lo stesso risultato senza divergenze.
@@ -240,12 +250,10 @@ log entries, no modified timestamps on unchanged files).*
 ### Gruppo C — Operazione ingest
 *(superato da FR-030/FR-031; la semantica è ridefinita da FEAT-010 D-11)*
 
-> **NOTA**: Il Gruppo C di FEAT-003 (REQ-020..023) è **superato** dalla ridefinizione dell'ingest
-> in FEAT-010 D-11. La precedente semantica — "ingest scrive un riassunto in `sources/`" — è
-> sostituita da "ingest importa in `ingested_sources/` senza auto-compilazione". I requisiti
-> operativi dell'ingest sono ora FR-030 e FR-031 (§6, Gruppo 5.7).
-
-*(REQ-020..023 conservati solo come riferimento storico; non sono operativi nel consolidato.)*
+> **NOTA (aggiornata 2026-06-09, D-18)**: L'override di FEAT-010 (FR-030/031, ingest→`ingested_sources/`)
+> è stato **rimosso per design**. Torna quindi **operativa** la semantica originale del Gruppo C:
+> **l'ingest scrive un riassunto in `sources/`** (pattern Karpathy). REQ-020..023 sono di nuovo
+> normativi.
 
 ### Gruppo D — Distillazione di conversazione/sessione
 *(assorbito invariato da FEAT-003; FEAT-010 D-10)*
@@ -305,7 +313,8 @@ a new chunk identity.*
 **FR-001 (Ubiquitous)**
 *The system shall populate and maintain the wiki via an agentic layer (skill + hook) that
 performs the bookkeeping of the Karpathy pattern (pages, `index.md`, `log.md`,
-cross-references), reducing manual editing to the exception confined to `manual_edited/`.*
+cross-references), reducing manual editing to the exception.*
+> *(Riformulata 2026-06-09, D-18: rimosso il confinamento a `manual_edited/`.)*
 
 **FR-002 (Optional — riuso DRY)**
 *The skills/hooks may build on top of the FEAT-003 operations (`create_wiki`/`record`/`ingest`/
@@ -332,9 +341,9 @@ in the wiki as a new page (no dispersal in chat), updating the index and the log
 stale claims, missing cross-references/coverage) and report the results.*
 > Cadenza/trigger del lint: vedi FR-037/FR-038.
 
-**FR-007 (Unwanted behaviour)**
-*If a page is in `manual_edited/`, then the agentic layer shall not modify it nor delete it,
-reading it only as a source (D-1).*
+**FR-007** — ⛔ **DELETED BY DESIGN (2026-06-09, D-18)** — dipendeva da `manual_edited/`, rimossa.
+> *~~If a page is in `manual_edited/`, then the agentic layer shall not modify it nor delete it,
+> reading it only as a source (D-1).~~*
 
 ### Gruppo 5.2 — Generazione (a) e indicizzazione/retrieval (b)
 *(net-new FEAT-010 D-3; override Gruppo E)*
@@ -345,8 +354,9 @@ reading it only as a source (D-1).*
 
 **FR-009 (Ubiquitous)**
 *The set of input-sources for generation shall be configurable and modifiable during the
-project lifecycle; default set: discussion logs, `manual_edited/`, sources, tests, SpecKit
+project lifecycle; default set: discussion logs, sources (`sources/`), tests, SpecKit
 (`specs/`).*
+> *(Riformulata 2026-06-09, D-18: rimosso `manual_edited/` dal set di default.)*
 
 **FR-010 (Ubiquitous)**
 *The wiki shall be indexed in a separate collection from the sources and shall be queryable
@@ -360,8 +370,9 @@ affect the other.*
 *(net-new FEAT-010 D-4)*
 
 **FR-012 (Ubiquitous)**
-*The system shall treat code+tests as authority on behaviour and discussions/SpecKit/
-`manual_edited` as authority on the why; no single source of truth exists.*
+*The system shall treat code+tests as authority on behaviour and discussions/SpecKit as
+authority on the why; no single source of truth exists.*
+> *(Riformulata 2026-06-09, D-18: rimosso `manual_edited`.)*
 
 **FR-013 (Ubiquitous)**
 *In case of conflict, the system shall apply the default hierarchy (behaviour → code/tests;
@@ -371,18 +382,19 @@ why → registered decision).*
 *Where configured, the system should apply an explicit authority hierarchy in place of the
 default.*
 
-**FR-015 (Event-driven)**
-*When an inconsistency involving `manual_edited/` is detected, the system shall signal it and
-ask the user how to proceed, without autonomously modifying or discarding the source.*
+**FR-015** — ⛔ **DELETED BY DESIGN (2026-06-09, D-18)** — dipendeva da `manual_edited/`, rimossa.
+> *~~When an inconsistency involving `manual_edited/` is detected, the system shall signal it and
+> ask the user how to proceed, without autonomously modifying or discarding the source.~~*
 
-**FR-016 (Ubiquitous)**
-*The content of `manual_edited/` shall be compiled into derived wiki pages (synthesis/
-integration) and optionally linked to the source; the source file in `manual_edited/` shall
-remain unmodified (D-1).*
+**FR-016** — ⛔ **DELETED BY DESIGN (2026-06-09, D-18)** — dipendeva da `manual_edited/`, rimossa.
+> *~~The content of `manual_edited/` shall be compiled into derived wiki pages (synthesis/
+> integration) and optionally linked to the source; the source file in `manual_edited/` shall
+> remain unmodified (D-1).~~*
 
 **FR-017 (Ubiquitous)**
 *A wiki page shall be considered stale if it contradicts the code/tests (behaviour) or a
-registered decision (SpecKit/`manual_edited`).*
+registered decision (SpecKit).*
+> *(Riformulata 2026-06-09, D-18: rimosso `manual_edited`.)*
 
 ### Gruppo 5.4 — Fonti-input, trigger e versionamento
 *(net-new FEAT-010 D-5/D-6)*
@@ -395,24 +407,26 @@ last commit (versioned sources). (Primary trigger.)*
 *The system shall require git as a prerequisite; the state "last processed commit" acts as the
 watermark for incremental updates.*
 
-**FR-020 (Ubiquitous)**
-*The `ingested_sources/` folder shall be the entry point for non-versionable sources, used by
-the wiki as input for generating/enriching concepts (it is not an output of summary pages).*
+**FR-020** — ⛔ **DELETED BY DESIGN (2026-06-09, D-18)** — `ingested_sources/` rimossa; le fonti
+esterne sono riassunte in `sources/` via ingest (vedi FR-030 riformulato).
+> *~~The `ingested_sources/` folder shall be the entry point for non-versionable sources, used by
+> the wiki as input for generating/enriching concepts (it is not an output of summary pages).~~*
 
-**FR-021 (Event-driven)**
-*When the user requests it (at creation or update), the system shall (re)process
-`ingested_sources/` as input.*
+**FR-021** — ⛔ **DELETED BY DESIGN (2026-06-09, D-18)** — `ingested_sources/` rimossa.
+> *~~When the user requests it (at creation or update), the system shall (re)process
+> `ingested_sources/` as input.~~*
 
 **FR-022 (Unwanted behaviour)**
-*If a file in `manual_edited/` or `ingested_sources/` is an unreadable binary, then the system
-shall not ingest it.*
+*If a source file to be ingested is an unreadable binary, then the system shall not ingest it.*
+> *(Riformulata 2026-06-09, D-18: rimossi i riferimenti a `manual_edited/`/`ingested_sources/`.)*
 
 ### Gruppo 5.5 — Perimetro del retrieval
 *(net-new FEAT-010 D-7; override Gruppo E)*
 
 **FR-023 (Ubiquitous)**
-*The RAG (moment b) shall index only the generated wiki and the code (separate collections,
-joint query); `manual_edited/` and `ingested_sources/` shall not be indexed.*
+*The RAG (moment b) shall index only the generated wiki (including `sources/`) and the code
+(separate collections, joint query).*
+> *(Riformulata 2026-06-09, D-18: rimossa la clausola sulle cartelle-input, non più esistenti.)*
 
 **FR-024 (Ubiquitous)**
 *Generated wiki pages may contain references/links to input sources; such references shall not
@@ -442,17 +456,18 @@ commit hook), so that the trigger is not lost.*
 *The system shall not assume the presence of source code: code is an optional input-source;
 LLM Wiki + RAG shall operate also for code-free projects.*
 
-### Gruppo 5.7 — Ingest: import in ingested_sources
-*(net-new FEAT-010 D-11; override Gruppo C)*
+### Gruppo 5.7 — Ingest: riassunto in `sources/`
+*(2026-06-09 D-18: l'override del Gruppo C decade; tornano operativi REQ-020..023, ingest scrive un
+riassunto in `sources/`, semantica Karpathy.)*
 
-**FR-030 (Event-driven)**
-*When the ingest functionality is invoked — at wiki creation, on-demand (importing new
-documentation), or following an update of external docs — the system shall (re)populate
-`ingested_sources/` with the imported external documentation.*
+**FR-030** — ⛔ **DELETED BY DESIGN (2026-06-09, D-18)** — sostituita dal ritorno alla semantica
+"ingest produce un riassunto in `sources/`" (REQ-020..023, Gruppo C riattivato).
+> *~~When the ingest functionality is invoked … the system shall (re)populate `ingested_sources/`
+> with the imported external documentation.~~*
 
-**FR-031 (Ubiquitous)**
-*Ingest (import into `ingested_sources/`) shall be distinct from compilation into concept-pages
-(generation, moment a): ingest provides the input, generation compiles it.*
+**FR-031** — ⛔ **DELETED BY DESIGN (2026-06-09, D-18)** — cade la separazione *import ≠ compile*.
+> *~~Ingest (import into `ingested_sources/`) shall be distinct from compilation into concept-pages
+> (generation, moment a): ingest provides the input, generation compiles it.~~*
 
 ### Gruppo 5.8 — Superfici di invocazione
 *(net-new FEAT-010 D-12)*
@@ -521,7 +536,7 @@ recording the override in a traceable manner.*
 | ID | Criterio | Collegamento |
 |----|----------|-------------|
 | SC-001 | Su un repo inizializzato, un commit che tocca N file produce un aggiornamento del wiki **limitato alle pagine collegate alle entità del changeset** (non un full rebuild). | D-5/FR-018/FR-037 |
-| SC-002 | Le cartelle di input (`manual_edited/`, `ingested_sources/`) **non compaiono mai nel RAG**: una query non restituisce quei file, ma i **concetti compilati** che ne derivano. | D-7/FR-023 |
+| SC-002 | ⛔ **OBSOLETO (2026-06-09, D-18)** — riguardava cartelle-input (`manual_edited/`, `ingested_sources/`) ora eliminate. | ~~D-7/FR-023~~ |
 | SC-003 | Una query di retrieval restituisce risultati dal **wiki generato** e dal **codice** (collezioni separate interrogate insieme). | D-3/D-7/FR-010 |
 | SC-004 | Al commit, se lint/freschezza rilevano problemi sopra soglia, l'operazione è **bloccata**, l'utente è **avvisato** e riceve **≥1 soluzione** tra cui "ignora e committa"; con l'override il commit procede e l'override è **registrato**. | D-17/FR-041/FR-042 |
 | SC-005 | Il prodotto funziona su un progetto **senza codice**: generazione, retrieval e manutenzione operano con le sole fonti documentali. | D-9/FR-029 |
@@ -529,7 +544,7 @@ recording the override in a traceable manner.*
 | SC-007 | La stessa operazione è invocabile e raggiungibile da **skill, CLI e MCP**. | D-12/FR-032 |
 | SC-008 | Dopo `sertor wiki init`, un commit **innesca effettivamente** la generazione (binding del trigger installato). | D-16/FR-028/FR-040 |
 | SC-009 | Una pagina che afferma un comportamento **contraddetto dal codice/test**, o una **decisione** contraddetta, è segnalata come **obsoleta**. | D-4/FR-017/FR-036 |
-| SC-010 | L'ingest popola `ingested_sources/` alla creazione, on-demand e su update, **senza** scrivere pagine-riassunto (separazione import/compile). | D-11/FR-030/FR-031 |
+| SC-010 | L'ingest, alla creazione/on-demand/update, produce un **riassunto in `sources/`** della fonte esterna (pattern Karpathy). *(2026-06-09, D-18: era "popola `ingested_sources/` senza riassunto".)* | REQ-020..023 |
 | SC-3a | Dato un repository privo di wiki, la skill produce la struttura completa (`index.md`, `log.md`, cartelle tematiche) in un'unica invocazione. | REQ-001 |
 | SC-3b | Una seconda invocazione su un progetto già dotato di wiki non sovrascrive il contenuto esistente (idempotenza strutturale). | REQ-002/REQ-013 |
 | SC-3c | Dopo record/ingest su un wiki esistente, l'indice riflette le nuove pagine e il log contiene la nuova voce. | REQ-011/REQ-012 |
@@ -578,12 +593,12 @@ recording the override in a traceable manner.*
 - Le pagine wiki sono scritte in Markdown (`.md`); altri formati sono fuori ambito.
 - L'input dell'operazione di distillazione è un **brief/riassunto già condensato** (non una
   trascrizione grezza; DA-W3 risolta).
-- `manual_edited/` contiene **solo contenuti leggibili** (no binari, FR-022).
+- Le fonti da ingerire contengono **solo contenuti leggibili** (no binari, FR-022). *(2026-06-09, D-18: era riferito a `manual_edited/`.)*
 - È presente un **client LLM** (Claude Code/Copilot/Codex) con un **binding del trigger** installato
   dal setup (D-8/D-16).
 - La struttura wiki di base (`concepts/`, `tech/`, `experiments/`, `syntheses/`, `index.md`,
   `log.md`) è fissa nell'MVP; la personalizzazione strutturale per progetto è post-MVP.
-- Le fonti versionate vivono nel repo; `ingested_sources/` è gestita a mano (non versionata).
+- Le fonti versionate vivono nel repo; le fonti esterne ingerite sono riassunte in `sources/`. *(2026-06-09, D-18: rimosso `ingested_sources/`.)*
 
 ### Dipendenze
 
@@ -608,7 +623,7 @@ recording the override in a traceable manner.*
 | R-03 | **Il trigger si perde** se il setup non installa il binding | Media | Alto | Il setup installa il binding (D-16/FR-028/FR-040) e lo verifica |
 | R-04 | **Generazione su progetti grandi** lenta | Bassa | Medio | Incrementale di default; full solo on-demand/periodico; scalabilità lineare (RNF-007/008) |
 | R-05 | **Divergenza tra le tre superfici** (skill/CLI/MCP) | Bassa | Medio | Superfici = binding sullo stesso core/contratto (D-8/D-12) |
-| R-06 | **Conflitti su `manual_edited` risolti male** | Bassa | Alto | Human-in-the-loop obbligatorio (D-4/FR-015); l'LLM non modifica la fonte |
+| ~~R-06~~ | ⛔ **DECADUTO (2026-06-09, D-18)** — `manual_edited` rimossa, il rischio non si applica più | — | — | — |
 | R-W1 | **Drift struttura wiki** (nomi cartelle/convenzioni divergono dal workspace) | Media | Alto | Convenzioni specificate come requisiti espliciti (Gruppo A) e validate su `prototype/wiki/` |
 | R-W3 | **Dimensione crescente dell'indice RAG** (wiki molto grande rallenta la reindicizzazione) | Bassa | Medio | RNF-007 (scalabilità lineare); incrementale di default; full rebuild solo on-demand |
 | R-W4 | **Dipendenza da FEAT-001 non ancora disponibile** | Media | Medio | I Gruppi A–D, F sono sviluppabili e dimostrabili in isolamento; pianificare integrazione con FEAT-001 come task separato |
@@ -625,7 +640,7 @@ recording the override in a traceable manner.*
 | D — Distillazione | REQ-030..033 | **Should** | Capacità di alto valore, dipende dal LLM; implementabile subito dopo i Must. |
 | F — Idempotenza trasversale | REQ-050..051 | **Must** | CS-3/SC-006 la citano esplicitamente; senza idempotenza il wiki diverge. |
 | Generazione al commit (D-2/D-3/D-5/D-8) + collezioni separate + retrieval (D-7) + setup (D-16) | FR-001..011, FR-018..019, FR-023..028, FR-040 | **Must** | Cuore e2e: senza, non c'è LLM Wiki vivo né "una sola verità interrogabile". |
-| Convenzione input (`manual_edited` D-1 / `ingested_sources` D-6) + ingest (D-11) | FR-007, FR-020..022, FR-030..031 | **Must** | Definiscono cosa alimenta la generazione. |
+| ~~Convenzione input (`manual_edited` D-1 / `ingested_sources` D-6) + ingest→ingested_sources (D-11)~~ | ~~FR-007, FR-020..021, FR-030..031~~ | ⛔ **DELETED BY DESIGN (2026-06-09, D-18)** | Eliminate; ingest torna a riassumere in `sources/` (REQ-020..023). |
 | Superfici skill+CLI+MCP (D-12) | FR-032..034 | **Should** | La skill@commit basta per il flusso primario; CLI/MCP ampliano l'uso. |
 | Manutenzione (lint + freschezza D-14) + gate al commit (D-17) | FR-035..038, FR-041..042 | **Should** | Alza la qualità; il valore base esiste anche senza. |
 | Verità stratificata + gerarchia + obsolescenza (D-4) | FR-012..017 | **Should** | Consolida la governance della fonte di verità. |
@@ -634,8 +649,8 @@ recording the override in a traceable manner.*
 | Gerarchia di autorità **configurabile** (D-4/FR-014) | FR-014 | **Could** | Il default copre la maggior parte dei casi. |
 
 > **Sequenza consigliata per l'MVP**: Gruppo A → Gruppo B → Gruppo F → generazione al commit +
-> collezioni separate (subordinato a FEAT-001) → ingest/`ingested_sources/` → Gruppo D → superfici
-> CLI/MCP → manutenzione/gate.
+> collezioni separate (subordinato a FEAT-001) → ingest (riassunto in `sources/`, REQ-020..023) →
+> Gruppo D → superfici CLI/MCP → manutenzione/gate. *(2026-06-09, D-18.)*
 
 ---
 
@@ -645,6 +660,9 @@ Le decisioni seguenti sono state stabilite nel corso delle iterazioni di elicita
 (2026-06-04). Sono normative per il design a valle.
 
 ### D-1 — Convenzione "manuale vs automatico" (cartella `manual_edited/`)
+> ⛔ **DELETED BY DESIGN (2026-06-09, vedi D-18).** La cartella `manual_edited/` è eliminata: l'autoring
+> umano avviene nelle pagine normali del wiki. Testo conservato sotto solo come riferimento storico.
+
 I file Markdown scritti a mano dall'umano vivono in `wiki/manual_edited/` e sono trattati come
 **documentazione esterna / fonte autorevole**. L'automazione **non modifica né cancella mai** i file
 in `manual_edited/`: li può solo **leggere** (come contesto/fonte) e **indicizzare**. Il wiki
@@ -667,20 +685,24 @@ collezione si rigenera indipendentemente (risolve il rebuild distruttivo). Il co
 alla generazione, non solo un corpus del RAG.
 
 ### D-4 — Verità stratificata, gerarchia di autorità e obsolescenza
-**Codice + test** = autorità sul **comportamento**; **discussioni / SpecKit / `manual_edited`** =
-autorità sul **perché**. Gerarchia di default per conflitti: comportamento → codice/test; perché →
-decisione registrata. Gerarchia **configurabile** (Should). Conflitti che coinvolgono `manual_edited`
-→ **human-in-the-loop**: segnala e chiede, non decide da solo. `manual_edited` compilato in pagine
-derivate, file sorgente immutato. Definizione di **obsolescenza**: pagina contraddice il codice/test
-**oppure** una decisione registrata.
+**Codice + test** = autorità sul **comportamento**; **discussioni / SpecKit** = autorità sul
+**perché**. Gerarchia di default per conflitti: comportamento → codice/test; perché →
+decisione registrata. Gerarchia **configurabile** (Should). Conflitti rilevati →
+**human-in-the-loop**: segnala e chiede, non decide da solo. Definizione di **obsolescenza**: pagina
+contraddice il codice/test **oppure** una decisione registrata. *(Aggiornata 2026-06-09, D-18: rimosso
+`manual_edited` come fonte/oggetto di conflitto.)*
 
 ### D-5 — Refresh git-driven al commit (fonti versionate) + git come prerequisito
 Le fonti-input versionate vivono in git; il wiki si aggiorna **al commit**, elaborando il changeset
 dall'ultimo commit (**generazione incrementale guidata da git**, watermark = "ultimo commit
-elaborato"). **Git è prerequisito documentato**. `manual_edited/` accetta qualunque contenuto
-leggibile; binari non leggibili esclusi.
+elaborato"). **Git è prerequisito documentato**. Le fonti accettano qualunque contenuto leggibile;
+binari non leggibili esclusi. *(Aggiornata 2026-06-09, D-18: rimosso il riferimento a `manual_edited/`.)*
 
 ### D-6 — `ingested_sources/` (ex `sources/`): input esterno NON versionabile, a trigger manuale
+> ⛔ **DELETED BY DESIGN (2026-06-09, vedi D-18).** La rinomina `sources/`→`ingested_sources/` e il
+> "modello a due classi" sono annullati: `sources/` resta `sources/` con la semantica Karpathy
+> (riassunti generati dall'ingest). Testo conservato sotto solo come riferimento storico.
+
 La cartella `sources/` è **rinominata `ingested_sources/`** e **cambia ruolo**: da output di
 riassunti generati a **punto d'ingresso delle sorgenti non versionabili** (paper, contenuti web).
 Popolamento a **trigger manuale**. Il wiki la usa come input per generare e arricchire i concetti.
@@ -689,9 +711,12 @@ Popolamento a **trigger manuale**. Il wiki la usa come input per generare e arri
 `experiments/` · `syntheses/` · `index.md` · `log.md`.
 
 ### D-7 — Retrieval "puro Karpathy": indicizzato solo il wiki generato + il codice
-Nel momento (b) il RAG contiene **solo**: il **wiki generato** + il **codice** (collezioni separate,
-query congiunta). `manual_edited/` e `ingested_sources/` **non sono indicizzate**: si interrogano
-solo attraverso i concetti compilati del wiki. I riferimenti nelle pagine generate non sono
+> ♻️ **SEMPLIFICATA (2026-06-09, vedi D-18).** Non esistendo più cartelle-input (`manual_edited/`,
+> `ingested_sources/`), cade la clausola di esclusione: indicizzato = **wiki generato (incluso
+> `sources/`) + codice**.
+
+Nel momento (b) il RAG contiene **solo**: il **wiki generato** (incluso `sources/`) + il **codice**
+(collezioni separate, query congiunta). I riferimenti esterni nelle pagine generate non sono
 indicizzati.
 
 ### D-8 — Skill client-agnostica invocata al commit; trigger contract portabile; setup rilascia il trigger
@@ -704,9 +729,9 @@ altrimenti il trigger si perde.
 
 ### D-9 — LLM Wiki + RAG come asset anche per progetti SENZA codice
 Il codice è una delle fonti-input (D-3), **non un prerequisito**. Per i progetti senza codice manca
-la "verità sul comportamento" (codice/test) di D-4, ma restano `manual_edited/`, `ingested_sources/`,
-log discussioni, e il wiki compilato interrogabile. Il git-prerequisito di D-5 resta; il "codice come
-fonte" è opzionale.
+la "verità sul comportamento" (codice/test) di D-4, ma restano log discussioni, fonti in `sources/`,
+e il wiki compilato interrogabile. Il git-prerequisito di D-5 resta; il "codice come
+fonte" è opzionale. *(Aggiornata 2026-06-09, D-18: rimossi `manual_edited/`/`ingested_sources/`.)*
 
 ### D-10 — Questo documento è l'autorità e2e (consolidante); FEAT-003 assorbito come storico
 Questo requisito (in origine FEAT-010 `llm-wiki`, ora consolidato qui) è il **riferimento canonico**
@@ -717,6 +742,10 @@ orchestrazione agentica, no-code. FEAT-003 (`wiki-creazione` storico) → `llm-w
 di riferimento.
 
 ### D-11 — Funzionalità di "ingest": importa documentazione esterna in `ingested_sources/`
+> ⛔ **DELETED BY DESIGN (2026-06-09, vedi D-18).** Cade la separazione *import ≠ compile*: l'ingest
+> torna a produrre un **riassunto in `sources/`** (FEAT-003 Gruppo C, REQ-020..023, di nuovo operativo).
+> Testo conservato sotto solo come riferimento storico.
+
 Esiste una funzionalità di **ingest** che **importa documentazione esterna** in `ingested_sources/`
 alla **creazione del wiki**, **on-demand** e a seguito di **update** di doc esterni. **Import ≠
 compile**: l'ingest popola l'**input** (`ingested_sources/`); la **compilazione** in pagine-concetto
@@ -754,6 +783,36 @@ commit, **avvisa** l'utente con i problemi rilevati e **propone una o più soluz
 c'è sempre **"ignora e committa lo stesso"** (override esplicito, **tracciato**). È
 **human-in-the-loop** (coerente con D-4): l'utente decide; **nessun auto-fix silenzioso** né blocco
 senza via d'uscita.
+
+### D-18 — RIMOZIONE PER DESIGN (2026-06-09): eliminati `manual_edited/` e `ingested_sources/`
+**Decisione canonica** che ribalta D-1, D-6, D-11 e semplifica D-4, D-5, D-7, D-9. Le due convenzioni
+a cartelle d'input sono **rimosse dallo scope** per semplificazione e per **allineare il piano alla
+realtà**: il wiki di produzione ha già consolidato la tassonomia in `sources/`, abbandonando
+`manual_edited/`/`ingested_sources/` (vedi `wiki/syntheses/sistema-wiki-fonte-unica.md`).
+
+**Modello risultante (sostituisce il "modello a due classi" di D-6):**
+- **Niente `manual_edited/`**: l'autoring umano avviene nelle **pagine normali** del wiki; non esiste
+  più una cartella-input immutabile né la regola "l'LLM non la modifica". La gerarchia di verità sul
+  **perché** poggia su **discussioni/SpecKit** (decisioni registrate).
+- **Niente `ingested_sources/`**: le fonti esterne **non versionabili** si gestiscono via l'operazione
+  **ingest** che produce un **riassunto in `sources/`** (semantica Karpathy originale, = FEAT-003
+  Gruppo C REQ-020..023, che torna così operativo). Cade la separazione *import ≠ compile* di D-11.
+- **Retrieval semplificato (override di D-7):** indicizzato = **wiki generato (incluso `sources/`) +
+  codice** (collezioni separate, query congiunta). Sparisce la clausola "le cartelle-input non sono
+  indicizzate" perché non esistono più cartelle-input escluse.
+
+**Impatto puntuale:**
+- **Decisioni:** D-1 ⛔ · D-6 ⛔ · D-11 ⛔ · D-7 semplificata · D-4/D-5/D-9 ripulite dai riferimenti.
+- **FR eliminate:** FR-007, FR-015, FR-016 (manual_edited) · FR-020, FR-021 (ingested_sources) · FR-030,
+  FR-031 (ingest→ingested_sources, import≠compile).
+- **FR riformulate:** FR-001, FR-009, FR-012, FR-013, FR-017 (rimosso "manual_edited") · FR-022 (binari
+  solo su `sources/`) · FR-023 (rimossa la clausola sulle cartelle-input).
+- **Criteri:** SC-002 ⛔ obsoleto · SC-010 riformulato (ingest scrive il riassunto in `sources/`).
+- **Rischi:** R-06 (conflitti su `manual_edited`) decaduto.
+- **Glossario/Scope/MoSCoW/Assunzioni:** allineati.
+
+Non si riscrivono changelog né log storici: registrano la decisione di allora. Questa D-18 è la verità
+corrente.
 
 ---
 
@@ -793,3 +852,11 @@ indicizzazione RAG, idempotenza. Domande DA-W2..W6 chiuse.
 ### Consolidamento (2026-06-05)
 FEAT-010 folded dentro `wiki-creazione/requirements.md` (questo file). Vince FEAT-010 su tutti i
 conflitti. FEAT-003 assorbito come storico (D-10). Stato: **in progress**.
+
+### Rimozione per design — D-18 (2026-06-09)
+Eliminate dallo scope le convenzioni a cartelle-input **`manual_edited/`** e **`ingested_sources/`**
+(semplificazione; allineamento alla realtà del wiki, già consolidato in `sources/`). Decisione canonica
+**D-18**. Marcate `⛔ DELETED BY DESIGN`: D-1, D-6, D-11, FR-007, FR-015, FR-016, FR-020, FR-021, FR-030,
+FR-031; **semplificate/riformulate**: D-4, D-5, D-7, D-9, FR-001, FR-009, FR-012, FR-017, FR-022, FR-023;
+SC-002 obsoleto, SC-010 riformulato, R-06 decaduto; glossario/scope/MoSCoW/assunzioni allineati. L'ingest
+torna alla semantica Karpathy (riassunto in `sources/`, REQ-020..023 di nuovo operativi).
