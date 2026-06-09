@@ -32,9 +32,14 @@ def build_embedder(settings: Settings | None = None) -> EmbeddingProvider:
 
 
 def build_store(settings: Settings | None = None) -> VectorStore:
-    """Costruisce il backend di vector store selezionato dalla configurazione (REQ-018/030)."""
+    """Costruisce il backend di vector store selezionato dalla configurazione (REQ-018/030).
+
+    Il backend dello store è **disaccoppiato** dal provider di embeddings (`store_backend`, non
+    `backend`): si possono combinare embeddings Azure con store Chroma locale (o viceversa),
+    restando fedeli al local-first (Principio II). Default: vedi `Settings.store_backend`.
+    """
     settings = settings or Settings.load()
-    if settings.backend == "azure":
+    if settings.store_backend == "azure":
         from sertor_core.adapters.vectorstores.azure_search import AzureSearchStore
 
         return AzureSearchStore(
@@ -57,7 +62,7 @@ def collection_name(settings: Settings, embedder: EmbeddingProvider) -> str:
     embedding di dimensioni diverse nella stessa collezione.
     """
     base = f"{settings.corpus}__{_sanitize(embedder.name)}"
-    if settings.backend == "azure":
+    if settings.store_backend == "azure":
         # Azure AI Search: gli index hanno vincoli di naming (minuscolo, lettera iniziale).
         base = base.lower().lstrip("0123456789_") or "sertor"
     # Chroma/Azure richiedono nomi di 3+ caratteri: garantisce la lunghezza minima.
