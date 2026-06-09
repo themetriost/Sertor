@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-09 (riscritta su master, ancorata allo stato reale; reconcilia numerazione epica↔spec; FEAT-009 indice dogfood; D-18/19/20 snelliscono lo scope wiki)
+updated: 2026-06-09 (startup di sessione chiuso → DONE, IN PROGRESS vuoto; riscritta su master, ancorata allo stato reale; reconcilia numerazione epica↔spec; FEAT-009 indice dogfood; D-18/19/20 snelliscono lo scope wiki)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md"]
 ---
 
@@ -34,16 +34,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- **Migliorie allo startup di sessione.**
-  - *Cosa:* l'avvio apre il contesto con questo executive summary. **Ridisegno 2026-06-09:** il vecchio hook
-    *stampava* index+roadmap+log (~17 KB) e sforava il cap di ~10.000 caratteri del canale-hook → nel contesto
-    arrivava solo un preview da 2 KB. Ora l'hook è **sottile**: emette una direttiva (~630 B) che fa caricare
-    i file al flusso principale col tool `Read` (output intero, nessun cap) e poi mostrare la roadmap.
-  - *Dove:* `.claude/settings.json` (hook SessionStart, ora direttiva-Read) · questo blocco in
-    `wiki/syntheses/roadmap.md` · regola del rituale (punto 4) e descrizione iniezione in `CLAUDE.md` ·
-    pagina [[sessionstart-hook]].
-  - *Prossimo passo:* verificare l'iniezione al prossimo avvio/resume reale; se ok, chiudere e passare a un PLANNED.
-  - *Blocco/decisione aperta:* nessuno.
+- *(nessuna voce in corso — scegliere il prossimo PLANNED)*
 
 ### 📋 PLANNED (per priorità)
 
@@ -61,6 +52,8 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   `generate-from-diff` (N8), trigger manuale `/wiki` (D-19), gate eliminato (D-20), cartelle-input rimosse (D-18).
 - Lavori abilitanti: decoupling store↔embeddings (`specs/009`) · meccanica log (`specs/008`) · indice dogfood
   `sertor` vivo via MCP.
+- **Startup di sessione**: hook SessionStart **sottile** (direttiva-`Read`, ~630 B) che fa caricare roadmap/index/log
+  al flusso principale e mostrare l'executive summary — supera il cap ~10K del canale-hook (verificato in sessione 2026-06-09).
 <!-- EXEC:END -->
 
 ## Visione
