@@ -31,13 +31,13 @@ identità/formato dell'index curato → sblocca l'offload totale di `record`.
 | N4 | **ingest** (fonte esterna → **riassunto in `sources/`** + integrazione nei concetti) | REQ-020..023 (Gruppo C riattivato) | ☐ da fare | **2026-06-09 (D-18):** rimosse `ingested_sources/`/`manual_edited/`; ingest torna alla semantica Karpathy (riassunto in `sources/`), niente separazione import≠compile |
 | N5 | **lint semantico** (contraddizioni, claim superati, coverage di senso) | FR-006 (parte semantica) | ◑ in corso | **metodo documentato (variante b, 2026-06-05):** procedura+tassonomia nel playbook (`lint` livello B), ground truth via git/RAG/test, host-agnostico, zero codice. **Esteso il 2026-06-06 (PR #16):** audit globale a 4 `kind` (wiki/requirements/spec/tracker) via `[[audit]]` in config; provato sull'intero repo (1 deriva ALTA corretta sulla pagina pycache). Deferito (c): probe deterministici in `wiki_tools` |
 | N6 | **gerarchia di verità / autorità / obsolescenza** (giudizio) | FR-012..017 | ☐ da fare | la *rilevazione* dei segnali (mtime/git vs pagina) la fa D |
-| N7 | **gate al commit** (decisione human-in-the-loop: blocca/avvisa/ignora) | FR-035..038, FR-041/042 | ☐ da fare | il *calcolo* dei segnali lo fa D |
-| N8 | **orchestrazione agentica / trigger** (quando/come l'agente popola) | FR-001..005 | ☐ da fare | dipende dal contratto trigger portabile (FR-027, lato D) |
+| N7 | ~~**gate al commit**~~ | ~~FR-041/042~~ | ⛔ **DELETED BY DESIGN (2026-06-09, D-20)** | Gate-che-blocca-il-commit eliminato (incoerente col trigger manuale post-commit). Lint/freschezza restano come report non bloccante di `/wiki` (resta in N5/N9) |
+| N8 | **orchestrazione agentica / trigger** (quando/come l'agente popola) | FR-001..005 | ✅ **COMPLETA come procedura (2026-06-09)** | Trigger deciso = comando manuale `/wiki` (D-19); l'operazione che popola dalle modifiche è **`generate-from-diff`** (`ops/generate-from-diff.md`): scan/diff [D, git delegato] → aggiorna solo le pagine impattate [N] → index + voce di log [D]. **Nessun codice nuovo**: è una procedura guidata dal flusso principale. Automazione non presidiata (`claude -p`) fuori scope (D-19) |
 | N9 | **lint organizzativo + reorg** (collocazione per natura, atomicità, coerenza `type`↔natura, disciplina link inline/backlink) | FR-035..038 (manutenzione, D-14); → FEAT-007 | ◑ in corso | **terza categoria di deriva** oltre igiene (A) e claim (B): l'*organizzazione*. Tutto **giudizio** — natura/collocazione non sono deterministiche (cartella e `type` concordano ma mentono sul contenuto). **Metodo documentato (2026-06-06):** `lint` livello C + op `reorg` nel playbook; detection via `collect` + backlink calcolati, apply su conferma via `Read`/`Edit`. Backlog (c): helper deterministico `move`-con-link in `wiki_tools`. Nota: **nessun FR esplicito** su organizzazione/refactoring in `../wiki-creazione/requirements.md` → agganciato a FR-035..038/FEAT-007 |
 
 ## Domanda aperta da chiudere insieme
-- **FR-004 — trigger esatto del popolamento:** hook `Stop`/`SessionEnd`, comando `/wiki`, o entrambi?
-  (emersa dal consolidamento, §13 del requisito). Da decidere prima di N8.
+- ✅ **FR-004 — trigger del popolamento: RISOLTA (2026-06-09, D-19)** — comando manuale `/wiki`, ambito =
+  changeset dell'ultimo commit (`git diff HEAD~1`); scartati hook automatico e `claude -p` headless.
 
 ## Come la lavoriamo
 Una operazione per volta, in dialogo: definiamo il comportamento (istruzioni in skill/playbook host-agnostici,

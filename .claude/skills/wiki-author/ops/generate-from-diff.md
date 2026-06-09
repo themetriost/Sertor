@@ -1,5 +1,10 @@
 # Operazione `generate-from-diff` — aggiorna dalle modifiche recenti
 
+> ✅ **Stato: COMPLETA come procedura (2026-06-09).** Decisione: questa operazione resta una procedura
+> guidata dal flusso principale, **senza codice nuovo**. Trigger = comando manuale `/wiki` (D-19); ambito =
+> changeset dell'ultimo commit. Lint/freschezza qui sono **non bloccanti** (gate eliminato, D-20). Vedi
+> `requirements/sertor-core/wiki-creazione/requirements.md` (D-19/D-20) e `wiki-llm/TODO.md` (N8).
+
 > **Modulo operazione.** Esecutore: **solo flusso principale**.
 > Per il **substrato condiviso** (confine D↔N §2, tassonomia §3, voce di log §6) vedi il playbook
 > `wiki-playbook.md`; le pagine aggiornate devono restare conformi a
