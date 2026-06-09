@@ -3,7 +3,7 @@ title: Architettura del Wiki LLM — stato e roadmap
 type: synthesis
 tags: [architettura, wiki-llm, host-agnostico, principio-x, roadmap, feat-003, deterministico-vs-giudizio]
 created: 2026-06-05
-updated: 2026-06-07
+updated: 2026-06-09 (D-18/D-19/D-20: rimossi manual_edited/ingested_sources, trigger = /wiki manuale, gate eliminato; N8 completa, N7 deleted)
 sources: [
   "src/sertor_core/wiki_tools/**",
   "wiki.config.toml",
@@ -113,7 +113,9 @@ del 2026-06-06 (`syntheses/` da 16/20 a una distribuzione 4/3/9/4). Dettagli:
 | N9 lint organizzativo + `reorg` — metodo + esercitato (reorg 2026-06-06) | ◑ in corso |
 | N1 record-contenuto — metodo «livello di significato» (page-craft) | ◑ in corso (metodo sì, da esercitare) |
 | N2 distillazione — operazione `distill` + standing nel rituale (esercitata su FEAT-001, 2026-06-08) | ✅ fatto |
-| N3-N4, N6-N8 (operazioni di giudizio) | ☐ da fare |
+| N8 orchestrazione/trigger (`generate-from-diff` + `/wiki`) | ✅ completa come procedura (2026-06-09, D-19) |
+| N7 gate al commit | ⛔ deleted by design (2026-06-09, D-20) |
+| N3, N4 (ingest→`sources/`), N6 (operazioni di giudizio) | ☐ da fare |
 
 ## Roadmap
 
@@ -122,24 +124,24 @@ Grafo delle dipendenze (cosa sblocca cosa):
 ```
 ✅ FEAT-003-D ─► ✅ Ponte D→N ─► ◑ N5 lint (metodo)
                        │
-                       ├─► 1a  Scope completo (write-back in CLI + formato index) ─► N1 record (offload pieno)
-                       ├─► 2a  FR-004 (trigger: hook/comando/headless) ─────────► N8 orchestrazione
-                       ├─► 3   Operazioni di contenuto: N1 · N2 · N3 · N4
-                       ├─► 4   N6 verità/autorità/obsolescenza · N7 gate al commit
-                       └─► ✅ 5a sertor_mcp (RAG ospite, PR #15) ─► resta: indice corpus `sertor` → N5 probe-RAG · dogfood · agente Azure
+                       ├─► 1a  Scope completo (write-back index in CLI) ─► N1 record (offload pieno)
+                       ├─► ✅ 2a  FR-004 trigger RISOLTO (D-19: comando manuale /wiki) ─► ✅ N8 generate-from-diff (procedura)
+                       ├─► 3   Operazioni di contenuto: N1 · N2(✅) · N3 · N4(ingest→sources/, D-18)
+                       ├─► 4   N6 verità/autorità/obsolescenza · ⛔ N7 gate ELIMINATO (D-20)
+                       └─► ✅ 5a sertor_mcp (PR #15) + indice corpus `sertor` COSTRUITO (FEAT-009) → dogfood vivo
 ```
 
 | # | Evoluzione | Natura | Requisiti? | Priorità | Dipende da |
 |---|---|---|---|---|---|
 | **5a** | `sertor_mcp` — RAG dell'ospite | **codice** (componente) | ✅ **FATTO** (PR #15, SpecKit completo) | — | — |
 | **1a** | Scope completo: write-back in CLI + riconciliazione formato index | **codice** (D) | ✅ EARS leggero / spec | Media | FEAT-003-D |
-| **2a** | FR-004: chiudere il trigger (hook vs comando vs headless) | **decisione** | ❌ (chiude requisito esistente §13) | Media | — |
+| **2a** | FR-004: trigger | **decisione** | ✅ **RISOLTA (2026-06-09, D-19)**: comando manuale `/wiki`, ambito = ultimo commit | — | — |
 | **3a** | N1 record-contenuto (autorship) | giudizio (N) | ❌ build, non spec | Media | 1a (migliora) |
 | **3b** | N2 distillazione sessione→pagina — operazione `distill` + rituale | giudizio (N) | ✅ **FATTO** (2026-06-08, pilota FEAT-001) | — | — |
 | **3c** | N3 generazione dal repo (Karpathy) | giudizio (N) | ❌ build | Bassa | — |
-| **3d** | N4 ingest compile | giudizio (N) | ❌ build | Bassa | — |
+| **3d** | N4 ingest (fonte→riassunto in `sources/`, D-18) | giudizio (N) | ❌ build | Bassa | — |
 | **4a** | N6 verità/autorità/obsolescenza | misto (D segnali + N decisione) | ◑ solo metà-D | Bassa | — |
-| **4b** | N7 gate al commit (human-in-the-loop) | misto | ◑ solo metà-D | Bassa | 2a |
+| ~~**4b**~~ | ~~N7 gate al commit~~ | — | ⛔ **DELETED BY DESIGN (2026-06-09, D-20)**: incoerente col trigger manuale post-commit; lint/freschezza restano non bloccanti | — | — |
 | **1b** | N5 variante (c): probe deterministici in `wiki_tools` | codice (D) | ◑ EARS-abile, valore incerto | Bassa | N5 |
 
 **Principio di processo** (vedi [[constitution]] e la regola "calibra al valore"): **EARS è il bisturi
@@ -147,6 +149,9 @@ sul lato D** (componenti/contratti con "done" testabile, soprattutto `sertor_mcp
 costruisce il metodo, non si spec-a** (i requisiti di outcome esistono già in
 `requirements/sertor-core/wiki-creazione/requirements.md`).
 
-**Prossimo passo raccomandato:** 5a (`sertor_mcp`) è **fatta** (PR #15, `.mcp.json` su produzione); resta da
-costruire l'**indice del corpus `sertor`** — è ciò che rende "vero" il probe-RAG del lint semantico (N5) e
-abilita il dogfood di produzione.
+**Aggiornamento 2026-06-09:** chiuse le decisioni di trigger/scope del wiki — **D-18** (rimossi
+`manual_edited/`/`ingested_sources/`; ingest→`sources/`), **D-19** (trigger = comando manuale `/wiki`,
+ambito = ultimo commit), **D-20** (gate al commit eliminato). L'indice dogfood `sertor` è **costruito**
+(FEAT-009). **Prossimo passo raccomandato:** i pezzi codice D (collezioni separate + query congiunta,
+`sertor wiki init`, write-back index in CLI), via SpecKit; oppure esercitare le operazioni di contenuto N
+(N1/N3/N4/N6).

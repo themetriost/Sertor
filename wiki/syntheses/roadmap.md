@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-09 (riscritta su master, ancorata allo stato reale; reconcilia numerazione epica↔spec; FEAT-009 indice dogfood)
+updated: 2026-06-09 (riscritta su master, ancorata allo stato reale; reconcilia numerazione epica↔spec; FEAT-009 indice dogfood; D-18/19/20 snelliscono lo scope wiki)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md"]
 ---
 
@@ -49,7 +49,7 @@ Legenda: ✅ su master · 🧪 operativo, consolidamento formale aperto · 💀 
 |---|---|---|---|---|
 | FEAT-001 | Nucleo di retrieval (ingestione, chunking code-aware, embeddings, vector store, facade) | Must | ✅ | `specs/001`, `src/sertor_core` |
 | FEAT-002 | Motore RAG vettoriale (baseline) | Must | ✅ | `specs/002`, `engines/baseline` |
-| FEAT-003 | Skill: creare/indicizzare l'LLM Wiki | Must | 🧪 operativo (D+N su master), consolidamento FEAT-010 aperto | vedi sotto |
+| FEAT-003 | Skill: creare/indicizzare l'LLM Wiki | Must | 🧪 operativo (D+N su master); scope snellito 2026-06-09 (D-18 no `manual_edited`/`ingested_sources`; D-19 trigger = `/wiki` manuale; D-20 gate eliminato; N8 `generate-from-diff` completa). Restano pezzi codice D | vedi sotto |
 | — FEAT-003-D | …nucleo **deterministico** (`wiki_tools` + `wiki.config.toml`) | Must | ✅ | `specs/006` (PR #13), `src/sertor_core/wiki_tools` |
 | — FEAT-003-N | …operazioni **assistite da LLM** (record/distill/lint/ingest) | Must | ✅ come **skills/playbook** (giudizio ≠ codice) | `.claude/skills/wiki-author`, `/wiki`, `wiki-curator` |
 | FEAT-MCP | Server MCP di produzione (`sertor_mcp`, superficie su `build_facade`) | Should | ✅ | `specs/007` (PR #15) |

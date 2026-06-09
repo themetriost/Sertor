@@ -96,9 +96,9 @@ Procedura ripetibile (già documentata in playbook §5.4, ma qui riassunto per c
 - **Livello A (strutturale):** CLI su **target wiki** → 100% meccanico.
 - **Livello B (semantico):** su **artefatti del changeset** (incrementale, non repo intero) → per ogni `kind` applicare il profilo della tabella sopra → **report + warning NON bloccante** (mai auto-fix; il valore sta nella rilevazione).
 
-**Caveat di automazione:** B è un giudizio LLM → esecuzione automatica al commit dipende da orchestrazione/trigger (lato deterministico). Per ora il warning al commit copre A e **ricorda di lanciare B incrementale** manualmente (`/wiki lint` sul changeset).
+**Caveat di automazione:** B è un giudizio LLM. Il trigger è il **comando manuale `/wiki`** (D-19): B incrementale si lancia con `/wiki lint` sul changeset dell'ultimo commit. Resta **non bloccante** (gate eliminato, D-20): rileva e riporta, non blocca.
 
-Vedi [[architettura-wiki-llm]] item **"2a FR-004: chiudere il trigger"**.
+Vedi [[architettura-wiki-llm]] (trigger risolto, D-19).
 
 ## Motivazione e lezione assorbita
 
@@ -121,7 +121,7 @@ Vedi [[architettura-wiki-llm]] item **"2a FR-004: chiudere il trigger"**.
 - ✅ Config (sezione audit) estesa a 4 `kind` e 4 `paths` glob nel `wiki.config.toml` di Sertor.
 - ✅ Playbook recritto (§5.4 operazione `lint`, tabella profilo universale, procedura ripetibile).
 - ✅ Delega chiara: ruolo VCS per git, RAG-ospite o `Read`/`Grep` per simboli, tool locale per test.
-- ◑ Automazione B al commit: metodo sì, cablaggio a trigger (FR-004) differito.
+- ✅ Trigger di B: comando manuale `/wiki` (D-19, 2026-06-09); non bloccante (gate eliminato, D-20).
 
 ---
 
