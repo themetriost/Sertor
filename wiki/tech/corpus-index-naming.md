@@ -3,8 +3,8 @@ title: Corpus & index naming (RAG)
 type: tech
 tags: [architettura, corpus, indice, naming, prodotto, prototipo]
 created: 2026-06-04
-updated: 2026-06-07
-sources: ["CLAUDE.md", "prototype/shared/config.py", ".mcp.json"]
+updated: 2026-06-09 (FEAT-009: indice dogfood `sertor` costruito; backend embeddings/store disaccoppiati)
+sources: ["CLAUDE.md", "prototype/shared/config.py", ".mcp.json", "src/sertor_core/config/settings.py", "src/sertor_core/composition.py"]
 ---
 
 # Corpus & index naming (RAG)
@@ -36,7 +36,7 @@ il naming è stato **riconciliato per chiarezza**.
 | **Indice (default locale Chroma)** | `.index-sertor/` |
 | **Contenuto** | Codice sorgente e docs del prodotto (FEAT-001, FEAT-002, FEAT-003, ...) |
 | **Scopo** | Ricerca, RAG production sul codice di `sertor` stesso |
-| **Backend** | Chroma + Ollama (default locale) oppure Azure AI Search + Azure OpenAI (via `RAG_BACKEND=azure`) |
+| **Backend** | Embeddings e store scelti **indipendentemente** (FEAT-009): `RAG_BACKEND` (Ollama \| Azure OpenAI) × `SERTOR_STORE_BACKEND` (Chroma locale \| Azure AI Search). Indice dogfood attuale: **embeddings Azure `text-embedding-3-large` + store Chroma locale**. |
 
 **Note operazionali:**
 - La cartella `.index-production` (epoch locale-backend, 39M, with stale collections) è stata **eliminata** il 2026-06-04 (non più rilevante).
@@ -87,7 +87,7 @@ il naming è stato **riconciliato per chiarezza**.
 
 ### Conventions
 - **Naming file indici:** `.<cartella>/.index-<corpus>/` (es. `.index-sertor`, `.index-prototype`).
-- **Naming collezioni Chroma:** per backend Chroma, collezione = `<corpus>__<provider>` (es. `sertor__ollama`, `prototype__azure-large`).
+- **Naming collezioni Chroma:** per backend Chroma, collezione = `<corpus>__<provider>` (es. `sertor__ollama`, `prototype__azure-large`). Il provider include il modello: l'indice dogfood di produzione è `sertor__azure_text_embedding_3_large` (FEAT-009, 191 doc / 1578 chunk, dim 3072).
 - **Namespacing logico:** `SERTOR_CORPUS` isola comportamento senza duplicare config.
 
 ## Storico delle modifiche
@@ -96,6 +96,7 @@ il naming è stato **riconciliato per chiarezza**.
 |------|-----------|----------|
 | 2026-05-30 | Isolamento prototipo | Corpus `sertor` introdotto per dogfooding (indice `.index-sertor` in prototipo). |
 | 2026-06-04 | Rinomina chiarificatrice | Corpus `sertor` → prodotto (radice); corpus `prototype` → prototipo. Indice `.index-production` rimosso; `.index-sertor` → `.index-sertor` (radice per prodotto). Cartelle prototipo `.index-sertor` → `.index-prototype`. |
+| 2026-06-09 | Indice dogfood costruito | Corpus `sertor` indicizzato per la **prima volta** (191 doc / 1578 chunk) in `.index-sertor/`, collezione `sertor__azure_text_embedding_3_large`. Embeddings Azure + store Chroma locale, abilitato da FEAT-009 (`store_backend` disaccoppiato). |
 
 ## Legami e riferimenti
 

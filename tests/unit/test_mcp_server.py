@@ -37,8 +37,14 @@ def _empty_facade(_settings=None) -> RetrievalFacade:
 
 
 def _use(monkeypatch, factory) -> None:
-    """Sostituisce la costruzione della facade e azzera la cache memoizzata."""
+    """Sostituisce la costruzione della facade e azzera la cache memoizzata.
+
+    Neutralizza anche `Settings.load`: `_facade()` lo invoca col default `env_file=".env"`, che con
+    `override=True` inquinerebbe `os.environ` globale (es. `RAG_BACKEND`) rompendo l'isolamento dei
+    test successivi. Le factory mock ignorano comunque le impostazioni.
+    """
     monkeypatch.setattr(srv, "build_facade", factory)
+    monkeypatch.setattr(srv.Settings, "load", lambda *a, **k: None)
     srv._facade.cache_clear()
 
 

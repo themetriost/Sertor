@@ -3,6 +3,9 @@
 Implementa la porta `EmbeddingProvider` via REST (`/embeddings`). Le credenziali (endpoint, chiave)
 arrivano dalla configurazione centralizzata e non vengono mai loggate (REQ-032). Gli errori sono
 avvolti in `EmbeddingError` (Principio IV).
+
+Supporta due superfici Azure: la "v1" (endpoint `.../openai/v1`, che NON accetta `api-version`) e
+quella classica (con `?api-version=`). `api-version` è inviato solo se l'endpoint NON è v1.
 """
 from __future__ import annotations
 
@@ -37,13 +40,14 @@ class AzureEmbedder:
         self._key = api_key
         self._deployment = deployment
         self._api_version = api_version
+        self._v1 = "/openai/v1" in endpoint  # superficie v1: niente api-version
         self._client = client or httpx.Client(timeout=300)
 
     def _embed_batch(self, texts: list[str]) -> list[list[float]]:
         try:
             r = self._client.post(
                 self._url,
-                params={"api-version": self._api_version},
+                params=None if self._v1 else {"api-version": self._api_version},
                 headers={"api-key": self._key},
                 json={"model": self._deployment, "input": texts},
             )

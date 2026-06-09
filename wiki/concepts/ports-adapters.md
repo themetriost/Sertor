@@ -3,7 +3,7 @@ title: Porte e adapter (boundary del retrieval-core)
 type: concept
 tags: [ports, adapters, protocol, hexagonal, clean-architecture, sertor-core, composition]
 created: 2026-06-08
-updated: 2026-06-08
+updated: 2026-06-09 (FEAT-009: store_backend disaccoppiato dal provider di embeddings)
 sources: ["src/sertor_core/domain/ports.py", "src/sertor_core/composition.py", "src/sertor_core/adapters/**"]
 ---
 
@@ -40,8 +40,11 @@ che impedisce a uno schema di backend di risalire nel nucleo.
 
 `composition.py` è l'**unico** componente che conosce gli adapter concreti: le `build_*` (`build_embedder`,
 `build_store`, `build_indexer`, `build_facade`, `build_baseline_engine`) leggono `Settings` e cablano
-l'implementazione — `local` → Chroma + Ollama, `azure` → Azure AI Search + Azure OpenAI. Due conseguenze di
-design:
+l'implementazione. Provider di **embeddings** e backend del **vector store** sono scelti da **due manopole
+distinte** (FEAT-009): `backend` (`RAG_BACKEND`) governa l'embedder (Ollama vs Azure OpenAI),
+`store_backend` (`SERTOR_STORE_BACKEND`, default = `backend`) governa lo store (Chroma vs Azure AI Search).
+Sono **combinabili** — es. embeddings Azure con store Chroma locale (la combinazione usata per l'indice di
+dogfooding `sertor`) — fedeli al local-first del Principio II. Due conseguenze di design:
 
 - **Import lazy.** Gli SDK pesanti sono importati **dentro** le `build_*`, solo sul ramo che li usa: l'extra
   `azure` non serve in locale (isolamento delle dipendenze).
