@@ -37,6 +37,24 @@ def test_embed_provider_follows_backend(monkeypatch):
     assert Settings.load(env_file=None).embed_provider == "azure"
 
 
+def test_store_backend_defaults_to_rag_backend(monkeypatch):
+    # Retro-compatibile: senza SERTOR_STORE_BACKEND lo store segue il backend di embeddings.
+    monkeypatch.delenv("SERTOR_STORE_BACKEND", raising=False)
+    monkeypatch.setenv("RAG_BACKEND", "azure")
+    assert Settings.load(env_file=None).store_backend == "azure"
+    monkeypatch.setenv("RAG_BACKEND", "local")
+    assert Settings.load(env_file=None).store_backend == "local"
+
+
+def test_store_backend_decouples_from_embeddings(monkeypatch):
+    # Embeddings Azure + store locale: combinazione abilitata da SERTOR_STORE_BACKEND (Princ. II).
+    monkeypatch.setenv("RAG_BACKEND", "azure")
+    monkeypatch.setenv("SERTOR_STORE_BACKEND", "local")
+    s = Settings.load(env_file=None)
+    assert s.embed_provider == "azure"   # provider di embeddings invariato
+    assert s.store_backend == "local"    # store disaccoppiato dal backend di embeddings
+
+
 def test_secrets_are_read_from_env_only(monkeypatch):
     # I segreti arrivano da env; Settings non li scrive da nessuna parte (REQ-032).
     monkeypatch.setenv("AZURE_OPENAI_API_KEY", "super-secret")
