@@ -228,9 +228,12 @@ automazione *unattended*: la distinzione è netta —
    lo stato di prodotto **non** lo innescano. **Confine:** è **giudizio** ancorato alla realtà del repo
    (git, `specs/`, `src/`) → resta nel **flusso principale (Opus)**, non a Haiku, come distill e lint
    semantico; il blocco executive e la mappa-feature sottostante **non devono contraddirsi**. **Iniezione
-   (non è compito del rituale):** il SessionStart hook estrae il blocco tra i marker e lo stampa (in
-   contesto + a schermo) insieme a indice e coda del log — l'hook *trasporta*, il rituale tiene il
-   *contenuto* vero.
+   (non è compito del rituale):** il SessionStart hook è **sottile** — non *trasporta* il contenuto (il
+   canale-hook è limitato a ~10.000 caratteri: l'indice da solo lo sforerebbe), ma **istruisce** il flusso
+   principale a caricarlo a freddo con il tool `Read` (`wiki/syntheses/roadmap.md`, `wiki/index.md`, l'ultimo
+   file di `wiki/log/`) — l'output del `Read` entra **intero** nel contesto, nessun cap — e poi a **mostrare
+   all'utente l'executive summary** della roadmap. L'hook *innesca*, il `Read` *trasporta*, il rituale tiene
+   il *contenuto* vero.
 5. **\<altre azioni\>** — questa lista è **estendibile**: ogni azione che l'utente chiede di rendere
    *standing* va aggiunta qui, e da quel momento fa parte del rituale a ogni step.
 

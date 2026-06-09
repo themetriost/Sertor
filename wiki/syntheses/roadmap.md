@@ -35,12 +35,14 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 ### 🔄 IN PROGRESS (dettaglio)
 
 - **Migliorie allo startup di sessione.**
-  - *Cosa:* l'avvio inietta questo executive summary (tabella roadmap + dettaglio IN PROGRESS), oltre a
-    indice del wiki e coda del log.
-  - *Dove:* `.claude/settings.json` (hook SessionStart, estrae il blocco `EXEC:*`) · questo blocco in
-    `wiki/syntheses/roadmap.md` · regola del rituale (punto 4) in `CLAUDE.md`.
-  - *Prossimo passo:* raccogliere eventuali ulteriori migliorie alla forma dell'avvio; altrimenti chiudere
-    e passare a un PLANNED.
+  - *Cosa:* l'avvio apre il contesto con questo executive summary. **Ridisegno 2026-06-09:** il vecchio hook
+    *stampava* index+roadmap+log (~17 KB) e sforava il cap di ~10.000 caratteri del canale-hook → nel contesto
+    arrivava solo un preview da 2 KB. Ora l'hook è **sottile**: emette una direttiva (~630 B) che fa caricare
+    i file al flusso principale col tool `Read` (output intero, nessun cap) e poi mostrare la roadmap.
+  - *Dove:* `.claude/settings.json` (hook SessionStart, ora direttiva-Read) · questo blocco in
+    `wiki/syntheses/roadmap.md` · regola del rituale (punto 4) e descrizione iniezione in `CLAUDE.md` ·
+    pagina [[sessionstart-hook]].
+  - *Prossimo passo:* verificare l'iniezione al prossimo avvio/resume reale; se ok, chiudere e passare a un PLANNED.
   - *Blocco/decisione aperta:* nessuno.
 
 ### 📋 PLANNED (per priorità)

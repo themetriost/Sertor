@@ -9,33 +9,41 @@ sources: [".claude/settings.json"]
 
 # SessionStart hook
 
-Il **SessionStart hook** inietta lo **stato del wiki** nel contesto della sessione al suo avvio. È un
+Il **SessionStart hook** fa aprire la sessione con lo **stato del progetto** nel contesto. È un
 comando PowerShell **inline** (non uno script separato) dichiarato in `.claude/settings.json`
 (`statusMessage` = "Carico lo stato del wiki", timeout 15s). È la prova empirica del ruolo *"contesto
 iniettato"* del wiki ([[wiki-role-da-w1]]): l'**host** (Claude Code) spinge la mappa del wiki davanti al
 modello in modalità *push*, prima di qualunque query e senza passare dal RAG.
 
-## Cosa fa
+## Cosa fa (hook sottile: innesca, non trasporta)
 
 Si esegue all'**avvio** della sessione e — come si osserva dai `system-reminder` — anche su **resume** e
-**compact**. In sola lettura: legge i file del wiki e ne stampa il contenuto su STDOUT, che l'harness
-**inietta nel contesto** come primo blocco prima del turno dell'utente. Non scrive nulla. Nel dettaglio:
-forza l'output in UTF-8 (accenti delle pagine italiane), risolve la radice da `$env:CLAUDE_PROJECT_DIR`,
-stampa l'intero `wiki/index.md` (la mappa del wiki) e infine un promemoria a delegare gli aggiornamenti al
-`wiki-curator`. Il comando esatto vive in `.claude/settings.json` (non trascritto qui: una copia nel wiki
-divergerebbe al primo ritocco).
+**compact**. **Non trasporta più il contenuto**: emette una **direttiva breve** (~630 byte) che istruisce il
+flusso principale a caricare il contesto *di propria iniziativa* con il tool `Read` —
+`wiki/syntheses/roadmap.md`, `wiki/index.md`, l'ultimo file di `wiki/log/` — e poi a **mostrare all'utente
+l'executive summary** della roadmap (il blocco tra i marker `<!-- EXEC:START -->` / `<!-- EXEC:END -->`).
+L'unica computazione che fa è risolvere la radice da `$env:CLAUDE_PROJECT_DIR` e calcolare il **nome** della
+partizione di log più recente (vedi sotto), da nominare nella direttiva; forza l'output in UTF-8. Il comando
+esatto vive in `.claude/settings.json` (non trascritto qui: una copia nel wiki divergerebbe al primo ritocco).
 
-Il payload è **piccolo e curato** per scelta: l'indice (la struttura navigabile) e — quando disponibile —
-la coda del log recente, **non** chunk casuali né l'intero wiki (troppo rumoroso per il contesto iniziale).
+La catena è: **l'hook *innesca*, il `Read` *trasporta*, il rituale tiene il *contenuto* vero**.
+
+## Perché l'hook non stampa più il contenuto (il cap dei 10.000 caratteri)
+
+L'output di un hook è **limitato a ~10.000 caratteri**: oltre quella soglia l'harness lo **salva su file** e
+nel contesto inietta solo un **preview (~2 KB)**. La versione precedente stampava `index.md` *intero* (~12 KB)
+più roadmap e coda log (~17 KB totali): sforava il cap a ogni avvio, così nel contesto arrivava solo mezza
+roadmap e né indice né log. La causa **non** era il contesto della sessione (1M token, ampio) ma il **canale-
+hook**. Il fix sposta il trasporto sul tool `Read`, il cui output entra **intero** nel contesto senza alcun
+cap; l'hook resta ben sotto i 10 K perché porta solo istruzioni. *(Ridisegnato il 2026-06-09.)*
 
 ## Compatibilità con la rotazione del log
 
 Il log del wiki è **partizionato per giorno** in `wiki/log/<data>.md` (rotazione FEAT-008): non esiste più
 un `wiki/log.md` unico. L'hook seleziona quindi la **partizione più recente** di `wiki/log/` (elenca i
 `*.md`, esclude `index.md`, ordina per nome — che per il formato `YYYY-MM-DD` è anche ordine cronologico —
-e prende l'ultimo) e ne stampa la coda; con fallback al vecchio `wiki/log.md` se la cartella non c'è.
-*(Allineato il 2026-06-09: prima leggeva `wiki/log.md` fisso, ormai inesistente → la coda del log non
-veniva più iniettata.)*
+e prende l'ultimo) e ne **mette il path nella direttiva**, perché sia il `Read` del flusso principale a
+caricarne il contenuto; con fallback al vecchio `wiki/log.md` se la cartella non c'è.
 
 ## Perché è rilevante per DA-W1
 
