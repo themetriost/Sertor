@@ -36,6 +36,10 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 
 ## Pagine
 
+> 🗺️ **[[roadmap]] — Roadmap & stato di prodotto (pagina viva).** Punto d'ingresso per "dove siamo":
+> mappa delle feature (epica `sertor-core`/`sertor-cli`), cosa è su `master` vs su branch, lavori
+> abilitanti mergiati, fasi e backlog. Tienila aperta come quadro d'insieme.
+
 ### Concepts (fondamenta e astrazioni)
 
 - **[[retrieval-core]]** — Il **nucleo di retrieval** importabile (`sertor-core`), *il prodotto*: architettura Clean (domain/services/adapters/engines + porte `Protocol`), composition root guidato da `Settings`, backend `local`/`azure`, policy errori tollerante↔strict, collezioni namespaced per `(corpus, provider)`. CLI/MCP/wiki ne sono consumatori sottili. *Scomposto nelle 4 pagine-entità sotto.*
@@ -70,6 +74,7 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 
 ### Syntheses (viste d'insieme e sintesi trasversali)
 
+- **[[roadmap]]** — 🗺️ **Roadmap & stato di prodotto (pagina viva).** Mappa feature epica × stato reale (master/branch), lavori abilitanti mergiati (incl. FEAT-009 indice dogfood), fasi, backlog e idee da discutere. Reconcilia le due numerazioni (epica `FEAT-NNN` ≠ `specs/NNN`).
 - **[[architettura-wiki-llm]]** — 🗺️ **Vista d'insieme + roadmap.** Architettura del Wiki LLM dopo il ponte D→N: nucleo deterministico (`wiki_tools`) + layer agentico (4 entità host-agnostiche) + hook, separati dal confine D (meccanico) ↔ N (giudizio); una sola config. Schemi a strati, confine per operazione, lint a tre livelli (A strutturale / B semantico / C organizzativo). **Roadmap** con grafo di dipendenze e priorità. Pagina d'ingresso all'architettura.
 - **[[sistema-wiki-fonte-unica]]** — Consolidamento del wiki (fonte unica playbook + tre interfacce sottili + automazione hook). Tassonomia consolidata; convenzioni esplicite; operazioni del playbook. **Modularizzato (2026-06-07):** playbook = indice + moduli `ops/*.md` caricati on-demand (progressive disclosure, resta DRY e portabile).
 - **[[lint-semantico-host-agnostico]]** — 🔍 **Estensione del lint a audit globale.** 4 `kind` di artefatti (`wiki`/`requirements`/`spec`/`tracker`) dichiarati in config `[[audit]]` con profili universali nel playbook; per ogni `kind`, tassonomia di coerenza e procedura ripetibile. Host-agnostico: la rete di anti-deriva è globale, non solo wiki.
