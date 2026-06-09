@@ -16,28 +16,49 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 <!-- EXEC:START -->
 ## ⚡ Executive summary (stato al 2026-06-09)
 
-**🔄 IN PROGRESS**
-- **Migliorie allo startup di sessione.** *Cosa:* iniettare a inizio sessione questo riassunto executive
-  (oltre a indice e coda del log). *Dove:* `.claude/settings.json` (SessionStart), questo blocco in
-  `wiki/syntheses/roadmap.md`, regola del rituale in `CLAUDE.md`. *Prossimo passo:* testare l'iniezione,
-  poi le ulteriori migliorie che l'utente segnalerà. *Blocco:* nessuno.
+### 📊 Roadmap a colpo d'occhio
 
-**📋 PLANNED** (per priorità)
+| Capacità | Pri | Stato |
+|---|---|---|
+| Nucleo retrieval (FEAT-001) | Must | ✅ master |
+| Motore baseline (FEAT-002) | Must | ✅ master |
+| Wiki LLM (FEAT-003) | Must | 🧪 operativo · pezzi codice D aperti |
+| Server MCP (FEAT-MCP) | Should | ✅ master |
+| RAG ibrido + reranking (FEAT-004) | Should | 📋 da decomporre |
+| GraphRAG (FEAT-005) | Should | 📋 da decomporre |
+| RAG agentico (FEAT-006) | Should | 📋 da decomporre |
+| Manutenzione wiki (FEAT-007) | Should | 📋 da decomporre |
+| CLI `sertor` | — | 💀 solo requirements (ramo morto) |
+
+*Legenda:* ✅ su master · 🧪 operativo, consolidamento aperto · 📋 pianificato · 💀 ramo morto (non su master).
+
+### 🔄 IN PROGRESS (dettaglio)
+
+- **Migliorie allo startup di sessione.**
+  - *Cosa:* l'avvio inietta questo executive summary (tabella roadmap + dettaglio IN PROGRESS), oltre a
+    indice del wiki e coda del log.
+  - *Dove:* `.claude/settings.json` (hook SessionStart, estrae il blocco `EXEC:*`) · questo blocco in
+    `wiki/syntheses/roadmap.md` · regola del rituale (punto 4) in `CLAUDE.md`.
+  - *Prossimo passo:* raccogliere eventuali ulteriori migliorie alla forma dell'avvio; altrimenti chiudere
+    e passare a un PLANNED.
+  - *Blocco/decisione aperta:* nessuno.
+
+### 📋 PLANNED (per priorità)
+
 - **Wiki FEAT-003, pezzi codice D:** collezioni separate wiki/codice + query congiunta · `sertor wiki init`
   · write-back della riga `index.md` in CLI.
-- **Wiki FEAT-003, operazioni-giudizio N:** N1 (consolidare con più casi) · N3 (generazione dal repo) ·
-  N4 (ingest → `sources/`) · N6 (verità/autorità/obsolescenza).
-- **Nuovi motori RAG:** FEAT-004 ibrido + reranking · FEAT-005 GraphRAG · FEAT-006 agentico ·
-  FEAT-007 manutenzione wiki.
+- **Wiki FEAT-003, operazioni-giudizio N:** N3 (generazione dal repo) · N4 (ingest → `sources/`) ·
+  N6 (verità/autorità/obsolescenza).
+- **Nuovi motori RAG:** FEAT-004 ibrido+reranking · FEAT-005 GraphRAG · FEAT-006 agentico · FEAT-007 manutenzione wiki.
 - **CLI `sertor`** da reimplementare su master (oggi solo requirements) · misurare la pertinenza (xfail).
 
-**✅ DONE** (su `master`)
+### ✅ DONE (su `master`, le rilevanti)
+
 - Nucleo retrieval (FEAT-001) · motore baseline (FEAT-002) · server MCP (FEAT-MCP).
-- Wiki LLM (FEAT-003) operativo: nucleo deterministico `wiki_tools` + operazioni-giudizio come
-  skills/playbook; `generate-from-diff` (N8) e trigger manuale `/wiki` (D-19); gate eliminato (D-20);
-  cartelle-input rimosse (D-18).
-- Lavori abilitanti: decoupling store↔embeddings (`specs/009`) · meccanica log (`specs/008`) · indice
-  dogfood `sertor` vivo via MCP.
+- Wiki LLM (FEAT-003) operativo: nucleo deterministico `wiki_tools` + operazioni-giudizio come skills/playbook;
+  `generate-from-diff` (N8), trigger manuale `/wiki` (D-19), gate eliminato (D-20), cartelle-input rimosse (D-18).
+- Lavori abilitanti: decoupling store↔embeddings (`specs/009`) · meccanica log (`specs/008`) · indice dogfood
+  `sertor` vivo via MCP.
 <!-- EXEC:END -->
 
 ## Visione
