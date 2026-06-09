@@ -167,7 +167,7 @@ domanda: i cross-reference ci sono già, le contraddizioni sono già state segna
    conforme e registrarla nel log.
 7. **Manutenzione**: lint strutturale (link rotti, orfani, copertura/cross-ref) + verifica di
    freschezza.
-8. **Gate al commit** human-in-the-loop (blocca/avvisa/propone/override tracciato).
+8. ~~**Gate al commit** human-in-the-loop~~ — ⛔ **DELETED BY DESIGN (2026-06-09, D-20)**: lint/freschezza restano come report non bloccante di `/wiki`.
 9. **Retrieval** via RAG su **collezioni separate** wiki/codice (query congiunta).
 10. **Superfici**: skill (primaria) + CLI + MCP; comando di **setup** `sertor wiki init`.
 11. ~~Convenzione **`manual_edited/`**~~ — ⛔ **DELETED BY DESIGN (2026-06-09, D-18)**.
@@ -527,13 +527,12 @@ create the structure and optionally execute an initial ingest.*
 ### Gruppo 5.12 — Gate al commit
 *(net-new FEAT-010 D-17)*
 
-**FR-041 (Event-driven)**
-*When lint/freshness at commit detect problems above the configurable threshold, the system
-shall block the commit, notify the user, and propose one or more solutions.*
+**FR-041** — ⛔ **DELETED BY DESIGN (2026-06-09, D-20)** — niente gate che blocca il commit (trigger manuale).
+> *~~When lint/freshness at commit detect problems above the configurable threshold, the system
+> shall block the commit…~~*
 
-**FR-042 (Optional)**
-*Where the user chooses "ignore and commit", the system shall proceed with the commit
-recording the override in a traceable manner.*
+**FR-042** — ⛔ **DELETED BY DESIGN (2026-06-09, D-20)** — non c'è gate, quindi nessun override da tracciare.
+> *~~Where the user chooses "ignore and commit", the system shall proceed with the commit…~~*
 
 ---
 
@@ -544,7 +543,7 @@ recording the override in a traceable manner.*
 | SC-001 | Su un repo inizializzato, un commit che tocca N file produce un aggiornamento del wiki **limitato alle pagine collegate alle entità del changeset** (non un full rebuild). | D-5/FR-018/FR-037 |
 | SC-002 | ⛔ **OBSOLETO (2026-06-09, D-18)** — riguardava cartelle-input (`manual_edited/`, `ingested_sources/`) ora eliminate. | ~~D-7/FR-023~~ |
 | SC-003 | Una query di retrieval restituisce risultati dal **wiki generato** e dal **codice** (collezioni separate interrogate insieme). | D-3/D-7/FR-010 |
-| SC-004 | Al commit, se lint/freschezza rilevano problemi sopra soglia, l'operazione è **bloccata**, l'utente è **avvisato** e riceve **≥1 soluzione** tra cui "ignora e committa"; con l'override il commit procede e l'override è **registrato**. | D-17/FR-041/FR-042 |
+| SC-004 | ⛔ **OBSOLETO (2026-06-09, D-20)** — riguardava il gate-che-blocca-il-commit, eliminato. Lint/freschezza restano come report non bloccante di `/wiki` (SC-009/FR-035..037). | ~~D-17/FR-041/FR-042~~ |
 | SC-005 | Il prodotto funziona su un progetto **senza codice**: generazione, retrieval e manutenzione operano con le sole fonti documentali. | D-9/FR-029 |
 | SC-006 | Rieseguendo un'operazione strutturale su input invariato, l'esito è **identico** (idempotenza: nessun duplicato di pagina/voce log; id chunk = path relativo). | REQ-050/051 |
 | SC-007 | La stessa operazione è invocabile e raggiungibile da **skill, CLI e MCP**. | D-12/FR-032 |
@@ -566,7 +565,7 @@ recording the override in a traceable manner.*
 |----|-----------|-----------|
 | RNF-001 | **Portabilità** | La skill opera su qualunque repository target senza dipendere da un sistema operativo specifico o da percorsi hard-coded. |
 | RNF-002 | **Testabilità** | Ogni operazione espone un'interfaccia verificabile automaticamente; è possibile eseguire i test su un wiki temporaneo senza effetti sul corpus di produzione. |
-| RNF-003 | **Configurabilità** | Il percorso del wiki, il provider LLM, il sistema RAG di destinazione e la soglia del gate al commit (FR-041) sono configurabili tramite parametri o file di configurazione centralizzato, senza modificare il codice. |
+| RNF-003 | **Configurabilità** | Il percorso del wiki, il provider LLM e il sistema RAG di destinazione sono configurabili tramite parametri o file di configurazione centralizzato, senza modificare il codice. *(2026-06-09, D-20: rimossa la soglia del gate.)* |
 | RNF-004 | **Osservabilità minima** | Ogni operazione emette log strutturati (almeno: operazione, file coinvolti, esito, changeset processato) che permettono di diagnosticare fallimenti senza accedere al codice sorgente. |
 | RNF-005 | **Gestione esplicita degli errori** | Condizioni di errore prevedibili (RAG non configurato, wiki già esistente, file corrotto, LLM non disponibile, git non disponibile) producono messaggi d'errore leggibili e non lasciano il sistema in uno stato parziale. |
 | RNF-006 | **Isolamento delle dipendenze** | Le dipendenze specifiche della skill non devono confliggere con quelle degli altri motori RAG del core, e devono poter essere installate in ambienti isolati. |
@@ -623,7 +622,7 @@ recording the override in a traceable manner.*
 
 | ID | Rischio | Prob | Impatto | Mitigazione |
 |----|---------|------|---------|-------------|
-| R-01 | **Rumore del giudizio LLM nella verifica di freschezza** (falsi positivi) | Media | Medio | Gate human-in-the-loop (D-17) + verità stratificata (D-4); soglia configurabile |
+| R-01 | **Rumore del giudizio LLM nella verifica di freschezza** (falsi positivi) | Media | Medio | Report non bloccante di `/wiki` (l'utente decide) + verità stratificata (D-4). *(2026-06-09, D-20: era "gate human-in-the-loop".)* |
 | R-02 | **Costo/latenza della generazione** via `/wiki` | Media | Medio | Incrementale sul solo changeset dell'ultimo commit (D-5/D-19); invocazione manuale → nessuna latenza imposta al commit |
 | ~~R-03~~ | ⛔ **DECADUTO (2026-06-09, D-19)** — nessun binding del trigger (trigger manuale `/wiki`) | — | — | — |
 | R-04 | **Generazione su progetti grandi** lenta | Bassa | Medio | Incrementale di default; full solo on-demand/periodico; scalabilità lineare (RNF-007/008) |
@@ -647,7 +646,7 @@ recording the override in a traceable manner.*
 | Generazione via `/wiki` (D-2/D-3/D-5/D-19) + collezioni separate + retrieval (D-7) + setup (D-16) | FR-001..011, FR-018..019, FR-023..025, FR-040 | **Must** | Cuore e2e: senza, non c'è LLM Wiki vivo né "una sola verità interrogabile". *(2026-06-09, D-19: FR-026..028 superate.)* |
 | ~~Convenzione input (`manual_edited` D-1 / `ingested_sources` D-6) + ingest→ingested_sources (D-11)~~ | ~~FR-007, FR-020..021, FR-030..031~~ | ⛔ **DELETED BY DESIGN (2026-06-09, D-18)** | Eliminate; ingest torna a riassumere in `sources/` (REQ-020..023). |
 | Superfici skill+CLI+MCP (D-12) | FR-032..034 | **Should** | La skill@commit basta per il flusso primario; CLI/MCP ampliano l'uso. |
-| Manutenzione (lint + freschezza D-14) + gate al commit (D-17) | FR-035..038, FR-041..042 | **Should** | Alza la qualità; il valore base esiste anche senza. |
+| Manutenzione (lint + freschezza D-14) | FR-035..038 | **Should** | Alza la qualità; il valore base esiste anche senza. *(2026-06-09, D-20: rimosso il gate al commit, FR-041/042.)* |
 | Verità stratificata + gerarchia + obsolescenza (D-4) | FR-012..017 | **Should** | Consolida la governance della fonte di verità. |
 | Trigger **periodico** (D-14) | FR-038 (schedulazione) | **Could** | Utile ma non essenziale rispetto a commit + on-demand. |
 | No-code-first (D-9) | FR-029 | **Could** | Generalizza il prodotto; non blocca il caso con codice. |
@@ -659,7 +658,7 @@ recording the override in a traceable manner.*
 
 ---
 
-## 12. Decisioni prese (D-1 .. D-17)
+## 12. Decisioni prese (D-1 .. D-20)
 
 Le decisioni seguenti sono state stabilite nel corso delle iterazioni di elicitazione di FEAT-010
 (2026-06-04). Sono normative per il design a valle.
@@ -773,7 +772,7 @@ essendo `.md` interconnessi, è consultabile con **Obsidian o altri editor** (na
 ### D-14 — Manutenzione in scope: lint strutturale + verifica di freschezza; trigger incrementale/on-demand/periodico
 In scope due controlli: **lint strutturale** (link rotti, orfani, copertura/cross-ref, contraddizioni)
 e **verifica di freschezza** (FR-017). Trigger: via `/wiki` **incrementale** (pagine collegate alle
-entità del changeset dell'ultimo commit, D-19); on-demand **full**; periodico **full**. Gate: vedi D-17.
+entità del changeset dell'ultimo commit, D-19); on-demand **full**; periodico **full**. *(2026-06-09, D-20: nessun gate; lint/freschezza riportano, non bloccano.)*
 
 ### D-15 — distill-da-artifact = modalità mirata della generazione (no operazione separata)
 Gli artefatti (spec SpecKit, plan, ADR, requirements, design doc) sono **già fonti-input** della
@@ -789,6 +788,10 @@ Esiste un comando/skill di **setup** (`sertor wiki init`), eseguito **una volta 
 (3) esegue un **ingest iniziale opzionale** (riassunto in `sources/`, D-18) se fornito.
 
 ### D-17 — Gate al commit: blocca, avvisa, propone soluzioni (incl. "ignora e committa")
+> ⛔ **DELETED BY DESIGN (2026-06-09, vedi D-20).** Il gate-che-blocca-il-commit è eliminato: incoerente
+> col trigger manuale `/wiki` post-commit (D-19). Lint/freschezza restano come parte normale di `/wiki`,
+> senza blocco. Testo sotto = riferimento storico.
+
 Al commit, se lint/freschezza rilevano problemi **sopra soglia configurabile**, il gate **blocca** il
 commit, **avvisa** l'utente con i problemi rilevati e **propone una o più soluzioni**; tra le opzioni
 c'è sempre **"ignora e committa lo stesso"** (override esplicito, **tracciato**). È
@@ -849,6 +852,18 @@ corrente.
 Coerente con la "calibra al valore": il trigger manuale è più semplice del binding automatico e copre il
 flusso primario. L'automazione non presidiata (`claude -p` headless) resta fuori scope.
 
+### D-20 — Eliminazione del gate al commit (risolve DA-GATE)
+**Decisione canonica.** Il "gate al commit" (D-17) **blocca il commit** se lint/freschezza superano una
+soglia: presuppone una generazione *automatica al commit*. Con D-19 il wiki si aggiorna con `/wiki`
+**dopo** il commit (su `git diff HEAD~1`): non c'è un commit da bloccare. Il gate è quindi **eliminato
+dallo scope**.
+
+- **Superati:** D-17, FR-041, FR-042, SC-004.
+- **Cosa resta:** lint + verifica di freschezza (FR-035/036/037) restano, ma come **parte normale di
+  `/wiki`** (eseguono e riportano i problemi); **nessun blocco**, nessuna soglia di gate. L'utente
+  decide se intervenire (resta human-in-the-loop, senza auto-fix).
+- **Allineati:** scope §5 item 8, RNF-003 (soglia gate), R-01 (mitigazione), MoSCoW, D-14.
+
 ---
 
 ## 13. Domande aperte
@@ -856,7 +871,7 @@ flusso primario. L'automazione non presidiata (`claude -p` headless) resta fuori
 | ID | Domanda | Priorità | Stato |
 |----|---------|---------|-------|
 | DA-FR004 | **Trigger esatto per FR-004**: hook Stop/SessionEnd, comando /wiki, o entrambi? | Media | ✅ **RISOLTA (2026-06-09, D-19)**: comando manuale `/wiki`, ambito = ultimo commit |
-| DA-GATE | **Coerenza del gate (D-17/FR-041/FR-042/SC-004) col trigger manuale**: `/wiki` elabora l'ultimo commit *dopo* che è avvenuto → non c'è un commit da "bloccare". Il gate va (a) eliminato, (b) trasformato in report non bloccante di `/wiki`, o (c) reso pre-commit (richiederebbe un hook, in tensione con D-19)? | Media | 🔴 **APERTA (2026-06-09)** |
+| DA-GATE | **Coerenza del gate (D-17/FR-041/FR-042/SC-004) col trigger manuale** | Media | ✅ **RISOLTA (2026-06-09, D-20)**: gate **eliminato** (opzione a); lint/freschezza restano come report non bloccante di `/wiki` |
 
 Le domande aperte di FEAT-003 sono tutte chiuse (DA-W2..W6, elicitazione 2026-05-31).
 I temi T0..T7 di FEAT-010 sono tutti risolti (iterazione 13, 2026-06-04). DA-FR004 risolta (D-19).
@@ -904,5 +919,10 @@ calcolato dalla parte D, configuration-manager come fornitore di diff); **cosa m
 parte N (page-craft/wiki-craft/playbook). Decisione canonica **D-19**. Superato il modello automatico:
 `⛔` FR-026, FR-027, FR-028; **rivisti** D-8 (resta SRP, cade l'invocazione-al-commit), D-16 (cade il
 binding), FR-040; **riformulati** FR-004, FR-018, FR-037, FR-025, SC-008; **decaduto** R-03; allineati
-scope/assunzioni/dipendenze/MoSCoW/D-13/D-14. **Aperto:** coerenza del *gate al commit* (D-17) col
-trigger manuale (vedi §13).
+scope/assunzioni/dipendenze/MoSCoW/D-13/D-14.
+
+### Gate eliminato — D-20 (2026-06-09)
+Risolta DA-GATE (opzione a): il **gate al commit è eliminato** — incoerente col trigger manuale `/wiki`
+post-commit (D-19). Decisione canonica **D-20**. `⛔` D-17, FR-041, FR-042, SC-004; allineati scope §5
+item 8, RNF-003, R-01, MoSCoW, D-14. Lint + verifica di freschezza (FR-035/036/037) restano come parte
+**non bloccante** di `/wiki`.
