@@ -107,10 +107,12 @@ Regole architetturali da rispettare quando si estende il core:
 - **Il `domain` non importa SDK esterni.** I provider concreti vivono in `adapters/` dietro le porte
   `Protocol` di `domain/ports.py` (`EmbeddingProvider`, `VectorStore`); structural typing → si mockano
   senza ereditarietà (vedi `tests/fixtures/mocks.py`).
-- **Si sceglie l'implementazione SOLO in `composition.py`**, in base a `Settings.backend`
-  (`local`→Chroma+Ollama · `azure`→Azure AI Search+Azure OpenAI). Per aggiungere un provider/backend
-  si estende il composition root e gli adapter, **non** i servizi. Gli import degli SDK pesanti sono
-  **lazy** dentro le `build_*` (NFR isolamento dipendenze: l'extra `azure` non serve in locale).
+- **Si sceglie l'implementazione SOLO in `composition.py`**: l'embedder da `Settings.backend`
+  (`local`→Ollama · `azure`→Azure OpenAI) e lo store da `Settings.store_backend` (`local`→Chroma ·
+  `azure`→Azure AI Search) — **manopole distinte** (FEAT-009, `store_backend` default = `backend`): si
+  combinano, es. embeddings Azure + store Chroma locale (l'indice dogfood `sertor`). Per aggiungere un
+  provider/backend si estende il composition root e gli adapter, **non** i servizi. Gli import degli SDK
+  pesanti sono **lazy** dentro le `build_*` (NFR isolamento dipendenze: l'extra `azure` non serve in locale).
 - **Default solo in `Settings`**, mai hardcodati nei componenti. I consumatori entrano da
   `build_facade()` / `build_indexer()` / `build_baseline_engine()` (riesportati da `__init__.py`).
 - **Policy errori non uniforme e voluta:** il nucleo è *tollerante* (indice mancante → `[]` + warning,
