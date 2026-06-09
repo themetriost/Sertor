@@ -9,7 +9,7 @@
             "shell": "powershell",
             "timeout": 15,
             "statusMessage": "Carico lo stato del wiki",
-            "command": "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; $idx = Join-Path $d 'wiki/index.md'; $log = Join-Path $d 'wiki/log.md'; if (Test-Path $idx) { '=== WIKI INDEX ==='; Get-Content $idx -Raw }; if (Test-Path $log) { ''; '=== WIKI LOG (coda) ==='; Get-Content $log -Tail 20 }; ''; 'Promemoria: durante le attivita di progetto delega l aggiornamento del wiki all agente wiki-curator (vedi CLAUDE.md, sezione Wiki e documentazione).'"
+            "command": "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; $idx = Join-Path $d 'wiki/index.md'; if (Test-Path $idx) { '=== WIKI INDEX ==='; Get-Content $idx -Raw }; $logDir = Join-Path $d 'wiki/log'; $log = if (Test-Path $logDir) { Get-ChildItem $logDir -Filter '*.md' | Where-Object { $_.Name -ne 'index.md' } | Sort-Object Name | Select-Object -Last 1 -ExpandProperty FullName } else { $f = Join-Path $d 'wiki/log.md'; if (Test-Path $f) { $f } }; if ($log) { ''; '=== WIKI LOG (coda) ==='; Get-Content $log -Tail 20 }; ''; 'Promemoria: durante le attivita di progetto delega l aggiornamento del wiki all agente wiki-curator (vedi CLAUDE.md, sezione Wiki e documentazione).'"
           }
         ]
       }

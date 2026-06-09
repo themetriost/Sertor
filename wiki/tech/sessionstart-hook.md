@@ -28,14 +28,14 @@ divergerebbe al primo ritocco).
 Il payload è **piccolo e curato** per scelta: l'indice (la struttura navigabile) e — quando disponibile —
 la coda del log recente, **non** chunk casuali né l'intero wiki (troppo rumoroso per il contesto iniziale).
 
-## ⚠️ Gap noto: la coda del log non viene più iniettata
+## Compatibilità con la rotazione del log
 
-Il comando tenta di leggere `wiki/log.md` e, se esiste, ne stampa le ultime 20 righe. Ma con la rotazione
-del log (FEAT-008) **`wiki/log.md` non esiste più**: i log sono partizionati per giorno in
-`wiki/log/<data>.md`. La guardia `if (Test-Path $log)` è quindi sempre falsa → **la sezione "coda del log"
-è un no-op silenzioso**: oggi l'hook inietta solo `index.md`. Per ripristinare l'iniezione del log il
-comando andrebbe aggiornato a leggere la partizione più recente di `wiki/log/`. *(Disallineamento tra
-l'hook e la rotazione del log; vale come bug, non come comportamento voluto.)*
+Il log del wiki è **partizionato per giorno** in `wiki/log/<data>.md` (rotazione FEAT-008): non esiste più
+un `wiki/log.md` unico. L'hook seleziona quindi la **partizione più recente** di `wiki/log/` (elenca i
+`*.md`, esclude `index.md`, ordina per nome — che per il formato `YYYY-MM-DD` è anche ordine cronologico —
+e prende l'ultimo) e ne stampa la coda; con fallback al vecchio `wiki/log.md` se la cartella non c'è.
+*(Allineato il 2026-06-09: prima leggeva `wiki/log.md` fisso, ormai inesistente → la coda del log non
+veniva più iniettata.)*
 
 ## Perché è rilevante per DA-W1
 
