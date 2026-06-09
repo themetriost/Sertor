@@ -143,7 +143,7 @@ domanda: i cross-reference ci sono già, le contraddizioni sono già state segna
 | **Owner/maintainer** | Invoca la skill per avviare e alimentare il wiki di un nuovo progetto; valida che il corpus RAG includa le pagine wiki. |
 | **Agente LLM (es. Claude Code)** | Attore automatico principale: usa la skill per le operazioni record/ingest durante le sessioni; interroga il RAG che include il wiki come corpus documentale. |
 | **Agente wiki-keeper** | Attore automatico secondario: usa le primitive della skill per operazioni di manutenzione puntuale. |
-| **configuration-manager** | Componente di versioning che **invoca** la skill di generazione al commit (binding del trigger, D-8); non assorbe la logica di generazione. |
+| **configuration-manager** | Componente di versioning; per il wiki **fornisce il diff** dell'ultimo commit alla parte D. *(2026-06-09, D-19: non invoca più la generazione — trigger manuale `/wiki`.)* |
 | **Epica sertor-cli** | Consumatore a valle: chiama questa skill come capacità installabile/configurabile. |
 | **Codebase target** | Il progetto su cui si crea il wiki; la skill deve essere indifferente alla sua struttura interna. |
 | **Sistema RAG del progetto** | Consumatore del wiki come corpus: dopo l'indicizzazione, il wiki entra nel retrieval documentale (DA-W1). |
@@ -155,7 +155,7 @@ domanda: i cross-reference ci sono già, le contraddizioni sono già state segna
 ### In ambito
 
 1. Generazione/manutenzione **agentica** del wiki (skill che riusa FEAT-003 come primitive), invocata
-   **al commit** (incrementale sul changeset), **on-demand** e **periodica**.
+   via **`/wiki`** (incrementale sul changeset dell'ultimo commit, D-19), **on-demand** e **periodica**.
 2. **Ingest** di documentazione esterna → **riassunto in `sources/`** (creazione/on-demand/update).
    *(2026-06-09, D-18: era "import in `ingested_sources/`".)*
 3. **Inizializzazione della struttura wiki**: directory tematiche e file fondamentali con contenuto
@@ -328,9 +328,12 @@ update related pages (potentially multiple pages), update `index.md`, append exa
 to `log.md`.*
 
 **FR-004 (Event-driven)**
-*When a session/activity concludes, the system shall distil the work done (decisions/concepts/
-outcomes) into conformant wiki pages and record it in the log.*
-> [DA CHIARIRE: trigger esatto — hook Stop/SessionEnd, comando /wiki, o entrambi?]
+*When the `/wiki` command is invoked, the system shall update the wiki by processing the changeset
+of the last commit (`git diff HEAD~1`) and record it in the log; the deterministic part computes the
+changeset, the judgment part decides which pages/content to change per page-craft, wiki-craft and the
+playbook. No full rebuild.*
+> *(Risolta 2026-06-09, D-19: trigger = comando manuale `/wiki`, non hook; ambito = ultimo commit;
+> il "cosa modificare" è responsabilità della parte N.)*
 
 **FR-005 (Event-driven)**
 *When a query/exploration produces reusable knowledge, the system shall be able to archive it
@@ -400,8 +403,10 @@ registered decision (SpecKit).*
 *(net-new FEAT-010 D-5/D-6)*
 
 **FR-018 (Event-driven)**
-*When a commit occurs, the system shall update the wiki by processing the changeset from the
-last commit (versioned sources). (Primary trigger.)*
+*When the `/wiki` command is invoked (manual trigger), the system shall process the changeset of the
+last commit (`git diff HEAD~1`, versioned sources) and update only the impacted pages.*
+> *(Aggiornata 2026-06-09, D-19: il trigger è il comando manuale `/wiki`, non un hook automatico al
+> commit; l'ambito resta il changeset dell'ultimo commit.)*
 
 **FR-019 (Ubiquitous)**
 *The system shall require git as a prerequisite; the state "last processed commit" acts as the
@@ -437,20 +442,20 @@ be indexed nor inserted into the RAG.*
 
 **FR-025 (Ubiquitous)**
 *The wiki generation/maintenance shall be a distinct skill separate from the versioning
-component; the latter shall only invoke it.*
+component; it is invoked manually via `/wiki`.*
+> *(Riformulata 2026-06-09, D-19: il versioning non invoca più la skill; trigger manuale.)*
 
-**FR-026 (Event-driven)**
-*When the configuration-manager (or equivalent) is about to commit, the system shall invoke
-the generation skill and include its outputs in the same commit; if synchronous execution is
-not feasible, the system shall fall back to a follow-up commit.*
+**FR-026** — ⛔ **SUPERATA (2026-06-09, D-19)** — il modello "config-manager invoca la skill al commit"
+è sostituito dal trigger manuale `/wiki`.
+> *~~When the configuration-manager (or equivalent) is about to commit, the system shall invoke
+> the generation skill and include its outputs in the same commit…~~*
 
-**FR-027 (Ubiquitous)**
-*The trigger shall be defined by a client-agnostic contract ("at commit, with the changeset");
-the configuration-manager is one binding.*
+**FR-027** — ⛔ **SUPERATA (2026-06-09, D-19)** — niente contratto di trigger "al commit": il trigger
+è il comando manuale `/wiki`.
+> *~~The trigger shall be defined by a client-agnostic contract ("at commit, with the changeset")…~~*
 
-**FR-028 (Ubiquitous)**
-*The product setup shall install the trigger binding (for Claude Code: configuration-manager /
-commit hook), so that the trigger is not lost.*
+**FR-028** — ⛔ **SUPERATA (2026-06-09, D-19)** — nessun binding del trigger da installare (trigger manuale).
+> *~~The product setup shall install the trigger binding…~~*
 
 **FR-029 (Ubiquitous)**
 *The system shall not assume the presence of source code: code is an optional input-source;
@@ -498,8 +503,9 @@ coverage/cross-references, contradictions).*
 *The system shall provide freshness verification of wiki pages (staleness, FR-017).*
 
 **FR-037 (Event-driven)**
-*When a commit occurs, the system shall run lint + freshness incrementally on the pages linked
-to the entities in the changeset (together with generation).*
+*When `/wiki` is invoked, the system shall run lint + freshness incrementally on the pages linked
+to the entities in the last-commit changeset (together with generation).*
+> *(Riformulata 2026-06-09, D-19: trigger = `/wiki`, non "al commit".)*
 
 **FR-038 (Event-driven)**
 *When requested on-demand or according to a periodic schedule, the system shall run lint +
@@ -515,8 +521,8 @@ input-sources for generation (D-3), which compiles them; an on-demand targeted m
 
 **FR-040 (Event-driven)**
 *When the wiki is initialised on a repo (`sertor wiki init` or equivalent), the system shall
-create the structure, install the trigger binding at commit, and optionally execute an initial
-ingest.*
+create the structure and optionally execute an initial ingest.*
+> *(Riformulata 2026-06-09, D-19: rimossa l'installazione del binding del trigger — trigger manuale.)*
 
 ### Gruppo 5.12 — Gate al commit
 *(net-new FEAT-010 D-17)*
@@ -542,7 +548,7 @@ recording the override in a traceable manner.*
 | SC-005 | Il prodotto funziona su un progetto **senza codice**: generazione, retrieval e manutenzione operano con le sole fonti documentali. | D-9/FR-029 |
 | SC-006 | Rieseguendo un'operazione strutturale su input invariato, l'esito è **identico** (idempotenza: nessun duplicato di pagina/voce log; id chunk = path relativo). | REQ-050/051 |
 | SC-007 | La stessa operazione è invocabile e raggiungibile da **skill, CLI e MCP**. | D-12/FR-032 |
-| SC-008 | Dopo `sertor wiki init`, un commit **innesca effettivamente** la generazione (binding del trigger installato). | D-16/FR-028/FR-040 |
+| SC-008 | Dopo `sertor wiki init`, lanciando **`/wiki`** la generazione elabora il changeset dell'ultimo commit e aggiorna solo le pagine impattate. *(2026-06-09, D-19: era "un commit innesca la generazione via binding".)* | D-19/FR-004/FR-018/FR-040 |
 | SC-009 | Una pagina che afferma un comportamento **contraddetto dal codice/test**, o una **decisione** contraddetta, è segnalata come **obsoleta**. | D-4/FR-017/FR-036 |
 | SC-010 | L'ingest, alla creazione/on-demand/update, produce un **riassunto in `sources/`** della fonte esterna (pattern Karpathy). *(2026-06-09, D-18: era "popola `ingested_sources/` senza riassunto".)* | REQ-020..023 |
 | SC-3a | Dato un repository privo di wiki, la skill produce la struttura completa (`index.md`, `log.md`, cartelle tematiche) in un'unica invocazione. | REQ-001 |
@@ -565,7 +571,7 @@ recording the override in a traceable manner.*
 | RNF-005 | **Gestione esplicita degli errori** | Condizioni di errore prevedibili (RAG non configurato, wiki già esistente, file corrotto, LLM non disponibile, git non disponibile) producono messaggi d'errore leggibili e non lasciano il sistema in uno stato parziale. |
 | RNF-006 | **Isolamento delle dipendenze** | Le dipendenze specifiche della skill non devono confliggere con quelle degli altri motori RAG del core, e devono poter essere installate in ambienti isolati. |
 | RNF-007 | **Scalabilità lineare** | Il corpus wiki indicizzato non deve imporre limiti artificiali al numero di pagine (la skill scala linearmente con il numero di file Markdown). |
-| RNF-008 | **Latenza incrementale** | La generazione incrementale al commit (FR-018) deve essere proporzionale alla dimensione del changeset, non al wiki intero. |
+| RNF-008 | **Latenza incrementale** | La generazione incrementale via `/wiki` (FR-018, changeset dell'ultimo commit) deve essere proporzionale alla dimensione del changeset, non al wiki intero. |
 
 ---
 
@@ -594,8 +600,7 @@ recording the override in a traceable manner.*
 - L'input dell'operazione di distillazione è un **brief/riassunto già condensato** (non una
   trascrizione grezza; DA-W3 risolta).
 - Le fonti da ingerire contengono **solo contenuti leggibili** (no binari, FR-022). *(2026-06-09, D-18: era riferito a `manual_edited/`.)*
-- È presente un **client LLM** (Claude Code/Copilot/Codex) con un **binding del trigger** installato
-  dal setup (D-8/D-16).
+- È presente un **client LLM** (Claude Code/Copilot/Codex) che espone il comando `/wiki`. *(2026-06-09, D-19: rimosso il binding del trigger.)*
 - La struttura wiki di base (`concepts/`, `tech/`, `experiments/`, `syntheses/`, `index.md`,
   `log.md`) è fissa nell'MVP; la personalizzazione strutturale per progetto è post-MVP.
 - Le fonti versionate vivono nel repo; le fonti esterne ingerite sono riassunte in `sources/`. *(2026-06-09, D-18: rimosso `ingested_sources/`.)*
@@ -609,7 +614,7 @@ recording the override in a traceable manner.*
 | **REQ-E3** (epica, LLM obbligatorio per generazione) | Architetturale | Solo per REQ-031 e le operazioni di generazione; le altre operazioni sono LLM-free. |
 | **Provider LLM configurato** | Runtime condizionale | Obbligatorio per distillazione e generazione wiki; opzionale per il resto. |
 | **Sistema RAG configurato** | Runtime condizionale | Obbligatorio per indicizzazione (FR-010/FR-023); non richiesto per operazioni strutturali. |
-| **configuration-manager** (o equivalente del client) | Runtime | Binding del trigger al commit (FR-026/FR-027). |
+| **configuration-manager** (o equivalente del client) | Runtime | Fornisce il diff dell'ultimo commit alla parte D. *(2026-06-09, D-19: non è più il binding del trigger.)* |
 | **git** | Runtime obbligatorio | Prerequisito per il meccanismo di refresh al commit (FR-019). |
 
 ---
@@ -619,8 +624,8 @@ recording the override in a traceable manner.*
 | ID | Rischio | Prob | Impatto | Mitigazione |
 |----|---------|------|---------|-------------|
 | R-01 | **Rumore del giudizio LLM nella verifica di freschezza** (falsi positivi) | Media | Medio | Gate human-in-the-loop (D-17) + verità stratificata (D-4); soglia configurabile |
-| R-02 | **Costo/latenza della generazione sincrona** al commit | Media | Medio | Incrementale sul solo changeset (D-5); fallback asincrono (D-8/FR-026) |
-| R-03 | **Il trigger si perde** se il setup non installa il binding | Media | Alto | Il setup installa il binding (D-16/FR-028/FR-040) e lo verifica |
+| R-02 | **Costo/latenza della generazione** via `/wiki` | Media | Medio | Incrementale sul solo changeset dell'ultimo commit (D-5/D-19); invocazione manuale → nessuna latenza imposta al commit |
+| ~~R-03~~ | ⛔ **DECADUTO (2026-06-09, D-19)** — nessun binding del trigger (trigger manuale `/wiki`) | — | — | — |
 | R-04 | **Generazione su progetti grandi** lenta | Bassa | Medio | Incrementale di default; full solo on-demand/periodico; scalabilità lineare (RNF-007/008) |
 | R-05 | **Divergenza tra le tre superfici** (skill/CLI/MCP) | Bassa | Medio | Superfici = binding sullo stesso core/contratto (D-8/D-12) |
 | ~~R-06~~ | ⛔ **DECADUTO (2026-06-09, D-18)** — `manual_edited` rimossa, il rischio non si applica più | — | — | — |
@@ -639,7 +644,7 @@ recording the override in a traceable manner.*
 | B — Operazione record | REQ-010..013 | **Must** | Flusso minimo del wiki-keeper; operazione fondamentale per documentare in continuo. |
 | D — Distillazione | REQ-030..033 | **Should** | Capacità di alto valore, dipende dal LLM; implementabile subito dopo i Must. |
 | F — Idempotenza trasversale | REQ-050..051 | **Must** | CS-3/SC-006 la citano esplicitamente; senza idempotenza il wiki diverge. |
-| Generazione al commit (D-2/D-3/D-5/D-8) + collezioni separate + retrieval (D-7) + setup (D-16) | FR-001..011, FR-018..019, FR-023..028, FR-040 | **Must** | Cuore e2e: senza, non c'è LLM Wiki vivo né "una sola verità interrogabile". |
+| Generazione via `/wiki` (D-2/D-3/D-5/D-19) + collezioni separate + retrieval (D-7) + setup (D-16) | FR-001..011, FR-018..019, FR-023..025, FR-040 | **Must** | Cuore e2e: senza, non c'è LLM Wiki vivo né "una sola verità interrogabile". *(2026-06-09, D-19: FR-026..028 superate.)* |
 | ~~Convenzione input (`manual_edited` D-1 / `ingested_sources` D-6) + ingest→ingested_sources (D-11)~~ | ~~FR-007, FR-020..021, FR-030..031~~ | ⛔ **DELETED BY DESIGN (2026-06-09, D-18)** | Eliminate; ingest torna a riassumere in `sources/` (REQ-020..023). |
 | Superfici skill+CLI+MCP (D-12) | FR-032..034 | **Should** | La skill@commit basta per il flusso primario; CLI/MCP ampliano l'uso. |
 | Manutenzione (lint + freschezza D-14) + gate al commit (D-17) | FR-035..038, FR-041..042 | **Should** | Alza la qualità; il valore base esiste anche senza. |
@@ -696,7 +701,7 @@ contraddice il codice/test **oppure** una decisione registrata. *(Aggiornata 202
 Le fonti-input versionate vivono in git; il wiki si aggiorna **al commit**, elaborando il changeset
 dall'ultimo commit (**generazione incrementale guidata da git**, watermark = "ultimo commit
 elaborato"). **Git è prerequisito documentato**. Le fonti accettano qualunque contenuto leggibile;
-binari non leggibili esclusi. *(Aggiornata 2026-06-09, D-18: rimosso il riferimento a `manual_edited/`.)*
+binari non leggibili esclusi. *(Aggiornata 2026-06-09: D-18 rimuove `manual_edited/`; D-19 — l'aggiornamento è innescato dal comando `/wiki`, non automaticamente al commit; l'ambito resta il changeset dell'ultimo commit.)*
 
 ### D-6 — `ingested_sources/` (ex `sources/`): input esterno NON versionabile, a trigger manuale
 > ⛔ **DELETED BY DESIGN (2026-06-09, vedi D-18).** La rinomina `sources/`→`ingested_sources/` e il
@@ -720,6 +725,10 @@ Nel momento (b) il RAG contiene **solo**: il **wiki generato** (incluso `sources
 indicizzati.
 
 ### D-8 — Skill client-agnostica invocata al commit; trigger contract portabile; setup rilascia il trigger
+> ♻️ **RIVISTA (2026-06-09, vedi D-19).** Resta valido che la generazione è una **skill distinta** dal
+> versioning (SRP). È **superata** la parte "invocata al commit dal configuration-manager + contratto
+> di trigger + binding": il trigger è il comando manuale `/wiki`. Testo sotto = riferimento storico.
+
 La generazione/manutenzione del wiki è una **skill distinta** dal componente di versioning (SRP,
 Principio VII). È **invocata al commit** dal configuration-manager: il config-manager decide il
 **quando**, la skill fa il **cosa** (riusa FEAT-003). Esecuzione **sincrona quando possibile**
@@ -754,7 +763,7 @@ avviene nella **generazione** (momento a, D-3). Override di FEAT-003 REQ-020.
 ### D-12 — Superfici di invocazione: skill (primaria) + CLI + MCP per le operazioni on-demand
 Le operazioni non-automatiche (ingest on-demand, query, rigenerazione, manutenzione, setup) sono
 esposte su: **skill** del client LLM (primaria); **CLI** (`sertor …`); **MCP** (uso cross-client).
-La superficie automatica (generazione al commit) resta quella di D-8.
+La generazione è innescata dal comando `/wiki` (D-19).
 
 ### D-13 — Query via RAG; navigazione umana via Obsidian/editor; nessuna superficie nativa
 L'interrogazione avviene tramite il **RAG esistente** (`sertor search` + MCP `search_*`). Il wiki,
@@ -763,8 +772,8 @@ essendo `.md` interconnessi, è consultabile con **Obsidian o altri editor** (na
 
 ### D-14 — Manutenzione in scope: lint strutturale + verifica di freschezza; trigger incrementale/on-demand/periodico
 In scope due controlli: **lint strutturale** (link rotti, orfani, copertura/cross-ref, contraddizioni)
-e **verifica di freschezza** (FR-017). Trigger: al commit **incrementale** (pagine collegate alle
-entità del changeset); on-demand **full**; periodico **full**. Gate al commit: vedi D-17.
+e **verifica di freschezza** (FR-017). Trigger: via `/wiki` **incrementale** (pagine collegate alle
+entità del changeset dell'ultimo commit, D-19); on-demand **full**; periodico **full**. Gate: vedi D-17.
 
 ### D-15 — distill-da-artifact = modalità mirata della generazione (no operazione separata)
 Gli artefatti (spec SpecKit, plan, ADR, requirements, design doc) sono **già fonti-input** della
@@ -772,10 +781,12 @@ generazione (D-3): la generazione li compila in concetti. **Non** esiste un'oper
 "distill-da-artifact" separata; ammessa una **modalità mirata** on-demand.
 
 ### D-16 — Comando/skill di setup (`sertor wiki init`)
+> ♻️ **RIVISTA (2026-06-09, D-18+D-19).** Cade il punto (2) "installa il binding del trigger" (trigger
+> manuale `/wiki`, D-19); l'ingest iniziale del punto (3) produce un riassunto in `sources/` (D-18).
+
 Esiste un comando/skill di **setup** (`sertor wiki init`), eseguito **una volta per repo**, che:
-(1) crea la struttura wiki (`create_wiki`); (2) installa il **binding del trigger** al commit
-(per Claude Code: configuration-manager / hook); (3) esegue un **ingest iniziale opzionale** di
-`ingested_sources/` se fornito.
+(1) crea la struttura wiki (`create_wiki`); (2) ~~installa il binding del trigger~~ (rimosso, D-19);
+(3) esegue un **ingest iniziale opzionale** (riassunto in `sources/`, D-18) se fornito.
 
 ### D-17 — Gate al commit: blocca, avvisa, propone soluzioni (incl. "ignora e committa")
 Al commit, se lint/freschezza rilevano problemi **sopra soglia configurabile**, il gate **blocca** il
@@ -814,16 +825,41 @@ realtà**: il wiki di produzione ha già consolidato la tassonomia in `sources/`
 Non si riscrivono changelog né log storici: registrano la decisione di allora. Questa D-18 è la verità
 corrente.
 
+### D-19 — Trigger del wiki: comando manuale `/wiki`, ambito = ultimo commit, "cosa modificare" alla parte N
+**Decisione canonica** che chiude DA-FR004/FR-004 e rivede il modello di trigger di D-8.
+
+- **Trigger = comando manuale `/wiki`** (non hook automatico, non binding al commit). L'utente lo lancia
+  quando vuole aggiornare il wiki.
+- **Ambito = changeset dell'ultimo commit** (`git diff HEAD~1`). La **parte D** calcola il changeset
+  (delegato al configuration-manager, che resta solo un fornitore di diff, non un invocatore). Mai
+  rebuild completo.
+- **Cosa modificare = parte N (giudizio LLM):** quali pagine e quali contenuti aggiornare lo decide il
+  giudizio in base a **page-craft**, **wiki-craft** e al **playbook**.
+
+**Impatto — superato il modello "automatico al commit via binding":**
+- **Decisioni:** D-8 (skill *invocata al commit* dal configuration-manager) → la parte "invocazione
+  automatica" è superata; resta valido che la skill è distinta dal versioning (SRP). D-16 → cade
+  l'installazione del *binding del trigger* (non serve con trigger manuale).
+- **FR superate:** FR-026 (config-manager invoca la skill al commit), FR-027 (contratto di trigger
+  "al commit"), FR-028 (setup installa il binding), e la parte "installa il binding" di FR-040.
+- **FR riformulate:** FR-037 (lint+freschezza incrementale all'invocazione di `/wiki`, non "al commit").
+- **Criteri:** SC-008 (era "dopo init, un commit innesca la generazione") → riformulato su `/wiki`.
+- **Rischi:** R-03 (trigger perso se il binding non è installato) → decaduto (nessun binding).
+
+Coerente con la "calibra al valore": il trigger manuale è più semplice del binding automatico e copre il
+flusso primario. L'automazione non presidiata (`claude -p` headless) resta fuori scope.
+
 ---
 
 ## 13. Domande aperte
 
-| ID | Domanda | Priorità |
-|----|---------|---------|
-| DA-FR004 | **Trigger esatto per FR-004 (distillazione di sessione)**: hook Stop/SessionEnd, comando /wiki, o entrambi? | Media |
+| ID | Domanda | Priorità | Stato |
+|----|---------|---------|-------|
+| DA-FR004 | **Trigger esatto per FR-004**: hook Stop/SessionEnd, comando /wiki, o entrambi? | Media | ✅ **RISOLTA (2026-06-09, D-19)**: comando manuale `/wiki`, ambito = ultimo commit |
+| DA-GATE | **Coerenza del gate (D-17/FR-041/FR-042/SC-004) col trigger manuale**: `/wiki` elabora l'ultimo commit *dopo* che è avvenuto → non c'è un commit da "bloccare". Il gate va (a) eliminato, (b) trasformato in report non bloccante di `/wiki`, o (c) reso pre-commit (richiederebbe un hook, in tensione con D-19)? | Media | 🔴 **APERTA (2026-06-09)** |
 
 Le domande aperte di FEAT-003 sono tutte chiuse (DA-W2..W6, elicitazione 2026-05-31).
-I temi T0..T7 di FEAT-010 sono tutti risolti (iterazione 13, 2026-06-04).
+I temi T0..T7 di FEAT-010 sono tutti risolti (iterazione 13, 2026-06-04). DA-FR004 risolta (D-19).
 
 ---
 
@@ -860,3 +896,13 @@ Eliminate dallo scope le convenzioni a cartelle-input **`manual_edited/`** e **`
 FR-031; **semplificate/riformulate**: D-4, D-5, D-7, D-9, FR-001, FR-009, FR-012, FR-017, FR-022, FR-023;
 SC-002 obsoleto, SC-010 riformulato, R-06 decaduto; glossario/scope/MoSCoW/assunzioni allineati. L'ingest
 torna alla semantica Karpathy (riassunto in `sources/`, REQ-020..023 di nuovo operativi).
+
+### Trigger del wiki — D-19 (2026-06-09)
+Chiusa DA-FR004. Il trigger di generazione/aggiornamento del wiki è il **comando manuale `/wiki`** (non
+hook, non binding automatico al commit); ambito = **changeset dell'ultimo commit** (`git diff HEAD~1`,
+calcolato dalla parte D, configuration-manager come fornitore di diff); **cosa modificare** lo decide la
+parte N (page-craft/wiki-craft/playbook). Decisione canonica **D-19**. Superato il modello automatico:
+`⛔` FR-026, FR-027, FR-028; **rivisti** D-8 (resta SRP, cade l'invocazione-al-commit), D-16 (cade il
+binding), FR-040; **riformulati** FR-004, FR-018, FR-037, FR-025, SC-008; **decaduto** R-03; allineati
+scope/assunzioni/dipendenze/MoSCoW/D-13/D-14. **Aperto:** coerenza del *gate al commit* (D-17) col
+trigger manuale (vedi §13).
