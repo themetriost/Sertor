@@ -45,7 +45,8 @@ da hook/skill/agente senza parsing fragile.
 (formato [[deterministic-vs-judgment|log-craft]]) e ne fa solo il **piazzamento** nella partizione della
 data, rigenerando l'indice delle partizioni di log (`update_log_index`) — confine deterministico↔giudizio
 netto. Con `log_dir` configurato la rotazione è **implicita** (la voce va nel file della sua data); senza,
-vale la modalità a file unico (back-compat). Lo stesso confine vale per l'op `upsert-index` (feature 010):
+vale la modalità a file unico (back-compat). Lo stesso confine vale per l'op `upsert-index`
+([[spec-010-query-congiunta-e-upsert-index|feature 010]]):
 il **sommario** della riga di `index.md` è giudizio dell'LLM, il **piazzamento** (insert/update/noop
 idempotente, esito `wiki.upsert_index/1`) è codice; un sommario vuoto o multilinea è rifiutato con errore
 esplicito, mai normalizzato in silenzio.

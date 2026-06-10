@@ -49,7 +49,7 @@ conoscere store/embeddings. Espone tre ricerche, distinte solo dal filtro `DocTy
 Ogni ricerca embedda la query, interroga lo store per il top-k, emette un log e ritorna
 `list[RetrievalResult]`.
 
-**Fan-out multi-collezione (feature 010).** Se `Settings.extra_corpora` (`SERTOR_EXTRA_CORPORA`, es.
+**Fan-out multi-collezione ([[spec-010-query-congiunta-e-upsert-index|feature 010]]).** Se `Settings.extra_corpora` (`SERTOR_EXTRA_CORPORA`, es.
 `wiki`) dichiara corpora aggiuntivi, `search_combined` interroga **tutte** le collezioni bersaglio (la
 query è embeddata una sola volta) e **fonde i top-k per score**, con tie-break deterministico per
 `chunk_id` e al più `k` risultati totali. Solo la combinata fa fan-out: `search_code`/`search_docs`

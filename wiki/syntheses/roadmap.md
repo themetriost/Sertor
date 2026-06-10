@@ -171,4 +171,5 @@ Legenda: ✅ su master · 🧪 operativo, consolidamento formale aperto · 💀 
 
 Sintesi per feature: [[implementazione-nucleo-retrieval]] · [[motore-baseline-feat002]] ·
 [[nucleo-wiki-deterministico-feat003d]] · [[server-mcp-produzione-feat-mcp]] · [[meccanica-log-feat008]] ·
-[[store-backend-disaccoppiato-feat009]] · [[architettura-wiki-llm]] · [[constitution]] · [[corpus-index-naming]].
+[[store-backend-disaccoppiato-feat009]] · [[spec-010-query-congiunta-e-upsert-index]] ·
+[[architettura-wiki-llm]] · [[constitution]] · [[corpus-index-naming]].

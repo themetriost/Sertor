@@ -3,7 +3,7 @@ title: Step ritual & wiki anti-drift
 type: concept
 tags: [wiki, automazione, hook, governance, processo, delega, fonte-unica, rituale-di-step]
 created: 2026-06-04
-updated: 2026-06-09
+updated: 2026-06-10 (rituale a 6 punti: + executive summary roadmap, + re-index dei corpora toccati)
 sources: ["CLAUDE.md", ".claude/skills/wiki-author/wiki-playbook.md", ".claude/agents/wiki-curator.md", ".claude/agents/configuration-manager.md", ".claude/settings.json", ".claude/hooks/wiki-pending-check.ps1"]
 ---
 
@@ -56,7 +56,14 @@ Codificato in `CLAUDE.md`. A fine di ogni step significativo, di propria iniziat
    lo step ha fatto emergere (operazione `distill`, N2); il record datato resta magro e vi punta.
 3. **Lint semantico di allineamento** — confronta il contenuto del wiki con la realtà del repo (`src/`,
    `specs/`, `requirements/`, stato git) e segnala ogni claim contraddetto.
-4. **\<altre azioni\>** — lista estendibile: ciò che l'utente chiede di rendere standing si aggiunge qui.
+4. **Executive summary della roadmap** (dal 2026-06-09) — tieni vero il blocco executive in testa a
+   [[roadmap]] (marker `EXEC:START/END`, iniettato a inizio sessione): si aggiorna nello stesso commit di
+   ogni step che cambia lo stato di una capacità.
+5. **Re-index dei corpora toccati** (dal 2026-06-10) — se lo step ha modificato file indicizzati, rebuild
+   del corpus RAG toccato (full ma atomico e namespaced), così il [[dogfooding]] non serve mai contesto
+   stantio; momento obbligato: dopo un merge su `master`. Mitigante operativo del refresh incrementale
+   (FEAT-009 d'epica, Could).
+6. **\<altre azioni\>** — lista estendibile: ciò che l'utente chiede di rendere standing si aggiunge qui.
 
 La voce di log **non è posticipabile**: si scrive **nello stesso momento del commit** dello step.
 

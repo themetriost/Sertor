@@ -62,6 +62,9 @@ Il bookkeeping **meccanico** è codice host-agnostico già pronto: la CLI **`ser
 | `lint` | wikilink rotti + pagine orfane + frontmatter mancante | `wiki.lint/1` |
 | `collect` | enumera le pagine + metadati (path, area, type, title, tags, wikilink) | `wiki.collect/1` |
 | `index` | re-indicizza il wiki nel RAG (corpus da `[rag]`) | `wiki.index/1` |
+| `append-log` | piazza una voce di log (corpo curato dall'LLM) nel file del giorno, idempotente | `wiki.append_log/1` |
+| `migrate` | splitta retroattivamente il log monolitico in partizioni giornaliere | `wiki.migrate/1` |
+| `upsert-index` | inserisce/aggiorna la riga `- [[page]] — summary` nell'indice (sommario LLM-authored) | `wiki.upsert_index/1` |
 
 Invocazione: `uv run sertor-wiki-tools <op> --config wiki.config.toml [--json]` (o il console-script
 `sertor-wiki-tools`). Con `--json` ottieni il contratto versionato; senza, un sommario umano.
@@ -188,11 +191,12 @@ eseguibili anche dal `curator` in background; il lint **B/C**, `distill`, `reorg
 | `rag-sync` | [`ops/rag-sync.md`](ops/rag-sync.md) | re-indicizza il wiki nel RAG (ruolo "corpus" di DA-W1) | solo Opus |
 | `structure` | [`ops/structure.md`](ops/structure.md) | bootstrap idempotente della struttura | curator/CLI |
 
-> **Write-back log/indice.** Il **log** è **cablato in CLI** (FEAT-008): l'LLM compone il **corpo curato**
-> della voce (§6) e `append-log` la **piazza** nel file del giorno (rotazione) — confine D↔N netto, niente
-> scrittura a mano del log. L'**indice** globale resta invece **LLM-authored** (riga `- **[[slug]]** —
-> summary`, sezioni raggruppate): `upsert_index` esiste ma con formato piatto, non cablato → l'indice si
-> scrive **a mano**.
+> **Write-back log/indice.** Entrambi **cablati in CLI**: il **log** con `append-log` (FEAT-008 — l'LLM
+> compone il **corpo curato** §6, la CLI lo piazza nel file del giorno) e la riga d'**indice** con
+> `upsert-index` (feature 010 — `--page` + `--summary` o stdin; insert/update/noop idempotente, sommario
+> **sempre LLM-authored**, vuoto/multilinea rifiutati). Sfumatura sull'indice: la CLI scrive la riga
+> **piatta** `- [[page]] — summary`; se l'indice dell'ospite è *curato* (grassetti, sezioni — il caso di
+> Sertor), decidere se adottare il formato piatto o continuare ad autorare la riga a mano è **giudizio**.
 
 ## 6. Voce di log
 

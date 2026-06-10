@@ -25,7 +25,7 @@ così è banale da mockare nei test (entrambe sono `@runtime_checkable`).
   `DocTypeFilter` = `code|doc|both` **senza** indici separati), più `delete`, `reset` (per il rebuild),
   `exists` e `list_collections()` (elenco delle collezioni — serve alla ricerca combinata multi-collezione
   per distinguere un corpus mai indicizzato, tollerato, da uno indicizzato con un **altro provider** →
-  `ProviderMismatchError`, feature 010). Una collezione assente → `query` restituisce `[]` ed
+  `ProviderMismatchError`, [[spec-010-query-congiunta-e-upsert-index|feature 010]]). Una collezione assente → `query` restituisce `[]` ed
   `exists()==False`; un backend irraggiungibile → `VectorStoreError` (Principio IV).
 
 Le porte parlano in termini di [[domain-model|entità di dominio]] (`EmbeddedChunk`, `RetrievalResult`): è ciò

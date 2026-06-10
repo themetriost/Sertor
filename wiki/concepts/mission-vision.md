@@ -3,7 +3,7 @@ title: Mission, vision & Principle X (host-agnosticity)
 type: concept
 tags: [missione, visione, host-agnostico, principio-x, disaccoppiamento, costituzione]
 created: 2026-06-05
-updated: 2026-06-07
+updated: 2026-06-10 (lint B: il backlog host-agnostico era superato — chiuso dal ponte D→N e da wiki_tools; resta differita solo la ri-esportazione del rituale)
 sources: ["README.md", ".specify/memory/constitution.md"]
 ---
 
@@ -31,7 +31,7 @@ Estratto da [`README.md`](../../README.md):
 > portabile da un progetto all'altro, eseguibile in locale, neutrale rispetto al provider di LLM e
 > di storage.
 
-**Cosa significa:** la conoscenza non è un privilegi dei progetti grandi/enterprise; ogni progetto,
+**Cosa significa:** la conoscenza non è un privilegio dei progetti grandi/enterprise; ogni progetto,
 di qualsiasi forma (codice, doc, ibrido) deve poter *emergere a sé stesso* senza ricominciare ogni volta,
 e senza dipendere da un fornitore specifico.
 
@@ -82,30 +82,30 @@ Estratto da [`.specify/memory/constitution.md`](../../.specify/memory/constituti
 **Cosa significa in pratica:**
 - Il motore RAG **non** conosce la cartella `src/` di Sertor; conosce il concetto universale di "documento".
 - Una skill wiki **non** contiene riferimenti a `wiki/log.md` o `.claude/` come percorsi hardcoded;
-  prende cartelle come parametri di istanziazione.
-- Il playbook wiki [[sistema-wiki-fonte-unica]] (rules + operazioni) oggi è Sertor-coupled (parla di
-  `wiki/`, `log.md`, agenti di Sertor); Principio X dice: "dovrà diventare parametrizzato all'ospite".
+  legge il profilo dell'ospite (`wiki.config.toml`) come unica fonte di specificità.
+- Il nucleo di retrieval si configura via `Settings` (corpus, backend, esclusioni): cambiare ospite è un
+  atto di configurazione, non di codice.
 
-## Conseguenza operativa: Backlog di refactor
+## Come il principio è stato reso esecutivo
 
-**Identificato il 2026-06-05:** le skill wiki, il playbook, e il rituale di step today violano il
-Principio X (citano `wiki/`, `src/`, `log.md`, agenti nomati di Sertor).
+Il vincolo, identificato il 2026-06-05, è stato **chiuso a strati** invece che restare backlog:
 
-**Azione differita (post-MVP):** quando la stack wiki sarà stabile (FEAT-003, FEAT-010 mergiate su `master`),
-ri-parametrizzarla come una suite di skill *host-agnostiche*:
+1. **Skill e playbook wiki** — resi host-agnostici col **ponte D→N** (2026-06-05, PR #14): playbook,
+   skill `wiki-author`, comando `/wiki` e agente `wiki-curator` leggono `wiki.config.toml`; il meccanico è
+   delegato alla CLI `sertor-wiki-tools`. Vedi [[ponte-d-n-host-agnostico]] e [[architettura-wiki-llm]].
+2. **Nucleo deterministico** — `wiki_tools` (FEAT-003-D) nasce host-agnostico per costruzione: zero path
+   dell'ospite nel corpo, tutto dal profilo. Vedi [[wiki-tools]].
+3. **Rituale di step** — il *principio* (registra/distilla/lint/…) è universale; l'**istanza** operativa
+   vive in `CLAUDE.md` come fonte unica *deliberata* (vedi [[step-ritual]]): un'azione standing deve stare
+   nell'unico asset garantito in contesto. La ri-esportazione come plugin portabile è il solo pezzo
+   **differito** (quando il rituale sarà stabile).
 
-1. **Skill wiki (refactor):** invece di scrivere in `wiki/syntheses/`, leggere il percorso da brief/config.
-2. **Playbook (refactor):** separare le regole universali (frontmatter, operazioni record/ingest/query)
-   da quelle specific di Sertor (path `wiki/`, log `.md`, agenti).
-3. **Rituale di step (refactor):** il "default fai" e la lint semantica restano principi universali;
-   l'invocazione ("chi chiama le skill?") e la delega ("quale agente?") diventano parametri dell'ospite.
+Ogni nuova capacità passa dal **gate Principio X** del Constitution Check (es. la manopola
+`extra_corpora` della query congiunta è *generica*, non "wiki": il caso dogfood vive solo nella config).
 
-**Ispirazione:** le skill di Transcriptio (`C:\Workspace\Git\Transcriptio\.claude\skills/`) già
-implementano pattern parametrizzati — si copia da lì.
-
-**Non è un difetto:** è un aspetto naturale dell'evoluzione di uno strumento: MVP tight su
-un'istanza (Sertor), follow-up di generalizzazione (Sertor come framework davvero portabile).
-La testata nel Principio X ora impedisce che il dogfooding diventi lock-in silenzioso.
+**Non è mai stato un difetto:** è l'evoluzione naturale di uno strumento — MVP tight su un'istanza
+(Sertor), generalizzazione come vincolo costituzionale. Il Principio X impedisce che il dogfooding
+diventi lock-in silenzioso.
 
 ## Allineamento
 

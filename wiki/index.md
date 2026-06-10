@@ -3,7 +3,7 @@ title: Indice del Wiki — Produzione Sertor
 type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
-updated: 2026-06-08 (distill FEAT-001/002/003-D/MCP + tree-sitter → pagine-entità: domain-model · ports-adapters · chunking-dispatch · indexing-and-retrieval · wiki-tools · mcp-server)
+updated: 2026-06-10 (Home: sezione "Da dove cominciare" con 4 percorsi di lettura; refactoring wiki — lint B/C su 6 pagine, record feature 010 tessuto nel grafo)
 sources: ["requirements/sertor-core/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "src/sertor_core/**", "CLAUDE.md"]
 ---
 
@@ -19,6 +19,20 @@ cumulativo: cresce a ogni sessione secondo lo schema in [`../CLAUDE.md`](../CLAU
 > Quel wiki (`../prototype/wiki/`) è indicizzato nel **RAG di dogfooding**: per consultare il
 > prototipo si interroga il server MCP **`sertor-rag`** (tool `search_code` / `search_docs` /
 > `get_context` / `find_symbol` / …), non si modifica più a mano.
+
+## 🧭 Da dove cominciare (percorsi di lettura)
+
+Quattro porte d'ingresso, per intento — ogni percorso parte da una pagina-overview e scende al dettaglio:
+
+| Vuoi… | Percorso |
+|---|---|
+| **Sapere dove siamo e cosa fare adesso** | [[roadmap]] (executive summary in testa, poi mappa feature × stato reale) |
+| **Capire il prodotto (il nucleo di retrieval)** | [[retrieval-core]] → le 4 entità: [[domain-model]] · [[ports-adapters]] · [[chunking-dispatch]] · [[indexing-and-retrieval]] → la 1ª modalità RAG [[vector-retrieval]] → le superfici: [[thin-consumer]] · [[mcp-server]] |
+| **Capire il sistema-wiki (questo wiki)** | [[architettura-wiki-llm]] → la metà deterministica [[wiki-tools]] → il principio che li separa [[deterministic-vs-judgment]] → la disciplina d'uso [[step-ritual]] |
+| **Conoscere le regole del gioco** | [[constitution]] (10 principi vincolanti) · [[mission-vision]] (il perché) · [[dogfooding]] (come ci usiamo) |
+
+La **storia** (cosa è successo, quando) sta nei record di *Experiments* qui sotto e nel
+[registro giornaliero](log/index.md).
 
 ## Come è organizzato
 
