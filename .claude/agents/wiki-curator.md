@@ -41,7 +41,7 @@ poco conto, fai il minimo indispensabile (o nulla) e spiega perché.
    stato attuale; lancia `collect`/`scan` per l'inventario meccanico.
 2. Individua l'operazione del playbook adatta al brief (di norma `record`; può essere `ingest`/`query`/ il
    lint **strutturale**). NON sono per te (richiedono **giudizio** o git/indexer del flusso principale): il
-   lint **semantico (B)** e **organizzativo (C)**, l'operazione **`reorg`**, `generate-from-diff`, `rag-sync`
+   lint **semantico (B)** e **organizzativo (C)**, l'operazione **`reorg`**, `generate`, `rag-sync`
    — il giudizio "questa pagina contraddice il codice / è mal-collocata / va spostata" resta al flusso
    principale (Opus), come il rituale in `CLAUDE.md`. Se il brief le implica, esegui le parti documentali e
    segnala che vanno completate lì.

@@ -30,8 +30,8 @@ pagina, igiene dei link).
 
 ## Le 9 operazioni
 
-`record` · `distill` · `ingest` · `query` · `lint` (livelli A/B/C) · `reorg` · `generate-from-diff` ·
-`rag-sync` · `structure`. Ciascuna applica il **confine D↔N** ([[deterministic-vs-judgment]]): il
+`record` · `distill` · `ingest` · `query` · `lint` (livelli A/B/C) · `reorg` · `generate` (da-zero ·
+da-diff; fino al 2026-06-10 `generate-from-diff`) · `rag-sync` · `structure`. Ciascuna applica il **confine D↔N** ([[deterministic-vs-judgment]]): il
 *meccanico* (scan, lint strutturale, collect, index, write-back del log) è delegato alla CLI
 **`sertor-wiki-tools`** (nucleo deterministico [[nucleo-wiki-deterministico-feat003d|FEAT-003-D]]);
 all'LLM resta il **giudizio** (cosa scrivere, è una contraddizione?, cosa estrarre). Elenco autorevole e

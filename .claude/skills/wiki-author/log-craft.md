@@ -49,7 +49,7 @@ dove vive ora ciò che resta).
 ```
 
 1. **Heading** — `## [data] <op> | <titolo>`. `<op>` dal **vocabolario del playbook §6**
-   (`setup·record·ingest·query·lint·reorg·generate-from-diff·rag-sync`); `<titolo>` descrive **una** cosa,
+   (`setup·record·distill·ingest·query·lint·reorg·generate·rag-sync`); `<titolo>` descrive **una** cosa,
    come il titolo di una pagina (no "varie", no due step in un titolo).
 2. **Lead (1–2 frasi)** — apre col **perché/contesto/trigger**, non col primo file toccato. È ciò che si
    legge a colpo d'occhio scorrendo il log. («Risolto uno smell segnalato dal proprietario: …», non

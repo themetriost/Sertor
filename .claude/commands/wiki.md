@@ -1,5 +1,5 @@
 ---
-description: Consolida nel wiki locale il lavoro della sessione (record/distill/ingest/query/lint/reorg/generate-from-diff/rag-sync)
+description: Consolida nel wiki locale il lavoro della sessione (record/distill/ingest/query/lint/reorg/generate/rag-sync)
 argument-hint: "[operazione e/o ambito, es. 'lint', 'distill <brief conversazione>', 'ingest https://...', 'rag-sync']"
 ---
 
@@ -22,11 +22,13 @@ Procedi così:
    `record` · `distill` (entità durevoli da step, backlog o **brief di una conversazione intera**, anche
    vecchia/esterna — mai il transcript grezzo: condensa prima) · `ingest` · `query` · `lint` (livelli A
    strutturale / B semantico / C organizzativo) ·
-   `reorg` (applica il refactoring organizzativo del lint C, su conferma) · `generate-from-diff` · `rag-sync`.
+   `reorg` (applica il refactoring organizzativo del lint C, su conferma) · `generate` (da-zero su ospite
+   privo di wiki, o da-diff incrementale — il default) · `rag-sync`.
    Poi fai `Read` **solo del modulo `ops/<operazione>.md`** corrispondente (vedi tabella §5 del playbook).
 3. **Esegui la procedura corrispondente** del modulo (input → passi → output), rispettandone i vincoli —
-   in particolare: il flusso principale ha **Bash** per le op pesanti; `generate-from-diff` delega
-   `git log/diff` al ruolo VCS (`[roles].vcs`); `rag-sync` lancia `sertor-wiki-tools index`.
+   in particolare: il flusso principale ha **Bash** per le op pesanti; il `generate` da-diff delega
+   `git log/diff` al ruolo VCS (`[roles].vcs`), il da-zero non richiede git; `rag-sync` lancia
+   `sertor-wiki-tools index`.
 4. Aggiorna i cross-reference e l'indice, e appendi al log la voce
    `## [YYYY-MM-DD] <operazione> | <titolo>` (data odierna).
 5. Segnala esplicitamente contraddizioni o pagine orfane (le orfane le trova `sertor-wiki-tools lint`).

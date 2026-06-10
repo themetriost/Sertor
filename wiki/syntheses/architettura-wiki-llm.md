@@ -76,7 +76,7 @@ lint  (A strutturale) lint · validate = 100% D         —
 lint  (B semantico)   baseline + ground truth          è davvero una deriva?  ← N5
 lint  (C organizzativo) collect (+ backlink invertiti) natura·collocazione·atomicità?  ← N9
 reorg                 move via Edit · lint post-move   cosa spostare/dove/splittare  ← N9
-generate-from-diff    scan · git(→VCS)                 pagine impattate · update
+generate              structure init·collect · git(→VCS)   piano-pagine·bootstrap / pagine impattate
 rag-sync              index = 100% D                   —
 structure             structure init = 100% D          —
 ```
@@ -117,10 +117,11 @@ del 2026-06-06 (`syntheses/` da 16/20 a una distribuzione 4/3/9/4). Dettagli:
 | N9 lint organizzativo + `reorg` — metodo + esercitato (2026-06-06 e 2026-06-10) | ↗ a FEAT-007 (2026-06-10): residuo = helper `move`-con-link |
 | N1 record-contenuto — metodo «livello di significato» (page-craft) | ✅ completa (2026-06-10): metodo esercitato a ogni step; write-back in CLI (PR #18/#20) → offload pieno |
 | N2 distillazione — operazione `distill` + standing nel rituale (esercitata su FEAT-001, 2026-06-08) | ✅ completa (2026-06-10): `distill` generalizzata a **tre ingressi** (step · backlog · **brief di conversazione intera**, anche vecchia → [[diary-vs-graph]]); chiude REQ-030..033 |
-| N8 orchestrazione/trigger (`generate-from-diff` + `/wiki`) | ✅ completa come procedura (2026-06-09, D-19) |
+| N8 orchestrazione/trigger (`generate-from-diff` + `/wiki`) | ✅ completa come procedura (2026-06-09, D-19); op generalizzata in **`generate`** il 2026-06-10 (chiusura N3) |
+| N3 generazione da-zero — ingresso bootstrap di `generate`, esercitato su ospite esterno (spec-kit) | ✅ completa (2026-06-10): SC-3a/SC-3e ✅, idempotenza ✅, lint ospite 0/0/0/0 |
 | N7 gate al commit | ⛔ deleted by design (2026-06-09, D-20) |
 | Pezzi codice D residui: **query congiunta multi-collezione** + **`upsert-index` in CLI** (feature 010) | ✅ implementati (2026-06-10, PR #20 — record: [[spec-010-query-congiunta-e-upsert-index]]) |
-| N3, N4 (ingest→`sources/`), N6 (operazioni di giudizio) | ☐ da fare |
+| N4 (ingest→`sources/`), N6 (operazioni di giudizio) | ☐ da fare |
 
 ## Roadmap
 
@@ -130,8 +131,8 @@ Grafo delle dipendenze (cosa sblocca cosa):
 ✅ FEAT-003-D ─► ✅ Ponte D→N ─► ◑ N5 lint (metodo)
                        │
                        ├─► ✅ 1a  Scope completo (write-back index in CLI, feature 010) ─► N1 record (offload pieno)
-                       ├─► ✅ 2a  FR-004 trigger RISOLTO (D-19: comando manuale /wiki) ─► ✅ N8 generate-from-diff (procedura)
-                       ├─► 3   Operazioni di contenuto: N1(✅) · N2(✅) · N3 · N4(ingest→sources/, D-18)
+                       ├─► ✅ 2a  FR-004 trigger RISOLTO (D-19: comando manuale /wiki) ─► ✅ N8 generate (procedura; ex generate-from-diff)
+                       ├─► 3   Operazioni di contenuto: N1(✅) · N2(✅) · N3(✅) · N4(ingest→sources/, D-18)
                        ├─► 4   N6 verità/autorità/obsolescenza · ⛔ N7 gate ELIMINATO (D-20)
                        └─► ✅ 5a sertor_mcp (PR #15) + indice corpus `sertor` COSTRUITO (FEAT-009) → dogfood vivo
 ```
@@ -143,7 +144,7 @@ Grafo delle dipendenze (cosa sblocca cosa):
 | **2a** | FR-004: trigger | **decisione** | ✅ **RISOLTA (2026-06-09, D-19)**: comando manuale `/wiki`, ambito = ultimo commit | — | — |
 | **3a** | N1 record-contenuto (autorship) | giudizio (N) | ✅ **COMPLETA** (2026-06-10: metodo esercitato + write-back in CLI, PR #18/#20) | — | — |
 | **3b** | N2 distillazione sessione→pagina — operazione `distill` + rituale | giudizio (N) | ✅ **COMPLETA** (2026-06-08 pilota FEAT-001; 2026-06-10 generalizzata a tre ingressi, incl. conversazione intera — SC-3f esercitato: [[diary-vs-graph]]) | — | — |
-| **3c** | N3 generazione dal repo (Karpathy) | giudizio (N) | ❌ build | Bassa | — |
+| **3c** | N3 generazione dal repo (Karpathy) | giudizio (N) | ✅ **COMPLETA** (2026-06-10: `generate` a due ingressi; da-zero esercitato su spec-kit, SC-3a/SC-3e) | — | — |
 | **3d** | N4 ingest (fonte→riassunto in `sources/`, D-18) | giudizio (N) | ❌ build | Bassa | — |
 | **4a** | N6 verità/autorità/obsolescenza | misto (D segnali + N decisione) | ◑ solo metà-D | Bassa | — |
 | ~~**4b**~~ | ~~N7 gate al commit~~ | — | ⛔ **DELETED BY DESIGN (2026-06-09, D-20)**: incoerente col trigger manuale post-commit; lint/freschezza restano non bloccanti | — | — |

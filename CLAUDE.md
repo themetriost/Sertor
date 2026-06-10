@@ -341,7 +341,7 @@ cresce a ogni sessione, invece di ricostruire la conoscenza ogni volta.
 - **query** — rispondi citando le pagine; se l'esplorazione è preziosa, archiviala come nuova pagina.
 - **lint** — verifica di coerenza a tre livelli: A strutturale (CLI: frontmatter/wikilink rotti/orfani/naming), B semantico (claim ↔ realtà del repo), C organizzativo (collocazione/atomicità/link). Report con severità; non auto-corregge.
 - **reorg** — applica il refactoring organizzativo emerso dal lint C (sposta pagine, corregge `type`, riallinea i link), su conferma. Solo flusso principale; mai automatico.
-- **generate-from-diff** — aggiorna solo le pagine impattate dalle modifiche recenti (il `git log/diff` è delegato al `configuration-manager`).
+- **generate** — genera il wiki dal repo, a due ingressi: **da-zero** (bootstrap su un ospite privo di wiki — config + struttura + piano-pagine bounded + prima ondata) o **da-diff** (aggiorna solo le pagine impattate dalle modifiche recenti; il `git log/diff` è delegato al `configuration-manager`).
 - **rag-sync** — ri-indicizza il wiki nel RAG con corpus dedicato (via `sertor-wiki-tools index`, corpus da `[rag]` in config), così il wiki diventa interrogabile via RAG. Solo flusso principale.
 - **structure** — bootstrap idempotente della struttura del wiki (cartelle della tassonomia + index + log) via `sertor-wiki-tools structure init`; non sovrascrive l'esistente.
 
@@ -350,7 +350,7 @@ cresce a ogni sessione, invece di ricostruire la conoscenza ogni volta.
 - **Backlink** in stile wikilink `[[nome-pagina]]` (compatibile Obsidian); i link relativi
   Markdown vanno bene per la navigazione da editor/GitHub. Mantieni i cross-reference aggiornati.
 - **Naming** file: kebab-case descrittivo (es. `azure-ai-search.md`, `hybrid-search.md`).
-- **Voce di log**: `## [YYYY-MM-DD] <operazione> | <titolo>` (operazione ∈ setup/structure/record/distill/ingest/query/lint/reorg/generate-from-diff/rag-sync; elenco autorevole nel playbook §6).
+- **Voce di log**: `## [YYYY-MM-DD] <operazione> | <titolo>` (operazione ∈ setup/structure/record/distill/ingest/query/lint/reorg/generate/rag-sync; elenco autorevole nel playbook §6).
 - Crea una **nuova** pagina per un concetto/entità nuovo; **aggiorna** quella esistente altrimenti.
 - Quando una fonte nuova contraddice una pagina, **segnala esplicitamente** la contraddizione.
 

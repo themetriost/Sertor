@@ -176,7 +176,7 @@ chi crea o riscrive pagine segue inoltre il page-craft in [`page-craft.md`](page
 La **procedura specifica** di ciascuna operazione vive in un **modulo `ops/<operazione>.md`** (stessa
 cartella di questo file): **`Read` solo il modulo dell'operazione che ti serve** — non caricarli tutti
 (progressive disclosure). Le operazioni documentali (`record`, `ingest`, `query`, lint **A**) sono
-eseguibili anche dal `curator` in background; il lint **B/C**, `distill`, `reorg`, `generate-from-diff` e
+eseguibili anche dal `curator` in background; il lint **B/C**, `distill`, `reorg`, `generate` e
 `rag-sync` richiedono il **flusso principale** (Opus).
 
 | Operazione | Modulo (`Read` on-demand) | Cosa fa | Esecutore |
@@ -187,7 +187,7 @@ eseguibili anche dal `curator` in background; il lint **B/C**, `distill`, `reorg
 | `query` | [`ops/query.md`](ops/query.md) | rispondi a una domanda sul wiki (archivia se prezioso) | curator OK |
 | `lint` | [`ops/lint.md`](ops/lint.md) | coerenza a 3 livelli: A strutturale · B semantico · C organizzativo | A: curator · B/C: solo Opus |
 | `reorg` | [`ops/reorg.md`](ops/reorg.md) | applica il refactoring organizzativo del lint C (su conferma) | solo Opus |
-| `generate-from-diff` | [`ops/generate-from-diff.md`](ops/generate-from-diff.md) | aggiorna solo le pagine impattate dalle modifiche recenti | solo Opus |
+| `generate` | [`ops/generate.md`](ops/generate.md) | genera il wiki dal repo: **da-zero** (bootstrap su ospite privo di wiki, N3) o **da-diff** (incrementale: solo le pagine impattate dalle modifiche recenti) | solo Opus |
 | `rag-sync` | [`ops/rag-sync.md`](ops/rag-sync.md) | re-indicizza il wiki nel RAG (ruolo "corpus" di DA-W1) | solo Opus |
 | `structure` | [`ops/structure.md`](ops/structure.md) | bootstrap idempotente della struttura | curator/CLI |
 
@@ -209,10 +209,12 @@ cui passi il **corpo curato**; senza `log_dir`, un unico file di log (back-compa
 - **<etichetta>:** <fatto saliente o puntatore [[pagina]], una riga>
 ```
 `<operazione>` ∈ `setup` · `structure` · `record` · `distill` · `ingest` · `query` · `lint` · `reorg` ·
-`generate-from-diff` · `rag-sync` — l'insieme delle operazioni di §5 più `setup` (bootstrap generico di
+`generate` · `rag-sync` — l'insieme delle operazioni di §5 più `setup` (bootstrap generico di
 sessione/governance, distinto da `structure` che è il bootstrap della *struttura* del wiki). `structure`
 lascia una voce **solo se ha creato qualcosa** (`created` non vuoto); se è tutto `skipped_existing`,
-niente voce (idempotente + regola anti-banale).
+niente voce (idempotente + regola anti-banale). *Retro-compatibilità:* le voci storiche
+`generate-from-diff` nei log restano valide (il log è append-only, non si riscrive); dal 2026-06-10 il
+vocabolario corrente usa `generate`.
 
 **Com'è fatta una buona voce → [`log-craft.md`](log-craft.md).** Le regole qui sopra sono la *convenzione*
 (grammatica dell'heading, vocabolario delle operazioni, regola anti-banale). Il **log-craft** — il confine
@@ -223,8 +225,8 @@ una voce (`record`, `ingest`, `lint`, `reorg`, …).
 
 ## 7. Limiti & deleghe
 
-- **Git:** mai eseguirlo direttamente. Tutte le operazioni git (incluse le letture per
-  `generate-from-diff`) si **delegano al ruolo VCS** (`[roles].vcs`). Il `curator` non esegue git.
+- **Git:** mai eseguirlo direttamente. Tutte le operazioni git (incluse le letture per il `generate`
+  da-diff) si **delegano al ruolo VCS** (`[roles].vcs`). Il `curator` non esegue git.
 - **Fonti & wiki congelati:** non toccare mai le fonti originali date a `ingest`, né i wiki esclusi via
   `exclude` (su Sertor: `prototype/`).
 - **Quando NON documentare:** modifiche puramente meccaniche o di poco conto non meritano una voce.

@@ -28,8 +28,9 @@ CLI `sertor-wiki-tools` invece di Glob/Grep a mano (vedi playbook).
    aggiorna i backlink e l'indice, appendi la voce al log.
 4. Segnala le contraddizioni invece di risolverle in silenzio (vedi playbook).
 
-Per ingerire una fonte esterna, fare il lint di coerenza, aggiornare dal diff git o ri-indicizzare nel
-RAG, usa le operazioni omonime del playbook (tipicamente via il comando `/wiki <operazione>`).
+Per ingerire una fonte esterna, fare il lint di coerenza, generare il wiki dal repo o aggiornarlo dal
+diff git (operazione `generate`, ingressi da-zero/da-diff) o ri-indicizzare nel RAG, usa le operazioni
+omonime del playbook (tipicamente via il comando `/wiki <operazione>`).
 
 ## Versionamento (opzionale)
 A fine generazione, se l'utente vuole versionare, **delega al ruolo VCS** (`[roles].vcs` in config; mai git

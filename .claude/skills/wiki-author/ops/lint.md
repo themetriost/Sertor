@@ -71,7 +71,7 @@ target `wiki`) **e** il livello **B** **solo sugli artefatti del changeset** (in
 per ogni `kind`; esito = **report + warning NON bloccante** (mai blocco, mai auto-fix — lezione: il valore sta
 nella rilevazione, non nella correzione automatica). **Caveat di automazione:** A al commit è meccanico
 (hook/CLI); **B al commit è un giudizio LLM** → la sua esecuzione automatica dipende dall'orchestrazione/trigger
-(lato deterministico, cfr. `ops/generate-from-diff.md` e il contratto-trigger, oggi non cablato). Finché non è cablata:
+(lato deterministico, cfr. `ops/generate.md` e il contratto-trigger, oggi non cablato). Finché non è cablata:
 il warning al commit copre A e **ricorda di lanciare B incrementale** (`/wiki lint` sul changeset).
 
 **C) Lint organizzativo — giudizio (LLM, flusso principale).** Verifica che il wiki sia un **grafo ben

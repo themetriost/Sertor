@@ -1,5 +1,9 @@
 # Flussi delle operazioni wiki + analisi di modularizzazione del playbook
 
+> **Nota (2026-06-10):** l'operazione `generate-from-diff` citata in questo documento è stata
+> generalizzata in **`generate`** (due ingressi: da-zero/da-diff, chiusura N3). Documento storico di
+> analisi: non riallineato oltre questa nota.
+
 > **Scopo:** capire (a) **come scorre** ciascuna operazione del sistema-wiki — dove finisce il
 > *meccanico* (CLI deterministica) e dove inizia il *giudizio* (LLM) — e (b) se conviene che il
 > **playbook** faccia riferimento a delle *skill* invece di descrivere tutto in un unico file.
