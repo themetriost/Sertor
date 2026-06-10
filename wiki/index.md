@@ -3,7 +3,7 @@ title: Indice del Wiki — Produzione Sertor
 type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
-updated: 2026-06-08 (distill FEAT-001/002/003-D/MCP + tree-sitter → pagine-entità: domain-model · ports-adapters · chunking-dispatch · indexing-and-retrieval · wiki-tools · mcp-server)
+updated: 2026-06-10 (Home: sezione "Da dove cominciare" con 4 percorsi di lettura; refactoring wiki — lint B/C su 6 pagine, record feature 010 tessuto nel grafo)
 sources: ["requirements/sertor-core/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "src/sertor_core/**", "CLAUDE.md"]
 ---
 
@@ -19,6 +19,20 @@ cumulativo: cresce a ogni sessione secondo lo schema in [`../CLAUDE.md`](../CLAU
 > Quel wiki (`../prototype/wiki/`) è indicizzato nel **RAG di dogfooding**: per consultare il
 > prototipo si interroga il server MCP **`sertor-rag`** (tool `search_code` / `search_docs` /
 > `get_context` / `find_symbol` / …), non si modifica più a mano.
+
+## 🧭 Da dove cominciare (percorsi di lettura)
+
+Quattro porte d'ingresso, per intento — ogni percorso parte da una pagina-overview e scende al dettaglio:
+
+| Vuoi… | Percorso |
+|---|---|
+| **Sapere dove siamo e cosa fare adesso** | [[roadmap]] (executive summary in testa, poi mappa feature × stato reale) |
+| **Capire il prodotto (il nucleo di retrieval)** | [[retrieval-core]] → le 4 entità: [[domain-model]] · [[ports-adapters]] · [[chunking-dispatch]] · [[indexing-and-retrieval]] → la 1ª modalità RAG [[vector-retrieval]] → le superfici: [[thin-consumer]] · [[mcp-server]] |
+| **Capire il sistema-wiki (questo wiki)** | [[architettura-wiki-llm]] → la metà deterministica [[wiki-tools]] → il principio che li separa [[deterministic-vs-judgment]] → la disciplina d'uso [[step-ritual]] |
+| **Conoscere le regole del gioco** | [[constitution]] (10 principi vincolanti) · [[mission-vision]] (il perché) · [[dogfooding]] (come ci usiamo) |
+
+La **storia** (cosa è successo, quando) sta nei record di *Experiments* qui sotto e nel
+[registro giornaliero](log/index.md).
 
 ## Come è organizzato
 
@@ -69,6 +83,7 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 - **[[server-mcp-produzione-feat-mcp]]** — Record FEAT-MCP (2026-06-06, PR #15): SpecKit completo, 6 test, Constitution 10/10 ✅, `.mcp.json` ri-puntato alla produzione (corpus `sertor`). **Distillato** (2026-06-08): entità in [[mcp-server]].
 - **[[meccanica-log-feat008]]** — Record FEAT-008 (2026-06-08, PR #18): meccanica del log di [[wiki-tools]] — rotazione a un file/giorno, `append-log` curato in CLI, `migrate` dello storico. SpecKit completo, 22 test, Constitution 10/10 ✅. Attivazione su Sertor deferita post-merge.
 - **[[store-backend-disaccoppiato-feat009]]** — Record FEAT-009 (2026-06-09): `store_backend` disaccoppiato dal provider di embeddings + `AzureEmbedder` su endpoint v1. Abilita embeddings Azure + store Chroma locale → **costruito il primo indice dogfood del corpus `sertor`** (191 doc / 1578 chunk). Distillato in [[ports-adapters]]/[[corpus-index-naming]].
+- **[[spec-010-query-congiunta-e-upsert-index]]** — Feature 010 (`specs/010`, 2026-06-10): i pezzi D residui di FEAT-003 (query congiunta multi-collezione + `upsert-index` CLI) portati da requirements a **implementazione** in un SpecKit completo in giornata; 4 decisioni clarify (fail-fast su provider eterogenei, corpora da Settings, multilinea → errore, fan-out solo `search_combined`); 159 test verdi, validata live sul dogfood; PR #20.
 - **[[pulizia-pycache-e-diagnosi-mcp]]** — Record del 2026-06-05: rimossi 16 dir `__pycache__` fantasma + diagnosi architetturale di `.mcp.json`. ⚠️ **Diagnosi superata il 2026-06-06** (banner nella pagina): `sertor_mcp` (PR #15) e `wiki_tools`/FEAT-003-D (PR #13) sono su master, `.mcp.json` ri-puntato alla produzione. *(Spostata da `tech/` a `experiments/`: è un record datato, non una tecnologia.)*
 - **[[retrospettiva-interazione-2026-06-04]]** — Retrospettiva onesta sull'interazione del 2026-06-04 (pattern di ostruzione percepito, radici plausibili, correttivo adottato); separata dal design del rituale per atomicità.
 

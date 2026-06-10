@@ -67,3 +67,11 @@ class VectorStore(Protocol):
     def exists(self, collection: str) -> bool:
         """True se la collezione esiste ed è inizializzata."""
         ...
+
+    def list_collections(self) -> list[str]:
+        """Nomi delle collezioni esistenti nel backend.
+
+        Serve alla ricerca combinata multi-collezione per distinguere un corpus mai indicizzato
+        (degradazione morbida) da uno indicizzato con un altro provider (errore esplicito, FR-009).
+        """
+        ...

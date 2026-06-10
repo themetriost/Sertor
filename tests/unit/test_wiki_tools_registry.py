@@ -65,23 +65,51 @@ def test_append_log_requires_existing_log(tmp_path):
 
 def test_upsert_index_inserts_then_idempotent(tmp_path):
     p = _profile(tmp_path)
-    wrote = upsert_index(p, "concepts/rag.md", "Retrieval-Augmented Generation")
-    assert wrote is True
+    result = upsert_index(p, "concepts/rag.md", "Retrieval-Augmented Generation")
+    assert result.written is True and result.action == "insert"   # wiki.upsert_index/1
+    assert result.page == "concepts/rag.md"
     assert "[[concepts/rag.md]] — Retrieval-Augmented Generation" in p.index_path.read_text("utf-8")
 
     mtime = p.index_path.stat().st_mtime_ns
-    wrote2 = upsert_index(p, "concepts/rag.md", "Retrieval-Augmented Generation")
-    assert wrote2 is False  # stessa identità + stesso sommario → no-op
+    result2 = upsert_index(p, "concepts/rag.md", "Retrieval-Augmented Generation")
+    assert result2.written is False and result2.action == "noop"  # no-op idempotente (FR-012)
     assert p.index_path.stat().st_mtime_ns == mtime
 
 
 def test_upsert_index_updates_changed_summary_without_duplicating(tmp_path):
     p = _profile(tmp_path)
     upsert_index(p, "concepts/rag.md", "vecchio")
-    upsert_index(p, "concepts/rag.md", "nuovo")
+    result = upsert_index(p, "concepts/rag.md", "nuovo")
+    assert result.written is True and result.action == "update"   # update in place (FR-013)
     content = p.index_path.read_text("utf-8")
     assert content.count("[[concepts/rag.md]]") == 1  # id stabile: una sola riga
     assert "nuovo" in content and "vecchio" not in content
+
+
+def test_upsert_index_trims_but_writes_text_verbatim(tmp_path):
+    # FR-014: scrittura fedele del testo fornito (solo trim del whitespace esterno).
+    p = _profile(tmp_path)
+    upsert_index(p, "concepts/à.md", "  Sommario con àccénti — e trattini  \n")
+    assert "- [[concepts/à.md]] — Sommario con àccénti — e trattini\n" in \
+        p.index_path.read_text("utf-8")
+
+
+def test_upsert_index_rejects_empty_summary(tmp_path):
+    # FR-018: vuoto/solo whitespace → errore esplicito, file invariato.
+    p = _profile(tmp_path)
+    snapshot = p.index_path.read_text("utf-8")
+    with pytest.raises(ConfigError):
+        upsert_index(p, "concepts/rag.md", "   \n ")
+    assert p.index_path.read_text("utf-8") == snapshot
+
+
+def test_upsert_index_rejects_multiline_summary(tmp_path):
+    # FR-018 (clarify #3): newline interni → errore, nessuna normalizzazione silenziosa.
+    p = _profile(tmp_path)
+    snapshot = p.index_path.read_text("utf-8")
+    with pytest.raises(ConfigError):
+        upsert_index(p, "concepts/rag.md", "prima riga\nseconda riga")
+    assert p.index_path.read_text("utf-8") == snapshot
 
 
 def test_sc002_full_rerun_is_identical(tmp_path):

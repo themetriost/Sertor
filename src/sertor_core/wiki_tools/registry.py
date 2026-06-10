@@ -18,7 +18,7 @@ from pathlib import Path
 
 from sertor_core.domain.errors import ConfigError
 from sertor_core.observability.logging import log_event
-from sertor_core.wiki_tools.contracts import AppendLogResult, MigrateResult
+from sertor_core.wiki_tools.contracts import AppendLogResult, MigrateResult, UpsertIndexResult
 from sertor_core.wiki_tools.profile import WikiProfile
 
 _PARTITION_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -185,12 +185,24 @@ def migrate_log(profile: WikiProfile) -> MigrateResult:
     return MigrateResult(migrated_entries=migrated, created=created, skipped=skipped)
 
 
-def upsert_index(profile: WikiProfile, page: str, summary: str) -> bool:
+def upsert_index(profile: WikiProfile, page: str, summary: str) -> UpsertIndexResult:
     """Inserisce/aggiorna la riga d'indice per `page` (id = path relativo); idempotente.
 
     La riga ha forma `- [[page]] — summary`. Se esiste già una riga per la stessa `page` con lo
     stesso sommario, non scrive (SC-002); se il sommario è cambiato, la riga viene aggiornata.
+    Il sommario è **autorato esternamente** e scritto fedelmente (solo trim, FR-014): vuoto o
+    multilinea → errore esplicito, nessuna scrittura e nessuna normalizzazione (FR-018).
     """
+    summary = summary.strip()
+    if not summary:
+        raise ConfigError("sommario vuoto: upsert-index richiede una riga di testo non vuota",
+                          key=page)
+    if "\n" in summary or "\r" in summary:
+        raise ConfigError(
+            "sommario multilinea: la riga d'indice è una riga singola (fornire il testo su una "
+            "riga, nessuna normalizzazione automatica)", key=page,
+        )
+
     index_path = profile.index_path
     if not index_path.is_file():
         raise ConfigError("indice del wiki non trovato (inizializzare la struttura)",
@@ -218,12 +230,12 @@ def upsert_index(profile: WikiProfile, page: str, summary: str) -> bool:
     if already:
         log_event(logging.INFO, "registry", profile=profile.profile,
                   target="index", action="noop-duplicate")
-        return False
+        return UpsertIndexResult(written=False, action="noop", page=page)
 
     if not replaced:
         out.append(line)
 
+    action = "update" if replaced else "insert"
     index_path.write_text("\n".join(out) + "\n", encoding="utf-8")
-    log_event(logging.INFO, "registry", profile=profile.profile, target="index",
-              action="update" if replaced else "insert")
-    return True
+    log_event(logging.INFO, "registry", profile=profile.profile, target="index", action=action)
+    return UpsertIndexResult(written=True, action=action, page=page)

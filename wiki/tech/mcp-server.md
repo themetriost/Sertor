@@ -3,7 +3,7 @@ title: Server MCP sertor-rag
 type: tech
 tags: [mcp, server, sertor-mcp, thin-consumer, retrieval, dogfooding, sertor-core]
 created: 2026-06-08
-updated: 2026-06-08
+updated: 2026-06-10 (search_combined eredita il fan-out multi-collezione della feature 010 via config, server invariato)
 sources: ["src/sertor_mcp/server.py", ".mcp.json"]
 ---
 
@@ -24,7 +24,10 @@ metodo omonimo della [[indexing-and-retrieval|facade]]:
 |---|---|---|
 | `search_code(query, k)` | solo codice | 5 |
 | `search_docs(query, k)` | sola documentazione | 5 |
-| `search_combined(query, k)` | codice + doc | 6 |
+| `search_combined(query, k)` | codice + doc; con corpora extra configurati (`SERTOR_EXTRA_CORPORA`, es. il wiki) fonde **più collezioni** — feature 010, [[indexing-and-retrieval|dettagli]] | 6 |
+
+Il fan-out multi-collezione arriva **gratis** al server senza toccarlo (è il senso del thin-consumer: la
+capacità vive nella facade, la superficie la eredita dalla configurazione).
 
 La facade è costruita **una volta** con `build_facade(Settings.load())` memoizzata via `@lru_cache(maxsize=1)`
 e riusata da tutti i tool.

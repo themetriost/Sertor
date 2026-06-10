@@ -3,7 +3,7 @@ title: Architettura del Wiki LLM — stato e roadmap
 type: synthesis
 tags: [architettura, wiki-llm, host-agnostico, principio-x, roadmap, feat-003, deterministico-vs-giudizio]
 created: 2026-06-05
-updated: 2026-06-09 (D-18/D-19/D-20: rimossi manual_edited/ingested_sources, trigger = /wiki manuale, gate eliminato; N8 completa, N7 deleted)
+updated: 2026-06-10 (feature 010: query congiunta multi-collezione + upsert-index in CLI → write-back entrambi cablati, evoluzione 1a chiusa; restano N3/N4/N6)
 sources: [
   "src/sertor_core/wiki_tools/**",
   "wiki.config.toml",
@@ -39,8 +39,8 @@ in **una sola config** (`wiki.config.toml`) — host-agnosticità, **Principio X
                    ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │  NUCLEO DETERMINISTICO — sertor_core.wiki_tools (FEAT-003-D) ✅    │   MECCANICO (D)
-│  CLI `sertor-wiki-tools`:                                          │   zero LLM · offline ·
-│    scan · structure · validate · lint · collect · index           │   idempotente · errori espliciti
+│  CLI `sertor-wiki-tools`:  scan · structure · validate · lint ·    │   zero LLM · offline ·
+│    collect · index · append-log · migrate · upsert-index          │   idempotente · errori espliciti
 │  contratti JSON versionati: wiki.scan/1 · wiki.lint/1 · …          │
 └──────────────────────────────────────────────────────────────────┘
                    ▲  chiama per il meccanico (via Bash)
@@ -81,8 +81,12 @@ rag-sync              index = 100% D                   —
 structure             structure init = 100% D          —
 ```
 
-Nota: i **write-back** (voce di log, riga d'indice) sono **ancora scritti dall'LLM** — la CLI non li
-espone e il formato curato non combacia col deterministico. Chiuderlo = evoluzione **1a** (roadmap).
+Nota: i **write-back** sono **entrambi cablati in CLI** — il log con `append-log` (FEAT-008, rotazione
+giornaliera) e la riga d'indice con `upsert-index` (feature 010, `specs/010`): l'LLM **autora** il corpo
+curato / il sommario, il codice fa il **piazzamento idempotente**. Sfumatura onesta sull'indice: la CLI
+scrive la riga **piatta** (wikilink della pagina + lineetta + sommario), mentre l'`index.md` di Sertor è
+*curato* (grassetti, sezioni per area) — sull'indice curato il giudizio resta quindi all'LLM, che può
+usare la CLI come write-back accettandone il formato o continuare ad autorare la riga.
 
 ## Il lint a tre livelli (N5 + N9)
 
@@ -115,6 +119,7 @@ del 2026-06-06 (`syntheses/` da 16/20 a una distribuzione 4/3/9/4). Dettagli:
 | N2 distillazione — operazione `distill` + standing nel rituale (esercitata su FEAT-001, 2026-06-08) | ✅ fatto |
 | N8 orchestrazione/trigger (`generate-from-diff` + `/wiki`) | ✅ completa come procedura (2026-06-09, D-19) |
 | N7 gate al commit | ⛔ deleted by design (2026-06-09, D-20) |
+| Pezzi codice D residui: **query congiunta multi-collezione** + **`upsert-index` in CLI** (feature 010) | ✅ implementati (2026-06-10, PR #20 — record: [[spec-010-query-congiunta-e-upsert-index]]) |
 | N3, N4 (ingest→`sources/`), N6 (operazioni di giudizio) | ☐ da fare |
 
 ## Roadmap
@@ -124,7 +129,7 @@ Grafo delle dipendenze (cosa sblocca cosa):
 ```
 ✅ FEAT-003-D ─► ✅ Ponte D→N ─► ◑ N5 lint (metodo)
                        │
-                       ├─► 1a  Scope completo (write-back index in CLI) ─► N1 record (offload pieno)
+                       ├─► ✅ 1a  Scope completo (write-back index in CLI, feature 010) ─► N1 record (offload pieno)
                        ├─► ✅ 2a  FR-004 trigger RISOLTO (D-19: comando manuale /wiki) ─► ✅ N8 generate-from-diff (procedura)
                        ├─► 3   Operazioni di contenuto: N1 · N2(✅) · N3 · N4(ingest→sources/, D-18)
                        ├─► 4   N6 verità/autorità/obsolescenza · ⛔ N7 gate ELIMINATO (D-20)
@@ -134,7 +139,7 @@ Grafo delle dipendenze (cosa sblocca cosa):
 | # | Evoluzione | Natura | Requisiti? | Priorità | Dipende da |
 |---|---|---|---|---|---|
 | **5a** | `sertor_mcp` — RAG dell'ospite | **codice** (componente) | ✅ **FATTO** (PR #15, SpecKit completo) | — | — |
-| **1a** | Scope completo: write-back in CLI + riconciliazione formato index | **codice** (D) | ✅ EARS leggero / spec | Media | FEAT-003-D |
+| **1a** | Scope completo: write-back in CLI (+ formato index, vedi nota sui write-back) | **codice** (D) | ✅ **FATTO** (feature 010, 2026-06-10: `upsert-index` cablata; sommario resta LLM-authored) | — | — |
 | **2a** | FR-004: trigger | **decisione** | ✅ **RISOLTA (2026-06-09, D-19)**: comando manuale `/wiki`, ambito = ultimo commit | — | — |
 | **3a** | N1 record-contenuto (autorship) | giudizio (N) | ❌ build, non spec | Media | 1a (migliora) |
 | **3b** | N2 distillazione sessione→pagina — operazione `distill` + rituale | giudizio (N) | ✅ **FATTO** (2026-06-08, pilota FEAT-001) | — | — |
@@ -152,6 +157,11 @@ costruisce il metodo, non si spec-a** (i requisiti di outcome esistono già in
 **Aggiornamento 2026-06-09:** chiuse le decisioni di trigger/scope del wiki — **D-18** (rimossi
 `manual_edited/`/`ingested_sources/`; ingest→`sources/`), **D-19** (trigger = comando manuale `/wiki`,
 ambito = ultimo commit), **D-20** (gate al commit eliminato). L'indice dogfood `sertor` è **costruito**
-(FEAT-009). **Prossimo passo raccomandato:** i pezzi codice D (collezioni separate + query congiunta,
-`sertor wiki init`, write-back index in CLI), via SpecKit; oppure esercitare le operazioni di contenuto N
-(N1/N3/N4/N6).
+(FEAT-009).
+
+**Aggiornamento 2026-06-10:** implementati i **pezzi codice D residui** con la feature 010 (SpecKit
+completo, PR #20 — record: [[spec-010-query-congiunta-e-upsert-index]]): la **query congiunta
+multi-collezione** (il wiki diventa interrogabile *insieme* al codice via `search_combined`, corpora extra
+da `Settings`) e il write-back **`upsert-index` in CLI** (evoluzione 1a). `sertor wiki init` resta
+nell'epica CLI. **Prossimo passo raccomandato:** esercitare le operazioni di contenuto N (N3 generazione ·
+N4 ingest→`sources/` · N6 verità/obsolescenza).

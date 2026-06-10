@@ -103,3 +103,6 @@ class InMemoryStore:
 
     def exists(self, collection: str) -> bool:
         return bool(self._data.get(collection))
+
+    def list_collections(self) -> list[str]:
+        return sorted(self._data)

@@ -83,15 +83,27 @@ def build_facade(settings: Settings | None = None):
     """Costruisce la facade di retrieval cablata dalla configurazione (REQ-029).
 
     Punto d'ingresso per i consumatori: importano e usano la facade senza conoscere
-    store/embeddings.
+    store/embeddings. I corpora extra (`Settings.extra_corpora`, FR-007) diventano la mappa
+    corpus→collezione del fan-out della ricerca combinata: il nome è derivato con la stessa
+    `collection_name`, quindi con il provider di embeddings corrente.
     """
+    from dataclasses import replace
+
     from sertor_core.services.retrieval import RetrievalFacade
 
     settings = settings or Settings.load()
     embedder = build_embedder(settings)
     store = build_store(settings)
+    extra = {
+        corpus: collection_name(replace(settings, corpus=corpus), embedder)
+        for corpus in settings.extra_corpora
+    }
     return RetrievalFacade(
-        embedder, store, collection_name(settings, embedder), default_k=settings.default_k
+        embedder,
+        store,
+        collection_name(settings, embedder),
+        default_k=settings.default_k,
+        extra_collections=extra,
     )
 
 

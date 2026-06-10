@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-09 (prossimo step deciso: pezzi D 1+3 del wiki via SpecKit completo, pezzo 2 → epica CLI; startup chiuso → DONE, IN PROGRESS vuoto; riscritta su master, ancorata allo stato reale; reconcilia numerazione epica↔spec; FEAT-009 indice dogfood; D-18/19/20 snelliscono lo scope wiki)
+updated: 2026-06-10 (avviati i pezzi D 1+3 del wiki: requirements scritti → IN PROGRESS, prossimo passo specify; pezzo 2 → epica CLI; startup chiuso → DONE; reconcilia numerazione epica↔spec; FEAT-009 indice dogfood; D-18/19/20 snelliscono lo scope wiki)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md"]
 ---
 
@@ -34,20 +34,23 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- *(nessuna voce in corso — scegliere il prossimo PLANNED)*
+- **Wiki FEAT-003 — due pezzi D deterministici (query congiunta + `upsert-index` in CLI), SpecKit completo.**
+  - **Cosa:** (1) *query congiunta multi-collezione* — `search_combined` fa fan-out su corpus primario +
+    `SERTOR_EXTRA_CORPORA` e fonde i top-k per score (`ProviderMismatchError` su provider eterogenei,
+    `list_collections` nuova capacità di porta). (2) *`upsert-index` in CLI* — sottocomando idempotente
+    (`--page` + `--summary`/stdin, contratto `wiki.upsert_index/1`), sommario LLM-authored.
+  - **Dove:** branch `010-query-congiunta-e-upsert-index` — **SpecKit completo ESEGUITO**: requirements ✅
+    spec+clarify ✅ (4 decisioni) · plan ✅ (Constitution 10/10) · tasks ✅ (22/22) · analyze ✅ (GO) ·
+    **implement ✅** (suite `not cloud` 159 verdi + 2 xfail, ruff pulito; validato live sul dogfood:
+    collezione `wiki__azure_text_embedding_3_large` costruita, 49 doc, fusione codice+wiki verificata).
+  - **Prossimo passo:** **mergiare la PR #20** (https://github.com/themetriost/Sertor/pull/20, aperta il
+    2026-06-10); post-merge: riavvio del server MCP + config dogfood (`SERTOR_EXTRA_CORPORA=wiki` nel `.env`,
+    valutare esclusione di `wiki/` dal corpus primario).
+  - **Blocco/decisione aperta:** nessuno. Nota emersa dal dogfood: il corpus primario `sertor` indicizza
+    anche `wiki/` → quasi-duplicati tra le collezioni nella combinata; valutare l'esclusione di `wiki/` dal
+    corpus primario via `SERTOR_EXCLUDE_PATTERNS` (scelta di config dell'ospite, non codice).
 
 ### 📋 PLANNED (per priorità)
-
-- **⏯️ PROSSIMO (al riavvio) — Wiki FEAT-003, due pezzi D deterministici via SpecKit completo:**
-  - **(1) Query congiunta multi-collezione.** Wiki e codice sono già in collezioni RAG separate (namespacing per
-    `(corpus, provider)`), ma oggi `search_combined` gira su **una sola** collezione (`services/retrieval.py`):
-    il filtro `both` discrimina per `doc_type` *dentro* la collezione, non fonde due collezioni. Serve fan-out +
-    merge dei top-k in `RetrievalFacade`/`VectorStore.query()`. *Pezzo con vero contenuto ingegneristico; abilita
-    la "sola verità interrogabile".*
-  - **(3) Esporre `upsert-index` in CLI.** `upsert_index()` esiste già (`wiki_tools/registry.py`), non è cablato
-    in CLI. Aggiungere il sottocomando `sertor-wiki-tools upsert-index`, sul modello di `append-log`: il **sommario
-    resta LLM-authored** (giudizio), la CLI fa solo il **write idempotente** della riga in `index.md`. *Piccolo.*
-  - Entrambi **deterministici** → **SpecKit completo** (requirements→specify→clarify→plan→tasks→analyze→implement), niente skill.
 - **Wiki FEAT-003, operazioni-giudizio N:** N3 (generazione dal repo) · N4 (ingest → `sources/`) ·
   N6 (verità/autorità/obsolescenza).
 - **Nuovi motori RAG:** FEAT-004 ibrido+reranking · FEAT-005 GraphRAG · FEAT-006 agentico · FEAT-007 manutenzione wiki.
@@ -168,4 +171,5 @@ Legenda: ✅ su master · 🧪 operativo, consolidamento formale aperto · 💀 
 
 Sintesi per feature: [[implementazione-nucleo-retrieval]] · [[motore-baseline-feat002]] ·
 [[nucleo-wiki-deterministico-feat003d]] · [[server-mcp-produzione-feat-mcp]] · [[meccanica-log-feat008]] ·
-[[store-backend-disaccoppiato-feat009]] · [[architettura-wiki-llm]] · [[constitution]] · [[corpus-index-naming]].
+[[store-backend-disaccoppiato-feat009]] · [[spec-010-query-congiunta-e-upsert-index]] ·
+[[architettura-wiki-llm]] · [[constitution]] · [[corpus-index-naming]].

@@ -39,14 +39,17 @@ da hook/skill/agente senza parsing fragile.
 | `index` | re-indicizza il wiki nel RAG (collezione isolata) **riusando la facade del core** (`build_indexer`, import **lazy** → le altre op restano offline) | `wiki.index/1` |
 | `append-log` | appende una voce di log nel file del giorno (**rotazione** a un file per data); accetta il **corpo curato** dall'LLM e ne fa solo il piazzamento (idempotente) | `wiki.append_log/1` |
 | `migrate` | splitta retroattivamente il log monolitico in partizioni giornaliere (una-tantum, idempotente, non distruttivo) | `wiki.migrate/1` |
+| `upsert-index` | inserisce/aggiorna la riga link+sommario di una pagina in `index.md` (`--page` + `--summary` o stdin UTF-8); il sommario resta **LLM-authored**, la CLI fa solo il write idempotente; vuoto/multilinea → errore esplicito | `wiki.upsert_index/1` |
 
 **Write-back del log curato + rotazione (FEAT-008).** L'op `append-log` riceve il **corpo curato** dall'LLM
 (formato [[deterministic-vs-judgment|log-craft]]) e ne fa solo il **piazzamento** nella partizione della
 data, rigenerando l'indice delle partizioni di log (`update_log_index`) — confine deterministico↔giudizio
 netto. Con `log_dir` configurato la rotazione è **implicita** (la voce va nel file della sua data); senza,
-vale la modalità a file unico (back-compat). Il modulo `registry.py` espone *anche* `upsert_index`
-(inserimento idempotente della riga link+sommario nell'indice globale `index.md`), ma **non è cablato in
-un'op della CLI**: per ora la riga di `index.md` resta **LLM-authored** (backlog in [[architettura-wiki-llm]]).
+vale la modalità a file unico (back-compat). Lo stesso confine vale per l'op `upsert-index`
+([[spec-010-query-congiunta-e-upsert-index|feature 010]]):
+il **sommario** della riga di `index.md` è giudizio dell'LLM, il **piazzamento** (insert/update/noop
+idempotente, esito `wiki.upsert_index/1`) è codice; un sommario vuoto o multilinea è rifiutato con errore
+esplicito, mai normalizzato in silenzio.
 
 ## Proprietà di fondo
 

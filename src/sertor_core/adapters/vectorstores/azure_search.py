@@ -134,3 +134,18 @@ class AzureSearchStore:
             return self._client(collection).get_document_count() > 0
         except Exception:
             return False
+
+    def list_collections(self) -> list[str]:
+        from azure.search.documents.indexes import SearchIndexClient
+
+        try:
+            client = SearchIndexClient(
+                endpoint=self._endpoint, credential=self._Credential(self._api_key)
+            )
+            return sorted(client.list_index_names())
+        except Exception as exc:
+            raise VectorStoreError(
+                "errore durante l'elenco degli index su Azure AI Search",
+                backend=_BACKEND,
+                reason=type(exc).__name__,
+            ) from exc

@@ -180,6 +180,15 @@ I marker pytest sono definiti in `pyproject.toml`: `cloud` (richiede credenziali
 - Nessuna over-engineering: aggiungere astrazioni solo quando un esperimento le richiede.
 - Mantenere ogni esperimento eseguibile in locale senza dipendere da Azure.
 
+## Domande all'utente (regola SEMPRE attiva)
+
+Ogni volta che si pone una domanda all'utente (bivi di design, clarify, scelte di scope, conferme),
+**prima** della domanda va dato il **contesto**: da dove nasce il problema (file/meccanismo reale),
+cosa comporta concretamente ciascuna opzione (pro/contro, impatti su consumatori e convenzioni del
+repo) e la raccomandazione motivata. Mai una domanda "secca" con sole etichette: l'utente deve poter
+decidere senza dover chiedere "spiegami meglio". Vale anche per le domande poste dentro i flussi
+SpecKit (`clarify`, `specify`, ecc.).
+
 ## Rituale di step / Definition of Done (regola SEMPRE attiva)
 
 Uno **step** è un'unità di lavoro significativa (una feature, un fix, una decisione, una ricerca,
@@ -234,7 +243,21 @@ automazione *unattended*: la distinzione è netta —
    file di `wiki/log/`) — l'output del `Read` entra **intero** nel contesto, nessun cap — e poi a **mostrare
    all'utente l'executive summary** della roadmap. L'hook *innesca*, il `Read` *trasporta*, il rituale tiene
    il *contenuto* vero.
-5. **\<altre azioni\>** — questa lista è **estendibile**: ogni azione che l'utente chiede di rendere
+5. **Re-index dei corpora toccati** — se lo step ha modificato **file indicizzati in un corpus RAG**,
+   ricostruisci l'indice del corpus toccato, così il RAG di dogfooding non serve mai contesto stantio
+   (è l'essenza: contesto dell'agente sempre reale). Mappa attuale: modifiche a `src/`, `specs/`,
+   `requirements/`, doc di radice → corpus **`sertor`** (rebuild via `build_indexer().index(root,
+   rebuild=True)`); modifiche a `wiki/` → corpus **`wiki`** (`uv run sertor-wiki-tools index`). Il
+   rebuild è **full ma sicuro**: `reset` della collezione *dopo* l'embedding (atomico — un errore del
+   provider lascia l'indice precedente intatto) e namespaced (non tocca altri corpora/provider).
+   È **meccanico** → delegabile/eseguibile in background; richiede l'ambiente di embeddings attivo
+   (oggi Azure: costo trascurabile, centesimi a rebuild). **Calibra al valore:** più step ravvicinati
+   sugli stessi file → basta un re-index a fine giornata/sessione; il momento *obbligato* è dopo un
+   **merge su `master`**. Questo è il **mitigante operativo** in attesa della FEAT-009 d'epica
+   (refresh incrementale sui soli file cambiati, Could). NB: il server MCP legge l'indice da disco ma
+   va **riavviato** per servire *codice* nuovo, non per indici nuovi.
+
+6. **\<altre azioni\>** — questa lista è **estendibile**: ogni azione che l'utente chiede di rendere
    *standing* va aggiunta qui, e da quel momento fa parte del rituale a ogni step.
 
 **Responsabilità & delega.** Che queste azioni **avvengano** a ogni step è responsabilità del flusso
@@ -344,7 +367,8 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/007-mcp-sertor-core/plan.md` (FEAT-MCP — server MCP di produzione, espone il retrieval del core
-come tool MCP; consumatore sottile, host-agnostico). In `master`: FEAT-001 `specs/001-nucleo-retrieval/plan.md`,
-FEAT-002 `specs/002-rag-baseline/plan.md`, FEAT-003-D `specs/006-nucleo-wiki-deterministico/plan.md`.
+`specs/010-query-congiunta-e-upsert-index/plan.md` (pezzi D residui di FEAT-003 — query congiunta
+multi-collezione codice+wiki nella facade + sottocomando `upsert-index` nella CLI wiki). In `master`:
+FEAT-001 `specs/001-nucleo-retrieval/plan.md`, FEAT-002 `specs/002-rag-baseline/plan.md`,
+FEAT-003-D `specs/006-nucleo-wiki-deterministico/plan.md`, FEAT-MCP `specs/007-mcp-sertor-core/plan.md`.
 <!-- SPECKIT END -->

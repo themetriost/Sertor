@@ -43,15 +43,26 @@ conoscere store/embeddings. Espone tre ricerche, distinte solo dal filtro `DocTy
 
 - `search_code(query, k)` → solo codice
 - `search_docs(query, k)` → sola documentazione
-- `search_combined(query, k)` → entrambi
+- `search_combined(query, k)` → entrambi; con **corpora extra** configurati fa anche il **fan-out
+  multi-collezione** (vedi sotto)
 
 Ogni ricerca embedda la query, interroga lo store per il top-k, emette un log e ritorna
 `list[RetrievalResult]`.
+
+**Fan-out multi-collezione ([[spec-010-query-congiunta-e-upsert-index|feature 010]]).** Se `Settings.extra_corpora` (`SERTOR_EXTRA_CORPORA`, es.
+`wiki`) dichiara corpora aggiuntivi, `search_combined` interroga **tutte** le collezioni bersaglio (la
+query è embeddata una sola volta) e **fonde i top-k per score**, con tie-break deterministico per
+`chunk_id` e al più `k` risultati totali. Solo la combinata fa fan-out: `search_code`/`search_docs`
+restano a singola collezione. I consumatori non cambiano: `build_facade()` deriva le collezioni extra
+dalla config con lo stesso naming `(corpus, provider)`.
 
 **Tolleranza sull'indice assente (policy voluta).** Se la collezione non esiste, la facade ritorna **`[]` con
 un warning**, senza eccezioni (REQ-028): è la faccia *tollerante* del nucleo, pensata per la composabilità —
 da non confondere con la policy *strict* del motore [[vector-retrieval|baseline]] (che invece solleva), scelta
 per l'usabilità del consumatore. La differenza è [[deterministic-vs-judgment|deliberata e non va uniformata]].
+**Unica deroga** (decisa nel clarify della feature 010): un corpus extra indicizzato con un **altro
+provider** di embeddings fa fallire la combinata con `ProviderMismatchError` — gli score di spazi
+vettoriali diversi non si fondono; meglio nessuna risposta che una fusione fuorviante.
 
 ## Vedi anche
 - Le entità in transito: [[domain-model]].
