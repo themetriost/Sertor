@@ -34,17 +34,20 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- *(nessuna voce in corso — scegliere il prossimo PLANNED)*. **Coda residua di sessione (2026-06-10):**
-  riavviare il **server MCP** (nuova sessione: il processo live gira col codice pre-feature-010). La
-  questione duplicati è **risolta con D-21** (modello a corpus unico: il wiki sta *dentro* il corpus
-  primario by design, `SERTOR_EXTRA_CORPORA` rimossa; il fan-out resta per ospiti con corpora disgiunti).
+- *(nessuna voce in corso — i tre Must sono consegnati: scegliere il prossimo PLANNED)*. Nessuna coda
+  residua: server MCP riavviato (sessione 2026-06-10, serve il codice post-feature-010), corpus `sertor`
+  fresco (210 doc / 1810 chunk).
 
 ### 📋 PLANNED (per priorità)
-- ~~Wiki FEAT-003~~ → **✅ COMPLETATA il 2026-06-10** (vedi DONE): tutti e tre i Must dell'epica consegnati.
-- **Nuovi motori RAG:** FEAT-004 ibrido+reranking · FEAT-005 GraphRAG · FEAT-006 agentico · FEAT-007 manutenzione wiki.
-- **CLI `sertor`** (epica `sertor-cli`, da reimplementare su master) — **include il pezzo (2) `sertor wiki init`**:
-  la capacità `init_structure` esiste già in `wiki_tools`, manca solo l'esposizione top-level → naturale dentro la
-  rinascita della CLI · misurare la pertinenza (xfail).
+- **FEAT-004 ibrido+reranking** — candidato naturale: migliora la qualità di `search_code` (debolezza
+  nota) e la ricetta è già in casa (BM25+vector fusi con RRF, ingerita da [[llm-wiki-v2-agentmemory]]).
+- **FEAT-005 GraphRAG · FEAT-006 agentico** — gli altri due motori, da decomporre.
+- **FEAT-007 manutenzione wiki** — parte con dote ricca: probe di freschezza (ex N5), helper
+  `move`-con-link (ex N9), op *reconcile* delle obsolescenze (idea utente 2026-06-10), seed
+  `structure init` localizzato.
+- **CLI `sertor`** (epica `sertor-cli`, da reimplementare su master) — include `sertor wiki init`
+  (capacità già in `wiki_tools`, con opzione `--depth` dai preset di `generate`).
+- **Misurare la pertinenza** (chiudere i 2 xfail con ground-truth reale).
 
 ### ✅ DONE (su `master`, le rilevanti)
 
