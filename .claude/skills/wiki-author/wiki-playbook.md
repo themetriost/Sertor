@@ -187,7 +187,7 @@ eseguibili anche dal `curator` in background; il lint **B/C**, `distill`, `reorg
 | `query` | [`ops/query.md`](ops/query.md) | rispondi a una domanda sul wiki (archivia se prezioso) | curator OK |
 | `lint` | [`ops/lint.md`](ops/lint.md) | coerenza a 3 livelli: A strutturale · B semantico · C organizzativo | A: curator · B/C: solo Opus |
 | `reorg` | [`ops/reorg.md`](ops/reorg.md) | applica il refactoring organizzativo del lint C (su conferma) | solo Opus |
-| `generate` | [`ops/generate.md`](ops/generate.md) | genera il wiki dal repo: **da-zero** (bootstrap su ospite privo di wiki, N3) o **da-diff** (incrementale: solo le pagine impattate dalle modifiche recenti) | solo Opus |
+| `generate` | [`ops/generate.md`](ops/generate.md) | genera il wiki dal repo: **da-zero** (bootstrap su ospite privo di wiki, N3) o **da-diff** (incrementale: solo le pagine impattate dalle modifiche recenti); profondità di ricognizione a preset (`leggera`/`media`/`massiva`, default leggera) | solo Opus |
 | `rag-sync` | [`ops/rag-sync.md`](ops/rag-sync.md) | re-indicizza il wiki nel RAG (ruolo "corpus" di DA-W1) | solo Opus |
 | `structure` | [`ops/structure.md`](ops/structure.md) | bootstrap idempotente della struttura | curator/CLI |
 

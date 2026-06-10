@@ -1,6 +1,6 @@
 ---
 description: Consolida nel wiki locale il lavoro della sessione (record/distill/ingest/query/lint/reorg/generate/rag-sync)
-argument-hint: "[operazione e/o ambito, es. 'lint', 'distill <brief conversazione>', 'ingest https://...', 'rag-sync']"
+argument-hint: "[operazione e/o ambito, es. 'lint', 'generate media', 'distill <brief conversazione>', 'ingest https://...', 'rag-sync']"
 ---
 
 Mantieni l'**LLM Wiki** del progetto. Ambito/operazione richiesti: $ARGUMENTS
@@ -23,7 +23,8 @@ Procedi così:
    vecchia/esterna — mai il transcript grezzo: condensa prima) · `ingest` · `query` · `lint` (livelli A
    strutturale / B semantico / C organizzativo) ·
    `reorg` (applica il refactoring organizzativo del lint C, su conferma) · `generate` (da-zero su ospite
-   privo di wiki, o da-diff incrementale — il default) · `rag-sync`.
+   privo di wiki, o da-diff incrementale — il default; profondità `leggera`/`media`/`massiva` come
+   argomento, default leggera) · `rag-sync`.
    Poi fai `Read` **solo del modulo `ops/<operazione>.md`** corrispondente (vedi tabella §5 del playbook).
 3. **Esegui la procedura corrispondente** del modulo (input → passi → output), rispettandone i vincoli —
    in particolare: il flusso principale ha **Bash** per le op pesanti; il `generate` da-diff delega
