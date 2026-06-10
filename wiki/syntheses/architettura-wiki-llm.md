@@ -113,10 +113,10 @@ del 2026-06-06 (`syntheses/` da 16/20 a una distribuzione 4/3/9/4). Dettagli:
 | Ponte D→N (layer agentico host-agnostico + rename author/curator) | ✅ mergiato (PR #14) |
 | Fix hook Stop (systemMessage schema-valido) | ✅ mergiato (PR #14) |
 | [[server-mcp-produzione-feat-mcp|`sertor_mcp`]] (RAG dell'ospite, FEAT-MCP) | ✅ mergiato (PR #15); `.mcp.json` ri-puntato alla produzione (corpus `sertor`) |
-| N5 lint semantico — metodo + audit globale 4 `kind` (PR #16) | ◑ in corso (metodo sì, esercitato; probe deterministici no) |
-| N9 lint organizzativo + `reorg` — metodo + esercitato (reorg 2026-06-06) | ◑ in corso |
-| N1 record-contenuto — metodo «livello di significato» (page-craft) | ◑ in corso (metodo sì, da esercitare) |
-| N2 distillazione — operazione `distill` + standing nel rituale (esercitata su FEAT-001, 2026-06-08) | ✅ fatto |
+| N5 lint semantico — metodo + audit globale 4 `kind` (PR #16) | ↗ a FEAT-007 (2026-06-10): metodo in uso quotidiano; il completamento (probe deterministici FR-036/037) va con la manutenzione |
+| N9 lint organizzativo + `reorg` — metodo + esercitato (2026-06-06 e 2026-06-10) | ↗ a FEAT-007 (2026-06-10): residuo = helper `move`-con-link |
+| N1 record-contenuto — metodo «livello di significato» (page-craft) | ✅ completa (2026-06-10): metodo esercitato a ogni step; write-back in CLI (PR #18/#20) → offload pieno |
+| N2 distillazione — operazione `distill` + standing nel rituale (esercitata su FEAT-001, 2026-06-08) | ✅ completa (2026-06-10): `distill` generalizzata a **tre ingressi** (step · backlog · **brief di conversazione intera**, anche vecchia → [[diary-vs-graph]]); chiude REQ-030..033 |
 | N8 orchestrazione/trigger (`generate-from-diff` + `/wiki`) | ✅ completa come procedura (2026-06-09, D-19) |
 | N7 gate al commit | ⛔ deleted by design (2026-06-09, D-20) |
 | Pezzi codice D residui: **query congiunta multi-collezione** + **`upsert-index` in CLI** (feature 010) | ✅ implementati (2026-06-10, PR #20 — record: [[spec-010-query-congiunta-e-upsert-index]]) |
@@ -131,7 +131,7 @@ Grafo delle dipendenze (cosa sblocca cosa):
                        │
                        ├─► ✅ 1a  Scope completo (write-back index in CLI, feature 010) ─► N1 record (offload pieno)
                        ├─► ✅ 2a  FR-004 trigger RISOLTO (D-19: comando manuale /wiki) ─► ✅ N8 generate-from-diff (procedura)
-                       ├─► 3   Operazioni di contenuto: N1 · N2(✅) · N3 · N4(ingest→sources/, D-18)
+                       ├─► 3   Operazioni di contenuto: N1(✅) · N2(✅) · N3 · N4(ingest→sources/, D-18)
                        ├─► 4   N6 verità/autorità/obsolescenza · ⛔ N7 gate ELIMINATO (D-20)
                        └─► ✅ 5a sertor_mcp (PR #15) + indice corpus `sertor` COSTRUITO (FEAT-009) → dogfood vivo
 ```
@@ -141,13 +141,13 @@ Grafo delle dipendenze (cosa sblocca cosa):
 | **5a** | `sertor_mcp` — RAG dell'ospite | **codice** (componente) | ✅ **FATTO** (PR #15, SpecKit completo) | — | — |
 | **1a** | Scope completo: write-back in CLI (+ formato index, vedi nota sui write-back) | **codice** (D) | ✅ **FATTO** (feature 010, 2026-06-10: `upsert-index` cablata; sommario resta LLM-authored) | — | — |
 | **2a** | FR-004: trigger | **decisione** | ✅ **RISOLTA (2026-06-09, D-19)**: comando manuale `/wiki`, ambito = ultimo commit | — | — |
-| **3a** | N1 record-contenuto (autorship) | giudizio (N) | ❌ build, non spec | Media | 1a (migliora) |
-| **3b** | N2 distillazione sessione→pagina — operazione `distill` + rituale | giudizio (N) | ✅ **FATTO** (2026-06-08, pilota FEAT-001) | — | — |
+| **3a** | N1 record-contenuto (autorship) | giudizio (N) | ✅ **COMPLETA** (2026-06-10: metodo esercitato + write-back in CLI, PR #18/#20) | — | — |
+| **3b** | N2 distillazione sessione→pagina — operazione `distill` + rituale | giudizio (N) | ✅ **COMPLETA** (2026-06-08 pilota FEAT-001; 2026-06-10 generalizzata a tre ingressi, incl. conversazione intera — SC-3f esercitato: [[diary-vs-graph]]) | — | — |
 | **3c** | N3 generazione dal repo (Karpathy) | giudizio (N) | ❌ build | Bassa | — |
 | **3d** | N4 ingest (fonte→riassunto in `sources/`, D-18) | giudizio (N) | ❌ build | Bassa | — |
 | **4a** | N6 verità/autorità/obsolescenza | misto (D segnali + N decisione) | ◑ solo metà-D | Bassa | — |
 | ~~**4b**~~ | ~~N7 gate al commit~~ | — | ⛔ **DELETED BY DESIGN (2026-06-09, D-20)**: incoerente col trigger manuale post-commit; lint/freschezza restano non bloccanti | — | — |
-| **1b** | N5 variante (c): probe deterministici in `wiki_tools` | codice (D) | ◑ EARS-abile, valore incerto | Bassa | N5 |
+| **1b** | N5 variante (c): probe deterministici in `wiki_tools` | codice (D) | ↗ **a FEAT-007** (2026-06-10, con N5/N9) | — | N5 |
 
 **Principio di processo** (vedi [[constitution]] e la regola "calibra al valore"): **EARS è il bisturi
 sul lato D** (componenti/contratti con "done" testabile, soprattutto `sertor_mcp`); **sul lato N si

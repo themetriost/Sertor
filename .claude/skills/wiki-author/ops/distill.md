@@ -7,13 +7,23 @@
 > pagina-entità** [`../page-craft.md`](../page-craft.md). Qui solo la procedura specifica.
 
 La distillazione è il **duale** di `record`: se `record` cattura l'**evento datato**, `distill` ne estrae la
-**conoscenza durevole** in pagine-entità proprie, così non resta sepolta nel diario di sessione. Si esegue
-come **secondo tempo del rituale di step** (subito dopo `record`, vedi `CLAUDE.md`) e, su richiesta, **sul
-backlog** — per distillare un vecchio record già grasso. Il **caso tipico** è una **feature appena
-implementata**: il suo record nasce *magro per costruzione* (evento + esito + puntatori), le entità in pagine.
+**conoscenza durevole** in pagine-entità proprie, così non resta sepolta nel diario di sessione. Tre
+**ingressi**, stesso giudizio:
+
+- **di step** (il caso tipico): secondo tempo del rituale (subito dopo `record`, vedi il rituale dell'ospite;
+  profilo Sertor: `CLAUDE.md`) — una **feature appena implementata**: il record nasce *magro per costruzione*
+  (evento + esito + puntatori), le entità in pagine;
+- **da backlog**, su richiesta: un vecchio record già grasso da assottigliare;
+- **da conversazione** (REQ-030..033 di FEAT-003): il **brief condensato** di una conversazione/sessione
+  **intera** — anche vecchia, mai registrata in tempo reale, o avvenuta altrove — da riversare nel grafo.
+  **Mai il transcript grezzo**: chi invoca condensa prima (REQ-030, l'input arriva già pre-elaborato).
+  È il *paracadute* per quando il rituale non c'era. Se il brief contiene anche **eventi** non a diario
+  (lavoro svolto mai registrato), un `record` contestuale li cattura: `distill` scrive il durevole nel
+  grafo, non fa cronaca.
 
 1. **Materiale di partenza.** Il lavoro appena svolto (codice toccato + il record `experiment` appena
-   scritto) oppure — in modalità backlog — una pagina grassa esistente da distillare. `collect --json` per
+   scritto), oppure — in modalità backlog — una pagina grassa esistente da distillare, oppure — in modalità
+   conversazione — il brief condensato di una sessione (decisioni, concetti, esiti). `collect --json` per
    sapere quali entità hanno già una pagina (anti-duplicato).
 2. **Enumera i candidati-entità.** Dal materiale, elenca i costrutti con **identità propria**: entità di
    dominio, porte/contratti, adapter, servizi, decisioni architetturali, tecnologie (la *lente di prodotto*

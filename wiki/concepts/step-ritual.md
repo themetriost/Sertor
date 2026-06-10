@@ -53,7 +53,9 @@ Codificato in `CLAUDE.md`. A fine di ogni step significativo, di propria iniziat
 1. **Registra** — `record`: appende la voce nel **file del giorno** `wiki/log/<data>.md` (rotazione,
    FEAT-008, via `append-log`) + pagine impattate e `index.md`.
 2. **Distilla le entità** — estrai in pagine proprie (`concepts/`/`tech/`) le entità/concetti durevoli che
-   lo step ha fatto emergere (operazione `distill`, N2); il record datato resta magro e vi punta.
+   lo step ha fatto emergere (operazione `distill`, N2); il record datato resta magro e vi punta. È il
+   *travaso* dal diario al grafo (vedi [[diary-vs-graph]]); dal 2026-06-10 `distill` accetta anche il brief
+   di una **conversazione intera** (anche vecchia) come ingresso on-demand, oltre allo step del rituale.
 3. **Lint semantico di allineamento** — confronta il contenuto del wiki con la realtà del repo (`src/`,
    `specs/`, `requirements/`, stato git) e segnala ogni claim contraddetto.
 4. **Executive summary della roadmap** (dal 2026-06-09) — tieni vero il blocco executive in testa a

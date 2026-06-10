@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-10 (riconciliazione tracker FEAT-003-N: N1 record completa, N5+N9 spostate a FEAT-007, N2 resta in FEAT-003; feature 010 mergiata, PR #20; D-21 corpus unico)
+updated: 2026-06-10 (FEAT-003-N: N1 e N2 complete — distill generalizzata a tre ingressi, pagina diary-vs-graph; N5+N9 a FEAT-007; restano N3/N4/N6; feature 010 mergiata, PR #20; D-21 corpus unico)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md"]
 ---
 
@@ -40,8 +40,8 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   primario by design, `SERTOR_EXTRA_CORPORA` rimossa; il fan-out resta per ospiti con corpora disgiunti).
 
 ### 📋 PLANNED (per priorità)
-- **Wiki FEAT-003, operazioni-giudizio N:** N2 (distillazione di conversazione intera) · N3 (generazione
-  dal repo) · N4 (ingest → `sources/`) · N6 (verità/autorità/obsolescenza).
+- **Wiki FEAT-003, operazioni-giudizio N:** N3 (generazione dal repo) · N4 (ingest → `sources/`) ·
+  N6 (verità/autorità/obsolescenza). *(N2 chiusa il 2026-06-10 per generalizzazione di `distill`.)*
 - **Nuovi motori RAG:** FEAT-004 ibrido+reranking · FEAT-005 GraphRAG · FEAT-006 agentico · FEAT-007 manutenzione wiki.
 - **CLI `sertor`** (epica `sertor-cli`, da reimplementare su master) — **include il pezzo (2) `sertor wiki init`**:
   la capacità `init_structure` esiste già in `wiki_tools`, manca solo l'esposizione top-level → naturale dentro la
@@ -103,7 +103,7 @@ Legenda: ✅ su master · 🧪 operativo, consolidamento formale aperto · 💀 
 |---|---|---|---|---|
 | FEAT-001 | Nucleo di retrieval (ingestione, chunking code-aware, embeddings, vector store, facade) | Must | ✅ | `specs/001`, `src/sertor_core` |
 | FEAT-002 | Motore RAG vettoriale (baseline) | Must | ✅ | `specs/002`, `engines/baseline` |
-| FEAT-003 | Skill: creare/indicizzare l'LLM Wiki | Must | 🧪 operativo (D+N su master); scope snellito 2026-06-09 (D-18/19/20; N8 completa). **Pezzi codice D chiusi** (feature 010, `specs/010`, PR #20: query congiunta + `upsert-index` CLI — [[spec-010-query-congiunta-e-upsert-index]]). Restano le operazioni N2/N3/N4/N6 | vedi sotto |
+| FEAT-003 | Skill: creare/indicizzare l'LLM Wiki | Must | 🧪 operativo (D+N su master); scope snellito 2026-06-09 (D-18/19/20; N8 completa). **Pezzi codice D chiusi** (feature 010, `specs/010`, PR #20: query congiunta + `upsert-index` CLI — [[spec-010-query-congiunta-e-upsert-index]]). Restano le operazioni N3/N4/N6 (N2 chiusa 2026-06-10: `distill` generalizzata al brief di conversazione intera) | vedi sotto |
 | — FEAT-003-D | …nucleo **deterministico** (`wiki_tools` + `wiki.config.toml`) | Must | ✅ | `specs/006` (PR #13), `src/sertor_core/wiki_tools` |
 | — FEAT-003-N | …operazioni **assistite da LLM** (record/distill/lint/ingest) | Must | ✅ come **skills/playbook** (giudizio ≠ codice) | `.claude/skills/wiki-author`, `/wiki`, `wiki-curator` |
 | FEAT-MCP | Server MCP di produzione (`sertor_mcp`, superficie su `build_facade`) | Should | ✅ | `specs/007` (PR #15) |

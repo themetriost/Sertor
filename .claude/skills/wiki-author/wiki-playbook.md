@@ -182,7 +182,7 @@ eseguibili anche dal `curator` in background; il lint **B/C**, `distill`, `reorg
 | Operazione | Modulo (`Read` on-demand) | Cosa fa | Esecutore |
 |---|---|---|---|
 | `record` | [`ops/record.md`](ops/record.md) | registra lavoro/decisione svolti | curator OK |
-| `distill` | [`ops/distill.md`](ops/distill.md) | estrae le entità/concetti durevoli in pagine proprie; assottiglia i record datati | solo Opus |
+| `distill` | [`ops/distill.md`](ops/distill.md) | estrae le entità/concetti durevoli in pagine proprie (ingressi: step appena svolto · record grasso dal backlog · brief di una conversazione intera, anche vecchia); assottiglia i record datati | solo Opus |
 | `ingest` | [`ops/ingest.md`](ops/ingest.md) | acquisisci una fonte esterna → `sources/` | curator OK |
 | `query` | [`ops/query.md`](ops/query.md) | rispondi a una domanda sul wiki (archivia se prezioso) | curator OK |
 | `lint` | [`ops/lint.md`](ops/lint.md) | coerenza a 3 livelli: A strutturale · B semantico · C organizzativo | A: curator · B/C: solo Opus |

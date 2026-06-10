@@ -1,6 +1,6 @@
 ---
-description: Consolida nel wiki locale il lavoro della sessione (record/ingest/query/lint/reorg/generate-from-diff/rag-sync)
-argument-hint: "[operazione e/o ambito, es. 'lint', 'ingest https://...', 'rag-sync', 'esperimento 01']"
+description: Consolida nel wiki locale il lavoro della sessione (record/distill/ingest/query/lint/reorg/generate-from-diff/rag-sync)
+argument-hint: "[operazione e/o ambito, es. 'lint', 'distill <brief conversazione>', 'ingest https://...', 'rag-sync']"
 ---
 
 Mantieni l'**LLM Wiki** del progetto. Ambito/operazione richiesti: $ARGUMENTS
@@ -19,7 +19,9 @@ Procedi così:
 1. Leggi il **playbook** (indice), poi l'indice e la coda del log del wiki (nomi-file da config) per lo stato
    attuale; usa `uv run sertor-wiki-tools collect --json` per l'inventario meccanico delle pagine.
 2. **Determina l'operazione** da `$ARGUMENTS` o dal lavoro di sessione, tra:
-   `record` · `ingest` · `query` · `lint` (livelli A strutturale / B semantico / C organizzativo) ·
+   `record` · `distill` (entità durevoli da step, backlog o **brief di una conversazione intera**, anche
+   vecchia/esterna — mai il transcript grezzo: condensa prima) · `ingest` · `query` · `lint` (livelli A
+   strutturale / B semantico / C organizzativo) ·
    `reorg` (applica il refactoring organizzativo del lint C, su conferma) · `generate-from-diff` · `rag-sync`.
    Poi fai `Read` **solo del modulo `ops/<operazione>.md`** corrispondente (vedi tabella §5 del playbook).
 3. **Esegui la procedura corrispondente** del modulo (input → passi → output), rispettandone i vincoli —
