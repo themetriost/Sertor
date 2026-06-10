@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-10 (avviati i pezzi D 1+3 del wiki: requirements scritti → IN PROGRESS, prossimo passo specify; pezzo 2 → epica CLI; startup chiuso → DONE; reconcilia numerazione epica↔spec; FEAT-009 indice dogfood; D-18/19/20 snelliscono lo scope wiki)
+updated: 2026-06-10 (feature 010 MERGIATA su master, PR #20: pezzi D di FEAT-003 chiusi → DONE; IN PROGRESS vuoto; regola standing di re-index; code residue: riavvio MCP + decisione esclusione wiki/ dal corpus primario)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md"]
 ---
 
@@ -14,7 +14,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > `requirements → spec → plan → tasks → implement`.
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-06-09)
+## ⚡ Executive summary (stato al 2026-06-10)
 
 ### 📊 Roadmap a colpo d'occhio
 
@@ -22,7 +22,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 |---|---|---|
 | Nucleo retrieval (FEAT-001) | Must | ✅ master |
 | Motore baseline (FEAT-002) | Must | ✅ master |
-| Wiki LLM (FEAT-003) | Must | 🧪 operativo · pezzi codice D aperti |
+| Wiki LLM (FEAT-003) | Must | 🧪 operativo · pezzi D chiusi (feature 010) · restano operazioni N |
 | Server MCP (FEAT-MCP) | Should | ✅ master |
 | RAG ibrido + reranking (FEAT-004) | Should | 📋 da decomporre |
 | GraphRAG (FEAT-005) | Should | 📋 da decomporre |
@@ -34,21 +34,10 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- **Wiki FEAT-003 — due pezzi D deterministici (query congiunta + `upsert-index` in CLI), SpecKit completo.**
-  - **Cosa:** (1) *query congiunta multi-collezione* — `search_combined` fa fan-out su corpus primario +
-    `SERTOR_EXTRA_CORPORA` e fonde i top-k per score (`ProviderMismatchError` su provider eterogenei,
-    `list_collections` nuova capacità di porta). (2) *`upsert-index` in CLI* — sottocomando idempotente
-    (`--page` + `--summary`/stdin, contratto `wiki.upsert_index/1`), sommario LLM-authored.
-  - **Dove:** branch `010-query-congiunta-e-upsert-index` — **SpecKit completo ESEGUITO**: requirements ✅
-    spec+clarify ✅ (4 decisioni) · plan ✅ (Constitution 10/10) · tasks ✅ (22/22) · analyze ✅ (GO) ·
-    **implement ✅** (suite `not cloud` 159 verdi + 2 xfail, ruff pulito; validato live sul dogfood:
-    collezione `wiki__azure_text_embedding_3_large` costruita, 49 doc, fusione codice+wiki verificata).
-  - **Prossimo passo:** **mergiare la PR #20** (https://github.com/themetriost/Sertor/pull/20, aperta il
-    2026-06-10); post-merge: riavvio del server MCP + config dogfood (`SERTOR_EXTRA_CORPORA=wiki` nel `.env`,
-    valutare esclusione di `wiki/` dal corpus primario).
-  - **Blocco/decisione aperta:** nessuno. Nota emersa dal dogfood: il corpus primario `sertor` indicizza
-    anche `wiki/` → quasi-duplicati tra le collezioni nella combinata; valutare l'esclusione di `wiki/` dal
-    corpus primario via `SERTOR_EXCLUDE_PATTERNS` (scelta di config dell'ospite, non codice).
+- *(nessuna voce in corso — scegliere il prossimo PLANNED)*. **Code residue di sessione (2026-06-10):**
+  riavviare il **server MCP** (nuova sessione: il processo live gira col codice pre-feature-010) e
+  **decidere** se escludere `wiki/` dal corpus primario (`SERTOR_EXCLUDE_PATTERNS`) per eliminare i
+  quasi-duplicati nella combinata.
 
 ### 📋 PLANNED (per priorità)
 - **Wiki FEAT-003, operazioni-giudizio N:** N3 (generazione dal repo) · N4 (ingest → `sources/`) ·
@@ -63,8 +52,12 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 - Nucleo retrieval (FEAT-001) · motore baseline (FEAT-002) · server MCP (FEAT-MCP).
 - Wiki LLM (FEAT-003) operativo: nucleo deterministico `wiki_tools` + operazioni-giudizio come skills/playbook;
   `generate-from-diff` (N8), trigger manuale `/wiki` (D-19), gate eliminato (D-20), cartelle-input rimosse (D-18).
+- **Query congiunta multi-collezione + `upsert-index` in CLI** (feature 010, `specs/010`, PR #20 mergiata il
+  2026-06-10): `search_combined` fonde codice+wiki (`SERTOR_EXTRA_CORPORA`, fail-fast su provider eterogenei);
+  write-back dell'indice cablato. I pezzi D di FEAT-003 sono chiusi.
 - Lavori abilitanti: decoupling store↔embeddings (`specs/009`) · meccanica log (`specs/008`) · indice dogfood
-  `sertor` vivo via MCP.
+  `sertor` vivo via MCP · **regola standing di re-index dei corpora** a fine step (2026-06-10, mitiga la
+  FEAT-009 d'epica).
 - **Startup di sessione**: hook SessionStart **sottile** (direttiva-`Read`, ~630 B) che fa caricare roadmap/index/log
   al flusso principale e mostrare l'executive summary — supera il cap ~10K del canale-hook (verificato in sessione 2026-06-09).
 <!-- EXEC:END -->
@@ -83,18 +76,20 @@ riproducibile e production-grade. **Una sola verità interrogabile**: sorgenti (
   (meccanica del log) e `specs/009` (decoupling store) sono **lavori abilitanti** sul nucleo/wiki-tools,
   **non** le FEAT-008/009 dell'epica (arricchimento Wiki↔RAG / refresh incrementale, ancora da decomporre).
 
-## Stato in breve (al 2026-06-09)
+## Stato in breve (al 2026-06-10)
 
 - **Su `master`** (l'unico asset reale): nucleo di retrieval + motore baseline + **wiki** (metà
   deterministica `wiki_tools` **in codice** + metà giudizio **come skills/playbook** in `.claude/`) +
-  **server MCP**, più due lavori abilitanti (meccanica log, decoupling store/embeddings).
-- **Dogfooding di produzione VIVO**: il corpus `sertor` è **indicizzato** (191 doc / 1578 chunk, embeddings
-  Azure `text-embedding-3-large` + store Chroma locale) e **servito dal server MCP** `sertor-rag`.
+  **server MCP** + **query congiunta multi-collezione** e `upsert-index` in CLI (feature 010), più i
+  lavori abilitanti (meccanica log, decoupling store/embeddings, regola di re-index).
+- **Dogfooding di produzione VIVO**: due collezioni nello store `.index-sertor/` — corpus `sertor`
+  (207 doc / 1778 chunk) e corpus `wiki` (49 doc), embeddings Azure `text-embedding-3-large` + Chroma
+  locale; con `SERTOR_EXTRA_CORPORA=wiki` la combinata le **fonde**. Servito dal server MCP `sertor-rag`.
 - **Rami abbandonati (NON su `master` → non contano come asset):** la **CLI `sertor`** (`specs/004` — su
   master ci sono solo i *requirements*, zero codice `sertor_cli`) e i tentativi *in codice* di FEAT-003-N
   (`specs/003`/`005`, superati dall'approccio a skills). Oggi il prodotto è usabile come **libreria + MCP**,
   **non** come CLI.
-- Qualità: **135 test verdi** (+2 xfail di misura), ruff pulito; ogni feature su master passata col
+- Qualità: **159 test verdi** (+2 xfail di misura), ruff pulito; ogni feature su master passata col
   **Constitution Check** (costituzione v1.1.0, 10 principi).
 
 ## Mappa delle feature (epica `sertor-core`) & stato reale
@@ -105,7 +100,7 @@ Legenda: ✅ su master · 🧪 operativo, consolidamento formale aperto · 💀 
 |---|---|---|---|---|
 | FEAT-001 | Nucleo di retrieval (ingestione, chunking code-aware, embeddings, vector store, facade) | Must | ✅ | `specs/001`, `src/sertor_core` |
 | FEAT-002 | Motore RAG vettoriale (baseline) | Must | ✅ | `specs/002`, `engines/baseline` |
-| FEAT-003 | Skill: creare/indicizzare l'LLM Wiki | Must | 🧪 operativo (D+N su master); scope snellito 2026-06-09 (D-18 no `manual_edited`/`ingested_sources`; D-19 trigger = `/wiki` manuale; D-20 gate eliminato; N8 `generate-from-diff` completa). Restano pezzi codice D | vedi sotto |
+| FEAT-003 | Skill: creare/indicizzare l'LLM Wiki | Must | 🧪 operativo (D+N su master); scope snellito 2026-06-09 (D-18/19/20; N8 completa). **Pezzi codice D chiusi** (feature 010, `specs/010`, PR #20: query congiunta + `upsert-index` CLI — [[spec-010-query-congiunta-e-upsert-index]]). Restano le operazioni N3/N4/N6 | vedi sotto |
 | — FEAT-003-D | …nucleo **deterministico** (`wiki_tools` + `wiki.config.toml`) | Must | ✅ | `specs/006` (PR #13), `src/sertor_core/wiki_tools` |
 | — FEAT-003-N | …operazioni **assistite da LLM** (record/distill/lint/ingest) | Must | ✅ come **skills/playbook** (giudizio ≠ codice) | `.claude/skills/wiki-author`, `/wiki`, `wiki-curator` |
 | FEAT-MCP | Server MCP di produzione (`sertor_mcp`, superficie su `build_facade`) | Should | ✅ | `specs/007` (PR #15) |

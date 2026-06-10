@@ -16,8 +16,8 @@ sources: [
 Record datato (2026-06-10) della feature **`specs/010`**: i due **pezzi deterministici (D) residui
 della feature Wiki (FEAT-003** dell'epica — *non* confondere col numero di spec, vedi il banner "due
 numerazioni" in [[roadmap]]), portati da requirements a implementazione in un **unico flusso SpecKit
-completo** nella stessa giornata. Branch `010-query-congiunta-e-upsert-index`, **PR #20** aperta verso
-`master`.
+completo** nella stessa giornata. Branch `010-query-congiunta-e-upsert-index`, **PR #20 mergiata su
+`master`** lo stesso giorno (merge `74783db`).
 
 ## Contesto
 
@@ -58,12 +58,13 @@ Nuova regola in `CLAUDE.md` (sezione *Domande all'utente*, nata durante il clari
 preceduta dal **contesto** (origine del problema, implicazioni concrete delle opzioni, raccomandazione
 motivata) — mai opzioni "secche".
 
-## Aperto (post-merge della PR #20)
+## Post-merge (2026-06-10)
 
-- Riavvio del **server MCP** per servire il nuovo codice.
-- Config dogfood: `SERTOR_EXTRA_CORPORA=wiki` nel `.env`; valutare l'**esclusione di `wiki/` dal corpus
-  primario** (`SERTOR_EXCLUDE_PATTERNS`) — oggi il corpus `sertor` indicizza anche `wiki/` → quasi-duplicati
-  nella combinata (deliberato: niente dedup, R5 YAGNI).
+- ✅ `SERTOR_EXTRA_CORPORA=wiki` nel `.env`: la combinata fonde codice+wiki **dalla sola config**
+  (verificato live post-merge); entrambi i corpora ri-costruiti (regola di re-index, momento obbligato).
+- ☐ Riavvio del **server MCP** per servire il nuovo codice (alla prossima sessione).
+- ☐ Decidere l'**esclusione di `wiki/` dal corpus primario** (`SERTOR_EXCLUDE_PATTERNS`) — il corpus
+  `sertor` indicizza anche `wiki/` → quasi-duplicati nella combinata (deliberato: niente dedup, R5 YAGNI).
 
 ## Artefatti
 
