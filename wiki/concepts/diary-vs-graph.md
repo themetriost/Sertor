@@ -56,6 +56,8 @@ Il travaso ha un solo giudizio (filtrare il durevole dall'effimero) ma tre prove
 
 ## Vedi anche
 
+- [[karpathy-llm-wiki]] — la fonte fondativa: log append-only greppabile + pagine compounding sono
+  entrambi nel gist originale; [[llm-wiki-v2-agentmemory]] estende il lato "verità" (supersession).
 - [[step-ritual]] — la disciplina che esegue cronaca e travaso a ogni step.
 - [[deterministic-vs-judgment]] — il confine D↔N che fonda la separazione scrivano/cronaca-travaso.
 - [[architettura-wiki-llm]] — dove i tre strati vivono nell'architettura del sistema-wiki.

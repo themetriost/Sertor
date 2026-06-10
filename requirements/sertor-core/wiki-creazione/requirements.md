@@ -248,12 +248,33 @@ system shall produce an output identical to the first run (no duplicate pages, n
 log entries, no modified timestamps on unchanged files).*
 
 ### Gruppo C — Operazione ingest
-*(superato da FR-030/FR-031; la semantica è ridefinita da FEAT-010 D-11)*
 
 > **NOTA (aggiornata 2026-06-09, D-18)**: L'override di FEAT-010 (FR-030/031, ingest→`ingested_sources/`)
 > è stato **rimosso per design**. Torna quindi **operativa** la semantica originale del Gruppo C:
 > **l'ingest scrive un riassunto in `sources/`** (pattern Karpathy). REQ-020..023 sono di nuovo
 > normativi.
+>
+> *(2026-06-10 — fix da audit `kind=requirements`: i testi dei REQ erano stati rimossi quando il gruppo
+> risultava "superato" e la riattivazione D-18 li richiamava solo per riferimento; ripristinati qui sotto
+> dalla storia git, commit `aec4afd`.)*
+
+**REQ-020 (Event-driven)**
+*When an ingest operation is invoked with an external source (text or structured summary), the
+system shall create or update a page in `sources/` containing the source summary, with
+frontmatter including the original source reference.*
+
+**REQ-021 (Event-driven)**
+*When an ingest operation creates or updates a source page, the system shall propagate a
+reference to that source in all directly related thematic pages (`concepts/`, `tech/`) that
+already exist in the wiki.*
+
+**REQ-022 (Event-driven)**
+*When an ingest operation completes, the system shall update `index.md` and append one entry
+to `log.md` with operation type `ingest`.*
+
+**REQ-023 (Unwanted behaviour)**
+*If an ingest operation encounters a source that contradicts a pre-existing wiki page, then
+the system shall explicitly mark the contradiction in the affected page before updating it.*
 
 ### Gruppo D — Distillazione di conversazione/sessione
 *(assorbito invariato da FEAT-003; FEAT-010 D-10)*

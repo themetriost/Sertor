@@ -88,6 +88,11 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 - **[[pulizia-pycache-e-diagnosi-mcp]]** — Record del 2026-06-05: rimossi 16 dir `__pycache__` fantasma + diagnosi architetturale di `.mcp.json`. ⚠️ **Diagnosi superata il 2026-06-06** (banner nella pagina): `sertor_mcp` (PR #15) e `wiki_tools`/FEAT-003-D (PR #13) sono su master, `.mcp.json` ri-puntato alla produzione. *(Spostata da `tech/` a `experiments/`: è un record datato, non una tecnologia.)*
 - **[[retrospettiva-interazione-2026-06-04]]** — Retrospettiva onesta sull'interazione del 2026-06-04 (pattern di ostruzione percepito, radici plausibili, correttivo adottato); separata dal design del rituale per atomicità.
 
+### Sources (riassunti di fonti esterne ingerite)
+
+- **[[karpathy-llm-wiki]]** — La **fonte fondativa** del sistema-wiki: gist originale di Karpathy (aprile 2026) — tre strati (raw/wiki/schema), tre operazioni, indice+log, il claim "sotto ~50-100k token il contesto batte il RAG" (tensione segnalata in [[wiki-role-da-w1]]), radice nel Memex di Bush.
+- **[[llm-wiki-v2-agentmemory]]** — Estensione "grassa" del pattern: memory lifecycle (confidence/supersession/decay), typed knowledge graph, hybrid search con RRF, automazione event-driven + le critiche dei commentatori. Input di design per N6 e FEAT-004/005.
+
 ### Syntheses (viste d'insieme e sintesi trasversali)
 
 - **[[roadmap]]** — 🗺️ **Roadmap & stato di prodotto (pagina viva).** Mappa feature epica × stato reale (master/branch), lavori abilitanti mergiati (incl. FEAT-009 indice dogfood), fasi, backlog e idee da discutere. Reconcilia le due numerazioni (epica `FEAT-NNN` ≠ `specs/NNN`).

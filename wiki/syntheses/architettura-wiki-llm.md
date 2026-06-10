@@ -121,7 +121,8 @@ del 2026-06-06 (`syntheses/` da 16/20 a una distribuzione 4/3/9/4). Dettagli:
 | N3 generazione da-zero — ingresso bootstrap di `generate`, esercitato su ospite esterno (spec-kit) | ✅ completa (2026-06-10): SC-3a/SC-3e ✅, idempotenza ✅, lint ospite 0/0/0/0 |
 | N7 gate al commit | ⛔ deleted by design (2026-06-09, D-20) |
 | Pezzi codice D residui: **query congiunta multi-collezione** + **`upsert-index` in CLI** (feature 010) | ✅ implementati (2026-06-10, PR #20 — record: [[spec-010-query-congiunta-e-upsert-index]]) |
-| N4 (ingest→`sources/`), N6 (operazioni di giudizio) | ☐ da fare |
+| N4 ingest — esercitata su fonte reale (gist Karpathy + v2 → prime 2 pagine `sources/`) | ✅ completa (2026-06-10): REQ-020..023 + SC-010 ✅; tensione RAG-vs-contesto segnalata in [[wiki-role-da-w1]] |
+| N6 (verità/autorità/obsolescenza) | ☐ da fare — input di design dall'ingest: [[llm-wiki-v2-agentmemory]] (supersession esplicita sì, confidence numerica no) |
 
 ## Roadmap
 
@@ -145,8 +146,8 @@ Grafo delle dipendenze (cosa sblocca cosa):
 | **3a** | N1 record-contenuto (autorship) | giudizio (N) | ✅ **COMPLETA** (2026-06-10: metodo esercitato + write-back in CLI, PR #18/#20) | — | — |
 | **3b** | N2 distillazione sessione→pagina — operazione `distill` + rituale | giudizio (N) | ✅ **COMPLETA** (2026-06-08 pilota FEAT-001; 2026-06-10 generalizzata a tre ingressi, incl. conversazione intera — SC-3f esercitato: [[diary-vs-graph]]) | — | — |
 | **3c** | N3 generazione dal repo (Karpathy) | giudizio (N) | ✅ **COMPLETA** (2026-06-10: `generate` a due ingressi; da-zero esercitato su spec-kit, SC-3a/SC-3e) | — | — |
-| **3d** | N4 ingest (fonte→riassunto in `sources/`, D-18) | giudizio (N) | ❌ build | Bassa | — |
-| **4a** | N6 verità/autorità/obsolescenza | misto (D segnali + N decisione) | ◑ solo metà-D | Bassa | — |
+| **3d** | N4 ingest (fonte→riassunto in `sources/`, D-18) | giudizio (N) | ✅ **COMPLETA** (2026-06-10: ingest del gist Karpathy + estensione v2 — [[karpathy-llm-wiki]], [[llm-wiki-v2-agentmemory]]; SC-010 ✅) | — | — |
+| **4a** | N6 verità/autorità/obsolescenza | misto (D segnali + N decisione) | ◑ solo metà-D — input di design: supersession/lifecycle da [[llm-wiki-v2-agentmemory]] | Bassa | — |
 | ~~**4b**~~ | ~~N7 gate al commit~~ | — | ⛔ **DELETED BY DESIGN (2026-06-09, D-20)**: incoerente col trigger manuale post-commit; lint/freschezza restano non bloccanti | — | — |
 | **1b** | N5 variante (c): probe deterministici in `wiki_tools` | codice (D) | ↗ **a FEAT-007** (2026-06-10, con N5/N9) | — | N5 |
 

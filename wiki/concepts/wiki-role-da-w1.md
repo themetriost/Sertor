@@ -37,9 +37,10 @@ Il nodo è che **wiki** e **RAG-sui-sorgenti** sono **DUE LAYER DI CONOSCENZA** 
 Dire *"il wiki è nel corpus del RAG"* significa, letteralmente, che i file `.md` del wiki sono
 tra i documenti ingeriti e spezzati in chunk. Il meccanismo esiste: l'operazione **`rag-sync`**
 indicizza il wiki in un **corpus dedicato** (`[rag] corpus = "wiki"` in `wiki.config.toml`), separato dal
-corpus del codice. Nota: il dogfood di produzione `sertor` indicizza `src/`, `specs/`, `requirements/`,
-`.claude/` (`source_dirs`) — **non** `wiki/`; il wiki-come-corpus è quindi un indice a sé, attivo solo
-dopo un `rag-sync`.
+corpus del codice. Nota (aggiornata 2026-06-10, D-21 — *modello a corpus unico*): il dogfood di produzione
+`sertor` indicizza **anche `wiki/`** come documentazione del corpus primario (il wiki vive dentro l'ospite
+by design); il corpus `wiki` separato di `rag-sync` resta una capacità esercitabile per ospiti con corpora
+davvero disgiunti, non il default.
 
 **SUPERFICIE** (di accesso / retrieval surface) = l'INTERFACCIA con cui si raggiunge la
 conoscenza: quali operazioni e che FORMA hanno i risultati. Esempi:
@@ -97,6 +98,13 @@ Un chunk di wiki pesa come uno di codice nel ranking semantico. Nessun boost spe
 L'**autorevolezza del wiki** deriva dalla **SUPERFICIE strutturata** (come ci si accede),
 non dal ranking RAG. _Non è in tensione_ con l'identità corpus+superficie: il wiki è speciale
 per **COME ci si accede**, non per quanto pesa nella similarità semantica.
+
+> **Conferma dalla fonte fondativa (ingest 2026-06-10, [[karpathy-llm-wiki]]):** il gist originale
+> sostiene che sotto ~50-100k token il wiki-in-contesto **batte il RAG** (retrieval 100%, zero
+> infrastruttura, ragionamento globale) e che il RAG serve solo a scala molto maggiore. Per il wiki *da
+> solo* la nostra scelta è coerente (il canale autorevole è la superficie: indice iniettato, pagine
+> intere); l'ingestion nel RAG (ruolo 3) resta giustificata perché il **corpus unico include il codice**,
+> che è oltre soglia — non per il retrieval del wiki in sé. Tensione segnalata, non contraddizione.
 
 ### Confine MVP (FEAT-003 Must): creare + indicizzare nel RAG
 
