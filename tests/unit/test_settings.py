@@ -55,6 +55,18 @@ def test_store_backend_decouples_from_embeddings(monkeypatch):
     assert s.store_backend == "local"    # store disaccoppiato dal backend di embeddings
 
 
+def test_extra_corpora_default_empty(monkeypatch):
+    # Senza SERTOR_EXTRA_CORPORA la ricerca combinata resta a singola collezione (FR-006).
+    monkeypatch.delenv("SERTOR_EXTRA_CORPORA", raising=False)
+    assert Settings.load(env_file=None).extra_corpora == ()
+
+
+def test_extra_corpora_csv_with_spaces(monkeypatch):
+    # CSV con spazi e voci vuote filtrate (FR-007, riusa _split_env).
+    monkeypatch.setenv("SERTOR_EXTRA_CORPORA", " wiki , docs ,, ")
+    assert Settings.load(env_file=None).extra_corpora == ("wiki", "docs")
+
+
 def test_secrets_are_read_from_env_only(monkeypatch):
     # I segreti arrivano da env; Settings non li scrive da nessuna parte (REQ-032).
     monkeypatch.setenv("AZURE_OPENAI_API_KEY", "super-secret")

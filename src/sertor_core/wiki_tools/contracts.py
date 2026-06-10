@@ -122,6 +122,26 @@ class AppendLogResult:
 
 
 @dataclass(frozen=True)
+class UpsertIndexResult:
+    """`wiki.upsert_index/1` — esito del write idempotente di una riga d'indice (feature 010).
+
+    `action`: `insert` (riga nuova) | `update` (sommario cambiato, riga sostituita in place) |
+    `noop` (riga identica già presente, nessuna scrittura).
+    """
+
+    written: bool
+    action: str
+    page: str
+    schema: str = "wiki.upsert_index/1"
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    def to_json(self) -> str:
+        return _to_json(self.to_dict())
+
+
+@dataclass(frozen=True)
 class MigrateResult:
     """`wiki.migrate/1` — esito dello split retroattivo del log monolitico (FR-009)."""
 

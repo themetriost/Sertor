@@ -40,6 +40,7 @@ class Settings:
     backend: str = "local"                 # local | azure — provider di EMBEDDINGS
     store_backend: str = "local"           # local | azure — backend VECTOR STORE (disaccoppiato)
     corpus: str = "default"                # namespace logico della collezione
+    extra_corpora: tuple[str, ...] = ()    # corpora aggiuntivi per la ricerca combinata (FR-007)
 
     # embeddings: locale (Ollama)
     ollama_host: str = "http://localhost:11434"
@@ -81,6 +82,7 @@ class Settings:
             load_dotenv(env_file, override=True)
 
         excludes = _split_env("SERTOR_EXCLUDE_PATTERNS")
+        extra_corpora = _split_env("SERTOR_EXTRA_CORPORA")
         index_dir = os.getenv("SERTOR_INDEX_DIR")
         backend = os.getenv("RAG_BACKEND", "local")
         return cls(
@@ -90,6 +92,7 @@ class Settings:
             # Azure con store Chroma locale.
             store_backend=os.getenv("SERTOR_STORE_BACKEND", backend),
             corpus=os.getenv("SERTOR_CORPUS", "default"),
+            extra_corpora=tuple(extra_corpora) if extra_corpora is not None else (),
             ollama_host=os.getenv("OLLAMA_HOST", "http://localhost:11434"),
             ollama_embed_model=os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text"),
             azure_openai_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT", ""),

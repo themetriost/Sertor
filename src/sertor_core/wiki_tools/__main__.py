@@ -17,11 +17,12 @@ from sertor_core.wiki_tools.collect import collect
 from sertor_core.wiki_tools.contracts import ErrorResult
 from sertor_core.wiki_tools.lint import lint
 from sertor_core.wiki_tools.profile import load_profile
-from sertor_core.wiki_tools.registry import append_log, migrate_log
+from sertor_core.wiki_tools.registry import append_log, migrate_log, upsert_index
 from sertor_core.wiki_tools.scan import scan
 from sertor_core.wiki_tools.structure import init_structure, validate
 
-_OPS = ("scan", "structure", "validate", "lint", "collect", "index", "append-log", "migrate")
+_OPS = ("scan", "structure", "validate", "lint", "collect", "index", "append-log", "migrate",
+        "upsert-index")
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -60,6 +61,15 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--body-file", default=None,
         help="file col corpo curato della voce (per 'append-log'; altrimenti letto da stdin)",
+    )
+    parser.add_argument(
+        "--page", default=None,
+        help="path relativo della pagina nel wiki (per 'upsert-index')",
+    )
+    parser.add_argument(
+        "--summary", default=None,
+        help="sommario della riga d'indice (per 'upsert-index'; altrimenti letto da stdin). "
+             "Il testo è fornito dall'autore (LLM), la CLI non lo genera né lo riscrive",
     )
     return parser
 
@@ -112,6 +122,13 @@ def _run(args, profile):
         )
     if op == "migrate":
         return migrate_log(profile)
+    if op == "upsert-index":
+        if not args.page:
+            raise ConfigError("upsert-index richiede --page")
+        summary = args.summary if args.summary is not None else _read_body(args)
+        if summary is None:
+            raise ConfigError("upsert-index richiede il sommario (--summary o stdin)")
+        return upsert_index(profile, args.page, summary)
     raise ConfigError(f"operazione non supportata: {op}")  # pragma: no cover
 
 
@@ -144,6 +161,8 @@ def _human(op: str, result) -> str:
             f"migrated_entries={data['migrated_entries']} created={len(data['created'])} "
             f"skipped={len(data['skipped'])}"
         )
+    if op == "upsert-index":
+        return f"written={data['written']} action={data['action']} page={data['page']}"
     return result.to_json()  # pragma: no cover
 
 

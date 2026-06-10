@@ -14,7 +14,7 @@
 
 **Purpose**: baseline verificata prima di toccare il codice.
 
-- [ ] T001 Verificare il punto di partenza: `uv run pytest -m "not cloud" -q` verde (135 attesi) e `uv run ruff check .` pulito
+- [x] T001 Verificare il punto di partenza: `uv run pytest -m "not cloud" -q` verde (135 attesi) e `uv run ruff check .` pulito
 
 ---
 
@@ -32,19 +32,19 @@ Nessun prerequisito condiviso tra le due story (moduli disgiunti: `domain/servic
 
 ### Implementation for User Story 1
 
-- [ ] T002 [US1] Aggiungere `ProviderMismatchError(SertorError)` (campi `corpus`, `expected`, `found`, messaggio azionabile) in `src/sertor_core/domain/errors.py`
-- [ ] T003 [US1] Estendere la porta `VectorStore` con `list_collections() -> list[str]` (docstring: rilevamento provider, FR-009) in `src/sertor_core/domain/ports.py`
-- [ ] T004 [P] [US1] Implementare `list_collections()` in `ChromaStore` (`client.list_collections()`, errori avvolti in `VectorStoreError`) in `src/sertor_core/adapters/vectorstores/chroma.py`
-- [ ] T005 [P] [US1] Implementare `list_collections()` in `AzureSearchStore` (`SearchIndexClient.list_index_names()`, import lazy, errori avvolti) in `src/sertor_core/adapters/vectorstores/azure_search.py`
-- [ ] T006 [P] [US1] Implementare `list_collections()` in `InMemoryStore` (chiavi del dict) in `tests/fixtures/mocks.py`
-- [ ] T007 [US1] Aggiungere `Settings.extra_corpora: tuple[str, ...] = ()` letto da `SERTOR_EXTRA_CORPORA` via `_split_env` in `src/sertor_core/config/settings.py`
-- [ ] T008 [US1] Implementare fan-out + merge in `RetrievalFacade` (`src/sertor_core/services/retrieval.py`): kwarg keyword-only `extra_collections: Mapping[str, str] | None`; `search_combined` → percorso invariato se mappa vuota, altrimenti 1 embed → query per collezione disponibile → merge `(-score, chunk_id)` → tronca a k; assente+mai-indicizzato → warning `no_index` (FR-004); assente+`{corpus}__*` esistente → `ProviderMismatchError` (FR-009); tutte assenti → `[]`+warning (FR-005); log `retrieve` con `collections`, `k`, `results`, `elapsed_ms` (FR-008); `search_code`/`search_docs` intoccati (FR-006bis)
-- [ ] T009 [US1] Cablare in `build_facade()` la mappa corpus→collezione per `settings.extra_corpora` via `collection_name(replace(settings, corpus=c), embedder)` in `src/sertor_core/composition.py`
-- [ ] T010 [P] [US1] Test parsing `SERTOR_EXTRA_CORPORA` (assente→`()`, CSV con spazi, vuoti filtrati) in `tests/unit/test_settings.py`
-- [ ] T011 [P] [US1] Test del contratto combined-search (i 7 casi: due collezioni popolate; pertinenza concentrata; parità di score → tie-break stabile; degradazione; tutte assenti; `ProviderMismatchError`; regressione single-collection identica) in `tests/unit/test_retrieval_facade.py`
-- [ ] T012 [P] [US1] Test wiring `build_facade` con `extra_corpora` (mappa derivata correttamente, default vuoto → facade odierna) in `tests/unit/test_composition.py`
-- [ ] T013 [P] [US1] Test `list_collections` di `ChromaStore` (client finto iniettato) e di `InMemoryStore` in `tests/unit/test_vectorstore.py`
-- [ ] T014 [US1] Checkpoint US1: `uv run pytest tests/unit -q` verde; `uv run ruff check .` pulito
+- [x] T002 [US1] Aggiungere `ProviderMismatchError(SertorError)` (campi `corpus`, `expected`, `found`, messaggio azionabile) in `src/sertor_core/domain/errors.py`
+- [x] T003 [US1] Estendere la porta `VectorStore` con `list_collections() -> list[str]` (docstring: rilevamento provider, FR-009) in `src/sertor_core/domain/ports.py`
+- [x] T004 [P] [US1] Implementare `list_collections()` in `ChromaStore` (`client.list_collections()`, errori avvolti in `VectorStoreError`) in `src/sertor_core/adapters/vectorstores/chroma.py`
+- [x] T005 [P] [US1] Implementare `list_collections()` in `AzureSearchStore` (`SearchIndexClient.list_index_names()`, import lazy, errori avvolti) in `src/sertor_core/adapters/vectorstores/azure_search.py`
+- [x] T006 [P] [US1] Implementare `list_collections()` in `InMemoryStore` (chiavi del dict) in `tests/fixtures/mocks.py`
+- [x] T007 [US1] Aggiungere `Settings.extra_corpora: tuple[str, ...] = ()` letto da `SERTOR_EXTRA_CORPORA` via `_split_env` in `src/sertor_core/config/settings.py`
+- [x] T008 [US1] Implementare fan-out + merge in `RetrievalFacade` (`src/sertor_core/services/retrieval.py`): kwarg keyword-only `extra_collections: Mapping[str, str] | None`; `search_combined` → percorso invariato se mappa vuota, altrimenti 1 embed → query per collezione disponibile → merge `(-score, chunk_id)` → tronca a k; assente+mai-indicizzato → warning `no_index` (FR-004); assente+`{corpus}__*` esistente → `ProviderMismatchError` (FR-009); tutte assenti → `[]`+warning (FR-005); log `retrieve` con `collections`, `k`, `results`, `elapsed_ms` (FR-008); `search_code`/`search_docs` intoccati (FR-006bis)
+- [x] T009 [US1] Cablare in `build_facade()` la mappa corpus→collezione per `settings.extra_corpora` via `collection_name(replace(settings, corpus=c), embedder)` in `src/sertor_core/composition.py`
+- [x] T010 [P] [US1] Test parsing `SERTOR_EXTRA_CORPORA` (assente→`()`, CSV con spazi, vuoti filtrati) in `tests/unit/test_settings.py`
+- [x] T011 [P] [US1] Test del contratto combined-search (i 7 casi: due collezioni popolate; pertinenza concentrata; parità di score → tie-break stabile; degradazione; tutte assenti; `ProviderMismatchError`; regressione single-collection identica) in `tests/unit/test_retrieval_facade.py`
+- [x] T012 [P] [US1] Test wiring `build_facade` con `extra_corpora` (mappa derivata correttamente, default vuoto → facade odierna) in `tests/unit/test_composition.py`
+- [x] T013 [P] [US1] Test `list_collections` di `ChromaStore` (client finto iniettato) e di `InMemoryStore` in `tests/unit/test_vectorstore.py`
+- [x] T014 [US1] Checkpoint US1: `uv run pytest tests/unit -q` verde; `uv run ruff check .` pulito
 
 **Checkpoint**: la query congiunta è completa e testabile in isolamento (MVP).
 
@@ -58,12 +58,12 @@ Nessun prerequisito condiviso tra le due story (moduli disgiunti: `domain/servic
 
 ### Implementation for User Story 2
 
-- [ ] T015 [P] [US2] Aggiungere il contratto `UpsertIndexResult` (`written`, `action`, `page`, schema `wiki.upsert_index/1`, `to_dict`/`to_json`) in `src/sertor_core/wiki_tools/contracts.py`
-- [ ] T016 [US2] Aggiornare `upsert_index` in `src/sertor_core/wiki_tools/registry.py`: ritorno `UpsertIndexResult` (insert/update/noop); validazione FR-018 (trim; vuoto/solo-whitespace o newline interni → `ConfigError`, nessuna scrittura); idempotenza e update-in-place invariati (dipende da T015)
-- [ ] T017 [US2] Cablare l'op `upsert-index` in `src/sertor_core/wiki_tools/__main__.py`: `_OPS`, parser (`--page`, `--summary`), `_run` (summary da `--summary` o `_read_body`/stdin; `--page` mancante o summary assente → `ConfigError`), `_human` (`written=… action=… page=…`) (dipende da T016)
-- [ ] T018 [P] [US2] Test registry aggiornati: contratto del risultato (insert/update/noop), validazione (vuoto, whitespace, multilinea → `ConfigError` e file invariato), idempotenza byte-identica in `tests/unit/test_wiki_tools_registry.py`
-- [ ] T019 [P] [US2] Test CLI end-to-end (nuovo file): insert/update/noop, `--json` conforme allo schema, indice mancante → exit 1, sommario vuoto/multilinea → exit 1, sommario non-ASCII via stdin fedele (UTF-8) in `tests/unit/test_wiki_tools_cli.py`
-- [ ] T020 [US2] Checkpoint US2: `uv run pytest tests/unit -q` verde; `uv run ruff check .` pulito
+- [x] T015 [P] [US2] Aggiungere il contratto `UpsertIndexResult` (`written`, `action`, `page`, schema `wiki.upsert_index/1`, `to_dict`/`to_json`) in `src/sertor_core/wiki_tools/contracts.py`
+- [x] T016 [US2] Aggiornare `upsert_index` in `src/sertor_core/wiki_tools/registry.py`: ritorno `UpsertIndexResult` (insert/update/noop); validazione FR-018 (trim; vuoto/solo-whitespace o newline interni → `ConfigError`, nessuna scrittura); idempotenza e update-in-place invariati (dipende da T015)
+- [x] T017 [US2] Cablare l'op `upsert-index` in `src/sertor_core/wiki_tools/__main__.py`: `_OPS`, parser (`--page`, `--summary`), `_run` (summary da `--summary` o `_read_body`/stdin; `--page` mancante o summary assente → `ConfigError`), `_human` (`written=… action=… page=…`) (dipende da T016)
+- [x] T018 [P] [US2] Test registry aggiornati: contratto del risultato (insert/update/noop), validazione (vuoto, whitespace, multilinea → `ConfigError` e file invariato), idempotenza byte-identica in `tests/unit/test_wiki_tools_registry.py`
+- [x] T019 [P] [US2] Test CLI end-to-end (nuovo file): insert/update/noop, `--json` conforme allo schema, indice mancante → exit 1, sommario vuoto/multilinea → exit 1, sommario non-ASCII via stdin fedele (UTF-8) in `tests/unit/test_wiki_tools_cli.py`
+- [x] T020 [US2] Checkpoint US2: `uv run pytest tests/unit -q` verde; `uv run ruff check .` pulito
 
 **Checkpoint**: entrambe le story funzionano in modo indipendente.
 
@@ -71,8 +71,8 @@ Nessun prerequisito condiviso tra le due story (moduli disgiunti: `domain/servic
 
 ## Phase 5: Polish & Cross-Cutting
 
-- [ ] T021 Suite completa: `uv run pytest -m "not cloud" -q` verde (zero regressioni, SC-007); `uv run ruff check .` pulito
-- [ ] T022 Validazione quickstart sul dogfood (richiede credenziali Azure — facoltativa, fuori CI): `SERTOR_EXTRA_CORPORA=wiki` nel `.env`, costruire la collezione wiki (`uv run sertor-wiki-tools index`), verificare `search_combined` fuso via `build_facade()` e un `upsert-index` reale su una pagina del wiki, come da [quickstart.md](quickstart.md)
+- [x] T021 Suite completa: `uv run pytest -m "not cloud" -q` verde (zero regressioni, SC-007); `uv run ruff check .` pulito
+- [x] T022 Validazione quickstart sul dogfood (richiede credenziali Azure — facoltativa, fuori CI): `SERTOR_EXTRA_CORPORA=wiki` nel `.env`, costruire la collezione wiki (`uv run sertor-wiki-tools index`), verificare `search_combined` fuso via `build_facade()` e un `upsert-index` reale su una pagina del wiki, come da [quickstart.md](quickstart.md)
 
 ---
 

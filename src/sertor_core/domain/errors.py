@@ -55,6 +55,24 @@ class VectorStoreError(SertorError):
         super().__init__(f"{message} [backend={backend}, reason={reason}]")
 
 
+class ProviderMismatchError(SertorError):
+    """Un corpus bersaglio della ricerca combinata è indicizzato con un altro provider (FR-009).
+
+    Gli score di spazi vettoriali diversi non sono confrontabili: meglio nessuna risposta che
+    una fusione fuorviante (deroga deliberata alla policy tollerante della facade, clarify
+    2026-06-10).
+    """
+
+    def __init__(self, message: str, *, corpus: str, expected: str, found: list[str]):
+        self.corpus = corpus
+        self.expected = expected
+        self.found = found
+        super().__init__(
+            f"{message} [corpus={corpus}, attesa={expected}, trovate={found}] — "
+            "reindicizzare il corpus con il provider corrente o cambiare provider"
+        )
+
+
 class IndexNotFoundError(SertorError):
     """Si interroga un indice che non esiste ancora (REQ-009 di FEAT-002).
 

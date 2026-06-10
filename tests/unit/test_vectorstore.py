@@ -60,6 +60,24 @@ def test_missing_collection_returns_empty_and_not_exists(tmp_path):
     assert store.exists("mai-creata") is False
 
 
+def test_list_collections_names_existing(tmp_path):
+    # Capacità di porta per il rilevamento provider (feature 010, FR-009).
+    store = _store(tmp_path)
+    assert store.list_collections() == []
+    store.upsert("beta", [_rec("b#0", [1.0, 0.0], "code", "b.py", "b")])
+    store.upsert("alfa", [_rec("a#0", [1.0, 0.0], "code", "a.py", "a")])
+    assert store.list_collections() == ["alfa", "beta"]       # ordinato, deterministico
+
+
+def test_inmemory_list_collections():
+    from tests.fixtures.mocks import InMemoryStore
+
+    store = InMemoryStore()
+    assert store.list_collections() == []
+    store.upsert("solo", [_rec("s#0", [1.0], "code", "s.py", "s")])
+    assert store.list_collections() == ["solo"]
+
+
 def test_upsert_is_idempotent(tmp_path):
     store = _store(tmp_path)
     rec = _rec("a#0", [1.0, 0.0], "code", "a.py", "a")

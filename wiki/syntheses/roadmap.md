@@ -35,17 +35,18 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 ### 🔄 IN PROGRESS (dettaglio)
 
 - **Wiki FEAT-003 — due pezzi D deterministici (query congiunta + `upsert-index` in CLI), SpecKit completo.**
-  - **Cosa:** (1) *query congiunta multi-collezione* — `search_combined` (`services/retrieval.py`) gira su **una
-    sola** collezione; serve fan-out su 2 collezioni (codice+wiki) + merge dei top-k per score. (3) *esporre
-    `upsert-index` in CLI* — `upsert_index()` (`wiki_tools/registry.py`) esiste ma non è cablato in `__main__.py`;
-    write idempotente, sommario LLM-authored.
-  - **Dove:** requirements ✅ `requirements/sertor-core/query-congiunta-e-indice/requirements.md` · spec ✅ +
-    clarify ✅ su branch `010-query-congiunta-e-upsert-index` (`specs/010-…/spec.md`, FR-001..018, 4 decisioni
-    in Clarifications 2026-06-10: provider eterogenei → errore esplicito; corpora da Settings; multilinea →
-    errore; fan-out solo `search_combined`).
-  - **Prossimo passo:** `/speckit-plan` (poi tasks→analyze→implement).
-  - **Blocco/decisione aperta:** nessuno bloccante; restano da accertare in plan DA-2 (topologia `persist_dir`),
-    DA-3 (fusione in porta vs facade), DA-5/6 (nomenclatura, contratto esito).
+  - **Cosa:** (1) *query congiunta multi-collezione* — `search_combined` fa fan-out su corpus primario +
+    `SERTOR_EXTRA_CORPORA` e fonde i top-k per score (`ProviderMismatchError` su provider eterogenei,
+    `list_collections` nuova capacità di porta). (2) *`upsert-index` in CLI* — sottocomando idempotente
+    (`--page` + `--summary`/stdin, contratto `wiki.upsert_index/1`), sommario LLM-authored.
+  - **Dove:** branch `010-query-congiunta-e-upsert-index` — **SpecKit completo ESEGUITO**: requirements ✅
+    spec+clarify ✅ (4 decisioni) · plan ✅ (Constitution 10/10) · tasks ✅ (22/22) · analyze ✅ (GO) ·
+    **implement ✅** (suite `not cloud` 159 verdi + 2 xfail, ruff pulito; validato live sul dogfood:
+    collezione `wiki__azure_text_embedding_3_large` costruita, 49 doc, fusione codice+wiki verificata).
+  - **Prossimo passo:** aprire la **PR** verso `master` (poi riavvio del server MCP per servire il nuovo codice).
+  - **Blocco/decisione aperta:** nessuno. Nota emersa dal dogfood: il corpus primario `sertor` indicizza
+    anche `wiki/` → quasi-duplicati tra le collezioni nella combinata; valutare l'esclusione di `wiki/` dal
+    corpus primario via `SERTOR_EXCLUDE_PATTERNS` (scelta di config dell'ospite, non codice).
 
 ### 📋 PLANNED (per priorità)
 - **Wiki FEAT-003, operazioni-giudizio N:** N3 (generazione dal repo) · N4 (ingest → `sources/`) ·

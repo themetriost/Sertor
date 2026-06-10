@@ -22,9 +22,11 @@ così è banale da mockare nei test (entrambe sono `@runtime_checkable`).
   primo batch se inizialmente `None`), `batch_size`.
 - **`VectorStore`** — persiste e cerca. `upsert(collection, records)` (idempotente sugli stessi id),
   `query(collection, vector, k, doc_type) -> list[RetrievalResult]` (top-k per similarità, filtro su
-  `DocTypeFilter` = `code|doc|both` **senza** indici separati), più `delete`, `reset` (per il rebuild) ed
-  `exists`. Una collezione assente → `query` restituisce `[]` ed `exists()==False`; un backend irraggiungibile
-  → `VectorStoreError` (Principio IV).
+  `DocTypeFilter` = `code|doc|both` **senza** indici separati), più `delete`, `reset` (per il rebuild),
+  `exists` e `list_collections()` (elenco delle collezioni — serve alla ricerca combinata multi-collezione
+  per distinguere un corpus mai indicizzato, tollerato, da uno indicizzato con un **altro provider** →
+  `ProviderMismatchError`, feature 010). Una collezione assente → `query` restituisce `[]` ed
+  `exists()==False`; un backend irraggiungibile → `VectorStoreError` (Principio IV).
 
 Le porte parlano in termini di [[domain-model|entità di dominio]] (`EmbeddedChunk`, `RetrievalResult`): è ciò
 che impedisce a uno schema di backend di risalire nel nucleo.

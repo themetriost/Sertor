@@ -122,6 +122,16 @@ class ChromaStore:
         except Exception:
             return False
 
+    def list_collections(self) -> list[str]:
+        try:
+            return sorted(c.name for c in self._client.list_collections())
+        except Exception as exc:
+            raise VectorStoreError(
+                "errore durante l'elenco delle collezioni",
+                backend=_BACKEND,
+                reason=type(exc).__name__,
+            ) from exc
+
 
 def _to_results(res: dict) -> list[RetrievalResult]:
     ids = (res.get("ids") or [[]])[0]
