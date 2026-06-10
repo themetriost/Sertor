@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-10 (feature 010 MERGIATA su master, PR #20: pezzi D di FEAT-003 chiusi → DONE; IN PROGRESS vuoto; regola standing di re-index; code residue: riavvio MCP + decisione esclusione wiki/ dal corpus primario)
+updated: 2026-06-10 (riconciliazione tracker FEAT-003-N: N1 record completa, N2+N9 spostate a FEAT-007; feature 010 mergiata, PR #20; D-21 corpus unico)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md"]
 ---
 
@@ -110,7 +110,7 @@ Legenda: ✅ su master · 🧪 operativo, consolidamento formale aperto · 💀 
 | FEAT-004 | Motore RAG **ibrido + reranking** | Should | 🔜 da decomporre | — |
 | FEAT-005 | Motore RAG a **grafo / GraphRAG** *(riporta `find_symbol`/`who_calls` nel MCP)* | Should | 🔜 da decomporre | — |
 | FEAT-006 | Motore RAG **agentico** (multi-step, query planning) | Should | 🔜 da decomporre | — |
-| FEAT-007 | Skill: **mantenere il wiki vivo** (spider/lint) | Should | 🔜 da decomporre | — |
+| FEAT-007 | Skill: **mantenere il wiki vivo** (spider/lint) *(2026-06-10: assorbe da FEAT-003-N la N2 distillazione-di-conversazione e la N9 lint organizzativo/reorg)* | Should | 🔜 da decomporre | — |
 | FEAT-008 | Arricchimento bidirezionale **Wiki↔RAG** | Could | 💤 da decomporre | — |
 | FEAT-009 | **Refresh incrementale** dell'indice (solo file cambiati) | Could | 💤 da decomporre | — |
 
