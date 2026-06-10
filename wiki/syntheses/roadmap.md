@@ -34,10 +34,10 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- *(nessuna voce in corso — scegliere il prossimo PLANNED)*. **Code residue di sessione (2026-06-10):**
-  riavviare il **server MCP** (nuova sessione: il processo live gira col codice pre-feature-010) e
-  **decidere** se escludere `wiki/` dal corpus primario (`SERTOR_EXCLUDE_PATTERNS`) per eliminare i
-  quasi-duplicati nella combinata.
+- *(nessuna voce in corso — scegliere il prossimo PLANNED)*. **Coda residua di sessione (2026-06-10):**
+  riavviare il **server MCP** (nuova sessione: il processo live gira col codice pre-feature-010). La
+  questione duplicati è **risolta con D-21** (modello a corpus unico: il wiki sta *dentro* il corpus
+  primario by design, `SERTOR_EXTRA_CORPORA` rimossa; il fan-out resta per ospiti con corpora disgiunti).
 
 ### 📋 PLANNED (per priorità)
 - **Wiki FEAT-003, operazioni-giudizio N:** N3 (generazione dal repo) · N4 (ingest → `sources/`) ·
@@ -53,8 +53,10 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 - Wiki LLM (FEAT-003) operativo: nucleo deterministico `wiki_tools` + operazioni-giudizio come skills/playbook;
   `generate-from-diff` (N8), trigger manuale `/wiki` (D-19), gate eliminato (D-20), cartelle-input rimosse (D-18).
 - **Query congiunta multi-collezione + `upsert-index` in CLI** (feature 010, `specs/010`, PR #20 mergiata il
-  2026-06-10): `search_combined` fonde codice+wiki (`SERTOR_EXTRA_CORPORA`, fail-fast su provider eterogenei);
-  write-back dell'indice cablato. I pezzi D di FEAT-003 sono chiusi.
+  2026-06-10): capacità di fan-out su più corpora (`SERTOR_EXTRA_CORPORA`, fail-fast su provider eterogenei) +
+  write-back dell'indice cablato. I pezzi D di FEAT-003 sono chiusi. **D-21 (stesso giorno):** modello
+  standard = **corpus unico** (il wiki vive dentro l'ospite by design → già nel corpus primario); il fan-out
+  resta per ospiti con corpora disgiunti.
 - Lavori abilitanti: decoupling store↔embeddings (`specs/009`) · meccanica log (`specs/008`) · indice dogfood
   `sertor` vivo via MCP · **regola standing di re-index dei corpora** a fine step (2026-06-10, mitiga la
   FEAT-009 d'epica).
@@ -82,9 +84,10 @@ riproducibile e production-grade. **Una sola verità interrogabile**: sorgenti (
   deterministica `wiki_tools` **in codice** + metà giudizio **come skills/playbook** in `.claude/`) +
   **server MCP** + **query congiunta multi-collezione** e `upsert-index` in CLI (feature 010), più i
   lavori abilitanti (meccanica log, decoupling store/embeddings, regola di re-index).
-- **Dogfooding di produzione VIVO**: due collezioni nello store `.index-sertor/` — corpus `sertor`
-  (207 doc / 1778 chunk) e corpus `wiki` (49 doc), embeddings Azure `text-embedding-3-large` + Chroma
-  locale; con `SERTOR_EXTRA_CORPORA=wiki` la combinata le **fonde**. Servito dal server MCP `sertor-rag`.
+- **Dogfooding di produzione VIVO**: corpus `sertor` (207 doc / 1778 chunk, **wiki incluso** come
+  documentazione — modello a corpus unico, D-21), embeddings Azure `text-embedding-3-large` + Chroma
+  locale in `.index-sertor/`. Servito dal server MCP `sertor-rag`. La collezione `wiki__*` resta come
+  capacità esercitabile (rag-sync), senza consumatori.
 - **Rami abbandonati (NON su `master` → non contano come asset):** la **CLI `sertor`** (`specs/004` — su
   master ci sono solo i *requirements*, zero codice `sertor_cli`) e i tentativi *in codice* di FEAT-003-N
   (`specs/003`/`005`, superati dall'approccio a skills). Oggi il prodotto è usabile come **libreria + MCP**,

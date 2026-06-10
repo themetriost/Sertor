@@ -116,13 +116,14 @@ da solo la creazione/ingestione del RAG: serve sempre un **comando esplicito** s
 > (FEAT-004) e governance (FEAT-005) completano il ciclo subito dopo (Should). La CLI è utile **solo
 > insieme** al core: il suo MVP presuppone che il core esista (almeno baseline + creazione wiki).
 
-## 9. Decisioni risolte (DA-1…DA-6)
+## 9. Decisioni risolte (DA-1…DA-7)
 
-Chiuse in elicitazione (2026-05-30); restano valide a livello di distribuzione/uso:
+Chiuse in elicitazione (2026-05-30, DA-7 il 2026-06-10); restano valide a livello di distribuzione/uso:
 
 | # | Tema | Decisione |
 |---|------|-----------|
 | DA-1 | Naming | Pacchetto e comando = **`sertor`**. |
+| DA-7 | **Wiki dentro l'ospite (by design)** | Quando si installa Sertor su un progetto, il **wiki si crea DENTRO il progetto ospite** (decisione utente, 2026-06-10). Conseguenza per il retrieval: il wiki è **parte del corpus primario** dell'ospite come documentazione (`doc_type=doc`) — il **modello standard è a corpus unico**, senza collezione separata né `SERTOR_EXTRA_CORPORA`. La query congiunta multi-collezione del core (feature `specs/010`) resta riservata a ospiti con corpora **davvero disgiunti** (es. doc-repo esterno), non al caso standard. L'install della CLI (FEAT-002) deve riflettere questo default. |
 | DA-2 | Confine install/config/run | **Confermato**: l'MVP della CLI installa; configurazione (FEAT-003) ed esecuzione (FEAT-004) restano **Should**. |
 | DA-3 | Governance | **Resta Should** (FEAT-005 fuori dall'MVP della CLI). |
 | DA-4 | Distribuzione interim | **`git+url`** prima dell'eventuale PyPI pubblico. |

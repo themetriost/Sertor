@@ -49,12 +49,16 @@ conoscere store/embeddings. Espone tre ricerche, distinte solo dal filtro `DocTy
 Ogni ricerca embedda la query, interroga lo store per il top-k, emette un log e ritorna
 `list[RetrievalResult]`.
 
-**Fan-out multi-collezione ([[spec-010-query-congiunta-e-upsert-index|feature 010]]).** Se `Settings.extra_corpora` (`SERTOR_EXTRA_CORPORA`, es.
-`wiki`) dichiara corpora aggiuntivi, `search_combined` interroga **tutte** le collezioni bersaglio (la
+**Fan-out multi-collezione ([[spec-010-query-congiunta-e-upsert-index|feature 010]]).** Se `Settings.extra_corpora` (`SERTOR_EXTRA_CORPORA`)
+dichiara corpora aggiuntivi, `search_combined` interroga **tutte** le collezioni bersaglio (la
 query è embeddata una sola volta) e **fonde i top-k per score**, con tie-break deterministico per
 `chunk_id` e al più `k` risultati totali. Solo la combinata fa fan-out: `search_code`/`search_docs`
 restano a singola collezione. I consumatori non cambiano: `build_facade()` deriva le collezioni extra
 dalla config con lo stesso naming `(corpus, provider)`.
+**Quando usarlo (D-21):** è la capacità per ospiti con corpora **davvero disgiunti** (es. un doc-repo
+esterno al repository indicizzato). Il **caso standard è a corpus unico**: il wiki vive *dentro*
+l'ospite by design ([[corpus-index-naming]]) → è già documentazione del corpus primario, e la combinata
+vede tutto senza fan-out né duplicati. Sul dogfood Sertor `extra_corpora` non è configurata.
 
 **Tolleranza sull'indice assente (policy voluta).** Se la collezione non esiste, la facade ritorna **`[]` con
 un warning**, senza eccezioni (REQ-028): è la faccia *tollerante* del nucleo, pensata per la composabilità —

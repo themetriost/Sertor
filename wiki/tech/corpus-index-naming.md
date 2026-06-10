@@ -3,7 +3,7 @@ title: Corpus & index naming (RAG)
 type: tech
 tags: [architettura, corpus, indice, naming, prodotto, prototipo]
 created: 2026-06-04
-updated: 2026-06-10 (corpus `wiki` come seconda collezione nello stesso store; .mcp.json → produzione dal 2026-06-06, claim corretto; ProviderMismatchError)
+updated: 2026-06-10 (D-21: modello a corpus unico — il wiki è dentro il corpus primario by design; la collezione `wiki__*` resta capacità senza consumatori sul dogfood; .mcp.json → produzione, claim corretto)
 sources: ["CLAUDE.md", "prototype/shared/config.py", ".mcp.json", "src/sertor_core/config/settings.py", "src/sertor_core/composition.py"]
 ---
 
@@ -38,18 +38,18 @@ il naming è stato **riconciliato per chiarezza**.
 | **Scopo** | Ricerca, RAG production sul codice di `sertor` stesso |
 | **Backend** | Embeddings e store scelti **indipendentemente** (FEAT-009): `RAG_BACKEND` (Ollama \| Azure OpenAI) × `SERTOR_STORE_BACKEND` (Chroma locale \| Azure AI Search). Indice dogfood attuale: **embeddings Azure `text-embedding-3-large` + store Chroma locale**. |
 
-### Wiki di produzione (corpus separato, stesso indice)
+### Il wiki nel retrieval: modello a corpus unico (D-21, 2026-06-10)
+
+Il wiki di produzione **vive dentro il progetto ospite by design** (lo creerà così l'install della CLI,
+DA-7 dell'epica `sertor-cli`) → è già **parte del corpus primario** `sertor` come documentazione
+(`doc_type=doc`). Questo è il **modello standard**: `search_docs` vede il wiki per natura,
+`search_combined` vede tutto **senza duplicati**, un solo indice da tenere fresco.
 
 | Aspetto | Valore |
 |---------|--------|
-| **Corpus** | `wiki` (da `wiki.config.toml`, sezione `[rag]`) |
-| **Indice** | lo **stesso** `.index-sertor/` del prodotto (l'`index_dir` viene dai medesimi `Settings`): una **seconda collezione** nello stesso store, `wiki__<provider>` |
-| **Contenuto** | le pagine del wiki di produzione (`wiki/`), indicizzate da `sertor-wiki-tools index` (op. `rag-sync`) |
-| **Scopo** | rendere il wiki interrogabile via RAG **separatamente** dal codice; con `SERTOR_EXTRA_CORPORA=wiki` la **ricerca combinata fonde** i due corpora (feature 010 — vedi [[indexing-and-retrieval]]) |
-
-Avvertenza nota: il corpus `sertor` indicizza **anche** `wiki/` al proprio interno → nella combinata
-compaiono quasi-duplicati (stessa pagina dai due corpora). Mitigazione possibile: escludere `wiki/` dal
-corpus primario via `SERTOR_EXCLUDE_PATTERNS` (scelta di config dell'ospite, aperta).
+| **Corpus `wiki` (collezione dedicata)** | esiste come **capacità** (`wiki.config.toml [rag]` → `sertor-wiki-tools index`, op. `rag-sync`): seconda collezione `wiki__<provider>` nello stesso `.index-sertor/` |
+| **Uso sul dogfood** | **nessun consumatore**: `SERTOR_EXTRA_CORPORA` non è configurata (D-21) — la collezione resta esercitabile come test della capacità, non fa parte del retrieval |
+| **Quando servirebbe** | ospiti con corpora **davvero disgiunti** (es. wiki o doc-repo *esterni* al repository indicizzato): lì la query congiunta multi-collezione (feature 010) fonde i top-k — vedi [[indexing-and-retrieval]] |
 
 **Note operazionali:**
 - La cartella `.index-production` (epoch locale-backend, 39M, with stale collections) è stata **eliminata** il 2026-06-04 (non più rilevante).

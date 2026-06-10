@@ -2,6 +2,13 @@
 
 <!-- Deriva da: FEAT-003 (Skill: creare/indicizzare l'LLM Wiki) — i due pezzi codice **deterministici (D)** residui -->
 
+> **Nota post-implementazione (2026-06-10, D-21 di FEAT-003 + DA-7 dell'epica CLI).** La feature è stata
+> implementata e mergiata (`specs/010`, PR #20). Successivamente l'utente ha deciso il **modello a corpus
+> unico** come default: il wiki vive *dentro* il progetto ospite by design (lo creerà così l'install della
+> CLI), quindi è già parte del corpus primario e il fan-out **non si usa nel caso standard** (sul dogfood
+> `SERTOR_EXTRA_CORPORA` non è configurata). La capacità del Gruppo A resta nel prodotto per ospiti con
+> corpora **davvero disgiunti**; il Gruppo B (`upsert-index`) resta pienamente in uso.
+
 > **Una sola feature, due capacità.** Sono raggruppate qui perché entrambe **deterministiche** e
 > decise come **un unico flusso SpecKit completo** (requirements→specify→clarify→plan→tasks→analyze→implement).
 > Non condividono requisiti funzionali: la sezione 5 le tiene in **due gruppi distinti** (A e B).

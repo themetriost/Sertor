@@ -658,7 +658,7 @@ create the structure and optionally execute an initial ingest.*
 
 ---
 
-## 12. Decisioni prese (D-1 .. D-20)
+## 12. Decisioni prese (D-1 .. D-21)
 
 Le decisioni seguenti sono state stabilite nel corso delle iterazioni di elicitazione di FEAT-010
 (2026-06-04). Sono normative per il design a valle.
@@ -863,6 +863,25 @@ dallo scope**.
   `/wiki`** (eseguono e riportano i problemi); **nessun blocco**, nessuna soglia di gate. L'utente
   decide se intervenire (resta human-in-the-loop, senza auto-fix).
 - **Allineati:** scope §5 item 8, RNF-003 (soglia gate), R-01 (mitigazione), MoSCoW, D-14.
+
+### D-21 — Modello a corpus unico per il retrieval (2026-06-10; rivede l'uso di D-3/D-7)
+**Decisione canonica (utente).** Il wiki **vive dentro il progetto ospite by design**: l'install della
+futura CLI lo crea così (epica `sertor-cli`, DA-7). Di conseguenza il wiki è già **parte del corpus
+primario** dell'ospite come documentazione (`doc_type=doc`): per il caso standard **non serve** una
+collezione separata interrogata congiuntamente — la separazione duplicherebbe i contenuti
+(quasi-duplicati osservati live sul dogfood) senza aggiungere informazione.
+
+- **Cosa cambia:** il modello "collezioni separate + query congiunta" (D-3/D-7, FR-010, SC-003) non è
+  più il **default**: il default è **corpus unico** (wiki dentro il corpus dell'ospite; `search_docs`
+  vede il wiki per natura, `search_combined` vede tutto senza duplicati). Sul dogfood Sertor:
+  `SERTOR_EXTRA_CORPORA` rimossa, la collezione `wiki__*` resta come capacità esercitabile (rag-sync),
+  non come parte del retrieval.
+- **Cosa resta:** la **capacità** di query congiunta multi-collezione (feature `specs/010`,
+  implementata e testata) resta nel prodotto per ospiti con corpora **davvero disgiunti** (es. wiki o
+  doc-repo esterni al repository indicizzato). SC-003 va letto così: soddisfatto **per costruzione** nel
+  modello a corpus unico; via fan-out solo nei casi disgiunti.
+- **Riferimenti:** epica `sertor-cli` DA-7 (install crea il wiki dentro l'ospite); CLAUDE.md rituale
+  punto 5 (re-index del solo corpus primario).
 
 ---
 

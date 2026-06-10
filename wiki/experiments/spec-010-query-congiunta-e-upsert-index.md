@@ -60,11 +60,15 @@ motivata) — mai opzioni "secche".
 
 ## Post-merge (2026-06-10)
 
-- ✅ `SERTOR_EXTRA_CORPORA=wiki` nel `.env`: la combinata fonde codice+wiki **dalla sola config**
-  (verificato live post-merge); entrambi i corpora ri-costruiti (regola di re-index, momento obbligato).
+- ✅ Merge `74783db`; entrambi i corpora ricostruiti (regola di re-index, momento obbligato); fan-out
+  verificato live dalla sola config (`SERTOR_EXTRA_CORPORA=wiki`, attivata temporaneamente).
+- ✅ **D-21 — modello a corpus unico (decisione utente, stesso giorno):** la verifica live ha mostrato i
+  quasi-duplicati (stessa pagina dai due corpora) e ha aperto la discussione; deciso che il wiki vive
+  *dentro* l'ospite **by design** (DA-7 epica CLI: l'install lo creerà così) → è già documentazione del
+  corpus primario. `SERTOR_EXTRA_CORPORA` **rimossa** dal `.env`: il **fan-out resta capacità di
+  prodotto** per ospiti con corpora davvero disgiunti, **dormiente sul dogfood**; `upsert-index` resta
+  pienamente in uso. Requisiti annotati (D-21 in FEAT-003, DA-7 in epica CLI, nota nel requirements 010).
 - ☐ Riavvio del **server MCP** per servire il nuovo codice (alla prossima sessione).
-- ☐ Decidere l'**esclusione di `wiki/` dal corpus primario** (`SERTOR_EXCLUDE_PATTERNS`) — il corpus
-  `sertor` indicizza anche `wiki/` → quasi-duplicati nella combinata (deliberato: niente dedup, R5 YAGNI).
 
 ## Artefatti
 
