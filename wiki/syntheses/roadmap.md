@@ -43,7 +43,9 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
     spec+clarify ✅ (4 decisioni) · plan ✅ (Constitution 10/10) · tasks ✅ (22/22) · analyze ✅ (GO) ·
     **implement ✅** (suite `not cloud` 159 verdi + 2 xfail, ruff pulito; validato live sul dogfood:
     collezione `wiki__azure_text_embedding_3_large` costruita, 49 doc, fusione codice+wiki verificata).
-  - **Prossimo passo:** aprire la **PR** verso `master` (poi riavvio del server MCP per servire il nuovo codice).
+  - **Prossimo passo:** **mergiare la PR #20** (https://github.com/themetriost/Sertor/pull/20, aperta il
+    2026-06-10); post-merge: riavvio del server MCP + config dogfood (`SERTOR_EXTRA_CORPORA=wiki` nel `.env`,
+    valutare esclusione di `wiki/` dal corpus primario).
   - **Blocco/decisione aperta:** nessuno. Nota emersa dal dogfood: il corpus primario `sertor` indicizza
     anche `wiki/` → quasi-duplicati tra le collezioni nella combinata; valutare l'esclusione di `wiki/` dal
     corpus primario via `SERTOR_EXCLUDE_PATTERNS` (scelta di config dell'ospite, non codice).
