@@ -180,6 +180,15 @@ I marker pytest sono definiti in `pyproject.toml`: `cloud` (richiede credenziali
 - Nessuna over-engineering: aggiungere astrazioni solo quando un esperimento le richiede.
 - Mantenere ogni esperimento eseguibile in locale senza dipendere da Azure.
 
+## Domande all'utente (regola SEMPRE attiva)
+
+Ogni volta che si pone una domanda all'utente (bivi di design, clarify, scelte di scope, conferme),
+**prima** della domanda va dato il **contesto**: da dove nasce il problema (file/meccanismo reale),
+cosa comporta concretamente ciascuna opzione (pro/contro, impatti su consumatori e convenzioni del
+repo) e la raccomandazione motivata. Mai una domanda "secca" con sole etichette: l'utente deve poter
+decidere senza dover chiedere "spiegami meglio". Vale anche per le domande poste dentro i flussi
+SpecKit (`clarify`, `specify`, ecc.).
+
 ## Rituale di step / Definition of Done (regola SEMPRE attiva)
 
 Uno **step** è un'unità di lavoro significativa (una feature, un fix, una decisione, una ricerca,

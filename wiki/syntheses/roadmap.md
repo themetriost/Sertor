@@ -39,11 +39,13 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
     sola** collezione; serve fan-out su 2 collezioni (codice+wiki) + merge dei top-k per score. (3) *esporre
     `upsert-index` in CLI* — `upsert_index()` (`wiki_tools/registry.py`) esiste ma non è cablato in `__main__.py`;
     write idempotente, sommario LLM-authored.
-  - **Dove:** requirements ✅ `requirements/sertor-core/query-congiunta-e-indice/requirements.md` (2 gruppi A/B, EARS).
-  - **Prossimo passo:** `/speckit-specify` (poi clarify→plan→tasks→analyze→implement).
-  - **Blocco/decisione aperta:** DA-1 = policy di merge quando i corpora non condividono provider di embeddings
-    (default proposto: vincolare allo stesso provider); DA-2 = topologia store (stesso `persist_dir` o no) →
-    sciogliere in clarify/plan. `RetrievalResult.score` esiste già (merge fattibile).
+  - **Dove:** requirements ✅ `requirements/sertor-core/query-congiunta-e-indice/requirements.md` · spec ✅ +
+    clarify ✅ su branch `010-query-congiunta-e-upsert-index` (`specs/010-…/spec.md`, FR-001..018, 4 decisioni
+    in Clarifications 2026-06-10: provider eterogenei → errore esplicito; corpora da Settings; multilinea →
+    errore; fan-out solo `search_combined`).
+  - **Prossimo passo:** `/speckit-plan` (poi tasks→analyze→implement).
+  - **Blocco/decisione aperta:** nessuno bloccante; restano da accertare in plan DA-2 (topologia `persist_dir`),
+    DA-3 (fusione in porta vs facade), DA-5/6 (nomenclatura, contratto esito).
 
 ### 📋 PLANNED (per priorità)
 - **Wiki FEAT-003, operazioni-giudizio N:** N3 (generazione dal repo) · N4 (ingest → `sources/`) ·
