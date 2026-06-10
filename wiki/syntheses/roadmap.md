@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-09 (prossimo step deciso: pezzi D 1+3 del wiki via SpecKit completo, pezzo 2 → epica CLI; startup chiuso → DONE, IN PROGRESS vuoto; riscritta su master, ancorata allo stato reale; reconcilia numerazione epica↔spec; FEAT-009 indice dogfood; D-18/19/20 snelliscono lo scope wiki)
+updated: 2026-06-10 (avviati i pezzi D 1+3 del wiki: requirements scritti → IN PROGRESS, prossimo passo specify; pezzo 2 → epica CLI; startup chiuso → DONE; reconcilia numerazione epica↔spec; FEAT-009 indice dogfood; D-18/19/20 snelliscono lo scope wiki)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md"]
 ---
 
@@ -34,20 +34,18 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- *(nessuna voce in corso — scegliere il prossimo PLANNED)*
+- **Wiki FEAT-003 — due pezzi D deterministici (query congiunta + `upsert-index` in CLI), SpecKit completo.**
+  - **Cosa:** (1) *query congiunta multi-collezione* — `search_combined` (`services/retrieval.py`) gira su **una
+    sola** collezione; serve fan-out su 2 collezioni (codice+wiki) + merge dei top-k per score. (3) *esporre
+    `upsert-index` in CLI* — `upsert_index()` (`wiki_tools/registry.py`) esiste ma non è cablato in `__main__.py`;
+    write idempotente, sommario LLM-authored.
+  - **Dove:** requirements ✅ `requirements/sertor-core/query-congiunta-e-indice/requirements.md` (2 gruppi A/B, EARS).
+  - **Prossimo passo:** `/speckit-specify` (poi clarify→plan→tasks→analyze→implement).
+  - **Blocco/decisione aperta:** DA-1 = policy di merge quando i corpora non condividono provider di embeddings
+    (default proposto: vincolare allo stesso provider); DA-2 = topologia store (stesso `persist_dir` o no) →
+    sciogliere in clarify/plan. `RetrievalResult.score` esiste già (merge fattibile).
 
 ### 📋 PLANNED (per priorità)
-
-- **⏯️ PROSSIMO (al riavvio) — Wiki FEAT-003, due pezzi D deterministici via SpecKit completo:**
-  - **(1) Query congiunta multi-collezione.** Wiki e codice sono già in collezioni RAG separate (namespacing per
-    `(corpus, provider)`), ma oggi `search_combined` gira su **una sola** collezione (`services/retrieval.py`):
-    il filtro `both` discrimina per `doc_type` *dentro* la collezione, non fonde due collezioni. Serve fan-out +
-    merge dei top-k in `RetrievalFacade`/`VectorStore.query()`. *Pezzo con vero contenuto ingegneristico; abilita
-    la "sola verità interrogabile".*
-  - **(3) Esporre `upsert-index` in CLI.** `upsert_index()` esiste già (`wiki_tools/registry.py`), non è cablato
-    in CLI. Aggiungere il sottocomando `sertor-wiki-tools upsert-index`, sul modello di `append-log`: il **sommario
-    resta LLM-authored** (giudizio), la CLI fa solo il **write idempotente** della riga in `index.md`. *Piccolo.*
-  - Entrambi **deterministici** → **SpecKit completo** (requirements→specify→clarify→plan→tasks→analyze→implement), niente skill.
 - **Wiki FEAT-003, operazioni-giudizio N:** N3 (generazione dal repo) · N4 (ingest → `sources/`) ·
   N6 (verità/autorità/obsolescenza).
 - **Nuovi motori RAG:** FEAT-004 ibrido+reranking · FEAT-005 GraphRAG · FEAT-006 agentico · FEAT-007 manutenzione wiki.

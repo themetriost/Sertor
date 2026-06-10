@@ -142,6 +142,10 @@ produzione: testato, configurabile, repo-agnostico, osservabile, riusabile come 
 > - **FEAT-003-N — Operazioni wiki assistite da LLM** (record-contenuto, distill, generazione, ingest-compile,
 >   lint semantico, giudizio verità/obsolescenza, gate al commit human-in-the-loop). → tracciata come
 >   **TODO collaborativo** in [`wiki-llm/TODO.md`](wiki-llm/TODO.md), affrontata passo-passo (non SpecKit).
+> - **Pezzi D residui (2026-06-10)** — due capacità deterministiche rimaste (query congiunta
+>   multi-collezione + esposizione di `upsert-index` in CLI), requisiti in
+>   [`query-congiunta-e-indice/requirements.md`](query-congiunta-e-indice/requirements.md). → un unico
+>   flusso **SpecKit completo**.
 
 ## 9. Decisioni risolte
 
