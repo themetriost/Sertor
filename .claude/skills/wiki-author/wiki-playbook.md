@@ -165,6 +165,30 @@ come) — vive nella pagina di riferimento `page-craft.md`, **linkata dalle oper
 riscrivono pagine (`record`, `ingest`, lint **C**, `reorg`). È una foglia: le operazioni la referenziano
 senza che questo file dipenda da loro.
 
+### Verità, autorità e obsolescenza (FR-012..017)
+
+**Non esiste una singola fonte di verità** (FR-012): l'autorità dipende dall'**asse** del claim —
+sul **comportamento** vincono **codice + test**; sul **perché** vincono le **decisioni registrate**
+(SpecKit, log, requirements). Il wiki è **derivato**: in conflitto si applica la gerarchia di default
+(FR-013: comportamento → codice/test · perché → decisione registrata); una gerarchia configurata
+dall'ospite può sostituirla (FR-014, opzionale — oggi non implementata).
+
+**Una pagina è stale quando contraddice la sua autorità** (FR-017). La risposta NON è correggere in
+silenzio, né cancellare: è la **supersession esplicita** —
+
+1. **frontmatter**: `status: superseded` (il campo `status` è tra gli opzionali della config);
+2. **banner in testa** con data, *cosa* supera la pagina e il **link** alla verità corrente
+   (`> ⚠️ **Superata (YYYY-MM-DD):** <claim> è contraddetto da <autorità> → vedi [[pagina-corrente]]`);
+3. il **contenuto resta** (testimonianza; gli errori cancellati si ripetono): la pagina si pota o si
+   fonde nel successore solo in un `reorg` confermato, mai d'ufficio.
+
+Per il **diario** (log, record datati) la supersession è naturale: la correzione è una **nuova voce**,
+mai un edit. Per il **grafo** la convenzione qui sopra è l'equivalente. **Niente punteggi di confidenza
+numerici**: l'evidenza è la catena di link/prove del claim ancorato (vedi le critiche in
+[[llm-wiki-v2-agentmemory]] — profilo Sertor — sulla falsa precisione). Chi *rileva* la contraddizione è
+il lint B (o chiunque, lavorando); chi *decide* la marcatura è il flusso principale **su conferma**
+quando il caso tocca decisioni/fonti autorevoli umane (convenzione "Contraddizioni" qui sopra).
+
 **File append-only** (il log): **non** portano `updated` nel frontmatter (sarebbe sempre stale); il loro
 stato è dato dall'ultima voce.
 

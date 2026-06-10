@@ -1,15 +1,19 @@
 ---
 title: Pulizia pycache fantasma e diagnosi .mcp.json (2026-06-05)
 type: experiment
+status: superseded
 tags: [cleanup, diagnostica, mcp, architettura, branch, master, diagnosi-storica]
 created: 2026-06-05
-updated: 2026-06-07
+updated: 2026-06-10
 sources: ["master (HEAD a4640b8)", ".mcp.json", "src/sertor_core/**"]
 ---
 
 # Pulizia pycache fantasma e diagnosi MCP (2026-06-05)
 
-> **⚠️ Superato il 2026-06-06 (diagnosi storica).** Questa pagina fotografa lo stato a `master @ a4640b8`
+> **⚠️ Superata (2026-06-06; convenzione di supersession applicata 2026-06-10, FR-017/SC-009 — vedi
+> playbook §4 *Verità, autorità e obsolescenza*):** la diagnosi è contraddetta dalle **decisioni
+> registrate** PR #13 e PR #15 (autorità sul perché) e dallo stato reale di `master` → verità corrente in
+> [[mcp-server]] e [[wiki-tools]]. Questa pagina fotografa lo stato a `master @ a4640b8`
 > (2026-06-05). **Da allora la realtà è cambiata** — le rettifiche, per evitare che un agente legga claim
 > stantii al presente:
 > - **`src/sertor_mcp/` è ora su master** (FEAT-MCP, **PR #15 mergiata**) — non più "solo su branch / PR non mergiata".

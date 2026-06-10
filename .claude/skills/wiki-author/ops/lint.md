@@ -60,6 +60,11 @@ Procedura ripetibile:
    positivi** (es. un reader che segnala link "inesistenti" già smentiti dalla CLI).
 6. **Correggi su conferma.** Aggiorna **solo le pagine attive** (stato corrente); **non riscrivere** il registro
    storico del log né gli artefatti datati. Appendi una voce di log `lint`.
+7. **Quando il finding è una pagina-superata** (non un refuso da correggere: la pagina nel suo insieme è
+   contraddetta dall'autorità — codice/test sul comportamento, decisione registrata sul perché), applica la
+   **supersession esplicita** del playbook §4 (*Verità, autorità e obsolescenza*): `status: superseded` +
+   banner datato con link alla verità corrente. **Mai cancellare d'ufficio**: la pagina si pota/fonde solo
+   in un `reorg` confermato. La gerarchia con cui giudichi il conflitto è FR-012/013 (stessa sezione).
 
 **Host-agnostico (degradazione per profilo).** I probe disponibili dipendono dall'ospite: su un host **solo-doc**
 non ci sono test/simboli di codice → salta i probe di codice e tieni i controlli su date/contraddizioni/coverage;
