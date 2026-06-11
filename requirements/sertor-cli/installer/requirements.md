@@ -1,6 +1,6 @@
 # Requisiti — CLI: installer `sertor install wiki`
 <!-- Deriva da: FEAT-002 (Installazione selettiva delle capacità del core su un repo target) -->
-<!-- STATO: elicitazione completata 2026-06-11; domande aperte DI-1..DI-5 RISOLTE con l'utente lo stesso giorno (vedi §10) -->
+<!-- STATO: CONSEGNATA — implementata come pacchetto `sertor` (specs/012-sertor-install-wiki, PR #22, mergiata su master il 2026-06-11). Residuo noto: tema lingua degli asset (italiano fisso anche con language=en) → 👍 da gestire, tracciato in roadmap/epiche -->
 <!-- Revisione 2026-06-11: primo taglio — backbone `sertor` + sottocomando `sertor install wiki`;
      `sertor install rag` e `sertor install governance` citati come futuri (fuori ambito). -->
 

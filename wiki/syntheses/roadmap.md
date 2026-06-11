@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-11 (🚢 feature 011 MERGIATA, PR #21: CLI di esecuzione RAG `sertor-rag` su master — SpecKit completo in giornata, 204 test, SC-008 CLI≡MCP)
+updated: 2026-06-11 sera (🚢🚢 DOPPIA consegna in giornata: PR #21 `sertor-rag` + PR #22 installer `sertor install wiki`, entrambe validate live; 👍 tema lingua da gestire)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md"]
 ---
 
@@ -29,35 +29,39 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | RAG agentico (FEAT-006) | Should | 📋 da decomporre |
 | Manutenzione wiki (FEAT-007) | Should | 📋 da decomporre |
 | CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
-| CLI — installer (`sertor install <capacità>`) | — | 🔄 **in progress** (implement ✅ 35/35 su branch `012`; prossimo: install live + PR) |
+| CLI — installer (`sertor install wiki`) | — | ✅ **master (2026-06-11, PR #22)**; `install rag`/`governance` = stub futuri |
+| Tema lingua (asset installer + seed structure init) | — | 👍 **da gestire** (decisione utente 2026-06-11) |
 
 *Legenda:* ✅ su master · 🧪 operativo, consolidamento aperto · 📋 pianificato · 💀 ramo morto (non su master).
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- **CLI — installer `sertor install <capacità>`** — *cosa:* backbone del comando `sertor` + primo
-  taglio `sertor install wiki` (DA-8). *Dove:* `requirements/sertor-cli/installer/requirements.md`
-  (25 REQ EARS + 7 NFR; DI-1..DI-5 risolte, DI-5 = package-data). *Dove:* branch
-  `012-sertor-install-wiki` — SpecKit completo in serata: specify ✅ · plan ✅ (PASS 10/10, D1
-  workspace + D2 assets-come-fonte) · tasks ✅ (35) · analyze ✅ (FR 25/25, 7 fix) · **implement ✅
-  35/35** (`packages/sertor/`, workspace uv senza fallback; root **221 passed + 2 xfail** + 38
-  package + 17 guardia; `.claude/` ora derivato dagli assets). *Prossimo passo:* install live su un
-  repo terzo (SC-008 reale) → PR. *Blocchi:* nessuno.
-- Coda residua: **riavvio del server MCP** alla prossima sessione (codice core cambiato; gli indici
-  nuovi si leggono già da disco).
+- *(nessuna voce in corso — feature 012 mergiata: scegliere il prossimo PLANNED)*. Code residue:
+  **riavvio del server MCP** alla prossima sessione (codice core cambiato con le feature 011+012;
+  gli indici nuovi si leggono già da disco) · **tema lingua** (vedi PLANNED).
 
 ### 📋 PLANNED (per priorità)
 - **FEAT-004 ibrido+reranking** — candidato naturale: migliora la qualità di `search_code` (debolezza
   nota) e la ricetta è già in casa (BM25+vector fusi con RRF, ingerita da [[llm-wiki-v2-agentmemory]]).
 - **FEAT-005 GraphRAG · FEAT-006 agentico** — gli altri due motori, da decomporre.
+- **Tema lingua (👍 approvato dall'utente, 2026-06-11)** — gli asset testuali dell'installer
+  (blocco rituale, skill) e il seed di `structure init` sono in **italiano fisso** anche con
+  `language=en`: la localizzazione va gestita organicamente (asset per lingua o generazione).
+  Casa naturale: FEAT-007 (che già aveva il seed) + evoluzione dell'installer.
 - **FEAT-007 manutenzione wiki** — parte con dote ricca: probe di freschezza (ex N5), helper
   `move`-con-link (ex N9), op *reconcile* delle obsolescenze (idea utente 2026-06-10), seed
-  `structure init` localizzato.
+  `structure init` localizzato **+ localizzazione asset installer (2026-06-11)**.
 - *(installer spostato in IN PROGRESS: requirements elicitati, DI-1..DI-5 da risolvere)*
 - **Misurare la pertinenza** (chiudere i 2 xfail con ground-truth reale).
 
 ### ✅ DONE (su `master`, le rilevanti)
 
+- **Installer `sertor install wiki` (feature 012, PR #22, 2026-06-11 sera)** — il pacchetto
+  **`sertor` distinto** (uv workspace) che porta il sistema-wiki su qualunque ospite
+  ([[sertor-installer]]): non distruttivo per artefatto, idempotente, install≠run, assets
+  package-data come fonte canonica (`.claude/` = derivato + test di guardia). **Validato live su un
+  repo ospite reale** (hook utente preservati, wiki operativo, re-run idempotente). 221+38 test.
+  Guida: `docs/install.md`. Aperto: tema lingua (PLANNED).
 - **CLI di esecuzione RAG `sertor-rag` (feature 011, PR #21, 2026-06-11)** — terza superficie del
   core ([[sertor-rag-cli]]): `index`/`search` dal terminale, osservabilità a runtime, validazione
   statica del backend. SpecKit completo in giornata (specify→plan→tasks→analyze→implement); suite
@@ -100,8 +104,9 @@ riproducibile e production-grade. **Una sola verità interrogabile**: sorgenti (
 - **Su `master`** (l'unico asset reale): nucleo di retrieval + motore baseline + **wiki** (metà
   deterministica `wiki_tools` **in codice** + metà giudizio **come skills/playbook** in `.claude/`) +
   **server MCP** + **query congiunta multi-collezione** e `upsert-index` in CLI (feature 010) +
-  **CLI di esecuzione RAG `sertor-rag`** (feature 011, [[sertor-rag-cli]]), più i lavori abilitanti
-  (meccanica log, decoupling store/embeddings, regola di re-index).
+  **CLI di esecuzione RAG `sertor-rag`** (feature 011, [[sertor-rag-cli]]) + **installer
+  `sertor install wiki`** (feature 012, [[sertor-installer]], pacchetto distinto in workspace), più
+  i lavori abilitanti (meccanica log, decoupling store/embeddings, regola di re-index).
 - **Dogfooding di produzione VIVO**: corpus `sertor` (207 doc / 1778 chunk, **wiki incluso** come
   documentazione — modello a corpus unico, D-21), embeddings Azure `text-embedding-3-large` + Chroma
   locale in `.index-sertor/`. Servito dal server MCP `sertor-rag`. La collezione `wiki__*` resta come
@@ -110,8 +115,8 @@ riproducibile e production-grade. **Una sola verità interrogabile**: sorgenti (
   (`specs/004`, superato dalla feature 011 reimplementata su master) e i tentativi *in codice* di
   FEAT-003-N (`specs/003`/`005`, superati dall'approccio a skills). Oggi il prodotto è usabile come
   **libreria + server MCP + CLI `sertor-rag`**; manca l'**installer** `sertor install <capacità>` (DA-8).
-- Qualità: **204 test verdi** (+2 xfail di misura), ruff pulito; ogni feature su master passata col
-  **Constitution Check** (costituzione v1.1.0, 10 principi).
+- Qualità: **259 test verdi** (221 root + 38 pacchetto `sertor`, +2 xfail di misura), ruff pulito;
+  ogni feature su master passata col **Constitution Check** (costituzione v1.1.0, 10 principi).
 
 ## Mappa delle feature (epica `sertor-core`) & stato reale
 
@@ -141,8 +146,8 @@ già su master).
 | Feature | Stato | Dove |
 |---|---|---|
 | CLI "esecuzione" (**`sertor-rag`** + `index`/`search`) | ✅ **su master (2026-06-11, PR #21)** — `src/sertor_core/cli/`, SpecKit `specs/011`; il vecchio `specs/004` resta ramo morto superato | requirements ✅ · codice ✅ |
-| Installer `sertor install <capacità>` (primo taglio: `install wiki`, contenuto in DA-8) | 📋 da elicitare (`/requirements`) | epica §9 DA-8 |
-| Wizard config · setup governance · PyPI | 💤 da decomporre/Won't ora | — |
+| Installer **`sertor install wiki`** (pacchetto `sertor` distinto, uv workspace) | ✅ **su master (2026-06-11, PR #22)** — `packages/sertor/`, SpecKit `specs/012`; validato live su ospite reale; `install rag`/`governance` stub | requirements ✅ · codice ✅ |
+| Localizzazione asset (tema lingua) · wizard config · `install rag`/`governance` · PyPI | 💤 da gestire/decomporre | tema lingua 👍 (2026-06-11) |
 
 > Oggi il prodotto si usa come **libreria** (`import sertor_core`), via **server MCP** e via
 > **CLI `sertor-rag`** ([[sertor-rag-cli]]). Il vecchio ramo CLI (`specs/004`) è definitivamente
@@ -174,7 +179,7 @@ già su master).
 | Migliorare la **qualità `search_code`** (oggi debole su query architetturali) | Il retrieval di codice è il caso d'uso primario | Naturale candidato per FEAT-004 (ibrido) / FEAT-005 (grafo) | 🗣️ in discussione |
 | Promuovere **PowerShell / T-SQL / PL-SQL** da fallback a chunking sintattico | Qualità di chunking per questi linguaggi | Validare node-type tree-sitter; incrementale | 💡 idea |
 | **Logging come strategia runtime** (osservabilità porta+adapter scelta a runtime) | Oggi la CLI non instrada i log da nessuna parte | Refactor deterministico → SpecKit | 💡 idea |
-| **Seed di `structure init` localizzato** (usare `language`/`[strings]` della config) | Finding dell'esercizio N3 su spec-kit: seed in italiano su ospite `en` | Fix D piccolo in `wiki_tools`; candidato FEAT-007 | 💡 idea |
+| **Tema lingua** (seed `structure init` + asset testuali dell'installer in italiano fisso anche con `language=en`) | Coerenza dell'esperienza su ospiti non-italiani | Seed: fix D in `wiki_tools`; asset: per-lingua o generazione; casa FEAT-007 + evoluzione installer | 👍 **da gestire** (utente, 2026-06-11) |
 
 ---
 
