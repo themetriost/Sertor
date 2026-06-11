@@ -189,11 +189,22 @@ pool_size > k, e.g. 3× k) and centralised in `Settings`.*
 
 ### Gruppo D — Selezione del motore e integrazione con il composition root
 
-**REQ-030 (Ubiquitous)** *The system shall expose a configuration knob (e.g. `SERTOR_ENGINE`)
-to select the active engine (`baseline` or `hybrid`); the default shall be `baseline` (no
-change to existing behaviour until explicitly configured).*
+**REQ-030 (Ubiquitous)** *The system shall expose the configuration knob `SERTOR_ENGINE` to
+select the active engine (`baseline` or `hybrid`); the default shall be **`hybrid`** (the
+better engine is the default; `baseline` remains selectable explicitly).*
 
-> [DA CHIARIRE — D1]: vedi sezione 10.
+> D1 risolta (2026-06-11, decisione utente — diversa dalla raccomandazione default-baseline):
+> nome `SERTOR_ENGINE` confermato, **default `hybrid`**. La retro-compatibilità degli indici
+> esistenti è garantita dalla degradazione di REQ-034 (DA-1b), non dal default.
+
+**REQ-034 (Unwanted behaviour)** *If the hybrid engine is selected (including by default) and
+the lexical index for the target collection is absent (corpus indexed before the hybrid
+feature), then the system shall degrade gracefully to dense-only retrieval (equivalent to
+baseline results), emitting a structured warning log event that states the lexical index is
+missing and re-indexing enables hybrid retrieval; the query shall NOT fail.*
+
+> DA-1b risolta (2026-06-11): **degradazione a vettoriale + warning**. Conseguenza diretta del
+> default `hybrid`: nessuna ricerca esistente si rompe; lo stato è onesto via log (Principio IX).
 
 **REQ-031 (Ubiquitous)** *The engine selection shall be resolved exclusively in the
 composition root (`src/sertor_core/composition.py`); no service, facade, or adapter shall
@@ -220,7 +231,11 @@ attribute), so that the composition root can substitute them transparently.*
 native Azure AI Search hybrid query (combining dense and keyword search) and optional
 semantic ranker, instead of performing client-side RRF.*
 
-> [DA CHIARIRE — D2]: vedi sezione 10.
+> D2 risolta (2026-06-11): il gruppo E **resta Could** — il core ibrido (porta lessicale + RRF
+> client-side) è **store-agnostico by design** e funziona su qualunque adapter `VectorStore`
+> (Chroma oggi; PGVector/MongoDB su Azure quando ne esisteranno gli adapter — **voce di backlog
+> aggiunta in roadmap** come feature separata). La delega nativa per-store (AI Search, Atlas) si
+> implementa quando uno di quegli store sarà in uso.
 
 **REQ-041 (Optional feature)** *Where the Azure-native hybrid path is selected, the system
 shall produce results functionally equivalent to the client-side RRF path (same `RetrievalResult`
@@ -239,6 +254,9 @@ containing at least 10 query–expected-file pairs, covering both lexical/symbol
 > `tests/integration/test_precision_at_k.py`. Il set minimo di 10 coppie è sufficiente per
 > un confronto statisticamente indicativo (il prototipo ne usava 18: 10 NL + 8 symbol,
 > `prototype/02-hybrid-reranking/eval_queries.json`).
+> DA-4 risolta (2026-06-11): **5-6 coppie "ovvie" si fissano già in fase di design**
+> (es. `"EmbeddingProvider"` → `src/sertor_core/domain/ports.py`), il set si completa ad
+> almeno 10 in implementazione.
 
 **REQ-051 (Event-driven)** *When the evaluation runs on the ground-truth set, the system
 shall compare baseline, hybrid, and hybrid+rerank (where reranker is available) reporting
@@ -277,8 +295,13 @@ credentials); redaction follows the existing pattern (`observability/logging.py`
 **REQ-070 (Ubiquitous)** *The `BaselineEngine` and its tests shall remain unchanged and fully
 passing after the introduction of the hybrid engine.*
 
-**REQ-071 (Ubiquitous)** *The default configuration (`SERTOR_ENGINE=baseline`) shall produce
-identical results to the current system for all existing consumers.*
+**REQ-071 (Ubiquitous)** *Setting `SERTOR_ENGINE=baseline` explicitly shall produce results
+identical to the current system for all existing consumers; under the default (`hybrid`),
+corpora indexed before this feature shall keep working via the graceful degradation of
+REQ-034 (dense-only results, equivalent to baseline) until re-indexed.*
+
+> Rev. D1/DA-1b (2026-06-11): la retro-compatibilità non passa più dal default ma dalla
+> coppia "baseline selezionabile" + "degradazione senza errori".
 
 **REQ-072 (Ubiquitous)** *The hybrid engine shall be non-destructive on the target repository:
 it shall not modify user source files; the lexical index shall be stored in the same
@@ -293,12 +316,12 @@ namespaced index directory as the vector store (e.g. `.index/`).*
 | NFR-01 | **Dipendenze verso l'interno** (Principio I) | Il motore ibrido dipende solo dalle porte del dominio (`EmbeddingProvider`, `VectorStore`) e dalle entità (`RetrievalResult`); non importa SDK concreti di vector store né di embeddings direttamente. |
 | NFR-02 | **Isolamento dipendenze pesanti** (Principio III) | La dipendenza del reranker (cross-encoder) è installabile separatamente (extra dedicato) e importata in modo lazy; la sua assenza non impedisce l'installazione o l'uso del pacchetto base. |
 | NFR-03 | **Testabilità senza rete** (Principio V) | Il motore ibrido è testabile con provider mock (`FakeEmbedder`, `InMemoryStore`) e indice lessicale mock/in-memory, senza cloud né rete; i test unitari devono passare con `pytest -m "not cloud"`. |
-| NFR-04 | **Latenza doppio retrieval** | La latenza totale di una query ibrida (senza reranker) deve essere accettabile per uso interattivo da un agente LLM: il doppio retrieval (vettoriale + lessicale) non deve introdurre attesa percettibile su corpus di dimensioni tipiche di una codebase media (< 10.000 chunk). [DA CHIARIRE — D3: soglia numerica] |
+| NFR-04 | **Latenza doppio retrieval** | La latenza totale di una query ibrida (senza reranker) deve essere accettabile per uso interattivo da un agente LLM: il doppio retrieval (vettoriale + lessicale) non deve introdurre attesa percettibile su corpus di dimensioni tipiche di una codebase media (< 10.000 chunk). *(D3 risolta 2026-06-11: criterio QUALITATIVO + misura empirica nel dogfood; una soglia numerica si fissa solo se emerge un problema.)* |
 | NFR-05 | **Configurabilità centralizzata** (Principio VIII) | Tutti i parametri del motore ibrido (costante RRF `c`, pool size, abilitazione reranker, selezione engine) sono in `Settings`; nessun default hardcodato nei componenti. |
 | NFR-06 | **Idempotenza** (Principio VI) | Re-indicizzare lo stesso corpus produce gli stessi chunk e lo stesso indice lessicale; le query sullo stesso indice producono lo stesso risultato ordinato (determinismo). |
 | NFR-07 | **Osservabilità** (Principio IX) | Ogni operazione di retrieval ibrido emette log strutturati sufficienti a diagnosticare un fallimento senza leggere il codice (REQ-060/061/062). |
 | NFR-08 | **Host-agnosticità** (Principio X) | Il motore ibrido non presuppone la struttura interna del progetto ospite; funziona su qualsiasi corpus indicizzato con il nucleo sertor. |
-| NFR-09 | **Retro-compatibilità** | Nessun consumatore esistente (facade, MCP, CLI) richiede modifiche di codice o di configurazione per continuare a funzionare con `SERTOR_ENGINE=baseline` (default). |
+| NFR-09 | **Retro-compatibilità** | Nessun consumatore esistente (facade, MCP, CLI) richiede modifiche di codice o di configurazione per continuare a funzionare: col default `hybrid`, gli indici pre-esistenti degradano a vettoriale senza errori (REQ-034); `SERTOR_ENGINE=baseline` resta selezionabile e produce risultati identici a oggi. |
 
 ---
 
@@ -374,7 +397,19 @@ namespaced index directory as the vector store (e.g. `.index/`).*
 
 ---
 
-## 10. Domande aperte
+## 10. Domande aperte (RISOLTE il 2026-06-11)
+
+Tutte risolte con l'utente lo stesso giorno dell'elicitazione e codificate nei requisiti:
+
+| # | Tema | Decisione | Codificata in |
+|---|------|-----------|---------------|
+| D1 | Manopola motore | `SERTOR_ENGINE`, **default `hybrid`** (decisione utente, diversa dalla raccomandazione default-baseline: il motore migliore è il default) | REQ-030 |
+| DA-1b | Indici pre-ibrido col default `hybrid` | **Degradazione a vettoriale + warning strutturato** (mai errore) | REQ-034 (nuovo), REQ-071, NFR-09 |
+| D2 | Percorso nativo per-store | **Resta Could**; core RRF store-agnostico by design (pgvector/Mongo via futuri adapter — voce di backlog in roadmap) | Gruppo E |
+| D3 | Latenza | **Qualitativa + misura empirica** nel dogfood | NFR-04 |
+| D4 | Ground-truth | **5-6 coppie ovvie già nel design**, completate a ≥10 in implementazione | REQ-050 |
+
+Il dettaglio originale delle opzioni valutate resta sotto, per tracciabilità.
 
 ### DA-1 — Selezione del motore: granularità della manopola
 

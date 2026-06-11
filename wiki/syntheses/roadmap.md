@@ -37,10 +37,13 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 ### 🔄 IN PROGRESS (dettaglio)
 
 - **FEAT-004 — Motore RAG ibrido + reranking** — *cosa:* secondo motore RAG del core (BM25+vector
-  fusi con RRF + reranking; ricetta da [[llm-wiki-v2-agentmemory]] e prototipo 02); obiettivo:
-  qualità di `search_code` su query architetturali. *Dove:* fase **requirements** in corso
-  (decomposizione dall'epica → `requirements/sertor-core/motore-ibrido/`). *Prossimo passo:*
-  risolvere le domande aperte dell'elicitazione → SpecKit. *Blocchi:* nessuno.
+  fusi con RRF + reranking opzionale; ricetta da [[llm-wiki-v2-agentmemory]] e prototipo 02);
+  obiettivo: qualità di `search_code` su query architetturali, **dimostrata** dal ground-truth set
+  (chiude i 2 xfail). *Dove:* `requirements/sertor-core/motore-ibrido/requirements.md` — **36 REQ
+  EARS, domande D1..D4 tutte risolte** (decisioni: `SERTOR_ENGINE` default **hybrid** con
+  degradazione a vettoriale+warning sugli indici pre-ibrido; nativo per-store resta Could, core
+  store-agnostico; latenza qualitativa; 5-6 coppie ground-truth nel design). *Prossimo passo:*
+  `/speckit-specify`. *Blocchi:* nessuno.
 - Code residue: **riavvio del server MCP** alla prossima sessione (codice core cambiato con
   011+012) · **tema lingua** (vedi PLANNED).
 
@@ -185,6 +188,7 @@ già su master).
 | Promuovere **PowerShell / T-SQL / PL-SQL** da fallback a chunking sintattico | Qualità di chunking per questi linguaggi | Validare node-type tree-sitter; incrementale | 💡 idea |
 | **Logging come strategia runtime** (osservabilità porta+adapter scelta a runtime) | Oggi la CLI non instrada i log da nessuna parte | Refactor deterministico → SpecKit | 💡 idea |
 | **Tema lingua** (seed `structure init` + asset testuali dell'installer in italiano fisso anche con `language=en`) | Coerenza dell'esperienza su ospiti non-italiani | Seed: fix D in `wiki_tools`; asset: per-lingua o generazione; casa FEAT-007 + evoluzione installer | 👍 **da gestire** (utente, 2026-06-11) |
+| **Adapter VectorStore per PGVector / MongoDB su Azure** | Ibrido e retrieval su store cloud alternativi ad AI Search (il motore ibrido è già store-agnostico via porte) | Nuovi adapter della porta `VectorStore` (+ eventuale delega ibrida nativa per Atlas Search); feature separata da FEAT-004 | 💡 idea (da DA-2 FEAT-004, 2026-06-11) |
 
 ---
 
