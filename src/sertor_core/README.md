@@ -22,10 +22,16 @@ composition.py build_facade() / build_indexer() / build_embedder() / build_store
 
 ## Installazione
 
+Il pacchetto **non è (ancora) su PyPI**: la distribuzione interim è via `git+url` (DA-4 dell'epica CLI).
+
 ```bash
-uv pip install sertor-core              # base: Chroma (locale) + Ollama (locale)
-uv pip install "sertor-core[azure]"     # extra cloud: Azure OpenAI + Azure AI Search
+# base: Chroma (locale) + Ollama (locale)
+uv add "sertor-core @ git+https://github.com/themetriost/Sertor"
+# extra cloud e server MCP
+uv add "sertor-core[azure,mcp] @ git+https://github.com/themetriost/Sertor"
 ```
+
+Guida completa per installare su un altro repository: [`docs/install.md`](../../docs/install.md).
 
 Il chunking usa `tree-sitter-language-pack` (wheel precompilati, nessuna toolchain C).
 

@@ -64,10 +64,19 @@ a incorporare assunzioni specifiche del progetto. Questo principio è vincolante
 In **costruzione attiva**. Disponibile oggi su `master`:
 
 - ✅ **`sertor-core`** — libreria di retrieval prod-ready (ingestione, chunking, embeddings, facade).
-- ✅ **Motore RAG baseline** (vettoriale) con valutazione (hit\@k, MRR).
+- ✅ **Motore RAG baseline** (vettoriale) con valutazione (hit\@k, MRR) e query congiunta multi-collezione.
+- ✅ **Server MCP** (`sertor_mcp`) — `search_code`/`search_docs`/`search_combined` per Claude Code e client MCP.
+- ✅ **CLI di esecuzione `sertor-rag`** — `index`/`search` dal terminale, osservabilità a runtime.
+- ✅ **LLM Wiki** — nucleo deterministico `sertor-wiki-tools` (scan/lint/structure/index/log) +
+  operazioni di giudizio come skill agentiche.
 
-In sviluppo: LLM Wiki end-to-end, motori avanzati (ibrido/grafo/agentico), refresh incrementale
-dell'indice, veicoli CLI e MCP.
+In sviluppo: installer `sertor install <capacità>`, motori avanzati (ibrido/grafo/agentico),
+refresh incrementale dell'indice, distribuzione PyPI.
+
+## Installazione su un altro repository
+
+Vedi **[`docs/install.md`](docs/install.md)** — installazione interim via `git+url`, configurazione
+`.env`, primi comandi `sertor-rag`, server MCP e tooling wiki.
 
 ## Sviluppo
 
