@@ -72,6 +72,27 @@ def test_query_missing_index_raises(sample_repo):
         engine.query("x")
 
 
+# -------------------------------------------- FEAT-011: ensure_index (check strict estratto, D6)
+def test_ensure_index_missing_raises():
+    engine = BaselineEngine(FakeEmbedder(dim=8), InMemoryStore(), "mai-creata", S)
+    with pytest.raises(IndexNotFoundError):          # via strict riusabile dalla CLI (FR-012)
+        engine.ensure_index()
+
+
+def test_ensure_index_populated_returns_none(sample_repo):
+    engine = _indexed_engine(sample_repo)
+    assert engine.ensure_index() is None             # indice presente -> nessuna eccezione
+
+
+def test_query_delegates_to_ensure_index(sample_repo, monkeypatch):
+    # query() non deve duplicare il check: deve invocare ensure_index() (Boy Scout Rule, fix F1)
+    engine = _indexed_engine(sample_repo)
+    calls = {"n": 0}
+    monkeypatch.setattr(engine, "ensure_index", lambda: calls.__setitem__("n", calls["n"] + 1))
+    engine.query("x")
+    assert calls["n"] == 1
+
+
 def test_query_provider_down_raises(sample_repo):
     store = InMemoryStore()
     BaselineEngine(FakeEmbedder(dim=8), store, COLL, S).index(sample_repo)  # popola l'indice

@@ -9,10 +9,20 @@ Nota: esercitato contro un servizio reale (test marcati `cloud`); la CI locale u
 """
 from __future__ import annotations
 
+import logging
+
 from sertor_core.domain.entities import DocType, EmbeddedChunk, RetrievalResult
 from sertor_core.domain.errors import VectorStoreError
+from sertor_core.observability.logging import log_event
 
 _BACKEND = "azure_search"
+
+
+def _raise_store_error(message: str, exc: Exception) -> None:
+    """Emette l'evento `store_error` al boundary (FR-020) e solleva `VectorStoreError`."""
+    reason = type(exc).__name__
+    log_event(logging.ERROR, "store_error", backend=_BACKEND, reason=reason)
+    raise VectorStoreError(message, backend=_BACKEND, reason=reason) from exc
 
 
 def _require_sdk():
@@ -66,11 +76,7 @@ class AzureSearchStore:
         try:
             self._client(collection).upload_documents(documents=docs)
         except Exception as exc:
-            raise VectorStoreError(
-                "errore durante l'upsert su Azure AI Search",
-                backend=_BACKEND,
-                reason=type(exc).__name__,
-            ) from exc
+            _raise_store_error("errore durante l'upsert su Azure AI Search", exc)
 
     def query(
         self, collection: str, vector: list[float], k: int, doc_type: str = "both"
@@ -101,11 +107,8 @@ class AzureSearchStore:
                 for d in res
             ]
         except Exception as exc:
-            raise VectorStoreError(
-                "errore durante la query su Azure AI Search",
-                backend=_BACKEND,
-                reason=type(exc).__name__,
-            ) from exc
+            _raise_store_error("errore durante la query su Azure AI Search", exc)
+            return []  # irraggiungibile: _raise_store_error solleva sempre
 
     def delete(self, collection: str, ids: list[str]) -> None:
         if not ids:
@@ -113,11 +116,7 @@ class AzureSearchStore:
         try:
             self._client(collection).delete_documents(documents=[{"id": i} for i in ids])
         except Exception as exc:
-            raise VectorStoreError(
-                "errore durante la delete su Azure AI Search",
-                backend=_BACKEND,
-                reason=type(exc).__name__,
-            ) from exc
+            _raise_store_error("errore durante la delete su Azure AI Search", exc)
 
     def reset(self, collection: str) -> None:
         # Rebuild-from-scratch: svuota l'index eliminando tutti i documenti (idempotente).
@@ -144,8 +143,5 @@ class AzureSearchStore:
             )
             return sorted(client.list_index_names())
         except Exception as exc:
-            raise VectorStoreError(
-                "errore durante l'elenco degli index su Azure AI Search",
-                backend=_BACKEND,
-                reason=type(exc).__name__,
-            ) from exc
+            _raise_store_error("errore durante l'elenco degli index su Azure AI Search", exc)
+            return []  # irraggiungibile: _raise_store_error solleva sempre

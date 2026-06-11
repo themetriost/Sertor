@@ -62,6 +62,7 @@ class Settings:
 
     # retrieval
     default_k: int = 5
+    preview_chars: int = 240               # lunghezza anteprima nei risultati CLI (FEAT-011, D5)
 
     # ingestione
     exclude_patterns: tuple[str, ...] = _DEFAULT_EXCLUDES
@@ -70,6 +71,29 @@ class Settings:
     def embed_provider(self) -> str:
         """Provider di embeddings coerente col backend: azure in cloud, ollama in locale."""
         return "azure" if self.backend == "azure" else "ollama"
+
+    def validate_backend(self) -> list[str]:
+        """Nomi delle variabili d'ambiente richieste ma mancanti per il backend selezionato (D3).
+
+        Validazione **statica** (FR-015): non contatta servizi, ritorna solo l'elenco dei campi di
+        configurazione vuoti che il backend/store scelto richiede. È l'UNICA fonte della mappa
+        "quali campi servono per azure" (Principio VIII): la CLI conosce solo l'esito.
+        `local` (Ollama/Chroma, default validi) non è mai bloccato → lista vuota.
+        """
+        missing: list[str] = []
+        if self.backend == "azure":
+            if not self.azure_openai_endpoint:
+                missing.append("AZURE_OPENAI_ENDPOINT")
+            if not self.azure_openai_api_key:
+                missing.append("AZURE_OPENAI_API_KEY")
+            if not self.azure_openai_embed_deployment:
+                missing.append("AZURE_OPENAI_EMBED_DEPLOYMENT")
+        if self.store_backend == "azure":
+            if not self.azure_search_endpoint:
+                missing.append("AZURE_SEARCH_ENDPOINT")
+            if not self.azure_search_api_key:
+                missing.append("AZURE_SEARCH_API_KEY")
+        return missing
 
     @classmethod
     def load(cls, env_file: str | os.PathLike[str] | None = ".env") -> Settings:
@@ -105,5 +129,6 @@ class Settings:
             chunk_size=int(os.getenv("CHUNK_SIZE", "1600")),
             chunk_overlap=int(os.getenv("CHUNK_OVERLAP", "200")),
             default_k=int(os.getenv("DEFAULT_K", "5")),
+            preview_chars=int(os.getenv("SERTOR_PREVIEW_CHARS", "240")),
             exclude_patterns=tuple(excludes) if excludes is not None else _DEFAULT_EXCLUDES,
         )

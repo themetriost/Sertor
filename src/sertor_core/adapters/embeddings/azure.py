@@ -9,9 +9,12 @@ quella classica (con `?api-version=`). `api-version` è inviato solo se l'endpoi
 """
 from __future__ import annotations
 
+import logging
+
 import httpx
 
 from sertor_core.domain.errors import EmbeddingError
+from sertor_core.observability.logging import log_event
 
 
 class AzureEmbedder:
@@ -56,13 +59,20 @@ class AzureEmbedder:
             return [d["embedding"] for d in data]
         except httpx.HTTPStatusError as exc:
             status = exc.response.status_code
+            retriable = status >= 500 or status == 429
+            # Evento strutturato al boundary PRIMA di propagare (FR-020): osservabilità additiva,
+            # il comportamento d'errore resta invariato.
+            log_event(logging.ERROR, "embeddings_error",
+                      provider=self.name, reason=f"http {status}", retriable=retriable)
             raise EmbeddingError(
                 "errore dal provider di embeddings",
                 provider=self.name,
                 reason=f"http {status}",
-                retriable=status >= 500 or status == 429,
+                retriable=retriable,
             ) from exc
         except httpx.HTTPError as exc:
+            log_event(logging.ERROR, "embeddings_error",
+                      provider=self.name, reason=type(exc).__name__, retriable=True)
             raise EmbeddingError(
                 "provider di embeddings non raggiungibile",
                 provider=self.name,

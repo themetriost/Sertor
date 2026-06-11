@@ -65,6 +65,11 @@ collection=sertor__azure_text_embedding_3_large documents=128 chunks=1430 embedd
 }
 ```
 
+> **Campi opzionali (`embedding_dim`, `elapsed_ms`).** `IndexReport` li definisce `Optional` (possono
+> essere assenti, es. corpus vuoto → provider mai interrogato → `dim` ignota). Resa esplicita e
+> coerente tra i due formati (fix F7/F12 analyze): nel JSON il campo è **presente con valore `null`**;
+> nell'output umano si rende con `?` (es. `embedding_dim=? elapsed_ms=?`).
+
 ### Comportamenti d'errore
 | Condizione | Esito | Requisito |
 |------------|-------|-----------|
