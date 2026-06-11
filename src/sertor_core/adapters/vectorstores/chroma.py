@@ -7,15 +7,28 @@ coseno. Una collezione assente fa restituire `[]` (REQ-028); un errore del backe
 """
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 from sertor_core.domain.entities import DocType, EmbeddedChunk, RetrievalResult
 from sertor_core.domain.errors import VectorStoreError
+from sertor_core.observability.logging import log_event
 
 _BACKEND = "chroma"
 # Chiavi di metadato scalari ammesse da Chroma (no None, no sequenze).
 _META_KEYS = ("path", "doc_type", "chunker", "language", "qualname", "node_type",
               "start_line", "end_line", "heading_path")
+
+
+def _raise_store_error(message: str, exc: Exception) -> None:
+    """Emette l'evento `store_error` al boundary (FR-020) e solleva `VectorStoreError`.
+
+    Usato SOLO per gli errori veri del backend; l'assenza lecita della collezione (→ `[]`, REQ-028)
+    NON passa di qui e non viene loggata come ERROR (sarebbe un falso positivo).
+    """
+    reason = type(exc).__name__
+    log_event(logging.ERROR, "store_error", backend=_BACKEND, reason=reason)
+    raise VectorStoreError(message, backend=_BACKEND, reason=reason) from exc
 
 
 def _clean_metadata(payload: dict) -> dict:
@@ -40,11 +53,7 @@ class ChromaStore:
 
                 self._client = chromadb.PersistentClient(path=str(persist_dir))
             except Exception as exc:  # backend non inizializzabile
-                raise VectorStoreError(
-                    "impossibile inizializzare il vector store",
-                    backend=_BACKEND,
-                    reason=type(exc).__name__,
-                ) from exc
+                _raise_store_error("impossibile inizializzare il vector store", exc)
 
     def upsert(self, collection: str, records: list[EmbeddedChunk]) -> None:
         if not records:
@@ -60,11 +69,7 @@ class ChromaStore:
                 metadatas=[_clean_metadata(r.payload) for r in records],
             )
         except Exception as exc:
-            raise VectorStoreError(
-                "errore durante l'upsert nel vector store",
-                backend=_BACKEND,
-                reason=type(exc).__name__,
-            ) from exc
+            _raise_store_error("errore durante l'upsert nel vector store", exc)
 
     def query(
         self, collection: str, vector: list[float], k: int, doc_type: str = "both"
@@ -82,11 +87,7 @@ class ChromaStore:
         try:
             res = coll.query(query_embeddings=[vector], n_results=k, where=where)
         except Exception as exc:
-            raise VectorStoreError(
-                "errore durante la query nel vector store",
-                backend=_BACKEND,
-                reason=type(exc).__name__,
-            ) from exc
+            _raise_store_error("errore durante la query nel vector store", exc)
         return _to_results(res)
 
     def delete(self, collection: str, ids: list[str]) -> None:
@@ -99,11 +100,7 @@ class ChromaStore:
         try:
             coll.delete(ids=ids)
         except Exception as exc:
-            raise VectorStoreError(
-                "errore durante la delete nel vector store",
-                backend=_BACKEND,
-                reason=type(exc).__name__,
-            ) from exc
+            _raise_store_error("errore durante la delete nel vector store", exc)
 
     def reset(self, collection: str) -> None:
         # Rebuild-from-scratch: elimina la collezione se esiste (idempotente: assente = no-op).
@@ -126,11 +123,8 @@ class ChromaStore:
         try:
             return sorted(c.name for c in self._client.list_collections())
         except Exception as exc:
-            raise VectorStoreError(
-                "errore durante l'elenco delle collezioni",
-                backend=_BACKEND,
-                reason=type(exc).__name__,
-            ) from exc
+            _raise_store_error("errore durante l'elenco delle collezioni", exc)
+            return []  # irraggiungibile: _raise_store_error solleva sempre (per il type checker)
 
 
 def _to_results(res: dict) -> list[RetrievalResult]:

@@ -51,6 +51,20 @@ class BaselineEngine:
         indexer = IndexingService(self._embedder, self._store, self._collection, self._settings)
         return indexer.index(root, rebuild=True)
 
+    def ensure_index(self) -> None:
+        """Verifica strict che l'indice esista, altrimenti `IndexNotFoundError` (REQ-009).
+
+        Check **esplicito** (niente lista vuota silenziosa) riusabile dai consumatori — es. la CLI
+        lo invoca prima di instradare la ricerca per `--type code|doc|both`, mantenendo la via
+        strict per tutti i filtri (FEAT-011, D6). `query()` vi delega: il check vive in un solo
+        punto.
+        """
+        if not self._store.exists(self._collection):
+            raise IndexNotFoundError(
+                "indice inesistente: costruiscilo (index) prima di interrogare",
+                collection=self._collection,
+            )
+
     def query(self, query: str, k: int | None = None) -> list[RetrievalResult]:
         """Top-k chunk per similarità vettoriale (REQ-005..008).
 
@@ -58,11 +72,7 @@ class BaselineEngine:
         silenziosa. Un provider non disponibile propaga `EmbeddingError` (REQ-010).
         """
         k = k or self._default_k
-        if not self._store.exists(self._collection):
-            raise IndexNotFoundError(
-                "indice inesistente: costruiscilo (index) prima di interrogare",
-                collection=self._collection,
-            )
+        self.ensure_index()
         started = time.perf_counter()
         vector = self._embedder.embed([query])[0]
         results = self._store.query(self._collection, vector, k, "both")

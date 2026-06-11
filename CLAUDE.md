@@ -370,8 +370,10 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/010-query-congiunta-e-upsert-index/plan.md` (pezzi D residui di FEAT-003 — query congiunta
-multi-collezione codice+wiki nella facade + sottocomando `upsert-index` nella CLI wiki). In `master`:
+`specs/011-cli-esecuzione-rag/plan.md` (FEAT-011 — console-script `sertor-rag` del core con
+sottocomandi `index <path>`/`search <query>`, validazione statica backend, osservabilità a runtime
+`-v`/`--log-json`/`--log-config`, evento di log strutturato ai boundary). In `master`:
 FEAT-001 `specs/001-nucleo-retrieval/plan.md`, FEAT-002 `specs/002-rag-baseline/plan.md`,
-FEAT-003-D `specs/006-nucleo-wiki-deterministico/plan.md`, FEAT-MCP `specs/007-mcp-sertor-core/plan.md`.
+FEAT-003-D `specs/006-nucleo-wiki-deterministico/plan.md`, FEAT-MCP `specs/007-mcp-sertor-core/plan.md`;
+feature 010 (query congiunta + `upsert-index`) `specs/010-query-congiunta-e-upsert-index/plan.md`.
 <!-- SPECKIT END -->
