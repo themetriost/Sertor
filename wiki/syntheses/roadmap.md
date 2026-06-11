@@ -37,10 +37,10 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 - **CLI — feature `esecuzione` (`sertor-rag index/search`)** — *cosa:* CLI di esecuzione RAG come
   console-script del core (DA-8: `sertor` resta riservato all'installer `sertor install <capacità>`).
-  *Dove:* `requirements/sertor-cli/esecuzione/requirements.md` (rev. 2026-06-11: REQ-001→`sertor-rag`,
-  gruppo D rimosso, REQ-041 precisato) + epica `requirements/sertor-cli/epic.md` (DA-8). *Prossimo
-  passo:* avviare il flusso SpecKit (`/speckit-specify` → branch + PR, policy produzione). *Blocchi:*
-  nessuno.
+  *Dove:* branch `011-cli-esecuzione-rag`, `specs/011-cli-esecuzione-rag/spec.md` (specify ✅,
+  checklist qualità tutta verde, zero NEEDS CLARIFICATION); requisiti a monte
+  `requirements/sertor-cli/esecuzione/requirements.md` (rev. 2026-06-11) + DA-8 in epica. *Prossimo
+  passo:* `/speckit-plan` (clarify non necessaria: decisioni già chiuse in EARS). *Blocchi:* nessuno.
 
 ### 📋 PLANNED (per priorità)
 - **FEAT-004 ibrido+reranking** — candidato naturale: migliora la qualità di `search_code` (debolezza
