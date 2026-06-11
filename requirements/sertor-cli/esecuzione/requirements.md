@@ -1,25 +1,38 @@
 # Requisiti — CLI: esecuzione delle capacità del core
 <!-- Deriva da: FEAT-CLI-001 (backbone entry-point) + FEAT-CLI-004 (esecuzione RAG) + fetta minima di FEAT-CLI-003 (config provider) -->
+<!-- Revisione 2026-06-11: ridiscussione requisito-per-requisito post FEAT-003/FEAT-MCP/feature 010/D-21.
+     Entry-point spostato sul core (`sertor-rag`, DA-8 epica); gruppo D (wiki index) rimosso; REQ-041 precisato. -->
+
+> **Revisione 2026-06-11 (DA-8 epica).** Il comando `sertor` è riservato all'**installer**
+> (`sertor install <capacità>`); l'esecuzione vive nei **console-script del core**: il nuovo
+> **`sertor-rag`** (questa feature: `index`/`search`) accanto a `sertor-wiki-tools` (già su master).
+> REQ-030/031 (`wiki index`) sono stati rimossi: superati da `sertor-wiki-tools index` e dal modello
+> a corpus unico (D-21 epica: il wiki dell'ospite è documentazione del corpus primario, lo indicizza
+> il normale `sertor-rag index`).
 
 ## 1. Contesto e problema (perché)
 
-Le capacità del core (`sertor-core`, FEAT-001/002/003, ora in `master`) sono usabili **solo come
-libreria Python**: per indicizzare un repository o interrogarlo bisogna scrivere codice
-(`build_indexer().index(...)`, `build_facade().search_code(...)`, `index_wiki(...)`). Manca un
-**punto d'ingresso eseguibile** che permetta di lanciare queste operazioni da riga di comando.
+Le capacità RAG del core (`sertor-core`, ora in `master`) sono usabili **solo come libreria Python o
+via server MCP**: per indicizzare un repository o interrogarlo dal terminale bisogna scrivere codice
+(`build_indexer().index(...)`, `build_facade().search_code(...)`). Manca un **punto d'ingresso
+eseguibile** che permetta di lanciare queste operazioni da riga di comando. Il precedente esiste già
+nel pacchetto: `sertor-wiki-tools` (CLI sottile del nucleo wiki, `wiki_tools/__main__.py`) ha rodato
+il pattern parse → chiama funzioni del core → output umano/JSON + exit code.
 
 Inoltre il core emette **log strutturati** (Principio IX) ma di default **non sono visibili**: usa la
 `logging` stdlib senza configurare handler/livello (scelta voluta, per non imporre un framework al
 chiamante). Serve un consumatore che **renda osservabili** i log e permetta di collegarvi appender
 esterni (file, syslog, Splunk/ELK).
 
-Questa feature copre il **primo taglio "run-centrico" della CLL**: i comandi che *eseguono* il core
-su un repository, più la gestione dell'osservabilità a runtime. È il prerequisito per il *dogfooding
-di produzione* (indicizzare il repo Sertor stesso con il motore nuovo).
+Questa feature copre il **primo taglio "run-centrico"**: i comandi che *eseguono* il core su un
+repository, più la gestione dell'osservabilità a runtime. È il prerequisito per il *dogfooding di
+produzione via CLI* (indicizzare e interrogare il repo Sertor stesso dal terminale).
 
 *Ancora al core (in master):* `src/sertor_core/composition.py` (`build_indexer`, `build_facade`,
-`build_baseline_engine`, `build_llm`); `src/sertor_core/wiki/indexing.py` (`index_wiki`);
-`src/sertor_core/observability/logging.py` (logger nominato `sertor_core`, `log_event`, `redact`).
+`build_baseline_engine`); `src/sertor_core/config/settings.py` (`Settings.load`);
+`src/sertor_core/observability/logging.py` (logger nominato `sertor_core`, `log_event`, `redact`);
+`src/sertor_core/wiki_tools/__main__.py` (pattern CLI di riferimento, console-script in
+`pyproject.toml [project.scripts]`).
 
 ---
 
@@ -27,9 +40,9 @@ di produzione* (indicizzare il repo Sertor stesso con il motore nuovo).
 
 | ID | Criterio (misurabile, tech-agnostico) | Collegamento epica |
 |----|----------------------------------------|--------------------|
-| LSC-1 | Da riga di comando si indicizza un repository qualunque e si ottiene un report (n. chunk + dimensione embedding), senza scrivere codice. | CS-1, FEAT-CLI-004 |
-| LSC-2 | Da riga di comando si interroga l'indice (codice/doc/combinata) e si ottengono i top-k risultati con metadati. | CS-1, FEAT-CLI-004 |
-| LSC-3 | Da riga di comando si indicizza un wiki nel RAG come corpus documentale. | CS-1, FEAT-CLI-004 + FEAT-003 |
+| LSC-1 | Da riga di comando (`sertor-rag index`) si indicizza un repository qualunque e si ottiene un report (n. chunk + dimensione embedding), senza scrivere codice. | CS-1, FEAT-CLI-004 |
+| LSC-2 | Da riga di comando (`sertor-rag search`) si interroga l'indice (codice/doc/combinata) e si ottengono i top-k risultati con metadati. | CS-1, FEAT-CLI-004 |
+| ~~LSC-3~~ | *Rimosso (2026-06-11):* l'indicizzazione del wiki in corpus dedicato è già coperta da `sertor-wiki-tools index`; nel modello a corpus unico (D-21) il wiki dell'ospite è indicizzato da `sertor-rag index` come documentazione. | — |
 | LSC-4 | Nessun comando avvia operazioni RAG senza invocazione esplicita (install ≠ run). | CS-2 |
 | LSC-5 | Senza un provider LLM/embeddings configurato, le operazioni RAG sono bloccate con errore esplicito. | CS-5 |
 | LSC-6 | Le operazioni sono non distruttive sul repo target e funzionano su ≥2 repository diversi senza modifiche. | CS-4 |
@@ -41,7 +54,7 @@ di produzione* (indicizzare il repo Sertor stesso con il motore nuovo).
 
 | Attore | Ruolo |
 |--------|-------|
-| **Owner/maintainer** | Lancia index/search/wiki dal terminale; configura la verbosità e gli appender di log. |
+| **Owner/maintainer** | Lancia index/search dal terminale; configura la verbosità e gli appender di log. |
 | **Agente LLM (es. Claude Code)** | Consumatore: può invocare la CLI come strumento (output scriptabile, exit code). |
 | **Sistema di log esterno (Splunk/ELK/syslog)** | Destinatario dei log strutturati via appender configurato dall'utente. |
 | **`sertor-core` (dipendenza a monte)** | Fornisce le capacità che la CLI esegue; la CLI non le duplica. |
@@ -52,12 +65,12 @@ di produzione* (indicizzare il repo Sertor stesso con il motore nuovo).
 ## 4. Ambito
 
 ### In ambito
-- **Entry-point ed esecuzione** della CLI con sottocomandi: `index`, `search`, `wiki index`.
+- **Entry-point ed esecuzione** della CLI di esecuzione RAG **`sertor-rag`** (console-script del
+  pacchetto `sertor-core`) con sottocomandi: `index`, `search`.
 - **`index <path>`**: costruisce l'indice vettoriale del repo (riusa `build_indexer`), full rebuild,
   riportando conteggi e dimensione embedding.
 - **`search <query>`**: interroga (codice/doc/combinata, oppure via motore `baseline`) con `k` e
   filtro tipo; output con path, tipo, id chunk, punteggio, anteprima.
-- **`wiki index <wiki>`**: indicizza il wiki nel RAG (riusa `index_wiki` di FEAT-003).
 - **Lettura della configurazione** (provider/backend/parametri) dal core (`Settings`, env/`.env`),
   senza modifiche al codice.
 - **Osservabilità a runtime**: verbosità (`-v/--verbose`), output JSON (`--log-json`), caricamento di
@@ -67,9 +80,12 @@ di produzione* (indicizzare il repo Sertor stesso con il motore nuovo).
 - **Repo-agnosticità, non distruttività, install ≠ run, exit code** per la scriptabilità.
 
 ### Fuori ambito
-- **Pacchetto installabile e distribuzione** (`uv pip install sertor`, comando globale `sertor`,
-  `git+url`, PyPI): rinviato (FEAT-CLI-001 parte packaging, FEAT-CLI-006). Nell'MVP la CLI si esegue
-  nell'ambiente di sviluppo (es. come modulo eseguibile).
+- **Il comando installer `sertor`** (`sertor install <capacità>`, DA-8): è FEAT-CLI-002/005, con
+  elicitazione propria. Questa feature non lo tocca.
+- **Indicizzazione del wiki in corpus dedicato**: già consegnata (`sertor-wiki-tools index`,
+  FEAT-003-D); nel modello a corpus unico (D-21) il wiki dell'ospite passa da `sertor-rag index`.
+- **Distribuzione del pacchetto** (`git+url`, PyPI, hardening): rinviata (FEAT-CLI-006). Nell'MVP il
+  console-script `sertor-rag` è disponibile con l'installazione (anche editable) di `sertor-core`.
 - **Installazione selettiva delle capacità su ALTRI repo** (FEAT-CLI-002).
 - **Wizard di configurazione interattivo** e gestione scrittura segreti (FEAT-CLI-003 completa): qui
   si **legge** soltanto la configurazione esistente.
@@ -83,10 +99,12 @@ di produzione* (indicizzare il repo Sertor stesso con il motore nuovo).
 
 ### Gruppo A — Entry-point e struttura comandi
 
-**REQ-001 (Ubiquitous)** *The CLI shall expose a single command-line entry-point named `sertor`
-(installed as a console-script in the environment) that dispatches to the subcommands `index`,
-`search`, and `wiki index`.*
-> DA-C1 risolta: comando globale `sertor` via console-script entry-point; la **distribuzione
+**REQ-001 (Ubiquitous)** *The CLI shall expose a single command-line entry-point named `sertor-rag`
+(installed as a console-script of the `sertor-core` package) that dispatches to the subcommands
+`index` and `search`.*
+> Rev. 2026-06-11 (DA-8 epica, supera DA-C1): il comando `sertor` è riservato all'**installer**
+> (`sertor install <capacità>`); l'esecuzione vive nei console-script del core — `sertor-rag`
+> (RAG, questa feature) accanto a `sertor-wiki-tools` (wiki, già su master). La **distribuzione
 > pubblica** (PyPI/git+url) resta fuori ambito.
 
 **REQ-002 (Ubiquitous)** *The CLI shall provide usage/help text for the entry-point and for each
@@ -138,6 +156,9 @@ core configuration (`default_k` for `k`) and `both` as the default search mode.*
 **REQ-022 (Unwanted behaviour)** *If the index does not exist when a search is requested, then the CLI
 shall print a readable error indicating that the index must be built first, and exit non-zero (no
 silent empty result).*
+> Nota di design (2026-06-11): nel core la facade è *tollerante* (indice assente → `[]` + warning)
+> mentre il motore baseline è *strict* (`IndexNotFoundError`) — policy voluta, da non uniformare.
+> La CLI deve imboccare la via strict (motore o verifica esplicita); la scelta è di design.
 
 **REQ-023 (Optional feature)** *Where the user requests JSON output (`--json`), the CLI shall print the
 search results as a structured JSON array suitable for programmatic/agent consumption; otherwise it
@@ -145,14 +166,14 @@ shall print human-readable text. In both formats the preview is truncated unless
 > DA-C5 risolta: **testo di default + `--json`**; anteprime troncate in entrambi i formati per
 > contenere il consumo di token quando la CLI è usata da un agente.
 
-### Gruppo D — Comando `wiki index`
+### Gruppo D — ~~Comando `wiki index`~~ (rimosso, 2026-06-11)
 
-**REQ-030 (Event-driven)** *When the user runs `wiki index <wiki-path>`, the CLI shall ingest the
-Markdown pages under `<wiki-path>` into the configured RAG corpus by invoking the core, and shall
-report the number of wiki documents indexed.*
-
-**REQ-031 (Unwanted behaviour)** *If the wiki path is empty or contains no Markdown files, then the
-CLI shall print a warning and complete without modifying the existing index.*
+> **REQ-030 e REQ-031 rimossi.** Superati dai fatti: (1) l'indicizzazione del wiki in **corpus
+> dedicato** è già consegnata da `sertor-wiki-tools index` (FEAT-003-D), per gli ospiti con corpora
+> davvero disgiunti; (2) nel **modello a corpus unico** (D-21 epica) il wiki dell'ospite è
+> documentazione del corpus primario e viene indicizzato dal normale `sertor-rag index`
+> (`doc_type=doc`). Il **bootstrap** del sistema-wiki sull'ospite (skill, rituale, config, struttura)
+> appartiene alla feature **installer** (`sertor install wiki`, FEAT-CLI-002 — vedi epica, DA-8).
 
 ### Gruppo E — Configurazione (lettura)
 
@@ -160,8 +181,14 @@ CLI shall print a warning and complete without modifying the existing index.*
 backend, paths, chunking parameters, default k, exclusion patterns) from the core's centralized
 configuration (environment variables and/or a configuration file), without requiring code changes.*
 
-**REQ-041 (Unwanted behaviour)** *If no embeddings/LLM provider is configured, then the CLI shall block
-any RAG operation (index/search/wiki) with an explicit, readable error.*
+**REQ-041 (Unwanted behaviour)** *If the configuration parameters required by the selected backend
+are missing or incomplete (e.g. `azure` backend without endpoint/API key/deployment), then the CLI
+shall block any RAG operation (index/search) with an explicit, readable error, before contacting any
+service.*
+> Rev. 2026-06-11: precisato il significato di "provider non configurato" — è una **validazione
+> statica** dei parametri del backend scelto (il default `local`/Ollama è sempre formalmente
+> completo). La **raggiungibilità** del provider (es. Ollama spento) resta un errore a runtime,
+> coperto da REQ-012.
 
 **REQ-042 (Ubiquitous)** *The CLI shall not write secret values (API keys, credentials) to any
 version-controlled file.*
@@ -224,16 +251,19 @@ without hardcoded assumptions about its internal structure, language distributio
 - **V-4**: Python ≥ 3.11 (vincolo d'epica).
 
 ### Assunzioni
-- **A-1**: Nell'MVP la CLI espone il comando globale `sertor` tramite **console-script entry-point**
-  (installato nell'ambiente con l'installazione editable del pacchetto); la **distribuzione pubblica**
-  (PyPI/git+url) e l'hardening del packaging restano fuori ambito (FEAT-CLI-006).
+- **A-1** *(rev. 2026-06-11)*: La CLI espone il comando **`sertor-rag`** come **console-script del
+  pacchetto `sertor-core` esistente** (una riga in `pyproject.toml [project.scripts]`, accanto a
+  `sertor-wiki-tools`); disponibile con l'installazione anche editable del pacchetto. La
+  **distribuzione pubblica** (PyPI/git+url) e l'hardening del packaging restano fuori ambito
+  (FEAT-CLI-006); l'eventuale pacchetto autonomo `sertor` riguarda l'**installer** (DA-8).
 - **A-2**: La configurazione (provider/backend) è **definita** altrove (env/`.env`) e dal core; la CLI
   la **legge**, non la scrive (il wizard interattivo è FEAT-CLI-003, fuori ambito).
 - **A-3**: Il provider reale (Ollama o Azure) è un prerequisito d'**esecuzione**, non di costruzione:
   i test usano mock; il dogfooding reale richiede un provider configurato.
 
 ### Dipendenze
-- **D-1**: `sertor-core` in `master` (build_indexer/build_facade/build_baseline_engine/build_llm/index_wiki).
+- **D-1**: `sertor-core` in `master` (`build_indexer`/`build_facade`/`build_baseline_engine` in
+  `composition.py`; `Settings.load` in `config/settings.py`).
 - **D-2**: `sertor-core/observability` per il logging strutturato (REQ-053/054 toccano il core in modo additivo).
 
 ---
@@ -255,7 +285,7 @@ without hardcoded assumptions about its internal structure, language distributio
 | Priorità | Requisiti | Motivazione |
 |----------|-----------|-------------|
 | **Must** | REQ-001..004, REQ-010..013, REQ-020..022, REQ-040, REQ-041, REQ-060, REQ-061 | Entry-point + index + search + config-read + install≠run + agnosticità: il ciclo minimo eseguibile. |
-| **Should** | REQ-030, REQ-031 (wiki index), REQ-050, REQ-051, REQ-052 (osservabilità a runtime), REQ-053 (log errori core) | Completano valore e osservabilità; il dogfooding del wiki e gli appender esterni. |
+| **Should** | REQ-050, REQ-051, REQ-052 (osservabilità a runtime), REQ-053 (log errori core) | Completano l'osservabilità: visibilità dei log e appender esterni. *(REQ-030/031 rimossi il 2026-06-11, vedi gruppo D.)* |
 | **Could** | REQ-054 (doc schema campi), REQ-042/055 (esplicitati; in gran parte ereditati dal core) | Rifiniture di osservabilità/sicurezza. |
 | **Won't (questa feature)** | packaging/distribuzione, install selettivo su altri repo, wizard config, governance | Rinviati ad altre feature dell'epica. |
 
@@ -265,8 +295,10 @@ without hardcoded assumptions about its internal structure, language distributio
 
 Chiuse in elicitazione (2026-06-03) e codificate nei requisiti sopra.
 
-- **DA-C1 — Forma dell'entry-point.** *Risolta:* comando globale **`sertor`** via console-script
-  entry-point (REQ-001); distribuzione pubblica (PyPI/git+url) fuori ambito.
+- **DA-C1 — Forma dell'entry-point.** *Risolta, poi **superata da DA-8** (2026-06-11):* la prima
+  risoluzione assegnava `index`/`search` al comando globale `sertor`; con DA-8 (epica §9) `sertor` è
+  riservato all'**installer** (`sertor install <capacità>`) e l'esecuzione vive nel console-script
+  del core **`sertor-rag`** (REQ-001 riscritto).
 - **DA-C2 — Provenienza dei corpora.** *Risolta:* **collezioni namespaced distinte** (REQ-014); il
   corpus si seleziona via `--corpus`/configurazione; prototipo e produzione restano isolati.
 - **DA-C3 — Formato di `--log-config`.** *Risolta:* **`dictConfig` (YAML/JSON)** (REQ-052).

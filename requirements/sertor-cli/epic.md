@@ -98,32 +98,35 @@ da solo la creazione/ingestione del RAG: serve sempre un **comando esplicito** s
 
 | ID | Feature | Valore / obiettivo | Priorità (MoSCoW) | Stato |
 |----|---------|--------------------|-------------------|-------|
-| FEAT-001 | **CLI installabile** (pacchetto `uv`/`pip`, entry-point `sertor`, struttura comandi, principio install≠run) | Spina dorsale: senza il CLI nessuna capacità è raggiungibile | **Must** | parz. → backbone/comandi in `esecuzione`; packaging rinviato |
-| FEAT-002 | **Installazione selettiva delle capacità del core** (motori RAG + skill wiki) su un repo target | Portare il core su un progetto, a scelta, senza eseguirlo | **Must** | da decomporre |
+| FEAT-001 | **CLI installabile** (pacchetto `uv`/`pip`, entry-point `sertor`, struttura comandi, principio install≠run) | Spina dorsale: senza il CLI nessuna capacità è raggiungibile | **Must** | parz. (rev. DA-8): la parte **eseguibile** vive nel core come `sertor-rag`/`sertor-wiki-tools` (feature `esecuzione`); `sertor` resta il veicolo di **install** (→ FEAT-002/005); packaging rinviato |
+| FEAT-002 | **Installazione selettiva delle capacità del core** (motori RAG + skill wiki) su un repo target | Portare il core su un progetto, a scelta, senza eseguirlo | **Must** | da decomporre — forma `sertor install <capacità>`; primo taglio `sertor install wiki`, contenuto confermato in DA-8 |
 | FEAT-003 | **Configurazione** (provider LLM obbligatorio default cloud + Ollama; vector DB condizionale a scelta Chroma vs PGVector/MongoDB Azure) | Adatta le capacità all'ambiente target senza toccare codice | **Should** | parz. → lettura config in `esecuzione`; wizard rinviato |
 | FEAT-004 | **Comando di creazione/esecuzione del RAG** (ingestione/indicizzazione, separato dall'install) | Costruire/aggiornare gli indici su richiesta esplicita | **Should** | decomposta → `esecuzione` |
 | FEAT-005 | **Setup configurazione di governance** (skill/agenti di fase + skill gestione requisiti) | Replicare la configurazione di lavoro su altri repo | **Should** | da decomporre |
 | FEAT-006 | **Distribuzione pubblica su PyPI** (versioning pubblico, licenza, hardening supply-chain) | Apertura a utenti esterni | **Won't (per ora)** | rinviata |
 
-> **Feature decomposta:** `esecuzione` (`requirements/sertor-cli/esecuzione/requirements.md`) — taglio
-> **run-centrico**: entry-point + comandi `index`/`search`/`wiki index` + osservabilità a runtime +
-> lettura della configurazione. Copre la parte eseguibile di FEAT-001, tutta FEAT-004 e la lettura
-> config di FEAT-003. Restano fuori: packaging/distribuzione, install selettivo su altri repo (FEAT-002),
-> wizard di configurazione, governance (FEAT-005).
+> **Feature decomposta:** `esecuzione` (`requirements/sertor-cli/esecuzione/requirements.md`, rev.
+> 2026-06-11) — taglio **run-centrico**: entry-point **`sertor-rag`** (console-script del core, DA-8)
+> + comandi `index`/`search` + osservabilità a runtime + lettura della configurazione. Copre la parte
+> eseguibile di FEAT-001, tutta FEAT-004 e la lettura config di FEAT-003. Il `wiki index` originario è
+> stato rimosso (coperto da `sertor-wiki-tools index` + modello a corpus unico D-21/DA-7). Restano
+> fuori: packaging/distribuzione, install selettivo su altri repo (FEAT-002), wizard di
+> configurazione, governance (FEAT-005).
 
 > **Nota sull'MVP della CLI:** il primo taglio (Must) rende il pacchetto **installabile** e capace di
 > **installare selettivamente** le capacità del core su un repo. Configurazione (FEAT-003), esecuzione
 > (FEAT-004) e governance (FEAT-005) completano il ciclo subito dopo (Should). La CLI è utile **solo
 > insieme** al core: il suo MVP presuppone che il core esista (almeno baseline + creazione wiki).
 
-## 9. Decisioni risolte (DA-1…DA-7)
+## 9. Decisioni risolte (DA-1…DA-8)
 
-Chiuse in elicitazione (2026-05-30, DA-7 il 2026-06-10); restano valide a livello di distribuzione/uso:
+Chiuse in elicitazione (2026-05-30, DA-7 il 2026-06-10, DA-8 il 2026-06-11); restano valide a livello di distribuzione/uso:
 
 | # | Tema | Decisione |
 |---|------|-----------|
 | DA-1 | Naming | Pacchetto e comando = **`sertor`**. |
 | DA-7 | **Wiki dentro l'ospite (by design)** | Quando si installa Sertor su un progetto, il **wiki si crea DENTRO il progetto ospite** (decisione utente, 2026-06-10). Conseguenza per il retrieval: il wiki è **parte del corpus primario** dell'ospite come documentazione (`doc_type=doc`) — il **modello standard è a corpus unico**, senza collezione separata né `SERTOR_EXTRA_CORPORA`. La query congiunta multi-collezione del core (feature `specs/010`) resta riservata a ospiti con corpora **davvero disgiunti** (es. doc-repo esterno), non al caso standard. L'install della CLI (FEAT-002) deve riflettere questo default. |
+| DA-8 | **Split installer / esecuzione (2026-06-11)** | Il comando **`sertor` è riservato all'installazione/setup** sull'ospite, con verbo esplicito: **`sertor install <capacità>`** (es. `sertor install wiki`, poi `install rag`, `install governance`). L'**esecuzione** vive nei **console-script del pacchetto core**: **`sertor-rag`** (chiamate RAG: `index`/`search`, feature `esecuzione`) accanto a `sertor-wiki-tools` (wiki, già consegnato). Supera la DA-C1 della feature `esecuzione`. Contenuto confermato di `sertor install wiki` (input per la decomposizione di FEAT-002): skill wiki (wiki-author+playbook, `/wiki`, agente wiki-curator) + step ritual nel `CLAUDE.md` dell'ospite + `wiki.config.toml` + `structure init` + tooling di indicizzazione configurato; **nessuna indicizzazione automatica** (REQ-E2). |
 | DA-2 | Confine install/config/run | **Confermato**: l'MVP della CLI installa; configurazione (FEAT-003) ed esecuzione (FEAT-004) restano **Should**. |
 | DA-3 | Governance | **Resta Should** (FEAT-005 fuori dall'MVP della CLI). |
 | DA-4 | Distribuzione interim | **`git+url`** prima dell'eventuale PyPI pubblico. |

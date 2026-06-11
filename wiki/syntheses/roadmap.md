@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-10 (🎉 FEAT-003 COMPLETATA — N6 chiusa: gerarchia di verità + supersession nel playbook, SC-009 esercitato; tutti e tre i Must dell'epica consegnati)
+updated: 2026-06-11 (ripresa CLI: DA-8 split installer/esecuzione — `sertor install <capacità>` vs console-script core `sertor-rag`; requirements `esecuzione` rinfrescati, prossimo passo SpecKit)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md"]
 ---
 
@@ -14,7 +14,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > `requirements → spec → plan → tasks → implement`.
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-06-10)
+## ⚡ Executive summary (stato al 2026-06-11)
 
 ### 📊 Roadmap a colpo d'occhio
 
@@ -28,15 +28,19 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | GraphRAG (FEAT-005) | Should | 📋 da decomporre |
 | RAG agentico (FEAT-006) | Should | 📋 da decomporre |
 | Manutenzione wiki (FEAT-007) | Should | 📋 da decomporre |
-| CLI `sertor` | — | 💀 solo requirements (ramo morto) |
+| CLI — feature `esecuzione` (`sertor-rag`) | — | 🔄 **in progress** (requirements rinfrescati 2026-06-11, prossimo: SpecKit) |
+| CLI — installer (`sertor install <capacità>`) | — | 📋 da elicitare (DA-8; contenuto `install wiki` confermato) |
 
 *Legenda:* ✅ su master · 🧪 operativo, consolidamento aperto · 📋 pianificato · 💀 ramo morto (non su master).
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- *(nessuna voce in corso — i tre Must sono consegnati: scegliere il prossimo PLANNED)*. Nessuna coda
-  residua: server MCP riavviato (sessione 2026-06-10, serve il codice post-feature-010), corpus `sertor`
-  fresco (210 doc / 1810 chunk).
+- **CLI — feature `esecuzione` (`sertor-rag index/search`)** — *cosa:* CLI di esecuzione RAG come
+  console-script del core (DA-8: `sertor` resta riservato all'installer `sertor install <capacità>`).
+  *Dove:* `requirements/sertor-cli/esecuzione/requirements.md` (rev. 2026-06-11: REQ-001→`sertor-rag`,
+  gruppo D rimosso, REQ-041 precisato) + epica `requirements/sertor-cli/epic.md` (DA-8). *Prossimo
+  passo:* avviare il flusso SpecKit (`/speckit-specify` → branch + PR, policy produzione). *Blocchi:*
+  nessuno.
 
 ### 📋 PLANNED (per priorità)
 - **FEAT-004 ibrido+reranking** — candidato naturale: migliora la qualità di `search_code` (debolezza
@@ -45,8 +49,9 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 - **FEAT-007 manutenzione wiki** — parte con dote ricca: probe di freschezza (ex N5), helper
   `move`-con-link (ex N9), op *reconcile* delle obsolescenze (idea utente 2026-06-10), seed
   `structure init` localizzato.
-- **CLI `sertor`** (epica `sertor-cli`, da reimplementare su master) — include `sertor wiki init`
-  (capacità già in `wiki_tools`, con opzione `--depth` dai preset di `generate`).
+- **CLI — installer `sertor install <capacità>`** (DA-8, da elicitare con `/requirements`): primo
+  taglio `sertor install wiki` — skill wiki + step ritual nel CLAUDE.md ospite + `wiki.config.toml` +
+  `structure init` + tooling di indicizzazione configurato, mai indicizzazione automatica.
 - **Misurare la pertinenza** (chiudere i 2 xfail con ground-truth reale).
 
 ### ✅ DONE (su `master`, le rilevanti)
@@ -119,15 +124,21 @@ Legenda: ✅ su master · 🧪 operativo, consolidamento formale aperto · 💀 
 | FEAT-008 | Arricchimento bidirezionale **Wiki↔RAG** | Could | 💤 da decomporre | — |
 | FEAT-009 | **Refresh incrementale** dell'indice (solo file cambiati) | Could | 💤 da decomporre | — |
 
-### Epica `sertor-cli` (il veicolo) — **non consegnata**
+### Epica `sertor-cli` (il veicolo) — **non consegnata**, ripresa il 2026-06-11
+
+**DA-8 (2026-06-11) — split installer/esecuzione:** `sertor` = solo **install** (`sertor install
+<capacità>`); l'**esecuzione** vive nei console-script del core (`sertor-rag` nuovo, `sertor-wiki-tools`
+già su master).
 
 | Feature | Stato | Dove |
 |---|---|---|
-| CLI "esecuzione" (`sertor` + `index`/`search`/`wiki index`) | 💀 **non su master**: requirements scritti, codice `sertor_cli` su ramo abbandonato | requirements ✅ · codice ✗ (`specs/004`) |
-| Install selettivo su altri repo · wizard config · setup governance · PyPI | 💤 da decomporre/Won't ora | — |
+| CLI "esecuzione" (**`sertor-rag`** + `index`/`search`) | 🔄 **in progress**: requirements rinfrescati (rev. 2026-06-11), prossimo passo SpecKit; il vecchio codice `sertor_cli` (`specs/004`) resta ramo morto | requirements ✅ · codice da fare |
+| Installer `sertor install <capacità>` (primo taglio: `install wiki`, contenuto in DA-8) | 📋 da elicitare (`/requirements`) | epica §9 DA-8 |
+| Wizard config · setup governance · PyPI | 💤 da decomporre/Won't ora | — |
 
-> Oggi il prodotto si usa come **libreria** (`import sertor_core`) e via **server MCP**. La CLI `sertor`
-> è solo *requirements*; se la si vuole, va **reimplementata su master** (il ramo vecchio non si recupera).
+> Oggi il prodotto si usa come **libreria** (`import sertor_core`) e via **server MCP**. Il vecchio
+> ramo CLI (`specs/004`) non si recupera: la feature `esecuzione` si reimplementa su master come
+> `sertor-rag`.
 
 ## Lavori abilitanti già mergiati (non sono FEAT d'epica)
 
