@@ -27,7 +27,7 @@ l'*intento* come *stato*; gerarchia di autorità: codice/test = comportamento, r
 | `spec` | no | come `requirements` + coerenza col codice **se** lo stato dichiara "implementato" | report |
 | `tracker` | no | **tabelle/checkbox di stato** ("FATTO/da fare", `[x]`/`[ ]`) contraddette dalla realtà = **deriva diretta** | report |
 
-**A) Lint strutturale — 100% meccanico (CLI).** Esegui `uv run sertor-wiki-tools lint --json` **e**
+**A) Lint strutturale — 100% meccanico (CLI).** Esegui `sertor-wiki-tools lint --json` **e**
 `… validate --json`; interpreta i contratti `wiki.lint/1` (wikilink rotti, orfani, frontmatter mancante,
 naming). **Non** rifare Glob/Grep a mano. È autorevole sui link: se la CLI dice 0 broken, i link sono a posto.
 Nota sui **forward-link**: un `[[…]]` verso un nodo da creare **non** va lasciato a vuoto (sarebbe `broken`,
@@ -51,7 +51,7 @@ Procedura ripetibile:
    - **git** (stato/PR/branch/commit) → **delega al ruolo VCS** (`[roles].vcs`); le operazioni git non si eseguono qui.
    - **esistenza file/simboli, valori nel codice** → il **RAG dell'ospite** se configurato (server MCP del corpus
      codice: `search_code`/`find_symbol`/`search_docs`); **altrimenti** ispezione diretta (`Read`/`Grep`).
-   - **conteggi build/test** → il tool dell'ospite (es. `uv run pytest --collect-only -q`).
+   - **conteggi build/test** → il tool dell'ospite (es. `pytest --collect-only -q`).
 4. **Confronta claim ↔ ground truth → giudica.** Un claim è una **deriva** se il repo lo contraddice. Tassonomia
    dei controlli: *stato git/PR/branch superato* · *numeri incoerenti col codice* · *file/simboli citati ma assenti*
    · *date/versioni vecchie* · *contraddizioni tra pagine* · *claim più vecchi delle `sources`* · *coverage* (cose
@@ -64,7 +64,7 @@ Procedura ripetibile:
    contraddetta dall'autorità — codice/test sul comportamento, decisione registrata sul perché), applica la
    **supersession esplicita** del playbook §4 (*Verità, autorità e obsolescenza*): `status: superseded` +
    banner datato con link alla verità corrente. **Mai cancellare d'ufficio**: la pagina si pota/fonde solo
-   in un `reorg` confermato. La gerarchia con cui giudichi il conflitto è FR-012/013 (stessa sezione).
+   in un `reorg` confermato. La gerarchia con cui giudichi il conflitto è quella della stessa sezione del playbook §4.
 
 **Host-agnostico (degradazione per profilo).** I probe disponibili dipendono dall'ospite: su un host **solo-doc**
 non ci sono test/simboli di codice → salta i probe di codice e tieni i controlli su date/contraddizioni/coverage;

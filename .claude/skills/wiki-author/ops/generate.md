@@ -5,12 +5,8 @@
 > log §6) vedi il playbook `wiki-playbook.md`; per **se/cosa merita una pagina**
 > [`../wiki-craft.md`](../wiki-craft.md) (test link/nome §1, archetipi e lente di prodotto §2, pagine di
 > struttura §3), per **come si scrive** [`../page-craft.md`](../page-craft.md). Qui solo la procedura.
->
-> *Storia:* nata come `generate-from-diff` (N8, completa come procedura il 2026-06-09, D-19/D-20);
-> generalizzata il 2026-06-10 con l'ingresso **da-zero** (N3, FR-008). Le voci di log storiche
-> `generate-from-diff` restano valide (il log è append-only).
 
-La generazione è **una capacità, due ingressi** (FR-008: contenuto in linguaggio naturale a concetti
+La generazione è **una capacità, due ingressi** (contenuto in linguaggio naturale a concetti
 linkati, *aggiornabile incrementalmente*). **Selettore:** se l'ospite **non ha** `wiki.config.toml`, o la
 root del wiki non esiste/è vuota → **da-zero** (bootstrap); altrimenti → **da-diff** (il default di
 `/wiki generate`).
@@ -31,8 +27,8 @@ caso concreto, non regole rigide.
 
 I livelli **si compongono col modello cumulativo**, non lo sostituiscono: una run `media` su un wiki nato
 `leggera` è il modo standard di ispessirlo (l'arricchimento passa dall'ingresso che si applica — da-zero
-se si riparte, da-diff/`distill` se si integra). *(Superficie futura: opzione `--depth` di
-`sertor wiki init`, epica CLI.)*
+se si riparte, da-diff/`distill` se si integra). *(Superficie futura: un'opzione `--depth` di un
+comando d'install.)*
 
 ## Ingresso A — da-zero (bootstrap su un repo privo di wiki)
 
@@ -44,16 +40,16 @@ del file di config, quindi l'operazione funziona anche su un ospite diverso dall
    **autoralo minimale** guardando il repo, senza presumere: `language` (la lingua della doc dell'ospite —
    il wiki si scrive in quella; chiedi se ambiguo), `root`/`index_file`/`log_file`/`log_dir`,
    `[[taxonomy]]` (le 5 aree del profilo standard come base, adattate alla natura dell'ospite),
-   `source_dirs` (FR-009 — doc, codice, test, specs **se esistono**: verificalo), `exclude` (VCS, build,
+   `source_dirs` (doc, codice, test, specs **se esistono**: verificalo), `exclude` (VCS, build,
    dipendenze, media), `[rag] enabled=false` se l'ospite non ha infrastruttura RAG, `[roles]` solo se
-   l'host ha gli agenti. *Questo passo è il segnaposto-giudizio di `sertor wiki init` (D-16): quando la
-   CLI d'install nascerà, la parte meccanica diventerà sua.*
+   l'host ha gli agenti. *Questo passo è il segnaposto-giudizio del bootstrap della config: quando un
+   comando d'install la genera, la parte meccanica diventa sua.*
 1. **Struttura (D).** `sertor-wiki-tools structure init --config <config> --json` — idempotente: crea
    cartelle della tassonomia + index + log, non sovrascrive nulla.
 2. **Ricognizione delle fonti (D+N).** `collect --json` per l'inventario (al bootstrap è vuoto; alla
    seconda run è l'anti-duplicato). Ordine di lettura delle fonti-input: **README** → **doc dedicata** →
    **specs/requirements** se esistono → **struttura del codice** (albero, entry point, contratti
-   pubblici — input *opzionale*: su un ospite solo-documentale si salta, FR-029/D-9) → **test** (il
+   pubblici — input *opzionale*: su un ospite solo-documentale si salta) → **test** (il
    comportamento). **L'ampiezza la decide la profondità dichiarata** (tabella sopra); a ogni livello
    vale: serve la **mappa**, non il mirror — si legge per capire, non per ricopiare.
 3. **Piano-pagine bounded (N — il passo distintivo).** Enumera i candidati col test del link/nome
@@ -78,11 +74,10 @@ del file di config, quindi l'operazione funziona anche su un ospite diverso dall
 
 ## Ingresso B — da-diff (aggiorna dalle modifiche recenti)
 
-Evita di rileggere l'intero repo: aggiorna solo ciò che è cambiato. Trigger = comando manuale `/wiki`
-(D-19); ambito = changeset dell'ultimo commit. Lint/freschezza qui sono **non bloccanti** (gate eliminato,
-D-20).
+Evita di rileggere l'intero repo: aggiorna solo ciò che è cambiato. Trigger = comando manuale `/wiki`;
+ambito = changeset dell'ultimo commit. Lint/freschezza qui sono **non bloccanti**.
 
-1. Ancora il punto di partenza con `uv run sertor-wiki-tools scan --json` (file pendenti via mtime) e/o
+1. Ancora il punto di partenza con `sertor-wiki-tools scan --json` (file pendenti via mtime) e/o
    **delega al ruolo VCS** (`[roles].vcs`) un brief di sola lettura «`git log` + `git diff` dal punto X».
    X = data dell'ultima voce di log (o l'ultimo commit che tocca il wiki). *(Le operazioni git si
    delegano; se l'ospite non ha un ruolo VCS configurato, chiedi all'utente come ottenere il diff.)*

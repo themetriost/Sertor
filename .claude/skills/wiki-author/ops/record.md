@@ -10,7 +10,7 @@
 > qui — si estraggono in pagine proprie con [`distill.md`](distill.md) (rituale di step, punto 2). Il record
 > resta magro e vi *punta*.
 
-1. Inventario meccanico: `uv run sertor-wiki-tools collect --json` (cosa esiste già) + leggi l'indice del
+1. Inventario meccanico: `sertor-wiki-tools collect --json` (cosa esiste già) + leggi l'indice del
    wiki (`index.md`).
 2. **Scrivi/aggiorna la/e pagina/e — giudizio di contenuto.** Decidi *nuova-vs-aggiorna* (il `collect` del
    passo 1 serve a non duplicare un concetto già presente); per *se* merita una pagina a sé applica i test
@@ -22,5 +22,5 @@
    riusabile vs cronaca, e *quali* backlink dicono **perché** due pagine si connettono.
 3. Aggiorna i backlink e l'indice (link + summary di una riga).
 4. Appendi una voce di log `record`: **componi il corpo curato** (formato: playbook §6; come si scrive:
-   [`../log-craft.md`](../log-craft.md)) e fallo **piazzare** da `append-log` (CLI, FEAT-008) nel file del
+   [`../log-craft.md`](../log-craft.md)) e fallo **piazzare** da `append-log` (CLI) nel file del
    giorno; senza rotazione, append al log unico.

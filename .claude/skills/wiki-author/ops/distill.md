@@ -10,13 +10,13 @@ La distillazione è il **duale** di `record`: se `record` cattura l'**evento dat
 **conoscenza durevole** in pagine-entità proprie, così non resta sepolta nel diario di sessione. Tre
 **ingressi**, stesso giudizio:
 
-- **di step** (il caso tipico): secondo tempo del rituale (subito dopo `record`, vedi il rituale dell'ospite;
-  profilo Sertor: `CLAUDE.md`) — una **feature appena implementata**: il record nasce *magro per costruzione*
+- **di step** (il caso tipico): secondo tempo del rituale (subito dopo `record`, vedi il rituale dell'ospite,
+  es. nel `CLAUDE.md`) — una **feature appena implementata**: il record nasce *magro per costruzione*
   (evento + esito + puntatori), le entità in pagine;
 - **da backlog**, su richiesta: un vecchio record già grasso da assottigliare;
-- **da conversazione** (REQ-030..033 di FEAT-003): il **brief condensato** di una conversazione/sessione
+- **da conversazione**: il **brief condensato** di una conversazione/sessione
   **intera** — anche vecchia, mai registrata in tempo reale, o avvenuta altrove — da riversare nel grafo.
-  **Mai il transcript grezzo**: chi invoca condensa prima (REQ-030, l'input arriva già pre-elaborato).
+  **Mai il transcript grezzo**: chi invoca condensa prima (l'input arriva già pre-elaborato).
   È il *paracadute* per quando il rituale non c'era. Se il brief contiene anche **eventi** non a diario
   (lavoro svolto mai registrato), un `record` contestuale li cattura: `distill` scrive il durevole nel
   grafo, non fa cronaca.

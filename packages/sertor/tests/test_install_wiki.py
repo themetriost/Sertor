@@ -1,0 +1,168 @@
+"""Test di accettazione US1/US2 di `install wiki` (T019, T025): repo vuoto, dogfood, idempotenza."""
+from __future__ import annotations
+
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+from sertor_core.wiki_tools.profile import load_profile
+from sertor_installer.artifacts import Outcome
+from sertor_installer.config_gen import build_host_profile
+from sertor_installer.install_wiki import build_install_plan, execute_plan
+
+
+def _install(target: Path, **kwargs):
+    profile = build_host_profile(target, **kwargs)
+    plan = build_install_plan()
+    return execute_plan(plan, profile)
+
+
+# ---------------------------------------------------------------- US1: repo vuoto
+
+def test_empty_repo_all_created_exit_zero(tmp_path: Path):
+    report = _install(tmp_path)
+    assert report.exit_code() == 0
+    assert report.errors == 0
+    # tutti gli esiti sono created/block (nessuno skipped/error su repo vuoto)
+    assert all(o.outcome in (Outcome.CREATED, Outcome.BLOCK) for o in report.outcomes)
+    # i conteggi derivano dal piano, non da numeri fissi: tutti i FILE del bundle + speciali
+    n_files = sum(1 for _ in build_install_plan() if _.target_rel.startswith(".claude/skills")
+                  or _.target_rel.startswith(".claude/commands")
+                  or _.target_rel.startswith(".claude/agents")
+                  or _.target_rel.startswith(".claude/hooks"))
+    assert n_files >= 17  # 14 skill + command + agent + hook
+    # CLAUDE.md ha outcome block (F11)
+    claude_outcomes = [o for o in report.outcomes if o.target_rel == "CLAUDE.md"]
+    assert len(claude_outcomes) == 1 and claude_outcomes[0].outcome is Outcome.BLOCK
+
+
+def test_empty_repo_expected_files_present(tmp_path: Path):
+    _install(tmp_path)
+    assert (tmp_path / ".claude/skills/wiki-author/SKILL.md").is_file()
+    assert (tmp_path / ".claude/commands/wiki.md").is_file()
+    assert (tmp_path / ".claude/agents/wiki-curator.md").is_file()
+    assert (tmp_path / ".claude/hooks/wiki-pending-check.ps1").is_file()
+    assert (tmp_path / ".claude/settings.json").is_file()
+    assert (tmp_path / "CLAUDE.md").is_file()
+    assert (tmp_path / "wiki.config.toml").is_file()
+    assert (tmp_path / "wiki/index.md").is_file()
+    assert (tmp_path / "wiki/concepts").is_dir()
+
+
+def test_generated_config_passes_core_load_profile(tmp_path: Path):
+    _install(tmp_path, language="it")
+    profile = load_profile(tmp_path / "wiki.config.toml")
+    assert profile.language == "it"
+    assert len(profile.taxonomy) == 5
+
+
+def test_dogfood_wiki_tools_scan_runs_on_generated_config(tmp_path: Path):
+    """SC-008: sertor-wiki-tools gira sulla config generata (import diretto, no rete)."""
+    _install(tmp_path)
+    # invocazione via subprocess del console-script del core, sulla config generata
+    result = subprocess.run(
+        [sys.executable, "-m", "sertor_core.wiki_tools", "scan",
+         "--config", str(tmp_path / "wiki.config.toml"), "--json"],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout.strip().splitlines()[-1])
+    assert payload["schema"] == "wiki.scan/1"
+
+
+def test_no_network_no_rag_in_config(tmp_path: Path):
+    """SC-005: install ≠ run — [rag] enabled=false nel config generato."""
+    _install(tmp_path)
+    profile = load_profile(tmp_path / "wiki.config.toml")
+    assert profile.rag.get("enabled") is False
+
+
+# ---------------------------------------------------------------- US2: repo pre-popolato
+
+def test_prepopulated_user_content_preserved(tmp_path: Path):
+    # CLAUDE.md utente
+    user_md = "# Il mio progetto\n\nIstruzioni dell'utente.\n"
+    (tmp_path / "CLAUDE.md").write_text(user_md, encoding="utf-8")
+    # settings.json con hook utente
+    user_settings = {
+        "$schema": "https://json.schemastore.org/claude-code-settings.json",
+        "hooks": {
+            "SessionStart": [
+                {"hooks": [{"type": "command", "shell": "bash", "command": "echo mine"}]}
+            ]
+        },
+    }
+    (tmp_path / ".claude").mkdir()
+    (tmp_path / ".claude/settings.json").write_text(
+        json.dumps(user_settings, indent=2), encoding="utf-8"
+    )
+    # wiki.config.toml esistente (utente): valido per load_profile ma con valori propri,
+    # così la STRUCTURE non fallisce e possiamo verificare che il file non venga toccato.
+    existing_config = (tmp_path / "wiki.config.toml")
+    existing_config.write_text(
+        "# config utente\n"
+        'language = "xx"\n'
+        'root = "mywiki"\n'
+        "[[taxonomy]]\n"
+        'name = "notes"\n'
+        'dir = "notes"\n'
+        'type = "note"\n',
+        encoding="utf-8",
+    )
+    config_hash_before = existing_config.read_bytes()
+    # skill parziale: un file skill già presente
+    (tmp_path / ".claude/skills/wiki-author").mkdir(parents=True)
+    partial = tmp_path / ".claude/skills/wiki-author/SKILL.md"
+    partial.write_text("contenuto skill personalizzato\n", encoding="utf-8")
+
+    report = _install(tmp_path)
+
+    # CLAUDE.md: contenuto utente byte-identico fuori dai marker
+    after = (tmp_path / "CLAUDE.md").read_text(encoding="utf-8")
+    assert after.startswith(user_md)
+    assert "SERTOR:WIKI-RITUAL START" in after
+    # settings.json: hook utente preservato + 3 voci aggiunte
+    merged = json.loads((tmp_path / ".claude/settings.json").read_text(encoding="utf-8"))
+    cmds = [h["command"] for e in merged["hooks"]["SessionStart"] for h in e["hooks"]]
+    assert "echo mine" in cmds
+    # wiki.config.toml non toccato
+    assert existing_config.read_bytes() == config_hash_before
+    # skill esistente non sovrascritto
+    assert partial.read_text(encoding="utf-8") == "contenuto skill personalizzato\n"
+    # file skill mancanti creati
+    assert (tmp_path / ".claude/skills/wiki-author/wiki-playbook.md").is_file()
+    assert report.exit_code() == 0
+
+
+def test_double_run_idempotent(tmp_path: Path):
+    """SC-003: due run → secondo report tutto skipped/merged-0, stato filesystem stabile."""
+    _install(tmp_path)
+    snapshot = {p: p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()}
+    report2 = _install(tmp_path)
+    assert report2.exit_code() == 0
+    assert report2.created == 0
+    assert report2.block == 0
+    assert report2.merged == 1  # settings sempre "merged" ma 0 nuove
+    # filesystem identico
+    after = {p: p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()}
+    assert snapshot.keys() == after.keys()
+    for p, content in snapshot.items():
+        assert after[p] == content, f"{p} cambiato al re-run"
+
+
+def test_malformed_settings_fail_fast(tmp_path: Path):
+    """settings.json malformato → exit 1, file non toccato, failed_step valorizzato."""
+    (tmp_path / ".claude").mkdir()
+    bad = tmp_path / ".claude/settings.json"
+    bad.write_text('{"hooks": {bad json', encoding="utf-8")
+    bad_before = bad.read_bytes()
+
+    report = _install(tmp_path)
+    assert report.exit_code() == 1
+    assert report.errors == 1
+    assert report.failed_step == ".claude/settings.json"
+    # file malformato non toccato
+    assert bad.read_bytes() == bad_before
+    # gli artefatti FILE prima del settings restano scritti (no rollback)
+    assert (tmp_path / ".claude/skills/wiki-author/SKILL.md").is_file()

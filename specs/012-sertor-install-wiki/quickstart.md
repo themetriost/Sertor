@@ -88,8 +88,8 @@ il `.claude/` del repo Sertor è **derivato**.
 
 ```powershell
 # propaga gli assets al .claude/ del repo Sertor (direzione: assets → .claude)
-python -m sertor_installer.sync     # (nome del comando: definito in tasks)
-# il test di guardia fallisce se assets e .claude/ divergono
+uv run python -m sertor_installer.sync [--repo-root <path>] [--dry-run]
+# il test di guardia (root suite) fallisce se assets e .claude/ divergono
 uv run pytest tests/unit/test_assets_sync.py
 ```
 

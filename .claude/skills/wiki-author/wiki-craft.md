@@ -9,7 +9,7 @@
 >
 > **Host-agnostica (Principio X).** I principi valgono su qualunque host; ciò che *varia* — le **aree** della
 > tassonomia, l'esistenza di tag/categorie, di hub per-area o di una home — viene dal profilo
-> (`wiki.config.toml`). La mappatura agli archetipi e gli esempi qui sotto sono il **profilo Sertor**.
+> (`wiki.config.toml`). La mappatura agli archetipi e gli esempi qui sotto sono **illustrativi**.
 
 ## 1. Quando creare una pagina (la regola fondamentale)
 
@@ -39,21 +39,20 @@ pagine di diventare minestroni illeggibili. **Non mescolare** un how-to con una 
 | **Spiegazione / Discussione** | il *perché*, le decisioni, il razionale | «Perché Postgres», un ADR |
 | **Indice / Hub** | non ha contenuto proprio, orchestra altre pagine | «Indice Backend», «Onboarding» |
 
-**Profilo Sertor.** Le aree della tassonomia sono *per natura* (`concepts`/`tech`/`experiments`/`sources`/
-`syntheses`) e **tagliano** gli archetipi: l'archetipo è la *forma*, l'area è la *casa* (vedi playbook §3).
-Mappatura: Entità/Concetto → `concepts`/`tech`; Spiegazione/razionale → `syntheses` (+ il razionale *datato*
-nei record `experiments`); Riferimento → di solito `tech` o una sezione, non un'area a sé; Hub → l'unico hub
-è l'`index.md` globale. Sertor **non usa** tutti gli archetipi: non ha how-to operativi nel wiki (le
-procedure-strumento vivono in `.claude/`, sono *tooling*) né hub per-area. Va bene: usa solo gli archetipi
-che servono, non forzarli.
+**Esempio di mappatura.** Quando le aree della tassonomia sono *per natura* (`concepts`/`tech`/`experiments`/
+`sources`/`syntheses`) esse **tagliano** gli archetipi: l'archetipo è la *forma*, l'area è la *casa* (vedi
+playbook §3). Mappatura: Entità/Concetto → `concepts`/`tech`; Spiegazione/razionale → `syntheses` (+ il
+razionale *datato* nei record `experiments`); Riferimento → di solito `tech` o una sezione, non un'area a sé;
+Hub → l'unico hub è l'`index.md` globale. Un progetto può **non usare** tutti gli archetipi (es. nessun
+how-to operativo nel wiki, né hub per-area). Va bene: usa solo gli archetipi che servono, non forzarli.
 
 ### La lente di prodotto — quali entità di una **codebase** meritano una pagina
 
-Gli archetipi sopra sono generali; quando l'ospite è **codice** (il caso di Sertor) la domanda «cosa merita
+Gli archetipi sopra sono generali; quando l'ospite è **codice** la domanda «cosa merita
 una pagina?» (§1) si specializza. I costrutti del codice che hanno **identità propria** e sono **referenziati
 da più punti** diventano pagine-entità; gli altri restano paragrafi dentro la pagina del loro contenitore.
 
-| Costrutto del codice | Archetipo | Area (profilo Sertor) | Esempio |
+| Costrutto del codice | Archetipo | Area (esempio) | Esempio |
 |---|---|---|---|
 | **Entità di dominio** (un tipo del modello) | Entità/Concetto | `concepts` | `Document`, `Chunk`, `RetrievalResult` |
 | **Porta / contratto** (Protocol, interfaccia) | Entità/Concetto | `concepts` | `EmbeddingProvider`, `VectorStore` |
@@ -78,8 +77,8 @@ in pagine proprie.
   **linkala**, non ricopiarla). Il tutorial copiato è filler che gonfia e invecchia, e non è ciò che serve a
   chi riprende il *tuo* progetto.
 - **Record `experiment` (feature/attività):** è **evento + esito + puntatori**, non un trattato. Non duplica
-  gli **artefatti di processo** che vivono altrove (profilo Sertor: `specs/`/`requirements/` — Constitution
-  Check, tabelle di task/rischi/decisioni, hash git): li **cita**. L'esito sta in una riga (test · check ·
+  gli **artefatti di processo** che vivono altrove (es. `specs/`/`requirements/` — tabelle di
+  task/rischi/decisioni, hash git): li **cita**. L'esito sta in una riga (test · check ·
   merge); il *cosa è* va nelle pagine-entità, non nel diario.
 
 ## 3. Le pagine di struttura (l'impalcatura)
@@ -97,9 +96,9 @@ Non descrivono contenuto: **tengono insieme la rete**.
 - **Categorie / tag** — navigazione **trasversale** che taglia la gerarchia (es. tutte le «deprecato», tutte
   le «security»).
 
-**Profilo Sertor.** `index.md` fa da **home + hub globale** insieme (catalogo con summary per pagina); i
-`tags` del frontmatter sono le **categorie** trasversali. Non ci sono ancora hub/overview per-area (la
-tassonomia è piatta): se un'area cresce molto, un'overview in `syntheses/` è la mossa naturale.
+**Esempio.** `index.md` può fare da **home + hub globale** insieme (catalogo con summary per pagina); i
+`tags` del frontmatter sono le **categorie** trasversali. Se non ci sono ancora hub/overview per-area (la
+tassonomia è piatta) e un'area cresce molto, un'overview in `syntheses/` è la mossa naturale.
 
 ## 4. I due assi di navigazione (convivono)
 
@@ -113,8 +112,8 @@ Una buona wiki ha **sempre due assi**, non uno:
 L'errore classico è averne **uno solo**: solo albero (rigido, devi già sapere dov'è una cosa) o solo rete
 (ti perdi, nessun punto fermo).
 
-**Profilo Sertor.** L'albero è **volutamente piatto** — un livello di aree + `index.md` come home/hub — e il
-grosso del valore sta nella **rete** dei `[[wikilink]]`. È il senso di «un wiki è un grafo, non un albero»: la
+**Esempio.** Un albero **volutamente piatto** — un livello di aree + `index.md` come home/hub — mette il
+grosso del valore nella **rete** dei `[[wikilink]]`. È il senso di «un wiki è un grafo, non un albero»: la
 cartella dà solo *una casa*, i link danno il *significato* (la **collocazione** per natura — quale casa — sta
 nel playbook §3). Qui la sfumatura: anche un albero piatto è un asse — serve come punto fermo, non va abolito,
 solo tenuto basso.
@@ -126,7 +125,7 @@ solo tenuto basso.
 - **Niente orfani né dead-end** — ogni nodo dev'essere nella rete; la **disciplina dei link** che lo
   garantisce sta a livello di pagina → [`page-craft.md`](page-craft.md) §4 (gli orfani li trova il lint A).
 - **Naming coerente e prevedibile** — convenzioni stabili sui titoli/slug, così si indovina dove sta una
-  cosa e come linkarla (profilo Sertor: kebab-case; entità/concetti in inglese — vedi playbook §4).
+  cosa e come linkarla (es. kebab-case; entità/concetti in inglese — vedi playbook §4).
 - **Coerenza > completezza** — meglio poche pagine vive e aggiornate che cento morte: una pagina **obsoleta**
   è peggio di una assente perché tradisce la fiducia (è ciò che il [`page-craft.md`](page-craft.md) chiama
   *verità ancorata* e il lint B difende).

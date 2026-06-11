@@ -3,7 +3,7 @@
   Trigger automatico (non bloccante) per la manutenzione del wiki — thin wrapper sulla CLI.
 
 .DESCRIPTION
-  Delega la logica al nucleo deterministico host-agnostico (FEAT-003-D): invoca
+  Delega la logica al nucleo deterministico host-agnostico: invoca
     sertor-wiki-tools scan --config <root>/wiki.config.toml --json
   e mappa il contratto `wiki.scan/1` (`pending`, `message`) al formato dell'hook. Nessuna
   euristica mtime duplicata qui: la fonte unica e' la CLI (Principio X, niente path hard-coded).
@@ -38,7 +38,7 @@ if (-not (Test-Path $config)) { exit 0 }   # nessuna config host → niente da f
 $scan = $null
 try {
     Push-Location $root
-    $out = uv run sertor-wiki-tools scan --config $config --json 2>$null
+    $out = sertor-wiki-tools scan --config $config --json 2>$null
     Pop-Location
     if ($out) { $scan = ($out | Select-Object -Last 1 | ConvertFrom-Json) }
 } catch {

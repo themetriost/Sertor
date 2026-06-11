@@ -29,7 +29,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | RAG agentico (FEAT-006) | Should | 📋 da decomporre |
 | Manutenzione wiki (FEAT-007) | Should | 📋 da decomporre |
 | CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
-| CLI — installer (`sertor install <capacità>`) | — | 🔄 **in progress** (specify ✅ su branch `012`; prossimo: plan) |
+| CLI — installer (`sertor install <capacità>`) | — | 🔄 **in progress** (implement ✅ 35/35 su branch `012`; prossimo: install live + PR) |
 
 *Legenda:* ✅ su master · 🧪 operativo, consolidamento aperto · 📋 pianificato · 💀 ramo morto (non su master).
 
@@ -37,11 +37,12 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 - **CLI — installer `sertor install <capacità>`** — *cosa:* backbone del comando `sertor` + primo
   taglio `sertor install wiki` (DA-8). *Dove:* `requirements/sertor-cli/installer/requirements.md`
-  (25 REQ EARS + 7 NFR; DI-1..DI-5 risolte, DI-5 finale = package-data nel wheel). *Dove:* branch
-  `012-sertor-install-wiki`, `specs/012-sertor-install-wiki/spec.md` (**specify ✅**: 3 user story
-  P1 repo-nuovo / P2 non-distruttività / P3 governo+help, 25 FR ↔ REQ-100..143, 8 SC, checklist
-  qualità verde, zero NEEDS CLARIFICATION). *Prossimo passo:* `/speckit-plan` (clarify non
-  necessaria). *Blocchi:* nessuno.
+  (25 REQ EARS + 7 NFR; DI-1..DI-5 risolte, DI-5 = package-data). *Dove:* branch
+  `012-sertor-install-wiki` — SpecKit completo in serata: specify ✅ · plan ✅ (PASS 10/10, D1
+  workspace + D2 assets-come-fonte) · tasks ✅ (35) · analyze ✅ (FR 25/25, 7 fix) · **implement ✅
+  35/35** (`packages/sertor/`, workspace uv senza fallback; root **221 passed + 2 xfail** + 38
+  package + 17 guardia; `.claude/` ora derivato dagli assets). *Prossimo passo:* install live su un
+  repo terzo (SC-008 reale) → PR. *Blocchi:* nessuno.
 - Coda residua: **riavvio del server MCP** alla prossima sessione (codice core cambiato; gli indici
   nuovi si leggono già da disco).
 

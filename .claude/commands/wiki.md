@@ -17,7 +17,7 @@ chiamala via Bash invece di Glob/Grep a mano. A te resta il **giudizio** (cosa s
 Procedi così:
 
 1. Leggi il **playbook** (indice), poi l'indice e la coda del log del wiki (nomi-file da config) per lo stato
-   attuale; usa `uv run sertor-wiki-tools collect --json` per l'inventario meccanico delle pagine.
+   attuale; usa `sertor-wiki-tools collect --json` per l'inventario meccanico delle pagine.
 2. **Determina l'operazione** da `$ARGUMENTS` o dal lavoro di sessione, tra:
    `record` · `distill` (entità durevoli da step, backlog o **brief di una conversazione intera**, anche
    vecchia/esterna — mai il transcript grezzo: condensa prima) · `ingest` · `query` · `lint` (livelli A

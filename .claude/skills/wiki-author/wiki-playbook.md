@@ -19,7 +19,7 @@ varia tra progetti vive in **`wiki.config.toml`** alla radice dell'ospite — **
 
 | Chiave config | Cosa definisce |
 |---|---|
-| `root`, `index_file`, `log_file`, `log_dir` | dove vive il wiki e i suoi file speciali (`log_dir` ⇒ rotazione del log a un file per giorno, FEAT-008) |
+| `root`, `index_file`, `log_file`, `log_dir` | dove vive il wiki e i suoi file speciali (`log_dir` ⇒ rotazione del log a un file per giorno) |
 | `[[taxonomy]]` | le aree logiche (cartella → tipo frontmatter) |
 | `frontmatter_required` / `_optional` | i campi di frontmatter attesi |
 | `source_dirs`, `exclude` | da dove leggere il lavoro dell'ospite e cosa ignorare |
@@ -28,7 +28,7 @@ varia tra progetti vive in **`wiki.config.toml`** alla radice dell'ospite — **
 | `[rag]`, `[strings]`, `language` | corpus RAG, messaggi localizzati, lingua |
 
 **Non assumere `wiki/`, `src/`, nomi di cartelle o di agenti**: leggili dalla config. Gli esempi concreti
-qui sotto (`wiki/`, `concepts/`, `src/`…) sono il **profilo Sertor** usato in dogfooding, **non** leggi
+qui sotto (`wiki/`, `concepts/`, `src/`…) sono **esempi del profilo dell'ospite**, **non** leggi
 universali. Su un altro progetto cambia solo il file di config.
 
 ## 1. Identità & filosofia
@@ -37,9 +37,8 @@ Il wiki è un **LLM Wiki** in stile Karpathy: *Obsidian è l'IDE, l'LLM è il pr
 codebase*. La conoscenza si **compila una volta** e si tiene aggiornata, invece di ricostruirla a ogni
 sessione.
 
-- **Doppio ruolo (DA-W1):** il wiki è insieme **corpus** (interrogabile via RAG) e **superficie**
-  (indice navigabile iniettato a inizio sessione). Vedi la pagina del wiki (profilo Sertor:
-  `wiki/concepts/wiki-role-da-w1.md`).
+- **Doppio ruolo:** il wiki è insieme **corpus** (interrogabile via RAG) e **superficie**
+  (indice navigabile iniettato a inizio sessione).
 - **Cumulativo:** cresce a ogni sessione; non si riparte da zero.
 - **Idempotente:** se una pagina è già accurata, **non riscriverla**. Niente modifiche inutili.
 - **Self-contained:** ogni pagina è scritta perché un agente la riprenda senza il contesto della chat.
@@ -47,12 +46,12 @@ sessione.
   a un'altra pagina) rende **stale** una pagina, riallinearla **fa parte dello stesso lavoro** — non è
   un'operazione separata da chiedere. La deriva che *tu* introduci si corregge **nello stesso step**, di
   default e senza richiesta esplicita; quella *preesistente* che soltanto scopri può diventare worklist del
-  `lint`. *(L'ospite può codificarlo nel proprio rituale; profilo Sertor: `CLAUDE.md`, rituale di step.)*
+  `lint`. *(L'ospite può codificarlo nel proprio rituale, es. nel `CLAUDE.md`.)*
 
 ## 2. Nucleo deterministico vs giudizio (il confine)
 
-Il bookkeeping **meccanico** è codice host-agnostico già pronto: la CLI **`sertor-wiki-tools`**
-(sottopacchetto `sertor_core.wiki_tools`, FEAT-003-D). **Usala invece di rifare il meccanico a mano.**
+Il bookkeeping **meccanico** è codice host-agnostico già pronto: la CLI **`sertor-wiki-tools`**.
+**Usala invece di rifare il meccanico a mano.**
 
 | Operazione CLI | Cosa fa (meccanico) | Contratto JSON |
 |---|---|---|
@@ -66,7 +65,7 @@ Il bookkeeping **meccanico** è codice host-agnostico già pronto: la CLI **`ser
 | `migrate` | splitta retroattivamente il log monolitico in partizioni giornaliere | `wiki.migrate/1` |
 | `upsert-index` | inserisce/aggiorna la riga `- [[page]] — summary` nell'indice (sommario LLM-authored) | `wiki.upsert_index/1` |
 
-Invocazione: `uv run sertor-wiki-tools <op> --config wiki.config.toml [--json]` (o il console-script
+Invocazione: `sertor-wiki-tools <op> --config wiki.config.toml [--json]` (o il console-script
 `sertor-wiki-tools`). Con `--json` ottieni il contratto versionato; senza, un sommario umano.
 
 **A te (LLM) resta il GIUDIZIO**, che la CLI non fa: *cosa* scrivere e il *perché*, se una pagina è nuova
@@ -75,7 +74,7 @@ Il *dove/come* (percorsi, formati, rilevazione meccanica) lo dà il deterministi
 
 ## 3. Tassonomia (dalla config)
 
-Le aree sono quelle in `[[taxonomy]]`. Nel profilo Sertor:
+Le aree sono quelle in `[[taxonomy]]`. Esempio di profilo:
 
 ```
 <root>/             (es. wiki/)
@@ -92,7 +91,7 @@ Le aree sono quelle in `[[taxonomy]]`. Nel profilo Sertor:
   `ingest`); non inventare cartelle non dichiarate.
 - Le cartelle possono non esistere ancora: **creale on-demand** alla prima pagina della categoria (oppure
   in blocco con `sertor-wiki-tools structure init`). Non creare cartelle vuote o placeholder.
-- Eventuali wiki **congelati/da non toccare** (su Sertor: `prototype/wiki/`) sono **fuori** dalla `root`
+- Eventuali wiki **congelati/da non toccare** (es. un wiki storico archiviato) sono **fuori** dalla `root`
   ed esclusi via `exclude`: non si modificano, si consultano semmai via RAG.
 
 ### Collocazione — scegliere l'area dalla natura della pagina
@@ -100,13 +99,13 @@ Le aree sono quelle in `[[taxonomy]]`. Nel profilo Sertor:
 L'area si sceglie dalla **natura logica** del contenuto, **non** dalla fase/progetto (cartelle
 per fase — `sprint-3/`, `fase-azure/` — invecchiano male): la cartella dà solo **una casa**, il valore sta nei
 link. Il *perché* — «un wiki è un grafo, non un albero» e i due assi di navigazione — sta in
-[`wiki-craft.md`](wiki-craft.md) §4. Ruoli delle aree (profilo Sertor; su un altro
+[`wiki-craft.md`](wiki-craft.md) §4. Ruoli delle aree (su ogni
 ospite valgono i ruoli analoghi della sua `[[taxonomy]]`):
 
 - **concepts/** — astrazioni, pattern, idee (un concetto RAG, una tecnica). Evergreen.
 - **tech/** — una tecnologia/strumento/infra concreta (una libreria, un servizio). Evergreen.
-- **experiments/** — il **record datato** di un'attività/step/feature svolta (l'implementazione di FEAT-X,
-  uno spike, una sessione). È il diario di un lavoro, non un'astrazione.
+- **experiments/** — il **record datato** di un'attività/step/feature svolta (l'implementazione di una
+  feature, uno spike, una sessione). È il diario di un lavoro, non un'astrazione.
 - **sources/** — il riassunto di una **fonte esterna** ingerita (paper, blog, PR, doc di terzi).
 - **syntheses/** — un **confronto trasversale** fra più concetti/esperimenti (A-vs-B, una sintesi che
   attraversa pagine). È la categoria **più rara**, **non** il default.
@@ -130,7 +129,7 @@ livello-grafo, gemella di `page-craft.md`.
 ## 4. Convenzioni
 
 **Frontmatter YAML** in ogni pagina (eccetto i file append-only). I campi attesi sono in
-`frontmatter_required`/`_optional`. Profilo Sertor:
+`frontmatter_required`/`_optional`. Esempio:
 ```yaml
 ---
 title: <titolo leggibile>
@@ -147,7 +146,7 @@ sources: ["<path o URL>", ...]
 - **Wikilink** `[[nome-pagina]]` (senza `.md`); alias con `[[nome-pagina|testo mostrato]]`. Mantieni i
   cross-reference aggiornati: una pagina nuova va linkata dall'indice e dalle pagine correlate.
 - **Naming** file: kebab-case descrittivo (`azure-ai-search.md`). `validate` lo verifica per te.
-  - **Lingua del nome (profilo Sertor):** le pagine-**entità/concetto** (`concepts/`, `tech/`) hanno
+  - **Lingua del nome (esempio di convenzione):** le pagine-**entità/concetto** (`concepts/`, `tech/`) hanno
     **slug e titolo in inglese** (`retrieval-core`, `thin-consumer`), mentre il **corpo discorsivo resta in
     italiano**. I **record** (`experiments/`) restano in italiano descrittivo (sono eventi, non entità). Le
     pagine esistenti con slug italiano si rinominano **opportunisticamente** (quando le si tocca), non in
@@ -165,15 +164,15 @@ come) — vive nella pagina di riferimento `page-craft.md`, **linkata dalle oper
 riscrivono pagine (`record`, `ingest`, lint **C**, `reorg`). È una foglia: le operazioni la referenziano
 senza che questo file dipenda da loro.
 
-### Verità, autorità e obsolescenza (FR-012..017)
+### Verità, autorità e obsolescenza
 
-**Non esiste una singola fonte di verità** (FR-012): l'autorità dipende dall'**asse** del claim —
+**Non esiste una singola fonte di verità**: l'autorità dipende dall'**asse** del claim —
 sul **comportamento** vincono **codice + test**; sul **perché** vincono le **decisioni registrate**
-(SpecKit, log, requirements). Il wiki è **derivato**: in conflitto si applica la gerarchia di default
-(FR-013: comportamento → codice/test · perché → decisione registrata); una gerarchia configurata
-dall'ospite può sostituirla (FR-014, opzionale — oggi non implementata).
+(log, requirements, decisioni di processo). Il wiki è **derivato**: in conflitto si applica la gerarchia
+di default (comportamento → codice/test · perché → decisione registrata); una gerarchia configurata
+dall'ospite può sostituirla (opzionale).
 
-**Una pagina è stale quando contraddice la sua autorità** (FR-017). La risposta NON è correggere in
+**Una pagina è stale quando contraddice la sua autorità.** La risposta NON è correggere in
 silenzio, né cancellare: è la **supersession esplicita** —
 
 1. **frontmatter**: `status: superseded` (il campo `status` è tra gli opzionali della config);
@@ -185,7 +184,7 @@ silenzio, né cancellare: è la **supersession esplicita** —
 Per il **diario** (log, record datati) la supersession è naturale: la correzione è una **nuova voce**,
 mai un edit. Per il **grafo** la convenzione qui sopra è l'equivalente. **Niente punteggi di confidenza
 numerici**: l'evidenza è la catena di link/prove del claim ancorato (vedi le critiche in
-[[llm-wiki-v2-agentmemory]] — profilo Sertor — sulla falsa precisione). Chi *rileva* la contraddizione è
+la falsa precisione dei punteggi numerici). Chi *rileva* la contraddizione è
 il lint B (o chiunque, lavorando); chi *decide* la marcatura è il flusso principale **su conferma**
 quando il caso tocca decisioni/fonti autorevoli umane (convenzione "Contraddizioni" qui sopra).
 
@@ -211,21 +210,21 @@ eseguibili anche dal `curator` in background; il lint **B/C**, `distill`, `reorg
 | `query` | [`ops/query.md`](ops/query.md) | rispondi a una domanda sul wiki (archivia se prezioso) | curator OK |
 | `lint` | [`ops/lint.md`](ops/lint.md) | coerenza a 3 livelli: A strutturale · B semantico · C organizzativo | A: curator · B/C: solo Opus |
 | `reorg` | [`ops/reorg.md`](ops/reorg.md) | applica il refactoring organizzativo del lint C (su conferma) | solo Opus |
-| `generate` | [`ops/generate.md`](ops/generate.md) | genera il wiki dal repo: **da-zero** (bootstrap su ospite privo di wiki, N3) o **da-diff** (incrementale: solo le pagine impattate dalle modifiche recenti); profondità di ricognizione a preset (`leggera`/`media`/`massiva`, default leggera) | solo Opus |
-| `rag-sync` | [`ops/rag-sync.md`](ops/rag-sync.md) | re-indicizza il wiki nel RAG (ruolo "corpus" di DA-W1) | solo Opus |
+| `generate` | [`ops/generate.md`](ops/generate.md) | genera il wiki dal repo: **da-zero** (bootstrap su ospite privo di wiki) o **da-diff** (incrementale: solo le pagine impattate dalle modifiche recenti); profondità di ricognizione a preset (`leggera`/`media`/`massiva`, default leggera) | solo Opus |
+| `rag-sync` | [`ops/rag-sync.md`](ops/rag-sync.md) | re-indicizza il wiki nel RAG (il ruolo di "corpus") | solo Opus |
 | `structure` | [`ops/structure.md`](ops/structure.md) | bootstrap idempotente della struttura | curator/CLI |
 
-> **Write-back log/indice.** Entrambi **cablati in CLI**: il **log** con `append-log` (FEAT-008 — l'LLM
+> **Write-back log/indice.** Entrambi **cablati in CLI**: il **log** con `append-log` (l'LLM
 > compone il **corpo curato** §6, la CLI lo piazza nel file del giorno) e la riga d'**indice** con
-> `upsert-index` (feature 010 — `--page` + `--summary` o stdin; insert/update/noop idempotente, sommario
+> `upsert-index` (`--page` + `--summary` o stdin; insert/update/noop idempotente, sommario
 > **sempre LLM-authored**, vuoto/multilinea rifiutati). Sfumatura sull'indice: la CLI scrive la riga
-> **piatta** `- [[page]] — summary`; se l'indice dell'ospite è *curato* (grassetti, sezioni — il caso di
-> Sertor), decidere se adottare il formato piatto o continuare ad autorare la riga a mano è **giudizio**.
+> **piatta** `- [[page]] — summary`; se l'indice dell'ospite è *curato* (grassetti, sezioni),
+> decidere se adottare il formato piatto o continuare ad autorare la riga a mano è **giudizio**.
 
 ## 6. Voce di log
 
 Append al log, una voce per operazione, con la **data odierna**. Con la **rotazione** (`log_dir`) la voce va
-nel **file del giorno** (`<log_dir>/YYYY-MM-DD.md`) e il **piazzamento** lo fa `append-log` (CLI, FEAT-008) a
+nel **file del giorno** (`<log_dir>/YYYY-MM-DD.md`) e il **piazzamento** lo fa `append-log` (CLI) a
 cui passi il **corpo curato**; senza `log_dir`, un unico file di log (back-compat). Formato:
 ```
 ## [YYYY-MM-DD] <operazione> | <titolo>
@@ -252,7 +251,7 @@ una voce (`record`, `ingest`, `lint`, `reorg`, …).
 - **Git:** mai eseguirlo direttamente. Tutte le operazioni git (incluse le letture per il `generate`
   da-diff) si **delegano al ruolo VCS** (`[roles].vcs`). Il `curator` non esegue git.
 - **Fonti & wiki congelati:** non toccare mai le fonti originali date a `ingest`, né i wiki esclusi via
-  `exclude` (su Sertor: `prototype/`).
+  `exclude`.
 - **Quando NON documentare:** modifiche puramente meccaniche o di poco conto non meritano una voce.
 - **Versionamento:** quando l'utente vuole versionare, delega al ruolo VCS un commit `docs(wiki):
   <sommario>` con staging selettivo della radice del wiki.
