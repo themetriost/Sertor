@@ -37,10 +37,10 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 - **CLI — installer `sertor install <capacità>`** — *cosa:* backbone del comando `sertor` + primo
   taglio `sertor install wiki` (DA-8). *Dove:* `requirements/sertor-cli/installer/requirements.md`
-  (27 REQ EARS + 7 NFR, elicitati 2026-06-11; **DI-1..DI-5 tutte risolte** lo stesso giorno —
-  decisione chiave: artefatti non-Python scaricati on-demand pinnati alla versione installata, con
-  fallback offline `--source`). *Prossimo passo:* `/speckit-specify` della feature installer.
-  *Blocchi:* nessuno.
+  (25 REQ EARS + 7 NFR, elicitati 2026-06-11; **DI-1..DI-5 tutte risolte** lo stesso giorno —
+  decisione chiave, rivista in serata: artefatti non-Python come **package-data nel wheel**
+  (offline e coerenza versione by construction; REQ-116/117 sul download rimossi)). *Prossimo
+  passo:* `/speckit-specify` della feature installer. *Blocchi:* nessuno.
 - Coda residua: **riavvio del server MCP** alla prossima sessione (codice core cambiato; gli indici
   nuovi si leggono già da disco).
 
