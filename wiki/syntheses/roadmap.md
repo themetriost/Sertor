@@ -24,7 +24,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | Motore baseline (FEAT-002) | Must | ✅ master |
 | Wiki LLM (FEAT-003) | Must | ✅ **completata 2026-06-10** (D 100% + N chiuse; N5/N9 → FEAT-007) |
 | Server MCP (FEAT-MCP) | Should | ✅ master |
-| RAG ibrido + reranking (FEAT-004) | Should | 📋 da decomporre |
+| RAG ibrido + reranking (FEAT-004) | Should | 🔄 **in progress** (requirements in corso, 2026-06-11) |
 | GraphRAG (FEAT-005) | Should | 📋 da decomporre |
 | RAG agentico (FEAT-006) | Should | 📋 da decomporre |
 | Manutenzione wiki (FEAT-007) | Should | 📋 da decomporre |
@@ -36,9 +36,13 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- *(nessuna voce in corso — feature 012 mergiata: scegliere il prossimo PLANNED)*. Code residue:
-  **riavvio del server MCP** alla prossima sessione (codice core cambiato con le feature 011+012;
-  gli indici nuovi si leggono già da disco) · **tema lingua** (vedi PLANNED).
+- **FEAT-004 — Motore RAG ibrido + reranking** — *cosa:* secondo motore RAG del core (BM25+vector
+  fusi con RRF + reranking; ricetta da [[llm-wiki-v2-agentmemory]] e prototipo 02); obiettivo:
+  qualità di `search_code` su query architetturali. *Dove:* fase **requirements** in corso
+  (decomposizione dall'epica → `requirements/sertor-core/motore-ibrido/`). *Prossimo passo:*
+  risolvere le domande aperte dell'elicitazione → SpecKit. *Blocchi:* nessuno.
+- Code residue: **riavvio del server MCP** alla prossima sessione (codice core cambiato con
+  011+012) · **tema lingua** (vedi PLANNED).
 
 ### 📋 PLANNED (per priorità)
 - **FEAT-004 ibrido+reranking** — candidato naturale: migliora la qualità di `search_code` (debolezza
@@ -51,7 +55,8 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 - **FEAT-007 manutenzione wiki** — parte con dote ricca: probe di freschezza (ex N5), helper
   `move`-con-link (ex N9), op *reconcile* delle obsolescenze (idea utente 2026-06-10), seed
   `structure init` localizzato **+ localizzazione asset installer (2026-06-11)**.
-- *(installer spostato in IN PROGRESS: requirements elicitati, DI-1..DI-5 da risolvere)*
+- **`sertor install rag` · `sertor install governance`** — gli altri due tagli dell'installer
+  (oggi stub dichiarati nell'help).
 - **Misurare la pertinenza** (chiudere i 2 xfail con ground-truth reale).
 
 ### ✅ DONE (su `master`, le rilevanti)
