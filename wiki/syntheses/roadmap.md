@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-11 (ripresa CLI: DA-8 split installer/esecuzione — `sertor install <capacità>` vs console-script core `sertor-rag`; requirements `esecuzione` rinfrescati, prossimo passo SpecKit)
+updated: 2026-06-11 (🚢 feature 011 MERGIATA, PR #21: CLI di esecuzione RAG `sertor-rag` su master — SpecKit completo in giornata, 204 test, SC-008 CLI≡MCP)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md"]
 ---
 
@@ -28,20 +28,16 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | GraphRAG (FEAT-005) | Should | 📋 da decomporre |
 | RAG agentico (FEAT-006) | Should | 📋 da decomporre |
 | Manutenzione wiki (FEAT-007) | Should | 📋 da decomporre |
-| CLI — feature `esecuzione` (`sertor-rag`) | — | 🔄 **in progress** (requirements rinfrescati 2026-06-11, prossimo: SpecKit) |
+| CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
 | CLI — installer (`sertor install <capacità>`) | — | 📋 da elicitare (DA-8; contenuto `install wiki` confermato) |
 
 *Legenda:* ✅ su master · 🧪 operativo, consolidamento aperto · 📋 pianificato · 💀 ramo morto (non su master).
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- **CLI — feature `esecuzione` (`sertor-rag index/search`)** — *cosa:* CLI di esecuzione RAG come
-  console-script del core (DA-8: `sertor` resta riservato all'installer `sertor install <capacità>`).
-  *Dove:* branch `011-cli-esecuzione-rag` — SpecKit completo in giornata: specify ✅ · plan ✅
-  (Constitution PASS/PASS) · tasks ✅ (32) · analyze ✅ (FR 24/24, 3 fix HIGH applicati) ·
-  **implement ✅ 31/32** (`src/sertor_core/cli/`, suite **204 passed + 2 xfail**, ruff pulito).
-  *Prossimo passo:* smoke test utente + T031 dogfood con provider reale (SC-008), poi PR verso
-  master. *Blocchi:* nessuno.
+- *(nessuna voce in corso — feature 011 consegnata: scegliere il prossimo PLANNED)*. Coda residua:
+  **riavvio del server MCP** alla prossima sessione (il codice del core è cambiato: settings, baseline,
+  adapter — gli indici nuovi invece si leggono già da disco).
 
 ### 📋 PLANNED (per priorità)
 - **FEAT-004 ibrido+reranking** — candidato naturale: migliora la qualità di `search_code` (debolezza
@@ -57,6 +53,11 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### ✅ DONE (su `master`, le rilevanti)
 
+- **CLI di esecuzione RAG `sertor-rag` (feature 011, PR #21, 2026-06-11)** — terza superficie del
+  core ([[sertor-rag-cli]]): `index`/`search` dal terminale, osservabilità a runtime, validazione
+  statica del backend. SpecKit completo in giornata (specify→plan→tasks→analyze→implement); suite
+  **204 passed + 2 xfail**; SC-008: risultati CLI ≡ server MCP. DA-8: `sertor` resta riservato
+  all'installer (PLANNED).
 - Nucleo retrieval (FEAT-001) · motore baseline (FEAT-002) · server MCP (FEAT-MCP).
 - **Wiki LLM (FEAT-003) COMPLETATA (2026-06-10)** — l'ultimo Must dell'epica: nucleo deterministico
   `wiki_tools` + operazioni-giudizio come skills/playbook. Nella giornata di chiusura: N1 riconciliata,
@@ -89,21 +90,22 @@ riproducibile e production-grade. **Una sola verità interrogabile**: sorgenti (
   (meccanica del log) e `specs/009` (decoupling store) sono **lavori abilitanti** sul nucleo/wiki-tools,
   **non** le FEAT-008/009 dell'epica (arricchimento Wiki↔RAG / refresh incrementale, ancora da decomporre).
 
-## Stato in breve (al 2026-06-10)
+## Stato in breve (al 2026-06-11)
 
 - **Su `master`** (l'unico asset reale): nucleo di retrieval + motore baseline + **wiki** (metà
   deterministica `wiki_tools` **in codice** + metà giudizio **come skills/playbook** in `.claude/`) +
-  **server MCP** + **query congiunta multi-collezione** e `upsert-index` in CLI (feature 010), più i
-  lavori abilitanti (meccanica log, decoupling store/embeddings, regola di re-index).
+  **server MCP** + **query congiunta multi-collezione** e `upsert-index` in CLI (feature 010) +
+  **CLI di esecuzione RAG `sertor-rag`** (feature 011, [[sertor-rag-cli]]), più i lavori abilitanti
+  (meccanica log, decoupling store/embeddings, regola di re-index).
 - **Dogfooding di produzione VIVO**: corpus `sertor` (207 doc / 1778 chunk, **wiki incluso** come
   documentazione — modello a corpus unico, D-21), embeddings Azure `text-embedding-3-large` + Chroma
   locale in `.index-sertor/`. Servito dal server MCP `sertor-rag`. La collezione `wiki__*` resta come
   capacità esercitabile (rag-sync), senza consumatori.
-- **Rami abbandonati (NON su `master` → non contano come asset):** la **CLI `sertor`** (`specs/004` — su
-  master ci sono solo i *requirements*, zero codice `sertor_cli`) e i tentativi *in codice* di FEAT-003-N
-  (`specs/003`/`005`, superati dall'approccio a skills). Oggi il prodotto è usabile come **libreria + MCP**,
-  **non** come CLI.
-- Qualità: **159 test verdi** (+2 xfail di misura), ruff pulito; ogni feature su master passata col
+- **Rami abbandonati (NON su `master` → non contano come asset):** il vecchio tentativo CLI
+  (`specs/004`, superato dalla feature 011 reimplementata su master) e i tentativi *in codice* di
+  FEAT-003-N (`specs/003`/`005`, superati dall'approccio a skills). Oggi il prodotto è usabile come
+  **libreria + server MCP + CLI `sertor-rag`**; manca l'**installer** `sertor install <capacità>` (DA-8).
+- Qualità: **204 test verdi** (+2 xfail di misura), ruff pulito; ogni feature su master passata col
   **Constitution Check** (costituzione v1.1.0, 10 principi).
 
 ## Mappa delle feature (epica `sertor-core`) & stato reale
@@ -133,13 +135,13 @@ già su master).
 
 | Feature | Stato | Dove |
 |---|---|---|
-| CLI "esecuzione" (**`sertor-rag`** + `index`/`search`) | 🔄 **in progress**: requirements rinfrescati (rev. 2026-06-11), prossimo passo SpecKit; il vecchio codice `sertor_cli` (`specs/004`) resta ramo morto | requirements ✅ · codice da fare |
+| CLI "esecuzione" (**`sertor-rag`** + `index`/`search`) | ✅ **su master (2026-06-11, PR #21)** — `src/sertor_core/cli/`, SpecKit `specs/011`; il vecchio `specs/004` resta ramo morto superato | requirements ✅ · codice ✅ |
 | Installer `sertor install <capacità>` (primo taglio: `install wiki`, contenuto in DA-8) | 📋 da elicitare (`/requirements`) | epica §9 DA-8 |
 | Wizard config · setup governance · PyPI | 💤 da decomporre/Won't ora | — |
 
-> Oggi il prodotto si usa come **libreria** (`import sertor_core`) e via **server MCP**. Il vecchio
-> ramo CLI (`specs/004`) non si recupera: la feature `esecuzione` si reimplementa su master come
-> `sertor-rag`.
+> Oggi il prodotto si usa come **libreria** (`import sertor_core`), via **server MCP** e via
+> **CLI `sertor-rag`** ([[sertor-rag-cli]]). Il vecchio ramo CLI (`specs/004`) è definitivamente
+> superato dalla feature 011.
 
 ## Lavori abilitanti già mergiati (non sono FEAT d'epica)
 
@@ -150,7 +152,7 @@ già su master).
 
 ## Roadmap per fasi
 
-- **✅ Fatto (master):** Nucleo · Baseline · Wiki (deterministico `wiki_tools` + operazioni LLM come skills) · Server MCP · Decoupling store · Indice dogfood `sertor` (vivo via MCP).
+- **✅ Fatto (master):** Nucleo · Baseline · Wiki (deterministico `wiki_tools` + operazioni LLM come skills) · Server MCP · CLI di esecuzione `sertor-rag` (feature 011) · Decoupling store · Indice dogfood `sertor` (vivo via MCP e CLI).
 - **💀 NON su master (rami abbandonati — non contano):** CLI `sertor` (`specs/004`) · tentativi *in codice* di FEAT-003-N (`specs/003`/`005`, superati dalle skills). Da rifare su master se servono.
 - **🔜 Prossimo (Should):** RAG ibrido+reranking (FEAT-004) · GraphRAG (FEAT-005) · RAG agentico (FEAT-006) · Manutenzione wiki (FEAT-007).
 - **💤 Dopo (Could):** Arricchimento Wiki↔RAG (FEAT-008) · Refresh incrementale indice (FEAT-009).
@@ -188,4 +190,4 @@ già su master).
 Sintesi per feature: [[implementazione-nucleo-retrieval]] · [[motore-baseline-feat002]] ·
 [[nucleo-wiki-deterministico-feat003d]] · [[server-mcp-produzione-feat-mcp]] · [[meccanica-log-feat008]] ·
 [[store-backend-disaccoppiato-feat009]] · [[spec-010-query-congiunta-e-upsert-index]] ·
-[[architettura-wiki-llm]] · [[constitution]] · [[corpus-index-naming]].
+[[sertor-rag-cli]] · [[architettura-wiki-llm]] · [[constitution]] · [[corpus-index-naming]].

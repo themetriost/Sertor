@@ -46,8 +46,12 @@ Non conosce gli adapter concreti né gli SDK: quelli restano dietro le porte, sc
   `build_facade(Settings.load())` (memoizzata) ed espone 3 tool (`search_code`/`search_docs`/`search_combined`)
   mappando i `RetrievalResult` sul protocollo MCP. Nessuna logica di retrieval propria. *(Record datato:
   [[server-mcp-produzione-feat-mcp]].)*
-- **CLI `sertor`** — il CLI di distribuzione (in arrivo) è un thin consumer analogo: importa il core, non
-  dipende dagli adapter Azure (extra opzionale).
+- **[[sertor-rag-cli|CLI `sertor-rag`]]** — il secondo esempio realizzato (feature 011, PR #21,
+  2026-06-11): `index`/`search` dal terminale via `build_indexer()`/`build_facade()`/
+  `build_baseline_engine()`, zero logica di core nella CLI; SC-008 verificato (stessi risultati del
+  server MCP a parità di query).
+- **CLI installer `sertor`** — il comando di installazione (`sertor install <capacità>`, DA-8, da
+  elicitare) sarà un thin consumer analogo.
 - **[[wiki-tools|`sertor-wiki-tools`]]** — la CLI del nucleo wiki deterministico è un entry sottile sopra
   `sertor_core.wiki_tools`, guidato da `wiki.config.toml`.
 

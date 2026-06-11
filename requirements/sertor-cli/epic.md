@@ -98,10 +98,10 @@ da solo la creazione/ingestione del RAG: serve sempre un **comando esplicito** s
 
 | ID | Feature | Valore / obiettivo | Priorità (MoSCoW) | Stato |
 |----|---------|--------------------|-------------------|-------|
-| FEAT-001 | **CLI installabile** (pacchetto `uv`/`pip`, entry-point `sertor`, struttura comandi, principio install≠run) | Spina dorsale: senza il CLI nessuna capacità è raggiungibile | **Must** | parz. (rev. DA-8): la parte **eseguibile** vive nel core come `sertor-rag`/`sertor-wiki-tools` (feature `esecuzione`); `sertor` resta il veicolo di **install** (→ FEAT-002/005); packaging rinviato |
+| FEAT-001 | **CLI installabile** (pacchetto `uv`/`pip`, entry-point `sertor`, struttura comandi, principio install≠run) | Spina dorsale: senza il CLI nessuna capacità è raggiungibile | **Must** | parz. (rev. DA-8): la parte **eseguibile** è **CONSEGNATA** come `sertor-rag` (feature `esecuzione`, PR #21, 2026-06-11), accanto a `sertor-wiki-tools`; `sertor` resta il veicolo di **install** (→ FEAT-002/005); packaging rinviato |
 | FEAT-002 | **Installazione selettiva delle capacità del core** (motori RAG + skill wiki) su un repo target | Portare il core su un progetto, a scelta, senza eseguirlo | **Must** | da decomporre — forma `sertor install <capacità>`; primo taglio `sertor install wiki`, contenuto confermato in DA-8 |
 | FEAT-003 | **Configurazione** (provider LLM obbligatorio default cloud + Ollama; vector DB condizionale a scelta Chroma vs PGVector/MongoDB Azure) | Adatta le capacità all'ambiente target senza toccare codice | **Should** | parz. → lettura config in `esecuzione`; wizard rinviato |
-| FEAT-004 | **Comando di creazione/esecuzione del RAG** (ingestione/indicizzazione, separato dall'install) | Costruire/aggiornare gli indici su richiesta esplicita | **Should** | decomposta → `esecuzione` |
+| FEAT-004 | **Comando di creazione/esecuzione del RAG** (ingestione/indicizzazione, separato dall'install) | Costruire/aggiornare gli indici su richiesta esplicita | **Should** | ✅ **CONSEGNATA** via feature `esecuzione` (`sertor-rag index`/`search`, PR #21, 2026-06-11) |
 | FEAT-005 | **Setup configurazione di governance** (skill/agenti di fase + skill gestione requisiti) | Replicare la configurazione di lavoro su altri repo | **Should** | da decomporre |
 | FEAT-006 | **Distribuzione pubblica su PyPI** (versioning pubblico, licenza, hardening supply-chain) | Apertura a utenti esterni | **Won't (per ora)** | rinviata |
 

@@ -1,5 +1,6 @@
 # Requisiti — CLI: esecuzione delle capacità del core
 <!-- Deriva da: FEAT-CLI-001 (backbone entry-point) + FEAT-CLI-004 (esecuzione RAG) + fetta minima di FEAT-CLI-003 (config provider) -->
+<!-- STATO: CONSEGNATA — implementata come `sertor-rag` (specs/011-cli-esecuzione-rag, PR #21, mergiata su master il 2026-06-11) -->
 <!-- Revisione 2026-06-11: ridiscussione requisito-per-requisito post FEAT-003/FEAT-MCP/feature 010/D-21.
      Entry-point spostato sul core (`sertor-rag`, DA-8 epica); gruppo D (wiki index) rimosso; REQ-041 precisato. -->
 

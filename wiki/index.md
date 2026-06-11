@@ -3,7 +3,7 @@ title: Indice del Wiki — Produzione Sertor
 type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
-updated: 2026-06-10 (Home: sezione "Da dove cominciare" con 4 percorsi di lettura; refactoring wiki — lint B/C su 6 pagine, record feature 010 tessuto nel grafo)
+updated: 2026-06-11 (nuova pagina tech [[sertor-rag-cli]] — CLI di esecuzione RAG consegnata, feature 011/PR #21)
 sources: ["requirements/sertor-core/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "src/sertor_core/**", "CLAUDE.md"]
 ---
 
@@ -107,4 +107,5 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 - **[[tree-sitter-language-pack]]** — Il binding Python (wheel precompilato) delle grammatiche tree-sitter, base del [[chunking-dispatch|chunking sintattico]]: API **a metodi** (non attributi) avvolta dal wrapper `_Node`, byte-range UTF-8, righe 0→1-based. *(Distillato 2026-06-08, allineato a `code.py`.)*
 - **[[wiki-tools]]** — Il nucleo **deterministico** del wiki (`sertor-wiki-tools`): `scan`/`lint`/`validate`/`collect`/`structure`/`index` + `append-log`/`migrate` (rotazione del log a un file/giorno, FEAT-008), contratti JSON versionati, host-agnostico via `wiki.config.toml`, zero LLM/rete (stdlib). È la metà **D** del confine D↔N.
 - **[[mcp-server]]** — Il server MCP `sertor-rag` (`sertor_mcp`): la superficie che espone la facade del core come 3 tool (`search_code/docs/combined`), facade memoizzata, formato citabile `path#chunk`, trasporto stdio. Esempio canonico di [[thin-consumer]].
+- **[[sertor-rag-cli]]** — La CLI di esecuzione RAG `sertor-rag` (feature 011, PR #21): `index`/`search` dal terminale, exit code per scripting, anteprime troncate (`preview_chars`), osservabilità `-v`/`--log-json`/`--log-config`, validazione statica del backend (`validate_backend`). Secondo esempio realizzato di [[thin-consumer]]; comandi spartiti per DA-8 (`sertor`=installer, core=esecuzione).
 - **[[corpus-index-naming]]** — Schema naming chiarificato (dal 2026-06-04): corpus `sertor` (prodotto, radice) vs `prototype` (prototipo, congelato); indici `.index-sertor` (radice) vs `.index-prototype` (prototipo).
