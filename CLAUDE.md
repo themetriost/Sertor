@@ -370,10 +370,13 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/011-cli-esecuzione-rag/plan.md` (FEAT-011 — console-script `sertor-rag` del core con
-sottocomandi `index <path>`/`search <query>`, validazione statica backend, osservabilità a runtime
-`-v`/`--log-json`/`--log-config`, evento di log strutturato ai boundary). In `master`:
+`specs/012-sertor-install-wiki/plan.md` (FEAT-012 — backbone del comando `sertor` + sottocomando
+`sertor install wiki`: porta il sistema-wiki su un repo ospite. Pacchetto `sertor` distinto in uv
+workspace `packages/sertor/` con modulo `sertor_installer`, dipende da `sertor-core`; artefatti come
+package-data in `assets/` letti via `importlib.resources`, fonte = assets e `.claude/` derivato
+con test di sync anti-drift; non-distruttività per artefatto, fail-fast, install ≠ run). In `master`:
 FEAT-001 `specs/001-nucleo-retrieval/plan.md`, FEAT-002 `specs/002-rag-baseline/plan.md`,
-FEAT-003-D `specs/006-nucleo-wiki-deterministico/plan.md`, FEAT-MCP `specs/007-mcp-sertor-core/plan.md`;
+FEAT-003-D `specs/006-nucleo-wiki-deterministico/plan.md`, FEAT-MCP `specs/007-mcp-sertor-core/plan.md`,
+FEAT-011 `specs/011-cli-esecuzione-rag/plan.md`;
 feature 010 (query congiunta + `upsert-index`) `specs/010-query-congiunta-e-upsert-index/plan.md`.
 <!-- SPECKIT END -->
