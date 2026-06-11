@@ -1,6 +1,6 @@
 # Requisiti — CLI: installer `sertor install wiki`
 <!-- Deriva da: FEAT-002 (Installazione selettiva delle capacità del core su un repo target) -->
-<!-- STATO: DA DECOMPORRE / elicitazione completata 2026-06-11 -->
+<!-- STATO: elicitazione completata 2026-06-11; domande aperte DI-1..DI-5 RISOLTE con l'utente lo stesso giorno (vedi §10) -->
 <!-- Revisione 2026-06-11: primo taglio — backbone `sertor` + sottocomando `sertor install wiki`;
      `sertor install rag` e `sertor install governance` citati come futuri (fuori ambito). -->
 
@@ -41,12 +41,14 @@ La mancanza di un installer crea tre problemi concreti:
 - Sezione rituale di step e istruzioni wiki: `CLAUDE.md` (sezione *Rituale di step* e sezione
   *Wiki & documentazione*).
 
-**Problema chiave — come viaggiano gli artefatti non-Python:** le skill, l'agente, gli hook e il
-comando `/wiki` **non fanno parte di un modulo Python**: oggi vivono in `.claude/` del repo Sertor.
-Il meccanismo con cui il pacchetto `sertor` li porta sull'ospite al momento dell'installazione è
-una decisione di **design** (da risolvere in `plan.md`), non di requisiti. I requisiti fissano
-il *cosa*: dopo `sertor install wiki`, quegli artefatti devono essere presenti e funzionanti
-sull'ospite, privi di riferimenti a Sertor-il-progetto.
+**Come viaggiano gli artefatti non-Python (DI-5, risolta 2026-06-11):** le skill, l'agente, gli
+hook e il comando `/wiki` **non fanno parte di un modulo Python**: oggi vivono in `.claude/` del
+repo Sertor. Decisione utente: l'installer li **scarica on-demand dal repository canonico**,
+**pinnati al ref corrispondente alla versione del pacchetto installato** (riproducibilità:
+artefatti sempre coerenti col codice); l'opzione **`--source <path>`** copia invece da un
+clone/cartella locale, coprendo offline e sviluppo (REQ-115/116). Il *cosa* resta invariato: dopo
+`sertor install wiki` quegli artefatti sono presenti e funzionanti sull'ospite, privi di
+riferimenti a Sertor-il-progetto.
 
 ---
 
@@ -58,8 +60,8 @@ sull'ospite, privi di riferimenti a Sertor-il-progetto.
 | LSC-2 | `sertor install wiki` su un repo che ha già un `CLAUDE.md`, un `wiki/`, o un `wiki.config.toml` **non sovrascrive** alcun contenuto utente preesistente; il comando termina con successo e riporta quali artefatti sono stati saltati. | CS-4, REQ-E6 |
 | LSC-3 | Rieseguire `sertor install wiki` sullo stesso repo produce lo stesso stato degli artefatti; nessuna duplicazione né errore (idempotenza). | Principio VI |
 | LSC-4 | Nessun artefatto installato contiene riferimenti a percorsi, domini o strutture specifiche del repo Sertor; ogni riferimento all'ospite proviene dalla configurazione (`wiki.config.toml`). | Principio X |
-| LSC-5 | L'installazione non avvia alcuna operazione di indicizzazione, chiamata LLM o accesso di rete. | CS-2, REQ-E2 |
-| LSC-6 | Il test di accettazione dell'installer (install su un repo vuoto, re-run, install su repo con artefatti preesistenti) è eseguibile senza rete, senza LLM e senza cloud. | Principio V |
+| LSC-5 | L'installazione non avvia alcuna operazione di indicizzazione né chiamata LLM; l'unico accesso di rete ammesso è il **download degli artefatti** (assente con `--source`). | CS-2, REQ-E2 |
+| LSC-6 | Il test di accettazione dell'installer (install su un repo vuoto, re-run, install su repo con artefatti preesistenti) è eseguibile senza rete, senza LLM e senza cloud **usando il fallback `--source <path>`** (rev. DI-5c). | Principio V |
 | LSC-7 | `sertor --help` e `sertor install --help` mostrano i sottocomandi disponibili e descrivono gli argomenti; sottocomandi non ancora implementati (`rag`, `governance`) sono elencati come pianificati ma non invocabili. | CS-1 |
 
 ---
@@ -160,11 +162,29 @@ installer shall install all wiki-enabling artefacts on the target repository roo
 `<path>` (defaulting to the current working directory) and shall print a report listing
 each artefact as created, skipped (already present), or in conflict.*
 
-**REQ-111 (Ubiquitous)** *The installer shall operate exclusively through file-system
-operations (create, write, append) on the target repository; it shall not invoke any LLM,
-embeddings provider, network service, or indexing operation during installation.*
-> Fissa il confine install ≠ run (REQ-E2 epica) al livello di questa feature: l'install
-> è un'operazione deterministica su file, completamente testabile offline.
+**REQ-111 (Ubiquitous)** *The installer shall not invoke any LLM, embeddings provider, or
+indexing operation during installation; its only permitted network access is fetching the
+artefacts to install (REQ-115), and no network access shall occur when `--source` is used
+(REQ-116). All writes are file-system operations on the target repository.*
+> Fissa il confine install ≠ run (REQ-E2 epica) al livello di questa feature; riscritto con la
+> risoluzione di DI-5 (2026-06-11): la rete serve SOLO al trasporto degli artefatti.
+
+**REQ-115 (Ubiquitous)** *The installer shall obtain the non-Python artefacts (skills, command,
+agent, hooks) by downloading them from the canonical Sertor repository URL, pinned to the ref
+(tag/commit) corresponding to the installed `sertor` package version, so that installed artefacts
+are always consistent with the installed code.*
+> DI-5 + DI-5b risolte (2026-06-11): download on-demand, pinning alla versione installata
+> (riproducibilità; un install oggi e uno fra un mese sulla stessa versione producono gli stessi
+> artefatti). L'URL canonico e il meccanismo di fetch sono decisione di design.
+
+**REQ-116 (Optional feature)** *Where the user passes a `--source <path>` option, the installer
+shall copy the artefacts from the given local directory (e.g. a local clone of Sertor) instead of
+downloading them, enabling fully offline installation and development workflows.*
+> DI-5c risolta (2026-06-11): fallback locale che copre offline e sviluppo; è la base di LSC-6.
+
+**REQ-117 (Unwanted behaviour)** *If the artefact download fails (network unavailable, ref not
+found), then the installer shall print a readable error suggesting the `--source` fallback and
+exit non-zero, leaving any already-written artefacts reported per REQ-125.*
 
 **REQ-112 (Ubiquitous)** *The installer shall install the wiki skill artefacts
 (`.claude/skills/wiki-author/SKILL.md`, `wiki-playbook.md`, and all `ops/*.md` modules),
@@ -186,11 +206,12 @@ wiki directory structure (taxonomy folders, `index.md`, log file) on the target 
 
 ### Gruppo C — Non-distruttività per artefatto
 
-**REQ-120 (Event-driven)** *When `sertor install wiki` is run and a `.claude/skills/wiki-author/`
-directory already exists on the target, the installer shall skip installation of the wiki-author
-skill artefacts and report them as skipped.*
-> [DA CHIARIRE: DI-1] Comportamento granulare vs blocco: l'installer salta l'intera skill o solo
-> i singoli file già presenti? Vedi domande aperte §10.
+**REQ-120 (Event-driven)** *When `sertor install wiki` is run and some wiki-author skill files
+already exist on the target, the installer shall check **file by file**: existing files are left
+untouched and reported as skipped, missing files are created — so that partial installations are
+repaired without overwriting user content.*
+> DI-1 risolta (2026-06-11): granulare, coerente con `init_structure`; il report distingue
+> creati da saltati.
 
 **REQ-121 (Event-driven)** *When `sertor install wiki` is run and a `wiki.config.toml` file
 already exists on the target, the installer shall not overwrite it and shall report it as
@@ -206,8 +227,9 @@ delimited block (using start/end markers); it shall not modify any content outsi
 already exists on the target, the installer shall merge the required hook entries (SessionStart,
 Stop, SessionEnd) into the existing configuration in an additive manner, without removing or
 overwriting existing entries.*
-> [DA CHIARIRE: DI-2] Strategia di merge del settings.json: append delle voci hook nell'array
-> esistente vs merge strutturato. Vedi domande aperte §10.
+> DI-2 risolta (2026-06-11): **merge con deduplicazione per `command`** — una voce hook si
+> aggiunge solo se nessuna voce con lo stesso `command` è già presente; idempotente, preserva gli
+> hook utente. Il criterio esatto di uguaglianza è dettaglio di design.
 
 **REQ-124 (Event-driven)** *When `sertor install wiki` is run and a `wiki/` directory already
 exists on the target, the installer shall invoke `structure init` (which is idempotent by
@@ -216,8 +238,9 @@ construction) and report existing directories and files as skipped.*
 **REQ-125 (Unwanted behaviour)** *If any artefact installation step fails (e.g. due to
 insufficient permissions), then the installer shall report the failure with the artefact path
 and reason, and shall not leave a partial set of artefacts in an inconsistent state.*
-> Questo requisito non prescrive rollback atomico (design) ma fissa il *cosa*: la condizione
-> parziale non deve essere silenziosa né irrecuperabile. [DA CHIARIRE: DI-3]
+> DI-3 risolta (2026-06-11): **fail-fast senza rollback** — l'installer si ferma al primo errore
+> e il report elenca esattamente cosa è stato scritto e cosa manca; gli artefatti già scritti
+> restano (nessuna cancellazione automatica sull'ospite) e il re-run idempotente completa i buchi.
 
 ### Gruppo D — Configurazione dell'ospite
 
@@ -225,8 +248,10 @@ and reason, and shall not leave a partial set of artefacts in an inconsistent st
 `sertor install wiki` shall generate it with host-specific defaults (at minimum: `root`,
 `source_dirs` inferred from the target repository layout, `language`, taxonomy sections, and
 `[roles]` entries referencing the installed agents by their installed names).*
-> I valori di default sono derivati dal layout dell'ospite (es. `src/` se esiste, `docs/` se
-> esiste) senza assunzioni hard-coded. [DA CHIARIRE: DI-4]
+> DI-4 risolta (2026-06-11): **euristica su cartelle standard riconosciute** (es. `src/`, `lib/`,
+> `docs/`, `tests/`, `app/`: incluse quelle presenti; nessuna → `["."]`) con override esplicito
+> via `--source-dirs` (REQ-133). La lista esatta delle cartelle riconosciute è decisione di design
+> (documentata, NFR-I-07).
 
 **REQ-131 (Ubiquitous)** *The installer shall not write secret values (API keys, credentials,
 endpoints) to any file on the target repository.*
@@ -283,9 +308,9 @@ code 0 if no artefact produced an error.*
 - **V-2**: Nessun segreto su file versionati (REQ-E5 epica; REQ-131).
 - **V-3**: `install ≠ run` (REQ-E2 epica; REQ-140): nessuna operazione automatica all'installazione.
 - **V-4**: Python ≥ 3.11 (vincolo d'epica).
-- **V-5**: Gli artefatti non-Python (skill, agenti, hook, comandi) devono essere accessibili al
-  pacchetto `sertor` al momento dell'installazione: il meccanismo concreto (package-data nel wheel,
-  asset bundled, template inline) è decisione di design, non di requisiti.
+- **V-5** *(rev. DI-5)*: Gli artefatti non-Python arrivano per **download dal repository canonico,
+  pinnato al ref della versione installata** (REQ-115), con fallback locale `--source <path>`
+  (REQ-116). URL canonico e meccanica di fetch sono dettaglio di design.
 
 ### Assunzioni
 
@@ -326,7 +351,7 @@ code 0 if no artefact produced an error.*
 | R-I2 | **Artefatti Sertor-coupled** (viola Principio X): skill/agenti installati contengono percorsi o nomi di dominio di Sertor hard-coded, rendendoli inutili su un altro ospite. | Alta | Alto | REQ-113 + NFR-I-03: test di accettazione su un repo terzo senza conoscenza di Sertor. |
 | R-I3 | **Stato parziale non segnalato** (viola REQ-125): un'installazione interrotta lascia l'ospite in uno stato inconsistente senza che l'utente lo sappia. | Bassa | Medio | REQ-125 + NFR-I-02: fail-fast con report esplicito; chiarire in design se serve rollback. |
 | R-I4 | **Conflitto settings.json**: la strategia di merge delle voci hook in un `settings.json` preesistente produce duplicati o rompe configurazioni utente. | Media | Medio | REQ-123 + DA CHIARIRE DI-2: decidere la strategia di merge prima del design. |
-| R-I5 | **Dipendenza da artefatti non versionati nel pacchetto**: le skill/hook non fanno parte del modulo Python e il meccanismo di trasporto (package-data vs altro) non è ancora definito. | Alta | Alto | [DA CHIARIRE: DI-5] Punto critico: il design deve risolvere questo prima dell'implementazione. |
+| R-I5 | **Trasporto degli artefatti non-Python**: il download on-demand introduce dipendenza dalla rete e dal repository remoto al momento dell'install. | Media | Medio | DI-5 risolta: download **pinnato al ref della versione installata** (REQ-115, riproducibile) + fallback offline `--source` (REQ-116) + errore leggibile con suggerimento del fallback (REQ-117). |
 | R-I6 | **Avvio non voluto** (viola REQ-E2): l'installer invoca `sertor-wiki-tools structure init` e questo potrebbe essere considerato "esecuzione" da un lettore frettoloso. | Bassa | Basso | REQ-111 chiarisce che `structure init` è un'operazione su file (crea directory/file seed), non un'indicizzazione o chiamata LLM: è parte dell'install per costruzione. |
 
 ---
@@ -335,17 +360,29 @@ code 0 if no artefact produced an error.*
 
 | Priorità | Requisiti | Motivazione |
 |----------|-----------|-------------|
-| **Must** | REQ-100..104 (backbone), REQ-110..114 (install wiki), REQ-120..125 (non-distruttività), REQ-130, REQ-131, REQ-140..143 (trasversali) | Ciclo minimo funzionante: il comando esiste, installa tutti gli artefatti wiki, non distrugge nulla, è idempotente, non avvia esecuzioni. |
+| **Must** | REQ-100..104 (backbone), REQ-110..117 (install wiki + trasporto artefatti), REQ-120..125 (non-distruttività), REQ-130, REQ-131, REQ-140..143 (trasversali) | Ciclo minimo funzionante: il comando esiste, scarica/copia gli artefatti in modo riproducibile, installa tutto il set wiki, non distrugge nulla, è idempotente, non avvia esecuzioni. REQ-116 (`--source`) è Must perché è la base della testabilità offline (LSC-6). |
 | **Should** | REQ-132, REQ-133 (opzioni `--language`, `--source-dirs`) | Migliorano l'usabilità del primo taglio senza essere bloccanti; il default inferito può bastare per il dogfooding. |
 | **Could** | Verbosità estesa (`--verbose`), output JSON (`--json`) del report di install | Utili per consumatori automatizzati (agenti LLM); non bloccanti per il primo uso umano. |
 | **Won't (questo taglio)** | `sertor install rag`, `sertor install governance`, upgrade degli artefatti, disinstallazione, wizard interattivo di config LLM | Tagli futuri (FEAT-002 residuo, FEAT-005); la struttura comandi li dichiara ma non li implementa. |
 
 ---
 
-## 10. Domande aperte
+## 10. Domande aperte (RISOLTE il 2026-06-11)
 
-Le seguenti decisioni non hanno un default tecnico ovvio o impattano criteri di sicurezza/scope.
-Sono elencate in ordine di priorità (bloccante prima).
+Tutte le decisioni sono state chiuse con l'utente lo stesso giorno dell'elicitazione e codificate
+nei requisiti sopra. Sintesi delle risoluzioni:
+
+| # | Tema | Decisione | Codificata in |
+|---|------|-----------|---------------|
+| DI-5 | Trasporto artefatti non-Python | **Download on-demand dal repo canonico** (scartati package-data e path-locale-come-unico-meccanismo) | REQ-115, REQ-111 |
+| DI-5b | Versione scaricata | **Ref pinnato alla versione del pacchetto installato** (riproducibilità) | REQ-115 |
+| DI-5c | Offline | **Fallback `--source <path>`** (clone/cartella locale): copre offline e sviluppo; base della testabilità | REQ-116, REQ-117, LSC-5/6 |
+| DI-1 | Skip artefatti esistenti | **Granulare, file-per-file** (ripara installazioni parziali, mai overwrite) | REQ-120 |
+| DI-2 | Merge `settings.json` | **Merge con deduplicazione per `command`** (idempotente, preserva hook utente) | REQ-123 |
+| DI-3 | Fallimento parziale | **Fail-fast + report, senza rollback** (nessuna cancellazione automatica; re-run completa i buchi) | REQ-125 |
+| DI-4 | `source_dirs` inferito | **Euristica su cartelle standard** + override `--source-dirs` | REQ-130, REQ-133 |
+
+Il dettaglio originale delle opzioni valutate resta sotto, per tracciabilità.
 
 ---
 
@@ -370,10 +407,10 @@ disponibili a runtime — ma come?
 - **Repo git clonato localmente** (per sviluppo/uso interno): un path fisso; fragile e non
   portabile.
 
-*Raccomandazione:* package-data nel wheel (prima opzione), in linea con la distribuzione
-`git+url` (DA-4 epica) e con l'obiettivo di installazione offline (LSC-6). Il design deve
-specificare la struttura interna del pacchetto `sertor` e come `importlib.resources` accede
-ai template.
+*Raccomandazione (storica):* package-data nel wheel. **Decisione utente (2026-06-11): diversa
+dalla raccomandazione — download on-demand da URL**, mitigata con pinning al ref della versione
+installata (DI-5b → REQ-115) e fallback offline `--source` (DI-5c → REQ-116): artefatti
+aggiornabili senza re-release del pacchetto, riproducibilità e offline preservati.
 
 ---
 
