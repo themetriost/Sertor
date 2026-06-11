@@ -90,7 +90,7 @@ il `.claude/` del repo Sertor è **derivato**.
 # propaga gli assets al .claude/ del repo Sertor (direzione: assets → .claude)
 python -m sertor_installer.sync     # (nome del comando: definito in tasks)
 # il test di guardia fallisce se assets e .claude/ divergono
-uv run pytest packages/sertor/tests/test_assets_sync.py
+uv run pytest tests/unit/test_assets_sync.py
 ```
 
 ## 7. Eseguire i test della feature

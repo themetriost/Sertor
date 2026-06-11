@@ -95,7 +95,7 @@ dagli assets), non viceversa. Meccanismo a due livelli:
 1. **Script di sync deterministico** (`packages/sertor/scripts/sync-assets.*` o un comando
    `python -m sertor_installer.sync`) che, *in sviluppo*, copia/diffa
    `assets/claude/**` ⇄ `.claude/**` del repo Sertor. Direzione canonica: **assets → .claude**.
-2. **Test di guardia** (`tests/test_assets_sync.py`): confronta byte-per-byte ogni file in
+2. **Test di guardia** (`tests/unit/test_assets_sync.py`, nella root suite): confronta byte-per-byte ogni file in
    `assets/claude/` con il corrispettivo in `.claude/` (escludendo le parti host-specifiche che il
    repo Sertor aggiunge — vedi D3). Il test **fallisce** se divergono: il drift diventa un errore di
    CI, non una sorpresa al runtime di un ospite.

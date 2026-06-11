@@ -330,7 +330,8 @@ code 0 if no artefact produced an error.*
 - **D-1**: `sertor-core` in `master` — in particolare `sertor_core.wiki_tools.structure.init_structure`
   (già idempotente e non-distruttivo, `structure.py:30-72`) e la CLI `sertor-wiki-tools structure init`.
 - **D-2**: Artefatti sorgente da installare (oggi in `.claude/` del repo Sertor):
-  `.claude/skills/wiki-author/` (10 file), `.claude/commands/wiki.md`,
+  `.claude/skills/wiki-author/` (14 file: 5 top-level + 9 `ops/*.md` — conteggio corretto in
+  analyze 012, F1), `.claude/commands/wiki.md`,
   `.claude/agents/wiki-curator.md`, `.claude/hooks/wiki-pending-check.ps1`.
 - **D-3**: Modello di `wiki.config.toml` (oggi: `wiki.config.toml` a radice del repo Sertor) come
   riferimento per i campi e le sezioni da generare sull'ospite.
@@ -385,7 +386,7 @@ Il dettaglio originale delle opzioni valutate resta sotto, per tracciabilità.
 
 **DI-5 — Meccanismo di trasporto degli artefatti non-Python** (BLOCCANTE per il design)
 
-*Contesto:* Le skill wiki-author (10 file `.md`), il comando `/wiki`, l'agente wiki-curator,
+*Contesto:* Le skill wiki-author (14 file `.md`), il comando `/wiki`, l'agente wiki-curator,
 l'hook `.ps1` **non fanno parte di un modulo Python**: oggi vivono in `.claude/` del repo Sertor.
 Per installarli sull'ospite tramite `sertor install wiki`, il pacchetto `sertor` deve averli
 disponibili a runtime — ma come?

@@ -44,7 +44,8 @@ bundlato è PowerShell (eseguito poi dall'harness, non dall'installer; D6).
 **Constraints**: offline-capable (by construction, package-data); idempotente e non-distruttivo
 (Principio VI); host-agnostico (Principio X); install ≠ run (FR-007/022/REQ-140).
 
-**Scale/Scope**: ~12 artefatti installati; backbone + 1 sottocomando + 2 stub. Nessun
+**Scale/Scope**: ~21 voci di report (14 file skill + comando + agente + hook + settings-merge +
+blocco CLAUDE.md + config + struttura wiki); backbone + 1 sottocomando + 2 stub. Nessun
 NEEDS CLARIFICATION residuo (DI-* chiuse a monte; D1..D8 risolte in `research.md`).
 
 ## Constitution Check

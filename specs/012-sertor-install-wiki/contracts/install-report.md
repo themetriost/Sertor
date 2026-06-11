@@ -9,6 +9,13 @@ che US1/US2/US3 ispezionano e su cui un agente LLM (stakeholder §3) può fare s
 
 ## Formato umano (default, su stdout)
 
+> **Nota sui numeri (fix F1/F8 analyze):** i conteggi negli esempi sono **illustrativi**. Il
+> conteggio reale deriva dalla composizione del bundle: la skill wiki-author ha **14 file** (5
+> top-level + 9 `ops/`), più comando `/wiki`, agente, hook → i `created` su repo vuoto sono ~17
+> file + config + struttura; `merged` (settings.json) e `block` (CLAUDE.md) si contano a parte.
+> I test DEVONO asserire sui totali calcolati dall'`InstallPlan` (es. enumerando gli assets),
+> mai su numeri fissi cablati.
+
 Una riga di intestazione, una riga per artefatto, una riga di riepilogo:
 
 ```
