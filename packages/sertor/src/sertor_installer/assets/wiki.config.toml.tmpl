@@ -1,0 +1,53 @@
+# Profilo host del LLM Wiki.
+#
+# UNICA fonte di specificità dell'ospite: il nucleo deterministico `sertor-wiki-tools` legge SOLO
+# questo file — nessun path/nome/lingua/tassonomia è hard-coded nel codice. Per portare la capacità
+# su un altro progetto basta un file diverso.
+
+profile = "code+doc"
+language = "{language}"
+root = "wiki"
+index_file = "index.md"
+log_file = "log.md"
+log_dir = "log"  # rotazione del log a un file per giorno
+
+source_dirs = {source_dirs}
+exclude = [
+    ".git", ".venv*", "venv", "__pycache__",
+    ".ruff_cache", ".pytest_cache", ".mypy_cache",
+    "node_modules", ".index*",
+]
+frontmatter_required = ["title", "type", "tags", "created", "updated"]
+frontmatter_optional = ["sources", "status"]
+
+[[taxonomy]]
+name = "concepts"
+dir = "concepts"
+type = "concept"
+
+[[taxonomy]]
+name = "tech"
+dir = "tech"
+type = "tech"
+
+[[taxonomy]]
+name = "experiments"
+dir = "experiments"
+type = "experiment"
+
+[[taxonomy]]
+name = "sources"
+dir = "sources"
+type = "source"
+
+[[taxonomy]]
+name = "syntheses"
+dir = "syntheses"
+type = "synthesis"
+
+[roles]
+curator = "wiki-curator"
+
+[rag]
+enabled = false
+corpus = "wiki"

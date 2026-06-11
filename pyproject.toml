@@ -34,6 +34,16 @@ dev = [
     "ruff>=0.6",
 ]
 
+[tool.uv.workspace]
+# Monorepo a due pacchetti (FEAT-012, D1): la root è `sertor-core`, il membro
+# `packages/sertor` è il pacchetto installer `sertor` (consumatore di `sertor-core`).
+members = ["packages/sertor"]
+
+[tool.uv.sources]
+# In sviluppo, `sertor-core` (dipendenza di `packages/sertor`) si risolve dal workspace,
+# non da PyPI/git: l'editable del membro punta al sorgente di questa root.
+sertor-core = { workspace = true }
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -44,14 +54,17 @@ packages = ["src/sertor_core", "src/sertor_mcp"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-src = ["src", "tests"]
+src = ["src", "tests", "packages/sertor/src", "packages/sertor/tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
 
+[tool.ruff.lint.isort]
+known-first-party = ["sertor_core", "sertor_mcp", "sertor_installer"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src", "."]
+pythonpath = ["src", ".", "packages/sertor/src"]
 addopts = "-ra"
 markers = [
     "cloud: test che richiedono credenziali/servizi cloud (esclusi dalla CI locale)",

@@ -19,7 +19,7 @@ CLI `sertor-wiki-tools` invece di Glob/Grep a mano (vedi playbook).
 ## Specifico di questa skill (operazione `record` dal repo)
 
 1. **Leggi prima il playbook**, poi l'indice del wiki (catalogo) per sapere cosa esiste già; lancia
-   `uv run sertor-wiki-tools collect --json` per l'inventario meccanico delle pagine.
+   `sertor-wiki-tools collect --json` per l'inventario meccanico delle pagine.
 2. Determina l'**ambito**:
    - se l'utente indica un'area/feature, **limitati a quella**;
    - altrimenti copri le parti rilevanti del repo partendo dalle **`source_dirs`** della config (codice e

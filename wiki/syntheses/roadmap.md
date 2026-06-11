@@ -29,7 +29,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | RAG agentico (FEAT-006) | Should | 📋 da decomporre |
 | Manutenzione wiki (FEAT-007) | Should | 📋 da decomporre |
 | CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
-| CLI — installer (`sertor install <capacità>`) | — | 🔄 **in progress** (requirements elicitati 2026-06-11; aperte DI-1..DI-5) |
+| CLI — installer (`sertor install <capacità>`) | — | 🔄 **in progress** (implement ✅ 35/35 su branch `012`; prossimo: install live + PR) |
 
 *Legenda:* ✅ su master · 🧪 operativo, consolidamento aperto · 📋 pianificato · 💀 ramo morto (non su master).
 
@@ -37,10 +37,12 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 - **CLI — installer `sertor install <capacità>`** — *cosa:* backbone del comando `sertor` + primo
   taglio `sertor install wiki` (DA-8). *Dove:* `requirements/sertor-cli/installer/requirements.md`
-  (25 REQ EARS + 7 NFR, elicitati 2026-06-11; **DI-1..DI-5 tutte risolte** lo stesso giorno —
-  decisione chiave, rivista in serata: artefatti non-Python come **package-data nel wheel**
-  (offline e coerenza versione by construction; REQ-116/117 sul download rimossi)). *Prossimo
-  passo:* `/speckit-specify` della feature installer. *Blocchi:* nessuno.
+  (25 REQ EARS + 7 NFR; DI-1..DI-5 risolte, DI-5 = package-data). *Dove:* branch
+  `012-sertor-install-wiki` — SpecKit completo in serata: specify ✅ · plan ✅ (PASS 10/10, D1
+  workspace + D2 assets-come-fonte) · tasks ✅ (35) · analyze ✅ (FR 25/25, 7 fix) · **implement ✅
+  35/35** (`packages/sertor/`, workspace uv senza fallback; root **221 passed + 2 xfail** + 38
+  package + 17 guardia; `.claude/` ora derivato dagli assets). *Prossimo passo:* install live su un
+  repo terzo (SC-008 reale) → PR. *Blocchi:* nessuno.
 - Coda residua: **riavvio del server MCP** alla prossima sessione (codice core cambiato; gli indici
   nuovi si leggono già da disco).
 

@@ -4,9 +4,9 @@
 > Per il **substrato condiviso** (confine D↔N §2, voce di log §6) vedi il playbook
 > `wiki-playbook.md`. Qui solo la procedura specifica.
 
-Rende il wiki interrogabile via RAG (ruolo "corpus" di DA-W1).
+Rende il wiki interrogabile via RAG (il ruolo di "corpus" del wiki).
 
-1. Esegui `uv run sertor-wiki-tools index --config wiki.config.toml`. La CLI legge `[rag]` (corpus isolato,
+1. Esegui `sertor-wiki-tools index --config wiki.config.toml`. La CLI legge `[rag]` (corpus isolato,
    default `wiki`) e fa rebuild-from-scratch idempotente; il backend (Chroma locale / Azure AI Search)
    dipende da `RAG_BACKEND` nel `.env`. **Non** lanciare interpreti Python a mano.
 2. Se la CLI segnala provider di embeddings non configurato (es. `RAG_BACKEND=azure` senza credenziali),

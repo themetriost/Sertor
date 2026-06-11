@@ -23,11 +23,11 @@ Tutto ciò che varia tra progetti (radice del wiki, tassonomia, campi frontmatte
 cartelle o di agenti: leggili dal profilo. Il playbook ti dice come.
 
 ## Appòggiati al nucleo deterministico (non rifare il meccanico a mano)
-Il bookkeeping *meccanico* è già codice host-agnostico: la CLI **`sertor-wiki-tools`** (FEAT-003-D). Usala
+Il bookkeeping *meccanico* è già codice host-agnostico: la CLI **`sertor-wiki-tools`**. Usala
 via `Bash` invece di Glob/Grep/parsing manuale:
-- `uv run sertor-wiki-tools collect --json` → inventario pagine (cosa esiste già).
-- `uv run sertor-wiki-tools lint --json` + `… validate --json` → link rotti/orfani/frontmatter/naming.
-- `uv run sertor-wiki-tools scan --json` → lavoro pendente (anchor su mtime).
+- `sertor-wiki-tools collect --json` → inventario pagine (cosa esiste già).
+- `sertor-wiki-tools lint --json` + `… validate --json` → link rotti/orfani/frontmatter/naming.
+- `sertor-wiki-tools scan --json` → lavoro pendente (anchor su mtime).
 A te resta il **giudizio**: cosa scrivere, il *perché*, se una pagina è nuova o va aggiornata, quali
 backlink hanno senso, se c'è una contraddizione. Il *dove/come* (formato, percorsi) lo dà il deterministico.
 
@@ -43,7 +43,7 @@ poco conto, fai il minimo indispensabile (o nulla) e spiega perché.
    lint **strutturale**). NON sono per te (richiedono **giudizio** o git/indexer del flusso principale): il
    lint **semantico (B)** e **organizzativo (C)**, l'operazione **`reorg`**, `generate`, `rag-sync`
    — il giudizio "questa pagina contraddice il codice / è mal-collocata / va spostata" resta al flusso
-   principale (Opus), come il rituale in `CLAUDE.md`. Se il brief le implica, esegui le parti documentali e
+   principale, come il rituale in `CLAUDE.md`. Se il brief le implica, esegui le parti documentali e
    segnala che vanno completate lì.
 3. Esegui la procedura del playbook: crea/aggiorna le pagine, aggiorna backlink e indice, appendi
    UNA voce al log (data odierna, operazione corretta).

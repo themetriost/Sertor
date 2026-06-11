@@ -10,8 +10,8 @@
 > **Host-agnostica (Principio X).** I principi qui valgono su qualunque host; ciò che *varia* — campi del
 > frontmatter, sintassi dei link, e l'esistenza di costrutti come TOC automatico, tag, stato/owner, redirect
 > o gerarchie genitore/figlio — viene dal profilo dell'ospite (`wiki.config.toml`) e dalle capacità
-> dell'host. Gli esempi concreti (`[[wikilink]]`, `concepts/`, `title/type/tags…`) sono il **profilo
-> Sertor**, non leggi universali: su un altro progetto cambia solo la resa, non i principi.
+> dell'host. Gli esempi concreti (`[[wikilink]]`, `concepts/`, `title/type/tags…`) sono **illustrativi**,
+> non leggi universali: su un altro progetto cambia solo la resa, non i principi.
 
 Una pagina ben fatta ha quattro qualità: una **struttura** prevedibile, **contenuto** azionabile, il giusto
 **livello di significato**, e **link** densi. Le prime due sono forma, il significato è sostanza, i link
@@ -31,10 +31,10 @@ sono ciò che trasforma un insieme di pagine in una *wiki*.
    sotto-sezioni): la gerarchia riflette il contenuto, non è decorativa.
 5. **"Vedi anche" / correlati** in fondo — *supplemento* di navigazione (vedi §4: non sostituisce i link
    inline).
-6. **Riferimenti / fonti** se la pagina afferma fatti verificabili (profilo Sertor: campo frontmatter
+6. **Riferimenti / fonti** se la pagina afferma fatti verificabili (es. campo frontmatter
    `sources`).
 7. **Metadati** — il frontmatter coi campi attesi dal profilo (`frontmatter_required`/`_optional` in
-   config; profilo Sertor: `title`, `type`, `tags`, `created`, `updated`, `sources`). Campi come stato
+   config; es. `title`, `type`, `tags`, `created`, `updated`, `sources`). Campi come stato
    (bozza/in revisione/stabile) o owner **solo se** l'host/profilo li prevede.
 
 ## 2. Tipo di contenuti
@@ -95,7 +95,7 @@ possa agire su di essa.
 I link sono ciò che trasforma un insieme di pagine in una vera wiki. Tre categorie utili, **distinte**:
 
 - **Interni contestuali** — la **prima volta** che citi un concetto che ha una sua pagina, collegalo
-  **inline** nel testo (profilo Sertor: `[[nome-pagina]]`; alias con `[[nome-pagina|testo mostrato]]`). Linka
+  **inline** nel testo (es. `[[nome-pagina]]`; alias con `[[nome-pagina|testo mostrato]]`). Linka
   la **prima occorrenza**, non tutte. È qui che sta il valore: il link contestuale dice *perché* due pagine
   sono connesse.
 - **Navigazione strutturale** — "Vedi anche", categorie/tag, e — *dove l'host ha gerarchie* — pagine

@@ -16,10 +16,10 @@ incremento per volta**. È **giudizio** (cosa spostare/dove/se splittare) + mecc
    **aggiorna tutti i wikilink entranti** (dai backlink calcolati nel lint C) perché area/slug cambiano; aggiorna
    l'indice (riga `- **[[slug]]** — summary` nella sezione giusta). Se splitti o riscrivi, la pagina risultante
    deve rispettare [`../page-craft.md`](../page-craft.md) (atomicità, auto-contenimento, link).
-3. **Verifica l'igiene post-move:** `uv run sertor-wiki-tools lint --json` **e** `… validate --json` →
+3. **Verifica l'igiene post-move:** `sertor-wiki-tools lint --json` **e** `… validate --json` →
    attesi **0 link rotti / 0 orfani / 0 naming**. Se no, ripara prima di proseguire.
 4. Appendi una voce di log `reorg` (pagine spostate da→a, `type` corretti).
 
-> **Backlog (meccanica deterministica):** un comando `move`-con-aggiornamento-link sicuro in `wiki_tools`
-> (FEAT-003-D) renderebbe il passo 2 meno fragile dell'`Edit` a mano — da fare **solo se** l'approccio manuale
+> **Backlog (meccanica deterministica):** un comando `move`-con-aggiornamento-link sicuro nella CLI
+> renderebbe il passo 2 meno fragile dell'`Edit` a mano — da fare **solo se** l'approccio manuale
 > si rivela rumoroso. La **rilevazione** (livello C) resta comunque giudizio, non deterministica.

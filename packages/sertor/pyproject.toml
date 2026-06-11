@@ -1,0 +1,33 @@
+[project]
+name = "sertor"
+version = "0.1.0"
+description = "Installer del sistema-wiki (LLM Wiki) su qualunque repo ospite: console-script `sertor` e sottocomando `sertor install wiki`. Consumatore sottile di sertor-core."
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Sertor" }]
+dependencies = [
+    "sertor-core",
+]
+
+[project.scripts]
+sertor = "sertor_installer.__main__:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+# hatchling include TUTTI i file sotto la dir di package (anche non-Python come gli assets in
+# `assets/**`): non serve `artifacts`/`force-include` finché il layout è dentro il package (D2, F6).
+packages = ["src/sertor_installer"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# `src` per `sertor_installer`; i path relativi risalgono alla root del monorepo per trovare
+# `sertor_core` (../../src) e i moduli di test della root (../..).
+pythonpath = ["src", "../../src", "../.."]
+addopts = "-ra"
+markers = [
+    "cloud: test che richiedono credenziali/servizi cloud (esclusi dalla CI locale)",
+    "integration: test di integrazione end-to-end",
+]

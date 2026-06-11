@@ -1,11 +1,10 @@
 # Installare Sertor su un altro repository
 
-> **Stato: guida-ponte (interim).** Sertor non è ancora su PyPI: la distribuzione ufficiale interim è
-> **`git+url`** (decisione DA-4 dell'epica CLI). L'installer guidato — `sertor install <capacità>` —
-> è in roadmap; finché non arriva, questa guida copre il percorso manuale: **capacità RAG completa**
-> (indicizzazione + ricerca + server MCP) e **tooling wiki deterministico**. Il sistema-wiki completo
-> (skill agentiche + rituale) oggi richiede copia manuale, non documentata qui: arriverà con
-> `sertor install wiki`.
+> **Stato.** Sertor non è ancora su PyPI: la distribuzione interim è **`git+url`** (decisione DA-4
+> dell'epica CLI). La guida copre: **capacità RAG completa** (indicizzazione + ricerca + server MCP),
+> **tooling wiki deterministico** e — dalla feature 012 — l'**installer guidato `sertor install
+> wiki`** che porta sull'ospite l'intero sistema-wiki (skill agentiche, rituale, config, struttura)
+> con un solo comando.
 
 ## Prerequisiti
 
@@ -93,12 +92,36 @@ Con l'extra `mcp` installato, aggiungi al repo target un `.mcp.json`:
 Il server espone `search_code` / `search_docs` / `search_combined` sullo stesso indice della CLI
 (stessi risultati a parità di configurazione).
 
-## 5. Tooling wiki (deterministico)
+## 5. Sistema-wiki completo: `sertor install wiki`
+
+Col pacchetto installer (`sertor`, fornito dal workspace — arriva con l'install `git+url`), un solo
+comando porta sull'ospite l'intero sistema-wiki:
+
+```bash
+uv run sertor install wiki                          # nella radice del repo target
+uv run sertor install wiki --target C:\path\repo    # oppure su un path esplicito
+uv run sertor install wiki --language it --source-dirs src,docs   # override dei default
+```
+
+Cosa installa (tutto **senza** avviare indicizzazioni, LLM o rete — install ≠ run):
+
+| Artefatto | Comportamento se esiste già |
+|---|---|
+| Skill `wiki-author` (playbook + moduli ops), comando `/wiki`, agente `wiki-curator`, hook di sessione | skip **file-per-file** (mai sovrascritti) |
+| Voci hook in `.claude/settings.json` | **merge additivo** con deduplicazione (gli hook tuoi restano) |
+| Sezione *rituale di step* nel `CLAUDE.md` | inserita in un **blocco a marker** `SERTOR:WIKI-RITUAL`; tutto il resto del file è intoccato |
+| `wiki.config.toml` | generato con default inferiti (lingua `en`, `source_dirs` dalle cartelle standard presenti); mai sovrascritto |
+| Struttura `wiki/` (tassonomia, indice, log) | `structure init` idempotente |
+
+Il comando stampa un **report** per artefatto (`created`/`skipped`/`merged`/`block`) ed esce con
+`0` (successo), `1` (errore di dominio, fail-fast con stato parziale esplicito — il re-run completa
+i buchi) o `2` (uso errato). Rieseguirlo è sicuro: stato identico, zero duplicati. Prerequisito per
+l'hook di sessione: PowerShell (`pwsh`) sull'ospite; senza, il wiki resta pienamente usabile (i
+promemoria automatici non scattano).
+
+### Tooling wiki deterministico (già incluso nel pacchetto core)
 
 `sertor-wiki-tools` (scan/lint/structure/collect/index/append-log/…) funziona su qualunque ospite a
-partire da una **`wiki.config.toml`** alla radice del progetto (vedi quella di Sertor come esempio).
-Bootstrap della struttura: `uv run sertor-wiki-tools structure init`.
-
-Il **sistema-wiki completo** (skill `wiki-author`+playbook, comando `/wiki`, agente `wiki-curator`,
-rituale di step nel `CLAUDE.md` dell'ospite) sarà installato da **`sertor install wiki`** — feature
-in elicitazione; fino ad allora la parte agentica va copiata a mano da `.claude/` di questo repo.
+partire dalla **`wiki.config.toml`** (quella generata dall'installer, o scritta a mano usando quella
+di Sertor come esempio). I sottocomandi `install rag` e `install governance` sono pianificati ma non
+ancora disponibili.
