@@ -29,15 +29,20 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | RAG agentico (FEAT-006) | Should | 📋 da decomporre |
 | Manutenzione wiki (FEAT-007) | Should | 📋 da decomporre |
 | CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
-| CLI — installer (`sertor install <capacità>`) | — | 📋 da elicitare (DA-8; contenuto `install wiki` confermato) |
+| CLI — installer (`sertor install <capacità>`) | — | 🔄 **in progress** (requirements elicitati 2026-06-11; aperte DI-1..DI-5) |
 
 *Legenda:* ✅ su master · 🧪 operativo, consolidamento aperto · 📋 pianificato · 💀 ramo morto (non su master).
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- *(nessuna voce in corso — feature 011 consegnata: scegliere il prossimo PLANNED)*. Coda residua:
-  **riavvio del server MCP** alla prossima sessione (il codice del core è cambiato: settings, baseline,
-  adapter — gli indici nuovi invece si leggono già da disco).
+- **CLI — installer `sertor install <capacità>`** — *cosa:* backbone del comando `sertor` + primo
+  taglio `sertor install wiki` (DA-8). *Dove:* `requirements/sertor-cli/installer/requirements.md`
+  (24 REQ EARS + 7 NFR, elicitati 2026-06-11). *Prossimo passo:* risolvere le domande aperte
+  **DI-1..DI-5** con l'utente (trasporto artefatti non-Python, granularità skip, merge settings.json,
+  fail-fast vs rollback, euristica source_dirs) → poi `/speckit-specify`. *Blocchi:* DI-5 è bloccante
+  per il design.
+- Coda residua: **riavvio del server MCP** alla prossima sessione (codice core cambiato; gli indici
+  nuovi si leggono già da disco).
 
 ### 📋 PLANNED (per priorità)
 - **FEAT-004 ibrido+reranking** — candidato naturale: migliora la qualità di `search_code` (debolezza
@@ -46,9 +51,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 - **FEAT-007 manutenzione wiki** — parte con dote ricca: probe di freschezza (ex N5), helper
   `move`-con-link (ex N9), op *reconcile* delle obsolescenze (idea utente 2026-06-10), seed
   `structure init` localizzato.
-- **CLI — installer `sertor install <capacità>`** (DA-8, da elicitare con `/requirements`): primo
-  taglio `sertor install wiki` — skill wiki + step ritual nel CLAUDE.md ospite + `wiki.config.toml` +
-  `structure init` + tooling di indicizzazione configurato, mai indicizzazione automatica.
+- *(installer spostato in IN PROGRESS: requirements elicitati, DI-1..DI-5 da risolvere)*
 - **Misurare la pertinenza** (chiudere i 2 xfail con ground-truth reale).
 
 ### ✅ DONE (su `master`, le rilevanti)
