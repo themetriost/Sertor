@@ -87,12 +87,15 @@ corretti; stesso corpus → stesso grafo. Senza rete, senza embeddings reali.
       atomico in `<index_dir>/graph/<corpus>.json` (tmp+rename, formato `sertor.graph/1`,
       coverage persistita) SENZA networkx; `find_symbol`/`exists`/`reset` con caricamento pigro
       (import networkx nei soli metodi di query → `ImportError` incapsulato in `ConfigError`
-      azionabile), cache per corpus, indici per nome (FR-005, contracts/code-graph-port.md)
+      azionabile), cache per corpus, indici per nome (FR-005, contracts/code-graph-port.md).
+      **L'evento `graph_build` (FR-026) lo emette `build()` qui** — l'adapter conosce
+      `graph_path` e i conteggi; l'orchestratore no (fix analyze I1)
 - [ ] T012 [US1] Estendi `IndexingService` in `src/sertor_core/services/indexing.py` con
       parametro opzionale `graph: CodeGraph | None = None`: dopo l'upsert (e il sink lessicale)
-      estrae dagli STESSI documents/chunks e chiama `graph.build()` (snapshot intero; corpus
-      vuoto in rebuild → build vuoto — specchio, FR-006); evento `graph_build`
-      (contracts/log-events.md, FR-026)
+      estrae dagli STESSI documents/chunks (passando `ambiguity_threshold` da
+      `Settings.graph_ambiguity_threshold` — Principio VIII, nessun default nel servizio) e
+      chiama `graph.build()` (snapshot intero; corpus vuoto in rebuild → build vuoto — specchio,
+      FR-006); l'evento `graph_build` lo emette l'adapter (T011, fix I1)
 - [ ] T013 [US1] Estendi `src/sertor_core/composition.py`: `build_graph_service(settings)`
       (factory dedicata, ortogonale a `SERTOR_ENGINE` — FR-012/FR-022) + wiring del sink grafo
       in `build_indexer()` quando `graph_enabled` (G6); riesporta `build_graph_service` da
@@ -179,21 +182,27 @@ tests/integration/test_graph_languages.py -q` → verde, senza rete.
 ### Implementation for User Story 4
 
 - [ ] T022 [P] [US4] Crea `tests/fixtures/graph_ground_truth.py`: ≥5 simboli reali di
-      `src/sertor_core/` (candidati da research G10: `build_facade`, `RetrievalFacade`,
-      `log_event`, `IndexingService`, `collection_name`) con definizione attesa (path +
-      intervallo righe), chiamanti attesi (≥1), doc attesi dove applicabile; path relativi
-      POSIX (FR-023/FR-025)
+      `src/sertor_core/` scelti per **stabilità dell'insieme dei chiamanti** (fix analyze U1:
+      preferire `collection_name`, `discover`, `chunk_document`, `redact` a simboli ad alto
+      churn come `log_event`), con definizione attesa (path + intervallo righe), chiamanti
+      attesi (lista chiusa enumerata alla scrittura), doc attesi dove applicabile; path
+      relativi POSIX (FR-023/FR-025)
 - [ ] T023 [P] [US4] Crea il mini-corpus `tests/fixtures/graph_corpus/`: un file minimo per
       ciascuno dei 10 linguaggi del chunker (una funzione che ne chiama un'altra + un import
       dove dichiarato), con gli archi attesi documentati nel modulo fixture (FR-003)
 - [ ] T024 [US4] Test integrazione `tests/integration/test_graph_ground_truth.py`: estrae il
       grafo da `src/sertor_core/` (discover+chunk+extract_graph — niente embeddings) e
-      verifica: definizioni esatte per ogni simbolo, precisione chiamanti ≥80% sul set
-      (SC-002/LSC-2), recall doc ≥80% (SC-003/LSC-3); marker `integration`, senza rete (FR-024)
+      verifica: definizioni esatte per ogni simbolo; **recall** chiamanti attesi ≥80% sul
+      corpus reale (robusto al churn: nuovi chiamanti legittimi non rompono il test — fix U1);
+      recall doc ≥80% (SC-003/LSC-3); marker `integration`, senza rete (FR-024). La
+      **precisione** piena (SC-002/LSC-2) si misura in T025 sul mini-corpus CHIUSO, dove il
+      ground-truth è totale
 - [ ] T025 [US4] Test integrazione `tests/integration/test_graph_languages.py`: estrazione sul
       mini-corpus e verifica che OGNI relazione dichiarata in `COVERAGE` per ogni linguaggio
-      produca l'arco atteso (la dichiarazione è vera — FR-003); nodi+contains presenti per
-      tutti i 10
+      produca l'arco atteso (la dichiarazione è vera — FR-003) e che la **precisione** sul
+      corpus chiuso sia ≥80% (SC-002/LSC-2: qui il ground-truth è totale); nodi+contains
+      presenti per tutti i 10. Il mini-corpus È anche la verifica SC-007 (secondo corpus,
+      zero adattamenti — fix C1)
 - [ ] T026 [US4] Suite completa + ruff e sistema fino al verde
 
 **Checkpoint**: copertura dichiarata = copertura dimostrata; soglie LSC misurate
