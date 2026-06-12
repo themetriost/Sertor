@@ -44,9 +44,9 @@ quello scenario la domanda "dove sta il file" è subordinata a **"chi possiede q
 
 - **OB-1 — Confine ownership esplicito.** Ogni artefatto prodotto dall'installer è dichiaratamente
   **condiviso/versionato** o **per-utente/per-macchina**, e il `.gitignore` generato lo riflette.
-  - *SC-1:* dopo l'install, eseguendo `git status`/`git check-ignore`, **0** artefatti per-utente
-    (`.venv`, `.env`/segreti, indice) risultano tracciati, e gli artefatti condivisi
-    (`.mcp.json`/`wiki.config.toml`/`wiki/` salvo scelte) **non** sono ignorati.
+  - *SC-1:* dopo l'install, **0** artefatti per-utente risultano tracciati (l'intera `.sertor/` è
+    ignorata) e gli artefatti condivisi (`wiki/` con la config dentro, `.claude/`, `CLAUDE.md`)
+    **non** sono ignorati.
 - **OB-2 — Onboarding del secondo dev.** Un secondo sviluppatore che clona il repo e ri-esegue
   l'install ricostruisce il **proprio** stato per-utente senza toccare il condiviso.
   - *SC-2:* su un clone con gli artefatti condivisi già presenti, il re-install produce solo
@@ -91,16 +91,16 @@ quello scenario la domanda "dove sta il file" è subordinata a **"chi possiede q
 ### Gruppo A — Confine ownership (versionato vs per-utente)
 - **REQ-301 (Ubiquitous):** *The installer shall classify every artifact it produces as either
   team-shared (version-controlled) or per-user/per-machine, and document the classification.*
-- **REQ-302 (Ubiquitous):** *The generated `.gitignore` shall ignore all per-user/per-machine
-  artifacts (`.sertor/.venv/`, `.sertor/.index*`, `.sertor/.env`) and shall not ignore the
-  team-shared ones that are meant to be committed.*
+- **REQ-302 (Ubiquitous):** *The generated `.gitignore` shall ignore the entire `.sertor/` runtime
+  directory (per-user/per-machine: project, `.venv`, index, `.env`, lockfile) and shall not ignore
+  the team-shared artifacts (`wiki/` incl. its config, `.claude/`, `CLAUDE.md`).*  *(DA-b risolta)*
 - **REQ-303 (Unwanted):** *If an artifact contains secrets, then it shall be per-user and never
   version-controlled (no secret value ever written).*
 
 ### Gruppo B — Collocazione di `wiki.config.toml`
-- **REQ-310 (Optional):** *Where the chosen layout places `wiki.config.toml` inside `wiki/`, the
-  installer shall generate it there and configure every installed `sertor-wiki-tools` invocation
-  (skill, hooks, agent) to locate it (`--config wiki/wiki.config.toml --root .`).*  *(condizionale a DA-a)*
+- **REQ-310 (Ubiquitous):** *The installer shall place `wiki.config.toml` inside `wiki/` and
+  configure every installed `sertor-wiki-tools` invocation (skill, hooks, agent) to locate it
+  (`--config wiki/wiki.config.toml --root .`).*  *(DA-a risolta: dentro `wiki/`)*
 - **REQ-311 (Ubiquitous):** *The wiki configuration shall be treated as team-shared
   (version-controlled), co-located coherently with the `wiki/` it configures.*
 - **REQ-312 (Event-driven):** *When the layout changes, the installed assets and Sertor's own
@@ -113,8 +113,8 @@ quello scenario la domanda "dove sta il file" è subordinata a **"chi possiede q
 - **REQ-321 (Optional):** *Where scope `local` is selected, the installer shall not create or modify
   `<host>/.mcp.json`, and shall register the `sertor-rag` server for the current user (or emit the
   exact `claude mcp add` command if it cannot do so).*
-- **REQ-322 (Ubiquitous):** *The default scope shall be the one chosen in DA-c (recommended:
-  `project`, to give the whole team the same tools).*
+- **REQ-322 (Ubiquitous):** *The default MCP scope shall be `local` (DA-c): a clean host root with
+  per-user registration; `project` (versioned `.mcp.json`) is opt-in.*
 - **REQ-323 (Unwanted):** *If scope `local` is requested but the Claude CLI / `~/.claude.json`
   mechanism is unavailable, then the installer shall fail-fast with a readable message (and/or print
   the manual command), without silently writing a root `.mcp.json`.*
@@ -134,8 +134,9 @@ quello scenario la domanda "dove sta il file" è subordinata a **"chi possiede q
 - **NFR-2 (sicurezza):** nessun segreto versionato né loggato; i segreti vivono solo nel `.env`
   per-utente.
 - **NFR-3 (coerenza di superficie):** stesse convenzioni di report/exit code di `install wiki`/`rag`.
-- **NFR-4 (riproducibilità):** la scelta su `pyproject.toml`/`uv.lock` (DA-b) deve consentire, se
-  versionati, un ambiente ricostruibile in modo deterministico dal team.
+- **NFR-4 (riproducibilità — trade-off accettato):** DA-b ha scelto runtime per-utente (`.sertor/`
+  gitignorato): NON c'è lockfile condiviso → possibile deriva di versioni tra dev, mitigata dal
+  medesimo `git+url`. Se in futuro servisse determinismo di team, si rivaluta versionando il lock.
 - **NFR-5 (retro-compatibilità):** gli ospiti già installati (root layout) non devono rompersi senza
   un percorso di migrazione esplicito.
 
@@ -159,28 +160,32 @@ quello scenario la domanda "dove sta il file" è subordinata a **"chi possiede q
 ## 9. Prioritizzazione (MoSCoW)
 - **Must:** REQ-301, REQ-302, REQ-303, REQ-330, REQ-331, REQ-332 (il confine ownership + onboarding
   multiutente sono il cuore).
-- **Should:** REQ-320, REQ-321, REQ-322, REQ-323 (scope `.mcp.json`); REQ-311.
-- **Could:** REQ-310/312 (spostamento `wiki.config.toml` in `wiki/` — dipende da DA-a); abilitazione
-  documentata dello store condiviso (DA-d).
+- **Should:** REQ-310, REQ-311, REQ-312 (`wiki.config.toml` → `wiki/`); REQ-320..323 (scope
+  `.mcp.json`, default `local`).
+- **Could:** abilitazione documentata dello store condiviso (DA-d, MongoDB/PGVector su Azure).
 - **Won't (qui):** store remoto implementato; vault segreti; superfici multi-assistente.
 
 ## 10. Domande aperte (da portare all'utente — bivi veri)
-- **[DA-a] Collocazione di `wiki.config.toml`.** Lasciarla in **root** (config standard accanto al
-  `wiki/` che governa, come `pyproject.toml`/`tsconfig.json`) oppure spostarla **dentro `wiki/`**
-  (cartella autocontenuta, ma cambia ogni invocazione negli asset + la config di Sertor stesso)?
-  *Raccomandazione: valutare il rapporto costo/beneficio — il guadagno è 1 file in meno a root, il
-  costo è il ripple sugli asset e la migrazione.*
-- **[DA-b] `.sertor/pyproject.toml` + `uv.lock`: versionati o per-utente?** Versionarli dà al team un
-  **ambiente riproducibile** (stesse versioni di `sertor-core`/extra); tenerli per-utente mantiene la
-  radice/`.sertor` più "privata" ma ogni dev risolve da sé. *Raccomandazione (enterprise): versionare
-  `pyproject.toml`+`uv.lock` (riproducibilità), gitignorare solo `.venv`/`.index`/`.env`.*
-- **[DA-c] Default di `--mcp-scope`.** `project` (versionato, tutto il team ha i tool — coerente con
-  enterprise/multiutente) o `local` (radice pulita ma per-utente)? *Raccomandazione: default
-  `project`; `local` come opt-in.*
-- **[DA-d] Store condiviso per team.** Per un team, l'installer dovrebbe **proporre/abilitare via
-  config** uno store **condiviso remoto** (Azure AI Search) invece di Chroma locale per-utente (così
-  l'indice si costruisce una volta e non per-dev)? *Raccomandazione: documentarlo come opzione ora,
-  implementazione dedicata dopo (è capacità core già esistente).*
+- **[DA-a] ✅ RISOLTA — `wiki.config.toml` va DENTRO `wiki/`** (decisione utente, 2026-06-12). Il
+  wiki diventa autocontenuto (config + contenuto). Si adeguano tutte le invocazioni di
+  `sertor-wiki-tools` negli asset (skill/hook/agente) a `--config wiki/wiki.config.toml --root .` e,
+  per coerenza, la config di Sertor stesso. REQ-310/312 → in ambito (Should).
+- **[DA-b] ✅ RISOLTA — per-utente/private, dentro `.sertor/`** (decisione utente). `pyproject.toml`
+  + `uv.lock` restano in `.sertor/` (non in root) e l'**INTERA `.sertor/` è gitignorata** (privata di
+  ogni dev). Conseguenza: **nessun** artefatto del runtime RAG è versionato; il team condivide solo
+  `wiki/` (config inclusa), `.claude/`, `CLAUDE.md`. Trade-off accettato: possibile deriva di versioni
+  tra dev (mitigata dal medesimo `git+url`).
+- **[DA-c] ✅ RISOLTA — default `--mcp-scope local`** (decisione utente: radice pulita).
+  **Implicazione esplicitata:** `.mcp.json` NON viene scritto nel repo di default; ogni dev registra
+  `sertor-rag` nel proprio `~/.claude.json`. È **coerente col modello runtime per-dev** attuale
+  (ognuno installa comunque per costruire `.venv`/indice locali, quindi registra anche l'MCP). Lo
+  scope `project` (`.mcp.json` versionato) resta **opt-in** e diventerà rilevante se/quando il team
+  adotta uno **store condiviso** (DA-d). NB: il local-scope dipende dalla CLI `claude` (REQ-323).
+- **[DA-d] ✅ RISOLTA — documenta ora, implementa dopo; store team probabili = PGVector/MongoDB**
+  (decisione utente: Azure AI Search è opzionale, più probabili **MongoDB**/**PGVector** su Azure).
+  L'installer **documenta** l'opzione store condiviso; l'abilitazione piena è una **feature dedicata**
+  legata all'idea di roadmap *"Adapter VectorStore PGVector/MongoDB su Azure"*. Fuori
+  dall'implementazione di questa feature.
 
 ---
 
