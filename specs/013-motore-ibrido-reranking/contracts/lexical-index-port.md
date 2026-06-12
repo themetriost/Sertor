@@ -21,6 +21,12 @@ vive in `adapters/lexical/`.
   la policy sull'assenza (degradazione REQ-034) è del motore, non dell'adapter.
 - Deterministico: stessa query + stesso indice → stessa lista (pareggi per `chunk_id`).
 
+### `lookup(collection: str, chunk_ids: list[str]) -> list[LexicalEntry]`
+- Voci per gli id richiesti: ordine di `chunk_ids` preservato, id assenti saltati (mai `None`).
+- Usato dal motore per materializzare i `RetrievalResult` dei candidati presenti SOLO nel
+  ranking lessicale (il pool denso porta già i propri payload). *(Aggiunto in implement,
+  2026-06-12: raffinamento del contratto.)*
+
 ### `exists(collection: str) -> bool`
 - True ⟺ l'indice della collezione è presente e leggibile (formato riconosciuto).
 - Formato sconosciuto/corrotto → False NON è ammesso come risposta silenziosa: `exists` può

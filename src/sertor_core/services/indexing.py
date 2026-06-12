@@ -13,8 +13,8 @@ import time
 from pathlib import Path
 
 from sertor_core.config.settings import Settings
-from sertor_core.domain.entities import Chunk, EmbeddedChunk, IndexReport
-from sertor_core.domain.ports import EmbeddingProvider, VectorStore
+from sertor_core.domain.entities import Chunk, EmbeddedChunk, IndexReport, LexicalEntry
+from sertor_core.domain.ports import EmbeddingProvider, LexicalIndex, VectorStore
 from sertor_core.observability.logging import log_event
 from sertor_core.services.chunking.dispatch import chunk_document
 from sertor_core.services.ingestion import discover
@@ -45,11 +45,16 @@ class IndexingService:
         store: VectorStore,
         collection: str,
         settings: Settings,
+        lexical: LexicalIndex | None = None,
     ):
         self._embedder = embedder
         self._store = store
         self._collection = collection
         self._settings = settings
+        # Sink lessicale del motore ibrido (FEAT-004): se presente, ogni index() scrive anche il
+        # sidecar come SNAPSHOT DELL'INTERO set di chunk (semantica specchio, REQ-002) — i flussi
+        # di upsert parziale non devono cablarlo (un sidecar-sottoinsieme violerebbe REQ-002).
+        self._lexical = lexical
 
     def index(self, root: Path | str, rebuild: bool = False) -> IndexReport:
         """Esegue la pipeline completa e restituisce un report con i conteggi.
@@ -74,8 +79,16 @@ class IndexingService:
             if rebuild:
                 self._store.reset(self._collection)  # scarta l'indice precedente, poi ricostruisce
             self._store.upsert(self._collection, records)
+            if self._lexical is not None:
+                # Rebuild congiunto (REQ-003): stesso insieme di chunk delle due vie, scritto dopo
+                # l'embedding riuscito (un errore del provider lascia intatti ENTRAMBI gli indici).
+                self._lexical.build(self._collection, [
+                    LexicalEntry(c.id, c.text, c.doc_type.value, c.metadata.path) for c in chunks
+                ])
         elif rebuild:
             self._store.reset(self._collection)  # corpus vuoto in rebuild: azzera l'indice
+            if self._lexical is not None:
+                self._lexical.build(self._collection, [])  # specchio: anche il lessicale si azzera
 
         report = IndexReport(
             collection=self._collection,

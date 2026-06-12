@@ -62,6 +62,18 @@ indice lessicale reale) e verificano: hit@5 ibrido ≥ baseline, MRR ibrido ≥ 
 baseline/ibrido/ibrido+rerank) si ottiene con `evaluate()` sul ground-truth
 (`tests/fixtures/ground_truth.py`).
 
+## Esito misurato (implementazione, 2026-06-12 — embedder mock, corpus `src/sertor_core`, 11 query)
+
+| Modalità | hit@1 | hit@3 | hit@5 | hit@10 | MRR@10 |
+|---|---|---|---|---|---|
+| baseline (dense, embedder finto) | 0.00 | 0.00 | 0.00 | 0.18 | 0.022 |
+| **hybrid (RRF)** | 0.18 | 0.36 | **0.73** | 0.91 | 0.348 |
+| **hybrid+rerank** (FlashRank ms-marco-MiniLM-L-12-v2) | **0.91** | 1.00 | 1.00 | 1.00 | **0.939** |
+
+Sul sottoinsieme a simbolo: baseline 0.00 → hybrid **1.00** (LSC-1 ampiamente superato). Replica
+del fenomeno del prototipo 02 (MRR 0.13→0.94 con embedder debole). Latenza del rerank: ~600 ms
+per query su CPU (pool 15) — coerente col default off (R-3: su embedder forte può non servire).
+
 ## Limiti dichiarati di questa iterazione
 
 - **Fan-out multi-collezione** (`SERTOR_EXTRA_CORPORA`): resta dense-only (gli score RRF non si

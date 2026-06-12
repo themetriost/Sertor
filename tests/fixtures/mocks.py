@@ -8,7 +8,7 @@ from __future__ import annotations
 import hashlib
 import math
 
-from sertor_core.domain.entities import DocType, EmbeddedChunk, RetrievalResult
+from sertor_core.domain.entities import DocType, EmbeddedChunk, LexicalEntry, RetrievalResult
 
 
 class FakeEmbedder:
@@ -106,3 +106,45 @@ class InMemoryStore:
 
     def list_collections(self) -> list[str]:
         return sorted(self._data)
+
+
+class InMemoryLexicalIndex:
+    """`LexicalIndex` in memoria per i test del motore ibrido (NFR-03): niente file system.
+
+    Ranking lessicale elementare ma deterministico: conta le occorrenze dei token della query nel
+    testo (lowercase), pareggi risolti per `chunk_id` — sufficiente a esercitare fusione e policy.
+    """
+
+    def __init__(self) -> None:
+        self._data: dict[str, list[LexicalEntry]] = {}
+
+    def build(self, collection: str, entries: list[LexicalEntry]) -> None:
+        self._data[collection] = list(entries)  # sostituzione integrale (idempotente)
+
+    def query(
+        self, collection: str, query: str, k: int, doc_type: str = "both"
+    ) -> list[str]:
+        if k <= 0:
+            return []
+        entries = self._data.get(collection, [])
+        if doc_type != "both":
+            entries = [e for e in entries if e.doc_type == doc_type]
+        tokens = query.lower().split()
+        scored = []
+        for e in entries:
+            text = e.text.lower()
+            score = sum(text.count(t) for t in tokens)
+            if score > 0:
+                scored.append((score, e.chunk_id))
+        scored.sort(key=lambda t: (-t[0], t[1]))
+        return [cid for _, cid in scored[:k]]
+
+    def lookup(self, collection: str, chunk_ids: list[str]) -> list[LexicalEntry]:
+        by_id = {e.chunk_id: e for e in self._data.get(collection, [])}
+        return [by_id[cid] for cid in chunk_ids if cid in by_id]
+
+    def exists(self, collection: str) -> bool:
+        return collection in self._data
+
+    def reset(self, collection: str) -> None:
+        self._data.pop(collection, None)

@@ -7,7 +7,43 @@ a `Settings`. Estendere qui (non nei servizi) per aggiungere provider/backend.
 from __future__ import annotations
 
 from sertor_core.config.settings import Settings
-from sertor_core.domain.ports import EmbeddingProvider, VectorStore
+from sertor_core.domain.errors import ConfigError
+from sertor_core.domain.ports import EmbeddingProvider, LexicalIndex, Reranker, VectorStore
+
+_VALID_ENGINES = ("baseline", "hybrid")
+
+
+def _validated_engine(settings: Settings) -> str:
+    """Valore di `Settings.engine` validato: sconosciuto → `ConfigError` coi valori ammessi."""
+    if settings.engine not in _VALID_ENGINES:
+        raise ConfigError(
+            f"motore sconosciuto: {settings.engine!r} (ammessi: {', '.join(_VALID_ENGINES)})",
+            key="SERTOR_ENGINE",
+        )
+    return settings.engine
+
+
+def _build_lexical(settings: Settings) -> LexicalIndex:
+    """Indice lessicale del motore ibrido: sidecar BM25 nella dir indici (FEAT-004)."""
+    from sertor_core.adapters.lexical.bm25 import Bm25LexicalIndex
+
+    return Bm25LexicalIndex(settings.index_dir)
+
+
+def _build_reranker(settings: Settings) -> Reranker | None:
+    """Reranker opzionale (extra `rerank`, lazy): configurato ma assente → errore (REQ-022)."""
+    if not settings.rerank_enabled:
+        return None
+    try:
+        from sertor_core.adapters.rerank.flashrank import FlashRankReranker
+
+        return FlashRankReranker()
+    except ImportError as exc:
+        raise ConfigError(
+            "reranking abilitato ma l'extra non è installato: "
+            'uv add "sertor-core[rerank]" (oppure SERTOR_RERANK=false)',
+            key="SERTOR_RERANK",
+        ) from exc
 
 
 def build_embedder(settings: Settings | None = None) -> EmbeddingProvider:
@@ -70,13 +106,22 @@ def collection_name(settings: Settings, embedder: EmbeddingProvider) -> str:
 
 
 def build_indexer(settings: Settings | None = None):
-    """Costruisce l'orchestratore di indicizzazione cablato dalla configurazione (REQ-029)."""
+    """Costruisce l'orchestratore di indicizzazione cablato dalla configurazione (REQ-029).
+
+    Con `engine=hybrid` (default) la pipeline riceve il sink lessicale: ogni `index()` scrive
+    anche il sidecar BM25 — è ciò che rende vero l'hint «re-index abilita l'ibrido» (REQ-034).
+    Con `baseline` la pipeline è identica a prima della FEAT-004 (REQ-071).
+    """
     from sertor_core.services.indexing import IndexingService
 
     settings = settings or Settings.load()
+    engine = _validated_engine(settings)
     embedder = build_embedder(settings)
     store = build_store(settings)
-    return IndexingService(embedder, store, collection_name(settings, embedder), settings)
+    lexical = _build_lexical(settings) if engine == "hybrid" else None
+    return IndexingService(
+        embedder, store, collection_name(settings, embedder), settings, lexical=lexical
+    )
 
 
 def build_facade(settings: Settings | None = None):
@@ -92,18 +137,34 @@ def build_facade(settings: Settings | None = None):
     from sertor_core.services.retrieval import RetrievalFacade
 
     settings = settings or Settings.load()
+    engine = _validated_engine(settings)
     embedder = build_embedder(settings)
     store = build_store(settings)
     extra = {
         corpus: collection_name(replace(settings, corpus=corpus), embedder)
         for corpus in settings.extra_corpora
     }
+    retriever = None
+    if engine == "hybrid":
+        # Strategia iniettata (FR-017/018): stesso embedder/store della facade, mai istanze
+        # duplicate. Il fan-out multi-collezione resta dense-only (research D6).
+        from sertor_core.engines.hybrid import HybridEngine
+
+        retriever = HybridEngine(
+            embedder,
+            store,
+            _build_lexical(settings),
+            collection_name(settings, embedder),
+            settings,
+            reranker=_build_reranker(settings),
+        )
     return RetrievalFacade(
         embedder,
         store,
         collection_name(settings, embedder),
         default_k=settings.default_k,
         extra_collections=extra,
+        retriever=retriever,
     )
 
 
@@ -115,3 +176,26 @@ def build_baseline_engine(settings: Settings | None = None):
     embedder = build_embedder(settings)
     store = build_store(settings)
     return BaselineEngine(embedder, store, collection_name(settings, embedder), settings)
+
+
+def build_engine(settings: Settings | None = None):
+    """Costruisce il motore RAG selezionato da `Settings.engine` (FEAT-004, REQ-030/031).
+
+    UNICO punto di scelta del motore (Principio I): `baseline` → `BaselineEngine` (identico a
+    oggi), `hybrid` (default) → `HybridEngine`; valore sconosciuto → `ConfigError`.
+    """
+    settings = settings or Settings.load()
+    if _validated_engine(settings) == "baseline":
+        return build_baseline_engine(settings)
+    from sertor_core.engines.hybrid import HybridEngine
+
+    embedder = build_embedder(settings)
+    store = build_store(settings)
+    return HybridEngine(
+        embedder,
+        store,
+        _build_lexical(settings),
+        collection_name(settings, embedder),
+        settings,
+        reranker=_build_reranker(settings),
+    )

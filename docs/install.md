@@ -61,6 +61,23 @@ qualunque servizio**, elencando le variabili mancanti. Opzionali utili: `SERTOR_
 dell'indice, default `.index` — aggiungila al `.gitignore` dell'ospite), `SERTOR_EXCLUDE_PATTERNS`,
 `DEFAULT_K`, `SERTOR_PREVIEW_CHARS`.
 
+**Motore di retrieval (FEAT-004):** il default è il motore **ibrido** (BM25 lessicale + vettoriale
+fusi con RRF) — migliora nettamente le query a simbolo/termine esatto:
+
+```bash
+SERTOR_ENGINE=hybrid       # baseline | hybrid (default: hybrid)
+SERTOR_RRF_C=60            # costante della fusione RRF
+SERTOR_RRF_POOL=30         # candidati per fonte prima della fusione
+SERTOR_RERANK=false        # secondo stadio cross-encoder (richiede l'extra `rerank`)
+SERTOR_RERANK_POOL=15      # pool fuso passato al reranker (~3×k)
+```
+
+> **Migrazione:** un corpus indicizzato **prima** dell'ibrido continua a funzionare (degradazione
+> a solo-vettoriale con warning nei log); un **re-index** (`sertor-rag index .`) costruisce anche
+> l'indice lessicale e abilita l'ibrido. Per il reranking opzionale: installare l'extra
+> (`uv add "sertor-core[rerank] @ git+…"`) e impostare `SERTOR_RERANK=true` — senza extra,
+> `SERTOR_RERANK=true` produce un errore esplicito con l'istruzione d'installazione.
+
 ## 3. Primi comandi
 
 ```bash

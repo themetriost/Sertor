@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-12 (FEAT-004: tasks 013 generati — 32 task in 7 fasi, MVP=US1; prossimo passo /speckit-analyze; + hotfix PR #23 MCP warm-up)
+updated: 2026-06-12 (FEAT-004: IMPLEMENTATA 32/32 — ibrido BM25+RRF+rerank, 273+38 test, xfail chiusi strict, dogfood live; prossimo passo PR)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md"]
 ---
 
@@ -24,7 +24,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | Motore baseline (FEAT-002) | Must | ✅ master |
 | Wiki LLM (FEAT-003) | Must | ✅ **completata 2026-06-10** (D 100% + N chiuse; N5/N9 → FEAT-007) |
 | Server MCP (FEAT-MCP) | Should | ✅ master |
-| RAG ibrido + reranking (FEAT-004) | Should | 🔄 **in progress** (plan 013 completato, 2026-06-12) |
+| RAG ibrido + reranking (FEAT-004) | Should | 🔄 **implementata 32/32 (2026-06-12)** — manca solo la PR |
 | GraphRAG (FEAT-005) | Should | 📋 da decomporre |
 | RAG agentico (FEAT-006) | Should | 📋 da decomporre |
 | Manutenzione wiki (FEAT-007) | Should | 📋 da decomporre |
@@ -49,11 +49,15 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   10/10 (unica deroga tracciata: degradazione REQ-034 vs Principio IV, decisione utente DA-1b).
   Architettura: porta `LexicalIndex` (adapter `rank-bm25` + sidecar JSON nell'index dir), RRF
   client-side, extra `rerank` (FlashRank lazy), `build_engine` nel composition root, facade con
-  strategia iniettata (consumatori invariati); xfail→strict senza rete. **Tasks generati
-  (2026-06-12):** `tasks.md` con 32 task in 7 fasi (setup → foundational → US1 MVP ricerca ibrida →
-  US2 selezione+degradazione → US3 ground-truth/xfail → US4 rerank → polish+dogfood), percorso
-  critico ~15 passi, Gruppo E senza task by design. *Prossimo passo:* `/speckit-analyze`, poi
-  implement. *Blocchi:* nessuno.
+  strategia iniettata (consumatori invariati); xfail→strict senza rete. **IMPLEMENTATA 32/32
+  (2026-06-12):** analyze 0-critical → implement completo in giornata. Consegnato: porta
+  `LexicalIndex` + adapter `Bm25LexicalIndex` (sidecar JSON atomico), `HybridEngine` + `rrf()`,
+  sink lessicale in `IndexingService`, `build_engine` + facade con strategia, adapter FlashRank
+  (extra `rerank`), ground-truth 11 coppie, **2 xfail → strict e verdi** (baseline hit@5 0.00 →
+  ibrido 0.73; simboli 0.00 → 1.00; +rerank MRR 0.939). Suite **273 + 38 passed**, ruff pulito,
+  dogfood live (degradazione REQ-034 osservata, re-index 304 doc/2675 chunk + sidecar, ibrido
+  servito da CLI in 666ms). *Prossimo passo:* **PR verso master** su conferma utente (poi distill
+  + riavvio MCP per servire l'ibrido). *Blocchi:* nessuno.
 - Code residue: **tema lingua** (vedi PLANNED). *(Il riavvio del server MCP è avvenuto con la
   nuova sessione del 2026-06-12.)*
 

@@ -12,6 +12,8 @@ dependencies = [
     "chromadb>=0.5",
     "tree-sitter>=0.23",
     "tree-sitter-language-pack>=0.7",
+    # Indice lessicale del motore ibrido (FEAT-004): puro Python, numpy già transitiva da chromadb.
+    "rank-bm25>=0.2",
 ]
 
 [project.scripts]
@@ -28,6 +30,11 @@ azure = [
 # (REQ-060): la libreria core resta installabile senza l'SDK MCP.
 mcp = [
     "mcp>=1.2",
+]
+# Reranker cross-encoder del motore ibrido (FEAT-004, REQ-021): extra isolato, import lazy nel
+# composition root — il pacchetto base funziona senza (RRF-only).
+rerank = [
+    "flashrank>=0.2",
 ]
 dev = [
     "pytest>=8.0",

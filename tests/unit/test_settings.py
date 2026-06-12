@@ -67,6 +67,41 @@ def test_extra_corpora_csv_with_spaces(monkeypatch):
     assert Settings.load(env_file=None).extra_corpora == ("wiki", "docs")
 
 
+def test_engine_knobs_defaults(monkeypatch):
+    # Manopole del motore ibrido (FEAT-004): default SOLO in Settings (NFR-05).
+    for var in ("SERTOR_ENGINE", "SERTOR_RRF_C", "SERTOR_RRF_POOL",
+                "SERTOR_RERANK", "SERTOR_RERANK_POOL"):
+        monkeypatch.delenv(var, raising=False)
+    s = Settings.load(env_file=None)
+    assert s.engine == "hybrid"        # il motore migliore è il default (D1/FR-015)
+    assert s.rrf_c == 60
+    assert s.rrf_pool == 30
+    assert s.rerank_enabled is False   # default off (R-3)
+    assert s.rerank_pool == 15
+
+
+def test_engine_knobs_from_env(monkeypatch):
+    monkeypatch.setenv("SERTOR_ENGINE", "baseline")
+    monkeypatch.setenv("SERTOR_RRF_C", "30")
+    monkeypatch.setenv("SERTOR_RRF_POOL", "50")
+    monkeypatch.setenv("SERTOR_RERANK", "true")
+    monkeypatch.setenv("SERTOR_RERANK_POOL", "20")
+    s = Settings.load(env_file=None)
+    assert s.engine == "baseline"
+    assert s.rrf_c == 30
+    assert s.rrf_pool == 50
+    assert s.rerank_enabled is True
+    assert s.rerank_pool == 20
+
+
+def test_rerank_bool_parsing(monkeypatch):
+    # Parsing tollerante: true/1/yes/on → True; altro → False.
+    for raw, expected in (("TRUE", True), ("1", True), ("yes", True), ("on", True),
+                          ("false", False), ("0", False), ("nope", False), ("", False)):
+        monkeypatch.setenv("SERTOR_RERANK", raw)
+        assert Settings.load(env_file=None).rerank_enabled is expected, raw
+
+
 def test_secrets_are_read_from_env_only(monkeypatch):
     # I segreti arrivano da env; Settings non li scrive da nessuna parte (REQ-032).
     monkeypatch.setenv("AZURE_OPENAI_API_KEY", "super-secret")
