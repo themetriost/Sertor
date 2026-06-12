@@ -14,9 +14,9 @@ sertor = "sertor_installer.__main__:main"
 
 # NOTA (FEAT-015, R1): NON aggiungere qui `[tool.uv.sources] sertor-core = { git = ... }`: uv lo
 # RIFIUTA perché `sertor-core` è un membro del workspace ("Workspace members must be declared as
-# workspace sources"). La risoluzione standalone di `sertor-core` via `uvx`/git va verificata con un
-# test end-to-end DOPO un push (uv potrebbe già scoprire il workspace dal checkout git del
-# subdirectory). Vedi research.md R1 e tasks T021/T023.
+# workspace sources"). E NON serve: VERIFICATO end-to-end (2026-06-12) che
+# `uvx --from "git+…#subdirectory=packages/sertor" sertor` risolve `sertor-core` scoprendo il
+# workspace dal checkout git (Built sertor-core @ git+…, exit 0), non da PyPI. Vedi research.md R1, T023.
 
 [build-system]
 requires = ["hatchling"]

@@ -204,5 +204,5 @@ uv run --directory .sertor sertor-rag index ..   # indicizza i sorgenti host, es
 > grafo dentro `.sertor/`. **Disinstallare** ≈ cancellare `.sertor/` e la voce `sertor-rag` da `.mcp.json`.
 
 > **Nota distribuzione (interim).** L'esecuzione standalone via `uvx --from "git+…#subdirectory=packages/sertor"`
-> dipende da come `uv` risolve `sertor-core` (membro di workspace) da un checkout git: va verificata
-> end-to-end dopo un push. In sviluppo dal repo Sertor si usa `uv run sertor install rag`.
+> è **verificata**: `uv` risolve `sertor-core` scoprendo il workspace dal checkout git (lo costruisce
+> dallo stesso repo, non da PyPI). In sviluppo dal repo Sertor si usa `uv run sertor install rag`.

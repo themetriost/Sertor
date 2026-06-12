@@ -54,9 +54,9 @@ contracts/cli-install-rag.md, quickstart.md.
 **Goal**: `sertor` eseguibile standalone senza fallire la risoluzione di `sertor-core`. **Test
 indipendente**: SC-005.
 
-- [~] T021 [US3] ⚠️ **FINDING — fix REVOCATO.** Il `[tool.uv.sources] sertor-core = { git = … }` nel member è **rifiutato da uv** ("Workspace members must be declared as workspace sources"): rompe il dev. Applicato e **revocato**; al suo posto una **nota** in `packages/sertor/pyproject.toml` che spiega il vincolo e rimanda alla validazione post-push. La risoluzione standalone va determinata empiricamente (uv potrebbe già scoprire il workspace dal checkout git). Vedi research.md R1 aggiornato. *(FR-024 NON ancora soddisfatto: aperto)*
-- [x] T022 [US3] Validazione DEV: `uv run pytest` (root) + `packages/sertor` verdi → risoluzione workspace intatta (nessun fix shippato che la rompa). Verifica: FR-025/REQ-262 ✅.
-- [~] T023 [US3] ⚠️ Validazione STANDALONE **PENDENTE (richiede PUSH)**: da ambiente pulito `uvx --from "git+…#subdirectory=packages/sertor" sertor --help` → determina se serve un fix e quale. Da eseguire post-push. *(FR-024 — verifica differita)*
+- [x] T021 [US3] ✅ **RISOLTO — NESSUN FIX NECESSARIO (bug era una diagnosi errata).** L'ipotesi che `sertor` standalone cercasse `sertor-core` su PyPI è **falsa**: uv 0.11.12 **scopre il workspace dal checkout git** e costruisce `sertor-core` dallo stesso git. Il `[tool.uv.sources] sertor-core = {git=…}` ipotizzato è anzi **rifiutato** da uv (rompe il dev) → revocato; in `packages/sertor/pyproject.toml` resta una **nota** che documenta il vincolo e l'esito della verifica. *(FR-024 ✅)*
+- [x] T022 [US3] Validazione DEV: `uv run pytest` (root 321) + `packages/sertor` (76) verdi → risoluzione workspace intatta. FR-025/REQ-262 ✅.
+- [x] T023 [US3] ✅ **VALIDAZIONE STANDALONE SUPERATA (post-push, 2026-06-12).** Da ambiente pulito: `uvx --from "git+…#subdirectory=packages/sertor" sertor --help` → exit 0, **`Built sertor-core @ git+…`** (risolto dal git, non da PyPI). End-to-end `… sertor install rag --target T --no-deps` → exit 0, creati `.sertor/.env`/`.mcp.json`/`.gitignore`. FR-024/SC-005 ✅.
 
 ## Phase 6 — User Story 4 (P4): backend locale e controllo via flag
 

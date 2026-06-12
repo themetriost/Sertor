@@ -51,13 +51,16 @@ tag/rev è un irrigidimento successivo (quando ci sarà un tag di release); anno
 > workspace di sviluppo** — uv 0.11.12 rifiuta con *"`sertor-core` is included as a workspace member,
 > but references a Git in `tool.uv.sources`. Workspace members must be declared as workspace
 > sources"*. Un membro del workspace **non può** referenziare una sorgente git per un altro membro.
-> Il fix è stato **revocato**; al suo posto una nota in `packages/sertor/pyproject.toml`. **Stato
-> reale del "bug":** non è stato riprodotto end-to-end — è possibile che `uvx --from
-> "git+url#subdirectory=packages/sertor"` **scopra già il workspace** dal checkout git e risolva
-> `sertor-core` localmente (nessun fix necessario), oppure che fallisca (serve un fix diverso, es.
-> pubblicare `sertor-core` o ristrutturare). **Determinabile SOLO con un push** (uvx legge il remoto).
-> → FR-024 resta **aperto**, validazione differita a T023 post-push. Il resto della feature (il
-> comando `install rag`) è **indipendente** da questo e completo.
+> Il fix è stato **revocato**; al suo posto una nota in `packages/sertor/pyproject.toml`.
+>
+> **✅ RISOLTO (post-push, 2026-06-12) — il "bug" era una DIAGNOSI ERRATA.** Validato end-to-end da
+> ambiente pulito su `a698efa`: `uvx --from "git+…#subdirectory=packages/sertor" sertor --help` →
+> **exit 0** con `Built sertor-core @ git+…` — uv **scopre il workspace dal checkout git** e
+> costruisce `sertor-core` dallo stesso repo (NON da PyPI). Anche `… sertor install rag --target T
+> --no-deps` → exit 0 (artefatti creati). **Conclusione:** nessun fix di distribuzione è necessario;
+> la premessa "uv cerca sertor-core su PyPI e fallisce" (requirements R1) è **smentita**. La sorgente
+> git nel member NON va aggiunta (uv la rifiuta). FR-024/SC-005 soddisfatti. Lezione: un'assunzione su
+> un tool esterno va verificata empiricamente prima di scolpirla in un requisito.
 
 ## R2 — Topologia del runtime `.sertor/` e indicizzazione che esclude sé stessa (FR-006/020, REQ-282)
 
