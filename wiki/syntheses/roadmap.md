@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-12 (FEAT-004: IMPLEMENTATA 32/32 — ibrido BM25+RRF+rerank, 273+38 test, xfail chiusi strict, dogfood live; prossimo passo PR)
+updated: 2026-06-12 (🚢 FEAT-004 MERGIATA: PR #24 — motore ibrido in produzione e default; + hotfix PR #23 MCP warm-up; xfail storici chiusi)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md"]
 ---
 
@@ -24,7 +24,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | Motore baseline (FEAT-002) | Must | ✅ master |
 | Wiki LLM (FEAT-003) | Must | ✅ **completata 2026-06-10** (D 100% + N chiuse; N5/N9 → FEAT-007) |
 | Server MCP (FEAT-MCP) | Should | ✅ master |
-| RAG ibrido + reranking (FEAT-004) | Should | 🔄 **implementata 32/32 (2026-06-12)** — manca solo la PR |
+| RAG ibrido + reranking (FEAT-004) | Should | ✅ **master (2026-06-12, PR #24)** — motore di default |
 | GraphRAG (FEAT-005) | Should | 📋 da decomporre |
 | RAG agentico (FEAT-006) | Should | 📋 da decomporre |
 | Manutenzione wiki (FEAT-007) | Should | 📋 da decomporre |
@@ -36,35 +36,13 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- **FEAT-004 — Motore RAG ibrido + reranking** — *cosa:* secondo motore RAG del core (BM25+vector
-  fusi con RRF + reranking opzionale; ricetta da [[llm-wiki-v2-agentmemory]] e prototipo 02);
-  obiettivo: qualità di `search_code` su query architetturali, **dimostrata** dal ground-truth set
-  (chiude i 2 xfail). *Dove:* branch `013-motore-ibrido-reranking`,
-  `specs/013-motore-ibrido-reranking/spec.md` — **spec creata il 2026-06-12** (4 user story
-  P1..P4, 32 FR mappati 1:1 sui REQ EARS, 8 SC, checklist qualità tutta verde, zero NEEDS
-  CLARIFICATION); fonte EARS `requirements/sertor-core/motore-ibrido/requirements.md` (D1..D4 +
-  DA-1b risolte: `SERTOR_ENGINE` default **hybrid** con degradazione a vettoriale+warning sugli
-  indici pre-ibrido). **Plan completato (2026-06-12):** 7 artefatti di design
-  (research D1..D12, data-model, 3 contracts, quickstart, plan), doppio Constitution Check PASS
-  10/10 (unica deroga tracciata: degradazione REQ-034 vs Principio IV, decisione utente DA-1b).
-  Architettura: porta `LexicalIndex` (adapter `rank-bm25` + sidecar JSON nell'index dir), RRF
-  client-side, extra `rerank` (FlashRank lazy), `build_engine` nel composition root, facade con
-  strategia iniettata (consumatori invariati); xfail→strict senza rete. **IMPLEMENTATA 32/32
-  (2026-06-12):** analyze 0-critical → implement completo in giornata. Consegnato: porta
-  `LexicalIndex` + adapter `Bm25LexicalIndex` (sidecar JSON atomico), `HybridEngine` + `rrf()`,
-  sink lessicale in `IndexingService`, `build_engine` + facade con strategia, adapter FlashRank
-  (extra `rerank`), ground-truth 11 coppie, **2 xfail → strict e verdi** (baseline hit@5 0.00 →
-  ibrido 0.73; simboli 0.00 → 1.00; +rerank MRR 0.939). Suite **273 + 38 passed**, ruff pulito,
-  dogfood live (degradazione REQ-034 osservata, re-index 304 doc/2675 chunk + sidecar, ibrido
-  servito da CLI in 666ms). *Prossimo passo:* **PR verso master** su conferma utente (poi distill
-  + riavvio MCP per servire l'ibrido). *Blocchi:* nessuno.
-- Code residue: **tema lingua** (vedi PLANNED). *(Il riavvio del server MCP è avvenuto con la
-  nuova sessione del 2026-06-12.)*
+- *(vuoto — FEAT-004 consegnata con PR #24)*
+- Code residue: **riavvio del server MCP** (il processo attivo precede l'ibrido: dal prossimo
+  restart servirà `SERTOR_ENGINE=hybrid` automaticamente) · **tema lingua** (vedi PLANNED).
 
 ### 📋 PLANNED (per priorità)
-- **FEAT-004 ibrido+reranking** — candidato naturale: migliora la qualità di `search_code` (debolezza
-  nota) e la ricetta è già in casa (BM25+vector fusi con RRF, ingerita da [[llm-wiki-v2-agentmemory]]).
-- **FEAT-005 GraphRAG · FEAT-006 agentico** — gli altri due motori, da decomporre.
+- **FEAT-005 GraphRAG · FEAT-006 agentico** — gli altri due motori, da decomporre (il GraphRAG
+  riporta `find_symbol`/`who_calls` nel server MCP).
 - **Tema lingua (👍 approvato dall'utente, 2026-06-11)** — gli asset testuali dell'installer
   (blocco rituale, skill) e il seed di `structure init` sono in **italiano fisso** anche con
   `language=en`: la localizzazione va gestita organicamente (asset per lingua o generazione).
@@ -74,10 +52,17 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   `structure init` localizzato **+ localizzazione asset installer (2026-06-11)**.
 - **`sertor install rag` · `sertor install governance`** — gli altri due tagli dell'installer
   (oggi stub dichiarati nell'help).
-- **Misurare la pertinenza** (chiudere i 2 xfail con ground-truth reale).
+- **Eval comparativa live su provider reale** (REQ-051 con Azure, marker `cloud`) — il confronto
+  strict è in CI; la misura col provider forte resta esercizio opzionale.
 
 ### ✅ DONE (su `master`, le rilevanti)
 
+- **🚢 Motore RAG ibrido + reranking (FEAT-004, feature 013, PR #24, 2026-06-12)** — seconda
+  modalità RAG e **nuovo default** ([[hybrid-retrieval]]): BM25 (porta `LexicalIndex`, sidecar
+  atomico) + denso fusi con RRF; degradazione onesta sui corpora pre-ibrido (REQ-034); reranking
+  FlashRank come extra `rerank` lazy; consumatori MCP/CLI invariati (strategia iniettata).
+  **Chiusi i 2 xfail storici** (strict: simboli hit@5 0.00→1.00; +rerank MRR 0.939). SpecKit
+  completo in giornata; 273+38 test; dogfood live validato (ibrido in 666ms).
 - **Hotfix server MCP (PR #23, 2026-06-12)** — risolto l'hang della prima query di sessione su
   Windows (init pigro di Chroma parcheggiava il task fino al prossimo evento stdin): warm-up eager
   della facade in `main()`; prima chiamata da 51+ min appesa → 0.6s; metodo di troubleshooting
@@ -141,8 +126,9 @@ riproducibile e production-grade. **Una sola verità interrogabile**: sorgenti (
   (`specs/004`, superato dalla feature 011 reimplementata su master) e i tentativi *in codice* di
   FEAT-003-N (`specs/003`/`005`, superati dall'approccio a skills). Oggi il prodotto è usabile come
   **libreria + server MCP + CLI `sertor-rag`**; manca l'**installer** `sertor install <capacità>` (DA-8).
-- Qualità: **259 test verdi** (221 root + 38 pacchetto `sertor`, +2 xfail di misura), ruff pulito;
-  ogni feature su master passata col **Constitution Check** (costituzione v1.1.0, 10 principi).
+- Qualità: **311 test verdi** (273 root + 38 pacchetto `sertor`; **zero xfail**: i 2 storici di
+  misura sono strict dal 2026-06-12), ruff pulito su src/tests/packages; ogni feature su master
+  passata col **Constitution Check** (costituzione v1.1.0, 10 principi).
 
 ## Mappa delle feature (epica `sertor-core`) & stato reale
 
@@ -156,7 +142,7 @@ Legenda: ✅ su master · 🧪 operativo, consolidamento formale aperto · 💀 
 | — FEAT-003-D | …nucleo **deterministico** (`wiki_tools` + `wiki.config.toml`) | Must | ✅ | `specs/006` (PR #13), `src/sertor_core/wiki_tools` |
 | — FEAT-003-N | …operazioni **assistite da LLM** (record/distill/lint/ingest) | Must | ✅ come **skills/playbook** (giudizio ≠ codice) | `.claude/skills/wiki-author`, `/wiki`, `wiki-curator` |
 | FEAT-MCP | Server MCP di produzione (`sertor_mcp`, superficie su `build_facade`) | Should | ✅ | `specs/007` (PR #15) |
-| FEAT-004 | Motore RAG **ibrido + reranking** | Should | 🔜 da decomporre | — |
+| FEAT-004 | Motore RAG **ibrido + reranking** | Should | ✅ **master (2026-06-12, PR #24)** — nuovo default ([[hybrid-retrieval]]); xfail storici chiusi strict | `specs/013`, `engines/hybrid`, `adapters/lexical` + `adapters/rerank` |
 | FEAT-005 | Motore RAG a **grafo / GraphRAG** *(riporta `find_symbol`/`who_calls` nel MCP)* | Should | 🔜 da decomporre | — |
 | FEAT-006 | Motore RAG **agentico** (multi-step, query planning) | Should | 🔜 da decomporre | — |
 | FEAT-007 | Skill: **mantenere il wiki vivo** (spider/lint) *(2026-06-10: assorbe da FEAT-003-N la N5 lint semantico — residuo: probe deterministici di freschezza — e la N9 lint organizzativo/reorg)* | Should | 🔜 da decomporre | — |
@@ -190,7 +176,7 @@ già su master).
 
 - **✅ Fatto (master):** Nucleo · Baseline · Wiki (deterministico `wiki_tools` + operazioni LLM come skills) · Server MCP · CLI di esecuzione `sertor-rag` (feature 011) · Decoupling store · Indice dogfood `sertor` (vivo via MCP e CLI).
 - **💀 NON su master (rami abbandonati — non contano):** CLI `sertor` (`specs/004`) · tentativi *in codice* di FEAT-003-N (`specs/003`/`005`, superati dalle skills). Da rifare su master se servono.
-- **🔜 Prossimo (Should):** RAG ibrido+reranking (FEAT-004) · GraphRAG (FEAT-005) · RAG agentico (FEAT-006) · Manutenzione wiki (FEAT-007).
+- **🔜 Prossimo (Should):** GraphRAG (FEAT-005) · RAG agentico (FEAT-006) · Manutenzione wiki (FEAT-007).
 - **💤 Dopo (Could):** Arricchimento Wiki↔RAG (FEAT-008) · Refresh incrementale indice (FEAT-009).
 
 ---
@@ -225,7 +211,7 @@ già su master).
 
 ## Riferimenti
 
-Sintesi per feature: [[implementazione-nucleo-retrieval]] · [[motore-baseline-feat002]] ·
+Sintesi per feature: [[hybrid-retrieval]] · [[implementazione-nucleo-retrieval]] · [[motore-baseline-feat002]] ·
 [[nucleo-wiki-deterministico-feat003d]] · [[server-mcp-produzione-feat-mcp]] · [[meccanica-log-feat008]] ·
 [[store-backend-disaccoppiato-feat009]] · [[spec-010-query-congiunta-e-upsert-index]] ·
 [[sertor-rag-cli]] · [[architettura-wiki-llm]] · [[constitution]] · [[corpus-index-naming]].

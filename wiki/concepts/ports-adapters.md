@@ -3,7 +3,7 @@ title: Porte e adapter (boundary del retrieval-core)
 type: concept
 tags: [ports, adapters, protocol, hexagonal, clean-architecture, sertor-core, composition]
 created: 2026-06-08
-updated: 2026-06-09 (FEAT-009: store_backend disaccoppiato dal provider di embeddings)
+updated: 2026-06-12 (FEAT-004: +LexicalIndex, Reranker, RetrieverStrategy — da due a cinque porte)
 sources: ["src/sertor_core/domain/ports.py", "src/sertor_core/composition.py", "src/sertor_core/adapters/**"]
 ---
 
@@ -11,11 +11,12 @@ sources: ["src/sertor_core/domain/ports.py", "src/sertor_core/composition.py", "
 
 Le **porte** del [[retrieval-core]] sono i **boundary astratti** dietro cui vivono i provider concreti: il
 nucleo dipende **solo** da esse (Principio I/II della [[constitution|Costituzione]]), gli **adapter** in
-`adapters/` le implementano importando gli SDK esterni. Sono due, in `domain/ports.py`, definite come
+`adapters/` le implementano importando gli SDK esterni. Vivono in `domain/ports.py`, definite come
 **`Protocol`** (structural typing): un adapter è conforme se ha i metodi giusti, **senza ereditare nulla** —
-così è banale da mockare nei test (entrambe sono `@runtime_checkable`).
+così è banale da mockare nei test (tutte `@runtime_checkable`). Le porte sono **cinque**: le due
+fondative qui sotto, più le tre della FEAT-004 ([[hybrid-retrieval]]).
 
-## Le due porte
+## Le due porte fondative
 
 - **`EmbeddingProvider`** — trasforma testo in vettori. Metodo `embed(texts) -> list[list[float]]` (a batch,
   ordine preservato, `[]` per input vuoto) + attributi `name`, `dim` (dimensione del vettore, scoperta al
@@ -28,8 +29,20 @@ così è banale da mockare nei test (entrambe sono `@runtime_checkable`).
   `ProviderMismatchError`, [[spec-010-query-congiunta-e-upsert-index|feature 010]]). Una collezione assente → `query` restituisce `[]` ed
   `exists()==False`; un backend irraggiungibile → `VectorStoreError` (Principio IV).
 
-Le porte parlano in termini di [[domain-model|entità di dominio]] (`EmbeddedChunk`, `RetrievalResult`): è ciò
-che impedisce a uno schema di backend di risalire nel nucleo.
+## Le tre porte della FEAT-004 ([[hybrid-retrieval]])
+
+- **`LexicalIndex`** — indice lessicale del motore ibrido: `build` (snapshot integrale, atomico),
+  `query` (ranking di chunk_id, filtro doc_type pre-taglio), `lookup` (materializzazione delle
+  voci), `exists`/`reset`. Namespacing per collezione, come il vettoriale.
+- **`Reranker`** — secondo stadio opzionale: `model` + `rerank(query, results, k)`; l'adapter è
+  dietro l'extra `rerank` (import lazy).
+- **`RetrieverStrategy`** — il seam con cui il composition root **inietta** la strategia di
+  retrieval nella facade (`retrieve(query, k, doc_type)`): i consumatori non cambiano quando
+  cambia il motore.
+
+Le porte parlano in termini di [[domain-model|entità di dominio]] (`EmbeddedChunk`,
+`RetrievalResult`, `LexicalEntry`): è ciò che impedisce a uno schema di backend di risalire nel
+nucleo.
 
 ## Gli adapter (le implementazioni concrete)
 
@@ -37,6 +50,8 @@ che impedisce a uno schema di backend di risalire nel nucleo.
 |---|---|---|
 | `EmbeddingProvider` | `adapters/embeddings/ollama.py` (`OllamaEmbedder`) | `adapters/embeddings/azure.py` (`AzureEmbedder`) |
 | `VectorStore` | `adapters/vectorstores/chroma.py` (`ChromaStore`) | `adapters/vectorstores/azure_search.py` (`AzureSearchStore`) |
+| `LexicalIndex` | `adapters/lexical/bm25.py` (`Bm25LexicalIndex`, sidecar JSON) | — (delega nativa per-store = Could, Gruppo E) |
+| `Reranker` | `adapters/rerank/flashrank.py` (`FlashRankReranker`, extra `rerank`) | — |
 
 ## Il composition root sceglie
 

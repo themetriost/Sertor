@@ -3,7 +3,7 @@ title: Vector retrieval
 type: concept
 tags: [vector-retrieval, dense-retrieval, rag, baseline, embeddings, valutazione, sertor-core]
 created: 2026-06-07
-updated: 2026-06-09
+updated: 2026-06-12 (non è più l'unica modalità né il default: arriva [[hybrid-retrieval]], FEAT-004)
 sources: ["src/sertor_core/engines/baseline.py", "src/sertor_core/engines/evaluation.py", "CLAUDE.md"]
 ---
 
@@ -39,10 +39,13 @@ e **MRR@10**. Serve a confrontare modalità/provider su numeri, non impressioni.
 
 ## Cosa NON è
 
-Non è retrieval **ibrido** (BM25 + dense), né **reranking**, né **GraphRAG**, né **agentic**: quelle sono
-modalità RAG successive (post-MVP) che si appoggeranno allo stesso [[retrieval-core]]. Il vector retrieval è
-la baseline di riferimento.
+Non è retrieval **ibrido** (BM25 + dense), né **reranking**, né **GraphRAG**, né **agentic**. Dal
+2026-06-12 la modalità ibrida **esiste** ([[hybrid-retrieval]], FEAT-004) ed è il **default**
+(`SERTOR_ENGINE=hybrid`): il vector retrieval resta la via densa che l'ibrido ingloba, la baseline
+di confronto nelle misure (`evaluate()`), e la modalità selezionabile con `SERTOR_ENGINE=baseline`
+(risultati identici a prima). GraphRAG e agentic restano future (FEAT-005/006).
 
 ## Vedi anche
+- La modalità che lo estende (e oggi default): [[hybrid-retrieval]].
 - Realizzazione e record datato: [[motore-baseline-feat002]]. Fondazione: [[retrieval-core]]. Collezioni e
   isolamento per corpus: [[corpus-index-naming]].
