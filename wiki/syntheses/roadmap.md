@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-12 (FEAT-004: plan 013 completato — porta LexicalIndex + RRF + extra rerank, doppio Constitution Check PASS; prossimo passo /speckit-tasks)
+updated: 2026-06-12 (FEAT-004: plan 013 completato, prossimo passo /speckit-tasks; + hotfix PR #23: hang prima query MCP risolto con warm-up eager)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md"]
 ---
 
@@ -71,6 +71,10 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### ✅ DONE (su `master`, le rilevanti)
 
+- **Hotfix server MCP (PR #23, 2026-06-12)** — risolto l'hang della prima query di sessione su
+  Windows (init pigro di Chroma parcheggiava il task fino al prossimo evento stdin): warm-up eager
+  della facade in `main()`; prima chiamata da 51+ min appesa → 0.6s; metodo di troubleshooting
+  documentato in [[mcp-server]]. 222 test verdi.
 - **Installer `sertor install wiki` (feature 012, PR #22, 2026-06-11 sera)** — il pacchetto
   **`sertor` distinto** (uv workspace) che porta il sistema-wiki su qualunque ospite
   ([[sertor-installer]]): non distruttivo per artefatto, idempotente, install≠run, assets
@@ -196,7 +200,7 @@ già su master).
 | **Logging come strategia runtime** (osservabilità porta+adapter scelta a runtime) | Oggi la CLI non instrada i log da nessuna parte | Refactor deterministico → SpecKit | 💡 idea |
 | **Tema lingua** (seed `structure init` + asset testuali dell'installer in italiano fisso anche con `language=en`) | Coerenza dell'esperienza su ospiti non-italiani | Seed: fix D in `wiki_tools`; asset: per-lingua o generazione; casa FEAT-007 + evoluzione installer | 👍 **da gestire** (utente, 2026-06-11) |
 | **Adapter VectorStore per PGVector / MongoDB su Azure** | Ibrido e retrieval su store cloud alternativi ad AI Search (il motore ibrido è già store-agnostico via porte) | Nuovi adapter della porta `VectorStore` (+ eventuale delega ibrida nativa per Atlas Search); feature separata da FEAT-004 | 💡 idea (da DA-2 FEAT-004, 2026-06-11) |
-| **Timeout espliciti su embed/query (server MCP e adapter)** | Oggi la prima query MCP può restare appesa indefinitamente (lazy facade + embed Azure senza timeout): un hang deve diventare errore leggibile | Timeout configurabile in `Settings` + eccezione di dominio; episodio osservato in sessione plan 013 (2026-06-12) | 💡 idea (diagnosi 2026-06-12) |
+| **Timeout espliciti su embed/query (server MCP e adapter)** | L'hang della prima query MCP è stato diagnosticato e **risolto** (causa vera: init pigro di Chroma nella prima tool call parcheggiava il task su Windows → warm-up eager in `main()`, **hotfix PR #23**, vedi [[mcp-server]]); i timeout generici restano una rifinitura di robustezza | Timeout configurabile in `Settings` + eccezione di dominio | 💡 idea ridimensionata (hang risolto 2026-06-12) |
 
 ---
 
