@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-12 (FEAT-004: spec 013 creata su branch 013-motore-ibrido-reranking, checklist verde; prossimo passo /speckit-plan)
+updated: 2026-06-12 (FEAT-004: plan 013 completato — porta LexicalIndex + RRF + extra rerank, doppio Constitution Check PASS; prossimo passo /speckit-tasks)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md"]
 ---
 
@@ -24,7 +24,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | Motore baseline (FEAT-002) | Must | ✅ master |
 | Wiki LLM (FEAT-003) | Must | ✅ **completata 2026-06-10** (D 100% + N chiuse; N5/N9 → FEAT-007) |
 | Server MCP (FEAT-MCP) | Should | ✅ master |
-| RAG ibrido + reranking (FEAT-004) | Should | 🔄 **in progress** (spec 013 creata, 2026-06-12) |
+| RAG ibrido + reranking (FEAT-004) | Should | 🔄 **in progress** (plan 013 completato, 2026-06-12) |
 | GraphRAG (FEAT-005) | Should | 📋 da decomporre |
 | RAG agentico (FEAT-006) | Should | 📋 da decomporre |
 | Manutenzione wiki (FEAT-007) | Should | 📋 da decomporre |
@@ -44,8 +44,13 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   P1..P4, 32 FR mappati 1:1 sui REQ EARS, 8 SC, checklist qualità tutta verde, zero NEEDS
   CLARIFICATION); fonte EARS `requirements/sertor-core/motore-ibrido/requirements.md` (D1..D4 +
   DA-1b risolte: `SERTOR_ENGINE` default **hybrid** con degradazione a vettoriale+warning sugli
-  indici pre-ibrido). *Prossimo passo:* `/speckit-plan` (clarify saltabile: unica assunzione da
-  confermare = riconciliazione REQ-004↔REQ-034, documentata in spec). *Blocchi:* nessuno.
+  indici pre-ibrido). **Plan completato (2026-06-12):** 7 artefatti di design
+  (research D1..D12, data-model, 3 contracts, quickstart, plan), doppio Constitution Check PASS
+  10/10 (unica deroga tracciata: degradazione REQ-034 vs Principio IV, decisione utente DA-1b).
+  Architettura: porta `LexicalIndex` (adapter `rank-bm25` + sidecar JSON nell'index dir), RRF
+  client-side, extra `rerank` (FlashRank lazy), `build_engine` nel composition root, facade con
+  strategia iniettata (consumatori invariati); xfail→strict senza rete. *Prossimo passo:*
+  `/speckit-tasks`. *Blocchi:* nessuno.
 - Code residue: **tema lingua** (vedi PLANNED). *(Il riavvio del server MCP è avvenuto con la
   nuova sessione del 2026-06-12.)*
 
@@ -191,6 +196,7 @@ già su master).
 | **Logging come strategia runtime** (osservabilità porta+adapter scelta a runtime) | Oggi la CLI non instrada i log da nessuna parte | Refactor deterministico → SpecKit | 💡 idea |
 | **Tema lingua** (seed `structure init` + asset testuali dell'installer in italiano fisso anche con `language=en`) | Coerenza dell'esperienza su ospiti non-italiani | Seed: fix D in `wiki_tools`; asset: per-lingua o generazione; casa FEAT-007 + evoluzione installer | 👍 **da gestire** (utente, 2026-06-11) |
 | **Adapter VectorStore per PGVector / MongoDB su Azure** | Ibrido e retrieval su store cloud alternativi ad AI Search (il motore ibrido è già store-agnostico via porte) | Nuovi adapter della porta `VectorStore` (+ eventuale delega ibrida nativa per Atlas Search); feature separata da FEAT-004 | 💡 idea (da DA-2 FEAT-004, 2026-06-11) |
+| **Timeout espliciti su embed/query (server MCP e adapter)** | Oggi la prima query MCP può restare appesa indefinitamente (lazy facade + embed Azure senza timeout): un hang deve diventare errore leggibile | Timeout configurabile in `Settings` + eccezione di dominio; episodio osservato in sessione plan 013 (2026-06-12) | 💡 idea (diagnosi 2026-06-12) |
 
 ---
 
