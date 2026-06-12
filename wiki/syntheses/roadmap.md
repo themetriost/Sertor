@@ -26,7 +26,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | Server MCP (FEAT-MCP) | Should | ✅ master |
 | RAG ibrido + reranking (FEAT-004) | Should | ✅ **master (2026-06-12, PR #24)** — motore di default |
 | GraphRAG / code-graph (FEAT-005) | Should | ✅ **master (2026-06-12, PR #25)** — i 4 tool MCP tornati |
-| RAG agentico (FEAT-006) | Should | 📋 da decomporre |
+| RAG agentico (FEAT-006) | Should | ⏸ **rinviata (2026-06-12)** — il composito MCP+agente È già agentic RAG; requirements elicitati come dote |
 | Manutenzione wiki (FEAT-007) | Should | 📋 da decomporre |
 | CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
 | CLI — installer (`sertor install wiki`) | — | ✅ **master (2026-06-11, PR #22)**; `install rag`/`governance` = stub futuri |
@@ -37,13 +37,19 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- *(vuoto — FEAT-005 consegnata con PR #25)*
+- *(vuoto — FEAT-006 rinviata con decisione, vedi sotto)*
 - Code residue: **tema lingua** (vedi PLANNED). *(Il riavvio MCP è avvenuto: server riconnesso
   il 2026-06-12 sera, 7 tool verificati live — `get_context("HybridEngine")` risponde esatto;
   extra `graph` installato anche in `.venv-core`, il venv del server.)*
 
 ### 📋 PLANNED (per priorità)
-- **FEAT-006 agentico** — il quarto motore, da decomporre.
+- **FEAT-006 agentico — ⏸ RINVIATA con decisione (2026-06-12 sera)**: presa d'atto che
+  **l'agentic RAG composito esiste già** — l'agente è il *client* MCP (frontier model) che
+  pianifica, sceglie tra i 7 tool, itera e cita; un loop incorporato con un modello minore non
+  lo migliorerebbe. L'**agenzia incorporata** (`sertor-rag ask` per umani/script senza
+  assistente, digest MCP per economia di contesto, porta `LLMProvider`) resta elicitata come
+  **dote pronta** (36 REQ in `requirements/sertor-core/motore-agentico/`, banner di rinvio):
+  si riapre quando uno di quei casi d'uso diventerà prioritario.
 - **Distribuzione multi-assistente (👍 utente, 2026-06-12)** — tutto il consegnato utilizzabile
   anche da **GitHub Copilot** (Must: MCP nei client Copilot + traduzione delle superfici
   agentiche dell'installer con target assistant) e da **Codex** (Could: AGENTS.md + MCP); CLI già
@@ -188,7 +194,7 @@ già su master).
 
 - **✅ Fatto (master):** Nucleo · Baseline · Wiki (deterministico `wiki_tools` + operazioni LLM come skills) · Server MCP · CLI di esecuzione `sertor-rag` (feature 011) · Decoupling store · Indice dogfood `sertor` (vivo via MCP e CLI).
 - **💀 NON su master (rami abbandonati — non contano):** CLI `sertor` (`specs/004`) · tentativi *in codice* di FEAT-003-N (`specs/003`/`005`, superati dalle skills). Da rifare su master se servono.
-- **🔜 Prossimo (Should):** RAG agentico (FEAT-006) · Manutenzione wiki (FEAT-007).
+- **🔜 Prossimo (Should):** Manutenzione wiki (FEAT-007) · Distribuzione multi-assistente (FEAT-007 CLI). *(FEAT-006 agentico ⏸ rinviata: il composito MCP+agente è già agentic RAG.)*
 - **💤 Dopo (Could):** Arricchimento Wiki↔RAG (FEAT-008) · Refresh incrementale indice (FEAT-009).
 
 ---
