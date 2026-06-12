@@ -388,17 +388,18 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/014-motore-grafo/plan.md` (FEAT-005 — motore RAG a grafo / code-graph strutturale: settima
-porta `CodeGraph` (adapter networkx dietro extra `graph`, lazy SOLO per le query — il build è JSON
-puro), estrazione in `services/graph_extraction.py` (nodi dai metadati del chunker, archi
-calls/imports/inherits via tree-sitter con mappa `COVERAGE` per-linguaggio dichiarata — tutti i 10
-linguaggi), build INTEGRATO in `index()` (sink opzionale, mai grafo stantio), artefatto
-`<index_dir>/graph/<corpus>.json` namespaced per solo corpus; 4 tool MCP
-find_symbol/who_calls/related_docs/get_context con warm-up eager; due semantiche di assenza:
-simbolo assente → vuoto esplicito, grafo non costruito → GraphNotFoundError; ortogonale a
-SERTOR_ENGINE). In `master`: FEAT-001 `specs/001-nucleo-retrieval/plan.md`, FEAT-002
-`specs/002-rag-baseline/plan.md`, FEAT-003-D `specs/006-nucleo-wiki-deterministico/plan.md`,
-FEAT-MCP `specs/007-mcp-sertor-core/plan.md`, FEAT-011 `specs/011-cli-esecuzione-rag/plan.md`,
-FEAT-012 `specs/012-sertor-install-wiki/plan.md`, FEAT-004 `specs/013-motore-ibrido-reranking/plan.md`;
-feature 010 (query congiunta + `upsert-index`) `specs/010-query-congiunta-e-upsert-index/plan.md`.
+`specs/015-sertor-install-rag/plan.md` (FEAT-002 taglio rag — installer `sertor install rag`: porta
+la capacità RAG su un repo ospite con UN comando, scope B "bootstrap completo" (scaffold config +
+aggiunta dipendenze via `uv`). Runtime RAG isolato in `<target>/.sertor/` (progetto Python + .venv +
+indice + `.env`); in radice host solo `.mcp.json` (ponte `uv run --directory .sertor`) e gli
+artefatti wiki. Riusa il backbone di `install wiki` (`Artifact`/`Outcome`/`InstallReport`, fail-fast
+no-rollback) + 4 nuovi `ArtifactKind` (DEPENDENCIES/ENV_MERGE/MCP_MERGE/GITIGNORE_APPEND) + un
+`CommandRunner` iniettabile che isola `uv` (testabile senza rete); include il fix del `pyproject` del
+pacchetto installer (risoluzione standalone di `sertor-core` da git → sblocca `uvx sertor install`).
+install ≠ run, segreti vuoti, idempotente. Lavorazione su `master` (bugfix, autorizzato). In `master`:
+FEAT-001 `specs/001-nucleo-retrieval/plan.md`, FEAT-002 `specs/002-rag-baseline/plan.md`, FEAT-003-D
+`specs/006-nucleo-wiki-deterministico/plan.md`, FEAT-MCP `specs/007-mcp-sertor-core/plan.md`, FEAT-011
+`specs/011-cli-esecuzione-rag/plan.md`, FEAT-012 `specs/012-sertor-install-wiki/plan.md`, FEAT-004
+`specs/013-motore-ibrido-reranking/plan.md`, FEAT-005 `specs/014-motore-grafo/plan.md`; feature 010
+(query congiunta + `upsert-index`) `specs/010-query-congiunta-e-upsert-index/plan.md`.
 <!-- SPECKIT END -->
