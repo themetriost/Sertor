@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-12 (🚢 FEAT-004 MERGIATA: PR #24 — motore ibrido in produzione e default; + hotfix PR #23 MCP warm-up; xfail storici chiusi)
+updated: 2026-06-12 (FEAT-005 GraphRAG aperta: requirements elicitati, DA-1..DA-5 risolte; in giornata anche 🚢 FEAT-004 mergiata PR #24 + hotfix PR #23)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md"]
 ---
 
@@ -25,7 +25,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | Wiki LLM (FEAT-003) | Must | ✅ **completata 2026-06-10** (D 100% + N chiuse; N5/N9 → FEAT-007) |
 | Server MCP (FEAT-MCP) | Should | ✅ master |
 | RAG ibrido + reranking (FEAT-004) | Should | ✅ **master (2026-06-12, PR #24)** — motore di default |
-| GraphRAG (FEAT-005) | Should | 📋 da decomporre |
+| GraphRAG (FEAT-005) | Should | 🔄 **in progress** (requirements completi, DA risolte, 2026-06-12) |
 | RAG agentico (FEAT-006) | Should | 📋 da decomporre |
 | Manutenzione wiki (FEAT-007) | Should | 📋 da decomporre |
 | CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
@@ -36,13 +36,19 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- *(vuoto — FEAT-004 consegnata con PR #24)*
+- **FEAT-005 — Motore RAG a grafo (code-graph strutturale)** — *cosa:* navigazione strutturale
+  deterministica (find_symbol/who_calls/related_docs/get_context) che riporta i 4 tool storici
+  nel server MCP; code-graph AST, niente LLM (il GraphRAG "alla Microsoft" è fuori ambito).
+  *Dove:* `requirements/sertor-core/motore-grafo/requirements.md` — **31 REQ EARS + 10 NFR +
+  8 LSC, DA-1..DA-5 risolte** (porta `CodeGraph` Protocol; build INTEGRATO in `index()`;
+  **tutti i 10 linguaggi** — decisione utente, archi per-linguaggio best-effort con copertura
+  dichiarata; serializzazione JSON; tool MCP → errore esplicito senza extra; ortogonale a
+  `SERTOR_ENGINE`, REQ-013). *Prossimo passo:* `/speckit-specify` (branch 014). *Blocchi:* nessuno.
 - Code residue: **riavvio del server MCP** (il processo attivo precede l'ibrido: dal prossimo
   restart servirà `SERTOR_ENGINE=hybrid` automaticamente) · **tema lingua** (vedi PLANNED).
 
 ### 📋 PLANNED (per priorità)
-- **FEAT-005 GraphRAG · FEAT-006 agentico** — gli altri due motori, da decomporre (il GraphRAG
-  riporta `find_symbol`/`who_calls` nel server MCP).
+- **FEAT-006 agentico** — il quarto motore, da decomporre.
 - **Tema lingua (👍 approvato dall'utente, 2026-06-11)** — gli asset testuali dell'installer
   (blocco rituale, skill) e il seed di `structure init` sono in **italiano fisso** anche con
   `language=en`: la localizzazione va gestita organicamente (asset per lingua o generazione).
