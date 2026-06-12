@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-12 (FEAT-005: plan 014 completato — porta CodeGraph, build integrato, COVERAGE per-linguaggio, Constitution PASS senza deroghe; prossimo /speckit-tasks)
+updated: 2026-06-12 (FEAT-005: tasks 014 generati — 29 task in 7 fasi, MVP=US1; prossimo /speckit-analyze)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md"]
 ---
 
@@ -25,7 +25,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | Wiki LLM (FEAT-003) | Must | ✅ **completata 2026-06-10** (D 100% + N chiuse; N5/N9 → FEAT-007) |
 | Server MCP (FEAT-MCP) | Should | ✅ master |
 | RAG ibrido + reranking (FEAT-004) | Should | ✅ **master (2026-06-12, PR #24)** — motore di default |
-| GraphRAG (FEAT-005) | Should | 🔄 **in progress** (plan 014 completato, 2026-06-12) |
+| GraphRAG (FEAT-005) | Should | 🔄 **in progress** (tasks 014 generati, 2026-06-12) |
 | RAG agentico (FEAT-006) | Should | 📋 da decomporre |
 | Manutenzione wiki (FEAT-007) | Should | 📋 da decomporre |
 | CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
@@ -53,8 +53,10 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   SOLO per le query — il build è JSON puro: `index()` produce sempre il grafo), estrazione pura
   con mappa `COVERAGE` per-linguaggio dichiarata, artefatto `graph/<corpus>.json` (namespace per
   solo corpus), 4 tool MCP con warm-up eager (lezione PR #23), ground-truth a due strati (5
-  simboli reali + mini-corpus per i 10 linguaggi). *Prossimo passo:* `/speckit-tasks`.
-  *Blocchi:* nessuno.
+  simboli reali + mini-corpus per i 10 linguaggi). **Tasks generati (2026-06-12):** 29 task in
+  7 fasi (setup → foundational → US1 MVP grafo+find_symbol → US2 navigazione → US3 tool MCP →
+  US4 ground-truth due strati → polish+dogfood), percorso critico ~17 passi, US3 ∥ US4 dopo
+  US2; 31/31 FR coperti. *Prossimo passo:* `/speckit-analyze`, poi implement. *Blocchi:* nessuno.
 - Code residue: **riavvio del server MCP** (il processo attivo precede l'ibrido: dal prossimo
   restart servirà `SERTOR_ENGINE=hybrid` automaticamente) · **tema lingua** (vedi PLANNED).
 
