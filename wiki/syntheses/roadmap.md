@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-11 sera (🚢🚢 DOPPIA consegna in giornata: PR #21 `sertor-rag` + PR #22 installer `sertor install wiki`, entrambe validate live; 👍 tema lingua da gestire)
+updated: 2026-06-12 (FEAT-004: spec 013 creata su branch 013-motore-ibrido-reranking, checklist verde; prossimo passo /speckit-plan)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md"]
 ---
 
@@ -14,7 +14,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > `requirements → spec → plan → tasks → implement`.
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-06-11)
+## ⚡ Executive summary (stato al 2026-06-12)
 
 ### 📊 Roadmap a colpo d'occhio
 
@@ -24,7 +24,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | Motore baseline (FEAT-002) | Must | ✅ master |
 | Wiki LLM (FEAT-003) | Must | ✅ **completata 2026-06-10** (D 100% + N chiuse; N5/N9 → FEAT-007) |
 | Server MCP (FEAT-MCP) | Should | ✅ master |
-| RAG ibrido + reranking (FEAT-004) | Should | 🔄 **in progress** (requirements in corso, 2026-06-11) |
+| RAG ibrido + reranking (FEAT-004) | Should | 🔄 **in progress** (spec 013 creata, 2026-06-12) |
 | GraphRAG (FEAT-005) | Should | 📋 da decomporre |
 | RAG agentico (FEAT-006) | Should | 📋 da decomporre |
 | Manutenzione wiki (FEAT-007) | Should | 📋 da decomporre |
@@ -39,13 +39,15 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 - **FEAT-004 — Motore RAG ibrido + reranking** — *cosa:* secondo motore RAG del core (BM25+vector
   fusi con RRF + reranking opzionale; ricetta da [[llm-wiki-v2-agentmemory]] e prototipo 02);
   obiettivo: qualità di `search_code` su query architetturali, **dimostrata** dal ground-truth set
-  (chiude i 2 xfail). *Dove:* `requirements/sertor-core/motore-ibrido/requirements.md` — **36 REQ
-  EARS, domande D1..D4 tutte risolte** (decisioni: `SERTOR_ENGINE` default **hybrid** con
-  degradazione a vettoriale+warning sugli indici pre-ibrido; nativo per-store resta Could, core
-  store-agnostico; latenza qualitativa; 5-6 coppie ground-truth nel design). *Prossimo passo:*
-  `/speckit-specify`. *Blocchi:* nessuno.
-- Code residue: **riavvio del server MCP** alla prossima sessione (codice core cambiato con
-  011+012) · **tema lingua** (vedi PLANNED).
+  (chiude i 2 xfail). *Dove:* branch `013-motore-ibrido-reranking`,
+  `specs/013-motore-ibrido-reranking/spec.md` — **spec creata il 2026-06-12** (4 user story
+  P1..P4, 32 FR mappati 1:1 sui REQ EARS, 8 SC, checklist qualità tutta verde, zero NEEDS
+  CLARIFICATION); fonte EARS `requirements/sertor-core/motore-ibrido/requirements.md` (D1..D4 +
+  DA-1b risolte: `SERTOR_ENGINE` default **hybrid** con degradazione a vettoriale+warning sugli
+  indici pre-ibrido). *Prossimo passo:* `/speckit-plan` (clarify saltabile: unica assunzione da
+  confermare = riconciliazione REQ-004↔REQ-034, documentata in spec). *Blocchi:* nessuno.
+- Code residue: **tema lingua** (vedi PLANNED). *(Il riavvio del server MCP è avvenuto con la
+  nuova sessione del 2026-06-12.)*
 
 ### 📋 PLANNED (per priorità)
 - **FEAT-004 ibrido+reranking** — candidato naturale: migliora la qualità di `search_code` (debolezza
