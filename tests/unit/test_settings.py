@@ -102,6 +102,29 @@ def test_rerank_bool_parsing(monkeypatch):
         assert Settings.load(env_file=None).rerank_enabled is expected, raw
 
 
+def test_graph_knobs_defaults(monkeypatch):
+    # Manopole del code-graph (FEAT-005): default SOLO in Settings (Principio VIII).
+    for var in ("SERTOR_GRAPH", "SERTOR_GRAPH_AMBIGUITY", "SERTOR_GRAPH_LIMIT_DEFS",
+                "SERTOR_GRAPH_LIMIT_RELS", "SERTOR_GRAPH_LIMIT_DOCS"):
+        monkeypatch.delenv(var, raising=False)
+    s = Settings.load(env_file=None)
+    assert s.graph_enabled is True        # build integrato in index() di default (DA-2)
+    assert s.graph_ambiguity_threshold == 2
+    assert (s.graph_limit_definitions, s.graph_limit_relations, s.graph_limit_docs) == (10, 8, 8)
+
+
+def test_graph_knobs_from_env(monkeypatch):
+    monkeypatch.setenv("SERTOR_GRAPH", "false")
+    monkeypatch.setenv("SERTOR_GRAPH_AMBIGUITY", "5")
+    monkeypatch.setenv("SERTOR_GRAPH_LIMIT_DEFS", "3")
+    monkeypatch.setenv("SERTOR_GRAPH_LIMIT_RELS", "4")
+    monkeypatch.setenv("SERTOR_GRAPH_LIMIT_DOCS", "2")
+    s = Settings.load(env_file=None)
+    assert s.graph_enabled is False
+    assert s.graph_ambiguity_threshold == 5
+    assert (s.graph_limit_definitions, s.graph_limit_relations, s.graph_limit_docs) == (3, 4, 2)
+
+
 def test_secrets_are_read_from_env_only(monkeypatch):
     # I segreti arrivano da env; Settings non li scrive da nessuna parte (REQ-032).
     monkeypatch.setenv("AZURE_OPENAI_API_KEY", "super-secret")

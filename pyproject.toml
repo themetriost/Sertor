@@ -36,6 +36,11 @@ mcp = [
 rerank = [
     "flashrank>=0.2",
 ]
+# Navigazione del code-graph (FEAT-005): networkx serve SOLO alle query (import lazy
+# nell'adapter); il BUILD del grafo è JSON puro e funziona senza questo extra (research G1).
+graph = [
+    "networkx>=3",
+]
 dev = [
     "pytest>=8.0",
     "ruff>=0.6",

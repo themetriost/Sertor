@@ -17,7 +17,7 @@ strati (P4).
 
 **Purpose**: dipendenze del progetto per la feature
 
-- [ ] T001 Aggiorna `pyproject.toml`: nuovo extra `graph = ["networkx>=3"]` (la navigazione lo
+- [x] T001 Aggiorna `pyproject.toml`: nuovo extra `graph = ["networkx>=3"]` (la navigazione lo
       richiede; il build NO — research G1); poi `uv sync --all-packages --extra dev --extra mcp
       --extra azure --extra graph` e baseline verde (`uv run pytest -m "not cloud" -q`)
 
@@ -29,21 +29,21 @@ strati (P4).
 
 **⚠️ CRITICAL**: nessun task di storia parte prima della fine di questa fase
 
-- [ ] T002 [P] Aggiungi le entità `GraphNode`, `GraphEdge`, `GraphData`, `SymbolHit`,
+- [x] T002 [P] Aggiungi le entità `GraphNode`, `GraphEdge`, `GraphData`, `SymbolHit`,
       `ContextBundle` (dataclass frozen, campi da data-model.md) in
       `src/sertor_core/domain/entities.py` — entità esistenti INVARIATE (FR-029)
-- [ ] T003 [P] Aggiungi `GraphNotFoundError` (stile `IndexNotFoundError`: messaggio azionabile
+- [x] T003 [P] Aggiungi `GraphNotFoundError` (stile `IndexNotFoundError`: messaggio azionabile
       + attributo `corpus`) in `src/sertor_core/domain/errors.py` (FR-007)
-- [ ] T004 Aggiungi la porta `CodeGraph` (Protocol: build/find_symbol/who_calls/related_docs/
+- [x] T004 Aggiungi la porta `CodeGraph` (Protocol: build/find_symbol/who_calls/related_docs/
       get_context/exists/reset) in `src/sertor_core/domain/ports.py` secondo
       `contracts/code-graph-port.md` — porte esistenti INVARIATE (FR-009/FR-029)
-- [ ] T005 Estendi `Settings` in `src/sertor_core/config/settings.py`: `graph_enabled` (True,
+- [x] T005 Estendi `Settings` in `src/sertor_core/config/settings.py`: `graph_enabled` (True,
       `SERTOR_GRAPH`, parsing bool), `graph_ambiguity_threshold` (2, `SERTOR_GRAPH_AMBIGUITY`),
       `graph_limit_definitions` (10), `graph_limit_relations` (8), `graph_limit_docs` (8) —
       default SOLO qui (Principio VIII)
-- [ ] T006 [P] Aggiungi il mock `FakeCodeGraph` (dict in memoria, stessa semantica della porta:
+- [x] T006 [P] Aggiungi il mock `FakeCodeGraph` (dict in memoria, stessa semantica della porta:
       due assenze distinte, bundle limitato) in `tests/fixtures/mocks.py` (NFR-03)
-- [ ] T007 Test unit dei nuovi campi `Settings` (default, override env, bool) in
+- [x] T007 Test unit dei nuovi campi `Settings` (default, override env, bool) in
       `tests/unit/test_settings.py`
 
 **Checkpoint**: porte+config pronte — le storie possono partire
@@ -61,13 +61,13 @@ corretti; stesso corpus → stesso grafo. Senza rete, senza embeddings reali.
 
 ### Tests for User Story 1 (prima dell'implementazione)
 
-- [ ] T008 [P] [US1] Test unit dell'estrazione in `tests/unit/test_graph_extraction.py`:
+- [x] T008 [P] [US1] Test unit dell'estrazione in `tests/unit/test_graph_extraction.py`:
       nodi simbolo dai chunk (symbol/qualname/node_type/start_line — FR-002), nodi module/doc
       dai Document, archi `contains` dalla gerarchia dei qualname (language-agnostic),
       `calls`/`imports`/`inherits` per Python (parità prototipo), soglia di ambiguità (FR-004:
       nomi oltre soglia → archi omessi), `mentions` per token distintivi (≥5 char/camel/underscore),
       determinismo (ordinamenti stabili — FR-008), `COVERAGE` esportata e coerente con `_REL`
-- [ ] T009 [P] [US1] Test unit dell'adapter in `tests/unit/test_networkx_graph.py` (parte
+- [x] T009 [P] [US1] Test unit dell'adapter in `tests/unit/test_networkx_graph.py` (parte
       build+find): `build` scrive JSON `sertor.graph/1` atomico (no leftovers tmp), `exists`/
       `reset` idempotenti, formato sconosciuto/corrotto → `ConfigError`, `find_symbol` (match
       esatto, kinds, ordinamento per ref, vuoto esplicito se assente — FR-013/FR-017), grafo
@@ -76,13 +76,13 @@ corretti; stesso corpus → stesso grafo. Senza rete, senza embeddings reali.
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] Implementa `src/sertor_core/services/graph_extraction.py`:
+- [x] T010 [US1] Implementa `src/sertor_core/services/graph_extraction.py`:
       `extract_graph(documents, chunks, *, ambiguity_threshold) -> GraphData` (nodi da chunk +
       module/doc; contains da qualname; mappa `_REL` per-linguaggio con python completo
       (calls/imports/inherits via tree-sitter) e node-type di invocazione per gli altri;
       mentions dai doc; `COVERAGE` derivata da `_REL` — FR-001..004, research G2/G3); puro,
       deterministico, NESSUN import di networkx
-- [ ] T011 [US1] Implementa `NetworkxCodeGraph` in
+- [x] T011 [US1] Implementa `NetworkxCodeGraph` in
       `src/sertor_core/adapters/graph/networkx_graph.py` (+ `__init__.py`): `build` = JSON
       atomico in `<index_dir>/graph/<corpus>.json` (tmp+rename, formato `sertor.graph/1`,
       coverage persistita) SENZA networkx; `find_symbol`/`exists`/`reset` con caricamento pigro
@@ -90,17 +90,17 @@ corretti; stesso corpus → stesso grafo. Senza rete, senza embeddings reali.
       azionabile), cache per corpus, indici per nome (FR-005, contracts/code-graph-port.md).
       **L'evento `graph_build` (FR-026) lo emette `build()` qui** — l'adapter conosce
       `graph_path` e i conteggi; l'orchestratore no (fix analyze I1)
-- [ ] T012 [US1] Estendi `IndexingService` in `src/sertor_core/services/indexing.py` con
+- [x] T012 [US1] Estendi `IndexingService` in `src/sertor_core/services/indexing.py` con
       parametro opzionale `graph: CodeGraph | None = None`: dopo l'upsert (e il sink lessicale)
       estrae dagli STESSI documents/chunks (passando `ambiguity_threshold` da
       `Settings.graph_ambiguity_threshold` — Principio VIII, nessun default nel servizio) e
       chiama `graph.build()` (snapshot intero; corpus vuoto in rebuild → build vuoto — specchio,
       FR-006); l'evento `graph_build` lo emette l'adapter (T011, fix I1)
-- [ ] T013 [US1] Estendi `src/sertor_core/composition.py`: `build_graph_service(settings)`
+- [x] T013 [US1] Estendi `src/sertor_core/composition.py`: `build_graph_service(settings)`
       (factory dedicata, ortogonale a `SERTOR_ENGINE` — FR-012/FR-022) + wiring del sink grafo
       in `build_indexer()` quando `graph_enabled` (G6); riesporta `build_graph_service` da
       `src/sertor_core/__init__.py`
-- [ ] T014 [US1] Esegui i test US1 + `uv run ruff check src tests packages` e sistema fino al
+- [x] T014 [US1] Esegui i test US1 + `uv run ruff check src tests packages` e sistema fino al
       verde
 
 **Checkpoint**: grafo costruito da `index()`, find_symbol esatto, artefatto persistito
@@ -117,7 +117,7 @@ con sezioni limitate dai knob; simbolo assente → vuoto; tutto senza rete.
 
 ### Tests for User Story 2 (prima dell'implementazione)
 
-- [ ] T015 [P] [US2] Estendi `tests/unit/test_networkx_graph.py` (parte navigazione):
+- [x] T015 [P] [US2] Estendi `tests/unit/test_networkx_graph.py` (parte navigazione):
       `who_calls` (archi calls entranti — FR-014), `related_docs` (mentions — FR-015),
       `get_context` (definizioni+chiamanti+chiamate+basi+doc, limiti dai knob — FR-016),
       simbolo assente → bundle/liste vuoti (FR-017), `ref` citabile `path#qualname` (FR-018),
@@ -126,14 +126,14 @@ con sezioni limitate dai knob; simbolo assente → vuoto; tutto senza rete.
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] Completa `NetworkxCodeGraph`: `who_calls`/`related_docs`/`get_context`
+- [x] T016 [US2] Completa `NetworkxCodeGraph`: `who_calls`/`related_docs`/`get_context`
       (traversal su indici; limiti da Settings; `SymbolHit`/`ContextBundle`; ordinamenti
       deterministici) + emissione `graph_query` per ogni operazione (FR-014..018, FR-027)
-- [ ] T017 [US2] Test di composition in `tests/unit/test_graph_composition.py`:
+- [x] T017 [US2] Test di composition in `tests/unit/test_graph_composition.py`:
       `build_graph_service()` ritorna l'adapter configurato; `build_indexer()` cabla il sink
       solo con `graph_enabled=True`; ortogonalità: `SERTOR_ENGINE=baseline|hybrid` non cambia
       nulla del grafo e viceversa (FR-012/FR-031); motori/facade INVARIATI (FR-029)
-- [ ] T018 [US2] Suite completa (`uv run pytest -m "not cloud" -q`) + ruff e sistema fino al
+- [x] T018 [US2] Suite completa (`uv run pytest -m "not cloud" -q`) + ruff e sistema fino al
       verde
 
 **Checkpoint**: navigazione completa dal core, osservabile e deterministica
@@ -151,7 +151,7 @@ loop stdio.
 
 ### Tests for User Story 3 (prima dell'implementazione)
 
-- [ ] T019 [P] [US3] Test unit in `tests/unit/test_mcp_graph_tools.py`: 7 tool registrati
+- [x] T019 [P] [US3] Test unit in `tests/unit/test_mcp_graph_tools.py`: 7 tool registrati
       (FR-019), i 4 di grafo delegano al servizio mock e formattano risposte citabili
       (`ref=path#qualname`, contracts/mcp-graph-tools.md), `GraphNotFoundError`/`ConfigError`
       propagati come errori del tool senza crash del server (FR-021/FR-022), i 3 tool di
@@ -160,12 +160,12 @@ loop stdio.
 
 ### Implementation for User Story 3
 
-- [ ] T020 [US3] Estendi `src/sertor_mcp/server.py`: `_graph()` memoizzato su
+- [x] T020 [US3] Estendi `src/sertor_mcp/server.py`: `_graph()` memoizzato su
       `build_graph_service(Settings.load())`, 4 tool sottili con docstring italiane per
       l'agente, formattazione `{path, line, kind, qualname, ref}` / bundle per sezioni,
       log di superficie `mcp.<tool>`; `main()` con warm-up esteso (tenta il load del grafo,
       tollerante a grafo/extra assenti — contracts/mcp-graph-tools.md)
-- [ ] T021 [US3] Suite completa + ruff e sistema fino al verde
+- [x] T021 [US3] Suite completa + ruff e sistema fino al verde
 
 **Checkpoint**: la promessa dell'epica è mantenuta — i 4 tool storici sono tornati
 
@@ -181,29 +181,29 @@ tests/integration/test_graph_languages.py -q` → verde, senza rete.
 
 ### Implementation for User Story 4
 
-- [ ] T022 [P] [US4] Crea `tests/fixtures/graph_ground_truth.py`: ≥5 simboli reali di
+- [x] T022 [P] [US4] Crea `tests/fixtures/graph_ground_truth.py`: ≥5 simboli reali di
       `src/sertor_core/` scelti per **stabilità dell'insieme dei chiamanti** (fix analyze U1:
       preferire `collection_name`, `discover`, `chunk_document`, `redact` a simboli ad alto
       churn come `log_event`), con definizione attesa (path + intervallo righe), chiamanti
       attesi (lista chiusa enumerata alla scrittura), doc attesi dove applicabile; path
       relativi POSIX (FR-023/FR-025)
-- [ ] T023 [P] [US4] Crea il mini-corpus `tests/fixtures/graph_corpus/`: un file minimo per
+- [x] T023 [P] [US4] Crea il mini-corpus `tests/fixtures/graph_corpus/`: un file minimo per
       ciascuno dei 10 linguaggi del chunker (una funzione che ne chiama un'altra + un import
       dove dichiarato), con gli archi attesi documentati nel modulo fixture (FR-003)
-- [ ] T024 [US4] Test integrazione `tests/integration/test_graph_ground_truth.py`: estrae il
+- [x] T024 [US4] Test integrazione `tests/integration/test_graph_ground_truth.py`: estrae il
       grafo da `src/sertor_core/` (discover+chunk+extract_graph — niente embeddings) e
       verifica: definizioni esatte per ogni simbolo; **recall** chiamanti attesi ≥80% sul
       corpus reale (robusto al churn: nuovi chiamanti legittimi non rompono il test — fix U1);
       recall doc ≥80% (SC-003/LSC-3); marker `integration`, senza rete (FR-024). La
       **precisione** piena (SC-002/LSC-2) si misura in T025 sul mini-corpus CHIUSO, dove il
       ground-truth è totale
-- [ ] T025 [US4] Test integrazione `tests/integration/test_graph_languages.py`: estrazione sul
+- [x] T025 [US4] Test integrazione `tests/integration/test_graph_languages.py`: estrazione sul
       mini-corpus e verifica che OGNI relazione dichiarata in `COVERAGE` per ogni linguaggio
       produca l'arco atteso (la dichiarazione è vera — FR-003) e che la **precisione** sul
       corpus chiuso sia ≥80% (SC-002/LSC-2: qui il ground-truth è totale); nodi+contains
       presenti per tutti i 10. Il mini-corpus È anche la verifica SC-007 (secondo corpus,
       zero adattamenti — fix C1)
-- [ ] T026 [US4] Suite completa + ruff e sistema fino al verde
+- [x] T026 [US4] Suite completa + ruff e sistema fino al verde
 
 **Checkpoint**: copertura dichiarata = copertura dimostrata; soglie LSC misurate
 
@@ -213,16 +213,16 @@ tests/integration/test_graph_languages.py -q` → verde, senza rete.
 
 **Purpose**: documentazione, validazione live, chiusura
 
-- [ ] T027 [P] Aggiorna `docs/install.md` (sezione grafo: extra `graph`, build automatico nel
+- [x] T027 [P] Aggiorna `docs/install.md` (sezione grafo: extra `graph`, build automatico nel
       re-index, i 4 tool MCP, manopole `SERTOR_GRAPH*`) e la sezione env del `CLAUDE.md` di
       radice (aggiungi `SERTOR_GRAPH`)
-- [ ] T028 Dogfood live sul corpus `sertor`: `uv run sertor-rag index .` (costruisce anche il
+- [x] T028 Dogfood live sul corpus `sertor`: `uv run sertor-rag index .` (costruisce anche il
       grafo — osserva `graph_build` nei log con conteggi per kind/type), poi da Python o via
       server MCP riavviato: `find_symbol("build_facade")`, `who_calls("log_event")`,
       `get_context("RetrievalFacade")` — risposte citabili e pertinenti; osserva
       `graph_query.elapsed_ms` (NFR-04: <100ms navigazione, <500ms context); annota l'esito in
       `specs/014-motore-grafo/quickstart.md`
-- [ ] T029 Suite completa finale (`uv run pytest -m "not cloud" -q` root + `uv run pytest
+- [x] T029 Suite completa finale (`uv run pytest -m "not cloud" -q` root + `uv run pytest
       packages/sertor/tests -q`) + `uv run ruff check src tests packages` + validazione del
       quickstart
 

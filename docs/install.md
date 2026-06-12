@@ -78,6 +78,29 @@ SERTOR_RERANK_POOL=15      # pool fuso passato al reranker (~3×k)
 > (`uv add "sertor-core[rerank] @ git+…"`) e impostare `SERTOR_RERANK=true` — senza extra,
 > `SERTOR_RERANK=true` produce un errore esplicito con l'istruzione d'installazione.
 
+**Code-graph strutturale (FEAT-005):** ogni `sertor-rag index .` costruisce anche il **grafo del
+codice** (nodi modulo/classe/funzione/metodo/doc; archi contains/calls/imports/inherits/mentions),
+persistito in `<index_dir>/graph/<corpus>.json` — il build non richiede dipendenze extra. Per
+**navigarlo** (i 4 tool MCP `find_symbol` / `who_calls` / `related_docs` / `get_context`) serve
+l'extra:
+
+```bash
+uv add "sertor-core[graph] @ git+https://github.com/themetriost/Sertor"   # networkx
+```
+
+```bash
+SERTOR_GRAPH=true               # build del grafo dentro index() (default)
+SERTOR_GRAPH_AMBIGUITY=2        # nomi più ambigui di così non generano archi calls
+SERTOR_GRAPH_LIMIT_DEFS=10      # limiti per sezione di get_context
+SERTOR_GRAPH_LIMIT_RELS=8
+SERTOR_GRAPH_LIMIT_DOCS=8
+```
+
+Simbolo assente → liste vuote; grafo non costruito → errore che dice di indicizzare; extra
+assente → errore con l'istruzione d'installazione. La copertura degli archi per linguaggio è
+**dichiarata**: nodi e gerarchia per tutti i 10 linguaggi sintattici, chiamate per tutti,
+import/ereditarietà per Python.
+
 ## 3. Primi comandi
 
 ```bash

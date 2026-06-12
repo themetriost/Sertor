@@ -109,6 +109,66 @@ class LexicalEntry:
 
 
 @dataclass(frozen=True)
+class GraphNode:
+    """Nodo del code-graph strutturale (FEAT-005).
+
+    `id` stabile e idempotente: `path` per module/doc, `path::qualname` per i simboli
+    (pattern del prototipo 03) — stesso corpus → stessi id (FR-008).
+    """
+
+    id: str
+    kind: str               # module | class | function | method | doc
+    name: str
+    path: str
+    line: int | None = None
+    qualname: str | None = None
+
+
+@dataclass(frozen=True)
+class GraphEdge:
+    """Arco tipato del code-graph: contains | calls | imports | inherits | mentions."""
+
+    source: str
+    target: str
+    type: str
+
+
+@dataclass(frozen=True)
+class GraphData:
+    """Output dell'estrazione e input di `CodeGraph.build` (snapshot intero del corpus).
+
+    `coverage` è la dichiarazione per-linguaggio degli archi relazionali supportati
+    (FR-003, DA-3): persiste nell'artefatto, mai assenza silenziosa.
+    """
+
+    nodes: tuple[GraphNode, ...] = ()
+    edges: tuple[GraphEdge, ...] = ()
+    coverage: tuple[tuple[str, tuple[str, ...]], ...] = ()
+
+
+@dataclass(frozen=True)
+class SymbolHit:
+    """Risultato citabile di una navigazione strutturale (FR-018): `ref = path#qualname`."""
+
+    path: str
+    line: int | None
+    kind: str
+    qualname: str
+    ref: str
+
+
+@dataclass(frozen=True)
+class ContextBundle:
+    """Risposta multi-hop di `get_context` (FR-016), sezioni limitate dai knob di Settings."""
+
+    definitions: tuple[SymbolHit, ...] = ()
+    callers: tuple[SymbolHit, ...] = ()
+    callees: tuple[SymbolHit, ...] = ()
+    bases: tuple[SymbolHit, ...] = ()
+    docs: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
 class RetrievalResult:
     """Risultato restituito dalla facade per ogni hit (REQ-025)."""
 

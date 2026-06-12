@@ -14,9 +14,10 @@ from pathlib import Path
 
 from sertor_core.config.settings import Settings
 from sertor_core.domain.entities import Chunk, EmbeddedChunk, IndexReport, LexicalEntry
-from sertor_core.domain.ports import EmbeddingProvider, LexicalIndex, VectorStore
+from sertor_core.domain.ports import CodeGraph, EmbeddingProvider, LexicalIndex, VectorStore
 from sertor_core.observability.logging import log_event
 from sertor_core.services.chunking.dispatch import chunk_document
+from sertor_core.services.graph_extraction import extract_graph
 from sertor_core.services.ingestion import discover
 
 
@@ -46,6 +47,7 @@ class IndexingService:
         collection: str,
         settings: Settings,
         lexical: LexicalIndex | None = None,
+        graph: CodeGraph | None = None,
     ):
         self._embedder = embedder
         self._store = store
@@ -55,6 +57,9 @@ class IndexingService:
         # sidecar come SNAPSHOT DELL'INTERO set di chunk (semantica specchio, REQ-002) — i flussi
         # di upsert parziale non devono cablarlo (un sidecar-sottoinsieme violerebbe REQ-002).
         self._lexical = lexical
+        # Sink del code-graph (FEAT-005, DA-2): stesso principio specchio — il grafo si
+        # ricostruisce a ogni index() dagli stessi documents/chunks, mai stantio.
+        self._graph = graph
 
     def index(self, root: Path | str, rebuild: bool = False) -> IndexReport:
         """Esegue la pipeline completa e restituisce un report con i conteggi.
@@ -85,10 +90,20 @@ class IndexingService:
                 self._lexical.build(self._collection, [
                     LexicalEntry(c.id, c.text, c.doc_type.value, c.metadata.path) for c in chunks
                 ])
+            if self._graph is not None:
+                # La soglia di ambiguità arriva da Settings (Principio VIII, fix analyze W1).
+                self._graph.build(self._settings.corpus, extract_graph(
+                    documents, chunks,
+                    ambiguity_threshold=self._settings.graph_ambiguity_threshold,
+                ))
         elif rebuild:
             self._store.reset(self._collection)  # corpus vuoto in rebuild: azzera l'indice
             if self._lexical is not None:
                 self._lexical.build(self._collection, [])  # specchio: anche il lessicale si azzera
+            if self._graph is not None:
+                self._graph.build(self._settings.corpus, extract_graph(
+                    [], [], ambiguity_threshold=self._settings.graph_ambiguity_threshold,
+                ))
 
         report = IndexReport(
             collection=self._collection,

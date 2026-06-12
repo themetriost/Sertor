@@ -171,6 +171,10 @@ I marker pytest sono definiti in `pyproject.toml`: `cloud` (richiede credenziali
   # Motore di retrieval (FEAT-004): baseline | hybrid (default hybrid). Manopole opzionali:
   # SERTOR_RRF_C, SERTOR_RRF_POOL, SERTOR_RERANK (richiede extra `rerank`), SERTOR_RERANK_POOL
   SERTOR_ENGINE=hybrid
+
+  # Code-graph strutturale (FEAT-005): build dentro index() (default true). Navigazione = extra
+  # `graph`. Manopole: SERTOR_GRAPH_AMBIGUITY, SERTOR_GRAPH_LIMIT_{DEFS,RELS,DOCS}
+  SERTOR_GRAPH=true
   ```
 
 - **Switch backend:** la variabile `RAG_BACKEND` (`local` | `azure`) alterna
