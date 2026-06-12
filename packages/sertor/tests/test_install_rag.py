@@ -37,8 +37,8 @@ def test_install_never_indexes(tmp_path: Path, make_runner):
     _run(tmp_path, runner, backend="azure")
     # install != run: nessun comando di indicizzazione/ricerca
     assert all("index" not in cmd and "search" not in cmd for cmd in _uv_calls(runner))
-    # solo uv init + uv add
-    assert ["uv", "init", "--bare"] in _uv_calls(runner)
+    # solo uv init + uv add (init con --name esplicito: `.sertor` non è un package name valido)
+    assert any(cmd[:3] == ["uv", "init", "--bare"] for cmd in _uv_calls(runner))
     assert any(cmd[:2] == ["uv", "add"] for cmd in _uv_calls(runner))
 
 
@@ -88,7 +88,7 @@ def test_deps_skips_init_when_pyproject_exists(tmp_path: Path, make_runner):
     runner = make_runner()
     _run(tmp_path, runner, backend="azure")
     # nessun uv init (già inizializzato), solo uv add
-    assert ["uv", "init", "--bare"] not in _uv_calls(runner)
+    assert not any(cmd[:2] == ["uv", "init"] for cmd in _uv_calls(runner))
     assert any(cmd[:2] == ["uv", "add"] for cmd in _uv_calls(runner))
 
 

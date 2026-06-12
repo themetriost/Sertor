@@ -30,6 +30,9 @@ from sertor_installer.report import InstallReport
 from sertor_installer.resources import read_asset_text
 
 _UV = "uv"
+# `uv init` usa il nome della cartella come package name: `.sertor` è INVALIDO (inizia con punto) →
+# nome esplicito valido per il progetto-runtime dell'ospite (mai pubblicato).
+_RUNTIME_NAME = "sertor-runtime"
 
 
 class DependencyError(SertorError):
@@ -78,7 +81,7 @@ def _apply_deps(profile: RagHostProfile, runner: CommandRunner) -> ArtifactOutco
     sertor_dir.mkdir(parents=True, exist_ok=True)
     already = (sertor_dir / "pyproject.toml").exists()
     if not already:
-        res = runner.run([_UV, "init", "--bare"], cwd=sertor_dir)
+        res = runner.run([_UV, "init", "--bare", "--name", _RUNTIME_NAME], cwd=sertor_dir)
         if not res.ok:
             raise DependencyError(f"`uv init` fallito: {res.stderr.strip() or res.returncode}")
     spec = profile.dep_spec()
