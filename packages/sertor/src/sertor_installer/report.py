@@ -20,6 +20,7 @@ class InstallReport:
     """Esito complessivo dell'install: esiti in ordine, conteggi, eventuale passo fallito."""
 
     target: str
+    capability: str = "wiki"  # "wiki" | "rag" — solo per il titolo della resa umana
     outcomes: list[ArtifactOutcome] = field(default_factory=list)
     created: int = 0
     skipped: int = 0
@@ -50,7 +51,7 @@ class InstallReport:
 
     def render_human(self) -> str:
         """Resa umana su stdout (contracts/install-report.md §Formato umano)."""
-        lines = [f"sertor install wiki — target: {self.target}"]
+        lines = [f"sertor install {self.capability} — target: {self.target}"]
         for o in self.outcomes:
             suffix = f" ({o.detail})" if o.detail else ""
             lines.append(f"  {o.outcome.value:<8}{o.target_rel}{suffix}")

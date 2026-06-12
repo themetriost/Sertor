@@ -11,8 +11,11 @@ import sys
 from pathlib import Path
 
 from sertor_core.domain.errors import ConfigError, IngestionError, SertorError
+from sertor_installer.command_runner import SubprocessRunner
 from sertor_installer.config_gen import build_host_profile
+from sertor_installer.install_rag import build_rag_plan, execute_rag_plan
 from sertor_installer.install_wiki import build_install_plan, execute_plan
+from sertor_installer.rag_profile import RagHostProfile, RagInstallOptions
 
 
 class CapabilityNotAvailableError(SertorError):
@@ -48,7 +51,24 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     wiki.add_argument("--json", action="store_true", help="emette il report come JSON")
 
-    install_sub.add_parser("rag", help="installa l'infrastruttura RAG (pianificato)")
+    rag = install_sub.add_parser("rag", help="installa la capacità RAG (.sertor/ + .mcp.json)")
+    rag.add_argument("--target", default=".", help="radice del repo ospite (default: cwd)")
+    rag.add_argument(
+        "--backend", choices=["azure", "local"], default="azure",
+        help="provider di embeddings (default: azure)",
+    )
+    rag.add_argument(
+        "--corpus", default=None,
+        help="nome del corpus (SERTOR_CORPUS); default: nome sanitizzato della dir target",
+    )
+    rag.add_argument("--no-graph", action="store_true", help="escludi l'extra `graph` (networkx)")
+    rag.add_argument("--no-rerank", action="store_true", help="escludi l'extra `rerank`")
+    rag.add_argument(
+        "--no-deps", action="store_true",
+        help="solo scaffold di config; non aggiungere le dipendenze (no uv)",
+    )
+    rag.add_argument("--json", action="store_true", help="emette il report come JSON")
+
     install_sub.add_parser("governance", help="installa la governance (pianificato)")
 
     return parser
@@ -75,11 +95,38 @@ def _cmd_install_wiki(args) -> int:
     return report.exit_code()
 
 
+def _cmd_install_rag(args) -> int:
+    """Handler `install rag`: valida il target, esegue il piano RAG, stampa il report."""
+    target_root = Path(args.target).resolve()
+    if not target_root.exists():
+        raise ConfigError("target inesistente", key=str(target_root))
+    if not target_root.is_dir():
+        raise IngestionError("il target non è una directory", path=str(target_root))
+
+    opts = RagInstallOptions(
+        target_root=target_root,
+        backend=args.backend,
+        corpus=args.corpus,
+        include_graph=not args.no_graph,
+        include_rerank=not args.no_rerank,
+        with_deps=not args.no_deps,
+        json_report=args.json,
+    )
+    profile = RagHostProfile.from_options(opts)
+    plan = build_rag_plan(profile, with_deps=opts.with_deps)
+    report = execute_rag_plan(plan, profile, SubprocessRunner())
+
+    print(report.render_json() if args.json else report.render_human())
+    return report.exit_code()
+
+
 def _dispatch(args) -> int:
     if args.command == "install":
         if args.capability == "wiki":
             return _cmd_install_wiki(args)
-        # stub leggibili: exit 1 via eccezione di dominio dedicata
+        if args.capability == "rag":
+            return _cmd_install_rag(args)
+        # stub leggibili: exit 1 via eccezione di dominio dedicata (governance)
         raise CapabilityNotAvailableError(args.capability)
     raise ConfigError(f"comando non supportato: {args.command}")  # pragma: no cover
 

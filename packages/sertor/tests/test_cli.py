@@ -39,12 +39,27 @@ def test_unknown_subcommand_exit_2(capsys):
     assert exc.value.code == 2
 
 
-def test_install_rag_stub_exit_1(capsys):
-    rc = main(["install", "rag"])
-    assert rc == 1
-    err = capsys.readouterr().err
-    assert "rag" in err
-    assert "non è ancora disponibile" in err
+def test_install_rag_no_deps_exit_0(tmp_path: Path, capsys):
+    # --no-deps: scaffold senza invocare `uv` (no rete)
+    rc = main(["install", "rag", "--target", str(tmp_path), "--no-deps"])
+    assert rc == 0
+    assert (tmp_path / ".sertor" / ".env").is_file()
+    assert (tmp_path / ".mcp.json").is_file()
+    assert (tmp_path / ".gitignore").is_file()
+
+
+def test_install_rag_bad_backend_exit_2():
+    with pytest.raises(SystemExit) as exc:
+        main(["install", "rag", "--backend", "foo", "--no-deps"])
+    assert exc.value.code == 2
+
+
+def test_install_rag_json_report(tmp_path: Path, capsys):
+    rc = main(["install", "rag", "--target", str(tmp_path), "--no-deps", "--json"])
+    assert rc == 0
+    payload = json.loads(capsys.readouterr().out.strip())
+    assert payload["schema"] == "install.report/1"
+    assert payload["summary"]["errors"] == 0
 
 
 def test_install_governance_stub_exit_1(capsys):

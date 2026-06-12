@@ -20,6 +20,11 @@ class ArtifactKind(Enum):
     MARKER_BLOCK = "marker_block"
     STRUCTURE = "structure"
     CONFIG = "config"
+    # `install rag` (feature 015): runtime RAG isolato in `.sertor/` + scaffold config in radice.
+    DEPENDENCIES = "dependencies"        # bootstrap Python in `.sertor/` (uv init + uv add)
+    ENV_MERGE = "env_merge"              # `.sertor/.env` da template, merge additivo per-chiave
+    MCP_MERGE = "mcp_merge"              # `.mcp.json` in radice host, merge additivo dei server
+    GITIGNORE_APPEND = "gitignore_append"  # `.gitignore` in radice, append dedup di righe
 
 
 class WriteStrategy(Enum):
@@ -30,6 +35,11 @@ class WriteStrategy(Enum):
     APPEND_BLOCK = "append_block"
     INIT_STRUCTURE = "init_structure"
     GENERATE_CONFIG = "generate_config"
+    # `install rag` (feature 015)
+    BOOTSTRAP_DEPS = "bootstrap_deps"    # esegue uv init/uv add (idempotente) via CommandRunner
+    MERGE_ENV = "merge_env"              # merge additivo di chiavi `.env` (mai sovrascrive valori)
+    MERGE_JSON = "merge_json"            # merge additivo di server in `.mcp.json`
+    APPEND_LINES = "append_lines"        # append dedup di righe (`.gitignore`)
 
 
 class Outcome(Enum):

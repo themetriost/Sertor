@@ -46,6 +46,19 @@ workspace-source* è il punto più incerto e va verificato in due modi, entrambi
 **Pin della sorgente.** Per l'MVP la sorgente git punta al branch di default (`master`). Un pin a
 tag/rev è un irrigidimento successivo (quando ci sarà un tag di release); annotato, non MVP.
 
+> **⚠️ AGGIORNAMENTO EMPIRICO (in implementazione, 2026-06-12).** La decisione sopra è **SMENTITA
+> dai fatti**: aggiungere `[tool.uv.sources] sertor-core = { git = … }` al member **rompe il
+> workspace di sviluppo** — uv 0.11.12 rifiuta con *"`sertor-core` is included as a workspace member,
+> but references a Git in `tool.uv.sources`. Workspace members must be declared as workspace
+> sources"*. Un membro del workspace **non può** referenziare una sorgente git per un altro membro.
+> Il fix è stato **revocato**; al suo posto una nota in `packages/sertor/pyproject.toml`. **Stato
+> reale del "bug":** non è stato riprodotto end-to-end — è possibile che `uvx --from
+> "git+url#subdirectory=packages/sertor"` **scopra già il workspace** dal checkout git e risolva
+> `sertor-core` localmente (nessun fix necessario), oppure che fallisca (serve un fix diverso, es.
+> pubblicare `sertor-core` o ristrutturare). **Determinabile SOLO con un push** (uvx legge il remoto).
+> → FR-024 resta **aperto**, validazione differita a T023 post-push. Il resto della feature (il
+> comando `install rag`) è **indipendente** da questo e completo.
+
 ## R2 — Topologia del runtime `.sertor/` e indicizzazione che esclude sé stessa (FR-006/020, REQ-282)
 
 **Problema.** Il runtime vive in `<target>/.sertor/` con `.env` in `<target>/.sertor/.env`. Il core

@@ -163,5 +163,46 @@ promemoria automatici non scattano).
 
 `sertor-wiki-tools` (scan/lint/structure/collect/index/append-log/…) funziona su qualunque ospite a
 partire dalla **`wiki.config.toml`** (quella generata dall'installer, o scritta a mano usando quella
-di Sertor come esempio). I sottocomandi `install rag` e `install governance` sono pianificati ma non
-ancora disponibili.
+di Sertor come esempio). Il sottocomando `install governance` è pianificato ma non ancora disponibile.
+
+## 6. Capacità RAG con un comando: `sertor install rag`
+
+`sertor install rag` porta l'intera capacità RAG su un repo ospite — **anche non-Python** (es. .NET):
+il runtime Python vive **isolato** in una dotfolder `.sertor/` (i tuoi sorgenti non vengono toccati),
+in radice restano solo il `.mcp.json` (il ponte verso Claude/client MCP) e il `.gitignore` aggiornato.
+
+```bash
+# da una macchina con `uv`, nella radice del repo target (Azure embeddings):
+uv run sertor install rag --backend azure
+# varianti:
+uv run sertor install rag --backend local --no-rerank   # Ollama, senza reranker
+uv run sertor install rag --no-deps                      # solo scaffold di config (no uv add)
+uv run sertor install rag --target C:\path\repo --corpus mioprogetto --json
+```
+
+Cosa fa (tutto **senza** indicizzare — install ≠ run):
+
+| Artefatto | Dove | Comportamento se esiste già |
+|---|---|---|
+| Progetto Python + dipendenze (`uv init --bare` + `uv add sertor-core[azure,mcp,graph,rerank]`) | `<target>/.sertor/` | `uv add` idempotente; `uv init` saltato se già inizializzato |
+| `.env` (template per backend, **segreti vuoti** da riempire) | `<target>/.sertor/.env` | merge additivo per-chiave (mai sovrascrive i tuoi valori) |
+| `.mcp.json` (server `sertor-rag` via `uv run --directory .sertor`) | **radice host** | merge additivo (preserva gli altri server MCP) |
+| `.gitignore` (`.sertor/.venv/`, `.sertor/.index*`, `.sertor/.env`) | **radice host** | append dedup |
+
+Default: backend `azure`, tutti gli extra (`mcp`+`graph`+`rerank`) + quello del backend; `--no-graph`
+/`--no-rerank` per alleggerire, `--no-deps` per il solo scaffold. Exit `0`/`1` (errore di dominio,
+fail-fast: `uv` assente o `uv add` fallito)/`2` (uso). Rieseguirlo è sicuro (stato identico).
+
+Dopo l'install (passo esplicito separato — riempi prima i segreti in `.sertor/.env`):
+
+```bash
+uv run --directory .sertor sertor-rag index ..   # indicizza i sorgenti host, esclude `.sertor/`
+# poi ricarica il client MCP: approva il server `sertor-rag` → search_code/docs/combined (+ grafo)
+```
+
+> Il server e la CLI girano con cwd `.sertor/`, quindi caricano `.sertor/.env` e tengono indice e
+> grafo dentro `.sertor/`. **Disinstallare** ≈ cancellare `.sertor/` e la voce `sertor-rag` da `.mcp.json`.
+
+> **Nota distribuzione (interim).** L'esecuzione standalone via `uvx --from "git+…#subdirectory=packages/sertor"`
+> dipende da come `uv` risolve `sertor-core` (membro di workspace) da un checkout git: va verificata
+> end-to-end dopo un push. In sviluppo dal repo Sertor si usa `uv run sertor install rag`.
