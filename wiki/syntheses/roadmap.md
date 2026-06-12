@@ -29,7 +29,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | RAG agentico (FEAT-006) | Should | ⏸ **rinviata (2026-06-12)** — il composito MCP+agente È già agentic RAG; requirements elicitati come dote |
 | Manutenzione wiki (FEAT-007, assorbe il tema lingua) | Should | 🔄 **in progress** (requirements completi, D1..D4 risolte, 2026-06-12 sera) |
 | CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
-| CLI — installer (`sertor install wiki`) | — | ✅ **master (2026-06-11, PR #22)**; `install rag`/`governance` = stub futuri |
+| CLI — installer (`sertor install`) | — | ✅ `wiki` (PR #22) + **`rag` su master (2026-06-12)** — validato live su Kaelen; `governance` = stub |
 | Distribuzione multi-assistente: GitHub Copilot (+ Codex Could) | — | 👍 **da decomporre** (decisione utente 2026-06-12) |
 | Tema lingua (asset installer + seed structure init) | — | ✅ **risolto come design (2026-06-12)**: asset in inglese canonico, contenuto nella lingua dell'ospite — confluito in FEAT-007 |
 
@@ -46,7 +46,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   `language` della config governa la lingua del CONTENUTO scritto sull'ospite — implicazione:
   `.claude/` di Sertor diventa inglese, il wiki interno resta italiano). *Dove:*
   `requirements/sertor-core/manutenzione-wiki/requirements.md` (gap analysis + 22 REQ residui,
-  D1..D4 risolte). *Prossimo passo:* `/speckit-specify` (branch 015). *Blocchi:* nessuno. *(Il riavvio MCP è avvenuto: server riconnesso
+  D1..D4 risolte). *Prossimo passo:* `/speckit-specify` (prossimo numero SpecKit: **016** — 015 è stato usato da `install rag`). *Blocchi:* nessuno. *(Il riavvio MCP è avvenuto: server riconnesso
   il 2026-06-12 sera, 7 tool verificati live — `get_context("HybridEngine")` risponde esatto;
   extra `graph` installato anche in `.venv-core`, il venv del server.)*
 
@@ -69,13 +69,23 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 - **FEAT-007 manutenzione wiki** — parte con dote ricca: probe di freschezza (ex N5), helper
   `move`-con-link (ex N9), op *reconcile* delle obsolescenze (idea utente 2026-06-10), seed
   `structure init` localizzato **+ localizzazione asset installer (2026-06-11)**.
-- **`sertor install rag` · `sertor install governance`** — gli altri due tagli dell'installer
-  (oggi stub dichiarati nell'help).
+- **`sertor install governance`** — l'ultimo taglio dell'installer ancora stub. *(`install rag` ✅ DONE, 2026-06-12.)*
 - **Eval comparativa live su provider reale** (REQ-051 con Azure, marker `cloud`) — il confronto
   strict è in CI; la misura col provider forte resta esercizio opzionale.
 
 ### ✅ DONE (su `master`, le rilevanti)
 
+- **🚢 Installer `sertor install rag` (feature 015, 2026-06-12, su master)** — la **capacità RAG su un
+  ospite con UN comando** ([[sertor-installer]]): scaffold config (`.env`/`.mcp.json`/`.gitignore`) +
+  bootstrap dipendenze via `uv` in un **runtime isolato `<host>/.sertor/`** (i sorgenti host, anche
+  non-Python come .NET, non vengono "pythonizzati"); riusa il backbone di `install wiki` (4 nuovi
+  ArtifactKind, `CommandRunner` mockabile). install ≠ run, idempotente, segreti vuoti. **Validato live
+  su un repo reale** (`uvx … sertor install rag` su Kaelen → `sertor-rag index` 150 doc/1755 chunk,
+  Azure `text-embedding-3-large`). **Finding chiave:** il "bug" di distribuzione `uvx` era una
+  **diagnosi errata** — `uv` risolve `sertor-core` scoprendo il workspace dal git, nessun fix
+  necessario (FR-024 ✅); il fix ipotizzato avrebbe rotto il dev (revocato). Bug reale trovato live e
+  fixato (`uv init --name`, `.sertor` non è un package name valido). Lavorato su `master` (bugfix
+  autorizzato); 76 (pacchetto) + 321 (root) test verdi. SpecKit completo requirements→implement.
 - **🚢 Motore a grafo / code-graph strutturale (FEAT-005, feature 014, PR #25, 2026-06-12 sera)**
   — terza capacità RAG, ortogonale ai motori ([[code-graph]]): porta `CodeGraph` (sesta), build
   integrato in `index()` (mai grafo stantio), artefatto JSON per corpus, copertura per-linguaggio
