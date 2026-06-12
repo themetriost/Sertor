@@ -1,10 +1,15 @@
 # Requisiti — Modello mono-utente vs enterprise/team (ownership degli artefatti)
-<!-- Deriva da: FEAT-002 (Installazione selettiva delle capacità del core su un repo target) -->
-<!-- STATO: IN ELABORAZIONE — origine: direzione strategica "Sertor enterprise e multiutente" (utente, 2026-06-12). -->
-<!-- ASSE: CHI possiede ogni artefatto (team-condiviso/versionato vs per-utente). ORTOGONALE alla
-     COLLOCAZIONE dei file, che vive in `igiene-radice-host/requirements.md`. -->
+<!-- Deriva da: FEAT-002 (sertor-cli) MA ASSORBITA come FEAT-M01 dell'epica `multiutente`. -->
+<!-- STATO: ❄️ CONGELATA — è la "fetta-installer" di un tema più ampio (workflow collaborativo). -->
 
-> **Asse di questa feature: l'OWNERSHIP.** Chi possiede ogni artefatto prodotto dall'installer — il
+> **⚠️ ASSORBITA NELL'EPICA `multiutente` (2026-06-12).** L'utente ha chiarito che il multiutente è un
+> **tema di workflow** (cosa/quando condividere, collaborazione su RAG+wiki), **non** solo
+> dell'installer. Questa bozza resta come **input** ed è ora **FEAT-M01** dell'epica
+> [`requirements/multiutente/epic.md`](../../multiutente/epic.md). **Non procedere a specify da qui**
+> finché l'epica non viene affrontata e decomposta (decisione: in seguito). L'asse **collocazione**
+> resta invece pronto e indipendente in [`igiene-radice-host`](../igiene-radice-host/requirements.md).
+
+> **Asse di questa (futura) feature: l'OWNERSHIP.** Chi possiede ogni artefatto prodotto dall'installer — il
 > **team** (versionato in git, condiviso) o il **singolo dev** (per-utente/per-macchina). È
 > **ortogonale** a *dove* sta il file (collocazione → feature
 > [`igiene-radice-host`](../igiene-radice-host/requirements.md)). Il driver è una **modalità**:
