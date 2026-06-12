@@ -107,6 +107,23 @@ def test_missing_index_returns_empty_without_crash(monkeypatch):
         srv._facade.cache_clear()
 
 
+def test_main_warms_facade_before_stdio_loop(monkeypatch):
+    """`main()` costruisce la facade PRIMA di avviare il loop stdio (warm-up eager).
+
+    L'init pigro di Chroma dentro la prima tool call parcheggia la risposta su Windows finché
+    stdin non riceve un altro evento (hang osservato il 2026-06-12): il warm-up all'avvio è il
+    contratto che lo previene.
+    """
+    calls: list[str] = []
+    _use(monkeypatch, lambda _s=None: calls.append("facade"))
+    monkeypatch.setattr(srv.mcp, "run", lambda *a, **k: calls.append("run"))
+    try:
+        srv.main()
+        assert calls == ["facade", "run"]
+    finally:
+        srv._facade.cache_clear()
+
+
 def test_internal_error_propagates_then_server_recovers(monkeypatch):
     """Un errore reale del motore NON viene inghiottito (FR-013); dopo, il server torna usabile."""
     class _Boom:

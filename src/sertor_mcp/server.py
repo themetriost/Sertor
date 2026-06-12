@@ -88,7 +88,15 @@ def search_combined(query: str, k: int = 6) -> list[dict]:
 
 
 def main() -> None:
-    """Avvia il server MCP sul trasporto stdio."""
+    """Avvia il server MCP sul trasporto stdio.
+
+    La facade viene costruita **prima** di avviare il loop stdio (warm-up eager): l'inizializzazione
+    pigra di Chroma dentro la prima tool call ne parcheggia la risposta su Windows — il task non
+    riprende finché stdin non riceve un altro evento (diagnosi 2026-06-12: prima query di sessione
+    appesa indefinitamente, sbloccata solo dal cancel). Costo: ~1s all'avvio, dentro il timeout di
+    connessione del client (30s).
+    """
+    _facade()
     mcp.run()
 
 
