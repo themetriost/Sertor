@@ -1,10 +1,10 @@
 """Server MCP `sertor-rag` basato su `sertor-core`.
 
-Espone la ricerca vettoriale del nucleo (codice / doc / combinata) come tool MCP. Sostituisce il
-vecchio server del prototipo: usa il motore production-grade e la configurazione centralizzata
-(`.env`: provider di embeddings, backend store, corpus). I tool di navigazione del grafo
-(`find_symbol`/`who_calls`/`related_docs`/`get_context`) torneranno col motore GraphRAG (FEAT-005);
-il reranking ibrido vero con il motore ibrido (FEAT-004).
+Espone il retrieval del nucleo come **7 tool MCP**: i 3 di ricerca (codice / doc / combinata —
+col motore selezionato da `SERTOR_ENGINE`, default ibrido BM25+RRF, FEAT-004) e i 4 di
+navigazione strutturale sul code-graph (`find_symbol`/`who_calls`/`related_docs`/`get_context`,
+FEAT-005). Configurazione centralizzata (`.env`: provider di embeddings, backend store, corpus,
+motore).
 
 Consumatore **sottile** (Principio I): i tool delegano alla facade di `sertor_core` e formattano
 i risultati; nessuna logica di retrieval reimplementata. L'osservabilità del retrieval è già

@@ -94,19 +94,26 @@ consumatore sottile.
 **Architettura (le dipendenze puntano verso l'interno):**
 
 ```
-domain/         entità (Document, Chunk, RetrievalResult), porte (Protocol), errori — NESSUN import di SDK
-services/       ingestion · chunking (code/markdown/fallback + dispatch) · indexing · retrieval (facade)
-adapters/       embeddings/{ollama,azure} · vectorstores/{chroma,azure_search} — implementano le porte
-engines/        baseline (1ª modalità RAG) + evaluation (hit_rate@k, MRR)
+domain/         entità (Document, Chunk, RetrievalResult, GraphNode, …), SEI porte Protocol
+                (EmbeddingProvider, VectorStore, LexicalIndex, Reranker, CodeGraph,
+                RetrieverStrategy), errori — NESSUN import di SDK
+services/       ingestion · chunking (code/markdown/fallback + dispatch) · indexing · retrieval
+                (facade) · graph_extraction (code-graph multi-linguaggio, COVERAGE dichiarata)
+adapters/       embeddings/{ollama,azure} · vectorstores/{chroma,azure_search} · lexical/bm25
+                · rerank/flashrank (extra `rerank`) · graph/networkx (extra `graph`, lazy solo query)
+engines/        baseline (vettoriale) · hybrid (BM25+RRF+rerank opzionale, DEFAULT via
+                SERTOR_ENGINE) · evaluation (hit_rate@k, MRR)
 config/         Settings — config centralizzata (UNICA fonte di default; legge env + .env)
 observability/  logging strutturato
-composition.py  composition root: l'UNICO posto che conosce gli adapter concreti e li cabla da Settings
+composition.py  composition root: l'UNICO posto che conosce gli adapter concreti e li cabla da
+                Settings (build_facade/build_indexer/build_engine/build_graph_service/…)
 ```
 
 Regole architetturali da rispettare quando si estende il core:
-- **Il `domain` non importa SDK esterni.** I provider concreti vivono in `adapters/` dietro le porte
-  `Protocol` di `domain/ports.py` (`EmbeddingProvider`, `VectorStore`); structural typing → si mockano
-  senza ereditarietà (vedi `tests/fixtures/mocks.py`).
+- **Il `domain` non importa SDK esterni.** I provider concreti vivono in `adapters/` dietro le SEI
+  porte `Protocol` di `domain/ports.py` (`EmbeddingProvider`, `VectorStore`, `LexicalIndex`,
+  `Reranker`, `CodeGraph`, `RetrieverStrategy`); structural typing → si mockano senza ereditarietà
+  (vedi `tests/fixtures/mocks.py`).
 - **Si sceglie l'implementazione SOLO in `composition.py`**: l'embedder da `Settings.backend`
   (`local`→Ollama · `azure`→Azure OpenAI) e lo store da `Settings.store_backend` (`local`→Chroma ·
   `azure`→Azure AI Search) — **manopole distinte** (FEAT-009, `store_backend` default = `backend`): si
@@ -114,7 +121,10 @@ Regole architetturali da rispettare quando si estende il core:
   provider/backend si estende il composition root e gli adapter, **non** i servizi. Gli import degli SDK
   pesanti sono **lazy** dentro le `build_*` (NFR isolamento dipendenze: l'extra `azure` non serve in locale).
 - **Default solo in `Settings`**, mai hardcodati nei componenti. I consumatori entrano da
-  `build_facade()` / `build_indexer()` / `build_baseline_engine()` (riesportati da `__init__.py`).
+  `build_facade()` / `build_indexer()` / `build_engine()` / `build_graph_service()` /
+  `build_baseline_engine()` (riesportati da `__init__.py`). Il motore si sceglie con
+  `SERTOR_ENGINE` (default `hybrid`); il code-graph è ORTOGONALE ai motori e si costruisce
+  dentro `index()` (default `SERTOR_GRAPH=true`).
 - **Policy errori non uniforme e voluta:** il nucleo è *tollerante* (indice mancante → `[]` + warning,
   per composabilità); il motore baseline è *strict* (solleva `IndexNotFoundError`, per usabilità del
   consumatore). Non "uniformare" questa differenza.
