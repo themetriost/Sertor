@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-12 (FEAT-004: plan 013 completato, prossimo passo /speckit-tasks; + hotfix PR #23: hang prima query MCP risolto con warm-up eager)
+updated: 2026-06-12 (FEAT-004: tasks 013 generati — 32 task in 7 fasi, MVP=US1; prossimo passo /speckit-analyze; + hotfix PR #23 MCP warm-up)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md"]
 ---
 
@@ -49,8 +49,11 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   10/10 (unica deroga tracciata: degradazione REQ-034 vs Principio IV, decisione utente DA-1b).
   Architettura: porta `LexicalIndex` (adapter `rank-bm25` + sidecar JSON nell'index dir), RRF
   client-side, extra `rerank` (FlashRank lazy), `build_engine` nel composition root, facade con
-  strategia iniettata (consumatori invariati); xfail→strict senza rete. *Prossimo passo:*
-  `/speckit-tasks`. *Blocchi:* nessuno.
+  strategia iniettata (consumatori invariati); xfail→strict senza rete. **Tasks generati
+  (2026-06-12):** `tasks.md` con 32 task in 7 fasi (setup → foundational → US1 MVP ricerca ibrida →
+  US2 selezione+degradazione → US3 ground-truth/xfail → US4 rerank → polish+dogfood), percorso
+  critico ~15 passi, Gruppo E senza task by design. *Prossimo passo:* `/speckit-analyze`, poi
+  implement. *Blocchi:* nessuno.
 - Code residue: **tema lingua** (vedi PLANNED). *(Il riavvio del server MCP è avvenuto con la
   nuova sessione del 2026-06-12.)*
 
