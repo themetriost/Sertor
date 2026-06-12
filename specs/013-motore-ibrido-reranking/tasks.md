@@ -85,7 +85,10 @@ query NL ancora pertinente; stessa query → stesso ordine (determinismo). Senza
 - [ ] T011 [US1] Estendi `IndexingService` in `src/sertor_core/services/indexing.py` con parametro
       opzionale `lexical: LexicalIndex | None = None`: se presente, dopo l'upsert vettoriale
       costruisce il sidecar dagli stessi chunk (rebuild congiunto, FR-003); default None →
-      pipeline byte-per-byte invariata (FR-030)
+      pipeline byte-per-byte invariata (FR-030). **Semantica specchio (FR-002):** il sidecar è
+      sempre uno snapshot dell'INTERO set di chunk prodotto da `index()` (in entrambe le modalità
+      rebuild); i flussi di upsert parziale (es. write-back feature 010) NON cablano il sink
+      lessicale — un sidecar-sottoinsieme violerebbe FR-002
 - [ ] T012 [US1] Implementa `rrf()` (funzione pura) + `HybridEngine` in
       `src/sertor_core/engines/hybrid.py`: `name="hybrid"`, `provider`, `index()` (pipeline con
       sink lessicale), `ensure_index()` strict sulla collezione vettoriale (FR-004),
@@ -135,7 +138,9 @@ risultati identici al sistema attuale; valore invalido → `ConfigError` con i v
 - [ ] T017 [US2] Estendi `src/sertor_core/composition.py`: `build_engine(settings)` (selezione
       baseline/hybrid + `ConfigError` su valore invalido — FR-015/017), wiring del sink lessicale
       in `build_indexer()` quando hybrid, iniezione del motore come `retriever` in
-      `build_facade()` quando hybrid (FR-031); import lazy; `build_baseline_engine()` NON toccata
+      `build_facade()` quando hybrid (FR-031); import lazy; `build_baseline_engine()` NON toccata;
+      riesporta `build_engine` da `src/sertor_core/__init__.py` (convenzione: i consumatori entrano
+      dalle factory riesportate)
 - [ ] T018 [US2] Implementa la degradazione REQ-034 in `HybridEngine.retrieve`
       (`src/sertor_core/engines/hybrid.py`): `lexical.exists()` false → retrieval dense-only +
       evento WARNING `lexical_index_missing` (`collection`, `hint` re-index) — mai eccezione
@@ -143,7 +148,8 @@ risultati identici al sistema attuale; valore invalido → `ConfigError` con i v
 - [ ] T019 [US2] Test integrazione end-to-end in `tests/integration/test_hybrid_end_to_end.py`:
       corpus fixture su tmp_path → `build_indexer`-style index → query via facade con strategia
       (stesso formato risultati dei consumatori); confronto `SERTOR_ENGINE=baseline` ≡
-      comportamento attuale (FR-031); marker `integration`, senza rete
+      comportamento attuale (FR-031); marker `integration`, senza rete. Il corpus fixture su
+      tmp_path È la verifica SC-007 (corpus diverso da sertor, zero adattamenti del motore)
 - [ ] T020 [US2] Esegui l'intera suite (`uv run pytest -m "not cloud" -q`) + ruff e sistema fino
       al verde — il baseline e i suoi test DEVONO essere intatti (FR-030)
 
@@ -227,8 +233,9 @@ test) → top-k ri-ordinati dal punteggio del cross-encoder + evento `rerank`.
 **Purpose**: documentazione, validazione live sul corpus reale, chiusura
 
 - [ ] T030 [P] Aggiorna `docs/install.md` (sezione configurazione: `SERTOR_ENGINE` e manopole
-      ibrido/rerank, extra `rerank`, nota migrazione: re-index abilita l'ibrido) e la sezione env
-      del `CLAUDE.md` di radice se elenca le variabili
+      ibrido/rerank, extra `rerank`, nota migrazione: re-index abilita l'ibrido) e la sezione
+      «Setup ed esecuzione» del `CLAUDE.md` di radice (elenca le variabili tipiche: aggiungere
+      `SERTOR_ENGINE` e le manopole ibrido)
 - [ ] T031 Dogfood live sul corpus `sertor` (provider reale Azure): re-index con
       `uv run sertor-rag index .` (costruisce il sidecar lessicale), query a simbolo
       (`EmbeddingProvider`, `IndexNotFoundError`) via `sertor-rag search` confrontando default
