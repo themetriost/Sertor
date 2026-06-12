@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-12 (FEAT-005 GraphRAG aperta: requirements elicitati, DA-1..DA-5 risolte; in giornata anche 🚢 FEAT-004 mergiata PR #24 + hotfix PR #23)
+updated: 2026-06-12 (FEAT-005: IMPLEMENTATA 29/29 — code-graph multi-linguaggio, 4 tool MCP tornati, 321+38 test, dogfood live; prossimo passo PR)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md"]
 ---
 
@@ -25,7 +25,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | Wiki LLM (FEAT-003) | Must | ✅ **completata 2026-06-10** (D 100% + N chiuse; N5/N9 → FEAT-007) |
 | Server MCP (FEAT-MCP) | Should | ✅ master |
 | RAG ibrido + reranking (FEAT-004) | Should | ✅ **master (2026-06-12, PR #24)** — motore di default |
-| GraphRAG (FEAT-005) | Should | 🔄 **in progress** (requirements completi, DA risolte, 2026-06-12) |
+| GraphRAG (FEAT-005) | Should | 🔄 **implementata 29/29 (2026-06-12)** — manca solo la PR |
 | RAG agentico (FEAT-006) | Should | 📋 da decomporre |
 | Manutenzione wiki (FEAT-007) | Should | 📋 da decomporre |
 | CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
@@ -43,7 +43,25 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   8 LSC, DA-1..DA-5 risolte** (porta `CodeGraph` Protocol; build INTEGRATO in `index()`;
   **tutti i 10 linguaggi** — decisione utente, archi per-linguaggio best-effort con copertura
   dichiarata; serializzazione JSON; tool MCP → errore esplicito senza extra; ortogonale a
-  `SERTOR_ENGINE`, REQ-013). *Prossimo passo:* `/speckit-specify` (branch 014). *Blocchi:* nessuno.
+  `SERTOR_ENGINE`, REQ-013). **Spec creata (2026-06-12):** branch `014-motore-grafo`,
+  `specs/014-motore-grafo/spec.md` — 4 user story (P1 grafo+find_symbol MVP; P2 navigazione
+  relazioni; P3 i 4 tool nel server MCP; P4 ground-truth strutturale), 31 FR mappati 1:1 sui
+  REQ EARS, 9 edge case (incluse le due semantiche di assenza), 8 SC, checklist verde, zero
+  NEEDS CLARIFICATION. **Plan completato (2026-06-12):** 7 artefatti di design (research
+  G1..G10, data-model, 3 contracts, quickstart, plan), doppio Constitution Check PASS 10/10
+  SENZA deroghe. Architettura: settima porta `CodeGraph` (adapter networkx, extra `graph` lazy
+  SOLO per le query — il build è JSON puro: `index()` produce sempre il grafo), estrazione pura
+  con mappa `COVERAGE` per-linguaggio dichiarata, artefatto `graph/<corpus>.json` (namespace per
+  solo corpus), 4 tool MCP con warm-up eager (lezione PR #23), ground-truth a due strati (5
+  simboli reali + mini-corpus per i 10 linguaggi). **IMPLEMENTATA 29/29 (2026-06-12):** analyze
+  0-critical (4 fix) → implement completo. Consegnato: porta `CodeGraph` + entità + `GraphNotFoundError`,
+  servizio `graph_extraction` (nodi dai metadati chunker + walk tree-sitter per-linguaggio,
+  fallback declarator per C/C++ — R-3 gestito), adapter `NetworkxCodeGraph` (JSON `sertor.graph/1`
+  atomico, networkx lazy solo query), sink in `index()`, `build_graph_service`, **4 tool MCP
+  tornati** con warm-up esteso. Misure: caller recall 8/8, doc recall 2/2, precisione mini-corpus
+  1.00 (10 linguaggi); dogfood live: 1.180 nodi/1.202 calls, find_symbol esatto, query <0.1ms.
+  Suite **321+38 passed**, ruff pulito. *Prossimo passo:* **PR verso master** su conferma utente
+  (poi distill + riavvio MCP per servire i 4 tool). *Blocchi:* nessuno.
 - Code residue: **riavvio del server MCP** (il processo attivo precede l'ibrido: dal prossimo
   restart servirà `SERTOR_ENGINE=hybrid` automaticamente) · **tema lingua** (vedi PLANNED).
 

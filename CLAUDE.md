@@ -171,6 +171,10 @@ I marker pytest sono definiti in `pyproject.toml`: `cloud` (richiede credenziali
   # Motore di retrieval (FEAT-004): baseline | hybrid (default hybrid). Manopole opzionali:
   # SERTOR_RRF_C, SERTOR_RRF_POOL, SERTOR_RERANK (richiede extra `rerank`), SERTOR_RERANK_POOL
   SERTOR_ENGINE=hybrid
+
+  # Code-graph strutturale (FEAT-005): build dentro index() (default true). Navigazione = extra
+  # `graph`. Manopole: SERTOR_GRAPH_AMBIGUITY, SERTOR_GRAPH_LIMIT_{DEFS,RELS,DOCS}
+  SERTOR_GRAPH=true
   ```
 
 - **Switch backend:** la variabile `RAG_BACKEND` (`local` | `azure`) alterna
@@ -374,14 +378,17 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/013-motore-ibrido-reranking/plan.md` (FEAT-004 — motore RAG ibrido + reranking: via lessicale
-BM25 dietro nuova porta `LexicalIndex` (adapter `rank-bm25` + sidecar JSON nell'index dir), fusione
-RRF deterministica con la via densa, reranking FlashRank opzionale come extra `rerank` lazy;
-`SERTOR_ENGINE` default `hybrid` con degradazione a dense-only + warning sugli indici pre-ibrido
-(REQ-034); selezione SOLO in `composition.py` (`build_engine`), facade con strategia iniettata —
-consumatori MCP/CLI invariati; ground-truth ≥10 coppie che converte i 2 xfail in strict senza rete).
-In `master`: FEAT-001 `specs/001-nucleo-retrieval/plan.md`, FEAT-002 `specs/002-rag-baseline/plan.md`,
-FEAT-003-D `specs/006-nucleo-wiki-deterministico/plan.md`, FEAT-MCP `specs/007-mcp-sertor-core/plan.md`,
-FEAT-011 `specs/011-cli-esecuzione-rag/plan.md`, FEAT-012 `specs/012-sertor-install-wiki/plan.md`;
+`specs/014-motore-grafo/plan.md` (FEAT-005 — motore RAG a grafo / code-graph strutturale: settima
+porta `CodeGraph` (adapter networkx dietro extra `graph`, lazy SOLO per le query — il build è JSON
+puro), estrazione in `services/graph_extraction.py` (nodi dai metadati del chunker, archi
+calls/imports/inherits via tree-sitter con mappa `COVERAGE` per-linguaggio dichiarata — tutti i 10
+linguaggi), build INTEGRATO in `index()` (sink opzionale, mai grafo stantio), artefatto
+`<index_dir>/graph/<corpus>.json` namespaced per solo corpus; 4 tool MCP
+find_symbol/who_calls/related_docs/get_context con warm-up eager; due semantiche di assenza:
+simbolo assente → vuoto esplicito, grafo non costruito → GraphNotFoundError; ortogonale a
+SERTOR_ENGINE). In `master`: FEAT-001 `specs/001-nucleo-retrieval/plan.md`, FEAT-002
+`specs/002-rag-baseline/plan.md`, FEAT-003-D `specs/006-nucleo-wiki-deterministico/plan.md`,
+FEAT-MCP `specs/007-mcp-sertor-core/plan.md`, FEAT-011 `specs/011-cli-esecuzione-rag/plan.md`,
+FEAT-012 `specs/012-sertor-install-wiki/plan.md`, FEAT-004 `specs/013-motore-ibrido-reranking/plan.md`;
 feature 010 (query congiunta + `upsert-index`) `specs/010-query-congiunta-e-upsert-index/plan.md`.
 <!-- SPECKIT END -->

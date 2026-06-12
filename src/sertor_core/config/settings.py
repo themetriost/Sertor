@@ -79,6 +79,13 @@ class Settings:
     rerank_enabled: bool = False           # secondo stadio cross-encoder (default off, R-3)
     rerank_pool: int = 15                  # pool fuso passato al reranker (~3×k, REQ-024)
 
+    # code-graph strutturale (FEAT-005): build integrato in index() + navigazione
+    graph_enabled: bool = True             # build del grafo dentro index() (DA-2)
+    graph_ambiguity_threshold: int = 2     # nomi più ambigui di così → niente archi calls (FR-004)
+    graph_limit_definitions: int = 10      # limiti per sezione di get_context (FR-016)
+    graph_limit_relations: int = 8
+    graph_limit_docs: int = 8
+
     # ingestione
     exclude_patterns: tuple[str, ...] = _DEFAULT_EXCLUDES
 
@@ -150,5 +157,10 @@ class Settings:
             rrf_pool=int(os.getenv("SERTOR_RRF_POOL", "30")),
             rerank_enabled=_bool_env("SERTOR_RERANK", False),
             rerank_pool=int(os.getenv("SERTOR_RERANK_POOL", "15")),
+            graph_enabled=_bool_env("SERTOR_GRAPH", True),
+            graph_ambiguity_threshold=int(os.getenv("SERTOR_GRAPH_AMBIGUITY", "2")),
+            graph_limit_definitions=int(os.getenv("SERTOR_GRAPH_LIMIT_DEFS", "10")),
+            graph_limit_relations=int(os.getenv("SERTOR_GRAPH_LIMIT_RELS", "8")),
+            graph_limit_docs=int(os.getenv("SERTOR_GRAPH_LIMIT_DOCS", "8")),
             exclude_patterns=tuple(excludes) if excludes is not None else _DEFAULT_EXCLUDES,
         )

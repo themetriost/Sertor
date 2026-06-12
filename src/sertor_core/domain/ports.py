@@ -8,7 +8,14 @@ from __future__ import annotations
 
 from typing import Literal, Protocol, runtime_checkable
 
-from sertor_core.domain.entities import EmbeddedChunk, LexicalEntry, RetrievalResult
+from sertor_core.domain.entities import (
+    ContextBundle,
+    EmbeddedChunk,
+    GraphData,
+    LexicalEntry,
+    RetrievalResult,
+    SymbolHit,
+)
 
 DocTypeFilter = Literal["code", "doc", "both"]
 
@@ -130,6 +137,44 @@ class Reranker(Protocol):
         self, query: str, results: list[RetrievalResult], k: int
     ) -> list[RetrievalResult]:
         """Top-k ri-ordinati per rilevanza query-passaggio; `score` = punteggio cross-encoder."""
+        ...
+
+
+@runtime_checkable
+class CodeGraph(Protocol):
+    """Astrazione del code-graph strutturale (FEAT-005, contracts/code-graph-port.md).
+
+    Namespacing per SOLO corpus (il grafo non dipende dal provider di embeddings). Due
+    semantiche di assenza: grafo non costruito → `GraphNotFoundError` (esplicito); simbolo
+    assente → risultati vuoti (legittimo). `build` non richiede la libreria di grafi.
+    """
+
+    def build(self, corpus: str, data: GraphData) -> None:
+        """Sostituisce integralmente l'artefatto del corpus (snapshot, atomico, idempotente)."""
+        ...
+
+    def find_symbol(self, name: str) -> list[SymbolHit]:
+        """Definizioni con match esatto del nome (class/function/method); vuoto se assente."""
+        ...
+
+    def who_calls(self, name: str) -> list[SymbolHit]:
+        """Nodi con arco `calls` uscente verso il simbolo."""
+        ...
+
+    def related_docs(self, name: str) -> list[str]:
+        """Path dei documenti con arco `mentions` verso il simbolo."""
+        ...
+
+    def get_context(self, name: str) -> ContextBundle:
+        """Bundle multi-hop (definizioni, chiamanti, chiamate, basi, doc), sezioni limitate."""
+        ...
+
+    def exists(self, corpus: str) -> bool:
+        """True se l'artefatto grafo del corpus è presente."""
+        ...
+
+    def reset(self, corpus: str) -> None:
+        """Elimina l'artefatto del corpus (assente = no-op)."""
         ...
 
 

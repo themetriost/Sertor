@@ -105,12 +105,35 @@ def collection_name(settings: Settings, embedder: EmbeddingProvider) -> str:
     return base if len(base) >= 3 else f"{base}_idx"
 
 
+def build_graph_service(settings: Settings | None = None):
+    """Costruisce il servizio di code-graph (FEAT-005) — ORTOGONALE a `SERTOR_ENGINE` (REQ-013).
+
+    Factory dedicata: il grafo è navigazione strutturale, non retrieval per similarità; non
+    passa dalla manopola dei motori. L'adapter costruisce l'artefatto SENZA l'extra `graph`;
+    la navigazione lo richiede (import lazy nei metodi di query, errore azionabile — DA-5).
+    """
+    from sertor_core.adapters.graph.networkx_graph import NetworkxCodeGraph
+
+    settings = settings or Settings.load()
+    return NetworkxCodeGraph(
+        settings.index_dir,
+        settings.corpus,
+        limits=(
+            settings.graph_limit_definitions,
+            settings.graph_limit_relations,
+            settings.graph_limit_docs,
+        ),
+    )
+
+
 def build_indexer(settings: Settings | None = None):
     """Costruisce l'orchestratore di indicizzazione cablato dalla configurazione (REQ-029).
 
     Con `engine=hybrid` (default) la pipeline riceve il sink lessicale: ogni `index()` scrive
     anche il sidecar BM25 — è ciò che rende vero l'hint «re-index abilita l'ibrido» (REQ-034).
     Con `baseline` la pipeline è identica a prima della FEAT-004 (REQ-071).
+    Con `graph_enabled` (default) riceve anche il sink del code-graph (FEAT-005, DA-2):
+    un solo comando tiene freschi retrieval e grafo.
     """
     from sertor_core.services.indexing import IndexingService
 
@@ -119,8 +142,10 @@ def build_indexer(settings: Settings | None = None):
     embedder = build_embedder(settings)
     store = build_store(settings)
     lexical = _build_lexical(settings) if engine == "hybrid" else None
+    graph = build_graph_service(settings) if settings.graph_enabled else None
     return IndexingService(
-        embedder, store, collection_name(settings, embedder), settings, lexical=lexical
+        embedder, store, collection_name(settings, embedder), settings,
+        lexical=lexical, graph=graph,
     )
 
 

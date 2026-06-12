@@ -73,6 +73,18 @@ class ProviderMismatchError(SertorError):
         )
 
 
+class GraphNotFoundError(SertorError):
+    """Si interroga un code-graph che non è stato costruito (FEAT-005, FR-007).
+
+    Assenza del GRAFO = errore d'uso esplicito (costruirlo con un index); l'assenza di un
+    SIMBOLO nel grafo è invece un risultato vuoto legittimo (FR-017) — due semantiche distinte.
+    """
+
+    def __init__(self, message: str, *, corpus: str):
+        self.corpus = corpus
+        super().__init__(f"{message} [corpus={corpus}]")
+
+
 class IndexNotFoundError(SertorError):
     """Si interroga un indice che non esiste ancora (REQ-009 di FEAT-002).
 

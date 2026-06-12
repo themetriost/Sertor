@@ -8,7 +8,16 @@ from __future__ import annotations
 import hashlib
 import math
 
-from sertor_core.domain.entities import DocType, EmbeddedChunk, LexicalEntry, RetrievalResult
+from sertor_core.domain.entities import (
+    ContextBundle,
+    DocType,
+    EmbeddedChunk,
+    GraphData,
+    LexicalEntry,
+    RetrievalResult,
+    SymbolHit,
+)
+from sertor_core.domain.errors import GraphNotFoundError
 
 
 class FakeEmbedder:
@@ -148,3 +157,79 @@ class InMemoryLexicalIndex:
 
     def reset(self, collection: str) -> None:
         self._data.pop(collection, None)
+
+
+class FakeCodeGraph:
+    """`CodeGraph` in memoria per i test (NFR-03): due assenze distinte, niente networkx.
+
+    Costruito su `GraphData`; il corpus attivo è quello passato al costruttore (come l'adapter
+    reale, che riceve corpus/limiti dalla composition).
+    """
+
+    def __init__(self, corpus: str = "fake", *, limits: tuple[int, int, int] = (10, 8, 8)):
+        self._corpus = corpus
+        self._limits = limits
+        self._data: dict[str, GraphData] = {}
+
+    def build(self, corpus: str, data: GraphData) -> None:
+        self._data[corpus] = data  # sostituzione integrale (idempotente)
+
+    def _graph(self) -> GraphData:
+        if self._corpus not in self._data:
+            raise GraphNotFoundError(
+                "grafo inesistente: costruiscilo (index) prima di interrogare",
+                corpus=self._corpus,
+            )
+        return self._data[self._corpus]
+
+    def _hit(self, node) -> SymbolHit:
+        qual = node.qualname or node.name
+        return SymbolHit(path=node.path, line=node.line, kind=node.kind,
+                         qualname=qual, ref=f"{node.path}#{qual}")
+
+    def _symbols(self, name: str) -> list:
+        return [n for n in self._graph().nodes
+                if n.name == name and n.kind in ("class", "function", "method")]
+
+    def find_symbol(self, name: str) -> list[SymbolHit]:
+        return sorted((self._hit(n) for n in self._symbols(name)), key=lambda h: h.ref)
+
+    def _by_id(self) -> dict:
+        return {n.id: n for n in self._graph().nodes}
+
+    def who_calls(self, name: str) -> list[SymbolHit]:
+        ids = {n.id for n in self._symbols(name)}
+        by_id = self._by_id()
+        callers = {e.source for e in self._graph().edges if e.type == "calls" and e.target in ids}
+        return sorted((self._hit(by_id[c]) for c in callers if c in by_id), key=lambda h: h.ref)
+
+    def related_docs(self, name: str) -> list[str]:
+        ids = {n.id for n in self._symbols(name)}
+        by_id = self._by_id()
+        docs = {e.source for e in self._graph().edges
+                if e.type == "mentions" and e.target in ids}
+        return sorted(by_id[d].path for d in docs if d in by_id)
+
+    def get_context(self, name: str) -> ContextBundle:
+        defs_limit, rel_limit, docs_limit = self._limits
+        ids = {n.id for n in self._symbols(name)}
+        by_id = self._by_id()
+        callees = {e.target for e in self._graph().edges
+                   if e.type == "calls" and e.source in ids}
+        bases = {e.target for e in self._graph().edges
+                 if e.type == "inherits" and e.source in ids}
+        return ContextBundle(
+            definitions=tuple(self.find_symbol(name)[:defs_limit]),
+            callers=tuple(self.who_calls(name)[:rel_limit]),
+            callees=tuple(sorted((self._hit(by_id[c]) for c in callees if c in by_id),
+                                 key=lambda h: h.ref))[:rel_limit],
+            bases=tuple(sorted((self._hit(by_id[b]) for b in bases if b in by_id),
+                               key=lambda h: h.ref))[:rel_limit],
+            docs=tuple(self.related_docs(name)[:docs_limit]),
+        )
+
+    def exists(self, corpus: str) -> bool:
+        return corpus in self._data
+
+    def reset(self, corpus: str) -> None:
+        self._data.pop(corpus, None)
