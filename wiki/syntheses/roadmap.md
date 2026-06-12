@@ -27,18 +27,26 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | RAG ibrido + reranking (FEAT-004) | Should | ✅ **master (2026-06-12, PR #24)** — motore di default |
 | GraphRAG / code-graph (FEAT-005) | Should | ✅ **master (2026-06-12, PR #25)** — i 4 tool MCP tornati |
 | RAG agentico (FEAT-006) | Should | ⏸ **rinviata (2026-06-12)** — il composito MCP+agente È già agentic RAG; requirements elicitati come dote |
-| Manutenzione wiki (FEAT-007) | Should | 📋 da decomporre |
+| Manutenzione wiki (FEAT-007, assorbe il tema lingua) | Should | 🔄 **in progress** (requirements completi, D1..D4 risolte, 2026-06-12 sera) |
 | CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
 | CLI — installer (`sertor install wiki`) | — | ✅ **master (2026-06-11, PR #22)**; `install rag`/`governance` = stub futuri |
 | Distribuzione multi-assistente: GitHub Copilot (+ Codex Could) | — | 👍 **da decomporre** (decisione utente 2026-06-12) |
-| Tema lingua (asset installer + seed structure init) | — | 👍 **da gestire** (decisione utente 2026-06-11) |
+| Tema lingua (asset installer + seed structure init) | — | ✅ **risolto come design (2026-06-12)**: asset in inglese canonico, contenuto nella lingua dell'ospite — confluito in FEAT-007 |
 
 *Legenda:* ✅ su master · 🧪 operativo, consolidamento aperto · 📋 pianificato · 💀 ramo morto (non su master).
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- *(vuoto — FEAT-006 rinviata con decisione, vedi sotto)*
-- Code residue: **tema lingua** (vedi PLANNED). *(Il riavvio MCP è avvenuto: server riconnesso
+- **FEAT-007 — Manutenzione wiki (+ tema lingua)** — *cosa:* l'ultimo Should aperto del core,
+  asciugato dalla gap analysis: lint B/C già coperti (giudizio/playbook); **probe di freschezza
+  ELIMINATO con decisione** (D1: valore marginale — falsi positivi sui `sources` larghi, il lint
+  B del rituale col contesto dello step lo batte). Resta: `move`-con-link, `reconcile` detection
+  (su `status: superseded`), seed localizzati (tabella it/en), `collect`+status, e il **tema
+  lingua risolto** (D4: asset installer → INGLESE canonico unico, traduzione one-time; la
+  `language` della config governa la lingua del CONTENUTO scritto sull'ospite — implicazione:
+  `.claude/` di Sertor diventa inglese, il wiki interno resta italiano). *Dove:*
+  `requirements/sertor-core/manutenzione-wiki/requirements.md` (gap analysis + 22 REQ residui,
+  D1..D4 risolte). *Prossimo passo:* `/speckit-specify` (branch 015). *Blocchi:* nessuno. *(Il riavvio MCP è avvenuto: server riconnesso
   il 2026-06-12 sera, 7 tool verificati live — `get_context("HybridEngine")` risponde esatto;
   extra `graph` installato anche in `.venv-core`, il venv del server.)*
 
