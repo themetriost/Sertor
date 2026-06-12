@@ -18,7 +18,12 @@ from collections.abc import Mapping
 
 from sertor_core.domain.entities import RetrievalResult
 from sertor_core.domain.errors import ProviderMismatchError
-from sertor_core.domain.ports import DocTypeFilter, EmbeddingProvider, VectorStore
+from sertor_core.domain.ports import (
+    DocTypeFilter,
+    EmbeddingProvider,
+    RetrieverStrategy,
+    VectorStore,
+)
 from sertor_core.observability.logging import log_event
 
 
@@ -33,6 +38,7 @@ class RetrievalFacade:
         default_k: int = 5,
         *,
         extra_collections: Mapping[str, str] | None = None,
+        retriever: RetrieverStrategy | None = None,
     ):
         self._embedder = embedder
         self._store = store
@@ -40,6 +46,10 @@ class RetrievalFacade:
         self._default_k = default_k
         # corpus -> collezione attesa (nome derivato dal provider corrente, vedi composition).
         self._extra_collections = dict(extra_collections or {})
+        # Strategia di retrieval iniettata dal composition root (FEAT-004, FR-017/018): se
+        # presente, il percorso single-collection delega a lei (es. motore ibrido); l'interfaccia
+        # della facade e la sua policy tollerante restano invariate per i consumatori.
+        self._retriever = retriever
 
     def _search(self, query: str, k: int | None, doc_type: DocTypeFilter) -> list[RetrievalResult]:
         k = k or self._default_k
@@ -52,6 +62,10 @@ class RetrievalFacade:
                 doc_type=doc_type,
             )
             return []
+        if self._retriever is not None:
+            # La strategia logga il proprio evento (es. `hybrid_query`); la collezione è già
+            # verificata esistente — la policy tollerante resta della facade.
+            return self._retriever.retrieve(query, k, doc_type)
         started = time.perf_counter()
         vector = self._embedder.embed([query])[0]
         results = self._store.query(self._collection, vector, k, doc_type)

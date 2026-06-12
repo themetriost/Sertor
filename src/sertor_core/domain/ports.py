@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Literal, Protocol, runtime_checkable
 
-from sertor_core.domain.entities import EmbeddedChunk, RetrievalResult
+from sertor_core.domain.entities import EmbeddedChunk, LexicalEntry, RetrievalResult
 
 DocTypeFilter = Literal["code", "doc", "both"]
 
@@ -74,4 +74,73 @@ class VectorStore(Protocol):
         Serve alla ricerca combinata multi-collezione per distinguere un corpus mai indicizzato
         (degradazione morbida) da uno indicizzato con un altro provider (errore esplicito, FR-009).
         """
+        ...
+
+
+@runtime_checkable
+class LexicalIndex(Protocol):
+    """Astrazione dell'indice lessicale del motore ibrido (contracts/lexical-index-port.md).
+
+    Namespacing per `collection` (lo stesso nome namespaced per corpus+provider della collezione
+    vettoriale che rispecchia, FR-005). La policy sull'assenza dell'indice (degradazione REQ-034)
+    è del motore: il chiamante verifica `exists()` prima di `query`.
+    """
+
+    def build(self, collection: str, entries: list[LexicalEntry]) -> None:
+        """Sostituisce integralmente l'indice della collezione (rebuild idempotente, atomico)."""
+        ...
+
+    def query(
+        self,
+        collection: str,
+        query: str,
+        k: int,
+        doc_type: DocTypeFilter = "both",
+    ) -> list[str]:
+        """Chunk id in ordine di rilevanza lessicale, max `k`; filtro doc_type PRIMA del taglio."""
+        ...
+
+    def lookup(self, collection: str, chunk_ids: list[str]) -> list[LexicalEntry]:
+        """Voci per gli id richiesti (ordine preservato, assenti saltati).
+
+        Serve al motore ibrido per materializzare i `RetrievalResult` dei candidati arrivati
+        dalla sola via lessicale (assenti dal pool denso).
+        """
+        ...
+
+    def exists(self, collection: str) -> bool:
+        """True se l'indice lessicale della collezione è presente."""
+        ...
+
+    def reset(self, collection: str) -> None:
+        """Elimina l'indice della collezione (assente = no-op)."""
+        ...
+
+
+@runtime_checkable
+class Reranker(Protocol):
+    """Astrazione del secondo stadio di reranking (FEAT-004, gruppo C — extra opzionale).
+
+    `model` identifica il cross-encoder per l'evento di log `rerank` (REQ-061).
+    """
+
+    model: str
+
+    def rerank(
+        self, query: str, results: list[RetrievalResult], k: int
+    ) -> list[RetrievalResult]:
+        """Top-k ri-ordinati per rilevanza query-passaggio; `score` = punteggio cross-encoder."""
+        ...
+
+
+@runtime_checkable
+class RetrieverStrategy(Protocol):
+    """Strategia di retrieval iniettata nella facade dal composition root (FR-017/018).
+
+    Il chiamante garantisce che la collezione primaria esista (la facade conserva la sua policy
+    tollerante: il check `exists()` + warning restano suoi).
+    """
+
+    def retrieve(self, query: str, k: int, doc_type: DocTypeFilter) -> list[RetrievalResult]:
+        """Retrieval sulla collezione primaria, già verificata esistente."""
         ...

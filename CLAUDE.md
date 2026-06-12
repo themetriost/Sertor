@@ -167,6 +167,10 @@ I marker pytest sono definiti in `pyproject.toml`: `cloud` (richiede credenziali
 
   # Selettore backend: local | azure
   RAG_BACKEND=local
+
+  # Motore di retrieval (FEAT-004): baseline | hybrid (default hybrid). Manopole opzionali:
+  # SERTOR_RRF_C, SERTOR_RRF_POOL, SERTOR_RERANK (richiede extra `rerank`), SERTOR_RERANK_POOL
+  SERTOR_ENGINE=hybrid
   ```
 
 - **Switch backend:** la variabile `RAG_BACKEND` (`local` | `azure`) alterna
@@ -370,13 +374,14 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/012-sertor-install-wiki/plan.md` (FEAT-012 — backbone del comando `sertor` + sottocomando
-`sertor install wiki`: porta il sistema-wiki su un repo ospite. Pacchetto `sertor` distinto in uv
-workspace `packages/sertor/` con modulo `sertor_installer`, dipende da `sertor-core`; artefatti come
-package-data in `assets/` letti via `importlib.resources`, fonte = assets e `.claude/` derivato
-con test di sync anti-drift; non-distruttività per artefatto, fail-fast, install ≠ run). In `master`:
-FEAT-001 `specs/001-nucleo-retrieval/plan.md`, FEAT-002 `specs/002-rag-baseline/plan.md`,
+`specs/013-motore-ibrido-reranking/plan.md` (FEAT-004 — motore RAG ibrido + reranking: via lessicale
+BM25 dietro nuova porta `LexicalIndex` (adapter `rank-bm25` + sidecar JSON nell'index dir), fusione
+RRF deterministica con la via densa, reranking FlashRank opzionale come extra `rerank` lazy;
+`SERTOR_ENGINE` default `hybrid` con degradazione a dense-only + warning sugli indici pre-ibrido
+(REQ-034); selezione SOLO in `composition.py` (`build_engine`), facade con strategia iniettata —
+consumatori MCP/CLI invariati; ground-truth ≥10 coppie che converte i 2 xfail in strict senza rete).
+In `master`: FEAT-001 `specs/001-nucleo-retrieval/plan.md`, FEAT-002 `specs/002-rag-baseline/plan.md`,
 FEAT-003-D `specs/006-nucleo-wiki-deterministico/plan.md`, FEAT-MCP `specs/007-mcp-sertor-core/plan.md`,
-FEAT-011 `specs/011-cli-esecuzione-rag/plan.md`;
+FEAT-011 `specs/011-cli-esecuzione-rag/plan.md`, FEAT-012 `specs/012-sertor-install-wiki/plan.md`;
 feature 010 (query congiunta + `upsert-index`) `specs/010-query-congiunta-e-upsert-index/plan.md`.
 <!-- SPECKIT END -->

@@ -32,6 +32,14 @@ def _split_env(name: str) -> list[str] | None:
     return [p.strip() for p in raw.split(",") if p.strip()]
 
 
+def _bool_env(name: str, default: bool) -> bool:
+    """Parsing booleano tollerante: true/1/yes/on (case-insensitive) → True."""
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in ("true", "1", "yes", "on")
+
+
 @dataclass(frozen=True)
 class Settings:
     """Settaggi del nucleo. Istanziare via `Settings.load()` per leggere env/`.env`."""
@@ -63,6 +71,13 @@ class Settings:
     # retrieval
     default_k: int = 5
     preview_chars: int = 240               # lunghezza anteprima nei risultati CLI (FEAT-011, D5)
+
+    # motore RAG (FEAT-004): selezione + parametri della fusione ibrida e del reranking
+    engine: str = "hybrid"                 # baseline | hybrid — il migliore è il default (D1)
+    rrf_c: int = 60                        # costante RRF (Cormack et al., REQ-011)
+    rrf_pool: int = 30                     # candidati per fonte prima della fusione (REQ-011)
+    rerank_enabled: bool = False           # secondo stadio cross-encoder (default off, R-3)
+    rerank_pool: int = 15                  # pool fuso passato al reranker (~3×k, REQ-024)
 
     # ingestione
     exclude_patterns: tuple[str, ...] = _DEFAULT_EXCLUDES
@@ -130,5 +145,10 @@ class Settings:
             chunk_overlap=int(os.getenv("CHUNK_OVERLAP", "200")),
             default_k=int(os.getenv("DEFAULT_K", "5")),
             preview_chars=int(os.getenv("SERTOR_PREVIEW_CHARS", "240")),
+            engine=os.getenv("SERTOR_ENGINE", "hybrid"),
+            rrf_c=int(os.getenv("SERTOR_RRF_C", "60")),
+            rrf_pool=int(os.getenv("SERTOR_RRF_POOL", "30")),
+            rerank_enabled=_bool_env("SERTOR_RERANK", False),
+            rerank_pool=int(os.getenv("SERTOR_RERANK_POOL", "15")),
             exclude_patterns=tuple(excludes) if excludes is not None else _DEFAULT_EXCLUDES,
         )

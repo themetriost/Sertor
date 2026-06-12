@@ -9,6 +9,7 @@ from __future__ import annotations
 from sertor_core.composition import (
     build_baseline_engine,
     build_embedder,
+    build_engine,
     build_facade,
     build_indexer,
     build_store,
@@ -38,6 +39,7 @@ from sertor_core.engines.evaluation import EvalReport, evaluate
 __all__ = [
     "build_facade",
     "build_indexer",
+    "build_engine",
     "build_baseline_engine",
     "build_embedder",
     "build_store",

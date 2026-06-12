@@ -95,6 +95,20 @@ class EmbeddedChunk:
 
 
 @dataclass(frozen=True)
+class LexicalEntry:
+    """Voce dell'indice lessicale del motore ibrido (FEAT-004, FR-001/002).
+
+    Rispecchia un chunk indicizzato nel vector store: stessa identità (`chunk_id`) e stesso
+    `doc_type` (per il filtro coerente sulle due vie del retrieval ibrido).
+    """
+
+    chunk_id: str
+    text: str
+    doc_type: str
+    path: str
+
+
+@dataclass(frozen=True)
 class RetrievalResult:
     """Risultato restituito dalla facade per ogni hit (REQ-025)."""
 

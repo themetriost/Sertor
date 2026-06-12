@@ -6,10 +6,25 @@ misura non è fatta" (Principio V): la misura è il criterio oggettivo di accett
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Protocol, runtime_checkable
 
-from sertor_core.engines.baseline import BaselineEngine
+from sertor_core.domain.entities import RetrievalResult
 
 GroundTruth = list[tuple[str, list[str]]]  # (query, expected_paths)
+
+
+@runtime_checkable
+class QueryableEngine(Protocol):
+    """Qualsiasi motore RAG misurabile: basta `query` + `provider` (structural typing).
+
+    Generalizzazione FEAT-004 (REQ-051): la valutazione confronta baseline, ibrido e
+    ibrido+rerank con la stessa funzione — solo annotazione, zero cambi di comportamento.
+    """
+
+    @property
+    def provider(self) -> str: ...
+
+    def query(self, query: str, k: int | None = None) -> list[RetrievalResult]: ...
 
 
 @dataclass(frozen=True)
@@ -23,7 +38,7 @@ class EvalReport:
 
 
 def evaluate(
-    engine: BaselineEngine,
+    engine: QueryableEngine,
     ground_truth: GroundTruth,
     ks: tuple[int, ...] = (1, 3, 5, 10),
 ) -> EvalReport:

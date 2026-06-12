@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-11 sera (🚢🚢 DOPPIA consegna in giornata: PR #21 `sertor-rag` + PR #22 installer `sertor install wiki`, entrambe validate live; 👍 tema lingua da gestire)
+updated: 2026-06-12 (FEAT-004: IMPLEMENTATA 32/32 — ibrido BM25+RRF+rerank, 273+38 test, xfail chiusi strict, dogfood live; prossimo passo PR)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md"]
 ---
 
@@ -14,7 +14,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > `requirements → spec → plan → tasks → implement`.
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-06-11)
+## ⚡ Executive summary (stato al 2026-06-12)
 
 ### 📊 Roadmap a colpo d'occhio
 
@@ -24,7 +24,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | Motore baseline (FEAT-002) | Must | ✅ master |
 | Wiki LLM (FEAT-003) | Must | ✅ **completata 2026-06-10** (D 100% + N chiuse; N5/N9 → FEAT-007) |
 | Server MCP (FEAT-MCP) | Should | ✅ master |
-| RAG ibrido + reranking (FEAT-004) | Should | 🔄 **in progress** (requirements in corso, 2026-06-11) |
+| RAG ibrido + reranking (FEAT-004) | Should | 🔄 **implementata 32/32 (2026-06-12)** — manca solo la PR |
 | GraphRAG (FEAT-005) | Should | 📋 da decomporre |
 | RAG agentico (FEAT-006) | Should | 📋 da decomporre |
 | Manutenzione wiki (FEAT-007) | Should | 📋 da decomporre |
@@ -39,13 +39,27 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 - **FEAT-004 — Motore RAG ibrido + reranking** — *cosa:* secondo motore RAG del core (BM25+vector
   fusi con RRF + reranking opzionale; ricetta da [[llm-wiki-v2-agentmemory]] e prototipo 02);
   obiettivo: qualità di `search_code` su query architetturali, **dimostrata** dal ground-truth set
-  (chiude i 2 xfail). *Dove:* `requirements/sertor-core/motore-ibrido/requirements.md` — **36 REQ
-  EARS, domande D1..D4 tutte risolte** (decisioni: `SERTOR_ENGINE` default **hybrid** con
-  degradazione a vettoriale+warning sugli indici pre-ibrido; nativo per-store resta Could, core
-  store-agnostico; latenza qualitativa; 5-6 coppie ground-truth nel design). *Prossimo passo:*
-  `/speckit-specify`. *Blocchi:* nessuno.
-- Code residue: **riavvio del server MCP** alla prossima sessione (codice core cambiato con
-  011+012) · **tema lingua** (vedi PLANNED).
+  (chiude i 2 xfail). *Dove:* branch `013-motore-ibrido-reranking`,
+  `specs/013-motore-ibrido-reranking/spec.md` — **spec creata il 2026-06-12** (4 user story
+  P1..P4, 32 FR mappati 1:1 sui REQ EARS, 8 SC, checklist qualità tutta verde, zero NEEDS
+  CLARIFICATION); fonte EARS `requirements/sertor-core/motore-ibrido/requirements.md` (D1..D4 +
+  DA-1b risolte: `SERTOR_ENGINE` default **hybrid** con degradazione a vettoriale+warning sugli
+  indici pre-ibrido). **Plan completato (2026-06-12):** 7 artefatti di design
+  (research D1..D12, data-model, 3 contracts, quickstart, plan), doppio Constitution Check PASS
+  10/10 (unica deroga tracciata: degradazione REQ-034 vs Principio IV, decisione utente DA-1b).
+  Architettura: porta `LexicalIndex` (adapter `rank-bm25` + sidecar JSON nell'index dir), RRF
+  client-side, extra `rerank` (FlashRank lazy), `build_engine` nel composition root, facade con
+  strategia iniettata (consumatori invariati); xfail→strict senza rete. **IMPLEMENTATA 32/32
+  (2026-06-12):** analyze 0-critical → implement completo in giornata. Consegnato: porta
+  `LexicalIndex` + adapter `Bm25LexicalIndex` (sidecar JSON atomico), `HybridEngine` + `rrf()`,
+  sink lessicale in `IndexingService`, `build_engine` + facade con strategia, adapter FlashRank
+  (extra `rerank`), ground-truth 11 coppie, **2 xfail → strict e verdi** (baseline hit@5 0.00 →
+  ibrido 0.73; simboli 0.00 → 1.00; +rerank MRR 0.939). Suite **273 + 38 passed**, ruff pulito,
+  dogfood live (degradazione REQ-034 osservata, re-index 304 doc/2675 chunk + sidecar, ibrido
+  servito da CLI in 666ms). *Prossimo passo:* **PR verso master** su conferma utente (poi distill
+  + riavvio MCP per servire l'ibrido). *Blocchi:* nessuno.
+- Code residue: **tema lingua** (vedi PLANNED). *(Il riavvio del server MCP è avvenuto con la
+  nuova sessione del 2026-06-12.)*
 
 ### 📋 PLANNED (per priorità)
 - **FEAT-004 ibrido+reranking** — candidato naturale: migliora la qualità di `search_code` (debolezza
@@ -64,6 +78,10 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### ✅ DONE (su `master`, le rilevanti)
 
+- **Hotfix server MCP (PR #23, 2026-06-12)** — risolto l'hang della prima query di sessione su
+  Windows (init pigro di Chroma parcheggiava il task fino al prossimo evento stdin): warm-up eager
+  della facade in `main()`; prima chiamata da 51+ min appesa → 0.6s; metodo di troubleshooting
+  documentato in [[mcp-server]]. 222 test verdi.
 - **Installer `sertor install wiki` (feature 012, PR #22, 2026-06-11 sera)** — il pacchetto
   **`sertor` distinto** (uv workspace) che porta il sistema-wiki su qualunque ospite
   ([[sertor-installer]]): non distruttivo per artefatto, idempotente, install≠run, assets
@@ -189,6 +207,7 @@ già su master).
 | **Logging come strategia runtime** (osservabilità porta+adapter scelta a runtime) | Oggi la CLI non instrada i log da nessuna parte | Refactor deterministico → SpecKit | 💡 idea |
 | **Tema lingua** (seed `structure init` + asset testuali dell'installer in italiano fisso anche con `language=en`) | Coerenza dell'esperienza su ospiti non-italiani | Seed: fix D in `wiki_tools`; asset: per-lingua o generazione; casa FEAT-007 + evoluzione installer | 👍 **da gestire** (utente, 2026-06-11) |
 | **Adapter VectorStore per PGVector / MongoDB su Azure** | Ibrido e retrieval su store cloud alternativi ad AI Search (il motore ibrido è già store-agnostico via porte) | Nuovi adapter della porta `VectorStore` (+ eventuale delega ibrida nativa per Atlas Search); feature separata da FEAT-004 | 💡 idea (da DA-2 FEAT-004, 2026-06-11) |
+| **Timeout espliciti su embed/query (server MCP e adapter)** | L'hang della prima query MCP è stato diagnosticato e **risolto** (causa vera: init pigro di Chroma nella prima tool call parcheggiava il task su Windows → warm-up eager in `main()`, **hotfix PR #23**, vedi [[mcp-server]]); i timeout generici restano una rifinitura di robustezza | Timeout configurabile in `Settings` + eccezione di dominio | 💡 idea ridimensionata (hang risolto 2026-06-12) |
 
 ---
 
