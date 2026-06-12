@@ -3,7 +3,7 @@ title: Indice del Wiki — Produzione Sertor
 type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
-updated: 2026-06-12 (+ [[hybrid-retrieval]] — seconda modalità RAG e nuovo default, feature 013/PR #24; [[ports-adapters]] a cinque porte; troubleshooting in [[mcp-server]], PR #23)
+updated: 2026-06-12 (sera: + [[code-graph]] — i 4 tool MCP tornati, feature 014/PR #25, porte a sei; pomeriggio: + [[hybrid-retrieval]] PR #24; mattina: troubleshooting [[mcp-server]] PR #23)
 sources: ["requirements/sertor-core/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "src/sertor_core/**", "CLAUDE.md"]
 ---
 
@@ -27,7 +27,7 @@ Quattro porte d'ingresso, per intento — ogni percorso parte da una pagina-over
 | Vuoi… | Percorso |
 |---|---|
 | **Sapere dove siamo e cosa fare adesso** | [[roadmap]] (executive summary in testa, poi mappa feature × stato reale) |
-| **Capire il prodotto (il nucleo di retrieval)** | [[retrieval-core]] → le 4 entità: [[domain-model]] · [[ports-adapters]] · [[chunking-dispatch]] · [[indexing-and-retrieval]] → le modalità RAG: [[vector-retrieval]] · [[hybrid-retrieval]] (default) → le superfici: [[thin-consumer]] · [[mcp-server]] |
+| **Capire il prodotto (il nucleo di retrieval)** | [[retrieval-core]] → le 4 entità: [[domain-model]] · [[ports-adapters]] · [[chunking-dispatch]] · [[indexing-and-retrieval]] → le modalità RAG: [[vector-retrieval]] · [[hybrid-retrieval]] (default) → la navigazione ortogonale: [[code-graph]] → le superfici: [[thin-consumer]] · [[mcp-server]] |
 | **Capire il sistema-wiki (questo wiki)** | [[architettura-wiki-llm]] → la metà deterministica [[wiki-tools]] → il principio che li separa [[deterministic-vs-judgment]] → la disciplina d'uso [[step-ritual]] |
 | **Conoscere le regole del gioco** | [[constitution]] (10 principi vincolanti) · [[mission-vision]] (il perché) · [[dogfooding]] (come ci usiamo) |
 
@@ -63,6 +63,7 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 - **[[indexing-and-retrieval]]** — Le **due pipeline**: indicizzazione (ingest→chunk→embed→store, atomicità del rebuild) e la **facade** `search_code/docs/combined`, tollerante su indice assente (`[]`+warning). Punto d'ingresso dei consumatori via `build_facade()`.
 - **[[vector-retrieval]]** — La **prima modalità RAG**: retrieval vettoriale (embed query → similarity top-k) realizzato dal motore baseline; policy errore *strict* (`IndexNotFoundError`) + valutazione hit-rate@k/MRR@10. Dal 2026-06-12 non è più il default (→ [[hybrid-retrieval]]) ma resta la baseline di confronto, selezionabile con `SERTOR_ENGINE=baseline`.
 - **[[hybrid-retrieval]]** — La **seconda modalità RAG e nuovo default** (FEAT-004, PR #24): BM25 lessicale (porta `LexicalIndex`, sidecar atomico) + via densa fusi con RRF deterministico; degradazione onesta sui corpora pre-ibrido (warning, mai errore); reranking FlashRank come extra opzionale; consumatori invariati via strategia iniettata. Qualità: simboli hit@5 0→1.00, xfail storici chiusi strict.
+- **[[code-graph]]** — La **navigazione strutturale del codice** (FEAT-005, PR #25), ortogonale ai motori: grafo AST deterministico (porta `CodeGraph`, artefatto JSON per corpus, build dentro `index()` — mai stantio), copertura per-linguaggio DICHIARATA e verificata sui 10 linguaggi; i 4 tool MCP storici tornati (find_symbol/who_calls/related_docs/get_context); due semantiche di assenza, niente LLM/cloud.
 - **[[thin-consumer]]** — Il pattern per cui le interfacce (CLI, server MCP, tool) espongono il [[retrieval-core]] importandolo e cablandolo dalle factory `build_*`, **senza reimplementare logica**: il prodotto è la libreria, l'interfaccia è un guscio sottile (host-agnostico, Principio X). Esempio realizzato: il server MCP.
 - **[[dogfooding]]** — Interrogare il progetto stesso col proprio RAG: Sertor indicizza il proprio codice/doc come corpus e li consulta coi suoi tool (server MCP `sertor-rag`) invece di leggerli a mano. Validazione continua + contesto ancorato.
 - **[[deterministic-vs-judgment]]** — Il confine **meccanico** (codice, zero LLM, testabile) ↔ **giudizio** (LLM: cosa scrivere, è una contraddizione?). Principio trasversale: massimizza il deterministico, riserva all'LLM solo il giudizio; guida anche la delega.

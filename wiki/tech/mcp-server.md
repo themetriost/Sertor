@@ -3,7 +3,7 @@ title: Server MCP sertor-rag
 type: tech
 tags: [mcp, server, sertor-mcp, thin-consumer, retrieval, dogfooding, sertor-core]
 created: 2026-06-08
-updated: 2026-06-12 (warm-up eager della facade in main(), PR #23 — fix dell'hang della prima query su Windows; + sezione troubleshooting)
+updated: 2026-06-12 (sera: superficie a 7 tool — tornati i 4 di grafo, FEAT-005/PR #25; mattina: warm-up eager PR #23 + troubleshooting)
 sources: ["src/sertor_mcp/server.py", ".mcp.json"]
 ---
 
@@ -15,7 +15,7 @@ Il **server MCP `sertor-rag`** (`src/sertor_mcp/server.py`) è la **superficie**
 sottile]] — delega tutto alla facade del core, non reimplementa retrieval — e **sostituisce** il vecchio
 server del prototipo come superficie attiva (FEAT-MCP, record: [[server-mcp-produzione-feat-mcp]]).
 
-## I tre tool
+## I sette tool
 
 Istanza `FastMCP("sertor-rag")` con `instructions` che guidano la scelta del tool. Ogni tool delega al
 metodo omonimo della [[indexing-and-retrieval|facade]]:
@@ -28,6 +28,20 @@ metodo omonimo della [[indexing-and-retrieval|facade]]:
 
 Il fan-out multi-collezione arriva **gratis** al server senza toccarlo (è il senso del thin-consumer: la
 capacità vive nella facade, la superficie la eredita dalla configurazione).
+
+Dal 2026-06-12 (FEAT-005, PR #25) sono **tornati i 4 tool di navigazione strutturale** sul
+[[code-graph]] — la promessa del docstring è mantenuta:
+
+| Tool | Domanda a cui risponde |
+|---|---|
+| `find_symbol(name)` | dove è definito il simbolo (path, riga, kind, qualname) |
+| `who_calls(name)` | chi lo chiama (chiamanti diretti) |
+| `related_docs(name)` | quali documenti lo menzionano |
+| `get_context(name)` | bundle multi-hop: definizioni + chiamanti + chiamate + basi + doc |
+
+Delegano al servizio `build_graph_service()` del core (memoizzato come la facade); risposte
+citabili `ref = path#qualname`; simbolo assente → liste vuote; grafo non costruito o extra
+`graph` assente → errore strutturato azionabile (mai crash).
 
 La facade è costruita **una volta** con `build_facade(Settings.load())` memoizzata via `@lru_cache(maxsize=1)`
 e riusata da tutti i tool. Dal 2026-06-12 (PR #23) il warm-up è **eager**: `main()` costruisce la facade
@@ -54,9 +68,10 @@ presentazione del server, non di dominio). Pensato per essere **citato** dal cli
 ## Avvio e binding
 
 Trasporto **stdio**: lo lancia il client MCP via `.mcp.json` (`python -m sertor_mcp.server`) con env
-`SERTOR_CORPUS=sertor` → fa **[[dogfooding]]** sul corpus di produzione. I tool di **grafo**
-(`find_symbol`/`who_calls`/`related_docs`/`get_context`) e il **reranking ibrido** torneranno coi motori
-GraphRAG (FEAT-005) e ibrido (FEAT-004), registrabili non-breaking.
+`SERTOR_CORPUS=sertor` → fa **[[dogfooding]]** sul corpus di produzione. Le promesse del 2026-06-08
+sono state mantenute entrambe il 2026-06-12: il retrieval **ibrido** arriva gratis dalla facade
+([[hybrid-retrieval]], PR #24) e i tool di **grafo** sono registrati (FEAT-005, PR #25). Il warm-up
+di `main()` copre facade E grafo (tollerante ad assenze).
 
 ## Troubleshooting (metodo collaudato, 2026-06-12)
 

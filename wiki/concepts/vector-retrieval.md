@@ -43,7 +43,8 @@ Non è retrieval **ibrido** (BM25 + dense), né **reranking**, né **GraphRAG**,
 2026-06-12 la modalità ibrida **esiste** ([[hybrid-retrieval]], FEAT-004) ed è il **default**
 (`SERTOR_ENGINE=hybrid`): il vector retrieval resta la via densa che l'ibrido ingloba, la baseline
 di confronto nelle misure (`evaluate()`), e la modalità selezionabile con `SERTOR_ENGINE=baseline`
-(risultati identici a prima). GraphRAG e agentic restano future (FEAT-005/006).
+(risultati identici a prima). Il [[code-graph]] (FEAT-005, dal 2026-06-12) NON è una modalità di
+retrieval ma navigazione strutturale ortogonale; il motore agentico resta futuro (FEAT-006).
 
 ## Vedi anche
 - La modalità che lo estende (e oggi default): [[hybrid-retrieval]].

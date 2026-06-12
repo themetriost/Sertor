@@ -3,7 +3,7 @@ title: Porte e adapter (boundary del retrieval-core)
 type: concept
 tags: [ports, adapters, protocol, hexagonal, clean-architecture, sertor-core, composition]
 created: 2026-06-08
-updated: 2026-06-12 (FEAT-004: +LexicalIndex, Reranker, RetrieverStrategy — da due a cinque porte)
+updated: 2026-06-12 (sera: +CodeGraph, FEAT-005 — sei porte; pomeriggio: +LexicalIndex/Reranker/RetrieverStrategy, FEAT-004)
 sources: ["src/sertor_core/domain/ports.py", "src/sertor_core/composition.py", "src/sertor_core/adapters/**"]
 ---
 
@@ -13,8 +13,9 @@ Le **porte** del [[retrieval-core]] sono i **boundary astratti** dietro cui vivo
 nucleo dipende **solo** da esse (Principio I/II della [[constitution|Costituzione]]), gli **adapter** in
 `adapters/` le implementano importando gli SDK esterni. Vivono in `domain/ports.py`, definite come
 **`Protocol`** (structural typing): un adapter è conforme se ha i metodi giusti, **senza ereditare nulla** —
-così è banale da mockare nei test (tutte `@runtime_checkable`). Le porte sono **cinque**: le due
-fondative qui sotto, più le tre della FEAT-004 ([[hybrid-retrieval]]).
+così è banale da mockare nei test (tutte `@runtime_checkable`). Le porte sono **sei**: le due
+fondative qui sotto, le tre della FEAT-004 ([[hybrid-retrieval]]) e la `CodeGraph` della
+FEAT-005 ([[code-graph]]).
 
 ## Le due porte fondative
 
@@ -40,6 +41,13 @@ fondative qui sotto, più le tre della FEAT-004 ([[hybrid-retrieval]]).
   retrieval nella facade (`retrieve(query, k, doc_type)`): i consumatori non cambiano quando
   cambia il motore.
 
+## La porta della FEAT-005 ([[code-graph]])
+
+- **`CodeGraph`** — navigazione strutturale: `build` (snapshot atomico, NON richiede la libreria
+  di grafi), `find_symbol`/`who_calls`/`related_docs`/`get_context`, `exists`/`reset`.
+  Namespace per **solo corpus** (il grafo non dipende dagli embeddings). Due semantiche di
+  assenza: grafo non costruito → `GraphNotFoundError`; simbolo assente → vuoto esplicito.
+
 Le porte parlano in termini di [[domain-model|entità di dominio]] (`EmbeddedChunk`,
 `RetrievalResult`, `LexicalEntry`): è ciò che impedisce a uno schema di backend di risalire nel
 nucleo.
@@ -52,6 +60,7 @@ nucleo.
 | `VectorStore` | `adapters/vectorstores/chroma.py` (`ChromaStore`) | `adapters/vectorstores/azure_search.py` (`AzureSearchStore`) |
 | `LexicalIndex` | `adapters/lexical/bm25.py` (`Bm25LexicalIndex`, sidecar JSON) | — (delega nativa per-store = Could, Gruppo E) |
 | `Reranker` | `adapters/rerank/flashrank.py` (`FlashRankReranker`, extra `rerank`) | — |
+| `CodeGraph` | `adapters/graph/networkx_graph.py` (`NetworkxCodeGraph`, extra `graph` solo per le query) | — |
 
 ## Il composition root sceglie
 
