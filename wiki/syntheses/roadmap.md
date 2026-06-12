@@ -37,9 +37,9 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 ### 🔄 IN PROGRESS (dettaglio)
 
 - *(vuoto — FEAT-005 consegnata con PR #25)*
-- Code residue: **riavvio del server MCP** (il processo attivo precede ibrido e grafo: dal
-  prossimo restart servirà `SERTOR_ENGINE=hybrid` e i **7 tool** automaticamente) · **tema
-  lingua** (vedi PLANNED).
+- Code residue: **tema lingua** (vedi PLANNED). *(Il riavvio MCP è avvenuto: server riconnesso
+  il 2026-06-12 sera, 7 tool verificati live — `get_context("HybridEngine")` risponde esatto;
+  extra `graph` installato anche in `.venv-core`, il venv del server.)*
 
 ### 📋 PLANNED (per priorità)
 - **FEAT-006 agentico** — il quarto motore, da decomporre.
