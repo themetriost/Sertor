@@ -71,6 +71,7 @@ def _page_meta(rel_path: str, full_path: Path, profile: WikiProfile) -> dict:
         "type": str(fields.get("type", "")),
         "title": str(fields.get("title", "")),
         "tags": list(tags) if isinstance(tags, list) else ([str(tags)] if tags else []),
+        "status": str(fields.get("status", "")),  # feature 017: additivo, forward-compatible
         "frontmatter_present": has_frontmatter(text),
         "wikilinks": extract_wikilinks(text),
     }

@@ -158,6 +158,48 @@ class MigrateResult:
 
 
 @dataclass(frozen=True)
+class MoveResult:
+    """`wiki.move/1` — esito dello spostamento di una pagina con riscrittura dei link (feature 017).
+
+    `rewritten`: lista di `{"page": rel_path, "occurrences": int}` per i file in cui sono stati
+    riscritti link. `moved`: True se il file è stato spostato (False in `--dry-run` o in recovery
+    quando il file era già a destinazione).
+    """
+
+    source: str
+    destination: str
+    rewritten: list[dict] = field(default_factory=list)
+    moved: bool = False
+    dry_run: bool = False
+    schema: str = "wiki.move/1"
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    def to_json(self) -> str:
+        return _to_json(self.to_dict())
+
+
+@dataclass(frozen=True)
+class ReconcileResult:
+    """`wiki.reconcile/1` — candidate all'obsolescenza (sola lettura, feature 017).
+
+    `candidates`: lista di `{"path", "status", "updated", "superseded_by", "reason"}`. `clean`:
+    True se non ci sono pagine `status: superseded`. Il comando non modifica mai alcun file.
+    """
+
+    candidates: list[dict] = field(default_factory=list)
+    clean: bool = True
+    schema: str = "wiki.reconcile/1"
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    def to_json(self) -> str:
+        return _to_json(self.to_dict())
+
+
+@dataclass(frozen=True)
 class ErrorResult:
     """`wiki.error/1` — errore esplicito (Principio IV); niente stato parziale."""
 

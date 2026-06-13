@@ -165,6 +165,16 @@ promemoria automatici non scattano).
 partire dalla **`wiki.config.toml`** (quella generata dall'installer, o scritta a mano usando quella
 di Sertor come esempio). Il sottocomando `install governance` è pianificato ma non ancora disponibile.
 
+**Manutenzione del wiki (feature 017):**
+- `sertor-wiki-tools move <src> <dest> [--dry-run]` — sposta/rinomina una pagina e **riscrive tutti i
+  link entranti** (wikilink `[[...]]` e link relativi), senza romperli; `--dry-run` mostra il piano
+  senza modificare nulla; fallisce se la destinazione esiste già.
+- `sertor-wiki-tools reconcile [--json]` — elenca (sola lettura) le pagine marcate
+  `status: superseded` (con l'eventuale `superseded_by`), come check delle obsolescenze; non modifica
+  mai nulla. Per un report **periodico**, schedula tu il comando con l'ambiente ospite (cron / Task
+  Scheduler / hook CI), es. `sertor-wiki-tools reconcile --json > reports/wiki-obsolete.json` —
+  il prodotto non incorpora uno scheduler.
+
 ## 6. Capacità RAG con un comando: `sertor install rag`
 
 `sertor install rag` porta l'intera capacità RAG su un repo ospite — **anche non-Python** (es. .NET):
