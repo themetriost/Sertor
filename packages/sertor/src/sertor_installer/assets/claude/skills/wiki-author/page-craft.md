@@ -1,138 +1,135 @@
-# Come si scrive una pagina ben fatta — anatomia del page-craft
+# How to write a well-crafted page — anatomy of page-craft
 
-> **Pagina di riferimento (foglia).** Descrive *com'è fatta una buona pagina del wiki* — struttura,
-> contenuto, significato, link. È **linkata da** chi crea o riscrive pagine (`ops/record.md`,
-> `ops/ingest.md`, `ops/query.md`, e il giudizio di `ops/lint.md` livello C e `ops/reorg.md`). È una
-> **foglia**: non dipende da altri documenti del sistema — le operazioni la referenziano, non viceversa.
-> Per il livello *sopra* — *cosa merita di essere una pagina* e come l'insieme tiene insieme (archetipi,
-> pagine di struttura, i due assi, igiene del grafo): la pagina gemella [`wiki-craft.md`](wiki-craft.md).
+> **Reference page (leaf).** Describes *what a good wiki page looks like* — structure,
+> content, meaning, links. It is **linked from** whoever creates or rewrites pages (`ops/record.md`,
+> `ops/ingest.md`, `ops/query.md`, and the judgment of `ops/lint.md` level C and `ops/reorg.md`). It is a
+> **leaf**: it does not depend on other documents in the system — the operations reference it, not the other way around.
+> For the level *above* — *what deserves to be a page* and how the whole holds together (archetypes,
+> structure pages, the two axes, graph hygiene): the twin page [`wiki-craft.md`](wiki-craft.md).
 >
-> **Host-agnostica (Principio X).** I principi qui valgono su qualunque host; ciò che *varia* — campi del
-> frontmatter, sintassi dei link, e l'esistenza di costrutti come TOC automatico, tag, stato/owner, redirect
-> o gerarchie genitore/figlio — viene dal profilo dell'ospite (`wiki.config.toml`) e dalle capacità
-> dell'host. Gli esempi concreti (`[[wikilink]]`, `concepts/`, `title/type/tags…`) sono **illustrativi**,
-> non leggi universali: su un altro progetto cambia solo la resa, non i principi.
+> **Host-agnostic (Principle X).** The principles here apply on any host; what *varies* — frontmatter
+> fields, link syntax, and the existence of constructs such as automatic TOC, tags, status/owner, redirects
+> or parent/child hierarchies — comes from the host profile (`wiki.config.toml`) and from the
+> host's capabilities. The concrete examples (`[[wikilink]]`, `concepts/`, `title/type/tags…`) are **illustrative**,
+> not universal laws: on another project only the rendering changes, not the principles.
 
-Una pagina ben fatta ha quattro qualità: una **struttura** prevedibile, **contenuto** azionabile, il giusto
-**livello di significato**, e **link** densi. Le prime due sono forma, il significato è sostanza, i link
-sono ciò che trasforma un insieme di pagine in una *wiki*.
+A well-crafted page has four qualities: a predictable **structure**, actionable **content**, the right
+**level of meaning**, and dense **links**. The first two are form, meaning is substance, links are what
+transforms a set of pages into a *wiki*.
 
-## 1. Struttura della pagina (dall'alto in basso)
+## 1. Page structure (top to bottom)
 
-1. **Titolo univoco** — descrive **una** cosa. Niente titoli vaghi ("Note", "Varie") né doppioni con altre
-   pagine (il naming kebab-case e l'unicità sono verificabili meccanicamente, lint A).
-2. **Lead (apertura)** — in 1–3 righe risponde a «di cosa parla questa pagina?» **senza presupporre** che il
-   lettore abbia letto altro. Deve reggere da solo: è spesso l'unica cosa che viene letta, ed è il primo
-   chunk che il RAG recupera *fuori contesto*. Apri con «**X è …**», non con «Questo concetto è stato visto
-   in…».
-3. **Indice (TOC)** — *se l'host lo genera* (Obsidian, MediaWiki…) e la pagina supera ~3–4 sezioni. Nei wiki
-   a soli file Markdown è opzionale.
-4. **Corpo a sezioni** con heading **gerarchici reali** (H2 per le sezioni principali, H3 per le
-   sotto-sezioni): la gerarchia riflette il contenuto, non è decorativa.
-5. **"Vedi anche" / correlati** in fondo — *supplemento* di navigazione (vedi §4: non sostituisce i link
-   inline).
-6. **Riferimenti / fonti** se la pagina afferma fatti verificabili (es. campo frontmatter
+1. **Unique title** — describes **one** thing. No vague titles ("Notes", "Misc") and no duplicates with other
+   pages (kebab-case naming and uniqueness are mechanically verifiable, lint A).
+2. **Lead (opening)** — in 1–3 lines answers «what is this page about?» **without assuming** that the
+   reader has read anything else. It must stand on its own: it is often the only thing that gets read, and it is the first
+   chunk the RAG retrieves *out of context*. Open with «**X is …**», not with «This concept was seen in…».
+3. **Table of contents (TOC)** — *if the host generates it* (Obsidian, MediaWiki…) and the page exceeds ~3–4 sections. In
+   markdown-only wikis it is optional.
+4. **Body in sections** with **real hierarchical** headings (H2 for main sections, H3 for
+   sub-sections): the hierarchy reflects the content, it is not decorative.
+5. **"See also" / related** at the bottom — a navigation *supplement* (see §4: does not replace inline links).
+6. **References / sources** if the page asserts verifiable facts (e.g. frontmatter field
    `sources`).
-7. **Metadati** — il frontmatter coi campi attesi dal profilo (`frontmatter_required`/`_optional` in
-   config; es. `title`, `type`, `tags`, `created`, `updated`, `sources`). Campi come stato
-   (bozza/in revisione/stabile) o owner **solo se** l'host/profilo li prevede.
+7. **Metadata** — the frontmatter with the fields expected by the profile (`frontmatter_required`/`_optional` in
+   config; e.g. `title`, `type`, `tags`, `created`, `updated`, `sources`). Fields such as status
+   (draft/in review/stable) or owner **only if** the host/profile provides them.
 
-## 2. Tipo di contenuti
+## 2. Content types
 
-- **Una pagina = un concetto.** Se ti accorgi di descrivere due argomenti distinti, sono **due pagine**
-  collegate, non una. Le pagine atomiche si linkano meglio, si riusano in più contesti e si **chunkano
-  puliti** per il RAG. Sotto la pressione dell'append è qui che si cede (sezioni duplicate, due blocchi di
-  stato): *ricuci o splitta*, non appendere. (*Se* una cosa meriti una pagina a sé — il criterio di split vs.
-  anti-frammentazione, e la *lente di prodotto* su quali entità di codice estrarre — sta in
+- **One page = one concept.** If you find yourself describing two distinct topics, those are **two pages**
+  linked together, not one. Atomic pages link better, are reused in more contexts and **chunk
+  cleanly** for RAG. Under the pressure of appending this is where things break down (duplicate sections, two state blocks):
+  *stitch or split*, do not append. (*Whether* something deserves its own page — the split vs.
+  anti-fragmentation criterion, and the *product lens* on which code entities to extract — is in
   [`wiki-craft.md`](wiki-craft.md) §1–§2.)
-- **Piramide rovesciata** — prima l'informazione più importante, poi i dettagli, poi i casi limite. Il
-  lettore deve poter fermarsi a metà e aver già capito l'essenziale.
-- **Concreto e azionabile** — esempi, snippet, comandi, tabelle. Una procedura va scritta come **lista
-  numerata** di passi.
-- **Auto-contenuta ma non ridondante** — spiega il necessario, ma per i concetti che hanno già una loro
-  pagina **linka, non ricopiare**: l'informazione duplicata invecchia in due posti diversi (è la *Single
-  Source of Truth* a livello di grafo → [`wiki-craft.md`](wiki-craft.md) §5).
-- **Il codice non si ricopia: si descrive e si cita.** Uno **snippet** è una *copia* del codice che diverge
-  appena il codice cambia → è la **prima fonte di deriva** (la trova il lint B; nei dump grassi è quasi sempre
-  lo snippet a essere stantio o fabbricato). Descrivi l'**interfaccia** e il **comportamento** e **cita il
-  file** (`path`); usa uno snippet **solo** per illustrare un *concetto stabile*, mai l'implementazione
-  corrente. Vale anche per nomi di file, simboli e firme: **citali, non trascriverli a mano**.
-- **Stile neutro e diretto** — frasi brevi, voce attiva, niente muri di testo; elenchi e tabelle quando i
-  dati sono strutturati.
-- **Aggiornabilità** — le informazioni che cambiano (versioni, owner, URL) vanno in **un punto solo e ben
-  visibile**.
+- **Inverted pyramid** — most important information first, then details, then edge cases. The
+  reader must be able to stop halfway and have already understood the essentials.
+- **Concrete and actionable** — examples, snippets, commands, tables. A procedure should be written as a **numbered
+  list** of steps.
+- **Self-contained but not redundant** — explain what is necessary, but for concepts that already have their own
+  page **link, don't copy**: duplicated information ages in two different places (this is *Single
+  Source of Truth* at graph level → [`wiki-craft.md`](wiki-craft.md) §5).
+- **Code is not copied: it is described and cited.** A **snippet** is a *copy* of the code that diverges
+  the moment the code changes → it is the **primary source of drift** (lint B finds it; in fat dumps it is almost always
+  the snippet that is stale or fabricated). Describe the **interface** and the **behavior** and **cite the
+  file** (`path`); use a snippet **only** to illustrate a *stable concept*, never the current implementation.
+  This applies to file names, symbols and signatures too: **cite them, do not transcribe them by hand**.
+- **Neutral and direct style** — short sentences, active voice, no walls of text; lists and tables when
+  data is structured.
+- **Maintainability** — information that changes (versions, owner, URLs) goes in **one place and clearly visible**.
 
-## 3. Il livello di significato — *cosa* scrivere, non solo come
+## 3. The level of meaning — *what* to write, not just how
 
-È la sostanza, oltre alla forma. Una pagina cattura **conoscenza distillata e riusabile**, non la cronaca di
-ciò che è successo (quella sta nel log). Scrivi perché un **LLM futuro**, che la recupera *a freddo* via RAG,
-possa agire su di essa.
+This is the substance, beyond the form. A page captures **distilled, reusable knowledge**, not the chronicle of
+what happened (that goes in the log). Write so that a **future LLM**, retrieving it *cold* via RAG,
+can act on it.
 
-- **Distilla, non trascrivere.** La pagina risponde a «cosa serve sapere a chi riprende», non «cosa abbiamo
-  fatto passo-passo». Il diario cronologico è il log; la pagina è ciò che *resta*.
-- **Cattura il *perché* e le alternative scartate.** Una decisione senza razionale e senza le opzioni
-  rifiutate verrà **ri-litigata**. Scrivi: cosa si è deciso · perché · cosa si è scartato e perché.
-- **Astrazione coerente con l'area.** Una pagina `concept`/`tech` è **evergreen**: il claim centrale è
-  atemporale, **niente stato volatile** (PR#, "in corso", conteggi) nel corpo — invecchia e diventa deriva
-  (lint B). Lo stato datato vive in `experiments`. Il *perché* generalizza; il *cosa* situato sta nel record.
-- **Verità ancorata.** Scrivi solo claim **veri al momento della scrittura e ancorabili** (codice/test/git/
-  fonte). Ciò che non puoi fondare non è contenuto: è un'ipotesi → marcala come tale (è il rovescio attivo
-  del lint B).
-- **Densità di significato.** Ogni frase porta informazione; taglia il filler. *Compila una volta*: scrivi
-  perché non vada riscritta.
+- **Distill, don't transcribe.** The page answers «what does someone resuming this need to know», not «what did we
+  do step by step». The chronological diary is the log; the page is what *remains*.
+- **Capture the *why* and the rejected alternatives.** A decision without rationale and without the
+  rejected options will be **relitigated**. Write: what was decided · why · what was rejected and why.
+- **Abstraction consistent with the area.** A `concept`/`tech` page is **evergreen**: the central claim is
+  timeless, **no volatile state** (PR#, "in progress", counts) in the body — it ages and becomes drift
+  (lint B). Dated state lives in `experiments`. The *why* generalizes; the situated *what* goes in the record.
+- **Anchored truth.** Write only claims that are **true at the time of writing and anchorable** (code/tests/git/
+  source). What you cannot ground is not content: it is a hypothesis → mark it as such (this is the active counterpart
+  of lint B).
+- **Density of meaning.** Every sentence carries information; cut the filler. *Compile once*: write
+  so it does not need to be rewritten.
 
-*Esempio — la stessa nozione, scritta male → bene:*
-- ✗ «Oggi abbiamo discusso a lungo del reranking e alla fine, dopo vari tentativi, abbiamo deciso di usare il
-  cross-encoder che sembrava andare meglio degli altri nei test.» — *diario, vago, non ancorato, nessun
-  perché riusabile.*
-- ✓ «Il **reranking cross-encoder** ri-ordina i top-k del retrieval valutando la coppia (query, chunk)
-  insieme: più accurato del bi-encoder ma costa O(k) inferenze → si applica **solo ai candidati**, non
-  all'indice. Preferito a BM25+rerank perché [motivo]; scartato il reranking LLM-as-judge per latenza/costo
-  sproporzionati al guadagno.» — *definisce, dà il trade-off e il perché, è atemporale e ancorabile.*
+*Example — the same notion, written poorly → well:*
+- ✗ «Today we discussed reranking at length and in the end, after various attempts, we decided to use the
+  cross-encoder which seemed to perform better than the others in the tests.» — *diary, vague, not anchored, no
+  reusable why.*
+- ✓ «**Cross-encoder reranking** re-orders the top-k retrieval results by evaluating the (query, chunk) pair
+  together: more accurate than the bi-encoder but costs O(k) inferences → applied **only to candidates**, not
+  to the index. Preferred over BM25+rerank because [reason]; LLM-as-judge reranking was rejected for latency/cost
+  disproportionate to the gain.» — *defines, gives the trade-off and the why, is timeless and anchorable.*
 
-## 4. Tipo di link
+## 4. Link types
 
-I link sono ciò che trasforma un insieme di pagine in una vera wiki. Tre categorie utili, **distinte**:
+Links are what transforms a set of pages into a true wiki. Three useful categories, **distinct**:
 
-- **Interni contestuali** — la **prima volta** che citi un concetto che ha una sua pagina, collegalo
-  **inline** nel testo (es. `[[nome-pagina]]`; alias con `[[nome-pagina|testo mostrato]]`). Linka
-  la **prima occorrenza**, non tutte. È qui che sta il valore: il link contestuale dice *perché* due pagine
-  sono connesse.
-- **Navigazione strutturale** — "Vedi anche", categorie/tag, e — *dove l'host ha gerarchie* — pagine
-  genitore/figlie. Nel modello a **grafo** (non albero) di questo wiki: wikilink + aree di tassonomia.
-  Servono a esplorare il vicinato della pagina. **Non** sostituiscono i link contestuali: relegare tutti i
-  link in una sezione finale invece che inline è uno *smell* organizzativo (lint C).
-- **Esterni / riferimenti** — fonti, documentazione ufficiale, ticket, RFC: in una **sezione dedicata** o
-  come note, **non** mescolati al testo come quelli interni.
+- **Contextual internal links** — the **first time** you mention a concept that has its own page, link it
+  **inline** in the text (e.g. `[[page-name]]`; alias with `[[page-name|displayed text]]`). Link
+  the **first occurrence**, not all of them. This is where the value lies: the contextual link says *why* two pages
+  are connected.
+- **Structural navigation** — "See also", categories/tags, and — *where the host has hierarchies* — parent/child
+  pages. In the **graph** model (not tree) of this wiki: wikilinks + taxonomy areas.
+  Used to explore the neighborhood of a page. Do **not** replace contextual links: relegating all
+  links to a final section instead of inline is an organizational *smell* (lint C).
+- **External / references** — sources, official documentation, tickets, RFCs: in a **dedicated section** or
+  as notes, **not** mixed with the text like internal links.
 
-Regole pratiche sui link:
-- Il **testo del link descrive la destinazione** («vedi la guida al deploy»), mai «clicca qui».
-- **Niente orfani né dead-end:** ogni pagina dovrebbe essere raggiungibile da almeno un'altra e a sua volta
-  puntare a qualcosa (gli orfani li trova il lint A).
-- **Forward-link → crea uno *stub*.** Linkare in avanti un nodo **non ancora scritto** è una *feature* (marca
-  un nodo da creare), ma **non** lasciare un `[[…]]` a vuoto: il lint A lo segnalerebbe come **broken** (per
-  lo strumento un target inesistente è indistinguibile da un refuso). Realizza invece il nodo come **stub** —
-  un **file reale** nell'area giusta, con frontmatter completo, `status: stub` e un corpo segnaposto
-  `> 🚧 STUB`. Così il link **risolve** (lint A verde) e il nodo è *voluto*; al contrario un `[[…]]` senza
-  pagina né stub resta **broken** — è così che si separa il **nodo intenzionale** dal **refuso**. Lo stub ha
-  ≥1 link entrante (quello che l'ha motivato) → non è orfano; **riempilo appena possibile** (uno stub
-  lasciato a lungo è uno *smell* del lint C). Il lint A li elenca nel campo **`stubs`** (worklist dei nodi
-  da riempire), separati dai difetti.
-- **Non sovra-linkare:** troppi link rendono il testo illeggibile e svuotano di valore quelli importanti
-  (densità ≠ qualità). Preferisci link **specifici** alla pagina giusta, non a pagine-contenitore.
-- **Niente link circolari inutili** né — *dove l'host ha i redirect* — redirect a catena.
+Practical link rules:
+- **Link text describes the destination** («see the deploy guide»), never «click here».
+- **No orphans or dead-ends:** every page should be reachable from at least one other and in turn
+  point to something (orphans are found by lint A).
+- **Forward-link → create a *stub*.** Linking forward to a node **not yet written** is a *feature* (marks
+  a node to be created), but **do not** leave an empty `[[…]]`: lint A would flag it as **broken** (for
+  the tool a non-existent target is indistinguishable from a typo). Instead realize the node as a **stub** —
+  a **real file** in the right area, with complete frontmatter, `status: stub` and a placeholder body
+  `> 🚧 STUB`. This way the link **resolves** (lint A green) and the node is *intentional*; conversely an empty `[[…]]` without
+  a page or stub remains **broken** — this is how an **intentional node** is distinguished from a **typo**. The stub has
+  ≥1 incoming link (the one that motivated it) → it is not an orphan; **fill it as soon as possible** (a stub
+  left for a long time is a lint C *smell*). Lint A lists them in the **`stubs`** field (worklist of nodes
+  to fill), separated from defects.
+- **Do not over-link:** too many links make the text unreadable and drain value from the important ones
+  (density ≠ quality). Prefer **specific** links to the right page, not to container pages.
+- **No unnecessary circular links** nor — *where the host has redirects* — chained redirects.
 
-## Checklist veloce
+## Quick checklist
 
-| Criterio | Domanda da farsi |
+| Criterion | Question to ask yourself |
 |---|---|
-| Titolo | È univoco e descrive una sola cosa? |
-| Lead | Le prime righe spiegano tutto da sole? |
-| Struttura | Heading gerarchici (+ TOC se l'host lo genera)? |
-| Scope | Un concetto per pagina? |
-| Contenuto | Esempi concreti, piramide rovesciata? |
-| Significato | Distilla il *perché* + alternative; claim ancorato e atemporale? |
-| Link interni | Prima occorrenza linkata, testo descrittivo? |
-| Navigazione | "Vedi anche" + categorie/tag, senza relegare i link inline? |
-| Fonti | Le affermazioni verificabili hanno riferimenti? |
-| Manutenzione | Stato/owner/data visibili (se previsti)? Niente duplicazioni? |
+| Title | Is it unique and does it describe one thing? |
+| Lead | Do the first lines explain everything on their own? |
+| Structure | Hierarchical headings (+ TOC if the host generates it)? |
+| Scope | One concept per page? |
+| Content | Concrete examples, inverted pyramid? |
+| Meaning | Distills the *why* + alternatives; anchored and timeless claim? |
+| Internal links | First occurrence linked, descriptive text? |
+| Navigation | "See also" + categories/tags, without relegating inline links? |
+| Sources | Do verifiable statements have references? |
+| Maintenance | Status/owner/date visible (if provided)? No duplications? |

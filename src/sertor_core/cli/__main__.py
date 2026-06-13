@@ -27,35 +27,35 @@ from sertor_core.domain.errors import ConfigError, IngestionError, SertorError
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="sertor-rag",
-        description="CLI di esecuzione RAG: indicizza un repository e interrogalo dal terminale.",
+        description="RAG execution CLI: index a repository and query it from the terminal.",
     )
-    sub = parser.add_subparsers(dest="command", required=True, metavar="comando")
+    sub = parser.add_subparsers(dest="command", required=True, metavar="command")
 
     p_index = sub.add_parser(
-        "index", help="indicizza un repository in una collezione vettoriale (full rebuild)",
-        description="Costruisce l'indice vettoriale del repository e riporta i conteggi.",
+        "index", help="index a repository into a vector collection (full rebuild)",
+        description="Builds the repository's vector index and reports the counts.",
     )
-    p_index.add_argument("path", help="radice del repository da indicizzare")
+    p_index.add_argument("path", help="root of the repository to index")
     p_index.add_argument("--corpus", default=None,
-                         help="namespace del corpus; prevale su SERTOR_CORPUS")
-    p_index.add_argument("--json", action="store_true", help="report come oggetto JSON")
+                         help="corpus namespace; overrides SERTOR_CORPUS")
+    p_index.add_argument("--json", action="store_true", help="report as a JSON object")
     _add_logging_flags(p_index)
     p_index.set_defaults(handler=_cmd_index)
 
     p_search = sub.add_parser(
-        "search", help="interroga l'indice e restituisce i top-k risultati",
-        description="Ricerca semantica sull'indice; risultati con path, tipo, chunk_id, score.",
+        "search", help="query the index and return the top-k results",
+        description="Semantic search over the index; results with path, type, chunk_id, score.",
     )
-    p_search.add_argument("query", help="testo della query (non vuoto)")
+    p_search.add_argument("query", help="query text (non-empty)")
     p_search.add_argument("-k", type=int, default=None,
-                          help="numero di risultati (default: Settings.default_k)")
+                          help="number of results (default: Settings.default_k)")
     p_search.add_argument("--type", choices=["code", "doc", "both"], default="both",
-                          help="filtro per tipo documento (default: both)")
+                          help="document-type filter (default: both)")
     p_search.add_argument("--full", action="store_true",
-                          help="testo completo del chunk invece dell'anteprima troncata")
-    p_search.add_argument("--json", action="store_true", help="risultati come array JSON")
+                          help="full chunk text instead of the truncated preview")
+    p_search.add_argument("--json", action="store_true", help="results as a JSON array")
     p_search.add_argument("--corpus", default=None,
-                          help="namespace del corpus; prevale su SERTOR_CORPUS")
+                          help="corpus namespace; overrides SERTOR_CORPUS")
     _add_logging_flags(p_search)
     p_search.set_defaults(handler=_cmd_search)
 
@@ -65,11 +65,11 @@ def _build_parser() -> argparse.ArgumentParser:
 def _add_logging_flags(p: argparse.ArgumentParser) -> None:
     """Leve di osservabilità comuni a entrambi i sottocomandi (US3, FR-017..019)."""
     p.add_argument("-v", "--verbose", action="store_true",
-                   help="abilita i log INFO strutturati su stderr")
+                   help="enable structured INFO logs on stderr")
     p.add_argument("--log-json", action="store_true",
-                   help="emette i record di log come JSON (un oggetto per evento)")
+                   help="emit log records as JSON (one object per event)")
     p.add_argument("--log-config", default=None,
-                   help="file dictConfig (JSON/YAML) per configurare gli appender del logging")
+                   help="dictConfig file (JSON/YAML) to configure the logging appenders")
 
 
 def _resolve_settings(args) -> Settings:
@@ -85,7 +85,7 @@ def _check_backend(settings: Settings) -> None:
     missing = settings.validate_backend()
     if missing:
         raise ConfigError(
-            f"configurazione backend incompleta: mancano {', '.join(missing)}"
+            f"incomplete backend configuration: missing {', '.join(missing)}"
         )
 
 
@@ -96,7 +96,7 @@ def _cmd_index(args) -> None:
     # Check pre-volo della CLI (non duplica logica del core, FR-006/edge case).
     if not path.exists() or not path.is_dir():
         raise IngestionError(
-            f"path non valido o non e' una directory: {args.path}", path=str(args.path)
+            f"invalid path or not a directory: {args.path}", path=str(args.path)
         )
     settings = _resolve_settings(args)
     _check_backend(settings)
@@ -108,7 +108,7 @@ def _cmd_search(args) -> None:
     """Handler di `search`: via strict per ogni `--type`, poi instrada e formatta (US2)."""
     setup_logging(args)
     if not args.query.strip():
-        raise ConfigError("query vuota o solo spazi")
+        raise ConfigError("empty or whitespace-only query")
     settings = _resolve_settings(args)
     _check_backend(settings)
     # Via strict per QUALUNQUE --type: indice assente → IndexNotFoundError (FR-012, D6).
@@ -140,7 +140,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         args.handler(args)
     except SertorError as exc:
-        print(f"errore: {exc}", file=sys.stderr)
+        print(f"error: {exc}", file=sys.stderr)
         return 1
     return 0
 

@@ -1,25 +1,25 @@
-# Operazione `reorg` — applica il refactoring organizzativo
+# Operation `reorg` — apply organizational refactoring
 
-> **Modulo operazione.** Esecutore: **solo flusso principale** (NON il curator).
-> Per il **substrato condiviso** (confine D↔N §2, tassonomia §3, voce di log §6) vedi il playbook
-> `wiki-playbook.md`; lo stato-bersaglio di una pagina (collocazione, atomicità, link) è
-> [`../page-craft.md`](../page-craft.md); la *crescita per refactoring* del grafo (spezza in entità+hub,
-> fondi le micro-pagine) è [`../wiki-craft.md`](../wiki-craft.md). Qui solo la procedura specifica.
+> **Operation module.** Executor: **main flow only** (NOT the curator).
+> For the **shared substrate** (D↔N boundary §2, taxonomy §3, log entry §6) see the playbook
+> `wiki-playbook.md`; the target state of a page (placement, atomicity, links) is
+> [`../page-craft.md`](../page-craft.md); *growth by refactoring* of the graph (split into entities+hub,
+> merge micro-pages) is [`../wiki-craft.md`](../wiki-craft.md). Only the specific procedure is described here.
 
-Applica, **su conferma esplicita** dell'utente, le proposte del **lint livello C** (`ops/lint.md`). È **più
-distruttivo** della correzione-claim (sposta file, riscrive link) → **mai automatico, mai bloccante, un
-incremento per volta**. È **giudizio** (cosa spostare/dove/se splittare) + meccanica via `Read`/`Edit`:
-**non si delega al `curator`**.
+Applies, **on explicit user confirmation**, the proposals from **lint level C** (`ops/lint.md`). It is **more
+destructive** than claim correction (moves files, rewrites links) → **never automatic, never blocking, one
+increment at a time**. It is **judgment** (what to move/where/whether to split) + mechanical work via `Read`/`Edit`:
+**not delegated to the `curator`**.
 
-1. Parti dal report del lint livello C e **concorda con l'utente** le pagine da trattare.
-2. Per ogni pagina: **spostala** nell'area corretta (nuovo path), **correggi il `type`** nel frontmatter, e
-   **aggiorna tutti i wikilink entranti** (dai backlink calcolati nel lint C) perché area/slug cambiano; aggiorna
-   l'indice (riga `- **[[slug]]** — summary` nella sezione giusta). Se splitti o riscrivi, la pagina risultante
-   deve rispettare [`../page-craft.md`](../page-craft.md) (atomicità, auto-contenimento, link).
-3. **Verifica l'igiene post-move:** `sertor-wiki-tools lint --json` **e** `… validate --json` →
-   attesi **0 link rotti / 0 orfani / 0 naming**. Se no, ripara prima di proseguire.
-4. Appendi una voce di log `reorg` (pagine spostate da→a, `type` corretti).
+1. Start from the lint level C report and **agree with the user** on the pages to handle.
+2. For each page: **move it** to the correct area (new path), **fix the `type`** in the frontmatter, and
+   **update all incoming wikilinks** (from the backlinks computed in lint C) because area/slug change; update
+   the index (line `- **[[slug]]** — summary` in the correct section). If splitting or rewriting, the resulting page
+   must comply with [`../page-craft.md`](../page-craft.md) (atomicity, self-containment, links).
+3. **Verify hygiene after the move:** `sertor-wiki-tools lint --json` **and** `… validate --json` →
+   expected **0 broken links / 0 orphans / 0 naming**. If not, fix before continuing.
+4. Append a log entry `reorg` (pages moved from→to, corrected `type` values).
 
-> **Backlog (meccanica deterministica):** un comando `move`-con-aggiornamento-link sicuro nella CLI
-> renderebbe il passo 2 meno fragile dell'`Edit` a mano — da fare **solo se** l'approccio manuale
-> si rivela rumoroso. La **rilevazione** (livello C) resta comunque giudizio, non deterministica.
+> **Backlog (deterministic mechanics):** a `move`-with-link-update command in the CLI
+> would make step 2 less fragile than manual `Edit` — to be done **only if** the manual approach
+> proves noisy. **Detection** (level C) remains judgment, not deterministic.

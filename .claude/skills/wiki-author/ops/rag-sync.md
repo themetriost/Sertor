@@ -1,15 +1,15 @@
-# Operazione `rag-sync` — re-indicizza il wiki nel RAG
+# Operation `rag-sync` — re-index the wiki in the RAG
 
-> **Modulo operazione.** Esecutore: **solo flusso principale** (NON il curator).
-> Per il **substrato condiviso** (confine D↔N §2, voce di log §6) vedi il playbook
-> `wiki-playbook.md`. Qui solo la procedura specifica.
+> **Operation module.** Executor: **main flow only** (NOT the curator).
+> For the **shared substrate** (D↔N boundary §2, log entry §6) see the playbook
+> `wiki-playbook.md`. Only the specific procedure is described here.
 
-Rende il wiki interrogabile via RAG (il ruolo di "corpus" del wiki).
+Makes the wiki queryable via RAG (the wiki's "corpus" role).
 
-1. Esegui `sertor-wiki-tools index --config wiki/wiki.config.toml --root .`. La CLI legge `[rag]` (corpus isolato,
-   default `wiki`) e fa rebuild-from-scratch idempotente; il backend (Chroma locale / Azure AI Search)
-   dipende da `RAG_BACKEND` nel `.env`. **Non** lanciare interpreti Python a mano.
-2. Se la CLI segnala provider di embeddings non configurato (es. `RAG_BACKEND=azure` senza credenziali),
-   **fermati e segnala** (non fallire in silenzio).
-3. Appendi una voce di log `rag-sync` con `documents`/`collection` dal contratto `wiki.index/1`.
-4. **Costo:** con backend azure gli embeddings sono a pagamento.
+1. Run `sertor-wiki-tools index --config wiki/wiki.config.toml --root .`. The CLI reads `[rag]` (isolated corpus,
+   default `wiki`) and performs an idempotent rebuild-from-scratch; the backend (local Chroma / Azure AI Search)
+   depends on `RAG_BACKEND` in `.env`. **Do not** launch Python interpreters manually.
+2. If the CLI reports an unconfigured embeddings provider (e.g. `RAG_BACKEND=azure` without credentials),
+   **stop and report** (do not fail silently).
+3. Append a log entry `rag-sync` with `documents`/`collection` from the `wiki.index/1` contract.
+4. **Cost:** with the azure backend, embeddings are billable.

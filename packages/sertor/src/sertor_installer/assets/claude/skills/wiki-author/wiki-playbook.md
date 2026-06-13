@@ -1,258 +1,253 @@
-# Wiki Playbook — fonte unica del sistema wiki
+# Wiki Playbook — single source of truth for the wiki system
 
-> **Questo file è la fonte di verità del "sistema wiki".** La skill `wiki-author`, il comando `/wiki` e
-> l'agente `wiki-curator` non duplicano queste regole: le **leggono qui** e le seguono. Se modifichi una
-> convenzione o un'operazione, modificala **solo** in questo file (o nel modulo `ops/` dell'operazione).
+> **This file is the source of truth for the "wiki system".** The `wiki-author` skill, the `/wiki` command and
+> the `wiki-curator` agent do not duplicate these rules: they **read them here** and follow them. If you modify a
+> convention or an operation, modify it **only** in this file (or in the operation's `ops/` module).
 >
-> **Struttura (indice + moduli):** questo file è l'**indice** col **substrato condiviso** (host-agnosticità,
-> identità, confine D↔N, tassonomia, convenzioni, voce di log, limiti). La **procedura di ogni operazione**
-> sta in un modulo `ops/<operazione>.md` (stessa cartella), da `Read` **on-demand** — vedi §5. Così invocare
-> una singola operazione non carica le procedure di tutte le altre (progressive disclosure), senza
-> duplicare il substrato (DRY) e restando documenti `.md` portabili (Principio X — niente costrutti dell'host).
+> **Structure (index + modules):** this file is the **index** with the **shared substrate** (host-agnosticity,
+> identity, D↔N boundary, taxonomy, conventions, log entry, limits). The **specific procedure of each operation**
+> lives in an `ops/<operation>.md` module (same folder as this file), to `Read` **on-demand** — see §5. This way
+> invoking a single operation does not load the procedures of all the others (progressive disclosure), without
+> duplicating the substrate (DRY) and remaining portable `.md` documents (Principle X — no host-specific constructs).
 >
-> È **tooling**, non contenuto del wiki: vive in `.claude/`, non va indicizzato né registrato nel wiki.
+> It is **tooling**, not wiki content: it lives in `.claude/`, it should not be indexed or recorded in the wiki.
 
-## 0. Host-agnostico: l'ospite si configura, non si presume
+## 0. Host-agnostic: the host is configured, not assumed
 
-La capacità wiki è **disaccoppiata dal progetto-ospite** (Principio X della costituzione). Tutto ciò che
-varia tra progetti vive in **`wiki.config.toml`** (in `wiki/` sull'ospite) — **unica fonte di specificità**:
+The wiki capability is **decoupled from the host project** (Principle X of the constitution). Everything that
+varies between projects lives in **`wiki.config.toml`** (in `wiki/` on the host) — **single source of host-specifics**:
 
-| Chiave config | Cosa definisce |
+| Config key | What it defines |
 |---|---|
-| `root`, `index_file`, `log_file`, `log_dir` | dove vive il wiki e i suoi file speciali (`log_dir` ⇒ rotazione del log a un file per giorno) |
-| `[[taxonomy]]` | le aree logiche (cartella → tipo frontmatter) |
-| `frontmatter_required` / `_optional` | i campi di frontmatter attesi |
-| `source_dirs`, `exclude` | da dove leggere il lavoro dell'ospite e cosa ignorare |
-| `[[audit]]` | cosa sottoporre al lint e di che `kind` (wiki/requirements/spec/tracker) — vedi op. `lint` |
-| `[roles]` | i nomi degli agenti: `curator` (questo wiki), `vcs` (git) |
-| `[rag]`, `[strings]`, `language` | corpus RAG, messaggi localizzati, lingua |
+| `root`, `index_file`, `log_file`, `log_dir` | where the wiki and its special files live (`log_dir` ⇒ log rotation to one file per day) |
+| `[[taxonomy]]` | the logical areas (folder → frontmatter type) |
+| `frontmatter_required` / `_optional` | the expected frontmatter fields |
+| `source_dirs`, `exclude` | where to read the host's work from and what to ignore |
+| `[[audit]]` | what to submit to lint and of what `kind` (wiki/requirements/spec/tracker) — see op. `lint` |
+| `[roles]` | agent names: `curator` (this wiki), `vcs` (git) |
+| `[rag]`, `[strings]`, `language` | RAG corpus, localized messages, language |
 
-**Non assumere `wiki/`, `src/`, nomi di cartelle o di agenti**: leggili dalla config. Gli esempi concreti
-qui sotto (`wiki/`, `concepts/`, `src/`…) sono **esempi del profilo dell'ospite**, **non** leggi
-universali. Su un altro progetto cambia solo il file di config.
+**Do not assume `wiki/`, `src/`, folder names or agent names**: read them from the config. The concrete examples
+below (`wiki/`, `concepts/`, `src/`…) are **examples from the host profile**, **not** universal laws. On another
+project only the config file changes.
 
-## 1. Identità & filosofia
+## 1. Identity & philosophy
 
-Il wiki è un **LLM Wiki** in stile Karpathy: *Obsidian è l'IDE, l'LLM è il programmatore, il wiki è la
-codebase*. La conoscenza si **compila una volta** e si tiene aggiornata, invece di ricostruirla a ogni
-sessione.
+The wiki is an **LLM Wiki** in the Karpathy style: *Obsidian is the IDE, the LLM is the programmer, the wiki is the
+codebase*. Knowledge is **compiled once** and kept up to date, instead of being rebuilt at every
+session.
 
-- **Doppio ruolo:** il wiki è insieme **corpus** (interrogabile via RAG) e **superficie**
-  (indice navigabile iniettato a inizio sessione).
-- **Cumulativo:** cresce a ogni sessione; non si riparte da zero.
-- **Idempotente:** se una pagina è già accurata, **non riscriverla**. Niente modifiche inutili.
-- **Self-contained:** ogni pagina è scritta perché un agente la riprenda senza il contesto della chat.
-- **Coerente per costruzione (anti-deriva auto-inflitta):** quando una modifica (al codice, alle regole o
-  a un'altra pagina) rende **stale** una pagina, riallinearla **fa parte dello stesso lavoro** — non è
-  un'operazione separata da chiedere. La deriva che *tu* introduci si corregge **nello stesso step**, di
-  default e senza richiesta esplicita; quella *preesistente* che soltanto scopri può diventare worklist del
-  `lint`. *(L'ospite può codificarlo nel proprio rituale, es. nel `CLAUDE.md`.)*
+- **Dual role:** the wiki is both **corpus** (queryable via RAG) and **surface**
+  (navigable index injected at session start).
+- **Cumulative:** grows at every session; no starting from scratch.
+- **Idempotent:** if a page is already accurate, **do not rewrite it**. No pointless edits.
+- **Self-contained:** every page is written so that an agent can resume it without the chat context.
+- **Coherent by construction (anti-self-inflicted-drift):** when a change (to the code, to the rules or
+  to another page) makes a page **stale**, realigning it **is part of the same work** — it is not
+  a separate operation to request. The drift that *you* introduce is corrected **in the same step**, by
+  default and without an explicit request; drift that you merely *discover* as pre-existing can become a worklist for
+  `lint`. *(The host can codify this in its own step ritual, e.g. in `CLAUDE.md`.)*
 
-## 2. Nucleo deterministico vs giudizio (il confine)
+## 2. Deterministic core vs judgment (the boundary)
 
-Il bookkeeping **meccanico** è codice host-agnostico già pronto: la CLI **`sertor-wiki-tools`**.
-**Usala invece di rifare il meccanico a mano.**
+**Mechanical** bookkeeping is host-agnostic code already available: the CLI **`sertor-wiki-tools`**.
+**Use it instead of redoing the mechanical work by hand.**
 
-| Operazione CLI | Cosa fa (meccanico) | Contratto JSON |
+| CLI operation | What it does (mechanical) | JSON contract |
 |---|---|---|
-| `scan` | conta i file più recenti dell'ultima voce di log (lavoro pendente) | `wiki.scan/1` |
-| `structure init` | crea cartelle della tassonomia + index + log (idempotente) | `wiki.structure/1` |
-| `validate` | frontmatter mancante + naming non kebab-case | `wiki.lint/1` |
-| `lint` | wikilink rotti + pagine orfane + frontmatter mancante | `wiki.lint/1` |
-| `collect` | enumera le pagine + metadati (path, area, type, title, tags, wikilink) | `wiki.collect/1` |
-| `index` | re-indicizza il wiki nel RAG (corpus da `[rag]`) | `wiki.index/1` |
-| `append-log` | piazza una voce di log (corpo curato dall'LLM) nel file del giorno, idempotente | `wiki.append_log/1` |
-| `migrate` | splitta retroattivamente il log monolitico in partizioni giornaliere | `wiki.migrate/1` |
-| `upsert-index` | inserisce/aggiorna la riga `- [[page]] — summary` nell'indice (sommario LLM-authored) | `wiki.upsert_index/1` |
+| `scan` | counts files more recent than the last log entry (pending work) | `wiki.scan/1` |
+| `structure init` | creates taxonomy folders + index + log (idempotent) | `wiki.structure/1` |
+| `validate` | missing frontmatter + non-kebab-case naming | `wiki.lint/1` |
+| `lint` | broken wikilinks + orphan pages + missing frontmatter | `wiki.lint/1` |
+| `collect` | enumerates pages + metadata (path, area, type, title, tags, wikilinks) | `wiki.collect/1` |
+| `index` | re-indexes the wiki in the RAG (corpus from `[rag]`) | `wiki.index/1` |
+| `append-log` | places a log entry (body curated by the LLM) in today's file, idempotent | `wiki.append_log/1` |
+| `migrate` | retroactively splits the monolithic log into daily partitions | `wiki.migrate/1` |
+| `upsert-index` | inserts/updates the `- [[page]] — summary` line in the index (LLM-authored summary) | `wiki.upsert_index/1` |
 
-Invocazione: `sertor-wiki-tools <op> --config wiki/wiki.config.toml --root . [--json]` (oppure, da
-radice ospite, basta `sertor-wiki-tools <op>`: la CLI fa auto-discovery di `wiki/wiki.config.toml`).
-Con `--json` ottieni il contratto versionato; senza, un sommario umano.
+Invocation: `sertor-wiki-tools <op> --config wiki/wiki.config.toml --root . [--json]` (or, from the
+host root, just `sertor-wiki-tools <op>`: the CLI auto-discovers `wiki/wiki.config.toml`).
+With `--json` you get the versioned contract; without it, a human-readable summary.
 
-**A te (LLM) resta il GIUDIZIO**, che la CLI non fa: *cosa* scrivere e il *perché*, se una pagina è nuova
-o va aggiornata, *quali* backlink hanno senso, se due claim si **contraddicono**, se un claim è superato.
-Il *dove/come* (percorsi, formati, rilevazione meccanica) lo dà il deterministico.
+**JUDGMENT is left to you (LLM)**, which the CLI does not provide: *what* to write and *why*, whether a page is new
+or needs updating, *which* backlinks make sense, whether two claims **contradict** each other, whether a claim is outdated.
+The *where/how* (paths, formats, mechanical detection) comes from the deterministic core.
 
-## 3. Tassonomia (dalla config)
+## 3. Taxonomy (from the config)
 
-Le aree sono quelle in `[[taxonomy]]`. Esempio di profilo:
+The areas are those in `[[taxonomy]]`. Example profile:
 
 ```
-<root>/             (es. wiki/)
-├─ <index_file>     catalogo globale (link + summary di una riga). LEGGILO PER PRIMO.
-├─ <log_dir>/       registro append-only, un file per giorno (rotazione; o <log_file> unico se off)
-├─ concepts/        concetti (RAG, chunking, embeddings, ...)
-├─ tech/            tecnologie e strumenti
-├─ experiments/     una pagina per attività/esperimento
-├─ sources/         riassunti di fonti esterne ingerite
-└─ syntheses/       confronti e sintesi trasversali
+<root>/             (e.g. wiki/)
+├─ <index_file>     global catalog (links + one-line summary). READ THIS FIRST.
+├─ <log_dir>/       append-only log, one file per day (rotation; or <log_file> single file if off)
+├─ concepts/        concepts (RAG, chunking, embeddings, ...)
+├─ tech/            technologies and tools
+├─ experiments/     one page per activity/experiment
+├─ sources/         summaries of ingested external sources
+└─ syntheses/       cross-cutting comparisons and syntheses
 ```
 
-- Le **uniche** aree sono quelle della config. Le fonti esterne ingerite vanno in **`sources/`** (vedi
-  `ingest`); non inventare cartelle non dichiarate.
-- Le cartelle possono non esistere ancora: **creale on-demand** alla prima pagina della categoria (oppure
-  in blocco con `sertor-wiki-tools structure init`). Non creare cartelle vuote o placeholder.
-- Eventuali wiki **congelati/da non toccare** (es. un wiki storico archiviato) sono **fuori** dalla `root`
-  ed esclusi via `exclude`: non si modificano, si consultano semmai via RAG.
+- The **only** areas are those in the config. Ingested external sources go in **`sources/`** (see
+  `ingest`); do not invent folders not declared in the config.
+- Folders may not exist yet: **create them on-demand** for the first page in that category (or
+  all at once with `sertor-wiki-tools structure init`). Do not create empty folders or placeholders.
+- Any **frozen/do-not-touch wikis** (e.g. an archived historical wiki) are **outside** the `root`
+  and excluded via `exclude`: they are not modified; they can be consulted via RAG if needed.
 
-### Collocazione — scegliere l'area dalla natura della pagina
+### Placement — choosing the area from the nature of the page
 
-L'area si sceglie dalla **natura logica** del contenuto, **non** dalla fase/progetto (cartelle
-per fase — `sprint-3/`, `fase-azure/` — invecchiano male): la cartella dà solo **una casa**, il valore sta nei
-link. Il *perché* — «un wiki è un grafo, non un albero» e i due assi di navigazione — sta in
-[`wiki-craft.md`](wiki-craft.md) §4. Ruoli delle aree (su ogni
-ospite valgono i ruoli analoghi della sua `[[taxonomy]]`):
+The area is chosen from the **logical nature** of the content, **not** from the phase/project (phase folders —
+`sprint-3/`, `phase-azure/` — age poorly): the folder just gives **a home**, the value lies in the
+links. The *why* — «a wiki is a graph, not a tree» and the two navigation axes — is in
+[`wiki-craft.md`](wiki-craft.md) §4. Area roles (on each host the analogous roles of its `[[taxonomy]]` apply):
 
-- **concepts/** — astrazioni, pattern, idee (un concetto RAG, una tecnica). Evergreen.
-- **tech/** — una tecnologia/strumento/infra concreta (una libreria, un servizio). Evergreen.
-- **experiments/** — il **record datato** di un'attività/step/feature svolta (l'implementazione di una
-  feature, uno spike, una sessione). È il diario di un lavoro, non un'astrazione.
-- **sources/** — il riassunto di una **fonte esterna** ingerita (paper, blog, PR, doc di terzi).
-- **syntheses/** — un **confronto trasversale** fra più concetti/esperimenti (A-vs-B, una sintesi che
-  attraversa pagine). È la categoria **più rara**, **non** il default.
+- **concepts/** — abstractions, patterns, ideas (a RAG concept, a technique). Evergreen.
+- **tech/** — a concrete technology/tool/infra (a library, a service). Evergreen.
+- **experiments/** — the **dated record** of an activity/step/feature completed (the implementation of a
+  feature, a spike, a session). It is the diary of a piece of work, not an abstraction.
+- **sources/** — the summary of an **external source** ingested (paper, blog, PR, third-party docs).
+- **syntheses/** — a **cross-cutting comparison** between multiple concepts/experiments (A-vs-B, a synthesis that
+  spans pages). This is the **rarest** category, **not** the default.
 
-**Regola anti-discarica:** se non sai dove mettere una pagina, di solito è perché **non è atomica** (parla
-di troppe cose) o perché **manca una categoria** — è un *segnale*, non un buco da tappare con `syntheses/`.
-Nessuna area va usata come `misc/`. In dubbio fra due aree, scegli la più specifica alla natura; una pagina
-è `syntheses/` **solo** se è davvero un confronto fra più concetti, altrimenti quasi mai.
+**Anti-dumping rule:** if you do not know where to put a page, it is usually because it is **not atomic** (it covers
+too many things) or because **a category is missing** — that is a *signal*, not a gap to fill with `syntheses/`.
+No area should be used as `misc/`. When in doubt between two areas, choose the one most specific to the nature; a page
+is `syntheses/` **only** if it is truly a comparison between multiple concepts, otherwise almost never.
 
-**`type` riflette la natura, non solo la cartella.** Il `type` del frontmatter deve descrivere **cos'è
-davvero** la pagina e coincidere con l'area che la ospita. Attenzione: cartella e `type` possono essere
-*coerenti tra loro ma entrambi falsi* rispetto al contenuto (es. un record in `syntheses/` con
-`type: synthesis`). Questo disallineamento **natura↔collocazione** è invisibile al lint meccanico (vede solo
-la stringa) ed è il bersaglio del **lint livello C** (modulo [`ops/lint.md`](ops/lint.md)).
+**`type` reflects the nature, not just the folder.** The frontmatter `type` must describe **what the page
+really is** and coincide with the area that hosts it. Note: folder and `type` can be
+*consistent with each other but both false* with respect to the content (e.g. a record in `syntheses/` with
+`type: synthesis`). This **nature↔placement** misalignment is invisible to mechanical lint (which only sees
+the string) and is the target of **lint level C** (module [`ops/lint.md`](ops/lint.md)).
 
-**Livello-grafo → [`page-craft.md`](page-craft.md) (la singola pagina) e [`wiki-craft.md`](wiki-craft.md)
-(l'insieme).** *Quando* una cosa merita una pagina (test del link/nome), gli **archetipi** di pagina, le
-pagine di struttura (home/hub/overview) e i due assi di navigazione stanno in `wiki-craft.md` — la guida di
-livello-grafo, gemella di `page-craft.md`.
+**Graph level → [`page-craft.md`](page-craft.md) (the single page) and [`wiki-craft.md`](wiki-craft.md)
+(the whole).** *When* something deserves a page (link/name test), **page archetypes**, structure pages (home/hub/overview)
+and the two navigation axes are in `wiki-craft.md` — the graph-level guide, twin of `page-craft.md`.
 
-## 4. Convenzioni
+## 4. Conventions
 
-**Frontmatter YAML** in ogni pagina (eccetto i file append-only). I campi attesi sono in
-`frontmatter_required`/`_optional`. Esempio:
+**YAML frontmatter** on every page (except append-only files). The expected fields are in
+`frontmatter_required`/`_optional`. Example:
 ```yaml
 ---
-title: <titolo leggibile>
+title: <readable title>
 type: <concept|tech|experiment|source|synthesis|index>
 tags: [<tag>, ...]
 created: YYYY-MM-DD
 updated: YYYY-MM-DD
-sources: ["<path o URL>", ...]
+sources: ["<path or URL>", ...]
 ---
 ```
 
-- **Stub (nodo da creare):** un forward-link a una pagina non ancora scritta si realizza come **stub**, non
-  come `[[…]]` a vuoto (che il lint A segnala `broken`). Meccanismo e regole in [`page-craft.md`](page-craft.md) §4.
-- **Wikilink** `[[nome-pagina]]` (senza `.md`); alias con `[[nome-pagina|testo mostrato]]`. Mantieni i
-  cross-reference aggiornati: una pagina nuova va linkata dall'indice e dalle pagine correlate.
-- **Naming** file: kebab-case descrittivo (`azure-ai-search.md`). `validate` lo verifica per te.
-  - **Lingua del nome (esempio di convenzione):** le pagine-**entità/concetto** (`concepts/`, `tech/`) hanno
-    **slug e titolo in inglese** (`retrieval-core`, `thin-consumer`), mentre il **corpo discorsivo resta in
-    italiano**. I **record** (`experiments/`) restano in italiano descrittivo (sono eventi, non entità). Le
-    pagine esistenti con slug italiano si rinominano **opportunisticamente** (quando le si tocca), non in
-    blocco.
-- **Nuova vs aggiorna:** crea una pagina nuova per un concetto/entità nuovo; **aggiorna** quella
-  esistente altrimenti. Una pagina per concetto reale, mai duplicati (usa `collect` per controllare).
-- **Contraddizioni:** quando una fonte/codice contraddice una pagina, **segnalalo esplicitamente** — non
-  scegliere in silenzio. Se tocca una decisione o una fonte autorevole umana, **chiedi all'utente**.
-- **Niente over-doc:** non documentare il banale o le modifiche meccaniche. Calibra al valore.
+- **Stub (node to create):** a forward-link to a page not yet written is realized as a **stub**, not
+  as an empty `[[…]]` (which lint A flags as `broken`). Mechanism and rules in [`page-craft.md`](page-craft.md) §4.
+- **Wikilinks** `[[page-name]]` (without `.md`); alias with `[[page-name|displayed text]]`. Keep
+  cross-references updated: a new page must be linked from the index and from related pages.
+- **File naming**: descriptive kebab-case (`azure-ai-search.md`). `validate` checks this for you.
+  - **Name language (example convention):** **entity/concept** pages (`concepts/`, `tech/`) have
+    **slug and title in English** (`retrieval-core`, `thin-consumer`), while the **discursive body** can remain in the host language.
+    **Records** (`experiments/`) remain in descriptive host language (they are events, not entities). Existing pages with
+    non-English slugs are renamed **opportunistically** (when touched), not in bulk.
+- **New vs update:** create a new page for a new concept/entity; **update** the existing one otherwise.
+  One page per real concept, no duplicates (use `collect` to check).
+- **Contradictions:** when a source/code contradicts a page, **report it explicitly** — do not
+  choose silently. If it involves a decision or an authoritative human source, **ask the user**.
+- **No over-documentation:** do not document the trivial or mechanical changes. Calibrate to value.
 
-**Com'è fatta *dentro* una pagina → [`page-craft.md`](page-craft.md).** Le regole qui sopra sono
-il *formato* (frontmatter, naming, wikilink, quando creare/aggiornare). Il **page-craft** — atomicità,
-auto-contenimento, disciplina dei link e soprattutto il **livello di significato** (*cosa* scrivere, non solo
-come) — vive nella pagina di riferimento `page-craft.md`, **linkata dalle operazioni** che creano o
-riscrivono pagine (`record`, `ingest`, lint **C**, `reorg`). È una foglia: le operazioni la referenziano
-senza che questo file dipenda da loro.
+**What a page looks like *inside* → [`page-craft.md`](page-craft.md).** The rules above are
+the *format* (frontmatter, naming, wikilinks, when to create/update). **Page-craft** — atomicity,
+self-containment, link discipline and especially the **level of meaning** (*what* to write, not just
+how) — lives in the reference page `page-craft.md`, **linked from the operations** that create or
+rewrite pages (`record`, `ingest`, lint **C**, `reorg`). It is a leaf: the operations reference it
+without this file depending on them.
 
-### Verità, autorità e obsolescenza
+### Truth, authority and obsolescence
 
-**Non esiste una singola fonte di verità**: l'autorità dipende dall'**asse** del claim —
-sul **comportamento** vincono **codice + test**; sul **perché** vincono le **decisioni registrate**
-(log, requirements, decisioni di processo). Il wiki è **derivato**: in conflitto si applica la gerarchia
-di default (comportamento → codice/test · perché → decisione registrata); una gerarchia configurata
-dall'ospite può sostituirla (opzionale).
+**There is no single source of truth**: authority depends on the **axis** of the claim —
+on **behavior**, **code + tests** win; on **why**, **recorded decisions** win
+(log, requirements, process decisions). The wiki is **derived**: in conflict the default hierarchy applies
+(behavior → code/tests · why → recorded decision); a hierarchy configured by the host can replace it (optional).
 
-**Una pagina è stale quando contraddice la sua autorità.** La risposta NON è correggere in
-silenzio, né cancellare: è la **supersession esplicita** —
+**A page is stale when it contradicts its authority.** The answer is NOT to correct silently,
+nor to delete: it is **explicit supersession** —
 
-1. **frontmatter**: `status: superseded` (il campo `status` è tra gli opzionali della config);
-2. **banner in testa** con data, *cosa* supera la pagina e il **link** alla verità corrente
-   (`> ⚠️ **Superata (YYYY-MM-DD):** <claim> è contraddetto da <autorità> → vedi [[pagina-corrente]]`);
-3. il **contenuto resta** (testimonianza; gli errori cancellati si ripetono): la pagina si pota o si
-   fonde nel successore solo in un `reorg` confermato, mai d'ufficio.
+1. **frontmatter**: `status: superseded` (the `status` field is among the optional ones in the config);
+2. **banner at the top** with date, *what* supersedes the page and the **link** to the current truth
+   (`> ⚠️ **Superseded (YYYY-MM-DD):** <claim> is contradicted by <authority> → see [[current-page]]`);
+3. the **content remains** (as testimony; deleted errors get repeated): the page is pruned or merged into
+   its successor only in a confirmed `reorg`, never automatically.
 
-Per il **diario** (log, record datati) la supersession è naturale: la correzione è una **nuova voce**,
-mai un edit. Per il **grafo** la convenzione qui sopra è l'equivalente. **Niente punteggi di confidenza
-numerici**: l'evidenza è la catena di link/prove del claim ancorato (vedi le critiche in
-la falsa precisione dei punteggi numerici). Chi *rileva* la contraddizione è
-il lint B (o chiunque, lavorando); chi *decide* la marcatura è il flusso principale **su conferma**
-quando il caso tocca decisioni/fonti autorevoli umane (convenzione "Contraddizioni" qui sopra).
+For the **diary** (log, dated records) supersession is natural: the correction is a **new entry**,
+never an edit. For the **graph** the convention above is the equivalent. **No numeric confidence scores**:
+the evidence is the chain of links/proof of the anchored claim (see the critiques in
+the false precision of numeric scores). Who *detects* the contradiction is
+lint B (or anyone, while working); who *decides* the marking is the main flow **on confirmation**
+when the case involves decisions/authoritative human sources (the "Contradictions" convention above).
 
-**File append-only** (il log): **non** portano `updated` nel frontmatter (sarebbe sempre stale); il loro
-stato è dato dall'ultima voce.
+**Append-only files** (the log): they do **not** carry `updated` in the frontmatter (it would always be stale); their
+state is given by the last entry.
 
-## 5. Operazioni — indice (caricamento on-demand)
+## 5. Operations — index (on-demand loading)
 
-Ogni operazione = **input → passi → output** (pagine toccate + UNA voce di log) e segue il **substrato
-condiviso** di questo file (confine D↔N §2, tassonomia §3, convenzioni §4, voce di log §6, limiti §7);
-chi crea o riscrive pagine segue inoltre il page-craft in [`page-craft.md`](page-craft.md).
-La **procedura specifica** di ciascuna operazione vive in un **modulo `ops/<operazione>.md`** (stessa
-cartella di questo file): **`Read` solo il modulo dell'operazione che ti serve** — non caricarli tutti
-(progressive disclosure). Le operazioni documentali (`record`, `ingest`, `query`, lint **A**) sono
-eseguibili anche dal `curator` in background; il lint **B/C**, `distill`, `reorg`, `generate` e
-`rag-sync` richiedono il **flusso principale** (Opus).
+Each operation = **input → steps → output** (pages touched + ONE log entry) and follows the **shared
+substrate** of this file (D↔N boundary §2, taxonomy §3, conventions §4, log entry §6, limits §7);
+whoever creates or rewrites pages also follows the page-craft in [`page-craft.md`](page-craft.md).
+The **specific procedure** of each operation lives in an **`ops/<operation>.md` module** (same
+folder as this file): **`Read` only the module for the operation you need** — do not load them all
+(progressive disclosure). Documentary operations (`record`, `ingest`, `query`, lint **A**) can also be
+run by the `curator` in background; lint **B/C**, `distill`, `reorg`, `generate` and
+`rag-sync` require the **main flow** (Opus).
 
-| Operazione | Modulo (`Read` on-demand) | Cosa fa | Esecutore |
+| Operation | Module (`Read` on-demand) | What it does | Executor |
 |---|---|---|---|
-| `record` | [`ops/record.md`](ops/record.md) | registra lavoro/decisione svolti | curator OK |
-| `distill` | [`ops/distill.md`](ops/distill.md) | estrae le entità/concetti durevoli in pagine proprie (ingressi: step appena svolto · record grasso dal backlog · brief di una conversazione intera, anche vecchia); assottiglia i record datati | solo Opus |
-| `ingest` | [`ops/ingest.md`](ops/ingest.md) | acquisisci una fonte esterna → `sources/` | curator OK |
-| `query` | [`ops/query.md`](ops/query.md) | rispondi a una domanda sul wiki (archivia se prezioso) | curator OK |
-| `lint` | [`ops/lint.md`](ops/lint.md) | coerenza a 3 livelli: A strutturale · B semantico · C organizzativo | A: curator · B/C: solo Opus |
-| `reorg` | [`ops/reorg.md`](ops/reorg.md) | applica il refactoring organizzativo del lint C (su conferma) | solo Opus |
-| `generate` | [`ops/generate.md`](ops/generate.md) | genera il wiki dal repo: **da-zero** (bootstrap su ospite privo di wiki) o **da-diff** (incrementale: solo le pagine impattate dalle modifiche recenti); profondità di ricognizione a preset (`leggera`/`media`/`massiva`, default leggera) | solo Opus |
-| `rag-sync` | [`ops/rag-sync.md`](ops/rag-sync.md) | re-indicizza il wiki nel RAG (il ruolo di "corpus") | solo Opus |
-| `structure` | [`ops/structure.md`](ops/structure.md) | bootstrap idempotente della struttura | curator/CLI |
+| `record` | [`ops/record.md`](ops/record.md) | records completed work/decisions | curator OK |
+| `distill` | [`ops/distill.md`](ops/distill.md) | extracts durable entities/concepts into their own pages (inputs: step just completed · fat record from backlog · brief of an entire conversation, even an old one); slims down dated records | Opus only |
+| `ingest` | [`ops/ingest.md`](ops/ingest.md) | acquires an external source → `sources/` | curator OK |
+| `query` | [`ops/query.md`](ops/query.md) | answers a question about the wiki (archives if valuable) | curator OK |
+| `lint` | [`ops/lint.md`](ops/lint.md) | consistency at 3 levels: A structural · B semantic · C organizational | A: curator · B/C: Opus only |
+| `reorg` | [`ops/reorg.md`](ops/reorg.md) | applies the organizational refactoring from lint C (on confirmation) | Opus only |
+| `generate` | [`ops/generate.md`](ops/generate.md) | generates the wiki from the repo: **from-scratch** (bootstrap on a host without a wiki) or **from-diff** (incremental: only the pages impacted by recent changes); reconnaissance depth preset (`light`/`medium`/`massive`, default light) | Opus only |
+| `rag-sync` | [`ops/rag-sync.md`](ops/rag-sync.md) | re-indexes the wiki in the RAG (the "corpus" role) | Opus only |
+| `structure` | [`ops/structure.md`](ops/structure.md) | idempotent bootstrap of the structure | curator/CLI |
 
-> **Write-back log/indice.** Entrambi **cablati in CLI**: il **log** con `append-log` (l'LLM
-> compone il **corpo curato** §6, la CLI lo piazza nel file del giorno) e la riga d'**indice** con
-> `upsert-index` (`--page` + `--summary` o stdin; insert/update/noop idempotente, sommario
-> **sempre LLM-authored**, vuoto/multilinea rifiutati). Sfumatura sull'indice: la CLI scrive la riga
-> **piatta** `- [[page]] — summary`; se l'indice dell'ospite è *curato* (grassetti, sezioni),
-> decidere se adottare il formato piatto o continuare ad autorare la riga a mano è **giudizio**.
+> **Write-back log/index.** Both **wired into the CLI**: the **log** with `append-log` (the LLM
+> composes the **curated body** §6, the CLI places it in today's file) and the **index** line with
+> `upsert-index` (`--page` + `--summary` or stdin; insert/update/noop idempotent, summary
+> **always LLM-authored**, empty/multiline rejected). Nuance on the index: the CLI writes the
+> **flat** line `- [[page]] — summary`; if the host's index is *curated* (bold text, sections),
+> deciding whether to adopt the flat format or continue authoring the line by hand is **judgment**.
 
-## 6. Voce di log
+## 6. Log entry
 
-Append al log, una voce per operazione, con la **data odierna**. Con la **rotazione** (`log_dir`) la voce va
-nel **file del giorno** (`<log_dir>/YYYY-MM-DD.md`) e il **piazzamento** lo fa `append-log` (CLI) a
-cui passi il **corpo curato**; senza `log_dir`, un unico file di log (back-compat). Formato:
+Append to the log, one entry per operation, with **today's date**. With **rotation** (`log_dir`) the entry goes
+in the **day's file** (`<log_dir>/YYYY-MM-DD.md`) and the **placement** is done by `append-log` (CLI) to
+which you pass the **curated body**; without `log_dir`, a single log file (back-compat). Format:
 ```
-## [YYYY-MM-DD] <operazione> | <titolo>
-<lead: 1–2 frasi col perché/trigger dello step>
-- **<etichetta>:** <fatto saliente o puntatore [[pagina]], una riga>
+## [YYYY-MM-DD] <operation> | <title>
+<lead: 1–2 sentences with the why/trigger of the step>
+- **<label>:** <salient fact or pointer [[page]], one line>
 ```
-`<operazione>` ∈ `setup` · `structure` · `record` · `distill` · `ingest` · `query` · `lint` · `reorg` ·
-`generate` · `rag-sync` — l'insieme delle operazioni di §5 più `setup` (bootstrap generico di
-sessione/governance, distinto da `structure` che è il bootstrap della *struttura* del wiki). `structure`
-lascia una voce **solo se ha creato qualcosa** (`created` non vuoto); se è tutto `skipped_existing`,
-niente voce (idempotente + regola anti-banale). *Retro-compatibilità:* le voci storiche
-`generate-from-diff` nei log restano valide (il log è append-only, non si riscrive); dal 2026-06-10 il
-vocabolario corrente usa `generate`.
+`<operation>` ∈ `setup` · `structure` · `record` · `distill` · `ingest` · `query` · `lint` · `reorg` ·
+`generate` · `rag-sync` — the full set of operations from §5 plus `setup` (generic session/governance bootstrap,
+distinct from `structure` which is the bootstrap of the *wiki structure*). `structure`
+leaves an entry **only if it created something** (`created` not empty); if everything is `skipped_existing`,
+no entry (idempotent + anti-trivial rule). *Back-compatibility:* historical entries
+`generate-from-diff` in logs remain valid (the log is append-only, never rewritten); from 2026-06-10 the
+current vocabulary uses `generate`.
 
-**Com'è fatta una buona voce → [`log-craft.md`](log-craft.md).** Le regole qui sopra sono la *convenzione*
-(grammatica dell'heading, vocabolario delle operazioni, regola anti-banale). Il **log-craft** — il confine
-log↔pagina (cosa va nel log datato vs nella pagina evergreen), l'anatomia della voce (lead + bullet piatti +
-riga d'esito), la **granularità** e l'**anti-deriva** (no dump del contenuto, no liste-file, no aggettivi) —
-vive nella pagina-foglia gemella di [`page-craft.md`](page-craft.md), linkata dalle operazioni che appendono
-una voce (`record`, `ingest`, `lint`, `reorg`, …).
+**What makes a good entry → [`log-craft.md`](log-craft.md).** The rules above are the *convention*
+(heading grammar, operation vocabulary, anti-trivial rule). **Log-craft** — the log↔page boundary (what goes in the dated log vs. in the evergreen page), the anatomy of the entry (lead + flat bullets +
+outcome line), **granularity** and **anti-drift** (no content dump, no file lists, no adjectives) —
+lives in the leaf page twin of [`page-craft.md`](page-craft.md), linked from the operations that append
+an entry (`record`, `ingest`, `lint`, `reorg`, …).
 
-## 7. Limiti & deleghe
+## 7. Limits & delegations
 
-- **Git:** mai eseguirlo direttamente. Tutte le operazioni git (incluse le letture per il `generate`
-  da-diff) si **delegano al ruolo VCS** (`[roles].vcs`). Il `curator` non esegue git.
-- **Fonti & wiki congelati:** non toccare mai le fonti originali date a `ingest`, né i wiki esclusi via
+- **Git:** never execute it directly. All git operations (including reads for the `generate`
+  from-diff) are **delegated to the VCS role** (`[roles].vcs`). The `curator` does not run git.
+- **Sources & frozen wikis:** never touch the original sources given to `ingest`, nor the wikis excluded via
   `exclude`.
-- **Quando NON documentare:** modifiche puramente meccaniche o di poco conto non meritano una voce.
-- **Versionamento:** quando l'utente vuole versionare, delega al ruolo VCS un commit `docs(wiki):
-  <sommario>` con staging selettivo della radice del wiki.
+- **When NOT to document:** purely mechanical or minor changes do not deserve an entry.
+- **Versioning:** when the user wants to version, delegate to the VCS role a commit `docs(wiki):
+  <summary>` with selective staging of the wiki root.

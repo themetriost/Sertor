@@ -58,7 +58,7 @@ def test_discovery_config_in_wiki_subdir(tmp_path, monkeypatch, capsys):
 def test_discovery_none_found_errors(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     assert main(["scan", "--json"]) == 1
-    assert "errore" in capsys.readouterr().err
+    assert "error" in capsys.readouterr().err
 
 
 def test_explicit_config_bypasses_discovery(tmp_path, monkeypatch, capsys):

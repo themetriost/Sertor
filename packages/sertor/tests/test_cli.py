@@ -72,7 +72,7 @@ def test_target_nonexistent_exit_1_no_artifacts(tmp_path: Path, capsys):
     missing = tmp_path / "does-not-exist"
     rc = main(["install", "wiki", "--target", str(missing)])
     assert rc == 1
-    assert "errore:" in capsys.readouterr().err
+    assert "error:" in capsys.readouterr().err
     assert not missing.exists()
 
 

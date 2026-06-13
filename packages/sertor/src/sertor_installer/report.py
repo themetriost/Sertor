@@ -57,12 +57,12 @@ class InstallReport:
             lines.append(f"  {o.outcome.value:<8}{o.target_rel}{suffix}")
         if self.errors and self.failed_step:
             lines.append(
-                f"Interrotto: passo fallito = {self.failed_step}. Risolvi e riesegui."
+                f"Aborted: failed step = {self.failed_step}. Fix it and re-run."
             )
         else:
             lines.append(
-                f"Riepilogo: {self.created} creati · {self.skipped} saltati · "
-                f"{self.merged} merged · {self.block} block · {self.errors} errori"
+                f"Summary: {self.created} created · {self.skipped} skipped · "
+                f"{self.merged} merged · {self.block} block · {self.errors} errors"
             )
         return "\n".join(lines)
 

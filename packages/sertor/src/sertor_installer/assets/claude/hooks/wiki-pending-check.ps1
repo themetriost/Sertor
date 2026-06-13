@@ -1,44 +1,44 @@
 <#
 .SYNOPSIS
-  Trigger automatico (non bloccante) per la manutenzione del wiki — thin wrapper sulla CLI.
+  Automatic (non-blocking) trigger for wiki maintenance — thin wrapper around the CLI.
 
 .DESCRIPTION
-  Delega la logica al nucleo deterministico host-agnostico: invoca
+  Delegates logic to the host-agnostic deterministic core: invokes
     sertor-wiki-tools scan --config <root>/wiki/wiki.config.toml --root <root> --json
-  e mappa il contratto `wiki.scan/1` (`pending`, `message`) al formato dell'hook. Nessuna
-  euristica mtime duplicata qui: la fonte unica e' la CLI (Principio X, niente path hard-coded).
-    - Mode Stop:       JSON con additionalContext (NON bloccante; rispetta stop_hook_active).
-    - Mode SessionEnd: JSON con systemMessage di riepilogo verso il terminale.
-  Se non c'e' lavoro pendente (o la CLI non e' disponibile): nessun output, exit 0.
-  L'input dell'hook (JSON) arriva su stdin; lo script e' tollerante se assente (test manuali).
+  and maps the `wiki.scan/1` contract (`pending`, `message`) to the hook format. No
+  duplicate mtime heuristics here: the single source of truth is the CLI (Principle X, no hard-coded paths).
+    - Mode Stop:       JSON with additionalContext (NON-blocking; respects stop_hook_active).
+    - Mode SessionEnd: JSON with systemMessage summary to the terminal.
+  If there is no pending work (or the CLI is unavailable): no output, exit 0.
+  The hook input (JSON) arrives on stdin; the script is tolerant if absent (manual tests).
 #>
 [CmdletBinding()]
 param([ValidateSet('Stop', 'SessionEnd')][string]$Mode = 'Stop')
 
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 
-# --- input hook (JSON su stdin) ---
+# --- hook input (JSON on stdin) ---
 $raw = ''
 try { $raw = [Console]::In.ReadToEnd() } catch {}
 $hook = $null
 if ($raw -and $raw.Trim()) { try { $hook = $raw | ConvertFrom-Json } catch { $hook = $null } }
 
-# --- guardia anti-loop: se Claude e' gia' in un ciclo di Stop hook, lascialo terminare ---
+# --- anti-loop guard: if Claude is already in a Stop hook cycle, let it finish ---
 if ($Mode -eq 'Stop' -and $hook -and $hook.stop_hook_active) { exit 0 }
 
-# --- radice progetto: env dell'harness, poi cwd dell'hook, poi cartella corrente ---
+# --- project root: harness env, then hook cwd, then current directory ---
 $root = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR }
         elseif ($hook -and $hook.cwd) { $hook.cwd }
         else { '.' }
 
-# feature 016: la config vive in wiki/; fallback al vecchio path radice per ospiti in transizione.
+# feature 016: config lives in wiki/; fallback to the old root path for hosts in transition.
 $config = Join-Path $root 'wiki/wiki.config.toml'
 if (-not (Test-Path $config)) {
     $legacy = Join-Path $root 'wiki.config.toml'
-    if (Test-Path $legacy) { $config = $legacy } else { exit 0 }  # nessuna config host → niente
+    if (Test-Path $legacy) { $config = $legacy } else { exit 0 }  # no host config → nothing to do
 }
 
-# --- delega al nucleo deterministico: scan --json → contratto wiki.scan/1 ---
+# --- delegate to the deterministic core: scan --json → wiki.scan/1 contract ---
 $scan = $null
 try {
     Push-Location $root
@@ -47,27 +47,27 @@ try {
     if ($out) { $scan = ($out | Select-Object -Last 1 | ConvertFrom-Json) }
 } catch {
     try { Pop-Location } catch {}
-    exit 0   # CLI non disponibile / errore: hook silenzioso, niente rumore
+    exit 0   # CLI unavailable / error: silent hook, no noise
 }
 
 if (-not $scan -or $scan.schema -ne 'wiki.scan/1' -or [int]$scan.pending -le 0) { exit 0 }
 
 $pending = [int]$scan.pending
 
-# --- output per evento (riusa il message localizzato del contratto) ---
+# --- output per event (reuses the localized message from the contract) ---
 if ($Mode -eq 'Stop') {
-    # NB: per l'evento Stop l'harness NON ammette hookSpecificOutput.additionalContext (valido solo per
-    # UserPromptSubmit/PostToolUse/PostToolBatch). Il messaggio non bloccante va in systemMessage (top-level),
-    # come fa il ramo SessionEnd. Vedi schema hook di Claude Code.
-    $msg = "$($scan.message) Per la regola aurea (vedi CLAUDE.md, sezione Wiki): valuta di " +
-           "delegare al wiki-curator (operazione record) o eseguire /wiki."
+    # NB: for the Stop event the harness does NOT support hookSpecificOutput.additionalContext (valid only for
+    # UserPromptSubmit/PostToolUse/PostToolBatch). The non-blocking message goes in systemMessage (top-level),
+    # as the SessionEnd branch does. See the Claude Code hook schema.
+    $msg = "$($scan.message) Per the golden rule (see CLAUDE.md, Wiki section): consider " +
+           "delegating to wiki-curator (record operation) or running /wiki."
     $out = @{ systemMessage = $msg }
     $out | ConvertTo-Json -Compress -Depth 5
     exit 0
 }
 else {
-    $msg = "Wiki: $pending file modificati non risultano ancora registrati. " +
-           "Alla prossima sessione esegui /wiki record (o delega al wiki-curator)."
+    $msg = "Wiki: $pending modified files are not yet recorded. " +
+           "At the next session run /wiki record (or delegate to wiki-curator)."
     $out = @{ systemMessage = $msg }
     $out | ConvertTo-Json -Compress -Depth 5
     exit 0

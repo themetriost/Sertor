@@ -1,11 +1,11 @@
-# Operazione `structure` — bootstrap della struttura (idempotente)
+# Operation `structure` — structure bootstrap (idempotent)
 
-> **Modulo operazione.** Esecutore: **curator/CLI** (puro meccanico, nessun giudizio).
-> Per il **substrato condiviso** (tassonomia §3) vedi il playbook `wiki-playbook.md`. Qui solo la procedura.
+> **Operation module.** Executor: **curator/CLI** (purely mechanical, no judgment).
+> For the **shared substrate** (taxonomy §3) see the playbook `wiki-playbook.md`. Only the procedure is described here.
 
-Su un ospite nuovo (o per riparare cartelle/file speciali mancanti): `sertor-wiki-tools structure
-init`. Crea le cartelle della tassonomia + index + log con seed minimo; **non sovrascrive** ciò che esiste
-(contratto `wiki.structure/1`: `created` / `skipped_existing`). Nessun giudizio: puro meccanico.
+On a new host (or to repair missing special folders/files): `sertor-wiki-tools structure
+init`. Creates the taxonomy folders + index + log with a minimal seed; **does not overwrite** what already exists
+(contract `wiki.structure/1`: `created` / `skipped_existing`). No judgment: purely mechanical.
 
-Appendi una voce di log `structure` **solo se** ha creato qualcosa (`created` non vuoto); se è tutto
-`skipped_existing`, **niente voce** (idempotente + regola anti-banale dell'indice §6).
+Append a log entry `structure` **only if** something was created (`created` non-empty); if everything is
+`skipped_existing`, **no entry** (idempotent + anti-trivial rule of index §6).

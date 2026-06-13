@@ -81,17 +81,17 @@ def test_upsert_index_summary_from_stdin_utf8(tmp_path, capsys, monkeypatch):
 def test_upsert_index_requires_page_and_summary(tmp_path, capsys, monkeypatch):
     cfg = _wiki(tmp_path)
     assert _run(cfg, "--summary", "senza pagina") == 1            # --page mancante
-    assert "errore" in capsys.readouterr().err
+    assert "error" in capsys.readouterr().err
     monkeypatch.setattr("sys.stdin", io.StringIO(""))             # niente summary, stdin vuoto
     assert _run(cfg, "--page", "concepts/x.md") == 1
-    assert "errore" in capsys.readouterr().err
+    assert "error" in capsys.readouterr().err
 
 
 def test_upsert_index_missing_index_fails_explicitly(tmp_path, capsys):
     cfg = tmp_path / "wiki.config.toml"
     cfg.write_text(_CONFIG, encoding="utf-8")                     # struttura NON inizializzata
     assert _run(cfg, "--page", "concepts/x.md", "--summary", "s") == 1   # FR-015
-    assert "errore" in capsys.readouterr().err
+    assert "error" in capsys.readouterr().err
 
 
 def test_upsert_index_rejects_empty_and_multiline(tmp_path, capsys):

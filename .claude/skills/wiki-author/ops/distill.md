@@ -1,45 +1,44 @@
-# Operazione `distill` — estrai le entità durevoli, assottiglia i record
+# Operation `distill` — extract durable entities, slim down records
 
-> **Modulo operazione.** Esecutore: **solo flusso principale (Opus)** — è giudizio (cosa è un'entità, come
-> astrarla), non trascrizione: non si delega al `curator` (Haiku), come il lint B/C e `reorg`. Per il
-> **substrato condiviso** (tassonomia §3, voce di log §6) vedi `wiki-playbook.md`; per **se/cosa merita una
-> pagina** [`../wiki-craft.md`](../wiki-craft.md) (§1 + la *lente di prodotto* §2), per **come si scrive la
-> pagina-entità** [`../page-craft.md`](../page-craft.md). Qui solo la procedura specifica.
+> **Operation module.** Executor: **main flow only (Opus)** — this is judgment (what counts as an entity, how to
+> abstract it), not transcription: it is not delegated to the `curator` (Haiku), like lint B/C and `reorg`. For the
+> **shared substrate** (taxonomy §3, log entry §6) see `wiki-playbook.md`; for **whether/what deserves a
+> page** [`../wiki-craft.md`](../wiki-craft.md) (§1 + the *product lens* §2), for **how to write the entity page**
+> [`../page-craft.md`](../page-craft.md). Only the specific procedure is described here.
 
-La distillazione è il **duale** di `record`: se `record` cattura l'**evento datato**, `distill` ne estrae la
-**conoscenza durevole** in pagine-entità proprie, così non resta sepolta nel diario di sessione. Tre
-**ingressi**, stesso giudizio:
+Distillation is the **dual** of `record`: where `record` captures the **dated event**, `distill` extracts the
+**durable knowledge** into dedicated entity pages, so it does not remain buried in the session diary. Three
+**inputs**, same judgment:
 
-- **di step** (il caso tipico): secondo tempo del rituale (subito dopo `record`, vedi il rituale dell'ospite,
-  es. nel `CLAUDE.md`) — una **feature appena implementata**: il record nasce *magro per costruzione*
-  (evento + esito + puntatori), le entità in pagine;
-- **da backlog**, su richiesta: un vecchio record già grasso da assottigliare;
-- **da conversazione**: il **brief condensato** di una conversazione/sessione
-  **intera** — anche vecchia, mai registrata in tempo reale, o avvenuta altrove — da riversare nel grafo.
-  **Mai il transcript grezzo**: chi invoca condensa prima (l'input arriva già pre-elaborato).
-  È il *paracadute* per quando il rituale non c'era. Se il brief contiene anche **eventi** non a diario
-  (lavoro svolto mai registrato), un `record` contestuale li cattura: `distill` scrive il durevole nel
-  grafo, non fa cronaca.
+- **step-driven** (the typical case): second step of the ritual (immediately after `record`, see the host ritual,
+  e.g. in `CLAUDE.md`) — a **newly implemented feature**: the record is born *lean by design*
+  (event + outcome + pointers), entities go into pages;
+- **from backlog**, on request: an old fat record to be slimmed down;
+- **from conversation**: the **condensed brief** of an entire conversation/session
+  — even an old one, never recorded in real time, or that happened elsewhere — to be poured into the graph.
+  **Never the raw transcript**: the caller condenses first (input arrives already pre-processed).
+  This is the *safety net* for when the ritual was absent. If the brief also contains **events** not in the diary
+  (completed work never recorded), a contextual `record` captures them: `distill` writes the durable into the
+  graph, it does not write chronicles.
 
-1. **Materiale di partenza.** Il lavoro appena svolto (codice toccato + il record `experiment` appena
-   scritto), oppure — in modalità backlog — una pagina grassa esistente da distillare, oppure — in modalità
-   conversazione — il brief condensato di una sessione (decisioni, concetti, esiti). `collect --json` per
-   sapere quali entità hanno già una pagina (anti-duplicato).
-2. **Enumera i candidati-entità.** Dal materiale, elenca i costrutti con **identità propria**: entità di
-   dominio, porte/contratti, adapter, servizi, decisioni architetturali, tecnologie (la *lente di prodotto*
+1. **Source material.** The work just completed (touched code + the `experiment` record just written), or — in
+   backlog mode — an existing fat page to distill, or — in conversation mode — the condensed brief of a session
+   (decisions, concepts, outcomes). `collect --json` to find out which entities already have a page (anti-duplication).
+2. **Enumerate entity candidates.** From the material, list constructs with **their own identity**: domain
+   entities, ports/contracts, adapters, services, architectural decisions, technologies (the *product lens*
    in [`../wiki-craft.md`](../wiki-craft.md) §2).
-3. **Filtra (test di [`../wiki-craft.md`](../wiki-craft.md) §1).** Tieni solo i candidati con **nome stabile**
-   e **referenziati da più punti**; scarta il dettaglio implementativo (un metodo privato non è una pagina).
-   **Anti-frammentazione:** poche pagine vive, non una micro-pagina per ogni classe.
-4. **Crea/arricchisci la pagina** di ogni candidato superstite, nell'area giusta (tassonomia §3), secondo
-   [`../page-craft.md`](../page-craft.md): **definizione in apertura** («X è…»), il *perché*, le **relazioni
-   coi vicini** (entità→porta→adapter→servizio), claim **evergreen** ancorato. Se la pagina esiste ed è già
-   ricca, **non duplicare** (idempotenza).
-5. **Assottiglia la sorgente.** Rimuovi dal record/pagina-grassa la conoscenza-entità migrata e sostituiscila
-   con **puntatori** `[[entità]]`. Il record `experiment` resta **evento + esito + link**, non un trattato —
-   è lo stesso confine di [`../log-craft.md`](../log-craft.md) §1 (log↔pagina), applicato a record↔entità. Non
-   duplicare gli **artefatti di processo** che vivono altrove (spec/plan/tasks/Constitution Check, tabelle di
-   rischi/decisioni, hash git): **citali**, non ricopiarli — l'esito sta in una riga. E non trascrivere il
-   **codice** in snippet (è la prima fonte di deriva): descrivi e cita il file (vedi [`../page-craft.md`](../page-craft.md)).
-6. **Backlink + indice + voce di log.** Linka le nuove pagine dall'indice e dalle correlate; appendi UNA voce
-   di log `distill` (formato: playbook §6; come si scrive: [`../log-craft.md`](../log-craft.md)).
+3. **Filter (test from [`../wiki-craft.md`](../wiki-craft.md) §1).** Keep only candidates with a **stable name**
+   and **referenced from multiple points**; discard implementation detail (a private method is not a page).
+   **Anti-fragmentation:** few living pages, not one micro-page per class.
+4. **Create/enrich the page** for each surviving candidate, in the right area (taxonomy §3), following
+   [`../page-craft.md`](../page-craft.md): **definition at the top** ("X is…"), the *why*, **relationships
+   with neighbors** (entity→port→adapter→service), anchored **evergreen** claim. If the page already exists and is
+   already rich, **do not duplicate** (idempotency).
+5. **Slim down the source.** Remove the migrated entity knowledge from the record/fat page and replace it
+   with **pointers** `[[entity]]`. The `experiment` record stays **event + outcome + links**, not a treatise —
+   the same boundary as [`../log-craft.md`](../log-craft.md) §1 (log↔page), applied to record↔entity. Do not
+   duplicate **process artifacts** that live elsewhere (spec/plan/tasks/Constitution Check, risk/decision tables,
+   git hashes): **cite them**, do not copy them — the outcome fits in one line. And do not transcribe **code**
+   into snippets (this is the primary source of drift): describe and cite the file (see [`../page-craft.md`](../page-craft.md)).
+6. **Backlinks + index + log entry.** Link the new pages from the index and from related pages; append ONE log
+   entry `distill` (format: playbook §6; how to write it: [`../log-craft.md`](../log-craft.md)).

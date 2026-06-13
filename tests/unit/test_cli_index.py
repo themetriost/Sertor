@@ -72,7 +72,7 @@ def test_index_nonexistent_path_exit_1(patched_indexer, tmp_path, capsys):
     code = _run(["index", str(tmp_path / "non-esiste")])
     err = capsys.readouterr().err
     assert code == 1
-    assert "errore:" in err
+    assert "error:" in err
 
 
 def test_index_path_is_file_exit_1(patched_indexer, tmp_path, capsys):
@@ -81,7 +81,7 @@ def test_index_path_is_file_exit_1(patched_indexer, tmp_path, capsys):
     code = _run(["index", str(f)])
     err = capsys.readouterr().err
     assert code == 1
-    assert "errore:" in err
+    assert "error:" in err
 
 
 # ------------------------------------------------------------- backend incompleto (FR-015)
