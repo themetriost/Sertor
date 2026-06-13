@@ -93,6 +93,14 @@ L'asse **DOVE**: radice ospite **minima e prevedibile**. Tre mosse + doc, distin
   Sertor: `pyproject.toml`+`uv.lock` stanno in radice perché `uv` lo richiede — **`uv.lock` sta sempre
   accanto al suo `pyproject.toml`** (su un ospite: in `.sertor/`; nel repo Sertor: in radice).
 
+**Runtime auto-localizzante (follow-up 2026-06-13).** `Settings.load` risolve il `.env` in modo
+robusto: cwd `.env` → poi `.env` accanto al venv del runtime (`Path(sys.prefix).parent`, cioè
+`.sertor/` per un install, radice repo in dev) → altrimenti default con **warning** (niente fallback
+silenzioso a `local`). L'indice è ancorato alla stessa home. Conseguenza: `sertor-rag` indicizza con
+backend Azure e tiene l'indice in `.sertor/.index` **da qualsiasi cwd**, non solo lanciato da dentro
+`.sertor/` (lezione dalla validazione live su Kaelen: l'exe chiamato da radice host caricava il `.env`
+sbagliato → fallback a Ollama).
+
 **Retrocompat ospiti esterni: fuori ambito** (decisione D4) — nessun comando di migrazione; un
 `wiki.config.toml` legacy in radice su un vecchio ospite non viene rimosso. **Eccezione: Sertor
 stesso**, spostato **one-shot** (config in `wiki/`, asset `.claude/` ri-sync, auto-discovery

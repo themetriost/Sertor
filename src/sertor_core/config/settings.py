@@ -7,7 +7,9 @@ provengono solo da env/`.env` e non vengono mai scritti su path versionati (REQ-
 """
 from __future__ import annotations
 
+import logging
 import os
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -23,6 +25,26 @@ _DEFAULT_EXCLUDES: tuple[str, ...] = (
     ".index", "chroma", ".idea", ".vscode",
     "*.key", "*.pem", ".env",
 )
+
+
+def _resolve_env_path(env_file: str | os.PathLike[str] | None) -> Path | None:
+    """Quale `.env` caricare — runtime auto-localizzante (host-agnostico).
+
+    `None` → nessun caricamento (isolamento dei test). Altrimenti, in ordine: il file indicato se
+    esiste (di default `./.env`, relativo al cwd); poi `.env` nella cartella del **progetto che
+    possiede il venv corrente** (`Path(sys.prefix).parent`) — per un runtime installato è
+    `.sertor/`, in sviluppo è la radice del repo. Così la CLI carica `.sertor/.env` (e ancora
+    l'indice lì) da **qualsiasi** cwd, non solo quando si lancia da dentro `.sertor/`.
+    """
+    if env_file is None:
+        return None
+    explicit = Path(env_file)
+    if explicit.exists():
+        return explicit
+    runtime_env = Path(sys.prefix).parent / ".env"
+    if runtime_env.exists():
+        return runtime_env
+    return None
 
 
 def _split_env(name: str) -> list[str] | None:
@@ -123,14 +145,34 @@ class Settings:
 
         Il file `.env` è autoritativo (override) per evitare che variabili di sistema
         spurie rompano la config; i valori assenti ricadono sui default di questa classe.
+        La risoluzione del `.env` è **auto-localizzante** (`_resolve_env_path`): se non c'è nel cwd,
+        usa quello accanto al venv del runtime (`.sertor/.env`), e l'indice viene ancorato lì.
         """
-        if env_file is not None and Path(env_file).exists():
-            load_dotenv(env_file, override=True)
+        env_path = _resolve_env_path(env_file)
+        if env_path is not None:
+            load_dotenv(env_path, override=True)
 
         excludes = _split_env("SERTOR_EXCLUDE_PATTERNS")
         extra_corpora = _split_env("SERTOR_EXTRA_CORPORA")
         index_dir = os.getenv("SERTOR_INDEX_DIR")
         backend = os.getenv("RAG_BACKEND", "local")
+        if env_path is None and env_file is not None and os.getenv("RAG_BACKEND") is None:
+            # Nessuna fonte di config (né `.env` nel cwd/accanto al runtime, né `RAG_BACKEND`
+            # nell'ambiente): si ricade sui default (backend `local`/Ollama). Lo si segnala per
+            # evitare il fallback silenzioso che confonde (es. "ollama non raggiungibile" quando si
+            # voleva Azure ma il `.sertor/.env` non è stato caricato).
+            from sertor_core.observability.logging import log_event
+            log_event(
+                logging.WARNING, "config_no_env_found",
+                note="nessun .env trovato e RAG_BACKEND non impostato; uso i default (local)",
+            )
+        # Ancora dell'indice: esplicito > home del runtime (cartella del `.env` risolto) > cwd.
+        if index_dir:
+            resolved_index_dir = Path(index_dir)
+        elif env_path is not None:
+            resolved_index_dir = env_path.parent / ".index"
+        else:
+            resolved_index_dir = Path(".index")
         return cls(
             backend=backend,
             # Lo store è disaccoppiato dal provider di embeddings: default = `RAG_BACKEND` (retro-
@@ -145,7 +187,7 @@ class Settings:
             azure_openai_api_key=os.getenv("AZURE_OPENAI_API_KEY", ""),
             azure_openai_embed_deployment=os.getenv("AZURE_OPENAI_EMBED_DEPLOYMENT", ""),
             embed_batch_size=int(os.getenv("EMBED_BATCH_SIZE", "64")),
-            index_dir=Path(index_dir) if index_dir else Path(".index"),
+            index_dir=resolved_index_dir,
             azure_search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT", ""),
             azure_search_api_key=os.getenv("AZURE_SEARCH_API_KEY", ""),
             chunk_size=int(os.getenv("CHUNK_SIZE", "1600")),
