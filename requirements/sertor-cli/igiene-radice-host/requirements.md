@@ -1,6 +1,7 @@
 # Requisiti — Igiene e collocazione degli artefatti sull'ospite
 <!-- Deriva da: FEAT-002 (Installazione selettiva delle capacità del core su un repo target) -->
-<!-- STATO: IN ELABORAZIONE — origine: feedback utente su Kaelen (2026-06-12). -->
+<!-- STATO: PRONTO PER SPECIFY — origine: feedback utente su Kaelen (2026-06-12); retrocompat ospiti
+     esterni esclusa dall'ambito (decisione utente 2026-06-13). -->
 <!-- ASSE: DOVE stanno i file (collocazione). ORTOGONALE al modello di ownership mono-utente vs
      enterprise/team, che vive in `installer-multiutente/requirements.md`. -->
 
@@ -65,6 +66,11 @@ confinato, ciò che resta in radice deve esserci per un motivo (vincolo di clien
   feature `installer-multiutente`.
 - **Spostare `.mcp.json` in `.claude/`**: impossibile (vincolo Claude Code verificato).
 - **Spostare `.claude/`/`CLAUDE.md`/`wiki/`** dalla radice: vincolo di client / by-design.
+- **Migrazione degli ospiti esterni già installati** al nuovo layout (`wiki.config.toml` in root →
+  `wiki/`): fuori ambito (base installata trascurabile; si riallineano con un nuovo `install`).
+  Nessun meccanismo/comando di migrazione. **Eccezione: Sertor stesso** (dogfood), il cui
+  `wiki.config.toml` si sposta in `wiki/` **one-shot**, come fix diretto contestuale
+  all'implementazione (riallineando i ~10 asset `.claude/` e i test di sync nello stesso passaggio).
 
 ## 5. Requisiti funzionali (EARS)
 
@@ -89,8 +95,11 @@ confinato, ciò che resta in radice deve esserci per un motivo (vincolo di clien
 
 ## 6. Requisiti non funzionali
 - **NFR-1 (coerenza):** stesse convenzioni di report/exit code di `install wiki`/`rag`.
-- **NFR-2 (retro-compatibilità):** gli ospiti già installati con `wiki.config.toml` in root non si
-  rompono senza un percorso di migrazione esplicito.
+- **NFR-2 (retro-compatibilità — FUORI AMBITO per gli ospiti esterni):** non si costruisce alcun
+  percorso/comando di migrazione per gli ospiti già installati con `wiki.config.toml` in root: la base
+  installata esterna è trascurabile e si riallinea con un nuovo `install`. **Unica eccezione: Sertor
+  stesso** (dogfood), il cui `wiki.config.toml` si sposta in `wiki/` **one-shot** (fix diretto
+  contestuale, non un meccanismo riusabile).
 - **NFR-3 (testabilità):** la collocazione e l'adeguamento delle invocazioni verificabili senza rete.
 
 ## 7. Vincoli, assunzioni e dipendenze
@@ -102,7 +111,9 @@ confinato, ciò che resta in radice deve esserci per un motivo (vincolo di clien
 
 ## 8. Rischi
 - **R-1 — Drift di coerenza** se qualche invocazione resta al vecchio path di `wiki.config.toml` (REQ-303).
-- **R-2 — Migrazione** degli ospiti già installati al nuovo layout (NFR-2).
+- **R-2 — Coerenza del dogfood di Sertor:** lo spostamento one-shot del `wiki.config.toml` di Sertor
+  deve riallineare in un colpo gli asset `.claude/` e i test di sync (nessuna migrazione per ospiti
+  esterni: fuori ambito, NFR-2).
 - **R-3 — Local-scope dipende dalla CLI `claude`** (REQ-305).
 
 ## 9. Prioritizzazione (MoSCoW)
@@ -116,6 +127,9 @@ confinato, ciò che resta in radice deve esserci per un motivo (vincolo di clien
 - **[D2] ✅ `.sertor/` unica sede del runtime** (confermato, feature 015).
 - **[D3] ✅ `.mcp.json`: solo root (project) o fuori-repo (local)** — il meccanismo `--mcp-scope`
   vive qui; il default è di `installer-multiutente`.
+- **[D4] ✅ Retrocompatibilità ospiti esterni FUORI AMBITO** (decisione utente 2026-06-13): niente
+  percorso/comando di migrazione per la base installata; il `wiki.config.toml` di **Sertor stesso** si
+  sposta one-shot come fix diretto dell'implementazione.
 - Nessuna domanda aperta di collocazione residua.
 
 ---
