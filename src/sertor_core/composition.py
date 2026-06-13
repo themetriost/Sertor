@@ -47,8 +47,18 @@ def _build_reranker(settings: Settings) -> Reranker | None:
 
 
 def build_embedder(settings: Settings | None = None) -> EmbeddingProvider:
-    """Build the embedding provider selected by the configuration (REQ-013/030)."""
+    """Build the embedding provider selected by the configuration (REQ-013/030).
+
+    Wires the retry policy (018, REQ-H3) from `Settings`: transient provider failures are retried
+    with exponential backoff + jitter. `embed_retry_attempts=1` disables retries (as before).
+    """
+    from sertor_core.adapters.embeddings._retry import RetryPolicy
+
     settings = settings or Settings.load()
+    retry = RetryPolicy(
+        max_attempts=settings.embed_retry_attempts,
+        base_backoff_s=settings.embed_retry_base_s,
+    )
     if settings.embed_provider == "azure":
         from sertor_core.adapters.embeddings.azure import AzureEmbedder
 
@@ -57,6 +67,7 @@ def build_embedder(settings: Settings | None = None) -> EmbeddingProvider:
             api_key=settings.azure_openai_api_key,
             deployment=settings.azure_openai_embed_deployment,
             batch_size=settings.embed_batch_size,
+            retry=retry,
         )
     from sertor_core.adapters.embeddings.ollama import OllamaEmbedder
 
@@ -64,6 +75,7 @@ def build_embedder(settings: Settings | None = None) -> EmbeddingProvider:
         host=settings.ollama_host,
         model=settings.ollama_embed_model,
         batch_size=settings.embed_batch_size,
+        retry=retry,
     )
 
 
@@ -190,6 +202,7 @@ def build_facade(settings: Settings | None = None):
         default_k=settings.default_k,
         extra_collections=extra,
         retriever=retriever,
+        min_score=settings.retrieval_min_score,
     )
 
 

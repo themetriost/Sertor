@@ -28,6 +28,22 @@ from sertor_core.domain.ports import (
 from sertor_core.observability.logging import log_event
 
 
+def apply_min_score(
+    results: list[RetrievalResult], min_score: float | None
+) -> tuple[list[RetrievalResult], bool]:
+    """Filter results below the cosine-similarity threshold (018, REQ-H1/H2).
+
+    `min_score=None` → passthrough `(results, False)` (today's behaviour, FR-013). Otherwise keep
+    only results scoring `>= min_score`; the second value (`low_confidence`) is true when there
+    WERE candidates but none passed — the consumer can use it to abstain (FR-011). Pure and
+    deterministic, so it is shared by the facade and both engines (D5).
+    """
+    if min_score is None:
+        return results, False
+    kept = [r for r in results if r.score >= min_score]
+    return kept, (bool(results) and not kept)
+
+
 class RetrievalFacade:
     """Backend-independent retrieval interface."""
 
@@ -40,6 +56,7 @@ class RetrievalFacade:
         *,
         extra_collections: Mapping[str, str] | None = None,
         retriever: RetrieverStrategy | None = None,
+        min_score: float | None = None,
     ):
         self._embedder = embedder
         self._store = store
@@ -51,6 +68,9 @@ class RetrievalFacade:
         # present, the single-collection path delegates to it (e.g. hybrid engine); the facade
         # interface and its tolerant policy remain unchanged for consumers.
         self._retriever = retriever
+        # Optional confidence threshold (018, REQ-H1/H2): applied only on the facade's own dense
+        # path; on the retriever path the hybrid engine applies it (no double filtering).
+        self._min_score = min_score
 
     def _search(self, query: str, k: int | None, doc_type: DocTypeFilter) -> list[RetrievalResult]:
         k = k or self._default_k
@@ -69,7 +89,8 @@ class RetrievalFacade:
             return self._retriever.retrieve(query, k, doc_type)
         started = time.perf_counter()
         vector = self._embedder.embed([query])[0]
-        results = self._store.query(self._collection, vector, k, doc_type)
+        raw = self._store.query(self._collection, vector, k, doc_type)
+        results, low = apply_min_score(raw, self._min_score)
         log_event(
             logging.INFO,
             "retrieve",
@@ -80,7 +101,21 @@ class RetrievalFacade:
             results=len(results),
             elapsed_ms=round((time.perf_counter() - started) * 1000, 2),
         )
+        if low:
+            self._log_low_confidence([self._collection], raw)
         return results
+
+    def _log_low_confidence(self, collections: list[str], raw: list[RetrievalResult]) -> None:
+        """Structured signal that the threshold emptied the result set (018, REQ-H2/FR-012)."""
+        log_event(
+            logging.WARNING,
+            "low_confidence",
+            collections=collections,
+            provider=self._embedder.name,
+            min_score=self._min_score,
+            best_score=max((r.score for r in raw), default=None),
+            candidates=len(raw),
+        )
 
     def search_code(self, query: str, k: int | None = None) -> list[RetrievalResult]:
         """Semantic search over code only."""
@@ -145,6 +180,7 @@ class RetrievalFacade:
             candidates.extend(self._store.query(collection, vector, k, "both"))
         # Total deterministic ordering: descending score, ties broken by chunk_id (FR-003).
         fused = sorted(candidates, key=lambda r: (-r.score, r.chunk_id))[:k]
+        fused, low = apply_min_score(fused, self._min_score)
         log_event(
             logging.INFO,
             "retrieve",
@@ -155,4 +191,6 @@ class RetrievalFacade:
             results=len(fused),
             elapsed_ms=round((time.perf_counter() - started) * 1000, 2),
         )
+        if low:
+            self._log_low_confidence(targets, candidates)
         return fused

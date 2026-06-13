@@ -17,6 +17,7 @@ from sertor_core.domain.errors import IndexNotFoundError
 from sertor_core.domain.ports import EmbeddingProvider, VectorStore
 from sertor_core.observability.logging import log_event
 from sertor_core.services.indexing import IndexingService
+from sertor_core.services.retrieval import apply_min_score
 
 
 class BaselineEngine:
@@ -75,7 +76,10 @@ class BaselineEngine:
         self.ensure_index()
         started = time.perf_counter()
         vector = self._embedder.embed([query])[0]
-        results = self._store.query(self._collection, vector, k, "both")
+        raw = self._store.query(self._collection, vector, k, "both")
+        # Confidence threshold (018, REQ-H1/H2): filter weak hits on the EXISTING index. A result
+        # filter, not an absent index — the strict `IndexNotFoundError` policy stays unchanged.
+        results, low = apply_min_score(raw, self._settings.retrieval_min_score)
         log_event(
             logging.INFO,
             "baseline_query",
@@ -85,4 +89,14 @@ class BaselineEngine:
             results=len(results),
             elapsed_ms=round((time.perf_counter() - started) * 1000, 2),
         )
+        if low:
+            log_event(
+                logging.WARNING,
+                "low_confidence",
+                collection=self._collection,
+                provider=self._embedder.name,
+                min_score=self._settings.retrieval_min_score,
+                best_score=max((r.score for r in raw), default=None),
+                candidates=len(raw),
+            )
         return results
