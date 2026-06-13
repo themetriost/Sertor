@@ -27,7 +27,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | RAG ibrido + reranking (FEAT-004) | Should | ✅ **master (2026-06-12, PR #24)** — motore di default |
 | GraphRAG / code-graph (FEAT-005) | Should | ✅ **master (2026-06-12, PR #25)** — i 4 tool MCP tornati |
 | RAG agentico (FEAT-006) | Should | ✅ **soddisfatta in forma composita (2026-06-13)** — il sistema MCP+agente È agentic RAG; agenzia incorporata = dote differita (Could) |
-| Manutenzione wiki (FEAT-007) | Should | 🔄 **spec creata (2026-06-13, `specs/017`)** — residuo B/C/D: `move`/`reconcile`/`collect`+status; prossimo `/speckit-plan` |
+| Manutenzione wiki (FEAT-007) | Should | 🔄 **plan+tasks+analyze OK (2026-06-13, `specs/017`)** — Constitution PASS 10/10; in implementazione (`move`/`reconcile`/`collect`+status) |
 | CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
 | CLI — installer (`sertor install`) | — | ✅ `wiki` (PR #22) + **`rag` su master (2026-06-12)** — validato live su Kaelen; `governance` = stub |
 | Distribuzione multi-assistente: GitHub Copilot (+ Codex Could) | — | 👍 **da decomporre** (decisione utente 2026-06-12) |
@@ -47,7 +47,9 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   `status: superseded`), `collect`+campo status. *Dove:* `specs/017-manutenzione-wiki/` (spec +
   checklist verde), requirements `requirements/sertor-core/manutenzione-wiki/`. *Spec 017:* 3 user
   story (US1 `move`-con-link = MVP; US2 `reconcile`+`collect`/status; US3 trigger periodico Could),
-  15 FR. *Prossimo passo:* `/speckit-plan`. *Blocchi:* nessuno.
+  15 FR. *Design:* plan+research+data-model+contracts+tasks (14 task); decisione D6 = successore da
+  frontmatter `superseded_by` (no banner). Constitution PASS 10/10 senza deroghe; analyze 100% copertura.
+  *Prossimo passo:* implement (in corso). *Blocchi:* nessuno.
 
 ### 📋 PLANNED (per priorità)
 - **Agenzia RAG incorporata — dote differita (Could)**: la capacità agentic RAG è ✅ **soddisfatta

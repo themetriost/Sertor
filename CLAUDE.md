@@ -388,6 +388,13 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/017-manutenzione-wiki/plan.md` (FEAT-007 residuo — manutenzione wiki deterministica:
+`sertor-wiki-tools move` (sposta pagina + riscrive wikilink/link relativi entranti, form-preserving
+via `_link_targets`, `--dry-run`, idempotente/recovery, errore su collisione, contratto `wiki.move/1`),
+`reconcile` (detection read-only pagine `status: superseded` + `superseded_by`, `wiki.reconcile/1`),
+`collect`+campo `status`; gruppo D trigger periodico = solo doc (scheduler ospite). stdlib-only, zero
+LLM, non-distruttivo. Constitution PASS 10/10 senza deroghe. Branch `017-manutenzione-wiki`. Gruppi
+E/F (seed+asset EN) già consegnati a parte; gruppo A (probe) Won't. Storico recente:
 `specs/016-igiene-radice-host/plan.md` (igiene radice ospite — asse DOVE/collocazione, epica
 `sertor-cli`: radice host pulita e prevedibile. (1) `wiki.config.toml` spostato in `wiki/` + ogni
 invocazione `sertor-wiki-tools` la localizza via convenzione `--config wiki/wiki.config.toml

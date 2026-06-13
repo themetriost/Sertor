@@ -96,8 +96,9 @@ scheduler.
   solo il bersaglio.
 - **Link relativi Markdown** verso la pagina spostata: riscritti come i wikilink.
 - **Sorgente inesistente** per lo spostamento: errore esplicito, nessuna modifica.
-- **Successore dell'obsoleta** dichiarato nel frontmatter vs in un banner di supersession nel corpo:
-  entrambi i casi vanno riconosciuti dove presenti; assente → campo successore vuoto, non un errore.
+- **Successore dell'obsoleta** dichiarato nel campo frontmatter `superseded_by` (decisione di design
+  D6: fonte deterministica, solo frontmatter — il parsing di un banner nel corpo è scartato perché
+  euristico); assente → campo successore vuoto, non un errore.
 - **Pagine senza campo `status`**: non compaiono nella riconciliazione e nell'inventario il campo è
   semplicemente assente.
 - **Nessuna pagina superata**: risultato "pulito", non un errore.
@@ -190,9 +191,9 @@ scheduler.
 - **Gruppi E ed F fuori ambito**: seed localizzati e asset in inglese sono **già consegnati** (PR
   #27/#28/#29, record retroattivo `requirements/sertor-cli/tema-lingua-runtime/`); questa feature non
   li ritocca. Il gruppo A (probe di freschezza) è **Won't** (D1).
-- **Successore della pagina superata**: si assume dichiarato o in un campo frontmatter dedicato (es.
-  `superseded_by`) o in un banner di supersession nel corpo; la risoluzione esatta della fonte è
-  dettaglio di design. Se assente, il campo successore è vuoto (non un errore).
+- **Successore della pagina superata** (D6 risolta): letto **solo** dal campo frontmatter
+  `superseded_by` (path/slug della pagina che sostituisce); deterministico. Il banner nel corpo è
+  scartato (euristico). Se `superseded_by` è assente, il campo successore è vuoto (non un errore).
 - **Slug-matching condiviso**: lo spostamento riusa la logica di risoluzione dei wikilink già usata dal
   lint, per garantire coerenza `move`↔`lint`.
 - **`status` è già un campo opzionale** dichiarato nel template di config installato; le pagine possono
