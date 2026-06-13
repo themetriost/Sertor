@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-13 (FEAT-006 agentico chiusa ✅ in forma composita — i «4 motori» completi; dote incorporata differita Could) · 2026-06-12 (🚢🚢🚢 TRIPLA: PR #23 hotfix MCP + PR #24 ibrido + PR #25 code-graph)
+updated: 2026-06-13 (giornata: FEAT-006 ✅ composita · igiene radice host PR #26 · tema lingua completo PR #27/#28/#29 — asset/CLI EN, runtime auto-localizzante, seed it/en D3) · 2026-06-12 (TRIPLA: PR #23/#24/#25)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md"]
 ---
 
@@ -27,7 +27,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | RAG ibrido + reranking (FEAT-004) | Should | ✅ **master (2026-06-12, PR #24)** — motore di default |
 | GraphRAG / code-graph (FEAT-005) | Should | ✅ **master (2026-06-12, PR #25)** — i 4 tool MCP tornati |
 | RAG agentico (FEAT-006) | Should | ✅ **soddisfatta in forma composita (2026-06-13)** — il sistema MCP+agente È agentic RAG; agenzia incorporata = dote differita (Could) |
-| Manutenzione wiki (FEAT-007, assorbe il tema lingua) | Should | 🔄 **in progress** (requirements completi, D1..D4 risolte, 2026-06-12 sera) |
+| Manutenzione wiki (FEAT-007) | Should | 🔄 **in progress** (requirements completi; tema lingua già consegnato a parte). Residuo: `move`/`reconcile`/`collect`+status |
 | CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
 | CLI — installer (`sertor install`) | — | ✅ `wiki` (PR #22) + **`rag` su master (2026-06-12)** — validato live su Kaelen; `governance` = stub |
 | Distribuzione multi-assistente: GitHub Copilot (+ Codex Could) | — | 👍 **da decomporre** (decisione utente 2026-06-12) |
@@ -39,18 +39,14 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- **FEAT-007 — Manutenzione wiki (+ tema lingua)** — *cosa:* l'ultimo Should aperto del core,
-  asciugato dalla gap analysis: lint B/C già coperti (giudizio/playbook); **probe di freschezza
-  ELIMINATO con decisione** (D1: valore marginale — falsi positivi sui `sources` larghi, il lint
-  B del rituale col contesto dello step lo batte). Resta: `move`-con-link, `reconcile` detection
-  (su `status: superseded`), seed localizzati (tabella it/en), `collect`+status, e il **tema
-  lingua risolto** (D4: asset installer → INGLESE canonico unico, traduzione one-time; la
-  `language` della config governa la lingua del CONTENUTO scritto sull'ospite — implicazione:
-  `.claude/` di Sertor diventa inglese, il wiki interno resta italiano). *Dove:*
-  `requirements/sertor-core/manutenzione-wiki/requirements.md` (gap analysis + 22 REQ residui,
-  D1..D4 risolte). *Prossimo passo:* `/speckit-specify` (prossimo numero SpecKit: **016** — 015 è stato usato da `install rag`). *Blocchi:* nessuno. *(Il riavvio MCP è avvenuto: server riconnesso
-  il 2026-06-12 sera, 7 tool verificati live — `get_context("HybridEngine")` risponde esatto;
-  extra `graph` installato anche in `.venv-core`, il venv del server.)*
+- **FEAT-007 — Manutenzione wiki** — *cosa:* l'ultimo Should aperto del core, asciugato dalla gap
+  analysis: lint B/C già coperti (giudizio/playbook), **probe di freschezza eliminato** (D1). Il
+  **tema lingua è stato consegnato a parte** (PR #27/#28/#29, vedi DONE — asset/CLI EN, runtime
+  auto-localizzante, seed it/en D3): **non** fa più parte di FEAT-007. **Residuo FEAT-007:**
+  `move`-con-link (`wiki.move/1`, dry-run idempotente), `reconcile` detection read-only (su
+  `status: superseded`), `collect`+campo status. *Dove:*
+  `requirements/sertor-core/manutenzione-wiki/requirements.md`. *Prossimo passo:* `/speckit-specify`
+  (prossimo numero SpecKit: **017**). *Blocchi:* nessuno.
 
 ### 📋 PLANNED (per priorità)
 - **Agenzia RAG incorporata — dote differita (Could)**: la capacità agentic RAG è ✅ **soddisfatta
@@ -62,13 +58,6 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   anche da **GitHub Copilot** (Must: MCP nei client Copilot + traduzione delle superfici
   agentiche dell'installer con target assistant) e da **Codex** (Could: AGENTS.md + MCP); CLI già
   assistant-agnostic. Nuova FEAT-007 dell'epica CLI; estende il Principio X all'assistente ospite.
-- **Tema lingua (👍 approvato dall'utente, 2026-06-11)** — gli asset testuali dell'installer
-  (blocco rituale, skill) e il seed di `structure init` sono in **italiano fisso** anche con
-  `language=en`: la localizzazione va gestita organicamente (asset per lingua o generazione).
-  Casa naturale: FEAT-007 (che già aveva il seed) + evoluzione dell'installer.
-- **FEAT-007 manutenzione wiki** — parte con dote ricca: probe di freschezza (ex N5), helper
-  `move`-con-link (ex N9), op *reconcile* delle obsolescenze (idea utente 2026-06-10), seed
-  `structure init` localizzato **+ localizzazione asset installer (2026-06-11)**.
 - **`sertor install governance`** — l'ultimo taglio dell'installer ancora stub. *(`install rag` ✅ DONE, 2026-06-12.)*
 - **Eval comparativa live su provider reale** (REQ-051 con Azure, marker `cloud`) — il confronto
   strict è in CI; la misura col provider forte resta esercizio opzionale.
