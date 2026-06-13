@@ -62,6 +62,17 @@ def _bool_env(name: str, default: bool) -> bool:
     return raw.strip().lower() in ("true", "1", "yes", "on")
 
 
+def _float_or_none_env(name: str) -> float | None:
+    """Float from env, or `None` when the variable is absent/blank (018, REQ-H1/H13).
+
+    Distinguishes "unset" (feature disabled, today's behaviour) from an explicit `0.0`.
+    """
+    raw = os.getenv(name)
+    if raw is None or not raw.strip():
+        return None
+    return float(raw)
+
+
 @dataclass(frozen=True)
 class Settings:
     """Core settings. Instantiate via `Settings.load()` to read env/`.env`."""
@@ -80,6 +91,9 @@ class Settings:
     azure_openai_api_key: str = ""
     azure_openai_embed_deployment: str = ""
     embed_batch_size: int = 64
+    # embedding resilience (018, REQ-H3): retry transient provider failures (429/5xx/network).
+    embed_retry_attempts: int = 3          # total attempts per batch; 1 = no retry
+    embed_retry_base_s: float = 0.5        # base of the exponential backoff (seconds)
 
     # vector store
     index_dir: Path = field(default_factory=lambda: Path(".index"))
@@ -93,6 +107,9 @@ class Settings:
     # retrieval
     default_k: int = 5
     preview_chars: int = 240               # preview length in CLI results (FEAT-011, D5)
+    # confidence signal (018, REQ-H1/H2): cosine-similarity threshold; None = disabled (today's
+    # behaviour). Below-threshold results are excluded so the consumer can abstain (grounding).
+    retrieval_min_score: float | None = None
 
     # RAG engine (FEAT-004): selection + parameters for hybrid fusion and reranking
     engine: str = "hybrid"                 # baseline | hybrid — best is the default (D1)
@@ -188,6 +205,8 @@ class Settings:
             azure_openai_api_key=os.getenv("AZURE_OPENAI_API_KEY", ""),
             azure_openai_embed_deployment=os.getenv("AZURE_OPENAI_EMBED_DEPLOYMENT", ""),
             embed_batch_size=int(os.getenv("EMBED_BATCH_SIZE", "64")),
+            embed_retry_attempts=int(os.getenv("SERTOR_EMBED_RETRY_ATTEMPTS", "3")),
+            embed_retry_base_s=float(os.getenv("SERTOR_EMBED_RETRY_BASE", "0.5")),
             index_dir=resolved_index_dir,
             azure_search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT", ""),
             azure_search_api_key=os.getenv("AZURE_SEARCH_API_KEY", ""),
@@ -195,6 +214,7 @@ class Settings:
             chunk_overlap=int(os.getenv("CHUNK_OVERLAP", "200")),
             default_k=int(os.getenv("DEFAULT_K", "5")),
             preview_chars=int(os.getenv("SERTOR_PREVIEW_CHARS", "240")),
+            retrieval_min_score=_float_or_none_env("SERTOR_MIN_SCORE"),
             engine=os.getenv("SERTOR_ENGINE", "hybrid"),
             rrf_c=int(os.getenv("SERTOR_RRF_C", "60")),
             rrf_pool=int(os.getenv("SERTOR_RRF_POOL", "30")),

@@ -27,6 +27,7 @@ from sertor_core.domain.ports import (
 )
 from sertor_core.observability.logging import log_event
 from sertor_core.services.indexing import IndexingService
+from sertor_core.services.retrieval import apply_min_score
 
 
 def rrf(rankings: list[list[str]], k: int, c: int = 60) -> list[tuple[str, float]]:
@@ -97,6 +98,7 @@ class HybridEngine:
         started = time.perf_counter()
         vector = self._embedder.embed([query])[0]
 
+        min_score = self._settings.retrieval_min_score
         if not self._lexical.exists(self._collection):
             # Degradation REQ-034 (pre-hybrid corpus): dense-only + warning, never an error.
             log_event(
@@ -105,13 +107,25 @@ class HybridEngine:
                 collection=self._collection,
                 hint="re-index the corpus to enable hybrid retrieval",
             )
-            results = self._store.query(self._collection, vector, k, doc_type)
-            self._log_query(results, lexical_hits=0, dense_hits=len(results),
+            raw = self._store.query(self._collection, vector, k, doc_type)
+            # Confidence threshold (018, REQ-H1/H2): here the score is cosine similarity → filter.
+            results, low = apply_min_score(raw, min_score)
+            self._log_query(results, lexical_hits=0, dense_hits=len(raw),
                             rerank_applied=False, started=started)
+            if low:
+                self._log_low_confidence(raw)
             return results
 
         pool = self._settings.rrf_pool
-        dense = self._store.query(self._collection, vector, pool, doc_type)
+        dense_raw = self._store.query(self._collection, vector, pool, doc_type)
+        # Confidence gate on the DENSE leg (018, REQ-H1/H2, research D4): the final score is RRF
+        # (rank-based, not a similarity), so the cosine threshold acts on the dense pool BEFORE
+        # fusion. If the dense leg is emptied by the threshold, abstain (empty + low_confidence).
+        dense, low = apply_min_score(dense_raw, min_score)
+        if low:
+            self._log_query([], lexical_hits=0, dense_hits=0, rerank_applied=False, started=started)
+            self._log_low_confidence(dense_raw)
+            return []
         lexical_ids = self._lexical.query(self._collection, query, pool, doc_type)
         # The fused pool covers k or, if the reranker is active, the second-stage pool size.
         fused_k = max(k, self._settings.rerank_pool) if self._use_reranker() else k
@@ -129,6 +143,18 @@ class HybridEngine:
 
     def _use_reranker(self) -> bool:
         return self._reranker is not None and self._settings.rerank_enabled
+
+    def _log_low_confidence(self, dense_raw: list[RetrievalResult]) -> None:
+        """Structured signal that the threshold emptied the dense leg (018, REQ-H2/FR-012)."""
+        log_event(
+            logging.WARNING,
+            "low_confidence",
+            collection=self._collection,
+            provider=self._embedder.name,
+            min_score=self._settings.retrieval_min_score,
+            best_score=max((r.score for r in dense_raw), default=None),
+            candidates=len(dense_raw),
+        )
 
     def _materialize(
         self, fused: list[tuple[str, float]], dense: list[RetrievalResult]

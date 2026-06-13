@@ -398,6 +398,16 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/018-hardening-retrieval/plan.md` (hardening produzione — i due Must dal RAG audit 2026-06-13:
+(US1) resilienza embedder = retry+backoff esponenziale+jitter su errori transitori (429/5xx/rete) via
+helper condiviso `with_retry`+`RetryPolicy` in `adapters/embeddings/_retry.py`, manopole `Settings`
+`SERTOR_EMBED_RETRY_ATTEMPTS`(3)/`SERTOR_EMBED_RETRY_BASE`(0.5), `attempts=1` disattiva, `EmbeddingError`
+preservato a esaurimento; (US2) segnale di confidenza = soglia similarità opzionale `SERTOR_MIN_SCORE`
+(default off) che esclude i risultati sotto soglia ed emette log `low_confidence`, funzione pura
+`apply_min_score` in `services/retrieval.py`; nell'ibrido la soglia agisce sul **pool denso prima di RRF**
+(lo score RRF non è una similarità). Additivo: `RetrievalResult`/porte invariati; default = comportamento
+odierno (SC-004/006). Constitution PASS 10/10 senza deroghe. Branch `018-hardening-retrieval`. Fonte:
+`requirements/sertor-core/hardening-produzione/` (Should/Could fuori ambito). Storico recente:
 `specs/017-manutenzione-wiki/plan.md` (FEAT-007 residuo — manutenzione wiki deterministica:
 `sertor-wiki-tools move` (sposta pagina + riscrive wikilink/link relativi entranti, form-preserving
 via `_link_targets`, `--dry-run`, idempotente/recovery, errore su collisione, contratto `wiki.move/1`),

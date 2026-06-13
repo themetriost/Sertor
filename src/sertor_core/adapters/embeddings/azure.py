@@ -11,9 +11,13 @@ NOT v1.
 from __future__ import annotations
 
 import logging
+import random
+import time
+from collections.abc import Callable
 
 import httpx
 
+from sertor_core.adapters.embeddings._retry import RetryPolicy, with_retry
 from sertor_core.domain.errors import EmbeddingError
 from sertor_core.observability.logging import log_event
 
@@ -29,6 +33,9 @@ class AzureEmbedder:
         api_version: str = "2024-10-21",
         batch_size: int = 64,
         client: httpx.Client | None = None,
+        retry: RetryPolicy | None = None,
+        sleep: Callable[[float], None] = time.sleep,
+        rng: Callable[[], float] = random.random,
     ):
         if not endpoint or not api_key or not deployment:
             raise EmbeddingError(
@@ -46,6 +53,9 @@ class AzureEmbedder:
         self._api_version = api_version
         self._v1 = "/openai/v1" in endpoint  # v1 surface: no api-version
         self._client = client or httpx.Client(timeout=300)
+        self._retry = retry
+        self._sleep = sleep
+        self._rng = rng
 
     def _embed_batch(self, texts: list[str]) -> list[list[float]]:
         try:
@@ -81,12 +91,28 @@ class AzureEmbedder:
                 retriable=True,
             ) from exc
 
+    def _embed_batch_resilient(self, batch: list[str]) -> list[list[float]]:
+        """`_embed_batch` with retry on transient failures (018, REQ-H3), if a policy is set.
+
+        Wrapping the BATCH (not the whole `embed`) avoids re-embedding batches that already
+        succeeded. With no policy or a single attempt, calls through with zero overhead.
+        """
+        if self._retry is None or self._retry.attempts <= 1:
+            return self._embed_batch(batch)
+        return with_retry(
+            lambda: self._embed_batch(batch),
+            self._retry,
+            sleep=self._sleep,
+            rng=self._rng,
+            provider=self.name,
+        )
+
     def embed(self, texts: list[str]) -> list[list[float]]:
         if not texts:
             return []
         out: list[list[float]] = []
         for i in range(0, len(texts), self.batch_size):
-            embs = self._embed_batch(texts[i : i + self.batch_size])
+            embs = self._embed_batch_resilient(texts[i : i + self.batch_size])
             if self.dim is None and embs:
                 self.dim = len(embs[0])
             out.extend(embs)
