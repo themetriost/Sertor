@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-13 (notte: FEAT-018 hardening retrieval Must ✅ su master, PR #32 — retry embedder + soglia/low_confidence) · 2026-06-13 (sera: + idea «Second brain cross-progetto»/Meta-Sertor → [[second-brain-cross-progetto]], da espandere · giornata: FEAT-006 ✅ composita · igiene radice host PR #26 · tema lingua completo PR #27/#28/#29) · 2026-06-12 (TRIPLA: PR #23/#24/#25)
+updated: 2026-06-13 (notte: FEAT-018 hardening retrieval Must ✅ su master, PR #32 — retry embedder + soglia/low_confidence; hardening resta IN PROGRESS perché Should/Could aperti) · 2026-06-13 (sera: + idea «Second brain cross-progetto»/Meta-Sertor → [[second-brain-cross-progetto]], da espandere · giornata: FEAT-006 ✅ composita · igiene radice host PR #26 · tema lingua completo PR #27/#28/#29) · 2026-06-12 (TRIPLA: PR #23/#24/#25)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md"]
 ---
 
@@ -30,7 +30,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | Manutenzione wiki (FEAT-007) | Should | ✅ **master (2026-06-13, PR #30)** — `move`/`reconcile`/`collect`+status; gruppi A(Won't)/E/F/B/C/D tutti chiusi |
 | CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
 | CLI — installer (`sertor install`) | — | ✅ `wiki` (PR #22) + **`rag` su master (2026-06-12)** — validato live su Kaelen; `governance` = stub |
-| **Hardening produzione (retrieval)** | — | ✅ **Must su master (2026-06-13, PR #32)** — retry/backoff embedder + soglia score/`low_confidence` per l'abstention. Restano Should/Could (cache embeddings + token nei log; query transformation, filtro metadata, tracing, contextual) in `requirements/sertor-core/hardening-produzione/` |
+| **Hardening produzione (retrieval)** | — | 🔄 **IN PROGRESS** — Must ✅ su master (2026-06-13, PR #32: retry/backoff embedder + soglia score/`low_confidence`); restano Should/Could (vedi IN PROGRESS) in `requirements/sertor-core/hardening-produzione/` |
 | Distribuzione multi-assistente: GitHub Copilot (+ Codex Could) | — | 👍 **da decomporre** (decisione utente 2026-06-12) |
 | Tema lingua (tutto il prodotto in inglese) | — | ✅ **completato totale (2026-06-13, PR #27/#28/#29/#31)**: codice (72 .py: docstring/commenti/**errori**), test (75 .py: commenti/docstring), documentazione di prodotto (README + `docs/`), asset installer, CLI, seed it/en. Restano IT **per scelta**: `wiki/`, `specs/`, `requirements/`, `CLAUDE.md`, `prototype/` (congelato) |
 | Igiene radice ospite (installer, asse DOVE) | — | ✅ **master (2026-06-13, PR #26)** — config in `wiki/` + auto-discovery, `--mcp-scope` |
@@ -40,17 +40,19 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- *(nessuna feature in progress — i Must/Should del core sono tutti su master; vedi PLANNED per gli
-  incrementi opzionali e le idee da decomporre.)*
+- **Hardening produzione del retrieval** — *cosa:* chiudere i gap del RAG audit (2026-06-13) che
+  ricadono sul livello di Sertor. *Dove:* `requirements/sertor-core/hardening-produzione/` (epica
+  `sertor-core`). *Fatto:* **Must** ✅ su master (feature 018, PR #32) = retry/backoff embedder +
+  soglia/`low_confidence` per l'abstention. *Prossimo passo:* `/speckit-specify` sugli **Should** quando
+  prioritari — **REQ-H4** cache embeddings per content-hash (re-index non ri-embedda i chunk invariati →
+  taglia il costo Azure dei rebuild) + **REQ-H5** token nei log (`usage.total_tokens` come segnale di
+  costo). *Could (dopo):* REQ-H7 query transformation, REQ-H8 filtro metadata esteso, REQ-H9 tracing
+  distribuito, REQ-H10 metriche aggregate, REQ-H11 contextual retrieval. *Collegato:* refresh
+  incrementale = FEAT-009 d'epica. *Blocco/decisione aperta:* nessuno — gli Should sono cantierabili;
+  decidere se prima questo o la distribuzione multi-assistente. *Azione operativa fuori-codice pendente:*
+  ruotare la key Azure esposta nel transcript.
 
 ### 📋 PLANNED (per priorità)
-- **Hardening produzione del retrieval — incrementi residui (da RAG audit 2026-06-13)** — i **Must**
-  sono ✅ su master (feature 018, PR #32: retry/backoff embedder + soglia/`low_confidence`). Restano:
-  **Should** = cache embeddings per content-hash (REQ-H4, taglia il costo dei rebuild) + token nei log
-  (REQ-H5); **Could** = query transformation, filtro metadata, tracing/metriche, contextual retrieval.
-  *Dove:* `requirements/sertor-core/hardening-produzione/`. *Prossimo passo:* `/speckit-specify` sugli
-  Should quando diventano prioritari. **+ azione operativa pendente: ruotare la key Azure esposta nel
-  transcript.** Generazione/serving/injection restano del consumer (non gap di Sertor).
 - **Agenzia RAG incorporata — dote differita (Could)**: la capacità agentic RAG è ✅ **soddisfatta
   in forma composita** (MCP + agente, vedi DONE). Resta opzionale l'**agenzia incorporata nel core**
   (`sertor-rag ask` per umani/script senza assistente, digest MCP per economia di contesto, porta
