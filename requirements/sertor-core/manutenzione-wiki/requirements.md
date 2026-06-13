@@ -3,6 +3,14 @@
 <!-- Stato: elicitato — 2026-06-12; domande D1..D4 RISOLTE con l'utente lo stesso giorno (vedi §10):
      probe di freschezza ELIMINATO (Won't), asset installer → INGLESE canonico -->
 
+> **⚠️ Aggiornamento 2026-06-13 — Gruppi E ed F GIÀ CONSEGNATI fuori da questo flusso.** Il tema lingua
+> (Gruppo E — seed localizzati, REQ-030..034; Gruppo F — asset installer in inglese, REQ-035..037) è
+> stato implementato come *pass mirato* e mergiato su `master` (PR #27/#28/#29), tracciato nel record
+> retroattivo [`../../sertor-cli/tema-lingua-runtime/requirements.md`](../../sertor-cli/tema-lingua-runtime/requirements.md).
+> **Residuo effettivo di FEAT-007 (da portare in SpecKit):** Gruppo B (`move`-con-link, REQ-010..015),
+> Gruppo C (`reconcile` detection + `collect`+`status`, REQ-020..027), Gruppo D (trigger periodico,
+> Could). Il Gruppo A (probe di freschezza) resta Won't (D1).
+
 ---
 
 ## Nota di elicitazione
