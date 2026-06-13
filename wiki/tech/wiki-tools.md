@@ -3,8 +3,8 @@ title: wiki-tools (nucleo deterministico del wiki)
 type: tech
 tags: [wiki-tools, cli, deterministico, host-agnostico, wiki, sertor-core, contracts]
 created: 2026-06-08
-updated: 2026-06-09
-sources: ["src/sertor_core/wiki_tools/registry.py", "src/sertor_core/wiki_tools/**", "wiki.config.toml"]
+updated: 2026-06-13 (+ move/reconcile/collect-status, feature 017)
+sources: ["src/sertor_core/wiki_tools/registry.py", "src/sertor_core/wiki_tools/**", "specs/017-manutenzione-wiki/**", "wiki/wiki.config.toml"]
 ---
 
 # wiki-tools (nucleo deterministico del wiki)
@@ -35,11 +35,13 @@ da hook/skill/agente senza parsing fragile.
 | `structure init` | crea tassonomia + index + log (idempotente, non-distruttivo) | `wiki.structure/1` |
 | `validate` | frontmatter mancante + naming non kebab-case | `wiki.lint/1` |
 | `lint` | wikilink rotti + pagine orfane + frontmatter + stub | `wiki.lint/1` |
-| `collect` | enumera le pagine + metadati (path, area, type, title, tags, wikilink) **senza corpo** | `wiki.collect/1` |
+| `collect` | enumera le pagine + metadati (path, area, type, title, tags, **status**, wikilink) **senza corpo** | `wiki.collect/1` |
 | `index` | re-indicizza il wiki nel RAG (collezione isolata) **riusando la facade del core** (`build_indexer`, import **lazy** → le altre op restano offline) | `wiki.index/1` |
 | `append-log` | appende una voce di log nel file del giorno (**rotazione** a un file per data); accetta il **corpo curato** dall'LLM e ne fa solo il piazzamento (idempotente) | `wiki.append_log/1` |
 | `migrate` | splitta retroattivamente il log monolitico in partizioni giornaliere (una-tantum, idempotente, non distruttivo) | `wiki.migrate/1` |
 | `upsert-index` | inserisce/aggiorna la riga link+sommario di una pagina in `index.md` (`--page` + `--summary` o stdin UTF-8); il sommario resta **LLM-authored**, la CLI fa solo il write idempotente; vuoto/multilinea → errore esplicito | `wiki.upsert_index/1` |
+| `move` | sposta/rinomina una pagina `move <src> <dest> [--dry-run]` e **riscrive i link entranti** (wikilink form-preserving — stessa logica target di `lint` — + link relativi); `rewrite-then-move` + recovery da stato parziale; destinazione esistente → errore; tocca pagine+indice, mai i log (feature 017) | `wiki.move/1` |
+| `reconcile` | detection **sola lettura** delle pagine `status: superseded` (con `superseded_by`/`updated`/`reason`); `clean=true` se nessuna; la risoluzione è giudizio su conferma, fuori dal comando (feature 017) | `wiki.reconcile/1` |
 
 **Write-back del log curato + rotazione (FEAT-008).** L'op `append-log` riceve il **corpo curato** dall'LLM
 (formato [[deterministic-vs-judgment|log-craft]]) e ne fa solo il **piazzamento** nella partizione della
