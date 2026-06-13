@@ -27,7 +27,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | RAG ibrido + reranking (FEAT-004) | Should | ✅ **master (2026-06-12, PR #24)** — motore di default |
 | GraphRAG / code-graph (FEAT-005) | Should | ✅ **master (2026-06-12, PR #25)** — i 4 tool MCP tornati |
 | RAG agentico (FEAT-006) | Should | ✅ **soddisfatta in forma composita (2026-06-13)** — il sistema MCP+agente È agentic RAG; agenzia incorporata = dote differita (Could) |
-| Manutenzione wiki (FEAT-007) | Should | 🔄 **in progress** (requirements completi; tema lingua già consegnato a parte). Residuo: `move`/`reconcile`/`collect`+status |
+| Manutenzione wiki (FEAT-007) | Should | 🔄 **spec creata (2026-06-13, `specs/017`)** — residuo B/C/D: `move`/`reconcile`/`collect`+status; prossimo `/speckit-plan` |
 | CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
 | CLI — installer (`sertor install`) | — | ✅ `wiki` (PR #22) + **`rag` su master (2026-06-12)** — validato live su Kaelen; `governance` = stub |
 | Distribuzione multi-assistente: GitHub Copilot (+ Codex Could) | — | 👍 **da decomporre** (decisione utente 2026-06-12) |
@@ -44,9 +44,10 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   **tema lingua è stato consegnato a parte** (PR #27/#28/#29, vedi DONE — asset/CLI EN, runtime
   auto-localizzante, seed it/en D3): **non** fa più parte di FEAT-007. **Residuo FEAT-007:**
   `move`-con-link (`wiki.move/1`, dry-run idempotente), `reconcile` detection read-only (su
-  `status: superseded`), `collect`+campo status. *Dove:*
-  `requirements/sertor-core/manutenzione-wiki/requirements.md`. *Prossimo passo:* `/speckit-specify`
-  (prossimo numero SpecKit: **017**). *Blocchi:* nessuno.
+  `status: superseded`), `collect`+campo status. *Dove:* `specs/017-manutenzione-wiki/` (spec +
+  checklist verde), requirements `requirements/sertor-core/manutenzione-wiki/`. *Spec 017:* 3 user
+  story (US1 `move`-con-link = MVP; US2 `reconcile`+`collect`/status; US3 trigger periodico Could),
+  15 FR. *Prossimo passo:* `/speckit-plan`. *Blocchi:* nessuno.
 
 ### 📋 PLANNED (per priorità)
 - **Agenzia RAG incorporata — dote differita (Could)**: la capacità agentic RAG è ✅ **soddisfatta
