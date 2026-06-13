@@ -202,8 +202,12 @@ uv run --directory .sertor sertor-rag index ..   # indicizza i sorgenti host, es
 # poi ricarica il client MCP: approva il server `sertor-rag` → search_code/docs/combined (+ grafo)
 ```
 
-> Il server e la CLI girano con cwd `.sertor/`, quindi caricano `.sertor/.env` e tengono indice e
-> grafo dentro `.sertor/`. **Disinstallare** ≈ cancellare `.sertor/` e la voce `sertor-rag` da `.mcp.json`.
+> **Runtime auto-localizzante.** `sertor-rag`/`sertor-wiki-tools` caricano `.sertor/.env` e tengono
+> indice e grafo dentro `.sertor/` **da qualsiasi cwd**: se nel cwd non c'è un `.env`, la CLI usa
+> quello accanto al proprio venv (`.sertor/`). La forma `uv run --directory .sertor …` resta quella
+> raccomandata (il server MCP la usa), ma non sei più costretto a lanciare da dentro `.sertor/`. Se
+> non trova alcun `.env` né `RAG_BACKEND`, avvisa invece di ricadere in silenzio su `local`/Ollama.
+> **Disinstallare** ≈ cancellare `.sertor/` e la voce `sertor-rag` da `.mcp.json`.
 
 > **Nota distribuzione (interim).** L'esecuzione standalone via `uvx --from "git+…#subdirectory=packages/sertor"`
 > è **verificata**: `uv` risolve `sertor-core` scoprendo il workspace dal checkout git (lo costruisce

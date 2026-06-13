@@ -24,7 +24,8 @@ _PATTERN = re.compile(r"\b(" + "|".join(_ITALIAN) + r")\b", re.IGNORECASE)
 
 
 def _assets() -> list[tuple[str, str]]:
-    items = list(iter_asset_dir("claude"))
+    items = list(iter_asset_dir("claude"))           # skill/agent/command/hook
+    items += list(iter_asset_dir("rag"))             # template .env/.mcp del runtime RAG
     items.append(("claude-md-block.md", read_asset_text("claude-md-block.md")))
     items.append(("wiki.config.toml.tmpl", read_asset_text("wiki.config.toml.tmpl")))
     return items
