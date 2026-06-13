@@ -18,7 +18,7 @@ def test_absent_creates_with_three_entries(tmp_path: Path):
     p = tmp_path / "settings.json"
     outcome, detail = merge_settings(p, _FRAGMENT)
     assert outcome is Outcome.CREATED
-    assert detail == "+3 voci hook"
+    assert detail == "+3 hook entries"
     data = json.loads(p.read_text(encoding="utf-8"))
     assert set(data["hooks"].keys()) == {"SessionStart", "Stop", "SessionEnd"}
 
@@ -45,7 +45,7 @@ def test_rerun_zero_new_entries(tmp_path: Path):
     merge_settings(p, _FRAGMENT)
     outcome, detail = merge_settings(p, _FRAGMENT)
     assert outcome is Outcome.MERGED
-    assert detail == "nessuna nuova voce"
+    assert detail == "no new entries"
 
 
 def test_malformed_raises_configerror_file_untouched(tmp_path: Path):

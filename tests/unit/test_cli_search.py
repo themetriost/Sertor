@@ -149,7 +149,7 @@ def test_search_missing_index_exit_1(monkeypatch, capsys, dtype):
     err = capsys.readouterr().err
     assert code == 1
     assert "error:" in err
-    assert "inesistente" in err
+    assert "not found" in err
 
 
 # --------------------------------------------------------------------- query vuota (edge case)

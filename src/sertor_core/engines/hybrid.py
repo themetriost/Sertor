@@ -1,13 +1,13 @@
-"""Motore RAG ibrido — seconda modalità del core (FEAT-004).
+"""Hybrid RAG engine — second core mode (FEAT-004).
 
-Fonde la via densa (similarità vettoriale) con la via lessicale (BM25) tramite Reciprocal Rank
-Fusion; reranking cross-encoder opzionale come secondo stadio. Stessa interfaccia del
-`BaselineEngine` (REQ-033) + `retrieve()` come `RetrieverStrategy` per la facade (FR-018).
+Fuses the dense path (vector similarity) with the lexical path (BM25) via Reciprocal Rank
+Fusion; optional cross-encoder reranking as a second stage. Same interface as
+`BaselineEngine` (REQ-033) + `retrieve()` as `RetrieverStrategy` for the facade (FR-018).
 
-Policy errori (riconciliazione REQ-004 ↔ REQ-034, research D7):
-- corpus MAI indicizzato (collezione vettoriale assente) → `IndexNotFoundError` (strict);
-- corpus pre-ibrido (vettoriale presente, indice lessicale assente) → degradazione a dense-only
-  con WARNING strutturato `lexical_index_missing` — mai errore, mai silenzio (decisione DA-1b).
+Error policy (reconciliation REQ-004 ↔ REQ-034, research D7):
+- corpus NEVER indexed (vector collection absent) → `IndexNotFoundError` (strict);
+- pre-hybrid corpus (vector present, lexical index absent) → degradation to dense-only
+  with structured WARNING `lexical_index_missing` — never an error, never silent (decision DA-1b).
 """
 from __future__ import annotations
 
@@ -30,10 +30,10 @@ from sertor_core.services.indexing import IndexingService
 
 
 def rrf(rankings: list[list[str]], k: int, c: int = 60) -> list[tuple[str, float]]:
-    """Reciprocal Rank Fusion: `score(id) = Σ 1/(c + rank)` sulle liste (REQ-010/011).
+    """Reciprocal Rank Fusion: `score(id) = Σ 1/(c + rank)` across lists (REQ-010/011).
 
-    Fusione per ranghi, non per score: similarità coseno e punteggi BM25 non sono
-    commensurabili. Deterministica: pareggi risolti per chunk_id crescente (REQ-012).
+    Fusion by rank, not by score: cosine similarity and BM25 scores are not
+    commensurable. Deterministic: ties broken by ascending chunk_id (REQ-012).
     """
     scores: dict[str, float] = {}
     for ranking in rankings:
@@ -44,9 +44,9 @@ def rrf(rankings: list[list[str]], k: int, c: int = 60) -> list[tuple[str, float
 
 
 class HybridEngine:
-    """Modalità RAG ibrida. Costruita via `composition.build_engine`."""
+    """Hybrid RAG mode. Built via `composition.build_engine`."""
 
-    name = "hybrid"  # nome stabile della modalità (REQ-033)
+    name = "hybrid"  # stable mode name (REQ-033)
 
     def __init__(
         self,
@@ -71,38 +71,39 @@ class HybridEngine:
         return self._embedder.name
 
     def index(self, root: Path | str) -> IndexReport:
-        """Rebuild congiunto vettoriale + lessicale dagli stessi chunk (REQ-001/003)."""
+        """Joint vector + lexical rebuild from the same chunks (REQ-001/003)."""
         indexer = IndexingService(
             self._embedder, self._store, self._collection, self._settings, lexical=self._lexical
         )
         return indexer.index(root, rebuild=True)
 
     def ensure_index(self) -> None:
-        """Strict sulla collezione vettoriale: assente → `IndexNotFoundError` (FR-004)."""
+        """Strict on the vector collection: absent → `IndexNotFoundError` (FR-004)."""
         if not self._store.exists(self._collection):
             raise IndexNotFoundError(
-                "indice inesistente: costruiscilo (index) prima di interrogare",
+                "index not found: build it (index) before querying",
                 collection=self._collection,
             )
 
     def query(self, query: str, k: int | None = None) -> list[RetrievalResult]:
-        """Top-k ibridi, via strict (consumo diretto del motore)."""
+        """Top-k hybrid results, strict path (direct engine consumption)."""
         k = k or self._default_k
         self.ensure_index()
         return self.retrieve(query, k, "both")
 
     def retrieve(self, query: str, k: int, doc_type: DocTypeFilter) -> list[RetrievalResult]:
-        """Cuore ibrido (`RetrieverStrategy`): collezione già verificata esistente dal chiamante."""
+        """Hybrid core (`RetrieverStrategy`): collection already verified as existing by the
+        caller."""
         started = time.perf_counter()
         vector = self._embedder.embed([query])[0]
 
         if not self._lexical.exists(self._collection):
-            # Degradazione REQ-034 (corpus pre-ibrido): dense-only + warning, mai errore.
+            # Degradation REQ-034 (pre-hybrid corpus): dense-only + warning, never an error.
             log_event(
                 logging.WARNING,
                 "lexical_index_missing",
                 collection=self._collection,
-                hint="re-index del corpus per abilitare il retrieval ibrido",
+                hint="re-index the corpus to enable hybrid retrieval",
             )
             results = self._store.query(self._collection, vector, k, doc_type)
             self._log_query(results, lexical_hits=0, dense_hits=len(results),
@@ -112,7 +113,7 @@ class HybridEngine:
         pool = self._settings.rrf_pool
         dense = self._store.query(self._collection, vector, pool, doc_type)
         lexical_ids = self._lexical.query(self._collection, query, pool, doc_type)
-        # Il pool fuso copre k oppure, se il reranker è attivo, il pool del secondo stadio.
+        # The fused pool covers k or, if the reranker is active, the second-stage pool size.
         fused_k = max(k, self._settings.rerank_pool) if self._use_reranker() else k
         fused = rrf([[r.chunk_id for r in dense], lexical_ids], k=fused_k, c=self._settings.rrf_c)
         candidates = self._materialize(fused, dense)
@@ -132,10 +133,10 @@ class HybridEngine:
     def _materialize(
         self, fused: list[tuple[str, float]], dense: list[RetrievalResult]
     ) -> list[RetrievalResult]:
-        """`RetrievalResult` per ogni id fuso, score = RRF (REQ-013).
+        """`RetrievalResult` for each fused id, score = RRF (REQ-013).
 
-        I candidati di sola via lessicale (assenti dal pool denso) si materializzano dalle voci
-        del sidecar via `lookup`.
+        Candidates from the lexical path only (absent from the dense pool) are materialised
+        from sidecar entries via `lookup`.
         """
         dense_by_id = {r.chunk_id: r for r in dense}
         missing = [cid for cid, _ in fused if cid not in dense_by_id]
@@ -156,8 +157,8 @@ class HybridEngine:
                     text=entry.text, path=entry.path, chunk_id=chunk_id,
                     doc_type=DocType(entry.doc_type), score=score,
                 ))
-            # id non risolvibile (indici disallineati): si salta — il rebuild congiunto (REQ-003)
-            # rende il caso non raggiungibile a indici coerenti.
+            # id not resolvable (misaligned indexes): skipped — the joint rebuild (REQ-003)
+            # makes this case unreachable when indexes are consistent.
         return results
 
     def _rerank(

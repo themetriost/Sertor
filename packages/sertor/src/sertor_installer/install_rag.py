@@ -1,13 +1,14 @@
-"""Orchestrazione di `sertor install rag` (data-model §4, plan 015).
+"""Orchestration of `sertor install rag` (data-model §4, plan 015).
 
-`build_rag_plan` enumera gli artefatti nell'ordine canonico (DEPENDENCIES → ENV_MERGE → MCP_MERGE →
-GITIGNORE_APPEND); `execute_rag_plan` esegue sequenzialmente con **fail-fast no-rollback** (come
-`install_wiki.execute_plan`): al primo errore di dominio registra l'esito di errore, valorizza
-`failed_step` e si ferma; gli artefatti già scritti restano (il re-run li trova → skipped/merged).
+`build_rag_plan` enumerates artifacts in canonical order (DEPENDENCIES → ENV_MERGE → MCP_MERGE →
+GITIGNORE_APPEND); `execute_rag_plan` executes sequentially with **fail-fast no-rollback** (same as
+`install_wiki.execute_plan`): on the first domain error it records the error outcome, sets
+`failed_step`, and stops; already-written artifacts remain (a re-run will find them →
+skipped/merged).
 
-**install ≠ run**: il passo DEPENDENCIES esegue solo `uv init`/`uv add` (mai indicizzazione). Il
-runtime vive isolato in `<target>/.sertor/`; `.mcp.json` e `.gitignore` stanno in radice host. Layer
-sottile (Principio I): `uv` è dietro il `CommandRunner` iniettabile.
+**install ≠ run**: the DEPENDENCIES step only runs `uv init`/`uv add` (never indexing). The runtime
+lives isolated in `<target>/.sertor/`; `.mcp.json` and `.gitignore` live in the host root. Thin
+layer (Principio I): `uv` is behind the injectable `CommandRunner`.
 """
 from __future__ import annotations
 
@@ -32,33 +33,33 @@ from sertor_installer.report import InstallReport
 from sertor_installer.resources import read_asset_text
 
 _UV = "uv"
-# `uv init` usa il nome della cartella come package name: `.sertor` è INVALIDO (inizia con punto) →
-# nome esplicito valido per il progetto-runtime dell'ospite (mai pubblicato).
+# `uv init` uses the folder name as the package name: `.sertor` is INVALID (starts with a dot) →
+# use an explicit valid name for the host runtime project (never published).
 _RUNTIME_NAME = "sertor-runtime"
 
 _CLAUDE = "claude"
 _SERVER_NAME = "sertor-rag"
-# Sentinel leggibile (NON un path di repo): in scope local non si scrive nulla nel repository
-# (feature 016, F1 analyze). Passa la validazione di `Artifact` (relativo, no `..`).
+# Human-readable sentinel (NOT a repo path): in local scope nothing is written to the repository
+# (feature 016, F1 analyze). Passes `Artifact` validation (relative, no `..`).
 _MCP_REGISTER_LABEL = "(mcp: client registry)"
 
 
 class DependencyError(SertorError):
-    """Bootstrap delle dipendenze fallito: `uv` assente o `uv init`/`uv add` non riuscito."""
+    """Dependency bootstrap failed: `uv` not found or `uv init`/`uv add` did not succeed."""
 
 
 class McpRegistrationError(SertorError):
-    """Registrazione MCP in scope `local` non riuscita: `claude` assente o comando fallito."""
+    """MCP registration in `local` scope failed: `claude` not found or command failed."""
 
 
 def build_rag_plan(
     profile: RagHostProfile, with_deps: bool = True, mcp_scope: str = "project"
 ) -> list[Artifact]:
-    """Lista ordinata di `Artifact`.
+    """Ordered list of `Artifact`.
 
-    `with_deps=False` salta DEPENDENCIES. `mcp_scope` (feature 016) sceglie come si rende noto il
-    server MCP: `project` → merge di `.mcp.json` in radice; `local` → registrazione nel client via
-    `claude` CLI (NESSUN file nel repo, `MCP_REGISTER` al posto di `MCP_MERGE`).
+    `with_deps=False` skips DEPENDENCIES. `mcp_scope` (feature 016) selects how the MCP server is
+    registered: `project` → merge into `.mcp.json` in the root; `local` → register in the client
+    via the `claude` CLI (NO file in the repo, `MCP_REGISTER` instead of `MCP_MERGE`).
     """
     plan: list[Artifact] = []
     if with_deps:
@@ -98,13 +99,13 @@ def build_rag_plan(
 
 
 def _apply_deps(profile: RagHostProfile, runner: CommandRunner) -> ArtifactOutcome:
-    """`BOOTSTRAP_DEPS`: `uv init --bare` (se manca pyproject) + `uv add` dentro `.sertor/`.
+    """`BOOTSTRAP_DEPS`: `uv init --bare` (if pyproject is missing) + `uv add` inside `.sertor/`.
 
-    Verifica `uv` PRIMA di creare `.sertor/` (REQ-214: evita stato a metà). Mai indicizza.
+    Checks for `uv` BEFORE creating `.sertor/` (REQ-214: avoids partial state). Never indexes.
     """
     if not runner.is_available(_UV):
         raise DependencyError(
-            "`uv` non è disponibile sul PATH: installalo (https://docs.astral.sh/uv/) e riesegui"
+            "`uv` is not available on the PATH: install it (https://docs.astral.sh/uv/) and re-run"
         )
     sertor_dir = profile.sertor_dir
     sertor_dir.mkdir(parents=True, exist_ok=True)
@@ -112,61 +113,62 @@ def _apply_deps(profile: RagHostProfile, runner: CommandRunner) -> ArtifactOutco
     if not already:
         res = runner.run([_UV, "init", "--bare", "--name", _RUNTIME_NAME], cwd=sertor_dir)
         if not res.ok:
-            raise DependencyError(f"`uv init` fallito: {res.stderr.strip() or res.returncode}")
+            raise DependencyError(f"`uv init` failed: {res.stderr.strip() or res.returncode}")
     spec = profile.dep_spec()
     res = runner.run([_UV, "add", spec], cwd=sertor_dir)
     if not res.ok:
-        raise DependencyError(f"`uv add` fallito: {res.stderr.strip() or res.returncode}")
+        raise DependencyError(f"`uv add` failed: {res.stderr.strip() or res.returncode}")
     outcome = Outcome.SKIPPED if already else Outcome.CREATED
     return ArtifactOutcome(".sertor", outcome, f"uv add {spec}")
 
 
 def _apply_env(profile: RagHostProfile) -> ArtifactOutcome:
-    """`MERGE_ENV`: `.sertor/.env` da template per backend (segreti vuoti), merge additivo."""
+    """`MERGE_ENV`: `.sertor/.env` from the backend template (empty secrets), additive merge."""
     rendered = read_asset_text(f"rag/env.{profile.backend}.tmpl").format(corpus=profile.corpus)
     outcome, detail = merge_env(profile.sertor_dir / ".env", rendered)
     return ArtifactOutcome(".sertor/.env", outcome, detail)
 
 
 def _apply_mcp(profile: RagHostProfile) -> ArtifactOutcome:
-    """`MERGE_JSON`: server `sertor-rag` in `.mcp.json` (radice host), merge additivo."""
+    """`MERGE_JSON`: `sertor-rag` server in `.mcp.json` (host root), additive merge."""
     entry = json.loads(read_asset_text("rag/mcp.server.json.tmpl").format(corpus=profile.corpus))
     outcome, detail = merge_mcp(profile.target_root / ".mcp.json", entry)
     return ArtifactOutcome(".mcp.json", outcome, detail)
 
 
 def _apply_gitignore(profile: RagHostProfile) -> ArtifactOutcome:
-    """`APPEND_LINES`: voci runtime nel `.gitignore` (radice host), dedup."""
+    """`APPEND_LINES`: runtime entries in `.gitignore` (host root), dedup."""
     outcome, detail = append_gitignore(profile.target_root / ".gitignore")
     return ArtifactOutcome(".gitignore", outcome, detail)
 
 
 def _server_entry_json(profile: RagHostProfile) -> str:
-    """Entry JSON del server (compatta) per `claude mcp add-json` — stesso template di MCP_MERGE."""
+    """Compact JSON entry for the server for `claude mcp add-json` — same template as MCP_MERGE."""
     entry = json.loads(read_asset_text("rag/mcp.server.json.tmpl").format(corpus=profile.corpus))
     return json.dumps(entry, ensure_ascii=False)
 
 
 def _apply_mcp_register(profile: RagHostProfile, runner: CommandRunner) -> ArtifactOutcome:
-    """`REGISTER_CLI` (scope local): registra `sertor-rag` nel client, NESSUN file nel repo.
+    """`REGISTER_CLI` (local scope): registers `sertor-rag` in the client, NO file in the repo.
 
-    Idempotente: se il server è già registrato (`claude mcp get`) → SKIPPED. Fail-fast (REQ-305):
-    `claude` assente o `add-json` fallito → `McpRegistrationError` con comando manuale; non scrive
-    nulla in radice (l'artefatto `.mcp.json` non è nel piano in scope local).
+    Idempotent: if the server is already registered (`claude mcp get`) → SKIPPED. Fail-fast
+    (REQ-305): `claude` not found or `add-json` failed → `McpRegistrationError` with manual
+    command; nothing is written in the root (the `.mcp.json` artifact is not in the plan in local
+    scope).
     """
     entry_json = _server_entry_json(profile)
     manual = f"claude mcp add-json {_SERVER_NAME} '{entry_json}' --scope local"
     if not runner.is_available(_CLAUDE):
         raise McpRegistrationError(
-            "`claude` non è disponibile sul PATH: impossibile registrare il server in scope local. "
-            f"Installa Claude Code oppure registra a mano: {manual}"
+            "`claude` is not available on the PATH: cannot register the server in local scope. "
+            f"Install Claude Code or register manually: {manual}"
         )
-    # idempotenza: server già presente → skip (nessuna seconda registrazione)
+    # idempotency: server already registered → skip (no second registration)
     if runner.run([_CLAUDE, "mcp", "get", _SERVER_NAME], cwd=profile.target_root).ok:
         log_event(logging.INFO, "mcp_register", server=_SERVER_NAME, scope="local",
                   outcome="skipped")
         return ArtifactOutcome(
-            _MCP_REGISTER_LABEL, Outcome.SKIPPED, f"{_SERVER_NAME} già registrato"
+            _MCP_REGISTER_LABEL, Outcome.SKIPPED, f"{_SERVER_NAME} already registered"
         )
     res = runner.run(
         [_CLAUDE, "mcp", "add-json", _SERVER_NAME, entry_json, "--scope", "local"],
@@ -174,8 +176,8 @@ def _apply_mcp_register(profile: RagHostProfile, runner: CommandRunner) -> Artif
     )
     if not res.ok:
         raise McpRegistrationError(
-            f"`claude mcp add-json` fallito: {res.stderr.strip() or res.returncode}. "
-            f"Comando manuale: {manual}"
+            f"`claude mcp add-json` failed: {res.stderr.strip() or res.returncode}. "
+            f"Manual command: {manual}"
         )
     log_event(logging.INFO, "mcp_register", server=_SERVER_NAME, scope="local", outcome="created")
     return ArtifactOutcome(_MCP_REGISTER_LABEL, Outcome.CREATED, f"{_SERVER_NAME} (scope local)")
@@ -184,7 +186,8 @@ def _apply_mcp_register(profile: RagHostProfile, runner: CommandRunner) -> Artif
 def execute_rag_plan(
     plan: list[Artifact], profile: RagHostProfile, runner: CommandRunner
 ) -> InstallReport:
-    """Esegue il piano con fail-fast no-rollback. Ritorna l'`InstallReport` (capability=rag)."""
+    """Executes the plan with fail-fast no-rollback. Returns the `InstallReport`
+    (capability=rag)."""
     report = InstallReport(target=str(profile.target_root), capability="rag")
     for art in plan:
         try:
@@ -198,10 +201,10 @@ def execute_rag_plan(
                 outcome = _apply_mcp_register(profile, runner)
             elif art.kind is ArtifactKind.GITIGNORE_APPEND:
                 outcome = _apply_gitignore(profile)
-            else:  # pragma: no cover — kind ignoto è un bug, non un input
-                raise ConfigError(f"kind di artefatto non gestito: {art.kind}")
+            else:  # pragma: no cover — unknown kind is a bug, not user input
+                raise ConfigError(f"unhandled artifact kind: {art.kind}")
         except SertorError as exc:
             report.add(ArtifactOutcome(art.target_rel, Outcome.ERROR, str(exc)))
-            break  # fail-fast: stop al primo errore di dominio (no rollback)
+            break  # fail-fast: stop on the first domain error (no rollback)
         report.add(outcome)
     return report

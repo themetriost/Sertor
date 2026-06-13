@@ -1,1 +1,1 @@
-"""Motori RAG (modalità) costruiti sopra il nucleo. Consumano le porte, non le ridefiniscono."""
+"""RAG engines (modes) built on top of the core. They consume the ports, not redefine them."""

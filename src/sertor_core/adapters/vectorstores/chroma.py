@@ -1,9 +1,9 @@
-"""Adapter di vector store su Chroma (backend locale embedded, default — REQ-018/022).
+"""Vector store adapter on Chroma (local embedded backend, default — REQ-018/022).
 
-Implementa la porta `VectorStore`: persistenza su file system locale, collezioni namespaced,
-filtro per tipo di documento sui metadati (REQ-027, niente indici separati). Spazio di similarità
-coseno. Una collezione assente fa restituire `[]` (REQ-028); un errore del backend è avvolto in
-`VectorStoreError` (Principio IV, REQ-021), mai un risultato vuoto silenzioso.
+Implements the `VectorStore` port: persistence on the local file system, namespaced collections,
+document-type filtering on metadata (REQ-027, no separate indexes). Cosine similarity space.
+A missing collection returns `[]` (REQ-028); a backend error is wrapped in
+`VectorStoreError` (Principle IV, REQ-021), never a silent empty result.
 """
 from __future__ import annotations
 
@@ -15,16 +15,16 @@ from sertor_core.domain.errors import VectorStoreError
 from sertor_core.observability.logging import log_event
 
 _BACKEND = "chroma"
-# Chiavi di metadato scalari ammesse da Chroma (no None, no sequenze).
+# Scalar metadata keys accepted by Chroma (no None, no sequences).
 _META_KEYS = ("path", "doc_type", "chunker", "language", "qualname", "node_type",
               "start_line", "end_line", "heading_path")
 
 
 def _raise_store_error(message: str, exc: Exception) -> None:
-    """Emette l'evento `store_error` al boundary (FR-020) e solleva `VectorStoreError`.
+    """Emits the `store_error` event at the boundary (FR-020) and raises `VectorStoreError`.
 
-    Usato SOLO per gli errori veri del backend; l'assenza lecita della collezione (→ `[]`, REQ-028)
-    NON passa di qui e non viene loggata come ERROR (sarebbe un falso positivo).
+    Used ONLY for genuine backend errors; a legitimately absent collection (→ `[]`, REQ-028)
+    does NOT go through here and is not logged as ERROR (that would be a false positive).
     """
     reason = type(exc).__name__
     log_event(logging.ERROR, "store_error", backend=_BACKEND, reason=reason)
@@ -42,7 +42,7 @@ def _clean_metadata(payload: dict) -> dict:
 
 
 class ChromaStore:
-    """`VectorStore` su Chroma. `client` è iniettabile per i test (NFR-01)."""
+    """`VectorStore` on Chroma. `client` is injectable for tests (NFR-01)."""
 
     def __init__(self, persist_dir: Path | str = ".index", client=None):
         if client is not None:
@@ -52,8 +52,8 @@ class ChromaStore:
                 import chromadb
 
                 self._client = chromadb.PersistentClient(path=str(persist_dir))
-            except Exception as exc:  # backend non inizializzabile
-                _raise_store_error("impossibile inizializzare il vector store", exc)
+            except Exception as exc:  # backend cannot be initialised
+                _raise_store_error("unable to initialise vector store", exc)
 
     def upsert(self, collection: str, records: list[EmbeddedChunk]) -> None:
         if not records:
@@ -69,7 +69,7 @@ class ChromaStore:
                 metadatas=[_clean_metadata(r.payload) for r in records],
             )
         except Exception as exc:
-            _raise_store_error("errore durante l'upsert nel vector store", exc)
+            _raise_store_error("error during vector store upsert", exc)
 
     def query(
         self, collection: str, vector: list[float], k: int, doc_type: str = "both"
@@ -81,13 +81,13 @@ class ChromaStore:
         except VectorStoreError:
             raise
         except Exception:
-            return []  # collezione assente/non inizializzata -> vuoto (REQ-028)
+            return []  # collection absent/not initialised -> empty (REQ-028)
 
         where = None if doc_type == "both" else {"doc_type": doc_type}
         try:
             res = coll.query(query_embeddings=[vector], n_results=k, where=where)
         except Exception as exc:
-            _raise_store_error("errore durante la query nel vector store", exc)
+            _raise_store_error("error during vector store query", exc)
         return _to_results(res)
 
     def delete(self, collection: str, ids: list[str]) -> None:
@@ -100,14 +100,14 @@ class ChromaStore:
         try:
             coll.delete(ids=ids)
         except Exception as exc:
-            _raise_store_error("errore durante la delete nel vector store", exc)
+            _raise_store_error("error during vector store delete", exc)
 
     def reset(self, collection: str) -> None:
-        # Rebuild-from-scratch: elimina la collezione se esiste (idempotente: assente = no-op).
+        # Rebuild-from-scratch: delete the collection if it exists (idempotent: absent = no-op).
         try:
             self._client.delete_collection(name=collection)
         except Exception:
-            return  # collezione assente o già eliminata: non è un errore
+            return  # collection absent or already deleted: not an error
 
     def exists(self, collection: str) -> bool:
         try:
@@ -123,8 +123,8 @@ class ChromaStore:
         try:
             return sorted(c.name for c in self._client.list_collections())
         except Exception as exc:
-            _raise_store_error("errore durante l'elenco delle collezioni", exc)
-            return []  # irraggiungibile: _raise_store_error solleva sempre (per il type checker)
+            _raise_store_error("error while listing collections", exc)
+            return []  # unreachable: _raise_store_error always raises (for the type checker)
 
 
 def _to_results(res: dict) -> list[RetrievalResult]:
@@ -142,7 +142,7 @@ def _to_results(res: dict) -> list[RetrievalResult]:
                 path=meta.get("path", ""),
                 chunk_id=cid,
                 doc_type=DocType(meta.get("doc_type", "code")),
-                score=1.0 - float(distance),  # spazio coseno: similarità = 1 - distanza
+                score=1.0 - float(distance),  # cosine space: similarity = 1 - distance
                 metadata=meta or None,
             )
         )

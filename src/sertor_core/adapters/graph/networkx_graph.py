@@ -1,13 +1,13 @@
-"""Adapter `CodeGraph` su networkx con artefatto JSON persistito (FEAT-005).
+"""Adapter `CodeGraph` on networkx with a persisted JSON artifact (FEAT-005).
 
-Asimmetria deliberata (research G1): `build()` è pura serializzazione JSON — funziona SENZA
-l'extra `graph`, così `index()` produce sempre l'artefatto; la NAVIGAZIONE importa networkx
-pigramente e, se l'extra manca, solleva `ConfigError` azionabile (DA-5).
+Deliberate asymmetry (research G1): `build()` is pure JSON serialisation — it works WITHOUT
+the `graph` extra, so `index()` always produces the artifact; NAVIGATION imports networkx
+lazily and, if the extra is missing, raises an actionable `ConfigError` (DA-5).
 
-L'artefatto vive in `<index_dir>/graph/<corpus>.json` — namespace per SOLO corpus: il grafo
-non dipende dal provider di embeddings (research G5). Formato versionato `sertor.graph/1`,
-scrittura atomica (tmp+rename). Due semantiche di assenza: grafo non costruito →
-`GraphNotFoundError`; simbolo assente → risultati vuoti (FR-007/FR-017).
+The artifact lives in `<index_dir>/graph/<corpus>.json` — namespaced by corpus ONLY: the graph
+does not depend on the embedding provider (research G5). Versioned format `sertor.graph/1`,
+atomic write (tmp+rename). Two absence semantics: graph not built →
+`GraphNotFoundError`; symbol absent → empty results (FR-007/FR-017).
 """
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ _SYMBOL_KINDS = ("class", "function", "method")
 
 
 class NetworkxCodeGraph:
-    """`CodeGraph` su nx.DiGraph caricato pigramente dall'artefatto JSON."""
+    """`CodeGraph` on nx.DiGraph lazily loaded from the JSON artifact."""
 
     def __init__(
         self,
@@ -44,14 +44,14 @@ class NetworkxCodeGraph:
     ):
         self._dir = Path(index_dir) / "graph"
         self._corpus = corpus
-        self._limits = limits  # (definizioni, relazioni, doc) per get_context (FR-016)
-        # cache per corpus: (DiGraph, nodi per id, indice nome→ids) — invalidata da build/reset.
+        self._limits = limits  # (definitions, relations, docs) for get_context (FR-016)
+        # per-corpus cache: (DiGraph, nodes by id, name→ids index) — invalidated by build/reset.
         self._cache: dict[str, tuple] = {}
 
     def _artifact(self, corpus: str) -> Path:
         return self._dir / f"{corpus}.json"
 
-    # --- build (senza extra, FR-005/FR-008) ------------------------------------------------------
+    # --- build (without extra, FR-005/FR-008) ----------------------------------------------------
 
     def build(self, corpus: str, data: GraphData) -> None:
         started = time.perf_counter()
@@ -78,7 +78,7 @@ class NetworkxCodeGraph:
             Path(tmp_name).unlink(missing_ok=True)
             raise
         self._cache.pop(corpus, None)
-        # L'evento lo emette l'adapter: conosce path e conteggi (FR-026, fix analyze I1).
+        # The adapter emits the event: it knows the path and counts (FR-026, fix analyze I1).
         log_event(
             logging.INFO,
             "graph_build",
@@ -89,7 +89,7 @@ class NetworkxCodeGraph:
             elapsed_ms=round((time.perf_counter() - started) * 1000, 2),
         )
 
-    # --- caricamento pigro (con extra, DA-5) -----------------------------------------------------
+    # --- lazy loading (with extra, DA-5) ---------------------------------------------------------
 
     def _load(self):
         if self._corpus in self._cache:
@@ -97,14 +97,14 @@ class NetworkxCodeGraph:
         artifact = self._artifact(self._corpus)
         if not artifact.exists():
             raise GraphNotFoundError(
-                "grafo inesistente: costruiscilo (index) prima di interrogare",
+                "graph not found: build it (index) before querying",
                 corpus=self._corpus,
             )
         try:
             import networkx as nx
         except ImportError as exc:
             raise ConfigError(
-                "la navigazione del code-graph richiede l'extra: "
+                "code-graph navigation requires the extra: "
                 'uv add "sertor-core[graph]"',
                 key="graph",
             ) from exc
@@ -112,12 +112,12 @@ class NetworkxCodeGraph:
             payload = json.loads(artifact.read_text(encoding="utf-8"))
         except json.JSONDecodeError as exc:
             raise ConfigError(
-                f"artefatto del grafo corrotto: {artifact} — ricostruirlo con un re-index",
+                f"corrupt graph artifact: {artifact} — rebuild it with a re-index",
             ) from exc
         if payload.get("format") != _FORMAT:
             raise ConfigError(
-                f"formato del grafo non riconosciuto ({payload.get('format')!r}): "
-                f"{artifact} — ricostruirlo con un re-index",
+                f"unrecognised graph format ({payload.get('format')!r}): "
+                f"{artifact} — rebuild it with a re-index",
             )
         graph = nx.DiGraph()
         by_id: dict[str, GraphNode] = {}
@@ -136,7 +136,7 @@ class NetworkxCodeGraph:
         self._cache[self._corpus] = (graph, by_id, name_index)
         return self._cache[self._corpus]
 
-    # --- navigazione (FR-013..018) ---------------------------------------------------------------
+    # --- navigation (FR-013..018) ----------------------------------------------------------------
 
     @staticmethod
     def _hit(node: GraphNode) -> SymbolHit:
@@ -212,11 +212,11 @@ class NetworkxCodeGraph:
         self._logged("get_context", name, len(bundle.definitions), started)
         return bundle
 
-    # --- stato ------------------------------------------------------------------------------------
+    # --- state -----------------------------------------------------------------------------------
 
     def exists(self, corpus: str) -> bool:
         return self._artifact(corpus).exists()
 
     def reset(self, corpus: str) -> None:
-        self._artifact(corpus).unlink(missing_ok=True)  # assente = no-op
+        self._artifact(corpus).unlink(missing_ok=True)  # absent = no-op
         self._cache.pop(corpus, None)

@@ -1,19 +1,19 @@
-"""Estrazione pura del code-graph strutturale (FEAT-005, gruppo A).
+"""Pure structural code-graph extraction (FEAT-005, group A).
 
-Servizio deterministico e locale: dai `Document`/`Chunk` del corpus produce `GraphData`
-(nodi + archi + copertura dichiarata). NESSUN import di librerie di grafi (research G1):
-la persistenza/navigazione è dell'adapter dietro la porta `CodeGraph`.
+Deterministic and local service: from the corpus `Document`/`Chunk` it produces `GraphData`
+(nodes + edges + declared coverage). NO imports of graph libraries (research G1):
+persistence/navigation belongs to the adapter behind the `CodeGraph` port.
 
-- **Nodi** (FR-002, DRY): i simboli derivano dai metadati già prodotti dal chunker sintattico
-  (`symbol`/`qualname`/`node_type`/`start_line`); i `module` dai Document di codice, i `doc`
-  dai Document Markdown. Gli archi `contains` derivano dalla gerarchia dei qualname:
-  language-agnostic per tutti i 10 linguaggi.
-- **Archi relazionali** (FR-001/003): passaggio tree-sitter dedicato (i chunk sono spezzati e
-  non bastano per le chiamate), guidato dalla mappa `_REL` per-linguaggio. `COVERAGE` (derivata
-  da `_REL`) è la dichiarazione unica di cosa è supportato per linguaggio (DA-3): ciò che non
-  è in mappa non esiste in modo DICHIARATO, mai silenzioso.
-- **Risoluzione best-effort intra-corpus per nome** (FR-004): i nomi più ambigui della soglia
-  non generano archi `calls` (precisione > completezza, come il prototipo 03).
+- **Nodes** (FR-002, DRY): symbols are derived from metadata already produced by the syntactic
+  chunker (`symbol`/`qualname`/`node_type`/`start_line`); `module` nodes from code Documents,
+  `doc` nodes from Markdown Documents. `contains` edges come from the qualname hierarchy:
+  language-agnostic across all 10 languages.
+- **Relational edges** (FR-001/003): dedicated tree-sitter pass (chunks are split and not
+  sufficient for calls), guided by the per-language `_REL` map. `COVERAGE` (derived from `_REL`)
+  is the single declaration of what is supported per language (DA-3): anything not in the map
+  does not exist in a DECLARED way, never silently.
+- **Best-effort intra-corpus resolution by name** (FR-004): names more ambiguous than the
+  threshold do not generate `calls` edges (precision > recall, matching prototype 03).
 """
 from __future__ import annotations
 
@@ -28,23 +28,23 @@ from sertor_core.domain.entities import (
     GraphNode,
 )
 
-# Riuso deliberato della conoscenza sintattica del chunker (stesso layer services, DRY):
-# kinds di definizione/classe per linguaggio, mapping grammatiche, wrapper del nodo.
+# Deliberate reuse of the chunker's syntactic knowledge (same services layer, DRY):
+# definition/class kinds per language, grammar mappings, node wrapper.
 from sertor_core.services.chunking.code import _LANG, _TS_NAME, _effective, _Node
 
 _IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
-_PART_SUFFIX = re.compile(r"\s*\(parte \d+\)$")
+_PART_SUFFIX = re.compile(r"\s*\(part \d+\)$")
 _IMPORT_MODULE = re.compile(r"(?:from|import)\s+([.\w]+)")
 
 _SYMBOL_KINDS = ("class", "function", "method")
 
-# Mappa di relazione per-linguaggio: i node-type tree-sitter delle invocazioni e (dove
-# validato) di import/ereditarietà. È LA dichiarazione di copertura (FR-003, DA-3).
+# Per-language relation map: tree-sitter node-types for invocations and (where
+# validated) imports/inheritance. This IS the coverage declaration (FR-003, DA-3).
 _REL: dict[str, dict] = {
     "python": {
         "calls": {"call"},
         "imports": {"import_statement", "import_from_statement"},
-        "inherits": True,  # via field `superclasses` di class_definition
+        "inherits": True,  # via field `superclasses` of class_definition
     },
     "javascript": {"calls": {"call_expression"}},
     "typescript": {"calls": {"call_expression"}},
@@ -57,7 +57,7 @@ _REL: dict[str, dict] = {
     "ruby": {"calls": {"call"}},
 }
 
-#: Copertura dichiarata per linguaggio (consumata da build/doc/test — FR-003).
+#: Declared coverage per language (consumed by build/doc/test — FR-003).
 COVERAGE: dict[str, tuple[str, ...]] = {
     lang: tuple(sorted(kind for kind in ("calls", "imports", "inherits") if rel.get(kind)))
     for lang, rel in _REL.items()
@@ -70,11 +70,11 @@ def extract_graph(
     *,
     ambiguity_threshold: int = 2,
 ) -> GraphData:
-    """Estrae il code-graph dal corpus. Puro e deterministico (FR-008)."""
+    """Extracts the code-graph from the corpus. Pure and deterministic (FR-008)."""
     nodes: dict[str, GraphNode] = {}
     edges: set[tuple[str, str, str]] = set()
 
-    # --- nodi module/doc dai Document -----------------------------------------------------------
+    # --- module/doc nodes from Documents ---------------------------------------------------------
     code_documents = [d for d in documents if d.doc_type is DocType.CODE]
     doc_documents = [d for d in documents if d.doc_type is DocType.DOC]
     module_paths = {d.path for d in code_documents}
@@ -83,7 +83,7 @@ def extract_graph(
     for doc in doc_documents:
         nodes[doc.path] = GraphNode(doc.path, "doc", doc.path.split("/")[-1], doc.path)
 
-    # --- nodi simbolo dai metadati del chunker (FR-002) ------------------------------------------
+    # --- symbol nodes from chunker metadata (FR-002) ---------------------------------------------
     for chunk in chunks:
         meta = chunk.metadata
         if not meta.symbol or meta.node_type not in _SYMBOL_KINDS:
@@ -95,10 +95,10 @@ def extract_graph(
                 node_id, meta.node_type, meta.symbol, meta.path, meta.start_line, qual
             )
 
-    # --- archi relazionali via tree-sitter (per-linguaggio, FR-001/003/004) ----------------------
-    # Il walk raccoglie anche i simboli che il chunker non ha saputo nominare (es. C/C++:
-    # `function_definition` senza field `name` → fallback sul `declarator`, rischio R-3):
-    # nodi supplementari, mai in conflitto con quelli del chunker (stesso id).
+    # --- relational edges via tree-sitter (per-language, FR-001/003/004) -------------------------
+    # The walk also collects symbols the chunker could not name (e.g. C/C++:
+    # `function_definition` without a `name` field → fallback on `declarator`, risk R-3):
+    # supplementary nodes, never conflicting with chunker nodes (same id).
     pending_calls: list[tuple[str, str]] = []
     pending_inherits: list[tuple[str, str]] = []
     discovered: dict[str, GraphNode] = {}
@@ -106,7 +106,7 @@ def extract_graph(
         rel = _REL.get(doc.language)
         lang_cfg = _LANG.get(doc.language)
         if not rel or not lang_cfg:
-            continue  # copertura dichiarata: il linguaggio resta a soli nodi+contains
+            continue  # declared coverage: language stays at nodes+contains only
         root = _parse(doc)
         if root is None:
             continue
@@ -117,7 +117,7 @@ def extract_graph(
     for node_id, node in discovered.items():
         nodes.setdefault(node_id, node)
 
-    # --- contains dalla gerarchia dei qualname (language-agnostic) -------------------------------
+    # --- contains from the qualname hierarchy (language-agnostic) --------------------------------
     for node in list(nodes.values()):
         if node.kind not in _SYMBOL_KINDS or not node.qualname:
             continue
@@ -129,7 +129,7 @@ def extract_graph(
         if parent_id in nodes:
             edges.add((parent_id, node.id, "contains"))
 
-    # indice nome → id dei simboli (per risoluzione calls/inherits e mentions)
+    # name → symbol id index (for calls/inherits resolution and mentions)
     name_index: dict[str, list[str]] = {}
     for node in nodes.values():
         if node.kind in _SYMBOL_KINDS:
@@ -143,7 +143,7 @@ def extract_graph(
 
     for caller_id, callee_name in pending_calls:
         targets = _resolve(callee_name, _SYMBOL_KINDS)
-        if 1 <= len(targets) <= ambiguity_threshold:  # ambigui → omessi (FR-004)
+        if 1 <= len(targets) <= ambiguity_threshold:  # ambiguous → omitted (FR-004)
             for target in targets:
                 if target != caller_id:
                     edges.add((caller_id, target, "calls"))
@@ -153,7 +153,7 @@ def extract_graph(
             if target != class_id:
                 edges.add((class_id, target, "inherits"))
 
-    # --- mentions: doc → simboli distintivi (FR-001) ---------------------------------------------
+    # --- mentions: doc → distinctive symbols (FR-001) --------------------------------------------
     distinctive = {
         name: ids for name, ids in name_index.items()
         if len(name) >= 5 or any(c.isupper() for c in name[1:]) or "_" in name
@@ -179,14 +179,14 @@ def _parse(doc: Document) -> _Node | None:
         from tree_sitter_language_pack import get_parser
 
         parser = get_parser(_TS_NAME.get(doc.language, doc.language))
-        # Il binding del pack accetta `str` e indicizza in byte: stesso uso del chunker (code.py).
+        # The pack binding accepts `str` and indexes in bytes: same usage as the chunker (code.py).
         return _Node(parser.parse(doc.text).root_node(), doc.text.encode("utf-8"))
     except Exception:
-        return None  # sorgente non parsabile: restano nodi+contains dal chunker
+        return None  # unparseable source: nodes+contains from the chunker are retained
 
 
 def _definition_name(eff: _Node) -> str | None:
-    """Nome di una definizione: field `name`, con fallback sul `declarator` (C/C++, R-3)."""
+    """Name of a definition: `name` field, with fallback on `declarator` (C/C++, R-3)."""
     name = eff.name()
     if name:
         return name
@@ -210,7 +210,7 @@ def _walk_relations(
     module_paths: set[str],
     discovered: dict[str, GraphNode],
 ) -> None:
-    """Percorre l'AST tracciando il simbolo che racchiude (per attribuire le chiamate)."""
+    """Walks the AST tracking the enclosing symbol (to attribute calls)."""
     for child in node.named_children():
         eff = _effective(child)
         kind = eff.kind
@@ -251,7 +251,7 @@ def _walk_relations(
 
 
 def _call_target(call_node: _Node) -> str | None:
-    """Nome del simbolo invocato: ultimo identificatore del campo funzione/nome/metodo."""
+    """Name of the invoked symbol: last identifier in the function/name/method field."""
     for field in ("function", "name", "method"):
         target = call_node.field(field)
         if target is not None:
@@ -261,13 +261,13 @@ def _call_target(call_node: _Node) -> str | None:
 
 
 def _import_candidates(path: str, statement: str) -> list[str]:
-    """Relpath candidati (senza estensione) per gli import, intra-corpus best-effort."""
+    """Candidate relpaths (without extension) for imports, intra-corpus best-effort."""
     out: list[str] = []
     for dotted in _IMPORT_MODULE.findall(statement):
         level = len(dotted) - len(dotted.lstrip("."))
         module = dotted.lstrip(".")
         parts = module.split(".") if module else []
-        if level:  # import relativo: risolto dalla cartella del file
+        if level:  # relative import: resolved from the file's directory
             base = path.split("/")[:-1]
             up = level - 1
             base = base[: len(base) - up] if up <= len(base) else []

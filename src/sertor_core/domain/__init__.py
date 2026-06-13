@@ -1,1 +1,1 @@
-"""Cuore di dominio: entità, porte e errori. Nessun import di SDK esterni (Principio I)."""
+"""Domain core: entities, ports, and errors. No external SDK imports (Principio I)."""

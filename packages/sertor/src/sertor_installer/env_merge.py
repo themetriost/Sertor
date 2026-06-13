@@ -1,10 +1,10 @@
-"""Merge additivo del `.sertor/.env` (FR-014/015/016, M1).
+"""Additive merge of `.sertor/.env` (FR-014/015/016, M1).
 
-Assente → crea dal template (segreti vuoti). Presente → aggiunge SOLO le chiavi mancanti, **mai**
-sovrascrive il valore di una chiave esistente (REQ-222). Eccezione mirata (M1): per
-`SERTOR_EXCLUDE_PATTERNS` garantisce comunque la presenza di `.sertor` (lo appende al valore
-esistente se manca), perché l'esclusione del runtime dall'indicizzazione è una correttezza, non una
-preferenza utente. Nessun segreto viene mai scritto con valore (i template li lasciano vuoti).
+Absent → create from template (empty secrets). Present → add ONLY missing keys, **never**
+overwrite the value of an existing key (REQ-222). Targeted exception (M1): for
+`SERTOR_EXCLUDE_PATTERNS`, always ensures `.sertor` is present (appends it to the existing value if
+missing), because excluding the runtime from indexing is a correctness concern, not a user
+preference. No secret is ever written with a value (templates leave them empty).
 """
 from __future__ import annotations
 
@@ -17,7 +17,8 @@ _SERTOR_DIR = ".sertor"
 
 
 def _parse_pairs(text: str) -> dict[str, str]:
-    """Estrae `KEY=value` (ignora commenti/righe vuote). Ultima vince (semantica dotenv)."""
+    """Extracts `KEY=value` pairs (ignores comments/blank lines). Last one wins (dotenv
+    semantics)."""
     pairs: dict[str, str] = {}
     for line in text.splitlines():
         s = line.strip()
@@ -29,7 +30,7 @@ def _parse_pairs(text: str) -> dict[str, str]:
 
 
 def _replace_key_line(text: str, key: str, new_line: str) -> str:
-    """Sostituisce la riga `key=...` con `new_line`, preservando il resto."""
+    """Replaces the `key=...` line with `new_line`, preserving everything else."""
     out: list[str] = []
     for line in text.splitlines():
         s = line.strip()
@@ -41,7 +42,7 @@ def _replace_key_line(text: str, key: str, new_line: str) -> str:
 
 
 def merge_env(env_path: Path, rendered: str) -> tuple[Outcome, str]:
-    """Applica il merge additivo. `rendered` = template già compilato (corpus iniettato)."""
+    """Applies the additive merge. `rendered` = already-compiled template (corpus injected)."""
     template = _parse_pairs(rendered)
 
     if not env_path.exists():
@@ -49,7 +50,7 @@ def merge_env(env_path: Path, rendered: str) -> tuple[Outcome, str]:
         env_path.write_text(
             rendered if rendered.endswith("\n") else rendered + "\n", encoding="utf-8"
         )
-        return Outcome.CREATED, f"{len(template)} chiavi"
+        return Outcome.CREATED, f"{len(template)} keys"
 
     existing_text = env_path.read_text(encoding="utf-8")
     existing = _parse_pairs(existing_text)
@@ -57,7 +58,7 @@ def merge_env(env_path: Path, rendered: str) -> tuple[Outcome, str]:
     added: list[str] = []
     ensured_sertor = False
 
-    # M1: garantisci `.sertor` negli excludes anche se la chiave esiste già.
+    # M1: ensure `.sertor` is in the excludes even if the key already exists.
     if _EXCLUDE_KEY in existing:
         items = [p.strip() for p in existing[_EXCLUDE_KEY].split(",") if p.strip()]
         if _SERTOR_DIR not in items:
@@ -67,7 +68,7 @@ def merge_env(env_path: Path, rendered: str) -> tuple[Outcome, str]:
             )
             ensured_sertor = True
 
-    # Chiavi mancanti: append (mai sovrascrivere valori esistenti).
+    # Missing keys: append (never overwrite existing values).
     missing = [f"{k}={v}" for k, v in template.items() if k not in existing]
     if missing:
         if not new_text.endswith("\n"):
@@ -76,12 +77,12 @@ def merge_env(env_path: Path, rendered: str) -> tuple[Outcome, str]:
         added = [line.split("=", 1)[0] for line in missing]
 
     if not missing and not ensured_sertor:
-        return Outcome.SKIPPED, "già presente"
+        return Outcome.SKIPPED, "already present"
 
     env_path.write_text(new_text, encoding="utf-8")
     parts: list[str] = []
     if added:
-        parts.append(f"+{len(added)} chiavi")
+        parts.append(f"+{len(added)} keys")
     if ensured_sertor:
-        parts.append(".sertor aggiunto agli excludes")
+        parts.append(".sertor added to excludes")
     return Outcome.MERGED, "; ".join(parts)

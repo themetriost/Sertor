@@ -1,9 +1,9 @@
-"""Configurazione centralizzata del nucleo (Principio VIII, REQ-030).
+"""Centralised configuration for the core (Principio VIII, REQ-030).
 
-UNICA fonte di verità per le scelte operative: provider, backend, percorsi, parametri di
-chunking, `k`, batch, esclusioni. I default vivono SOLO qui — i componenti non hardcodano nulla.
-Caricata da variabili d'ambiente e da un file `.env` (non versionato). I segreti (chiavi API)
-provengono solo da env/`.env` e non vengono mai scritti su path versionati (REQ-032).
+Single source of truth for operational choices: provider, backend, paths, chunking parameters,
+`k`, batch size, exclusions. Defaults live ONLY here — components hardcode nothing.
+Loaded from environment variables and a `.env` file (not versioned). Secrets (API keys)
+come only from env/`.env` and are never written to versioned paths (REQ-032).
 """
 from __future__ import annotations
 
@@ -15,8 +15,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Pattern di esclusione di default per l'ingestione (REQ-002): ambienti, artefatti, VCS, segreti.
-# È un default sovrascrivibile via config, non una lista hardcoded nei componenti.
+# Default exclusion patterns for ingestion (REQ-002): environments, artifacts, VCS, secrets.
+# This is an overridable default via config, not a hardcoded list in components.
 _DEFAULT_EXCLUDES: tuple[str, ...] = (
     ".git", ".hg", ".svn",
     ".venv", "venv", "env", "node_modules", "__pycache__",
@@ -28,13 +28,13 @@ _DEFAULT_EXCLUDES: tuple[str, ...] = (
 
 
 def _resolve_env_path(env_file: str | os.PathLike[str] | None) -> Path | None:
-    """Quale `.env` caricare — runtime auto-localizzante (host-agnostico).
+    """Which `.env` to load — self-locating runtime (host-agnostic).
 
-    `None` → nessun caricamento (isolamento dei test). Altrimenti, in ordine: il file indicato se
-    esiste (di default `./.env`, relativo al cwd); poi `.env` nella cartella del **progetto che
-    possiede il venv corrente** (`Path(sys.prefix).parent`) — per un runtime installato è
-    `.sertor/`, in sviluppo è la radice del repo. Così la CLI carica `.sertor/.env` (e ancora
-    l'indice lì) da **qualsiasi** cwd, non solo quando si lancia da dentro `.sertor/`.
+    `None` → no loading (test isolation). Otherwise, in order: the given file if it exists
+    (default `./.env`, relative to cwd); then `.env` in the folder of the **project that owns
+    the current venv** (`Path(sys.prefix).parent`) — for an installed runtime this is `.sertor/`,
+    in development it is the repo root. This way the CLI loads `.sertor/.env` (and anchors the
+    index there) from **any** cwd, not only when launched from inside `.sertor/`.
     """
     if env_file is None:
         return None
@@ -55,7 +55,7 @@ def _split_env(name: str) -> list[str] | None:
 
 
 def _bool_env(name: str, default: bool) -> bool:
-    """Parsing booleano tollerante: true/1/yes/on (case-insensitive) → True."""
+    """Tolerant boolean parsing: true/1/yes/on (case-insensitive) → True."""
     raw = os.getenv(name)
     if raw is None:
         return default
@@ -64,13 +64,13 @@ def _bool_env(name: str, default: bool) -> bool:
 
 @dataclass(frozen=True)
 class Settings:
-    """Settaggi del nucleo. Istanziare via `Settings.load()` per leggere env/`.env`."""
+    """Core settings. Instantiate via `Settings.load()` to read env/`.env`."""
 
     # backend & corpus
-    backend: str = "local"                 # local | azure — provider di EMBEDDINGS
-    store_backend: str = "local"           # local | azure — backend VECTOR STORE (disaccoppiato)
-    corpus: str = "default"                # namespace logico della collezione
-    extra_corpora: tuple[str, ...] = ()    # corpora aggiuntivi per la ricerca combinata (FR-007)
+    backend: str = "local"                 # local | azure — EMBEDDINGS provider
+    store_backend: str = "local"           # local | azure — VECTOR STORE backend (decoupled)
+    corpus: str = "default"                # logical namespace for the collection
+    extra_corpora: tuple[str, ...] = ()    # additional corpora for combined search (FR-007)
 
     # embeddings: locale (Ollama)
     ollama_host: str = "http://localhost:11434"
@@ -92,19 +92,20 @@ class Settings:
 
     # retrieval
     default_k: int = 5
-    preview_chars: int = 240               # lunghezza anteprima nei risultati CLI (FEAT-011, D5)
+    preview_chars: int = 240               # preview length in CLI results (FEAT-011, D5)
 
-    # motore RAG (FEAT-004): selezione + parametri della fusione ibrida e del reranking
-    engine: str = "hybrid"                 # baseline | hybrid — il migliore è il default (D1)
-    rrf_c: int = 60                        # costante RRF (Cormack et al., REQ-011)
-    rrf_pool: int = 30                     # candidati per fonte prima della fusione (REQ-011)
-    rerank_enabled: bool = False           # secondo stadio cross-encoder (default off, R-3)
-    rerank_pool: int = 15                  # pool fuso passato al reranker (~3×k, REQ-024)
+    # RAG engine (FEAT-004): selection + parameters for hybrid fusion and reranking
+    engine: str = "hybrid"                 # baseline | hybrid — best is the default (D1)
+    rrf_c: int = 60                        # RRF constant (Cormack et al., REQ-011)
+    rrf_pool: int = 30                     # candidates per source before fusion (REQ-011)
+    rerank_enabled: bool = False           # second cross-encoder stage (default off, R-3)
+    rerank_pool: int = 15                  # fused pool passed to the reranker (~3×k, REQ-024)
 
-    # code-graph strutturale (FEAT-005): build integrato in index() + navigazione
-    graph_enabled: bool = True             # build del grafo dentro index() (DA-2)
-    graph_ambiguity_threshold: int = 2     # nomi più ambigui di così → niente archi calls (FR-004)
-    graph_limit_definitions: int = 10      # limiti per sezione di get_context (FR-016)
+    # structural code graph (FEAT-005): build integrated in index() + navigation
+    graph_enabled: bool = True             # build graph inside index() (DA-2)
+    # names more ambiguous than this → no calls edges (FR-004)
+    graph_ambiguity_threshold: int = 2
+    graph_limit_definitions: int = 10      # per-section limits for get_context (FR-016)
     graph_limit_relations: int = 8
     graph_limit_docs: int = 8
 
@@ -113,16 +114,16 @@ class Settings:
 
     @property
     def embed_provider(self) -> str:
-        """Provider di embeddings coerente col backend: azure in cloud, ollama in locale."""
+        """Embedding provider consistent with the backend: azure in cloud, ollama locally."""
         return "azure" if self.backend == "azure" else "ollama"
 
     def validate_backend(self) -> list[str]:
-        """Nomi delle variabili d'ambiente richieste ma mancanti per il backend selezionato (D3).
+        """Names of required but missing environment variables for the selected backend (D3).
 
-        Validazione **statica** (FR-015): non contatta servizi, ritorna solo l'elenco dei campi di
-        configurazione vuoti che il backend/store scelto richiede. È l'UNICA fonte della mappa
-        "quali campi servono per azure" (Principio VIII): la CLI conosce solo l'esito.
-        `local` (Ollama/Chroma, default validi) non è mai bloccato → lista vuota.
+        **Static** validation (FR-015): does not contact services; returns only the list of
+        empty configuration fields required by the chosen backend/store. This is the ONLY source
+        of the "which fields are needed for azure" map (Principio VIII): the CLI knows only the
+        outcome. `local` (Ollama/Chroma, valid defaults) is never blocked → empty list.
         """
         missing: list[str] = []
         if self.backend == "azure":
@@ -141,12 +142,12 @@ class Settings:
 
     @classmethod
     def load(cls, env_file: str | os.PathLike[str] | None = ".env") -> Settings:
-        """Costruisce i settaggi da variabili d'ambiente + file `.env` (se presente).
+        """Build settings from environment variables + `.env` file (if present).
 
-        Il file `.env` è autoritativo (override) per evitare che variabili di sistema
-        spurie rompano la config; i valori assenti ricadono sui default di questa classe.
-        La risoluzione del `.env` è **auto-localizzante** (`_resolve_env_path`): se non c'è nel cwd,
-        usa quello accanto al venv del runtime (`.sertor/.env`), e l'indice viene ancorato lì.
+        The `.env` file is authoritative (override) to prevent spurious system variables from
+        breaking the configuration; missing values fall back to this class's defaults.
+        `.env` resolution is **self-locating** (`_resolve_env_path`): if not found in cwd,
+        uses the one next to the runtime venv (`.sertor/.env`), and the index is anchored there.
         """
         env_path = _resolve_env_path(env_file)
         if env_path is not None:
@@ -157,16 +158,16 @@ class Settings:
         index_dir = os.getenv("SERTOR_INDEX_DIR")
         backend = os.getenv("RAG_BACKEND", "local")
         if env_path is None and env_file is not None and os.getenv("RAG_BACKEND") is None:
-            # Nessuna fonte di config (né `.env` nel cwd/accanto al runtime, né `RAG_BACKEND`
-            # nell'ambiente): si ricade sui default (backend `local`/Ollama). Lo si segnala per
-            # evitare il fallback silenzioso che confonde (es. "ollama non raggiungibile" quando si
-            # voleva Azure ma il `.sertor/.env` non è stato caricato).
+            # No configuration source (neither `.env` in cwd/next to the runtime, nor
+            # `RAG_BACKEND` in the environment): falling back to defaults (backend `local`/Ollama).
+            # Signalled to avoid the silent fallback that causes confusion (e.g. "ollama
+            # unreachable" when Azure was intended but `.sertor/.env` was not loaded).
             from sertor_core.observability.logging import log_event
             log_event(
                 logging.WARNING, "config_no_env_found",
-                note="nessun .env trovato e RAG_BACKEND non impostato; uso i default (local)",
+                note="no .env found and RAG_BACKEND not set; using defaults (local)",
             )
-        # Ancora dell'indice: esplicito > home del runtime (cartella del `.env` risolto) > cwd.
+        # Index anchor: explicit > runtime home (folder of resolved `.env`) > cwd.
         if index_dir:
             resolved_index_dir = Path(index_dir)
         elif env_path is not None:
@@ -175,9 +176,9 @@ class Settings:
             resolved_index_dir = Path(".index")
         return cls(
             backend=backend,
-            # Lo store è disaccoppiato dal provider di embeddings: default = `RAG_BACKEND` (retro-
-            # compatibile), si sovrascrive con `SERTOR_STORE_BACKEND` per combinare, es., embeddings
-            # Azure con store Chroma locale.
+            # The store is decoupled from the embedding provider: default = `RAG_BACKEND`
+            # (backward-compatible), overridable with `SERTOR_STORE_BACKEND` to combine, e.g.,
+            # Azure embeddings with a local Chroma store.
             store_backend=os.getenv("SERTOR_STORE_BACKEND", backend),
             corpus=os.getenv("SERTOR_CORPUS", "default"),
             extra_corpora=tuple(extra_corpora) if extra_corpora is not None else (),

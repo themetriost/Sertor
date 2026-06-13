@@ -1,10 +1,10 @@
-"""`WikiProfile`: la config dell'ospite — unica fonte di specificità (Principio X, Principio VIII).
+"""`WikiProfile`: the host config — single source of specificity (Principio X, Principio VIII).
 
-Caricata da `wiki.config.toml` con `tomllib` (stdlib, research D1). Tutta la specificità
-dell'ospite (radice, tassonomia, cartelle-sorgente, lingua, profilo, stringhe) vive qui: nessun
-default è hard-coded nel *corpo* delle operazioni — il profilo di Sertor è un *file esterno*
-sostituibile. La validazione è esplicita (Principio IV): config assente/malformata → `ConfigError`,
-mai uno stato parziale o un `None` silenzioso.
+Loaded from `wiki.config.toml` with `tomllib` (stdlib, research D1). All host-specific details
+(root, taxonomy, source directories, language, profile, strings) live here: no default is
+hard-coded in the operation *body* — the Sertor profile is a replaceable *external file*.
+Validation is explicit (Principio IV): absent/malformed config → `ConfigError`,
+never a partial state or a silent `None`.
 """
 from __future__ import annotations
 
@@ -17,8 +17,8 @@ from pathlib import Path
 from sertor_core.domain.errors import ConfigError
 from sertor_core.observability.logging import log_event
 
-# Default *di campo* (non di ospite): scelte generiche del formato wiki, non specificità del
-# progetto. La specificità (root, tassonomia, source_dirs, lingua) resta obbligatoria in config.
+# *Field* defaults (not host defaults): generic wiki format choices, not project specifics.
+# Specifics (root, taxonomy, source_dirs, language) remain mandatory in config.
 _DEFAULT_INDEX_FILE = "index.md"
 _DEFAULT_LOG_FILE = "log.md"
 _DEFAULT_FRONTMATTER_REQUIRED = ("title", "type", "tags", "created", "updated")
@@ -30,7 +30,7 @@ _DEFAULT_LOG_INDEX_FILE = "index.md"
 
 @dataclass(frozen=True)
 class TaxonomyEntry:
-    """Una voce di tassonomia: area logica → cartella relativa → tipo di frontmatter."""
+    """A taxonomy entry: logical area → relative directory → frontmatter type."""
 
     name: str
     dir: str
@@ -39,7 +39,7 @@ class TaxonomyEntry:
 
 @dataclass(frozen=True)
 class WikiProfile:
-    """Descrizione dichiarativa dell'ospite. `config_dir` ancora i path relativi al disco."""
+    """Declarative description of the host. `config_dir` anchors relative paths to disk."""
 
     config_dir: Path
     profile: str
@@ -48,7 +48,7 @@ class WikiProfile:
     taxonomy: list[TaxonomyEntry]
     index_file: str = _DEFAULT_INDEX_FILE
     log_file: str = _DEFAULT_LOG_FILE
-    log_dir: str = ""  # vuoto = file-unico (back-compat); valorizzato = rotazione giornaliera
+    log_dir: str = ""  # empty = single-file (back-compat); set = daily rotation
     log_index_file: str = _DEFAULT_LOG_INDEX_FILE
     source_dirs: list[str] = field(default_factory=list)
     exclude: list[str] = field(default_factory=list)
@@ -66,7 +66,7 @@ class WikiProfile:
 
     @property
     def root_path(self) -> Path:
-        """Radice assoluta del wiki (relativa alla cartella della config)."""
+        """Absolute wiki root (relative to the config directory)."""
         return self.config_dir / self.root
 
     @property
@@ -79,25 +79,25 @@ class WikiProfile:
 
     @property
     def rotation_enabled(self) -> bool:
-        """True se la rotazione del log è attiva (`log_dir` configurato)."""
+        """True if log rotation is active (`log_dir` configured)."""
         return bool(self.log_dir)
 
     @property
     def log_dir_path(self) -> Path:
-        """Directory delle partizioni giornaliere (relativa alla radice del wiki)."""
+        """Directory of daily partitions (relative to the wiki root)."""
         return self.root_path / self.log_dir
 
     def partition_path(self, day: date) -> Path:
-        """File di partizione del giorno `day` (`<log_dir>/YYYY-MM-DD.md`)."""
+        """Partition file for day `day` (`<log_dir>/YYYY-MM-DD.md`)."""
         return self.log_dir_path / f"{day.isoformat()}.md"
 
     @property
     def log_index_path(self) -> Path:
-        """Indice delle partizioni, dentro la directory di log."""
+        """Index of partitions, inside the log directory."""
         return self.log_dir_path / self.log_index_file
 
     def existing_taxonomy(self) -> list[TaxonomyEntry]:
-        """Voci di tassonomia la cui cartella esiste sul disco (dir assente → warning+skip)."""
+        """Taxonomy entries whose directory exists on disk (absent dir → warning+skip)."""
         present: list[TaxonomyEntry] = []
         for entry in self.taxonomy:
             if (self.root_path / entry.dir).is_dir():
@@ -116,32 +116,32 @@ class WikiProfile:
 
 def _require(value: object, key: str) -> None:
     if value is None or value == "" or value == []:
-        raise ConfigError("campo di configurazione obbligatorio assente o vuoto", key=key)
+        raise ConfigError("required configuration field is absent or empty", key=key)
 
 
 def _coerce_str_list(value: object, key: str) -> list[str]:
     if value is None:
         return []
     if not isinstance(value, list) or not all(isinstance(v, str) for v in value):
-        raise ConfigError("atteso un elenco di stringhe", key=key)
+        raise ConfigError("expected a list of strings", key=key)
     return list(value)
 
 
 def _parse_taxonomy(raw: object) -> list[TaxonomyEntry]:
     if not isinstance(raw, list) or not raw:
-        raise ConfigError("la tassonomia deve avere almeno una voce", key="taxonomy")
+        raise ConfigError("taxonomy must have at least one entry", key="taxonomy")
     entries: list[TaxonomyEntry] = []
     seen_names: set[str] = set()
     seen_dirs: set[str] = set()
     for i, item in enumerate(raw):
         if not isinstance(item, dict):
-            raise ConfigError("voce di tassonomia malformata", key=f"taxonomy[{i}]")
+            raise ConfigError("malformed taxonomy entry", key=f"taxonomy[{i}]")
         name, directory, typ = item.get("name"), item.get("dir"), item.get("type")
         for label, value in (("name", name), ("dir", directory), ("type", typ)):
             if not isinstance(value, str) or not value:
-                raise ConfigError("voce di tassonomia incompleta", key=f"taxonomy[{i}].{label}")
+                raise ConfigError("incomplete taxonomy entry", key=f"taxonomy[{i}].{label}")
         if name in seen_names or directory in seen_dirs:
-            raise ConfigError("nomi/cartelle di tassonomia non univoci", key=f"taxonomy[{i}]")
+            raise ConfigError("taxonomy names/directories are not unique", key=f"taxonomy[{i}]")
         seen_names.add(name)
         seen_dirs.add(directory)
         entries.append(TaxonomyEntry(name=name, dir=directory, type=typ))
@@ -149,20 +149,21 @@ def _parse_taxonomy(raw: object) -> list[TaxonomyEntry]:
 
 
 def load_profile(config_path: str | Path, root_override: str | Path | None = None) -> WikiProfile:
-    """Carica e valida `wiki.config.toml`; `ConfigError` su assente/malformata (Principio IV).
+    """Loads and validates `wiki.config.toml`; raises `ConfigError` if absent/malformed
+    (Principio IV).
 
-    `root_override` (stile Transcriptio `--root`) sostituisce la cartella-ospite usata per
-    risolvere i path relativi, lasciando immutato il file di config.
+    `root_override` (Transcriptio-style `--root`) replaces the host directory used to resolve
+    relative paths, leaving the config file itself unchanged.
     """
     config_path = Path(config_path)
     if not config_path.is_file():
-        raise ConfigError("file di configurazione del wiki non trovato", key=str(config_path))
+        raise ConfigError("wiki configuration file not found", key=str(config_path))
 
     try:
         with config_path.open("rb") as fh:
             data = tomllib.load(fh)
     except tomllib.TOMLDecodeError as exc:
-        raise ConfigError(f"configurazione TOML malformata: {exc}", key=str(config_path)) from exc
+        raise ConfigError(f"malformed TOML configuration: {exc}", key=str(config_path)) from exc
 
     config_dir = Path(root_override) if root_override is not None else config_path.parent
 
@@ -176,7 +177,7 @@ def load_profile(config_path: str | Path, root_override: str | Path | None = Non
     strings = data.get("strings") or {}
     roles = data.get("roles") or {}
     if not isinstance(rag, dict) or not isinstance(strings, dict) or not isinstance(roles, dict):
-        raise ConfigError("sezioni rag/strings/roles malformate", key=str(config_path))
+        raise ConfigError("malformed rag/strings/roles sections", key=str(config_path))
 
     profile = WikiProfile(
         config_dir=config_dir,

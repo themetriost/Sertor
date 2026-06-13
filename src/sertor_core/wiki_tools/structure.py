@@ -1,9 +1,9 @@
-"""`init_structure` e `validate`: struttura non-distruttiva + convenzioni (FR-003/004, SC-006).
+"""`init_structure` and `validate`: non-destructive structure + conventions (FR-003/004, SC-006).
 
-`init_structure` crea le cartelle della tassonomia + indice/registro con contenuto minimo, senza
-sovrascrivere alcun file preesistente (idempotente, non-distruttivo — SC-006). `validate` controlla
-le convenzioni meccaniche delle pagine (frontmatter richiesto, naming kebab-case, area) e ne
-riporta le non conformità nello schema `wiki.lint/1`.
+`init_structure` creates taxonomy directories + index/log with minimal content, without
+overwriting any pre-existing file (idempotent, non-destructive — SC-006). `validate` checks
+the mechanical page conventions (required frontmatter, kebab-case naming, area) and reports
+non-conformances in the `wiki.lint/1` schema.
 """
 from __future__ import annotations
 
@@ -18,9 +18,9 @@ from sertor_core.wiki_tools.profile import WikiProfile
 
 _KEBAB = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*\.md$")
 
-# Localizzazione del seed (D3): index/log sono CONTENUTO del wiki → seguono `profile.language`.
-# L'inglese è il fallback canonico per lingue non in tabella (host-agnostico: la selezione è guidata
-# dalla config, non presunta). Solo le due frasi descrittive; le intestazioni vengono dalla config.
+# Seed localisation (D3): index/log are wiki CONTENT → they follow `profile.language`.
+# English is the canonical fallback for languages not in the table (host-agnostic: selection is
+# driven by config, not assumed). Only the two descriptive sentences; headings come from config.
 _SEED_STRINGS: dict[str, dict[str, str]] = {
     "en": {"index": "Wiki index. Updated by the log operations.", "log": "Append-only wiki log."},
     "it": {
@@ -32,7 +32,7 @@ _SEED_FALLBACK = "en"
 
 
 def _seed_strings(profile: WikiProfile) -> dict[str, str]:
-    """Frasi del seed nella lingua dell'host (`en`/`it`); fallback inglese (es. `it-IT` → `it`)."""
+    """Seed strings in the host language (`en`/`it`); English fallback (e.g. `it-IT` → `it`)."""
     lang = profile.language.lower().split("-")[0]
     return _SEED_STRINGS.get(lang, _SEED_STRINGS[_SEED_FALLBACK])
 
@@ -46,10 +46,10 @@ def _log_seed(profile: WikiProfile) -> str:
 
 
 def init_structure(profile: WikiProfile) -> StructureResult:
-    """Crea cartelle di tassonomia + indice/registro; lascia intatto tutto ciò che esiste già.
+    """Creates taxonomy directories + index/log; leaves everything that already exists untouched.
 
-    Idempotente: una seconda esecuzione su un wiki già inizializzato non crea né modifica nulla
-    (tutto finisce in `skipped_existing`).
+    Idempotent: a second run on an already-initialised wiki creates or modifies nothing
+    (everything ends up in `skipped_existing`).
     """
     created: list[str] = []
     skipped: list[str] = []
@@ -74,7 +74,7 @@ def init_structure(profile: WikiProfile) -> StructureResult:
         (profile.log_path, _log_seed(profile), profile.log_file),
     ):
         if path.exists():
-            skipped.append(label)  # non-distruttività: mai sovrascrivere file utente (SC-006)
+            skipped.append(label)  # non-destructive: never overwrite user files (SC-006)
         else:
             path.write_text(seed, encoding="utf-8")
             created.append(label)
@@ -91,7 +91,7 @@ def init_structure(profile: WikiProfile) -> StructureResult:
 
 
 def validate(profile: WikiProfile) -> LintResult:
-    """Valida le convenzioni delle pagine: frontmatter richiesto + naming kebab-case (FR-004)."""
+    """Validates page conventions: required frontmatter + kebab-case naming (FR-004)."""
     missing_frontmatter: list[dict] = []
     naming_violations: list[dict] = []
 

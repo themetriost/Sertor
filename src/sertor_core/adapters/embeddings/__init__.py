@@ -1,1 +1,1 @@
-"""Adapter di embeddings: Ollama (locale), Azure OpenAI (cloud)."""
+"""Embedding adapters: Ollama (local), Azure OpenAI (cloud)."""

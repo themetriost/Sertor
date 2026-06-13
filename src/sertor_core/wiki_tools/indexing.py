@@ -1,10 +1,10 @@
-"""`index_wiki`: orchestrazione dell'indicizzazione a collezioni separate (FR-010, US5, D5).
+"""`index_wiki`: indexing orchestration into separate collections (FR-010, US5, D5).
 
-Riusa il facade/indexer esistente di `sertor_core` (DRY, Principio III): l'embedding è una chiamata
-all'adapter, non un giudizio LLM. La collezione del wiki è separata dalle sorgenti via
-`collection_name((corpus, provider))`, così rigenerare il wiki non tocca la collezione delle
-sorgenti. L'import del composition root è **lazy** (dentro la funzione): le altre operazioni del
-nucleo restano senza dipendenze dal vector store (Principio I/II). No-op se `rag.enabled=false`.
+Reuses the existing `sertor_core` facade/indexer (DRY, Principio III): embedding is an adapter
+call, not an LLM judgment. The wiki collection is kept separate from source collections via
+`collection_name((corpus, provider))`, so regenerating the wiki does not touch the source
+collection. The composition root import is **lazy** (inside the function): the other core
+operations remain free of vector-store dependencies (Principio I/II). No-op if `rag.enabled=false`.
 """
 from __future__ import annotations
 
@@ -17,11 +17,11 @@ from sertor_core.wiki_tools.profile import WikiProfile
 
 
 def index_wiki(profile: WikiProfile, *, indexer_factory=None) -> IndexResult:
-    """Indicizza il wiki in una collezione separata; no-op se `rag.enabled` è falso.
+    """Indexes the wiki into a separate collection; no-op if `rag.enabled` is false.
 
-    `indexer_factory` (per i test) sostituisce la costruzione dell'indexer: riceve i `Settings`
-    e restituisce un oggetto con `.index(root, rebuild=...) -> report` (campi `collection`,
-    `documents`). In produzione si usa `build_indexer` del composition root (import lazy).
+    `indexer_factory` (for tests) replaces the indexer construction: receives `Settings`
+    and returns an object with `.index(root, rebuild=...) -> report` (fields `collection`,
+    `documents`). In production, `build_indexer` from the composition root is used (lazy import).
     """
     rag = profile.rag or {}
     if not rag.get("enabled", False):
@@ -29,7 +29,7 @@ def index_wiki(profile: WikiProfile, *, indexer_factory=None) -> IndexResult:
         log_event(logging.INFO, "index", profile=profile.profile, action="noop-disabled")
         return result
 
-    # Import lazy: solo questa operazione tocca il composition root / vector store.
+    # Lazy import: only this operation touches the composition root / vector store.
     from sertor_core.config.settings import Settings
 
     settings = Settings.load()

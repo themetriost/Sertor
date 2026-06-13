@@ -1,1 +1,1 @@
-"""Adapter di vector store: Chroma (locale embedded), Azure AI Search (cloud, extra opzionale)."""
+"""Vector store adapters: Chroma (local embedded), Azure AI Search (cloud, optional extra)."""

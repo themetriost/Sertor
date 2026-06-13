@@ -85,7 +85,7 @@ def test_log_config_json_loaded(tmp_path):
 def test_log_config_missing_file_raises_config_error(tmp_path):
     with pytest.raises(ConfigError) as exc:
         setup_logging(_args(log_config=str(tmp_path / "non-esiste.json")))
-    assert "non trovato" in str(exc.value)
+    assert "not found" in str(exc.value)
 
 
 def test_log_config_invalid_json_raises_config_error(tmp_path):

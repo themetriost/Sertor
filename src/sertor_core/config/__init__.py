@@ -1,1 +1,1 @@
-"""Configurazione centralizzata del nucleo (Principio VIII)."""
+"""Centralised configuration for the core (Principio VIII)."""

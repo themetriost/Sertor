@@ -1,20 +1,20 @@
-"""Parsing del frontmatter e dei wikilink via regex su stdlib (research D2).
+"""Frontmatter and wikilink parsing via stdlib regex (research D2).
 
-Il frontmatter del wiki è semplice (coppie `chiave: valore`, liste di tag): basta `re`, senza
-librerie YAML (Principio III, nessuna nuova dipendenza). Si estraggono i campi scalari, le liste
-in stile `[a, b]` o `- voce`, e i bersagli dei wikilink `[[name]]` uscenti dal corpo.
+The wiki frontmatter is simple (`key: value` pairs, tag lists): plain `re` is enough, no
+YAML libraries needed (Principio III, no new dependency). Extracts scalar fields, inline lists
+`[a, b]` or block lists `- item`, and outgoing wikilink `[[name]]` targets from the body.
 """
 from __future__ import annotations
 
 import re
 
-# Blocco frontmatter all'inizio del file: `---\n ... \n---`.
+# Frontmatter block at the start of the file: `---\n ... \n---`.
 _FM_BLOCK = re.compile(r"\A﻿?---[ \t]*\r?\n(?P<body>.*?)\r?\n---[ \t]*\r?\n?", re.DOTALL)
-# Coppia `chiave: valore` (chiave alfanumerica/underscore, indentazione zero).
+# `key: value` pair (alphanumeric/underscore key, zero indentation).
 _FM_PAIR = re.compile(r"^(?P<key>[A-Za-z0-9_-]+)[ \t]*:[ \t]*(?P<value>.*)$")
-# Voce di lista in blocco (`  - foo`).
+# Block list item (`  - foo`).
 _FM_ITEM = re.compile(r"^[ \t]*-[ \t]+(?P<value>.*)$")
-# Wikilink `[[target]]` (eventuale alias `[[target|alias]]` → si tiene il target).
+# Wikilink `[[target]]` (optional alias `[[target|alias]]` → target is kept).
 _WIKILINK = re.compile(r"\[\[([^\[\]|#]+)(?:[#|][^\[\]]*)?\]\]")
 
 
@@ -26,7 +26,7 @@ def _strip_scalar(value: str) -> str:
 
 
 def _parse_list(raw: str) -> list[str]:
-    """Interpreta una lista inline `[a, b, c]` (o `[]`)."""
+    """Parses an inline list `[a, b, c]` (or `[]`)."""
     inner = raw.strip()[1:-1].strip()
     if not inner:
         return []
@@ -34,10 +34,10 @@ def _parse_list(raw: str) -> list[str]:
 
 
 def parse_frontmatter(text: str) -> dict:
-    """Estrae il frontmatter come dizionario; `{}` se il blocco è assente.
+    """Extracts the frontmatter as a dictionary; `{}` if the block is absent.
 
-    Gestisce scalari, liste inline `[a, b]` e liste in blocco (`- voce`). Non interpreta YAML
-    annidato (non serve per il wiki): valori complessi restano stringhe.
+    Handles scalars, inline lists `[a, b]` and block lists (`- item`). Does not parse nested YAML
+    (not needed for the wiki): complex values remain strings.
     """
     match = _FM_BLOCK.match(text)
     if not match:
@@ -68,7 +68,7 @@ def parse_frontmatter(text: str) -> dict:
         key = pair.group("key")
         value = pair.group("value").strip()
         if value == "":
-            # Possibile lista in blocco nelle righe seguenti.
+            # Possible block list in the following lines.
             pending_key = key
             pending_items = []
         elif value.startswith("[") and value.endswith("]"):
@@ -80,12 +80,12 @@ def parse_frontmatter(text: str) -> dict:
 
 
 def has_frontmatter(text: str) -> bool:
-    """`True` se il documento apre con un blocco frontmatter parsabile."""
+    """`True` if the document opens with a parsable frontmatter block."""
     return _FM_BLOCK.match(text) is not None
 
 
 def missing_required(fields: dict, required: list[str]) -> list[str]:
-    """Campi richiesti assenti o vuoti, nell'ordine di `required` (Principio IV)."""
+    """Required fields that are absent or empty, in the order of `required` (Principio IV)."""
     missing: list[str] = []
     for name in required:
         value = fields.get(name)
@@ -95,13 +95,13 @@ def missing_required(fields: dict, required: list[str]) -> list[str]:
 
 
 def body_after_frontmatter(text: str) -> str:
-    """Corpo del documento dopo il blocco frontmatter (o l'intero testo se assente)."""
+    """Document body after the frontmatter block (or the entire text if absent)."""
     match = _FM_BLOCK.match(text)
     return text[match.end():] if match else text
 
 
 def extract_wikilinks(text: str) -> list[str]:
-    """Bersagli `[[..]]` uscenti, deduplicati preservando l'ordine di prima occorrenza."""
+    """Outgoing `[[..]]` targets, deduplicated while preserving first-occurrence order."""
     seen: dict[str, None] = {}
     for raw in _WIKILINK.findall(body_after_frontmatter(text)):
         target = raw.strip()

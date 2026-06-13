@@ -1,9 +1,9 @@
-"""`scan`: ricerca di lavoro pendente via mtime (FR-005, research D3).
+"""`scan`: pending-work detection via mtime (FR-005, research D3).
 
-Confronta il `mtime` dei file nelle `source_dirs` del profilo (con le esclusioni della config)
-con l'ancora temporale dell'ultima voce di registro. Host-agnostico: funziona anche su ospiti
-non-git (nessuna dipendenza da git; il refresh git-driven è competenza di FEAT-003-N). Replica
-la logica dell'attuale `wiki-pending-check.ps1` (SC-003) per parità di conteggio.
+Compares the `mtime` of files in the profile's `source_dirs` (with config exclusions) against
+the time anchor of the last log entry. Host-agnostic: works on non-git hosts too (no git
+dependency; git-driven refresh is the responsibility of FEAT-003-N). Replicates the logic of
+the current `wiki-pending-check.ps1` (SC-003) for count parity.
 """
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from sertor_core.wiki_tools.profile import WikiProfile
 
 
 def _is_excluded(rel_parts: tuple[str, ...], patterns: list[str]) -> bool:
-    """`True` se un qualunque segmento di path combacia con un pattern di esclusione (glob)."""
+    """`True` if any path segment matches an exclusion pattern (glob)."""
     for part in rel_parts:
         for pattern in patterns:
             if fnmatch.fnmatch(part, pattern):
@@ -27,7 +27,7 @@ def _is_excluded(rel_parts: tuple[str, ...], patterns: list[str]) -> bool:
 
 
 def _file_mtime(path: Path) -> float | None:
-    """mtime di un file non vuoto (None se assente/vuoto/illeggibile)."""
+    """mtime of a non-empty file (None if absent/empty/unreadable)."""
     if not path.is_file():
         return None
     try:
@@ -39,11 +39,11 @@ def _file_mtime(path: Path) -> float | None:
 
 
 def _latest_log_mtime(profile: WikiProfile) -> float | None:
-    """Àncora temporale dell'ultima voce di registro.
+    """Time anchor of the last log entry.
 
-    Rotazione attiva → mtime della **partizione più recente** (max sui file `YYYY-MM-DD.md`,
-    escluso l'indice). Modalità file-unico (back-compat) → mtime del registro unico. In entrambi i
-    casi: assente/vuoto → `None` (tutto pendente). Il contratto `wiki.scan/1` resta invariato.
+    Rotation active → mtime of the **most recent partition** (max over `YYYY-MM-DD.md` files,
+    excluding the index). Single-file mode (back-compat) → mtime of the single log file. In both
+    cases: absent/empty → `None` (everything is pending). The `wiki.scan/1` contract is unchanged.
     """
     if profile.rotation_enabled:
         log_dir = profile.log_dir_path
@@ -60,10 +60,10 @@ def _latest_log_mtime(profile: WikiProfile) -> float | None:
 
 
 def scan(profile: WikiProfile) -> ScanResult:
-    """Conta i file-sorgente più recenti dell'ultima voce di registro.
+    """Counts source files newer than the last log entry.
 
-    `anchor` assente (registro mancante/vuoto) → tutto è pendente. `message` proviene dalle
-    `strings` localizzate del profilo (`{n}` sostituito col conteggio).
+    Absent `anchor` (missing/empty log) → everything is pending. `message` comes from the
+    profile's localised `strings` (`{n}` replaced with the count).
     """
     anchor = _latest_log_mtime(profile)
     anchor_iso = (
@@ -94,9 +94,9 @@ def scan(profile: WikiProfile) -> ScanResult:
 
     template = profile.strings.get(
         "pending" if pending else "clean",
-        "{n} file più recenti dell'ultima voce di log."
+        "{n} file(s) newer than the last log entry."
         if pending
-        else "Nessun file più recente dell'ultima voce di log.",
+        else "No files newer than the last log entry.",
     )
     message = template.replace("{n}", str(pending))
 

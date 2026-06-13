@@ -1,8 +1,8 @@
-"""Opzioni e profilo dell'ospite per `install rag` (data-model §3).
+"""Options and host profile for `install rag` (data-model §3).
 
-`compose_extras` è la funzione pura backend→extra (DA-3); `RagHostProfile` raccoglie la specificità
-dell'ospite (target, `.sertor/`, corpus, extra, url di distribuzione) per generare i template e la
-spec di `uv add`. Nessun import di SDK (Principio I).
+`compose_extras` is the pure backend→extras function (DA-3); `RagHostProfile` collects the host
+specifics (target, `.sertor/`, corpus, extras, distribution url) to generate templates and the
+`uv add` spec. No SDK imports (Principio I).
 """
 from __future__ import annotations
 
@@ -12,26 +12,27 @@ from pathlib import Path
 
 from sertor_core.domain.errors import ConfigError
 
-# URL di distribuzione del PRODOTTO Sertor (DA-4, interim git+url). NON è un'assunzione sull'ospite
-# (Principio X): varia col progetto Sertor, non col repo target.
+# Distribution URL of the Sertor PRODUCT (DA-4, interim git+url). NOT an assumption about the host
+# (Principio X): varies with the Sertor project, not with the target repo.
 DIST_URL = "https://github.com/themetriost/Sertor.git"
 
 _BACKENDS = ("azure", "local")
-_MCP_SCOPES = ("project", "local")  # project = .mcp.json in radice · local = client ~/.claude.json
+_MCP_SCOPES = ("project", "local")  # project = .mcp.json in root · local = client ~/.claude.json
 
 
 def sanitize_corpus(name: str) -> str:
-    """Nome corpus sicuro da una cartella: minuscolo, non [a-z0-9._-] → '-'; fallback 'corpus'."""
+    """Safe corpus name derived from a folder: lowercase, non-[a-z0-9._-] → '-'; fallback
+    'corpus'."""
     slug = re.sub(r"[^a-z0-9._-]+", "-", name.strip().lower()).strip("-._")
     return slug or "corpus"
 
 
 def compose_extras(backend: str, include_graph: bool, include_rerank: bool) -> list[str]:
-    """Extra per `uv add` (DA-3): `mcp` sempre; `azure` solo su azure; graph/rerank opt-out."""
+    """Extras for `uv add` (DA-3): `mcp` always; `azure` only on azure; graph/rerank opt-out."""
     extras: list[str] = []
     if backend == "azure":
         extras.append("azure")
-    extras.append("mcp")  # il caso d'uso primario è l'assistente via server MCP
+    extras.append("mcp")  # the primary use case is the assistant via the MCP server
     if include_graph:
         extras.append("graph")
     if include_rerank:
@@ -41,7 +42,7 @@ def compose_extras(backend: str, include_graph: bool, include_rerank: bool) -> l
 
 @dataclass(frozen=True)
 class RagInstallOptions:
-    """Input normalizzato del comando `install rag` (dopo il parsing argparse)."""
+    """Normalized input for the `install rag` command (after argparse parsing)."""
 
     target_root: Path
     backend: str = "azure"
@@ -50,13 +51,13 @@ class RagInstallOptions:
     include_rerank: bool = True
     with_deps: bool = True
     json_report: bool = False
-    mcp_scope: str = "project"  # feature 016: project (.mcp.json radice) | local (client, no file)
+    mcp_scope: str = "project"  # feature 016: project (.mcp.json root) | local (client, no file)
 
     def __post_init__(self) -> None:
         if self.backend not in _BACKENDS:
-            raise ConfigError(f"backend non valido: {self.backend}", key="backend")
+            raise ConfigError(f"invalid backend: {self.backend}", key="backend")
         if self.mcp_scope not in _MCP_SCOPES:
-            raise ConfigError(f"mcp-scope non valido: {self.mcp_scope}", key="mcp_scope")
+            raise ConfigError(f"invalid mcp-scope: {self.mcp_scope}", key="mcp_scope")
 
     def resolved_corpus(self) -> str:
         return self.corpus or sanitize_corpus(self.target_root.name)
@@ -67,7 +68,7 @@ class RagInstallOptions:
 
 @dataclass(frozen=True)
 class RagHostProfile:
-    """Specificità dell'ospite per il RAG, derivata dalle opzioni."""
+    """Host specifics for RAG, derived from the options."""
 
     target_root: Path
     backend: str
@@ -89,5 +90,5 @@ class RagHostProfile:
         )
 
     def dep_spec(self) -> str:
-        """Spec per `uv add`: `sertor-core[<extras>] @ git+<url>`."""
+        """Spec for `uv add`: `sertor-core[<extras>] @ git+<url>`."""
         return f"sertor-core[{','.join(self.extras)}] @ git+{self.dist_url}"

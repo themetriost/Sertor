@@ -1,14 +1,15 @@
-"""Facade di retrieval: punto d'accesso unico e stabile al corpus indicizzato (REQ-023..029).
+"""Retrieval facade: single stable access point to the indexed corpus (REQ-023..029).
 
-Dipende solo dalle porte `EmbeddingProvider` e `VectorStore` (Principio I): è importabile come
-libreria dai consumatori (motori RAG, skill wiki, CLI) senza conoscere store/embeddings. Espone la
-ricerca su codice, su documentazione e combinata; ogni query emette log strutturati (REQ-031). Su
-indice vuoto restituisce risultati vuoti con un warning, senza eccezioni (REQ-028).
+Depends only on the ports `EmbeddingProvider` and `VectorStore` (Principio I): importable as a
+library by consumers (RAG engines, wiki skill, CLI) without knowledge of the store/embeddings.
+Exposes code search, documentation search, and combined search; every query emits structured logs
+(REQ-031). On an empty index it returns empty results with a warning, without raising exceptions
+(REQ-028).
 
-La ricerca combinata può fare **fan-out su più collezioni** (corpus primario + corpora extra
-dichiarati in configurazione, feature 010): i top-k delle collezioni vengono fusi per score.
-Eccezione deliberata alla policy tollerante: un corpus extra indicizzato con un **altro provider**
-solleva `ProviderMismatchError` (gli score di spazi vettoriali diversi non si fondono, FR-009).
+Combined search can **fan-out across multiple collections** (primary corpus + extra corpora declared
+in configuration, feature 010): top-k results from each collection are merged by score.
+Deliberate exception to the tolerant policy: an extra corpus indexed with a **different provider**
+raises `ProviderMismatchError` (scores from different vector spaces cannot be merged, FR-009).
 """
 from __future__ import annotations
 
@@ -28,7 +29,7 @@ from sertor_core.observability.logging import log_event
 
 
 class RetrievalFacade:
-    """Interfaccia di retrieval indipendente dal backend."""
+    """Backend-independent retrieval interface."""
 
     def __init__(
         self,
@@ -44,11 +45,11 @@ class RetrievalFacade:
         self._store = store
         self._collection = collection
         self._default_k = default_k
-        # corpus -> collezione attesa (nome derivato dal provider corrente, vedi composition).
+        # corpus -> expected collection name (derived from the current provider, see composition).
         self._extra_collections = dict(extra_collections or {})
-        # Strategia di retrieval iniettata dal composition root (FEAT-004, FR-017/018): se
-        # presente, il percorso single-collection delega a lei (es. motore ibrido); l'interfaccia
-        # della facade e la sua policy tollerante restano invariate per i consumatori.
+        # Retrieval strategy injected by the composition root (FEAT-004, FR-017/018): when
+        # present, the single-collection path delegates to it (e.g. hybrid engine); the facade
+        # interface and its tolerant policy remain unchanged for consumers.
         self._retriever = retriever
 
     def _search(self, query: str, k: int | None, doc_type: DocTypeFilter) -> list[RetrievalResult]:
@@ -63,8 +64,8 @@ class RetrievalFacade:
             )
             return []
         if self._retriever is not None:
-            # La strategia logga il proprio evento (es. `hybrid_query`); la collezione è già
-            # verificata esistente — la policy tollerante resta della facade.
+            # The strategy logs its own event (e.g. `hybrid_query`); the collection has already
+            # been verified to exist — the tolerant policy remains with the facade.
             return self._retriever.retrieve(query, k, doc_type)
         started = time.perf_counter()
         vector = self._embedder.embed([query])[0]
@@ -82,29 +83,30 @@ class RetrievalFacade:
         return results
 
     def search_code(self, query: str, k: int | None = None) -> list[RetrievalResult]:
-        """Ricerca semantica sul solo codice."""
+        """Semantic search over code only."""
         return self._search(query, k, "code")
 
     def search_docs(self, query: str, k: int | None = None) -> list[RetrievalResult]:
-        """Ricerca semantica sulla sola documentazione."""
+        """Semantic search over documentation only."""
         return self._search(query, k, "doc")
 
     def search_combined(self, query: str, k: int | None = None) -> list[RetrievalResult]:
-        """Ricerca semantica su codice + documentazione insieme.
+        """Semantic search over code + documentation together.
 
-        Con corpora extra configurati fa fan-out su tutte le collezioni bersaglio e fonde i
-        top-k per score (FR-001/002); senza, il comportamento è identico al passato (FR-006).
+        With extra corpora configured, fans out across all target collections and merges the
+        top-k results by score (FR-001/002); without them, behaviour is identical to before
+        (FR-006).
         """
         if not self._extra_collections:
             return self._search(query, k, "both")
         return self._search_multi(query, k)
 
     def _available_targets(self) -> list[str]:
-        """Collezioni bersaglio interrogabili; degrada o fallisce per quelle assenti.
+        """Queryable target collections; degrades or fails for missing ones.
 
-        Primaria assente → warning `no_index` (policy tollerante invariata, FR-004). Corpus extra
-        assente: mai indicizzato → warning; indicizzato con un altro provider (esiste una
-        collezione `{corpus}__*` diversa dall'attesa) → `ProviderMismatchError` (FR-009).
+        Primary absent → warning `no_index` (unchanged tolerant policy, FR-004). Extra corpus
+        absent: never indexed → warning; indexed with a different provider (a `{corpus}__*`
+        collection exists that differs from the expected one) → `ProviderMismatchError` (FR-009).
         """
         targets: list[str] = []
         if self._store.exists(self._collection):
@@ -112,7 +114,7 @@ class RetrievalFacade:
         else:
             log_event(logging.WARNING, "retrieve", collection=self._collection,
                       status="no_index", doc_type="both")
-        existing: list[str] | None = None  # elenco lazy: solo se un'attesa manca
+        existing: list[str] | None = None  # lazy list: only fetched when an expected one is missing
         for corpus, expected in self._extra_collections.items():
             if self._store.exists(expected):
                 targets.append(expected)
@@ -123,7 +125,7 @@ class RetrievalFacade:
                           if name.startswith(f"{corpus}__") and name != expected]
             if mismatched:
                 raise ProviderMismatchError(
-                    "corpus indicizzato con un provider di embeddings diverso",
+                    "corpus indexed with a different embedding provider",
                     corpus=corpus, expected=expected, found=mismatched,
                 )
             log_event(logging.WARNING, "retrieve", collection=expected,
@@ -131,7 +133,7 @@ class RetrievalFacade:
         return targets
 
     def _search_multi(self, query: str, k: int | None) -> list[RetrievalResult]:
-        """Fan-out sulle collezioni bersaglio + fusione dei top-k per score (FR-001..005)."""
+        """Fan-out across target collections + top-k merge by score (FR-001..005)."""
         k = k or self._default_k
         targets = self._available_targets()
         if not targets:
@@ -141,7 +143,7 @@ class RetrievalFacade:
         candidates: list[RetrievalResult] = []
         for collection in targets:
             candidates.extend(self._store.query(collection, vector, k, "both"))
-        # Ordinamento totale e deterministico: score decrescente, pareggi per chunk_id (FR-003).
+        # Total deterministic ordering: descending score, ties broken by chunk_id (FR-003).
         fused = sorted(candidates, key=lambda r: (-r.score, r.chunk_id))[:k]
         log_event(
             logging.INFO,

@@ -1,16 +1,17 @@
-"""Server MCP `sertor-rag` basato su `sertor-core`.
+"""MCP server `sertor-rag` built on `sertor-core`.
 
-Espone il retrieval del nucleo come **7 tool MCP**: i 3 di ricerca (codice / doc / combinata —
-col motore selezionato da `SERTOR_ENGINE`, default ibrido BM25+RRF, FEAT-004) e i 4 di
-navigazione strutturale sul code-graph (`find_symbol`/`who_calls`/`related_docs`/`get_context`,
-FEAT-005). Configurazione centralizzata (`.env`: provider di embeddings, backend store, corpus,
-motore).
+Exposes the core retrieval as **7 MCP tools**: the 3 search tools (code / doc / combined —
+using the engine selected by `SERTOR_ENGINE`, default hybrid BM25+RRF, FEAT-004) and the 4
+structural navigation tools over the code-graph (`find_symbol`/`who_calls`/`related_docs`/
+`get_context`, FEAT-005). Centralised configuration (`.env`: embeddings provider, store backend,
+corpus, engine).
 
-Consumatore **sottile** (Principio I): i tool delegano alla facade di `sertor_core` e formattano
-i risultati; nessuna logica di retrieval reimplementata. L'osservabilità del retrieval è già
-emessa dal nucleo (la facade logga `retrieve`/`no_index`); qui si aggiunge un log per-tool.
+**Thin** consumer (Principio I): tools delegate to the `sertor_core` facade and format the
+results; no retrieval logic is reimplemented. Retrieval observability is already emitted by the
+core (the facade logs `retrieve`/`no_index`); a per-tool log is added here.
 
-Avvio (stdio): di norma lo lancia il client MCP via `.mcp.json` (`python -m sertor_mcp.server`).
+Startup (stdio): normally launched by the MCP client via `.mcp.json`
+(`python -m sertor_mcp.server`).
 """
 from __future__ import annotations
 
@@ -28,31 +29,31 @@ from sertor_core.observability.logging import log_event
 mcp = FastMCP(
     "sertor-rag",
     instructions=(
-        "Retrieval su un corpus indicizzato (codice + documentazione) col motore Sertor. "
-        "Usa search_code per implementazioni/simboli, search_docs per spiegazioni concettuali, "
-        "search_combined quando servono entrambi. Cita sempre il file (path#chunk)."
+        "Retrieval over an indexed corpus (code + documentation) with the Sertor engine. "
+        "Use search_code for implementations/symbols, search_docs for conceptual explanations, "
+        "search_combined when both are needed. Always cite the file (path#chunk)."
     ),
 )
 
-# Lunghezza massima dell'anteprima testuale di un risultato: limita il payload verso il client
-# (parametro di presentazione del server, non una scelta di dominio del core).
+# Maximum length of the text preview for a result: limits the payload sent to the client
+# (a server presentation parameter, not a core domain choice).
 _PREVIEW = 300
 
 
 @lru_cache(maxsize=1)
 def _facade():
-    """Facade del core, costruita una volta dalla configurazione (`.env`) e riusata."""
+    """Core facade, built once from the configuration (`.env`) and reused."""
     return build_facade(Settings.load())
 
 
 @lru_cache(maxsize=1)
 def _graph():
-    """Servizio di code-graph (FEAT-005), memoizzato come la facade — ortogonale al motore."""
+    """Code-graph service (FEAT-005), memoized like the facade — orthogonal to the engine."""
     return build_graph_service(Settings.load())
 
 
 def _fmt(r: RetrievalResult) -> dict:
-    """`RetrievalResult` -> dict con campi stabili; anteprima normalizzata e troncata."""
+    """`RetrievalResult` -> dict with stable fields; normalised and truncated preview."""
     flat = " ".join(r.text.split())
     return {
         "path": r.path,
@@ -69,7 +70,7 @@ def _run(
     query: str,
     k: int,
 ) -> list[dict]:
-    """Esegue una ricerca della facade, formatta i risultati ed emette un log di superficie."""
+    """Runs a facade search, formats the results and emits a surface-level log."""
     results = [_fmt(r) for r in search(query, k)]
     log_event(logging.INFO, f"mcp.{tool}", k=k, results=len(results))
     return results
@@ -77,36 +78,36 @@ def _run(
 
 @mcp.tool()
 def search_code(query: str, k: int = 5) -> list[dict]:
-    """Cerca nel CODICE sorgente: implementazioni, funzioni, classi, usi."""
+    """Search the source CODE: implementations, functions, classes, usages."""
     return _run("search_code", _facade().search_code, query, k)
 
 
 @mcp.tool()
 def search_docs(query: str, k: int = 5) -> list[dict]:
-    """Cerca nella DOCUMENTAZIONE Markdown: spiegazioni, guide, decisioni, spec, wiki."""
+    """Search the Markdown DOCUMENTATION: explanations, guides, decisions, specs, wiki."""
     return _run("search_docs", _facade().search_docs, query, k)
 
 
 @mcp.tool()
 def search_combined(query: str, k: int = 6) -> list[dict]:
-    """Cerca su CODICE + DOC insieme: quando servono implementazione e spiegazione."""
+    """Search CODE + DOCS together: when both implementation and explanation are needed."""
     return _run("search_combined", _facade().search_combined, query, k)
 
 
-# --- Navigazione strutturale (FEAT-005): superfici sottili sul code-graph -----------------------
+# --- Structural navigation (FEAT-005): thin surfaces over the code-graph -----------------------
 
 def _hit_dict(hit: SymbolHit) -> dict:
-    """`SymbolHit` -> dict citabile (`ref = path#qualname`, coerente con path#chunk)."""
+    """`SymbolHit` -> citable dict (`ref = path#qualname`, consistent with path#chunk)."""
     return {"path": hit.path, "line": hit.line, "kind": hit.kind,
             "qualname": hit.qualname, "ref": hit.ref}
 
 
 @mcp.tool()
 def find_symbol(name: str) -> list[dict]:
-    """Dove è DEFINITO il simbolo (classe/funzione/metodo): path, riga, kind, qualname.
+    """Where the symbol (class/function/method) is DEFINED: path, line, kind, qualname.
 
-    Lookup esatto sul code-graph, senza retrieval per similarità. Lista vuota = simbolo
-    assente dal grafo; errore esplicito = grafo non costruito (lancia un index).
+    Exact lookup on the code-graph, without similarity retrieval. Empty list = symbol
+    absent from the graph; explicit error = graph not built (run index first).
     """
     hits = [_hit_dict(h) for h in _graph().find_symbol(name)]
     log_event(logging.INFO, "mcp.find_symbol", results=len(hits))
@@ -115,7 +116,7 @@ def find_symbol(name: str) -> list[dict]:
 
 @mcp.tool()
 def who_calls(name: str) -> list[dict]:
-    """CHI CHIAMA il simbolo: i chiamanti diretti nel corpus (archi `calls` del code-graph)."""
+    """WHO CALLS the symbol: direct callers in the corpus (`calls` edges of the code-graph)."""
     hits = [_hit_dict(h) for h in _graph().who_calls(name)]
     log_event(logging.INFO, "mcp.who_calls", results=len(hits))
     return hits
@@ -123,7 +124,7 @@ def who_calls(name: str) -> list[dict]:
 
 @mcp.tool()
 def related_docs(name: str) -> list[dict]:
-    """Quali DOCUMENTI menzionano il simbolo (archi `mentions` doc→simbolo)."""
+    """Which DOCUMENTS mention the symbol (`mentions` edges doc→symbol)."""
     docs = [{"path": p, "ref": p} for p in _graph().related_docs(name)]
     log_event(logging.INFO, "mcp.related_docs", results=len(docs))
     return docs
@@ -131,7 +132,7 @@ def related_docs(name: str) -> list[dict]:
 
 @mcp.tool()
 def get_context(name: str) -> dict:
-    """CONTESTO multi-hop del simbolo: definizioni + chiamanti + chiamate + basi + doc collegati."""
+    """Multi-hop CONTEXT of the symbol: definitions + callers + callees + bases + linked docs."""
     bundle = _graph().get_context(name)
     out = {
         "definitions": [_hit_dict(h) for h in bundle.definitions],
@@ -145,20 +146,20 @@ def get_context(name: str) -> dict:
 
 
 def main() -> None:
-    """Avvia il server MCP sul trasporto stdio.
+    """Starts the MCP server on the stdio transport.
 
-    La facade viene costruita **prima** di avviare il loop stdio (warm-up eager): l'inizializzazione
-    pigra di Chroma dentro la prima tool call ne parcheggia la risposta su Windows — il task non
-    riprende finché stdin non riceve un altro evento (diagnosi 2026-06-12: prima query di sessione
-    appesa indefinitamente, sbloccata solo dal cancel). Costo: ~1s all'avvio, dentro il timeout di
-    connessione del client (30s). Stesso warm-up per il code-graph (FEAT-005, R-7): il caricamento
-    è TOLLERANTE — grafo non costruito o extra assente non impediscono l'avvio (l'errore esplicito
-    arriva alla chiamata del tool, DA-5).
+    The facade is built **before** starting the stdio loop (eager warm-up): Chroma's lazy
+    initialisation inside the first tool call stalls the response on Windows — the task does not
+    resume until stdin receives another event (diagnosis 2026-06-12: first session query hung
+    indefinitely, unblocked only by cancel). Cost: ~1s at startup, within the client connection
+    timeout (30s). Same warm-up for the code-graph (FEAT-005, R-7): loading is TOLERANT —
+    a missing graph or absent extra do not prevent startup (the explicit error arrives at the
+    tool call, DA-5).
     """
     _facade()
     try:
-        _graph().find_symbol("__warmup__")  # carica artefatto + networkx, se disponibili
-    except Exception:  # noqa: BLE001 — warm-up best-effort, mai bloccante per l'avvio
+        _graph().find_symbol("__warmup__")  # load artifact + networkx, if available
+    except Exception:  # noqa: BLE001 — warm-up best-effort, never blocking for startup
         pass
     mcp.run()
 

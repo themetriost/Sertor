@@ -1,6 +1,6 @@
-"""Server MCP di Sertor: espone il retrieval del nucleo a un client MCP (es. Claude Code).
+"""Sertor MCP server: exposes the core retrieval to an MCP client (e.g. Claude Code).
 
-Layer sottile sul core (Principio I): i tool MCP chiamano la facade di `sertor_core`, non
-reimplementano nulla. Provider/backend/corpus dalla configurazione centralizzata (`.env`,
-Principio VIII/X). Avvio: `python -m sertor_mcp.server` (di norma lo lancia il client MCP).
+Thin layer over the core (Principio I): MCP tools call the `sertor_core` facade and reimplement
+nothing. Provider/backend/corpus from the centralised configuration (`.env`,
+Principio VIII/X). Startup: `python -m sertor_mcp.server` (normally launched by the MCP client).
 """

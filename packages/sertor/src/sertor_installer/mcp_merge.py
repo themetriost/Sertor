@@ -1,9 +1,9 @@
-"""Merge additivo del `.mcp.json` in radice host (FR-017/018, REQ-231/232).
+"""Additive merge of `.mcp.json` in the host root (FR-017/018, REQ-231/232).
 
-Pattern di `settings_merge.py`: assente → crea con il solo server `sertor-rag`; presente → aggiunge
-il server preservando gli altri; già presente → skip (mai sovrascrive); malformato → `ConfigError`
-(fail-fast, file non toccato). Il `.mcp.json` vive in **radice host** (dove i client MCP lo cercano)
-e punta al runtime in `.sertor/` (`uv run --directory .sertor`).
+Same pattern as `settings_merge.py`: absent → create with the `sertor-rag` server only; present →
+add the server while preserving the others; already present → skip (never overwrites); malformed →
+`ConfigError` (fail-fast, file not touched). `.mcp.json` lives in the **host root** (where MCP
+clients look for it) and points to the runtime in `.sertor/` (`uv run --directory .sertor`).
 """
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ _SERVER_NAME = "sertor-rag"
 
 
 def merge_mcp(mcp_path: Path, server_entry: dict) -> tuple[Outcome, str]:
-    """Aggiunge il server `sertor-rag` a `.mcp.json` in modo additivo e idempotente."""
+    """Adds the `sertor-rag` server to `.mcp.json` in an additive and idempotent manner."""
     if not mcp_path.exists():
         payload = {"mcpServers": {_SERVER_NAME: server_entry}}
         mcp_path.parent.mkdir(parents=True, exist_ok=True)
@@ -31,17 +31,17 @@ def merge_mcp(mcp_path: Path, server_entry: dict) -> tuple[Outcome, str]:
         existing = json.loads(raw)
     except json.JSONDecodeError as exc:
         raise ConfigError(
-            f"JSON malformato alla riga {exc.lineno}: {exc.msg}", key=str(mcp_path)
+            f"malformed JSON at line {exc.lineno}: {exc.msg}", key=str(mcp_path)
         ) from exc
     if not isinstance(existing, dict):
-        raise ConfigError(".mcp.json non è un oggetto JSON", key=str(mcp_path))
+        raise ConfigError(".mcp.json is not a JSON object", key=str(mcp_path))
 
     servers = existing.setdefault("mcpServers", {})
     if not isinstance(servers, dict):
-        raise ConfigError(".mcp.json: 'mcpServers' non è un oggetto", key=str(mcp_path))
+        raise ConfigError(".mcp.json: 'mcpServers' is not an object", key=str(mcp_path))
 
     if _SERVER_NAME in servers:
-        return Outcome.SKIPPED, f"server {_SERVER_NAME} già presente"
+        return Outcome.SKIPPED, f"server {_SERVER_NAME} already present"
 
     servers[_SERVER_NAME] = server_entry
     mcp_path.write_text(

@@ -1,1 +1,1 @@
-"""Osservabilità: logging strutturato del nucleo (Principio IX)."""
+"""Observability: structured logging for the core (Principio IX)."""

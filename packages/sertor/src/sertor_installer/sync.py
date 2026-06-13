@@ -1,11 +1,12 @@
-"""Sync degli assets verso `.claude/` del repo di sviluppo (D2).
+"""Sync of assets to `.claude/` in the development repo (D2).
 
-Fonte canonica = gli assets nel pacchetto; `.claude/` del repo è il **derivato**. Questo script,
-*in sviluppo*, propaga `assets/claude/**` → `.claude/**` così il dogfood gira sulla versione
-installabile. Direzione canonica: **assets → .claude** (mai il contrario). Il test di guardia
-`tests/unit/test_assets_sync.py` impedisce che le due copie divergano (drift = errore CI).
+Canonical source = assets in the package; `.claude/` in the repo is the **derived copy**.
+This script, *in development*, propagates `assets/claude/**` → `.claude/**` so that dogfooding
+runs on the installable version. Canonical direction: **assets → .claude** (never the reverse).
+The guard test `tests/unit/test_assets_sync.py` prevents the two copies from diverging
+(drift = CI error).
 
-Uso: `python -m sertor_installer.sync [--repo-root <path>] [--dry-run]`.
+Usage: `python -m sertor_installer.sync [--repo-root <path>] [--dry-run]`.
 """
 from __future__ import annotations
 
@@ -16,10 +17,10 @@ from sertor_installer.resources import iter_asset_dir
 
 
 def sync_assets_to_claude(repo_root: Path, dry_run: bool = False) -> dict[str, str]:
-    """Copia `assets/claude/**` verso `<repo_root>/.claude/`. Ritorna `{rel: stato}`.
+    """Copies `assets/claude/**` to `<repo_root>/.claude/`. Returns `{rel: status}`.
 
-    Stato ∈ `created` (file nuovo) · `updated` (contenuto diverso) · `identical` (nessuna modifica).
-    In `dry_run` non scrive nulla, riporta solo cosa farebbe.
+    Status ∈ `created` (new file) · `updated` (different content) · `identical` (no change).
+    In `dry_run` mode nothing is written; only reports what would be done.
     """
     result: dict[str, str] = {}
     claude_root = repo_root / ".claude"
@@ -43,20 +44,20 @@ def sync_assets_to_claude(repo_root: Path, dry_run: bool = False) -> dict[str, s
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="sertor_installer.sync",
-        description="Propaga gli assets bundlati al .claude/ del repo (sviluppo, D2).",
+        description="Propagates bundled assets to .claude/ in the dev repo (D2).",
     )
     parser.add_argument(
-        "--repo-root", default=".", help="radice del repo di sviluppo (default: cwd)"
+        "--repo-root", default=".", help="root of the development repo (default: cwd)"
     )
-    parser.add_argument("--dry-run", action="store_true", help="non scrive, riporta soltanto")
+    parser.add_argument("--dry-run", action="store_true", help="do not write, only report")
     args = parser.parse_args(argv)
 
     result = sync_assets_to_claude(Path(args.repo_root).resolve(), dry_run=args.dry_run)
     for rel, status in sorted(result.items()):
         print(f"  {status:<10}{rel}")
     n_changed = sum(1 for s in result.values() if s != "identical")
-    print(f"Sync: {n_changed} file {'da aggiornare' if args.dry_run else 'aggiornati'}, "
-          f"{len(result)} totali")
+    print(f"Sync: {n_changed} file{'s to update' if args.dry_run else 's updated'}, "
+          f"{len(result)} total")
     return 0
 
 

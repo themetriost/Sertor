@@ -1,9 +1,9 @@
-"""`reconcile`: detection (sola lettura) delle pagine obsolete (FR-008..012, feature 017).
+"""`reconcile`: read-only detection of obsolete pages (FR-008..012, feature 017).
 
-Elenca le pagine con frontmatter `status: superseded` come candidate all'obsolescenza, con il
-successore dichiarato (`superseded_by`, D6) e la data `updated`. **Non modifica mai** alcun file: la
-risoluzione (aggiornare/fondere/archiviare) è giudizio, su conferma, fuori da questo comando
-(Principio VI). Deterministico/offline.
+Lists pages with frontmatter `status: superseded` as candidates for obsolescence, along with the
+declared successor (`superseded_by`, D6) and the `updated` date. **Never modifies** any file: the
+resolution (update/merge/archive) is judgment, on confirmation, outside this command
+(Principio VI). Deterministic/offline.
 """
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ _SUPERSEDED = "superseded"
 
 
 def reconcile(profile: WikiProfile) -> ReconcileResult:
-    """Candidate all'obsolescenza = pagine con `status: superseded`. Read-only."""
+    """Candidates for obsolescence = pages with `status: superseded`. Read-only."""
     candidates: list[dict] = []
     for rel_path, full_path in iter_pages(profile):
         try:

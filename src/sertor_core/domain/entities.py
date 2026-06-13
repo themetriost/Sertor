@@ -1,8 +1,8 @@
-"""Entità di dominio del nucleo di retrieval.
+"""Domain entities for the retrieval core.
 
-Nessun import di SDK esterni (Principio I): sono strutture dati pure, condivise da servizi e
-adapter. Gli identificatori sono **stabili** e derivati dai path/posizioni (Principio VI):
-`Document.id` = path relativo; `Chunk.id` = `document_id#indice`.
+No external SDK imports (Principio I): these are pure data structures, shared by services and
+adapters. Identifiers are **stable** and derived from paths/positions (Principio VI):
+`Document.id` = relative path; `Chunk.id` = `document_id#index`.
 """
 from __future__ import annotations
 
@@ -11,33 +11,33 @@ from enum import StrEnum
 
 
 class DocType(StrEnum):
-    """Tipo di documento ingerito."""
+    """Type of ingested document."""
 
     CODE = "code"
     DOC = "doc"
 
 
 class ChunkerKind(StrEnum):
-    """Come è stato prodotto un chunk (utile per osservabilità e analisi di qualità)."""
+    """How a chunk was produced (useful for observability and quality analysis)."""
 
-    SYNTACTIC = "syntactic"      # tree-sitter, ai confini sintattici
-    MARKDOWN = "markdown"        # ai confini di heading
-    SIZE_FALLBACK = "size_fallback"  # finestra dimensionale (linguaggio fuori set)
+    SYNTACTIC = "syntactic"      # tree-sitter, at syntactic boundaries
+    MARKDOWN = "markdown"        # at heading boundaries
+    SIZE_FALLBACK = "size_fallback"  # size window (language outside supported set)
 
 
 @dataclass(frozen=True)
 class Document:
-    """Unità ingerita da un repository: un file di codice o documentazione.
+    """Unit ingested from a repository: a code or documentation file.
 
-    `id` è l'identificatore stabile derivato dal path relativo POSIX rispetto alla radice del
-    repo (REQ-004): la re-ingestione di un file invariato produce lo stesso id.
+    `id` is the stable identifier derived from the POSIX relative path from the repo root
+    (REQ-004): re-ingesting an unchanged file produces the same id.
     """
 
     id: str
     text: str
     doc_type: DocType
     language: str
-    path: str = ""  # = id; ridondante per leggibilità nei metadati
+    path: str = ""  # = id; redundant for readability in metadata
 
     def __post_init__(self) -> None:
         if not self.path:
@@ -46,17 +46,17 @@ class Document:
 
 @dataclass(frozen=True)
 class ChunkMetadata:
-    """Metadati strutturali di un chunk.
+    """Structural metadata for a chunk.
 
-    Per il codice: `qualname`, `symbol`, `node_type`, `start_line`, `end_line` (REQ-007).
-    Per il Markdown: `heading_path` (gerarchia di sezione, REQ-008). `chunker` indica la
-    provenienza del chunk.
+    For code: `qualname`, `symbol`, `node_type`, `start_line`, `end_line` (REQ-007).
+    For Markdown: `heading_path` (section hierarchy, REQ-008). `chunker` indicates the
+    chunk's origin.
     """
 
     path: str
     chunker: ChunkerKind
     language: str = ""
-    # codice
+    # code
     qualname: str | None = None
     symbol: str | None = None
     node_type: str | None = None  # function | class | method | module
@@ -68,10 +68,10 @@ class ChunkMetadata:
 
 @dataclass(frozen=True)
 class Chunk:
-    """Porzione indicizzabile di un documento.
+    """Indexable portion of a document.
 
-    `id` = `f"{document_id}#{index}"`, dove `index` è l'ordinale posizionale nell'ordine di
-    emissione del chunker (REQ-010): stabile e idempotente a contenuto invariato.
+    `id` = `f"{document_id}#{index}"`, where `index` is the positional ordinal in the
+    chunker emission order (REQ-010): stable and idempotent for unchanged content.
     """
 
     id: str
@@ -83,10 +83,11 @@ class Chunk:
 
 @dataclass(frozen=True)
 class EmbeddedChunk:
-    """Record persistito nel vector store: chunk + vettore, dentro una collezione namespaced.
+    """Record persisted in the vector store: chunk + vector, inside a namespaced collection.
 
-    `payload` porta testo e metadati (incluso `doc_type` per il filtro). La collezione è coerente
-    per (corpus, provider, dimensione embedding): vettori di dimensioni diverse non si mescolano.
+    `payload` carries text and metadata (including `doc_type` for filtering). The collection is
+    consistent for (corpus, provider, embedding dimension): vectors of different dimensions do
+    not mix.
     """
 
     chunk_id: str
@@ -96,10 +97,10 @@ class EmbeddedChunk:
 
 @dataclass(frozen=True)
 class LexicalEntry:
-    """Voce dell'indice lessicale del motore ibrido (FEAT-004, FR-001/002).
+    """Entry in the lexical index of the hybrid engine (FEAT-004, FR-001/002).
 
-    Rispecchia un chunk indicizzato nel vector store: stessa identità (`chunk_id`) e stesso
-    `doc_type` (per il filtro coerente sulle due vie del retrieval ibrido).
+    Mirrors a chunk indexed in the vector store: same identity (`chunk_id`) and same
+    `doc_type` (for consistent filtering across both retrieval paths of the hybrid engine).
     """
 
     chunk_id: str
@@ -110,10 +111,10 @@ class LexicalEntry:
 
 @dataclass(frozen=True)
 class GraphNode:
-    """Nodo del code-graph strutturale (FEAT-005).
+    """Node in the structural code graph (FEAT-005).
 
-    `id` stabile e idempotente: `path` per module/doc, `path::qualname` per i simboli
-    (pattern del prototipo 03) — stesso corpus → stessi id (FR-008).
+    `id` is stable and idempotent: `path` for module/doc, `path::qualname` for symbols
+    (prototype 03 pattern) — same corpus → same ids (FR-008).
     """
 
     id: str
@@ -126,7 +127,7 @@ class GraphNode:
 
 @dataclass(frozen=True)
 class GraphEdge:
-    """Arco tipato del code-graph: contains | calls | imports | inherits | mentions."""
+    """Typed edge in the code graph: contains | calls | imports | inherits | mentions."""
 
     source: str
     target: str
@@ -135,10 +136,10 @@ class GraphEdge:
 
 @dataclass(frozen=True)
 class GraphData:
-    """Output dell'estrazione e input di `CodeGraph.build` (snapshot intero del corpus).
+    """Output of extraction and input to `CodeGraph.build` (full corpus snapshot).
 
-    `coverage` è la dichiarazione per-linguaggio degli archi relazionali supportati
-    (FR-003, DA-3): persiste nell'artefatto, mai assenza silenziosa.
+    `coverage` is the per-language declaration of supported relational edges
+    (FR-003, DA-3): persisted in the artifact, never silently absent.
     """
 
     nodes: tuple[GraphNode, ...] = ()
@@ -148,7 +149,7 @@ class GraphData:
 
 @dataclass(frozen=True)
 class SymbolHit:
-    """Risultato citabile di una navigazione strutturale (FR-018): `ref = path#qualname`."""
+    """Citable result of a structural navigation query (FR-018): `ref = path#qualname`."""
 
     path: str
     line: int | None
@@ -159,7 +160,7 @@ class SymbolHit:
 
 @dataclass(frozen=True)
 class ContextBundle:
-    """Risposta multi-hop di `get_context` (FR-016), sezioni limitate dai knob di Settings."""
+    """Multi-hop response from `get_context` (FR-016), sections limited by Settings knobs."""
 
     definitions: tuple[SymbolHit, ...] = ()
     callers: tuple[SymbolHit, ...] = ()
@@ -170,7 +171,7 @@ class ContextBundle:
 
 @dataclass(frozen=True)
 class RetrievalResult:
-    """Risultato restituito dalla facade per ogni hit (REQ-025)."""
+    """Result returned by the facade for each hit (REQ-025)."""
 
     text: str
     path: str
@@ -182,7 +183,7 @@ class RetrievalResult:
 
 @dataclass
 class IndexReport:
-    """Esito di un'operazione di indicizzazione (osservabilità, REQ-031)."""
+    """Outcome of an indexing operation (observability, REQ-031)."""
 
     collection: str
     documents: int = 0

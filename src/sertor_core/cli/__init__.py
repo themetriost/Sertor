@@ -1,7 +1,7 @@
-"""Pacchetto CLI di esecuzione RAG `sertor-rag` (FEAT-011).
+"""CLI package for RAG execution `sertor-rag` (FEAT-011).
 
-Layer **sottile** (Principio I): consuma il core (`build_indexer`, `build_facade`,
-`build_baseline_engine`, `Settings`) via composition root e formatta l'output. Nessuna logica di
-retrieval qui dentro e **nessun side-effect a import-time** (install ≠ run, FR-023): ogni operazione
-richiede l'invocazione esplicita di un sottocomando.
+**Thin** layer (Principio I): consumes the core (`build_indexer`, `build_facade`,
+`build_baseline_engine`, `Settings`) via the composition root and formats the output. No retrieval
+logic here and **no import-time side effects** (install ≠ run, FR-023): every operation requires
+the explicit invocation of a subcommand.
 """

@@ -1,8 +1,8 @@
-"""Adapter di embeddings per Ollama (provider locale, REQ-013/016).
+"""Embedding adapter for Ollama (local provider, REQ-013/016).
 
-Implementa la porta `EmbeddingProvider` via REST (`/api/embed`). Opera interamente in locale: in
-configurazione local-only non contatta alcun servizio cloud. Gli errori del provider sono avvolti
-in `EmbeddingError` (Principio IV) con indicazione di ritentabilità.
+Implements the `EmbeddingProvider` port via REST (`/api/embed`). Operates entirely locally: in
+a local-only configuration it contacts no cloud service. Provider errors are wrapped
+in `EmbeddingError` (Principle IV) with a retryability flag.
 """
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from sertor_core.observability.logging import log_event
 
 
 class OllamaEmbedder:
-    """`EmbeddingProvider` su Ollama. `client` è iniettabile per i test (NFR-01)."""
+    """`EmbeddingProvider` on Ollama. `client` is injectable for tests (NFR-01)."""
 
     def __init__(
         self,
@@ -42,12 +42,12 @@ class OllamaEmbedder:
         except httpx.HTTPStatusError as exc:
             status = exc.response.status_code
             retriable = status >= 500 or status == 429
-            # Evento strutturato al boundary PRIMA di propagare (FR-020): osservabilità additiva,
-            # il comportamento d'errore resta invariato.
+            # Structured event at the boundary BEFORE propagating (FR-020): additive observability,
+            # error behaviour is unchanged.
             log_event(logging.ERROR, "embeddings_error",
                       provider=self.name, reason=f"http {status}", retriable=retriable)
             raise EmbeddingError(
-                "errore dal provider di embeddings",
+                "error from embedding provider",
                 provider=self.name,
                 reason=f"http {status}",
                 retriable=retriable,
@@ -56,7 +56,7 @@ class OllamaEmbedder:
             log_event(logging.ERROR, "embeddings_error",
                       provider=self.name, reason=type(exc).__name__, retriable=True)
             raise EmbeddingError(
-                "provider di embeddings non raggiungibile",
+                "embedding provider unreachable",
                 provider=self.name,
                 reason=type(exc).__name__,
                 retriable=True,

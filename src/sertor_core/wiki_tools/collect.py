@@ -1,9 +1,9 @@
-"""`collect`: enumerazione delle pagine del wiki + metadati, senza corpo (FR-007).
+"""`collect`: wiki page enumeration + metadata, without body (FR-007).
 
-Restituisce una mappa strutturata (`wiki.collect/1`) con, per ogni pagina, il percorso relativo
-POSIX (identità stabile, FR-009/REQ-051), l'area di tassonomia, tipo/titolo/tag dal frontmatter e i
-wikilink uscenti. Il **contenuto integrale** non è mai incluso. `iter_pages` è riusata da `lint`,
-`validate` e `structure` per condividere l'enumerazione.
+Returns a structured map (`wiki.collect/1`) with, for each page, the relative POSIX path
+(stable identity, FR-009/REQ-051), the taxonomy area, type/title/tags from the frontmatter and
+outgoing wikilinks. The **full content** is never included. `iter_pages` is reused by `lint`,
+`validate` and `structure` to share the enumeration.
 """
 from __future__ import annotations
 
@@ -22,23 +22,23 @@ from sertor_core.wiki_tools.profile import WikiProfile
 
 
 def iter_pages(profile: WikiProfile) -> Iterator[tuple[str, Path]]:
-    """Itera `(rel_path_posix, full_path)` per ogni pagina `.md` sotto la radice del wiki.
+    """Iterates `(rel_path_posix, full_path)` for every `.md` page under the wiki root.
 
-    Esclude il file indice e il file di registro (non sono pagine di contenuto). L'ordine è
-    deterministico (ordinamento per rel_path) per garantire output ripetibili (SC-002).
+    Excludes the index file and the log file (they are not content pages). Order is
+    deterministic (sorted by rel_path) to guarantee repeatable output (SC-002).
     """
     root = profile.root_path
     if not root.is_dir():
         return
     reserved = {profile.index_file, profile.log_file}
-    log_dir = profile.log_dir  # directory delle partizioni di log (append-only, non pagine)
+    log_dir = profile.log_dir  # log partition directory (append-only, not content pages)
     pages: list[tuple[str, Path]] = []
     for path in root.rglob("*.md"):
         rel = path.relative_to(root)
-        # Indice e registro stanno alla radice del wiki: non sono pagine di contenuto.
+        # Index and log live at the wiki root: they are not content pages.
         if len(rel.parts) == 1 and rel.name in reserved:
             continue
-        # Le partizioni di log (rotazione, FEAT-008) sono file append-only, non pagine: escludile.
+        # Log partitions (rotation, FEAT-008) are append-only files, not pages: exclude them.
         if log_dir and rel.parts[0] == log_dir:
             continue
         pages.append((rel.as_posix(), path))
@@ -71,14 +71,14 @@ def _page_meta(rel_path: str, full_path: Path, profile: WikiProfile) -> dict:
         "type": str(fields.get("type", "")),
         "title": str(fields.get("title", "")),
         "tags": list(tags) if isinstance(tags, list) else ([str(tags)] if tags else []),
-        "status": str(fields.get("status", "")),  # feature 017: additivo, forward-compatible
+        "status": str(fields.get("status", "")),  # feature 017: additive, forward-compatible
         "frontmatter_present": has_frontmatter(text),
         "wikilinks": extract_wikilinks(text),
     }
 
 
 def collect(profile: WikiProfile) -> CollectResult:
-    """Enumera le pagine del wiki con i metadati; nessun corpo (FR-007)."""
+    """Enumerates wiki pages with metadata; no body content (FR-007)."""
     pages = [_page_meta(rel, full, profile) for rel, full in iter_pages(profile)]
     result = CollectResult(
         root=profile.root,

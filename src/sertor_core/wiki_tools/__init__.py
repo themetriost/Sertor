@@ -1,13 +1,13 @@
-"""Nucleo wiki deterministico host-agnostico (FEAT-003-D).
+"""Host-agnostic deterministic wiki core (FEAT-003-D).
 
-Tutte le operazioni *meccaniche* del LLM Wiki — config-profilo, struttura, convenzioni,
-scan del lavoro pendente, lint strutturale, enumerazione, registri idempotenti e
-orchestrazione dell'indicizzazione — **senza alcun giudizio o chiamata LLM** (SC-005).
+All *mechanical* operations of the LLM Wiki — profile config, structure, conventions,
+pending-work scan, structural lint, enumeration, idempotent registries and
+indexing orchestration — **without any LLM judgment or call** (SC-005).
 
-Host-agnostico (Principio X): tutta la specificità dell'ospite vive in `WikiProfile`
-(caricato da `wiki.config.toml`); nessun path/nome/lingua/tassonomia è hard-coded nel corpo.
-Dipende solo da `config/`, `domain/errors` e `observability/`; l'unico aggancio al vector
-store (`indexing`) importa il facade/indexer in modo **lazy**.
+Host-agnostic (Principio X): all host-specific details live in `WikiProfile`
+(loaded from `wiki.config.toml`); no path/name/language/taxonomy is hard-coded in the body.
+Depends only on `config/`, `domain/errors` and `observability/`; the sole hook to the vector
+store (`indexing`) imports the facade/indexer **lazily**.
 """
 from __future__ import annotations
 

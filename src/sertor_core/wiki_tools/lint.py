@@ -1,8 +1,8 @@
-"""`lint`: lint strutturale meccanico del wiki (FR-006, SC-004).
+"""`lint`: mechanical structural lint of the wiki (FR-006, SC-004).
 
-Rileva **solo** difetti strutturali — link interni rotti, pagine orfane, frontmatter
-mancante/incompleto — **senza** alcun giudizio semantico (le contraddizioni e i claim superati
-sono giudizio LLM, FEAT-003-N). Deterministico e ripetibile (SC-005): nessuna rete, nessun LLM.
+Detects **only** structural defects — broken internal links, orphan pages, missing/incomplete
+frontmatter — **without** any semantic judgment (contradictions and superseded claims are LLM
+judgment, FEAT-003-N). Deterministic and repeatable (SC-005): no network, no LLM.
 """
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ from sertor_core.wiki_tools.profile import WikiProfile
 
 
 def _link_targets(rel_path: str) -> set[str]:
-    """Forme con cui un wikilink può riferirsi a questa pagina (con/senza estensione, stem)."""
+    """Forms by which a wikilink can refer to this page (with/without extension, stem)."""
     posix = rel_path
     no_ext = posix[:-3] if posix.endswith(".md") else posix
     stem = posix.rsplit("/", 1)[-1]
@@ -29,7 +29,7 @@ def _link_targets(rel_path: str) -> set[str]:
 
 
 def lint(profile: WikiProfile) -> LintResult:
-    """Lint strutturale: link rotti, orfani, frontmatter mancante (FR-006)."""
+    """Structural lint: broken links, orphans, missing frontmatter (FR-006)."""
     pages: dict[str, str] = {}  # rel_path -> testo
     for rel_path, full_path in iter_pages(profile):
         try:
@@ -40,13 +40,13 @@ def lint(profile: WikiProfile) -> LintResult:
                 page=rel_path, note="unreadable-skip",
             )
 
-    # Mappa di tutti i bersagli risolvibili a una pagina esistente.
+    # Map of all targets resolvable to an existing page.
     target_index: dict[str, str] = {}
     for rel_path in pages:
         for alias in _link_targets(rel_path):
             target_index.setdefault(alias, rel_path)
 
-    # Riferimenti dell'indice: una pagina linkata dall'indice non è orfana.
+    # Index references: a page linked from the index is not an orphan.
     index_text = ""
     if profile.index_path.is_file():
         try:
@@ -75,7 +75,7 @@ def lint(profile: WikiProfile) -> LintResult:
             if resolved is None:
                 broken_links.append({"page": rel_path, "target": target})
             elif resolved != rel_path:
-                referenced.add(resolved)  # link page→page: il bersaglio non è orfano
+                referenced.add(resolved)  # page→page link: the target is not an orphan
 
     orphans = sorted(rel for rel in pages if rel not in referenced)
 
