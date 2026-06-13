@@ -32,7 +32,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | CLI — installer (`sertor install`) | — | ✅ `wiki` (PR #22) + **`rag` su master (2026-06-12)** — validato live su Kaelen; `governance` = stub |
 | Distribuzione multi-assistente: GitHub Copilot (+ Codex Could) | — | 👍 **da decomporre** (decisione utente 2026-06-12) |
 | Tema lingua (asset installer + seed structure init) | — | ✅ **risolto come design (2026-06-12)**: asset in inglese canonico, contenuto nella lingua dell'ospite — confluito in FEAT-007 |
-| Igiene radice ospite (installer, asse DOVE) | — | 🔄 **implementata (2026-06-13, `specs/016`)** — 24/25 task, 410 test verdi; PR su conferma |
+| Igiene radice ospite (installer, asse DOVE) | — | ✅ **master (2026-06-13, PR #26)** — config in `wiki/` + auto-discovery, `--mcp-scope` |
 | **Collaborazione multiutente/enterprise** (asse CHI, workflow) | — | 📋 **EPICA aperta, differita (2026-06-12)** — `requirements/multiutente/epic.md`; da affrontare quando il caso d'uso team è concreto |
 
 *Legenda:* ✅ su master · 🧪 operativo, consolidamento aperto · 📋 pianificato · 💀 ramo morto (non su master).
@@ -51,21 +51,6 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   D1..D4 risolte). *Prossimo passo:* `/speckit-specify` (prossimo numero SpecKit: **016** — 015 è stato usato da `install rag`). *Blocchi:* nessuno. *(Il riavvio MCP è avvenuto: server riconnesso
   il 2026-06-12 sera, 7 tool verificati live — `get_context("HybridEngine")` risponde esatto;
   extra `graph` installato anche in `.venv-core`, il venv del server.)*
-
-- **Igiene radice ospite (installer, asse DOVE)** — *cosa:* radice host pulita e prevedibile —
-  `wiki.config.toml` dentro `wiki/` + ogni invocazione asset riallineata, `.sertor/` unica sede del
-  runtime, meccanismo `--mcp-scope project|local`, doc dei residenti inevitabili. Retrocompat ospiti
-  esterni **fuori ambito** (D4); Sertor stesso spostato **one-shot**. *Dove:* `specs/016-igiene-radice-host/`
-  (spec + checklist + plan + research + data-model + contracts + quickstart), requirements
-  `requirements/sertor-cli/igiene-radice-host/`. *Design chiave:* `wiki.config.toml`→`wiki/` con
-  auto-discovery nel CLI (oltre alla convenzione `--root .`) per non rompere le invocazioni ad-hoc;
-  `--mcp-scope project|local` via `claude` CLI dietro `CommandRunner`; fix Sertor one-shot. *Tasks:*
-  25 task in 6 fasi (MVP=US1 radice minima; US2 auto-discovery+asset+Sertor one-shot; US3 scope MCP).
-  *Stato:* **implementata** (24/25 task; T025 re-index = post-merge). Consegnato: config in `wiki/`
-  con auto-discovery del CLI; `--mcp-scope project|local` via `claude` dietro `CommandRunner`
-  (`MCP_REGISTER`, fail-fast); fix Sertor one-shot (config spostata, asset ri-sync, auto-discovery
-  verificata dal vivo). 84+326 test verdi, ruff pulito. *Prossimo passo:* PR verso master su conferma
-  utente → al merge distill + re-index + riavvio MCP. *Blocchi:* nessuno.
 
 ### 📋 PLANNED (per priorità)
 - **Agenzia RAG incorporata — dote differita (Could)**: la capacità agentic RAG è ✅ **soddisfatta
@@ -90,6 +75,14 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### ✅ DONE (su `master`, le rilevanti)
 
+- **🚢 Igiene radice host (feature 016, PR #26, 2026-06-13)** — radice ospite pulita e prevedibile
+  ([[sertor-installer]]): `wiki.config.toml` spostato in `wiki/` con **auto-discovery** nel CLI
+  (`./wiki.config.toml` poi `./wiki/wiki.config.toml`, root=CWD) così le invocazioni ad-hoc non si
+  rompono; `sertor install rag --mcp-scope project|local` (5° `ArtifactKind` `MCP_REGISTER` via
+  `claude mcp add-json --scope local` dietro `CommandRunner`, idempotente, fail-fast); `.sertor/`
+  confermata unica sede runtime + doc dei residenti inevitabili (`docs/install.md §7`). Fix Sertor
+  one-shot (config + asset ri-sync); retrocompat ospiti esterni fuori ambito (D4). 410 test verdi,
+  Constitution 10/10 senza deroghe; SpecKit completo specify→implement in giornata.
 - **🧩 Agentic RAG in forma composita (FEAT-006, 2026-06-13)** — la quarta modalità RAG **esiste
   senza codice nuovo da scrivere**: il sistema [server MCP a 7 tool] + [agente client frontier]
   pianifica, seleziona i tool, itera e cita — *è* agentic RAG. Decisione utente: nessun motore
@@ -252,7 +245,7 @@ già su master).
 | **Distribuzione multi-assistente: GitHub Copilot (+ Codex Could)** | Le capacità non devono dipendere da un solo assistente: MCP nei client Copilot + superfici agentiche tradotte (copilot-instructions/prompt files; Codex: AGENTS.md) | Nuova FEAT-007 epica CLI; distinto da DA-6 (Copilot lì è provider LLM); CLI già assistant-agnostic | 👍 **da decomporre** (utente, 2026-06-12) |
 | **Adapter VectorStore per PGVector / MongoDB su Azure** | Ibrido e retrieval su store cloud alternativi ad AI Search (il motore ibrido è già store-agnostico via porte) | Nuovi adapter della porta `VectorStore` (+ eventuale delega ibrida nativa per Atlas Search); feature separata da FEAT-004 | 💡 idea (da DA-2 FEAT-004, 2026-06-11) |
 | **Timeout espliciti su embed/query (server MCP e adapter)** | L'hang della prima query MCP è stato diagnosticato e **risolto** (causa vera: init pigro di Chroma nella prima tool call parcheggiava il task su Windows → warm-up eager in `main()`, **hotfix PR #23**, vedi [[mcp-server]]); i timeout generici restano una rifinitura di robustezza | Timeout configurabile in `Settings` + eccezione di dominio | 💡 idea ridimensionata (hang risolto 2026-06-12) |
-| **Igiene radice ospite** (feature `sertor-cli`, asse **DOVE**) | Radice ospite ordinata: `wiki.config.toml`→`wiki/`, `.sertor/` unica sede del runtime, meccanismo `--mcp-scope project\|local`, residenti inevitabili a root documentati | `requirements/sertor-cli/igiene-radice-host/` (7 REQ, 0 domande aperte). Vincolo verificato: `.mcp.json` project-scope DEVE stare in root (doc Claude Code). **Ortogonale** al multiutente. | 🔄 **requirements pronti** → `/speckit-specify` |
+| **Igiene radice ospite** (feature `sertor-cli`, asse **DOVE**) | Radice ospite ordinata: `wiki.config.toml`→`wiki/`, `.sertor/` unica sede del runtime, meccanismo `--mcp-scope project\|local`, residenti inevitabili a root documentati | Consegnata: `specs/016`, PR #26 (auto-discovery CLI + `MCP_REGISTER` + fix Sertor one-shot). | ✅ **su master (2026-06-13)** |
 | **Collaborazione multiutente / enterprise** (asse **CHI** — ora EPICA propria) | Non è un tema di installer: è **workflow** (cosa/quando condividere, collaborazione su RAG+wiki, ownership, governance leggera) | **Epica aperta** `requirements/multiutente/epic.md` (6 feature M01..M06, 7 domande aperte DA-M-a..g). La bozza `installer-multiutente` ne è la fetta-installer (FEAT-M01, congelata). **Da affrontare in seguito**, quando il caso d'uso team è concreto. | 📋 **epica aperta, differita** (utente, 2026-06-12) |
 
 ---

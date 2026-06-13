@@ -3,8 +3,8 @@ title: sertor — l'installer (pacchetto e comando)
 type: tech
 tags: [installer, cli, wiki, package-data, host-agnostico, produzione]
 created: 2026-06-11
-updated: 2026-06-12 (+ `sertor install rag`, feature 015)
-sources: ["packages/sertor/", "specs/012-sertor-install-wiki/", "specs/015-sertor-install-rag/", "requirements/sertor-cli/installer/requirements.md", "requirements/sertor-cli/install-rag/requirements.md"]
+updated: 2026-06-13 (+ igiene radice host, feature 016: config in `wiki/`, auto-discovery, `--mcp-scope`)
+sources: ["packages/sertor/", "specs/012-sertor-install-wiki/", "specs/015-sertor-install-rag/", "specs/016-igiene-radice-host/", "requirements/sertor-cli/installer/requirements.md", "requirements/sertor-cli/install-rag/requirements.md", "requirements/sertor-cli/igiene-radice-host/requirements.md"]
 ---
 
 # `sertor` — l'installer
@@ -26,7 +26,7 @@ o rete (install ≠ run):
 | Skill wiki-author (14 file) + `/wiki` + agente wiki-curator + hook di sessione | skip **file-per-file** |
 | Voci hook in `.claude/settings.json` | **merge con dedup per `command`** (hook utente preservati; JSON malformato → fail-fast, mai riscritto) |
 | Rituale di step nel `CLAUDE.md` | blocco a marker `SERTOR:WIKI-RITUAL`, byte-identico fuori dai marker |
-| `wiki.config.toml` | generato (euristica `source_dirs` su cartelle standard, `language` default `en`, `--language`/`--source-dirs` per override); mai sovrascritto |
+| `wiki/wiki.config.toml` (in `wiki/`, **non** in radice — feature 016) | generato (euristica `source_dirs` su cartelle standard, `language` default `en`, `--language`/`--source-dirs` per override); mai sovrascritto |
 | Struttura `wiki/` | `structure init` del nucleo deterministico (idempotente) |
 
 Report per artefatto (`created`/`skipped`/`merged`/`block`/`error`, anche `--json`,
@@ -67,6 +67,38 @@ necessario. Il fix ipotizzato (`[tool.uv.sources]` git nel member) è anzi **rif
 `text-embedding-3-large`. Bug reale trovato live e fixato (`uv init` rifiuta `.sertor` come package
 name → `--name sertor-runtime`). 76 test del pacchetto (38 nuovi) + 321 root verdi; **zero modifiche
 al core**. Lavorato su `master` (bugfix autorizzato), non via PR.
+
+## Igiene radice host (feature 016, 2026-06-13)
+
+L'asse **DOVE**: radice ospite **minima e prevedibile**. Tre mosse + doc, distinte dall'asse CHI
+(ownership/multiutente, differito).
+
+- **`wiki.config.toml` → `wiki/`.** Non più sparso in radice: vive accanto al contenuto del wiki.
+  `install_wiki._CONFIG_TARGET = "wiki/wiki.config.toml"` (mkdir del genitore; `_apply_structure`
+  passa `root_override=target_root`). Il valore `root="wiki"` del file **non cambia**: resta relativo
+  alla radice ospite.
+- **Auto-discovery del `--config`** nel CLI [[wiki-tools|`sertor-wiki-tools`]] (`wiki_tools/__main__`):
+  se `--config` è omesso cerca `./wiki.config.toml` poi `./wiki/wiki.config.toml` (in quest'ultimo
+  caso `root`=CWD). Così le invocazioni *ad-hoc* e gli esempi non si rompono dopo lo spostamento —
+  è ciò che rende vero "le invocazioni funzionano senza intervento manuale" e abbatte il rischio di
+  drift. Forma canonica esplicita equivalente: `--config wiki/wiki.config.toml --root .`.
+- **`--mcp-scope project|local`** su `install rag` (5° `ArtifactKind`: `MCP_REGISTER`). `project`
+  (default) = `.mcp.json` in radice (comportamento attuale); `local` = registra il server nel client
+  via `claude mcp add-json … --scope local` (dietro lo stesso `CommandRunner` di `uv`), **nessun file
+  nel repo**. Idempotente (`claude mcp get` → skip se già presente), **fail-fast** `McpRegistrationError`
+  + comando manuale se `claude` manca: mai un `.mcp.json` scritto silenziosamente. Il *default* dello
+  scope resta materia dell'epica multiutente.
+- **Residenti inevitabili a root documentati** (`docs/install.md §7`): `.claude/`, `CLAUDE.md`,
+  `wiki/`, `.gitignore`, `.sertor/` e `.mcp.json` (solo scope project). Stesso principio del workspace
+  Sertor: `pyproject.toml`+`uv.lock` stanno in radice perché `uv` lo richiede — **`uv.lock` sta sempre
+  accanto al suo `pyproject.toml`** (su un ospite: in `.sertor/`; nel repo Sertor: in radice).
+
+**Retrocompat ospiti esterni: fuori ambito** (decisione D4) — nessun comando di migrazione; un
+`wiki.config.toml` legacy in radice su un vecchio ospite non viene rimosso. **Eccezione: Sertor
+stesso**, spostato **one-shot** (config in `wiki/`, asset `.claude/` ri-sync, auto-discovery
+verificata dal vivo: `sertor-wiki-tools scan`/`append-log` senza flag dalla radice repo). Consegnata
+con SpecKit completo (`specs/016`, PR #26): 410 test verdi (84 pacchetto + 326 root), Constitution
+10/10 senza deroghe.
 
 ## L'architettura che conta: assets come fonte
 
