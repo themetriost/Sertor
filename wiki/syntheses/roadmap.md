@@ -32,7 +32,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | CLI — installer (`sertor install`) | — | ✅ `wiki` (PR #22) + **`rag` su master (2026-06-12)** — validato live su Kaelen; `governance` = stub |
 | Distribuzione multi-assistente: GitHub Copilot (+ Codex Could) | — | 👍 **da decomporre** (decisione utente 2026-06-12) |
 | Tema lingua (asset installer + seed structure init) | — | ✅ **risolto come design (2026-06-12)**: asset in inglese canonico, contenuto nella lingua dell'ospite — confluito in FEAT-007 |
-| Igiene radice ospite (installer, asse DOVE) | — | 🔄 **tasks generati (2026-06-13, `specs/016`)** — 25 task/6 fasi, MVP=US1 radice minima; prossimo `/speckit-analyze` |
+| Igiene radice ospite (installer, asse DOVE) | — | 🔄 **analyze OK (2026-06-13, `specs/016`)** — copertura 100%, 0 critical; prossimo `/speckit-implement` |
 | **Collaborazione multiutente/enterprise** (asse CHI, workflow) | — | 📋 **EPICA aperta, differita (2026-06-12)** — `requirements/multiutente/epic.md`; da affrontare quando il caso d'uso team è concreto |
 
 *Legenda:* ✅ su master · 🧪 operativo, consolidamento aperto · 📋 pianificato · 💀 ramo morto (non su master).
@@ -61,7 +61,8 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   auto-discovery nel CLI (oltre alla convenzione `--root .`) per non rompere le invocazioni ad-hoc;
   `--mcp-scope project|local` via `claude` CLI dietro `CommandRunner`; fix Sertor one-shot. *Tasks:*
   25 task in 6 fasi (MVP=US1 radice minima; US2 auto-discovery+asset+Sertor one-shot; US3 scope MCP).
-  *Prossimo passo:* `/speckit-analyze`. *Blocchi:* nessuno.
+  *Prossimo passo:* `/speckit-implement` (analyze OK: copertura 100%, 0 critical/high; 4 ritocchi
+  applicati). *Blocchi:* nessuno.
 
 ### 📋 PLANNED (per priorità)
 - **Agenzia RAG incorporata — dote differita (Could)**: la capacità agentic RAG è ✅ **soddisfatta

@@ -15,9 +15,10 @@ Estende il modello dell'installer (feature 012/015). Solo le **delta** rispetto 
 | `MCP_REGISTER` | `REGISTER_CLI` | Registra il server `sertor-rag` nel client via `claude mcp add-json … --scope local`; **non** scrive file nel repo. Alternativa a `MCP_MERGE` quando `--mcp-scope local`. |
 
 Invarianti: `MCP_REGISTER` ha `source = "rag/mcp.server.json.tmpl"` (stessa entry di `MCP_MERGE`) e
-`target_rel` simbolico (`"<client mcp registry>"`, non un path di repo — non viene scritto su disco;
-la validazione path-traversal di `Artifact.__post_init__` resta soddisfatta da una stringa relativa
-senza `..`).
+`target_rel` **sentinel leggibile** `"(mcp: client registry)"` (non un path di repo — non viene
+scritto su disco; la validazione path-traversal di `Artifact.__post_init__` resta soddisfatta:
+stringa relativa senza `..`). Il render del report (`report.py`) deve mostrare il sentinel come
+**etichetta**, non come percorso (F1 analyze): verificato da test.
 
 `MCP_MERGE` resta invariato per lo scope `project`.
 
