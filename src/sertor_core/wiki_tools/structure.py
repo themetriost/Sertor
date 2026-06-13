@@ -18,13 +18,31 @@ from sertor_core.wiki_tools.profile import WikiProfile
 
 _KEBAB = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*\.md$")
 
+# Localizzazione del seed (D3): index/log sono CONTENUTO del wiki → seguono `profile.language`.
+# L'inglese è il fallback canonico per lingue non in tabella (host-agnostico: la selezione è guidata
+# dalla config, non presunta). Solo le due frasi descrittive; le intestazioni vengono dalla config.
+_SEED_STRINGS: dict[str, dict[str, str]] = {
+    "en": {"index": "Wiki index. Updated by the log operations.", "log": "Append-only wiki log."},
+    "it": {
+        "index": "Indice del wiki. Aggiornato dalle operazioni di registro.",
+        "log": "Registro append-only del wiki.",
+    },
+}
+_SEED_FALLBACK = "en"
+
+
+def _seed_strings(profile: WikiProfile) -> dict[str, str]:
+    """Frasi del seed nella lingua dell'host (`en`/`it`); fallback inglese (es. `it-IT` → `it`)."""
+    lang = profile.language.lower().split("-")[0]
+    return _SEED_STRINGS.get(lang, _SEED_STRINGS[_SEED_FALLBACK])
+
 
 def _index_seed(profile: WikiProfile) -> str:
-    return f"# {profile.root}\n\nIndice del wiki. Aggiornato dalle operazioni di registro.\n"
+    return f"# {profile.root}\n\n{_seed_strings(profile)['index']}\n"
 
 
 def _log_seed(profile: WikiProfile) -> str:
-    return f"# {profile.log_file}\n\nRegistro append-only del wiki.\n"
+    return f"# {profile.log_file}\n\n{_seed_strings(profile)['log']}\n"
 
 
 def init_structure(profile: WikiProfile) -> StructureResult:

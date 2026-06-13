@@ -31,7 +31,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
 | CLI — installer (`sertor install`) | — | ✅ `wiki` (PR #22) + **`rag` su master (2026-06-12)** — validato live su Kaelen; `governance` = stub |
 | Distribuzione multi-assistente: GitHub Copilot (+ Codex Could) | — | 👍 **da decomporre** (decisione utente 2026-06-12) |
-| Tema lingua (asset installer in inglese) | — | ✅ **implementato (2026-06-13)**: ~17 asset + ritual block + tmpl + output host-facing CLI tradotti in inglese; guardia di lingua. Resta: seed localization (D3) + error-string profonde (graduale) |
+| Tema lingua (asset installer in inglese) | — | ✅ **completato (2026-06-13)**: asset + ritual + tmpl + `.env` template + output host-facing CLI in inglese; **seed localizzato it/en (D3 ✅)** con fallback inglese; guardia di lingua. Residuo solo graduale: error-string profonde del dominio |
 | Igiene radice ospite (installer, asse DOVE) | — | ✅ **master (2026-06-13, PR #26)** — config in `wiki/` + auto-discovery, `--mcp-scope` |
 | **Collaborazione multiutente/enterprise** (asse CHI, workflow) | — | 📋 **EPICA aperta, differita (2026-06-12)** — `requirements/multiutente/epic.md`; da affrontare quando il caso d'uso team è concreto |
 

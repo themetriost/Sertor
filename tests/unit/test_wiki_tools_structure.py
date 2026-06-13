@@ -87,3 +87,38 @@ def test_validate_reports_naming_violation(tmp_path):
     )
     res = validate(p)
     assert any(v["page"] == "tech/BadName.md" for v in res.naming_violations)
+
+
+# --- D3: seed localizzato per lingua dell'host (contenuto = lingua host, fallback inglese) -----
+
+def _profile_lang(tmp_path: Path, language: str):
+    cfg = tmp_path / "wiki.config.toml"
+    cfg.write_text(
+        f'profile = "code+doc"\nlanguage = "{language}"\nroot = "wiki"\n'
+        'index_file = "index.md"\nlog_file = "log.md"\n\n'
+        '[[taxonomy]]\nname = "concepts"\ndir = "concepts"\ntype = "concept"\n',
+        encoding="utf-8",
+    )
+    return load_profile(cfg)
+
+
+def test_seed_localized_english(tmp_path):
+    init_structure(_profile_lang(tmp_path, "en"))
+    assert "Wiki index. Updated by the log operations." in \
+        (tmp_path / "wiki" / "index.md").read_text("utf-8")
+    assert "Append-only wiki log." in (tmp_path / "wiki" / "log.md").read_text("utf-8")
+
+
+def test_seed_localized_italian(tmp_path):
+    init_structure(_profile_lang(tmp_path, "it"))
+    assert "Indice del wiki." in (tmp_path / "wiki" / "index.md").read_text("utf-8")
+
+
+def test_seed_unknown_language_falls_back_to_english(tmp_path):
+    init_structure(_profile_lang(tmp_path, "fr"))   # lingua non in tabella → inglese
+    assert "Wiki index." in (tmp_path / "wiki" / "index.md").read_text("utf-8")
+
+
+def test_seed_language_subtag_normalized(tmp_path):
+    init_structure(_profile_lang(tmp_path, "it-IT"))   # sottotag → `it`
+    assert "Indice del wiki." in (tmp_path / "wiki" / "index.md").read_text("utf-8")
