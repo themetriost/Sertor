@@ -32,7 +32,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | CLI — installer (`sertor install`) | — | ✅ `wiki` (PR #22) + **`rag` su master (2026-06-12)** — validato live su Kaelen; `governance` = stub |
 | Distribuzione multi-assistente: GitHub Copilot (+ Codex Could) | — | 👍 **da decomporre** (decisione utente 2026-06-12) |
 | Tema lingua (asset installer + seed structure init) | — | ✅ **risolto come design (2026-06-12)**: asset in inglese canonico, contenuto nella lingua dell'ospite — confluito in FEAT-007 |
-| Igiene radice ospite (installer, asse DOVE) | — | 🔄 **requirements pronti (2026-06-12)** — `sertor-cli/igiene-radice-host`, 0 domande aperte → specify |
+| Igiene radice ospite (installer, asse DOVE) | — | 🔄 **spec creata (2026-06-13, `specs/016`)** — checklist verde, retrocompat esterni fuori ambito; prossimo `/speckit-plan` |
 | **Collaborazione multiutente/enterprise** (asse CHI, workflow) | — | 📋 **EPICA aperta, differita (2026-06-12)** — `requirements/multiutente/epic.md`; da affrontare quando il caso d'uso team è concreto |
 
 *Legenda:* ✅ su master · 🧪 operativo, consolidamento aperto · 📋 pianificato · 💀 ramo morto (non su master).
@@ -51,6 +51,13 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   D1..D4 risolte). *Prossimo passo:* `/speckit-specify` (prossimo numero SpecKit: **016** — 015 è stato usato da `install rag`). *Blocchi:* nessuno. *(Il riavvio MCP è avvenuto: server riconnesso
   il 2026-06-12 sera, 7 tool verificati live — `get_context("HybridEngine")` risponde esatto;
   extra `graph` installato anche in `.venv-core`, il venv del server.)*
+
+- **Igiene radice ospite (installer, asse DOVE)** — *cosa:* radice host pulita e prevedibile —
+  `wiki.config.toml` dentro `wiki/` + ogni invocazione asset riallineata, `.sertor/` unica sede del
+  runtime, meccanismo `--mcp-scope project|local`, doc dei residenti inevitabili. Retrocompat ospiti
+  esterni **fuori ambito** (D4); Sertor stesso spostato **one-shot**. *Dove:* `specs/016-igiene-radice-host/`
+  (spec + checklist verde), requirements `requirements/sertor-cli/igiene-radice-host/`. *Prossimo passo:*
+  `/speckit-plan` (clarify saltabile — 0 NEEDS CLARIFICATION). *Blocchi:* nessuno.
 
 ### 📋 PLANNED (per priorità)
 - **Agenzia RAG incorporata — dote differita (Could)**: la capacità agentic RAG è ✅ **soddisfatta
