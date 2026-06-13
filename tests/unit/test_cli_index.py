@@ -1,7 +1,7 @@
 """Test US1 — CLI `sertor-rag index <path>` (FR-001..009, FR-015, FR-023..024, SC-001/003..005).
 
-Tutto senza rete: il `build_indexer` del core è sostituito (monkeypatch) con un orchestratore reale
-cablato su `FakeEmbedder` + `InMemoryStore` (`tests/fixtures/mocks.py`).
+All without network: the core's `build_indexer` is replaced (monkeypatch) with a real orchestrator
+wired to `FakeEmbedder` + `InMemoryStore` (`tests/fixtures/mocks.py`).
 """
 from __future__ import annotations
 
@@ -17,11 +17,11 @@ from tests.fixtures.mocks import FakeEmbedder, InMemoryStore
 
 @pytest.fixture(autouse=True)
 def _no_dotenv(monkeypatch):
-    """Isola i test dal `.env` del repo: `Settings.load()` non deve leggere/iniettare il file.
+    """Isolate tests from the repo's `.env`: `Settings.load()` must not read/inject the file.
 
-    `load_dotenv(override=True)` muterebbe `os.environ` in modo non ripristinabile da monkeypatch,
-    contaminando i test successivi (es. `RAG_BACKEND=azure` dal .env locale). I test che vogliono
-    una config specifica sovrascrivono comunque `Settings.load` dopo questa fixture.
+    `load_dotenv(override=True)` would mutate `os.environ` in a way not restorable by monkeypatch,
+    contaminating subsequent tests (e.g. `RAG_BACKEND=azure` from the local .env). Tests that need
+    a specific config override `Settings.load` themselves after this fixture.
     """
     _orig = Settings.load.__func__
     monkeypatch.setattr(
@@ -31,7 +31,7 @@ def _no_dotenv(monkeypatch):
 
 @pytest.fixture
 def patched_indexer(monkeypatch):
-    """Sostituisce `build_indexer` nella CLI con un orchestratore su mock; espone l'embedder."""
+    """Replace `build_indexer` in the CLI with a mock-backed orchestrator; exposes the embedder."""
     embedder = FakeEmbedder(dim=8)
     store = InMemoryStore()
 
@@ -47,7 +47,7 @@ def _run(argv):
     return cli.main(argv)
 
 
-# --------------------------------------------------------------------- successo
+# --------------------------------------------------------------------- success
 def test_index_success_human_output(patched_indexer, sample_repo, capsys):
     code = _run(["index", str(sample_repo)])
     out = capsys.readouterr().out
@@ -67,7 +67,7 @@ def test_index_success_json_output(patched_indexer, sample_repo, capsys):
     assert payload["embedding_dim"] == 8
 
 
-# --------------------------------------------------------------------- errori path
+# --------------------------------------------------------------------- path errors
 def test_index_nonexistent_path_exit_1(patched_indexer, tmp_path, capsys):
     code = _run(["index", str(tmp_path / "non-esiste")])
     err = capsys.readouterr().err
@@ -86,7 +86,7 @@ def test_index_path_is_file_exit_1(patched_indexer, tmp_path, capsys):
 
 # ------------------------------------------------------------- backend incompleto (FR-015)
 def test_index_incomplete_backend_blocks_before_embedding(monkeypatch, sample_repo, capsys):
-    # Azure senza credenziali: blocca PRIMA di costruire/usare l'indexer (FakeEmbedder mai usato)
+    # Azure without credentials: blocks BEFORE building/using the indexer (FakeEmbedder never used)
     called = {"build": False}
 
     def _factory(settings):
@@ -94,7 +94,7 @@ def test_index_incomplete_backend_blocks_before_embedding(monkeypatch, sample_re
         raise AssertionError("build_indexer non deve essere chiamato su backend incompleto")
 
     monkeypatch.setattr(cli, "build_indexer", _factory)
-    # config azure incompleta, iniettata senza leggere il .env del repo
+    # incomplete azure config, injected without reading the repo's .env
     monkeypatch.setattr(
         cli.Settings, "load",
         classmethod(lambda c, env_file=".env": c(backend="azure", store_backend="local")),
@@ -112,10 +112,10 @@ def test_importing_cli_runs_nothing():
 
     import sertor_core.cli as pkg
 
-    importlib.reload(pkg)  # re-import non deve eseguire alcuna operazione RAG
+    importlib.reload(pkg)  # re-import must not execute any RAG operation
 
 
-# --------------------------------------------------------------------- repo-agnosticità (SC-005)
+# --------------------------------------------------------------------- repo-agnosticism (SC-005)
 def test_index_two_repos_namespaced(monkeypatch, tmp_path, capsys):
     embedder = FakeEmbedder(dim=8)
     store = InMemoryStore()
@@ -138,7 +138,7 @@ def test_index_two_repos_namespaced(monkeypatch, tmp_path, capsys):
     cols = store.list_collections()
     assert any(c.startswith("ca__") for c in cols)
     assert any(c.startswith("cb__") for c in cols)
-    # i file dei due repository non sono stati alterati
+    # files of the two repositories have not been altered
     assert (repo_a / "m.py").read_text(encoding="utf-8") == "def f():\n    return 1\n"
     assert (repo_b / "m.py").read_text(encoding="utf-8") == "def f():\n    return 1\n"
 

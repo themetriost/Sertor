@@ -1,8 +1,8 @@
-"""Test US4 — la copertura dichiarata è VERA per ciascuno dei 10 linguaggi (FR-003, SC-007).
+"""Test US4 — declared coverage is TRUE for each of the 10 languages (FR-003, SC-007).
 
-Mini-corpus CHIUSO (`tests/fixtures/graph_corpus.py`): qui il ground-truth è totale → si
-misura la precisione piena (SC-002) oltre alla verifica per-relazione della mappa `COVERAGE`.
-Corpus diverso da sertor, zero adattamenti del motore = verifica SC-007 (fix analyze C1).
+CLOSED mini-corpus (`tests/fixtures/graph_corpus.py`): here the ground-truth is total →
+full precision is measured (SC-002) along with per-relation verification of the `COVERAGE` map.
+Corpus different from sertor, zero engine adaptations = SC-007 verification (fix analyze C1).
 """
 from __future__ import annotations
 
@@ -41,7 +41,7 @@ def test_nodes_and_contains_for_all_ten_languages(data):
     contains = _edges(data, "contains")
     for case in LANGUAGE_CASES:
         caller_id = f"{case.filename}::{case.caller_qual}"
-        assert caller_id in by_id, case.language       # nodi per TUTTI i 10 (FR-003)
+        assert caller_id in by_id, case.language       # nodes for ALL 10 (FR-003)
         parent = (f"{case.filename}::{case.caller_qual.rsplit('.', 1)[0]}"
                   if "." in case.caller_qual else case.filename)
         assert (parent, caller_id) in contains, case.language
@@ -50,12 +50,12 @@ def test_nodes_and_contains_for_all_ten_languages(data):
 def test_declared_calls_coverage_is_true(data):
     calls = _edges(data, "calls")
     for case in LANGUAGE_CASES:
-        assert "calls" in COVERAGE[case.language], case.language  # tutti dichiarano calls
+        assert "calls" in COVERAGE[case.language], case.language  # all declare calls
         caller_id = f"{case.filename}::{case.caller_qual}"
         targets = {dst for src, dst in calls if src == caller_id}
         assert any(dst.endswith(f"::{case.callee_name}") or
                    dst.endswith(f".{case.callee_name}") for dst in targets), (
-            f"{case.language}: arco calls dichiarato ma non estratto")
+            f"{case.language}: calls edge declared but not extracted")
 
 
 def test_declared_python_imports_and_inherits_are_true(data):
@@ -64,7 +64,7 @@ def test_declared_python_imports_and_inherits_are_true(data):
 
 
 def test_precision_on_closed_corpus(data):
-    # SC-002 sul corpus chiuso: ogni arco calls estratto deve essere uno degli attesi.
+    # SC-002 on the closed corpus: every extracted calls edge must be one of the expected ones.
     expected = set()
     for case in LANGUAGE_CASES:
         caller_id = f"{case.filename}::{case.caller_qual}"
@@ -74,5 +74,5 @@ def test_precision_on_closed_corpus(data):
     ]
     total = len(_edges(data, "calls"))
     precision = (total - len(spurious)) / total if total else 1.0
-    print(f"closed-corpus precision: {precision:.2f} ({total} archi, {len(spurious)} spuri)")
+    print(f"closed-corpus precision: {precision:.2f} ({total} edges, {len(spurious)} spurious)")
     assert precision >= 0.8

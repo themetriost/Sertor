@@ -1,4 +1,4 @@
-"""Test US6 — configurazione centralizzata (REQ-030/032)."""
+"""Test US6 — centralized configuration (REQ-030/032)."""
 from __future__ import annotations
 
 from sertor_core.config.settings import Settings
@@ -9,7 +9,7 @@ def test_defaults_are_centralized():
     assert s.backend == "local"
     assert s.default_k == 5
     assert s.chunk_size == 1600
-    assert s.exclude_patterns  # default non vuoto, definito solo in Settings
+    assert s.exclude_patterns  # non-empty default, defined only in Settings
 
 
 def test_all_choices_read_from_env(monkeypatch):
@@ -27,7 +27,7 @@ def test_all_choices_read_from_env(monkeypatch):
     assert s.chunk_overlap == 50
     assert s.default_k == 9
     assert s.embed_batch_size == 16
-    assert s.exclude_patterns == ("foo", "bar", "*.tmp")   # override configurabile (REQ-002/030)
+    assert s.exclude_patterns == ("foo", "bar", "*.tmp")   # configurable override (REQ-002/030)
 
 
 def test_embed_provider_follows_backend(monkeypatch):
@@ -38,7 +38,7 @@ def test_embed_provider_follows_backend(monkeypatch):
 
 
 def test_store_backend_defaults_to_rag_backend(monkeypatch):
-    # Retro-compatibile: senza SERTOR_STORE_BACKEND lo store segue il backend di embeddings.
+    # Backward-compatible: without SERTOR_STORE_BACKEND the store follows the embeddings backend.
     monkeypatch.delenv("SERTOR_STORE_BACKEND", raising=False)
     monkeypatch.setenv("RAG_BACKEND", "azure")
     assert Settings.load(env_file=None).store_backend == "azure"
@@ -47,33 +47,33 @@ def test_store_backend_defaults_to_rag_backend(monkeypatch):
 
 
 def test_store_backend_decouples_from_embeddings(monkeypatch):
-    # Embeddings Azure + store locale: combinazione abilitata da SERTOR_STORE_BACKEND (Princ. II).
+    # Azure embeddings + local store: combination enabled by SERTOR_STORE_BACKEND (Princ. II).
     monkeypatch.setenv("RAG_BACKEND", "azure")
     monkeypatch.setenv("SERTOR_STORE_BACKEND", "local")
     s = Settings.load(env_file=None)
-    assert s.embed_provider == "azure"   # provider di embeddings invariato
-    assert s.store_backend == "local"    # store disaccoppiato dal backend di embeddings
+    assert s.embed_provider == "azure"   # embeddings provider unchanged
+    assert s.store_backend == "local"    # store decoupled from the embeddings backend
 
 
 def test_extra_corpora_default_empty(monkeypatch):
-    # Senza SERTOR_EXTRA_CORPORA la ricerca combinata resta a singola collezione (FR-006).
+    # Without SERTOR_EXTRA_CORPORA the combined search stays on a single collection (FR-006).
     monkeypatch.delenv("SERTOR_EXTRA_CORPORA", raising=False)
     assert Settings.load(env_file=None).extra_corpora == ()
 
 
 def test_extra_corpora_csv_with_spaces(monkeypatch):
-    # CSV con spazi e voci vuote filtrate (FR-007, riusa _split_env).
+    # CSV with spaces and empty entries filtered out (FR-007, reuses _split_env).
     monkeypatch.setenv("SERTOR_EXTRA_CORPORA", " wiki , docs ,, ")
     assert Settings.load(env_file=None).extra_corpora == ("wiki", "docs")
 
 
 def test_engine_knobs_defaults(monkeypatch):
-    # Manopole del motore ibrido (FEAT-004): default SOLO in Settings (NFR-05).
+    # Hybrid engine knobs (FEAT-004): defaults ONLY in Settings (NFR-05).
     for var in ("SERTOR_ENGINE", "SERTOR_RRF_C", "SERTOR_RRF_POOL",
                 "SERTOR_RERANK", "SERTOR_RERANK_POOL"):
         monkeypatch.delenv(var, raising=False)
     s = Settings.load(env_file=None)
-    assert s.engine == "hybrid"        # il motore migliore è il default (D1/FR-015)
+    assert s.engine == "hybrid"        # the best engine is the default (D1/FR-015)
     assert s.rrf_c == 60
     assert s.rrf_pool == 30
     assert s.rerank_enabled is False   # default off (R-3)
@@ -95,7 +95,7 @@ def test_engine_knobs_from_env(monkeypatch):
 
 
 def test_rerank_bool_parsing(monkeypatch):
-    # Parsing tollerante: true/1/yes/on → True; altro → False.
+    # Lenient parsing: true/1/yes/on → True; anything else → False.
     for raw, expected in (("TRUE", True), ("1", True), ("yes", True), ("on", True),
                           ("false", False), ("0", False), ("nope", False), ("", False)):
         monkeypatch.setenv("SERTOR_RERANK", raw)
@@ -103,12 +103,12 @@ def test_rerank_bool_parsing(monkeypatch):
 
 
 def test_graph_knobs_defaults(monkeypatch):
-    # Manopole del code-graph (FEAT-005): default SOLO in Settings (Principio VIII).
+    # Code-graph knobs (FEAT-005): defaults ONLY in Settings (Principio VIII).
     for var in ("SERTOR_GRAPH", "SERTOR_GRAPH_AMBIGUITY", "SERTOR_GRAPH_LIMIT_DEFS",
                 "SERTOR_GRAPH_LIMIT_RELS", "SERTOR_GRAPH_LIMIT_DOCS"):
         monkeypatch.delenv(var, raising=False)
     s = Settings.load(env_file=None)
-    assert s.graph_enabled is True        # build integrato in index() di default (DA-2)
+    assert s.graph_enabled is True        # build integrated into index() by default (DA-2)
     assert s.graph_ambiguity_threshold == 2
     assert (s.graph_limit_definitions, s.graph_limit_relations, s.graph_limit_docs) == (10, 8, 8)
 
@@ -126,7 +126,7 @@ def test_graph_knobs_from_env(monkeypatch):
 
 
 def test_secrets_are_read_from_env_only(monkeypatch):
-    # I segreti arrivano da env; Settings non li scrive da nessuna parte (REQ-032).
+    # Secrets come from env; Settings does not write them anywhere (REQ-032).
     monkeypatch.setenv("AZURE_OPENAI_API_KEY", "super-secret")
     s = Settings.load(env_file=None)
     assert s.azure_openai_api_key == "super-secret"

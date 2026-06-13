@@ -1,11 +1,11 @@
-"""Test SC-004 (T032): zero riferimenti Sertor-specifici negli artefatti installati.
+"""Test SC-004 (T032): zero Sertor-specific references in installed artifacts.
 
-Scansiona ogni file installato in `<tmp_repo>` dopo `install wiki` con la regex `\\bsertor\\b`
-(case-insensitive). La **whitelist (F7)** ammette i soli nomi-comando di prodotto e il marker:
-- `sertor-wiki-tools` — console-script del nucleo deterministico;
-- `sertor-rag` — console-script MCP/retrieval;
-- `SERTOR:WIKI-RITUAL` — namespace del marker nel CLAUDE.md (nome del prodotto, non host-specifico).
-Tutto il resto è giudicato un riferimento al progetto Sertor → il test fallisce.
+Scans every file installed in `<tmp_repo>` after `install wiki` with the regex `\\bsertor\\b`
+(case-insensitive). The **whitelist (F7)** allows only product command names and the marker:
+- `sertor-wiki-tools` — console-script of the deterministic core;
+- `sertor-rag` — MCP/retrieval console-script;
+- `SERTOR:WIKI-RITUAL` — namespace of the marker in CLAUDE.md (product name, not host-specific).
+Everything else is considered a reference to the Sertor project → the test fails.
 """
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from pathlib import Path
 from sertor_installer.config_gen import build_host_profile
 from sertor_installer.install_wiki import build_install_plan, execute_plan
 
-# Whitelist host-agnosticità (F7): nomi-comando di prodotto + marker (rimossi prima del match).
+# Host-agnostic whitelist (F7): product command names + marker (stripped before matching).
 _WHITELIST = ("sertor-wiki-tools", "sertor-rag", "SERTOR:WIKI-RITUAL")
 _SERTOR = re.compile(r"sertor", re.IGNORECASE)
 
@@ -41,7 +41,7 @@ def test_installed_artifacts_have_no_sertor_references(tmp_path: Path):
             continue
         residual = _strip_whitelist(text)
         if _SERTOR.search(residual):
-            # raccogli le righe colpevoli per un messaggio diagnostico
+            # collect the offending lines for a diagnostic message
             for i, line in enumerate(residual.splitlines(), 1):
                 if _SERTOR.search(line):
                     offenders.append(f"{path.relative_to(tmp_path)}:{i}: {line.strip()[:80]}")

@@ -1,8 +1,8 @@
-"""Test dell'auto-discovery del `--config` di `sertor-wiki-tools` (feature 016, T010).
+"""Test of `sertor-wiki-tools` `--config` auto-discovery (feature 016, T010).
 
-Verifica la risoluzione del profilo quando `--config` è omesso: `./wiki.config.toml` poi
-`./wiki/wiki.config.toml` (con root = CWD), e `ConfigError` se nessuna è presente. Nessuna rete;
-la CWD è simulata con `monkeypatch.chdir`.
+Verifies profile resolution when `--config` is omitted: `./wiki.config.toml` then
+`./wiki/wiki.config.toml` (with root = CWD), and `ConfigError` if neither is present. No network;
+CWD is simulated with `monkeypatch.chdir`.
 """
 from __future__ import annotations
 
@@ -50,7 +50,7 @@ def test_discovery_config_in_wiki_subdir(tmp_path, monkeypatch, capsys):
     (tmp_path / "wiki").mkdir()
     _init(tmp_path / "wiki" / "wiki.config.toml", tmp_path)
     monkeypatch.chdir(tmp_path)
-    # config solo in wiki/: root auto = CWD → i path relativi si risolvono dalla radice ospite
+    # config only in wiki/: auto root = CWD → relative paths resolve from the host root
     assert main(["scan", "--json"]) == 0
     assert _scan_schema(capsys) == "wiki.scan/1"
 
@@ -65,28 +65,28 @@ def test_explicit_config_bypasses_discovery(tmp_path, monkeypatch, capsys):
     other = tmp_path / "custom"
     other.mkdir()
     _init(other / "wiki.config.toml", other)
-    monkeypatch.chdir(tmp_path)  # CWD senza config
+    monkeypatch.chdir(tmp_path)  # CWD without config
     assert main(["scan", "--config", str(other / "wiki.config.toml"), "--json"]) == 0
     assert _scan_schema(capsys) == "wiki.scan/1"
 
 
 def test_resolve_config_order_and_root(tmp_path, monkeypatch):
-    """Unit del risolutore + asserzione host-agnostica (F4): solo path relativi a CWD."""
+    """Unit test of the resolver + host-agnostic assertion (F4): only paths relative to CWD."""
     monkeypatch.chdir(tmp_path)
-    # nessuna config → errore esplicito
+    # no config → explicit error
     with pytest.raises(ConfigError):
         _resolve_config(None, None)
-    # solo in wiki/ → path relativo + root auto = "."
+    # only in wiki/ → relative path + auto root = "."
     (tmp_path / "wiki").mkdir()
     (tmp_path / "wiki" / "wiki.config.toml").write_text("x", encoding="utf-8")
     assert _resolve_config(None, None) == ("wiki/wiki.config.toml", ".")
-    # --root esplicito vince sull'auto-impostazione
+    # explicit --root wins over auto-setting
     assert _resolve_config(None, "/custom/root") == ("wiki/wiki.config.toml", "/custom/root")
-    # config in radice ha precedenza sulla sotto-cartella
+    # config in root takes precedence over subdirectory
     (tmp_path / "wiki.config.toml").write_text("x", encoding="utf-8")
     assert _resolve_config(None, None) == ("wiki.config.toml", None)
-    # --config esplicito bypassa la ricerca
+    # explicit --config bypasses discovery
     assert _resolve_config("altrove/x.toml", None) == ("altrove/x.toml", None)
-    # host-agnostico: i path tornati sono relativi a CWD, nessun riferimento assoluto a Sertor
+    # host-agnostic: returned paths are relative to CWD, no absolute reference to Sertor
     cfg, _root = _resolve_config(None, None)
     assert not Path(cfg).is_absolute()

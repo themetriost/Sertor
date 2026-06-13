@@ -1,7 +1,7 @@
-"""Polish — repo-agnosticità: indicizzazione di 2 codebase distinte senza modifiche (SC-001).
+"""Polish — host-agnosticity: indexing of 2 distinct codebases without code changes (SC-001).
 
-Due repository diversi vanno in due collezioni namespaced sullo stesso store, senza interferenze
-(REQ-019). Test offline con `FakeEmbedder` + `ChromaStore` su temp dir.
+Two different repositories go into two namespaced collections on the same store, without
+interference (REQ-019). Offline test with `FakeEmbedder` + `ChromaStore` on temp dir.
 """
 from __future__ import annotations
 
@@ -35,9 +35,9 @@ def test_two_distinct_repos_indexed_without_code_changes(sample_repo, tmp_path):
     assert store.exists("corpus-uno")
     assert store.exists("corpus-due")
 
-    # Le due collezioni sono isolate: una query su corpus-due trova solo i suoi path (REQ-019).
+    # The two collections are isolated: a query on corpus-due finds only its own paths (REQ-019).
     qvec = FakeEmbedder(dim=8).embed(["helper"])[0]
     hits = store.query("corpus-due", qvec, k=20)
     paths = {h.path for h in hits}
-    assert paths  # ha risultati
-    assert all(p in {"pkg/util.py", "README.md"} for p in paths)  # nessun path del primo repo
+    assert paths  # has results
+    assert all(p in {"pkg/util.py", "README.md"} for p in paths)  # no paths from the first repo

@@ -88,8 +88,8 @@ def move(profile: WikiProfile, src: str, dest: str, dry_run: bool = False) -> Mo
     States (D5): src+!dest = move; src+dest = collision (error, REQ-013); !src+dest =
     recovery (only completes rewrites, REQ-014); !src+!dest = source not found.
     """
-    src = _validate_rel(src, "sorgente")
-    dest = _validate_rel(dest, "destinazione")
+    src = _validate_rel(src, "source")
+    dest = _validate_rel(dest, "destination")
     root = profile.root_path
     src_path = root / src
     dest_path = root / dest

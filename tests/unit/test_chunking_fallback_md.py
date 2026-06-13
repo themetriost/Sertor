@@ -1,4 +1,4 @@
-"""Test US2 — fallback dimensionale (REQ-009) e chunking Markdown (REQ-008) via dispatcher."""
+"""Test US2 — size fallback (REQ-009) and Markdown chunking (REQ-008) via dispatcher."""
 from __future__ import annotations
 
 from sertor_core.config.settings import Settings
@@ -26,7 +26,7 @@ def test_dispatch_uses_fallback_for_unsupported_language():
         language="powershell",
     )
     chunks = chunk_document(doc, S)
-    assert chunks  # nessun errore, almeno un chunk
+    assert chunks  # no error, at least one chunk
     assert all(c.metadata.chunker is ChunkerKind.SIZE_FALLBACK for c in chunks)
 
 
@@ -42,7 +42,7 @@ def test_markdown_heading_hierarchy():
     assert ("Guida",) in paths
     assert ("Guida", "Installazione") in paths
     assert ("Guida", "Installazione", "Prerequisiti") in paths
-    assert ("Guida", "Uso") in paths  # 'Uso' chiude la sezione 'Installazione' (livello pari)
+    assert ("Guida", "Uso") in paths  # 'Uso' closes the 'Installazione' section (same level)
 
 
 def test_dispatch_markdown_sets_markdown_chunker_and_path():
@@ -66,6 +66,6 @@ def test_chunk_ids_are_stable_and_positional():
     )
     first = chunk_document(doc, S)
     second = chunk_document(doc, S)
-    assert [c.id for c in first] == [c.id for c in second]          # idempotenza (REQ-010)
-    assert first[0].id == "app/calculator.py#0"                      # id posizionale
+    assert [c.id for c in first] == [c.id for c in second]          # idempotent (REQ-010)
+    assert first[0].id == "app/calculator.py#0"                      # positional id
     assert all(c.id.startswith("app/calculator.py#") for c in first)

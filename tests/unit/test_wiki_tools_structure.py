@@ -1,4 +1,4 @@
-"""Test US2 — init struttura idempotente e non-distruttiva (FR-003, SC-006)."""
+"""Test US2 — idempotent and non-destructive structure init (FR-003, SC-006)."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -46,12 +46,12 @@ def test_init_is_idempotent(tmp_path):
     p = _profile(tmp_path)
     init_structure(p)
     res2 = init_structure(p)
-    assert res2.created == []  # seconda esecuzione: nulla di nuovo
+    assert res2.created == []  # second run: nothing new
     assert set(res2.skipped_existing) >= {"concepts", "tech", "index.md", "log.md"}
 
 
 def test_init_is_non_destructive(tmp_path):
-    # SC-006: indice/registro preesistenti dell'utente non vengono toccati.
+    # SC-006: pre-existing user index/log are not touched.
     p = _profile(tmp_path)
     (tmp_path / "wiki").mkdir()
     user_index = tmp_path / "wiki" / "index.md"
@@ -89,7 +89,7 @@ def test_validate_reports_naming_violation(tmp_path):
     assert any(v["page"] == "tech/BadName.md" for v in res.naming_violations)
 
 
-# --- D3: seed localizzato per lingua dell'host (contenuto = lingua host, fallback inglese) -----
+# --- D3: seed localized for the host language (content = host language, English fallback) -----
 
 def _profile_lang(tmp_path: Path, language: str):
     cfg = tmp_path / "wiki.config.toml"
@@ -115,10 +115,10 @@ def test_seed_localized_italian(tmp_path):
 
 
 def test_seed_unknown_language_falls_back_to_english(tmp_path):
-    init_structure(_profile_lang(tmp_path, "fr"))   # lingua non in tabella → inglese
+    init_structure(_profile_lang(tmp_path, "fr"))   # language not in table → English
     assert "Wiki index." in (tmp_path / "wiki" / "index.md").read_text("utf-8")
 
 
 def test_seed_language_subtag_normalized(tmp_path):
-    init_structure(_profile_lang(tmp_path, "it-IT"))   # sottotag → `it`
+    init_structure(_profile_lang(tmp_path, "it-IT"))   # subtag → `it`
     assert "Indice del wiki." in (tmp_path / "wiki" / "index.md").read_text("utf-8")

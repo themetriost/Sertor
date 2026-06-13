@@ -1,4 +1,4 @@
-"""Test US2 — parsing del frontmatter e dei wikilink (research D2)."""
+"""Test US2 — frontmatter and wikilink parsing (research D2)."""
 from __future__ import annotations
 
 from sertor_core.wiki_tools.frontmatter import (
@@ -50,7 +50,7 @@ def test_has_frontmatter():
 
 def test_extract_wikilinks_dedup_and_alias():
     links = extract_wikilinks(_PAGE)
-    assert links == ["chunking", "embeddings"]  # alias scartato, dedup preservando l'ordine
+    assert links == ["chunking", "embeddings"]  # alias discarded, dedup preserving order
 
 
 def test_wikilinks_ignore_frontmatter_block():

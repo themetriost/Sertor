@@ -1,4 +1,4 @@
-"""Test US4 — registri idempotenti; SC-002 (re-run identico, niente duplicati/timestamp)."""
+"""Test US4 — idempotent registries; SC-002 (identical re-run, no duplicates/timestamps)."""
 from __future__ import annotations
 
 from datetime import date
@@ -43,7 +43,7 @@ def test_append_log_writes_formatted_entry(tmp_path):
 
 
 def test_append_log_is_idempotent(tmp_path):
-    # SC-002: stessa voce due volte → nessun duplicato, file invariato la seconda volta.
+    # SC-002: same entry twice → no duplicate, file unchanged the second time.
     p = _profile(tmp_path)
     append_log(p, "record", "X", on_date=date(2026, 6, 5))
     first = p.log_path.read_text("utf-8")
@@ -51,14 +51,14 @@ def test_append_log_is_idempotent(tmp_path):
 
     wrote2 = append_log(p, "record", "X", on_date=date(2026, 6, 5))
     assert wrote2.written is False
-    assert p.log_path.read_text("utf-8") == first  # contenuto identico
-    assert p.log_path.stat().st_mtime_ns == mtime_first  # nessun timestamp modificato
+    assert p.log_path.read_text("utf-8") == first  # identical content
+    assert p.log_path.stat().st_mtime_ns == mtime_first  # no timestamp modified
 
 
 def test_append_log_requires_existing_log(tmp_path):
     cfg = tmp_path / "wiki.config.toml"
     cfg.write_text(_CONFIG, encoding="utf-8")
-    p = load_profile(cfg)  # struttura non inizializzata → log assente
+    p = load_profile(cfg)  # structure not initialized → log absent
     with pytest.raises(ConfigError):
         append_log(p, "record", "X")
 
@@ -72,7 +72,7 @@ def test_upsert_index_inserts_then_idempotent(tmp_path):
 
     mtime = p.index_path.stat().st_mtime_ns
     result2 = upsert_index(p, "concepts/rag.md", "Retrieval-Augmented Generation")
-    assert result2.written is False and result2.action == "noop"  # no-op idempotente (FR-012)
+    assert result2.written is False and result2.action == "noop"  # idempotent no-op (FR-012)
     assert p.index_path.stat().st_mtime_ns == mtime
 
 
@@ -82,12 +82,12 @@ def test_upsert_index_updates_changed_summary_without_duplicating(tmp_path):
     result = upsert_index(p, "concepts/rag.md", "nuovo")
     assert result.written is True and result.action == "update"   # update in place (FR-013)
     content = p.index_path.read_text("utf-8")
-    assert content.count("[[concepts/rag.md]]") == 1  # id stabile: una sola riga
+    assert content.count("[[concepts/rag.md]]") == 1  # stable id: single line
     assert "nuovo" in content and "vecchio" not in content
 
 
 def test_upsert_index_trims_but_writes_text_verbatim(tmp_path):
-    # FR-014: scrittura fedele del testo fornito (solo trim del whitespace esterno).
+    # FR-014: faithful write of the provided text (only outer whitespace trimmed).
     p = _profile(tmp_path)
     upsert_index(p, "concepts/à.md", "  Sommario con àccénti — e trattini  \n")
     assert "- [[concepts/à.md]] — Sommario con àccénti — e trattini\n" in \
@@ -95,7 +95,7 @@ def test_upsert_index_trims_but_writes_text_verbatim(tmp_path):
 
 
 def test_upsert_index_rejects_empty_summary(tmp_path):
-    # FR-018: vuoto/solo whitespace → errore esplicito, file invariato.
+    # FR-018: empty/whitespace-only → explicit error, file unchanged.
     p = _profile(tmp_path)
     snapshot = p.index_path.read_text("utf-8")
     with pytest.raises(ConfigError):
@@ -104,7 +104,7 @@ def test_upsert_index_rejects_empty_summary(tmp_path):
 
 
 def test_upsert_index_rejects_multiline_summary(tmp_path):
-    # FR-018 (clarify #3): newline interni → errore, nessuna normalizzazione silenziosa.
+    # FR-018 (clarify #3): internal newlines → error, no silent normalization.
     p = _profile(tmp_path)
     snapshot = p.index_path.read_text("utf-8")
     with pytest.raises(ConfigError):
@@ -113,7 +113,7 @@ def test_upsert_index_rejects_multiline_summary(tmp_path):
 
 
 def test_sc002_full_rerun_is_identical(tmp_path):
-    # SC-002 trasversale: due esecuzioni identiche dell'intera sequenza → output identico.
+    # SC-002 end-to-end: two identical runs of the full sequence → identical output.
     p = _profile(tmp_path)
     append_log(p, "record", "Step", on_date=date(2026, 6, 5))
     upsert_index(p, "concepts/rag.md", "RAG")

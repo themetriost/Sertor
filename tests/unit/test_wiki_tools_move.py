@@ -1,4 +1,4 @@
-"""Test di `move` (feature 017): riscrittura link form-preserving, dry-run, collisione, recovery."""
+"""Test of `move` (feature 017): form-preserving link rewrite, dry-run, collision, recovery."""
 from __future__ import annotations
 
 import json
@@ -56,7 +56,7 @@ def test_move_rewrites_path_form_links_same_stem(tmp_path):
     assert (p.root_path / "experiments/a.md").is_file()
     assert not (p.root_path / "concepts/a.md").exists()
     text = b.read_text("utf-8")
-    # stesso stem ("a"): i link a stem restano; cambiano solo le forme con path
+    # same stem ("a"): stem links remain; only path-form links change
     assert "[[a]]" in text and "[[a|Alias]]" in text
     assert "[[experiments/a]]" in text and "[[experiments/a.md]]" in text
     assert "[[concepts/a]]" not in text and "[[concepts/a.md]]" not in text
@@ -87,9 +87,9 @@ def test_move_dry_run_changes_nothing(tmp_path):
     b = _page(p, "concepts/b.md", "[[concepts/a]]\n")
     before = b.read_bytes()
     res = move(p, "concepts/a.md", "experiments/a.md", dry_run=True)
-    assert res.dry_run is True and res.rewritten          # piano calcolato
-    assert a.is_file() and not (p.root_path / "experiments/a.md").exists()  # niente spostamento
-    assert b.read_bytes() == before                       # nessuna riscrittura
+    assert res.dry_run is True and res.rewritten          # plan computed
+    assert a.is_file() and not (p.root_path / "experiments/a.md").exists()  # no move
+    assert b.read_bytes() == before                       # no rewrite
 
 
 def test_move_collision_errors_no_change(tmp_path):
@@ -99,8 +99,8 @@ def test_move_collision_errors_no_change(tmp_path):
     before = dest.read_bytes()
     with pytest.raises(ConfigError):
         move(p, "concepts/a.md", "experiments/a.md")
-    assert (p.root_path / "concepts/a.md").is_file()      # sorgente intatta
-    assert dest.read_bytes() == before                    # destinazione non sovrascritta
+    assert (p.root_path / "concepts/a.md").is_file()      # source intact
+    assert dest.read_bytes() == before                    # destination not overwritten
 
 
 def test_move_source_not_found_errors(tmp_path):
@@ -110,13 +110,13 @@ def test_move_source_not_found_errors(tmp_path):
 
 
 def test_move_recovery_completes_rewrites(tmp_path):
-    # Stato parziale: file GIÀ a destinazione, un link punta ancora alla vecchia forma.
+    # Partial state: file ALREADY at destination, one link still points to the old form.
     _, p = _wiki(tmp_path)
-    _page(p, "experiments/a.md", "# A (already moved)\n")     # dest presente
-    b = _page(p, "concepts/b.md", "[[concepts/a]]\n")          # link residuo
-    res = move(p, "concepts/a.md", "experiments/a.md")        # src assente, dest presente
-    assert res.moved is False                                  # nessun move (recovery)
-    assert "[[experiments/a]]" in b.read_text("utf-8")        # riscrittura completata
+    _page(p, "experiments/a.md", "# A (already moved)\n")     # dest present
+    b = _page(p, "concepts/b.md", "[[concepts/a]]\n")          # residual link
+    res = move(p, "concepts/a.md", "experiments/a.md")        # src absent, dest present
+    assert res.moved is False                                  # no move (recovery)
+    assert "[[experiments/a]]" in b.read_text("utf-8")        # rewrite completed
 
 
 def test_move_then_lint_no_broken_links(tmp_path):

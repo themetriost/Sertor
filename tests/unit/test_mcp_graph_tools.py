@@ -1,7 +1,7 @@
-"""Test US3 — i 4 tool di grafo nel server MCP (FR-019..022).
+"""Test US3 — the 4 graph tools in the MCP server (FR-019..022).
 
-Con `FakeCodeGraph` (NFR-03): superfici sottili, errori strutturati, 3 tool di ricerca
-invariati, warm-up eager esteso al grafo (lezione PR #23 / R-7).
+With `FakeCodeGraph` (NFR-03): thin surfaces, structured errors, 3 search tools
+unchanged, eager warm-up extended to the graph (lesson from PR #23 / R-7).
 """
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ def _use(monkeypatch, factory) -> None:
     srv._graph.cache_clear()
 
 
-# --- registrazione e invarianza (FR-019) ---------------------------------------------------------
+# --- registration and invariance (FR-019) --------------------------------------------------------
 
 def test_seven_tools_registered():
     tools = asyncio.run(srv.mcp.list_tools())
@@ -49,7 +49,7 @@ def test_seven_tools_registered():
     assert {"find_symbol", "who_calls", "related_docs", "get_context"} <= names
 
 
-# --- delega e formato citabile (FR-020, contracts/mcp-graph-tools.md) ----------------------------
+# --- delegation and citable format (FR-020, contracts/mcp-graph-tools.md) -----------------------
 
 def test_find_symbol_returns_citable_hits(monkeypatch):
     _use(monkeypatch, _populated_graph)
@@ -84,18 +84,18 @@ def test_get_context_bundle_sections(monkeypatch):
 def test_unknown_symbol_returns_empty_lists(monkeypatch):
     _use(monkeypatch, _populated_graph)
     try:
-        assert srv.find_symbol("inesistente") == []        # vuoto esplicito, non errore (FR-017)
+        assert srv.find_symbol("inesistente") == []        # explicit empty, not an error (FR-017)
     finally:
         srv._graph.cache_clear()
 
 
-# --- errori strutturati (FR-021/FR-022) -----------------------------------------------------------
+# --- structured errors (FR-021/FR-022) -----------------------------------------------------------
 
 def test_graph_not_built_propagates_explicit_error(monkeypatch):
     _use(monkeypatch, lambda _s=None: FakeCodeGraph("vuoto"))
     try:
         with pytest.raises(GraphNotFoundError):
-            srv.find_symbol("aiuta")                       # il server NON inghiotte (FR-021)
+            srv.find_symbol("aiuta")                       # the server does NOT swallow it (FR-021)
     finally:
         srv._graph.cache_clear()
 
@@ -108,12 +108,12 @@ def test_missing_extra_propagates_actionable_error(monkeypatch):
     _use(monkeypatch, lambda _s=None: _NoExtra())
     try:
         with pytest.raises(ConfigError):
-            srv.find_symbol("aiuta")                       # DA-5: errore azionabile
+            srv.find_symbol("aiuta")                       # DA-5: actionable error
     finally:
         srv._graph.cache_clear()
 
 
-# --- warm-up eager esteso (R-7, lezione PR #23) ---------------------------------------------------
+# --- extended eager warm-up (R-7, lesson from PR #23) --------------------------------------------
 
 def test_main_warms_facade_and_graph_before_stdio_loop(monkeypatch):
     calls: list[str] = []
@@ -135,7 +135,7 @@ def test_main_warms_facade_and_graph_before_stdio_loop(monkeypatch):
 
 
 def test_main_warmup_tolerates_missing_graph(monkeypatch):
-    # Grafo non costruito o extra assente: il warm-up NON deve impedire l'avvio del server.
+    # Graph not built or extra absent: warm-up must NOT prevent the server from starting.
     class _Boom:
         def exists(self, corpus):
             raise ConfigError("extra assente", key="graph")
@@ -148,7 +148,7 @@ def test_main_warmup_tolerates_missing_graph(monkeypatch):
     ran: list[bool] = []
     monkeypatch.setattr(srv.mcp, "run", lambda *a, **k: ran.append(True))
     try:
-        srv.main()                                          # nessuna eccezione
+        srv.main()                                          # no exception
         assert ran == [True]
     finally:
         srv._facade.cache_clear()

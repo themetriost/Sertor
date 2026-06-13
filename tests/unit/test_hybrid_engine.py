@@ -1,6 +1,6 @@
-"""Test US1/US2 — HybridEngine: fusione dense+lessicale, via strict, degradazione (FR-004..016).
+"""Test US1/US2 — HybridEngine: dense+lexical fusion, strict path, degradation (FR-004..016).
 
-Tutto con mock (FakeEmbedder, InMemoryStore, InMemoryLexicalIndex), senza rete (NFR-03/LSC-5).
+All with mocks (FakeEmbedder, InMemoryStore, InMemoryLexicalIndex), no network (NFR-03/LSC-5).
 """
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ def _payload(text: str, path: str, doc_type: str = "code") -> dict:
 
 
 def _populated(emb: FakeEmbedder) -> tuple[InMemoryStore, InMemoryLexicalIndex]:
-    """Store + lessicale con 3 chunk: solo `ports.py#0` contiene il simbolo raro."""
+    """Store + lexical with 3 chunks: only `ports.py#0` contains the rare symbol."""
     from sertor_core.domain.entities import LexicalEntry
 
     texts = {
@@ -50,21 +50,21 @@ def _engine(store=None, lexical=None, emb=None, settings=None) -> HybridEngine:
     return HybridEngine(emb, store, lexical, COLL, settings)
 
 
-# --- US1: fusione --------------------------------------------------------------------------------
+# --- US1: fusion ---------------------------------------------------------------------------------
 
 def test_engine_has_baseline_compatible_interface():
     eng = _engine()
-    assert eng.name == "hybrid"                      # FR-019: stessa interfaccia del baseline
+    assert eng.name == "hybrid"                      # FR-019: same interface as baseline
     assert eng.provider.startswith("fake:")
     assert callable(eng.index) and callable(eng.query) and callable(eng.ensure_index)
 
 
 def test_exact_symbol_query_surfaces_lexical_match_on_top():
-    # Il simbolo raro vive in UN chunk: la via lessicale lo mette rank 1; con la fusione RRF
-    # il suo score (lessicale + densa) batte ogni candidato di sola via densa (FR-006).
+    # The rare symbol lives in ONE chunk: the lexical path ranks it 1; with RRF fusion
+    # its score (lexical + dense) beats any dense-only candidate (FR-006).
     hits = _engine().query("EmbeddingProvider", k=3)
     assert hits and hits[0].chunk_id == "ports.py#0"
-    assert all(isinstance(h, RetrievalResult) for h in hits)   # FR-009: entità invariata
+    assert all(isinstance(h, RetrievalResult) for h in hits)   # FR-009: entity unchanged
 
 
 def test_results_are_deterministic():
@@ -77,11 +77,11 @@ def test_results_are_deterministic():
 def test_query_without_any_index_raises_strict_error():
     eng = _engine(store=InMemoryStore(), lexical=InMemoryLexicalIndex())
     with pytest.raises(IndexNotFoundError):
-        eng.query("qualunque")                                 # FR-004: corpus mai indicizzato
+        eng.query("qualunque")                                 # FR-004: corpus never indexed
 
 
 def test_index_builds_vector_and_lexical_together(tmp_path):
-    # REQ-001/002/003: stesso insieme di chunk nelle due vie, in un solo passaggio.
+    # REQ-001/002/003: same set of chunks in both paths, in a single pass.
     (tmp_path / "app.py").write_text("def collection_name():\n    return 'x'\n", encoding="utf-8")
     (tmp_path / "README.md").write_text("# Guida\n\nIl progetto demo.\n", encoding="utf-8")
     emb = FakeEmbedder(dim=8)
@@ -91,7 +91,7 @@ def test_index_builds_vector_and_lexical_together(tmp_path):
     assert report.chunks > 0
     vector_ids = set(store._data[COLL])
     lexical_ids = {e.chunk_id for e in lexical._data[COLL]}
-    assert vector_ids == lexical_ids                           # specchio (FR-002)
+    assert vector_ids == lexical_ids                           # mirror (FR-002)
 
 
 def test_hybrid_query_log_event_has_contract_fields(caplog):
@@ -99,33 +99,33 @@ def test_hybrid_query_log_event_has_contract_fields(caplog):
     with caplog.at_level(logging.INFO, logger="sertor_core"):
         eng.query("EmbeddingProvider", k=3)
     events = [r for r in caplog.records if getattr(r, "operation", "") == "hybrid_query"]
-    assert events, "manca l'evento hybrid_query (FR-027)"
+    assert events, "missing hybrid_query event (FR-027)"
     rec = events[-1]
     for field in ("engine", "provider", "collection", "lexical_hits", "dense_hits",
                   "fused_k", "rerank_applied", "elapsed_ms"):
-        assert hasattr(rec, field), f"campo mancante nel contratto log-events: {field}"
+        assert hasattr(rec, field), f"missing field in log-events contract: {field}"
     assert rec.engine == "hybrid" and rec.rerank_applied is False
     assert rec.lexical_hits >= 1 and rec.dense_hits >= 1
 
 
-# --- US2: degradazione REQ-034 (FR-016) -----------------------------------------------------------
+# --- US2: degradation REQ-034 (FR-016) -----------------------------------------------------------
 
 def test_missing_lexical_index_degrades_to_dense_with_warning(caplog):
-    # Corpus pre-ibrido: vettoriale presente, sidecar assente → dense-only + WARNING, MAI errore.
+    # Pre-hybrid corpus: vector present, lexical sidecar absent → dense-only + WARNING, no error.
     emb = FakeEmbedder(dim=8)
     store, _ = _populated(emb)
     eng = HybridEngine(emb, store, InMemoryLexicalIndex(), COLL, Settings.load(env_file=None))
     with caplog.at_level(logging.WARNING, logger="sertor_core"):
         hits = eng.query("provider di embeddings", k=3)
-    assert hits                                                # la query NON fallisce
+    assert hits                                                # the query does NOT fail
     warnings = [r for r in caplog.records
                 if getattr(r, "operation", "") == "lexical_index_missing"]
     assert warnings and warnings[-1].collection == COLL
-    assert "re-index" in str(warnings[-1].hint)                # hint azionabile (REQ-034)
+    assert "re-index" in str(warnings[-1].hint)                # actionable hint (REQ-034)
 
 
 def test_degraded_results_equal_dense_only_baseline():
-    # In degradazione i risultati sono equivalenti al retrieval vettoriale puro (FR-016/031).
+    # In degradation, results are equivalent to pure vector retrieval (FR-016/031).
     emb = FakeEmbedder(dim=8)
     store, _ = _populated(emb)
     eng = HybridEngine(emb, store, InMemoryLexicalIndex(), COLL, Settings.load(env_file=None))

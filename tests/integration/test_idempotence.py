@@ -1,7 +1,7 @@
-"""Polish — idempotenza del full re-index (SC-005, NFR-02, REQ-010).
+"""Polish — idempotency of the full re-index (SC-005, NFR-02, REQ-010).
 
-Rieseguire l'indicizzazione su un corpus invariato produce lo stesso insieme di chunk id, senza
-duplicati. Test offline con `FakeEmbedder` + `InMemoryStore` (introspezione degli id).
+Re-running indexing on an unchanged corpus produces the same set of chunk ids, without
+duplicates. Offline test with `FakeEmbedder` + `InMemoryStore` (id introspection).
 """
 from __future__ import annotations
 
@@ -24,8 +24,8 @@ def test_reindex_same_corpus_yields_same_chunk_ids(sample_repo):
     store_b = InMemoryStore()
     ids_first = _index_once(store_a, sample_repo)
     ids_second = _index_once(store_b, sample_repo)
-    assert ids_first == ids_second           # stesso insieme di id (SC-005)
-    assert ids_first                          # non vuoto
+    assert ids_first == ids_second           # same set of ids (SC-005)
+    assert ids_first                          # not empty
 
 
 def test_reindex_into_same_store_has_no_duplicates(sample_repo):
@@ -33,5 +33,5 @@ def test_reindex_into_same_store_has_no_duplicates(sample_repo):
     ids_run1 = _index_once(store, sample_repo)
     ids_run2 = _index_once(store, sample_repo)
     assert ids_run1 == ids_run2
-    # upsert sugli stessi id sostituisce: il numero di record non cresce (NFR-02)
+    # upsert on same ids replaces: the number of records does not grow (NFR-02)
     assert len(store._data[COLL]) == len(ids_run1)

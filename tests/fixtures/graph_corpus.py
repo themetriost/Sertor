@@ -1,10 +1,10 @@
-"""Mini-corpus sintetico per i 10 linguaggi del chunker (FEAT-005, FR-003).
+"""Synthetic mini-corpus for the 10 chunker languages (FEAT-005, FR-003).
 
-Corpus CHIUSO e versionato: per ogni linguaggio un sorgente minimo con una funzione che ne
-chiama un'altra (più import/ereditarietà per Python, dove dichiarati in `COVERAGE`). Qui il
-ground-truth è TOTALE: misura la precisione piena (SC-002) e verifica che la copertura
-dichiarata sia vera (mai promessa non testata). È anche la verifica SC-007: un corpus diverso
-da sertor, zero adattamenti del motore (fix analyze C1).
+CLOSED and versioned corpus: for each language a minimal source with a function that calls
+another one (plus import/inheritance for Python, where declared in `COVERAGE`). Here the
+ground-truth is TOTAL: measures full precision (SC-002) and verifies that declared coverage
+is true (no untested promises). It is also the SC-007 verification: a corpus different from
+sertor, zero engine adaptations (fix analyze C1).
 """
 from __future__ import annotations
 
@@ -16,8 +16,8 @@ class LanguageCase:
     language: str
     filename: str
     source: str
-    caller_qual: str      # qualname del chiamante atteso
-    callee_name: str      # nome del simbolo chiamato
+    caller_qual: str      # qualname of the expected caller
+    callee_name: str      # name of the called symbol
 
 
 LANGUAGE_CASES: tuple[LanguageCase, ...] = (
@@ -68,7 +68,7 @@ LANGUAGE_CASES: tuple[LanguageCase, ...] = (
                  "runner", "aiutante"),
 )
 
-# Sorgente Python aggiuntivo: definisce il chiamato + classe base (per imports/inherits).
+# Additional Python source: defines the callee + base class (for imports/inherits).
 PYTHON_COMPANION = (
     "mod_a.py",
     "class Base:\n"

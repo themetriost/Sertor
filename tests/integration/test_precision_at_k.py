@@ -1,9 +1,9 @@
-"""Test precision@5 STRICT via facade — la superficie dei consumatori (REQ-052, SC-003).
+"""STRICT precision@5 test via facade — the consumer surface (REQ-052, SC-003).
 
-Ex `xfail` (US5 di FEAT-002): completato dalla FEAT-004. Stesso ground-truth e stesso indice
-del test di qualità, ma misurato attraverso la `RetrievalFacade` (con e senza strategia ibrida):
-verifica che il miglioramento arrivi ai consumatori dalla superficie stabile, non solo dal
-motore nudo. Senza rete.
+Former `xfail` (US5 of FEAT-002): completed by FEAT-004. Same ground-truth and same index as
+the quality test, but measured through the `RetrievalFacade` (with and without hybrid strategy):
+verifies that the improvement reaches consumers via the stable surface, not just the raw engine.
+No network.
 """
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ _GT = relative_to("src/sertor_core")
 
 @pytest.fixture(scope="module")
 def facades(tmp_path_factory):
-    """Due facade sullo stesso indice: percorso denso attuale vs strategia ibrida iniettata."""
+    """Two facades on the same index: current dense path vs injected hybrid strategy."""
     tmp = tmp_path_factory.mktemp("precision-index")
     settings = Settings(index_dir=tmp, corpus="precision")
     emb = FakeEmbedder(dim=8)
@@ -57,5 +57,5 @@ def test_hybrid_facade_precision_meets_dense_baseline(facades):
     dense, hybrid = facades
     p_dense, p_hybrid = _precision_at_5(dense), _precision_at_5(hybrid)
     print(f"precision@5 — dense: {p_dense:.2f} · hybrid: {p_hybrid:.2f} ({len(_GT)} query)")
-    assert p_hybrid >= p_dense                          # REQ-052: mai peggio
-    assert p_hybrid >= 0.5                              # sanità: l'ibrido risolve metà delle query
+    assert p_hybrid >= p_dense                          # REQ-052: never worse
+    assert p_hybrid >= 0.5                              # sanity: hybrid resolves at least half

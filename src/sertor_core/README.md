@@ -1,122 +1,120 @@
 # sertor-core
 
-Nucleo di retrieval condiviso di Sertor (FEAT-001): la **fondazione production-grade** su cui
-poggiano i motori RAG e le skill wiki. Legge un repository qualunque, ne fa chunking di codice e
-documentazione, produce embeddings via provider intercambiabili, persiste/interroga i chunk via
-un'astrazione di vector store, ed espone una **facade di retrieval importabile come libreria**.
+The shared retrieval core of Sertor (FEAT-001): the **production-grade foundation** on which the
+RAG engines and wiki skills are built. It reads any repository, chunks its code and documentation,
+produces embeddings via swappable providers, persists/queries the chunks through a vector store
+abstraction, and exposes a **retrieval facade importable as a library**.
 
-## Architettura (Clean Architecture)
+## Architecture (Clean Architecture)
 
-Le dipendenze puntano verso l'interno: il `domain` (entità + porte + errori) non importa alcun SDK
-esterno; gli `adapters` implementano le porte; il `composition root` cabla tutto dalla
-configurazione.
+Dependencies point inward: the `domain` (entities + ports + errors) imports no external SDK;
+`adapters` implement the ports; the `composition root` wires everything from configuration.
 
 ```
-domain/        entità (Document, Chunk, RetrievalResult, GraphNode, …) + SEI porte Protocol
+domain/        entities (Document, Chunk, RetrievalResult, GraphNode, …) + SIX Protocol ports
                (EmbeddingProvider, VectorStore, LexicalIndex, Reranker, CodeGraph,
-               RetrieverStrategy) + errori di dominio
+               RetrieverStrategy) + domain errors
 services/      ingestion · chunking (code/markdown/fallback) · indexing · retrieval (facade)
-               · graph_extraction (code-graph multi-linguaggio)
+               · graph_extraction (multi-language code-graph)
 adapters/      embeddings/{ollama,azure} · vectorstores/{chroma,azure_search}
                · lexical/bm25 · rerank/flashrank (extra) · graph/networkx (extra)
-engines/       baseline (vettoriale) · hybrid (BM25+RRF, DEFAULT) · evaluation (hit@k, MRR)
-config/        Settings (config centralizzata)
-observability/ logging strutturato
+engines/       baseline (vector) · hybrid (BM25+RRF, DEFAULT) · evaluation (hit@k, MRR)
+config/        Settings (centralised configuration)
+observability/ structured logging
 composition.py build_facade() / build_indexer() / build_engine() / build_graph_service() / …
 ```
 
-## Installazione
+## Installation
 
-Il pacchetto **non è (ancora) su PyPI**: la distribuzione interim è via `git+url` (DA-4 dell'epica CLI).
+The package is **not (yet) on PyPI**: the interim distribution is via `git+url` (DA-4 of the CLI epic).
 
 ```bash
-# base: Chroma (locale) + Ollama (locale), motore ibrido incluso
+# base: Chroma (local) + Ollama (local), hybrid engine included
 uv add "sertor-core @ git+https://github.com/themetriost/Sertor"
-# extra: cloud, server MCP, reranking cross-encoder, navigazione code-graph
+# extras: cloud, MCP server, cross-encoder reranking, code-graph navigation
 uv add "sertor-core[azure,mcp,rerank,graph] @ git+https://github.com/themetriost/Sertor"
 ```
 
-Guida completa per installare su un altro repository: [`docs/install.md`](../../docs/install.md).
+Full guide for installing on another repository: [`docs/install.md`](../../docs/install.md).
 
-Il chunking usa `tree-sitter-language-pack` (wheel precompilati, nessuna toolchain C).
+Chunking uses `tree-sitter-language-pack` (pre-built wheels, no C toolchain required).
 
-## Configurazione
+## Configuration
 
-Tutte le scelte passano da `Settings`, lette da env + file `.env` (non versionato). Vedi
-`.env.example` alla radice. Modalità `RAG_BACKEND=local` → nessuna chiamata di rete cloud.
+All choices flow through `Settings`, read from env + `.env` file (not versioned). See
+`.env.example` at the root. `RAG_BACKEND=local` mode → no cloud network calls.
 
-## Uso come libreria
+## Usage as a library
 
 ```python
 from sertor_core import build_indexer, build_facade
 
-# Indicizzare un repository qualunque
-report = build_indexer().index("/path/al/repo")
+# Index any repository
+report = build_indexer().index("/path/to/repo")
 print(report.documents, report.chunks)
 
-# Interrogare (codice / doc / combinata)
+# Query (code / doc / combined)
 facade = build_facade()
-for hit in facade.search_code("validazione input", k=5):
+for hit in facade.search_code("input validation", k=5):
     print(hit.path, hit.chunk_id, round(hit.score, 3))
 ```
 
-Ogni risultato espone `text`, `path`, `chunk_id`, `doc_type`, `score`. Indice vuoto → lista vuota
-+ warning (nessuna eccezione).
+Each result exposes `text`, `path`, `chunk_id`, `doc_type`, `score`. Empty index → empty list
++ warning (no exception).
 
-## Motori RAG e code-graph
+## RAG engines and code-graph
 
-Tre capacità (selezione SEMPRE da configurazione, mai da codice):
+Three capabilities (selection is ALWAYS from configuration, never from code):
 
-- **Ibrido (default, FEAT-004)** — `SERTOR_ENGINE=hybrid`: BM25 lessicale + retrieval vettoriale
-  fusi con RRF; reranking cross-encoder opzionale (extra `rerank`). I corpora indicizzati prima
-  dell'ibrido degradano a vettoriale con warning; un re-index abilita l'ibrido.
-- **Baseline (FEAT-002)** — `SERTOR_ENGINE=baseline`: solo similarità vettoriale, identico a
-  prima dell'ibrido.
-- **Code-graph (FEAT-005, ortogonale ai motori)** — `index()` costruisce anche il grafo
-  strutturale del codice; `build_graph_service()` espone `find_symbol` / `who_calls` /
-  `related_docs` / `get_context` (navigazione richiede l'extra `graph`).
+- **Hybrid (default, FEAT-004)** — `SERTOR_ENGINE=hybrid`: lexical BM25 + vector retrieval
+  fused with RRF; optional cross-encoder reranking (extra `rerank`). Corpora indexed before
+  the hybrid engine degrade to vector-only with a warning; a re-index enables the hybrid engine.
+- **Baseline (FEAT-002)** — `SERTOR_ENGINE=baseline`: vector similarity only, identical to
+  pre-hybrid behaviour.
+- **Code-graph (FEAT-005, orthogonal to engines)** — `index()` also builds the structural code
+  graph; `build_graph_service()` exposes `find_symbol` / `who_calls` /
+  `related_docs` / `get_context` (navigation requires the `graph` extra).
 
 ```python
 from sertor_core import build_engine, build_graph_service
 
-engine = build_engine()                    # ibrido di default; baseline via SERTOR_ENGINE
+engine = build_engine()                    # hybrid by default; baseline via SERTOR_ENGINE
 hits = engine.query("EmbeddingProvider", k=5)
 
 graph = build_graph_service()
-print(graph.find_symbol("build_facade"))  # definizione esatta: path, riga, qualname
+print(graph.find_symbol("build_facade"))  # exact definition: path, line, qualname
 ```
 
-### Il motore baseline in dettaglio
+### The baseline engine in detail
 
-Un motore sottile sopra il nucleo che indicizza una codebase e la interroga per similarità
-vettoriale.
+A thin engine on top of the core that indexes a codebase and queries it by vector similarity.
 
 ```python
 from sertor_core import build_baseline_engine, evaluate, IndexNotFoundError
 
-engine = build_baseline_engine()           # cablato da Settings; engine.name == "baseline"
-engine.index("/path/al/repo")              # rebuild-from-scratch idempotente
-hits = engine.query("come si valida un input", k=5)   # top-k per similarità
+engine = build_baseline_engine()           # wired from Settings; engine.name == "baseline"
+engine.index("/path/to/repo")              # idempotent rebuild-from-scratch
+hits = engine.query("how is an input validated", k=5)   # top-k by similarity
 
-# Indice non costruito → errore esplicito (non lista vuota):
+# Index not built → explicit error (not an empty list):
 try:
     build_baseline_engine().query("x")
 except IndexNotFoundError as e:
-    print("Costruisci prima l'indice:", e)
+    print("Build the index first:", e)
 
-# Valutazione della pertinenza (hit-rate@k, MRR@10) su un ground-truth:
-report = evaluate(engine, [("avvio del server", ["web/server.js"])])
+# Relevance evaluation (hit-rate@k, MRR@10) against a ground-truth:
+report = evaluate(engine, [("server startup", ["web/server.js"])])
 print(report.hit_rate, report.mrr)
 ```
 
-Differenze rispetto alla facade del nucleo: il motore **ricostruisce l'indice da zero** a ogni
-`index()` (nessun chunk obsoleto) e su indice mancante **solleva `IndexNotFoundError`** invece di
-restituire una lista vuota. Usa **solo** retrieval vettoriale: è la baseline di confronto nelle
-misure (il default di prodotto è l'ibrido).
+Differences from the core facade: the engine **rebuilds the index from scratch** on every
+`index()` call (no stale chunks) and on a missing index **raises `IndexNotFoundError`** instead of
+returning an empty list. It uses **only** vector retrieval: it is the comparison baseline in
+measurements (the product default is the hybrid engine).
 
-## Test con mock (senza cloud né rete)
+## Testing with mocks (no cloud or network)
 
-Il core è esercitabile con adapter mock delle porte:
+The core is exercisable with mock adapters of the ports:
 
 ```python
 from sertor_core.services.retrieval import RetrievalFacade
@@ -125,11 +123,10 @@ facade = RetrievalFacade(embedder=FakeEmbedder(dim=8), store=InMemoryStore(),
                          collection="test", default_k=5)
 ```
 
-## Linguaggi del chunking code-aware
+## Languages supported by code-aware chunking
 
-Sintattici al primo rilascio: Python, JavaScript/TypeScript, Java, C#, Go, C/C++, PHP, Ruby.
-PowerShell e i dialetti SQL (T-SQL/PL-SQL) usano il **fallback dimensionale** finché i node-type
-non sono validati (estensione incrementale). Qualunque altro linguaggio ricade sul fallback senza
-errore.
+Syntactic at first release: Python, JavaScript/TypeScript, Java, C#, Go, C/C++, PHP, Ruby.
+PowerShell and SQL dialects (T-SQL/PL-SQL) use the **dimensional fallback** until their node types
+are validated (incremental extension). Any other language falls back without error.
 
-Vedi `specs/001-nucleo-retrieval/` per spec, piano, contratti e quickstart completi.
+See `specs/001-nucleo-retrieval/` for the full spec, plan, contracts, and quickstart.

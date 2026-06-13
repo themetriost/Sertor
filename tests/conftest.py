@@ -1,8 +1,8 @@
-"""Fixtures condivise dei test del nucleo.
+"""Shared fixtures for the core tests.
 
-`sample_repo` copia il mini-repo versionato in una temp dir e vi **inietta** gli artefatti da
-escludere (una `.venv/` e un file `*.key`): questi non sono versionati (sono in `.gitignore`),
-quindi vengono creati a runtime per rendere il test di esclusione ripetibile su qualunque clone.
+`sample_repo` copies the versioned mini-repo into a temp dir and **injects** the artifacts to
+be excluded (a `.venv/` and a `*.key` file): these are not versioned (they are in `.gitignore`),
+so they are created at runtime to make the exclusion test repeatable on any clone.
 """
 from __future__ import annotations
 
@@ -14,17 +14,17 @@ import pytest
 from tests.fixtures.mocks import FakeEmbedder, InMemoryStore
 
 _SAMPLE = Path(__file__).parent / "fixtures" / "sample_repo"
-# Ciò che NON va copiato dal sorgente (verrà iniettato a runtime in modo deterministico).
+# What must NOT be copied from the source (will be injected at runtime deterministically).
 _IGNORE = shutil.ignore_patterns(".venv", "venv", "*.key", "__pycache__")
 
 
 @pytest.fixture
 def sample_repo(tmp_path: Path) -> Path:
-    """Un repo di esempio multilinguaggio + artefatti da escludere, in una temp dir."""
+    """A multilanguage sample repo with artifacts to exclude, in a temp dir."""
     root = tmp_path / "repo"
     shutil.copytree(_SAMPLE, root, ignore=_IGNORE)
 
-    # Artefatti che l'ingestione deve escludere (REQ-002):
+    # Artifacts that ingestion must exclude (REQ-002):
     venv_file = root / ".venv" / "lib" / "junk.py"
     venv_file.parent.mkdir(parents=True, exist_ok=True)
     venv_file.write_text("def excluded():\n    return True\n", encoding="utf-8")

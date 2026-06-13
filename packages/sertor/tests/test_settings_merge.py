@@ -1,4 +1,4 @@
-"""Test di `settings_merge` (T024, US2): dedup per command, malformato → fail-fast (D5)."""
+"""Tests for `settings_merge` (T024, US2): dedup by command, malformed → fail-fast (D5)."""
 from __future__ import annotations
 
 import json
@@ -35,8 +35,8 @@ def test_present_with_user_hook_merges_additively(tmp_path: Path):
     assert outcome is Outcome.MERGED
     data = json.loads(p.read_text(encoding="utf-8"))
     cmds = [h["command"] for e in data["hooks"]["SessionStart"] for h in e["hooks"]]
-    assert "echo mine" in cmds  # voce utente preservata
-    assert data["$schema"] == "x"  # chiavi esistenti preservate
+    assert "echo mine" in cmds  # user entry preserved
+    assert data["$schema"] == "x"  # existing keys preserved
     assert len(data["hooks"]["SessionStart"]) == 2  # utente + nostra
 
 

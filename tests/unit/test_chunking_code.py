@@ -1,4 +1,4 @@
-"""Test US2 — chunking code-aware sintattico (REQ-006/007/010/011)."""
+"""Test US2 — syntactic code-aware chunking (REQ-006/007/010/011)."""
 from __future__ import annotations
 
 from sertor_core.services.chunking.code import code_chunks
@@ -44,11 +44,11 @@ def test_python_syntactic_chunks_with_metadata():
     assert chunks is not None
     quals = {c["qualname"] for c in chunks}
     kinds = {c["symbol_kind"] for c in chunks}
-    assert "add" in quals                      # funzione top-level
-    assert "Calculator" in quals               # classe
-    assert "Calculator.add" in quals           # metodo con qualname annidato
+    assert "add" in quals                      # top-level function
+    assert "Calculator" in quals               # class
+    assert "Calculator.add" in quals           # method with nested qualname
     assert {"function", "class", "method"} <= kinds
-    # metadati strutturali: righe 1-based coerenti (REQ-007)
+    # structural metadata: consistent 1-based line numbers (REQ-007)
     for c in chunks:
         assert c["start_line"] >= 1
         assert c["end_line"] >= c["start_line"]
@@ -71,7 +71,7 @@ def test_go_functions_are_chunked():
 
 
 def test_unsupported_language_returns_none():
-    # powershell/sql: grammatica non configurata al 1° rilascio -> None -> fallback (REQ-009)
+    # powershell/sql: grammar not configured at 1st release -> None -> fallback (REQ-009)
     assert code_chunks("function Deploy {}", "powershell") is None
     assert code_chunks("SELECT 1", "sql") is None
 

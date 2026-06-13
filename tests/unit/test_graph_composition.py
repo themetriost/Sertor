@@ -1,7 +1,7 @@
-"""Test US2 — composition del code-graph (FR-010/FR-012/FR-029/FR-031).
+"""Test US2 — code-graph composition (FR-010/FR-012/FR-029/FR-031).
 
-Il grafo è ORTOGONALE a `SERTOR_ENGINE`: factory dedicata, sink cablato da `graph_enabled`,
-motori e facade invariati.
+The graph is ORTHOGONAL to `SERTOR_ENGINE`: dedicated factory, sink wired from `graph_enabled`,
+engines and facade unchanged.
 """
 from __future__ import annotations
 
@@ -24,18 +24,18 @@ def test_build_graph_service_returns_configured_adapter(tmp_path):
         _settings(tmp_path, graph_limit_definitions=3, graph_limit_relations=2,
                   graph_limit_docs=1))
     assert isinstance(service, NetworkxCodeGraph)
-    assert service._limits == (3, 2, 1)                  # limiti da Settings (FR-016)
+    assert service._limits == (3, 2, 1)                  # limits from Settings (FR-016)
 
 
 def test_indexer_gets_graph_sink_only_when_enabled(tmp_path):
     with_graph = composition.build_indexer(_settings(tmp_path))
-    assert with_graph._graph is not None                 # default: build integrato (DA-2)
+    assert with_graph._graph is not None                 # default: integrated build (DA-2)
     without = composition.build_indexer(_settings(tmp_path, graph_enabled=False))
     assert without._graph is None
 
 
 def test_graph_is_orthogonal_to_engine_selection(tmp_path):
-    # Cambiare SERTOR_ENGINE non tocca il grafo e viceversa (FR-012/FR-031).
+    # Changing SERTOR_ENGINE does not affect the graph and vice versa (FR-012/FR-031).
     baseline = composition.build_indexer(_settings(tmp_path, engine="baseline"))
     assert baseline._graph is not None and baseline._lexical is None
     hybrid_no_graph = composition.build_indexer(

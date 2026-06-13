@@ -1,4 +1,4 @@
-"""Test US4 — enumerazione delle pagine + metadati (FR-007)."""
+"""Test US4 — page enumeration + metadata (FR-007)."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -39,21 +39,21 @@ def test_collect_returns_expected_map(tmp_path):
     res = collect(load_profile(cfg))
     assert res.schema == "wiki.collect/1"
     assert res.root == "wiki"
-    # index e log esclusi: una sola pagina di contenuto.
+    # index and log excluded: a single content page.
     assert len(res.pages) == 1
     page = res.pages[0]
-    assert page["rel_path"] == "concepts/rag.md"  # identità POSIX stabile
+    assert page["rel_path"] == "concepts/rag.md"  # stable POSIX identity
     assert page["area"] == "concepts"
     assert page["type"] == "concept"
     assert page["title"] == "RAG"
     assert page["tags"] == ["rag", "x"]
     assert page["frontmatter_present"] is True
     assert page["wikilinks"] == ["chunking"]
-    assert "text" not in page and "body" not in page  # niente corpo (FR-007)
+    assert "text" not in page and "body" not in page  # no body (FR-007)
 
 
 def test_collect_on_doc_only_host():
-    # Stesso enumeratore sull'ospite doc-only: rel_path POSIX, due pagine note.
+    # Same enumerator on the doc-only host: POSIX rel_path, two known pages.
     res = collect(load_profile(_DOC_ONLY))
     rels = {p["rel_path"] for p in res.pages}
     assert rels == {"guides/getting-started.md", "reference/api-overview.md"}
@@ -74,7 +74,7 @@ def test_collect_is_deterministically_ordered(tmp_path):
 
 
 def test_collect_exposes_status_field(tmp_path):
-    # feature 017 (REQ-021): `status` nei metadati, additivo e forward-compatible.
+    # feature 017 (REQ-021): `status` in metadata, additive and forward-compatible.
     cfg = tmp_path / "wiki.config.toml"
     cfg.write_text(_CONFIG, encoding="utf-8")
     wiki = tmp_path / "wiki" / "concepts"
@@ -83,7 +83,7 @@ def test_collect_exposes_status_field(tmp_path):
         "---\ntitle: Old\ntype: concept\ntags: [x]\ncreated: 2026-01-01\n"
         "updated: 2026-01-02\nstatus: superseded\n---\nbody\n", "utf-8"
     )
-    (wiki / "cur.md").write_text(_FM + "body\n", "utf-8")  # senza status
+    (wiki / "cur.md").write_text(_FM + "body\n", "utf-8")  # without status
     meta = {p["rel_path"]: p for p in collect(load_profile(cfg)).pages}
     assert meta["concepts/old.md"]["status"] == "superseded"
-    assert meta["concepts/cur.md"]["status"] == ""  # assente → stringa vuota
+    assert meta["concepts/cur.md"]["status"] == ""  # absent → empty string

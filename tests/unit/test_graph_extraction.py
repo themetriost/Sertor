@@ -1,6 +1,6 @@
-"""Test US1 — estrazione pura del code-graph (FR-001..004, FR-008).
+"""Test US1 — pure code-graph extraction (FR-001..004, FR-008).
 
-Nessun networkx, nessuna rete: l'estrazione è un servizio puro su Document/Chunk.
+No networkx, no network: extraction is a pure service over Document/Chunk.
 """
 from __future__ import annotations
 
@@ -61,7 +61,7 @@ def _edges(data, etype: str) -> set[tuple[str, str]]:
     return {(e.source, e.target) for e in data.edges if e.type == etype}
 
 
-# --- nodi (FR-001/FR-002) -------------------------------------------------------------------
+# --- nodes (FR-001/FR-002) ------------------------------------------------------------------
 
 def test_nodes_cover_modules_symbols_and_docs():
     data = _extract()
@@ -71,25 +71,25 @@ def test_nodes_cover_modules_symbols_and_docs():
     assert by_id["mod_uno.py::Greeter"].kind == "class"
     assert by_id["mod_uno.py::Greeter.salute"].kind == "method"
     assert by_id["mod_uno.py::formato_speciale"].kind == "function"
-    assert by_id["mod_uno.py::formato_speciale"].line is not None  # riga dal chunker (FR-002)
+    assert by_id["mod_uno.py::formato_speciale"].line is not None  # line from chunker (FR-002)
 
 
 def test_contains_follows_qualname_hierarchy():
     data = _extract()
     contains = _edges(data, "contains")
-    assert ("mod_uno.py", "mod_uno.py::Greeter") in contains          # module → top-level
+    assert ("mod_uno.py", "mod_uno.py::Greeter") in contains          # module → top-level symbol
     assert ("mod_uno.py::Greeter", "mod_uno.py::Greeter.salute") in contains  # class → method
     assert ("mod_due.py", "mod_due.py::main") in contains
 
 
-# --- archi relazionali Python (FR-001, parità prototipo) --------------------------------------
+# --- relational Python edges (FR-001, prototype parity) --------------------------------------
 
 def test_calls_edges_resolved_by_name():
     data = _extract()
     calls = _edges(data, "calls")
     assert ("mod_uno.py::Greeter.salute", "mod_uno.py::formato_speciale") in calls
     assert ("mod_due.py::main", "mod_uno.py::formato_speciale") in calls
-    # chiamata via attributo: self.greet() → Base.greet (1 solo candidato)
+    # attribute call: self.greet() → Base.greet (single candidate)
     assert ("mod_uno.py::Greeter.salute", "mod_uno.py::Base.greet") in calls
 
 
@@ -104,7 +104,7 @@ def test_imports_edges_intra_corpus():
 
 
 def test_ambiguous_names_do_not_generate_calls(monkeypatch):
-    # Tre definizioni omonime: con soglia 2 gli archi calls verso "dup" sono OMESSI (FR-004).
+    # Three homonymous definitions: with threshold 2 the calls edges to "dup" are OMITTED (FR-004).
     settings = Settings.load(env_file=None)
     documents = [
         _document(f"m{i}.py", "def dup():\n    return 1\n", DocType.CODE, "python")
@@ -124,12 +124,12 @@ def test_ambiguous_names_do_not_generate_calls(monkeypatch):
 def test_docs_mention_distinctive_symbols():
     data = _extract()
     mentions = _edges(data, "mentions")
-    assert ("guida.md", "mod_uno.py::formato_speciale") in mentions   # underscore → distintivo
-    # "Base" non è distintivo (corto, maiuscola solo iniziale): nessuna menzione spuria
+    assert ("guida.md", "mod_uno.py::formato_speciale") in mentions   # underscore → distinctive
+    # "Base" is not distinctive (short, only initial uppercase): no spurious mention
     assert not [t for s, t in mentions if t.endswith("::Base")]
 
 
-# --- determinismo e copertura dichiarata (FR-003/FR-008) ---------------------------------------
+# --- determinism and declared coverage (FR-003/FR-008) ----------------------------------------
 
 def test_extraction_is_deterministic():
     assert _extract() == _extract()
@@ -140,7 +140,7 @@ def test_coverage_declares_all_ten_languages():
                              "go", "c", "cpp", "php", "ruby"}
     assert set(COVERAGE["python"]) >= {"calls", "imports", "inherits"}
     for lang, kinds in COVERAGE.items():
-        assert isinstance(kinds, tuple), lang   # dichiarazione esplicita, mai assenza silenziosa
+        assert isinstance(kinds, tuple), lang   # explicit declaration, never silent absence
 
 
 def test_coverage_is_persisted_in_graph_data():

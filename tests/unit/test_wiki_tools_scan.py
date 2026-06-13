@@ -1,4 +1,4 @@
-"""Test US1 — scan del lavoro pendente; SC-001 (host-agnostico) e SC-003 (parità hook)."""
+"""Test US1 — scan of pending work; SC-001 (host-agnostic) and SC-003 (hook parity)."""
 from __future__ import annotations
 
 import os
@@ -93,20 +93,20 @@ def test_scan_respects_exclude(tmp_path):
     venv.write_text("junk\n", "utf-8")
     _set_mtime(venv, time.time() + 1000)
     result = scan(load_profile(cfg))
-    assert result.pending == 0  # .venv* escluso
+    assert result.pending == 0  # .venv* excluded
 
 
 def test_sc001_same_scan_on_doc_only_host_unchanged_code(tmp_path):
-    # SC-001: lo STESSO scan gira sull'ospite doc-only cambiando solo la config.
+    # SC-001: the SAME scan runs on the doc-only host by changing only the config.
     result = scan(load_profile(_DOC_ONLY))
     assert result.schema == "wiki.scan/1"
-    assert result.dirs_scanned == ["docs"]  # source-dir diversa, dalla config
+    assert result.dirs_scanned == ["docs"]  # different source-dir, from the config
     assert "wiki" in result.message.lower() or "work" in result.message.lower()
 
 
 def test_sc003_parity_with_hook_logic(tmp_path):
-    # SC-003: a parità di condizioni il conteggio replica l'euristica mtime dell'hook
-    # (file con mtime > mtime(log) contano; gli altri no).
+    # SC-003: under equal conditions the count replicates the hook mtime heuristic
+    # (files with mtime > mtime(log) count; others do not).
     cfg = _make_host(tmp_path)
     anchor = time.time()
     _set_mtime(tmp_path / "wiki" / "log.md", anchor)

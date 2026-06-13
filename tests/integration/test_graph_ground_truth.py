@@ -1,8 +1,8 @@
-"""Test US4 — ground-truth strutturale sul corpus REALE `src/sertor_core` (FR-023..025).
+"""Test US4 — structural ground-truth on the REAL corpus `src/sertor_core` (FR-023..025).
 
-Estrazione + build + navigazione senza rete e senza embeddings (LSC-5/LSC-8). Metrica
-robusta al churn (fix analyze U1): recall ≥80% degli attesi — nuovi chiamanti legittimi non
-rompono il test; la precisione piena vive in `test_graph_languages.py` (corpus chiuso).
+Extraction + build + navigation without network or embeddings (LSC-5/LSC-8). Metric
+robust to churn (fix analyze U1): recall ≥80% of expected — new legitimate callers do not
+break the test; full precision lives in `test_graph_languages.py` (closed corpus).
 """
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ def graph(tmp_path_factory) -> NetworkxCodeGraph:
 
 
 def test_definitions_are_exact(graph):
-    # LSC-1: definizione con path e riga corretti, in un solo lookup.
+    # LSC-1: definition with correct path and line, in a single lookup.
     for truth in GROUND_TRUTH:
         hits = graph.find_symbol(truth.name)
         paths = {h.path for h in hits}
@@ -45,7 +45,7 @@ def test_definitions_are_exact(graph):
 
 
 def test_caller_recall_meets_threshold(graph):
-    # LSC-2 (declinata anti-churn, fix U1): recall ≥80% dei chiamanti attesi.
+    # LSC-2 (anti-churn variant, fix U1): recall ≥80% of expected callers.
     expected_total = 0
     found_total = 0
     for truth in GROUND_TRUTH:
@@ -60,7 +60,7 @@ def test_caller_recall_meets_threshold(graph):
 
 
 def test_doc_recall_meets_threshold(graph):
-    # LSC-3: recall ≥80% dei documenti attesi che menzionano il simbolo.
+    # LSC-3: recall ≥80% of expected documents that mention the symbol.
     expected_total = 0
     found_total = 0
     for truth in GROUND_TRUTH:
@@ -82,4 +82,4 @@ def test_get_context_bundles_real_symbol(graph):
 
 def test_ground_truth_has_at_least_five_symbols():
     assert len(GROUND_TRUTH) >= 5                       # FR-023
-    assert all("\\" not in t.definition_path for t in GROUND_TRUTH)  # POSIX (FR-025)
+    assert all("\\" not in t.definition_path for t in GROUND_TRUTH)  # POSIX paths (FR-025)

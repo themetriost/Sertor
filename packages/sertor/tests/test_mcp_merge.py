@@ -1,4 +1,4 @@
-"""Test del merge `.mcp.json` (T015/T019): creazione, preservazione, idempotenza, malformato."""
+"""Tests for `.mcp.json` merge (T015/T019): creation, preservation, idempotence, malformed."""
 from __future__ import annotations
 
 import json

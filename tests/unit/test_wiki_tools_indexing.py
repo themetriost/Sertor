@@ -1,7 +1,7 @@
-"""Test US5 — orchestrazione indicizzazione (FR-010); no-op disabilitato + collezione separata.
+"""Test US5 — indexing orchestration (FR-010); no-op when disabled + separate collection.
 
-Marker `not cloud`: nessun servizio cloud, nessuna rete. L'indexer è un fake che simula il
-report del facade esistente (la chiamata agli embeddings è dietro l'adapter, non un giudizio LLM).
+Marker `not cloud`: no cloud service, no network. The indexer is a fake that simulates the
+report from the existing facade (the embeddings call is behind the adapter, not an LLM judgment).
 """
 from __future__ import annotations
 
@@ -43,7 +43,7 @@ class _FakeReport:
 
 
 class _FakeIndexer:
-    """Registra le chiamate per provare la separazione di collezione e la rigenerazione."""
+    """Records calls to verify collection separation and regeneration."""
 
     def __init__(self, collection: str):
         self.collection = collection
@@ -56,7 +56,7 @@ class _FakeIndexer:
 
 @pytest.mark.cloud
 def test_index_real_facade_marker_placeholder():
-    # Segnaposto: il percorso col facade reale richiederebbe embeddings → marcato cloud.
+    # Placeholder: the path with the real facade would require embeddings → marked cloud.
     pytest.skip("percorso con facade reale escluso dalla CI locale")
 
 
@@ -74,15 +74,15 @@ def test_indexes_into_separate_collection(tmp_path):
     fake = _FakeIndexer(collection="wiki__fake")
 
     res = index_wiki(p, indexer_factory=lambda settings: fake)
-    assert res.collection == "wiki__fake"  # collezione separata dalle sorgenti
+    assert res.collection == "wiki__fake"  # collection separate from sources
     assert res.documents == 7
     assert res.regenerated is True
-    # Ha indicizzato la radice del wiki, in rebuild (rigenerazione indipendente).
+    # Indexed the wiki root, with rebuild (independent regeneration).
     assert fake.calls == [(p.root_path, True)]
 
 
 def test_regeneration_is_independent(tmp_path):
-    # Rigenerare il wiki invoca l'indexer del solo corpus wiki: le sorgenti non sono toccate qui.
+    # Regenerating the wiki invokes only the wiki corpus indexer: sources are not touched here.
     p = _profile(tmp_path, '\n[rag]\nenabled = true\ncorpus = "wiki"\n')
     seen_corpus = {}
 
@@ -91,5 +91,5 @@ def test_regeneration_is_independent(tmp_path):
         return _FakeIndexer(collection=f"{settings.corpus}__fake")
 
     res = index_wiki(p, indexer_factory=factory)
-    assert seen_corpus["corpus"] == "wiki"  # corpus override dalla config rag
+    assert seen_corpus["corpus"] == "wiki"  # corpus overridden from rag config
     assert res.collection == "wiki__fake"

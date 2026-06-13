@@ -1,4 +1,4 @@
-"""Test dell'append `.gitignore` (T015/T019): creazione, idempotenza, preservazione, dedup."""
+"""Tests for `.gitignore` append (T015/T019): creation, idempotence, preservation, dedup."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -36,4 +36,4 @@ def test_partial_dedup(tmp_path: Path):
     gi.write_text(".sertor/.env\n", encoding="utf-8")
     outcome, _ = append_gitignore(gi)
     assert outcome is Outcome.MERGED
-    assert gi.read_text(encoding="utf-8").count(".sertor/.env") == 1  # non duplicato
+    assert gi.read_text(encoding="utf-8").count(".sertor/.env") == 1  # not duplicated

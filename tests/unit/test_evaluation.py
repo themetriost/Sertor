@@ -1,4 +1,4 @@
-"""Test US4 — valutazione della pertinenza: hit-rate@k e MRR@10 (REQ-011)."""
+"""Test US4 — relevance evaluation: hit-rate@k and MRR@10 (REQ-011)."""
 from __future__ import annotations
 
 from sertor_core.config.settings import Settings
@@ -18,17 +18,17 @@ def _engine(sample_repo):
 
 def test_evaluate_reports_metrics(sample_repo):
     engine = _engine(sample_repo)
-    # query = testo di un chunk noto → il suo file deve essere fra i top risultati
+    # query = text of a known chunk → its file must be among the top results
     gt = [("def add(a, b):\n    return a + b", ["app/calculator.py"])]
     report = evaluate(engine, gt)
     assert report.queries == 1
     assert set(report.hit_rate.keys()) == {1, 3, 5, 10}
     assert 0.0 <= report.mrr <= 1.0
-    assert report.hit_rate[10] >= report.hit_rate[1]   # monotonia in k
+    assert report.hit_rate[10] >= report.hit_rate[1]   # monotonic in k
 
 
 def test_evaluate_perfect_hit_at_1():
-    # match esatto come primo risultato (FakeEmbedder deterministico)
+    # exact match as first result (deterministic FakeEmbedder)
     from sertor_core.domain.entities import EmbeddedChunk
 
     emb = FakeEmbedder(dim=8)
@@ -55,4 +55,4 @@ def test_evaluate_empty_ground_truth_is_zero(sample_repo):
     report = evaluate(engine, [])
     assert report.queries == 0
     assert report.mrr == 0.0
-    assert all(v == 0.0 for v in report.hit_rate.values())   # nessun errore su input vuoto
+    assert all(v == 0.0 for v in report.hit_rate.values())   # no error on empty input

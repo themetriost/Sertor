@@ -1,4 +1,4 @@
-"""Test US1 — caricamento/validazione del profilo dell'ospite (FR-001, Principio IV/X)."""
+"""Test US1 — loading/validation of the host profile (FR-001, Principio IV/X)."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -29,7 +29,7 @@ def test_load_valid_profile_from_disk():
 
 
 def test_sertor_default_profile_is_external_file():
-    # Il default = profilo Sertor è un FILE esterno, non costanti nel codice (Principio X).
+    # The default = Sertor profile is an external FILE, not constants in code (Principio X).
     p = load_profile(_SERTOR)
     assert p.profile == "code+doc"
     assert p.language == "it"
@@ -49,7 +49,7 @@ def test_malformed_toml_raises_config_error(tmp_path):
 
 
 def test_missing_required_field_raises(tmp_path):
-    cfg = _write(tmp_path, 'language = "it"\nroot = "wiki"\n')  # niente taxonomy
+    cfg = _write(tmp_path, 'language = "it"\nroot = "wiki"\n')  # no taxonomy
     with pytest.raises(ConfigError):
         load_profile(cfg)
 
@@ -81,10 +81,10 @@ def test_taxonomy_dir_missing_is_skipped_not_error(tmp_path):
         '[[taxonomy]]\nname="c"\ndir="concepts"\ntype="concept"\n'
         '[[taxonomy]]\nname="t"\ndir="tech"\ntype="tech"\n',
     )
-    (tmp_path / "wiki" / "concepts").mkdir(parents=True)  # 'tech' assente sul disco
+    (tmp_path / "wiki" / "concepts").mkdir(parents=True)  # 'tech' absent on disk
     p = load_profile(cfg)
     present = {e.name for e in p.existing_taxonomy()}
-    assert present == {"c"}  # 'tech' (dir mancante) saltata, non errore
+    assert present == {"c"}  # 'tech' (missing dir) skipped, not an error
 
 
 def test_duplicate_taxonomy_names_raise(tmp_path):

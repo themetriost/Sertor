@@ -1,4 +1,4 @@
-"""Test US1/US2/US5 — BaselineEngine: index, query, errori, modalità (REQ-001..014)."""
+"""Test US1/US2/US5 — BaselineEngine: index, query, errors, modes (REQ-001..014)."""
 from __future__ import annotations
 
 import pytest
@@ -17,7 +17,7 @@ COLL = "baseline-coll"
 
 
 class _Boom(FakeEmbedder):
-    """Embedder che simula un provider non disponibile."""
+    """Embedder that simulates an unavailable provider."""
 
     def embed(self, texts):
         raise EmbeddingError("down", provider="fake", reason="net", retriable=True)
@@ -38,7 +38,7 @@ def test_index_aborts_without_corrupting_existing_index(sample_repo):
     engine = BaselineEngine(_Boom(dim=8), store, COLL, S)
     with pytest.raises(EmbeddingError):
         engine.index(sample_repo)
-    # provider down durante l'embed (prima del reset): indice preesistente intatto (REQ-004)
+    # provider down during embed (before reset): pre-existing index intact (REQ-004)
     assert store.exists(COLL)
     assert "old#0" in store._data[COLL]
 
@@ -63,29 +63,29 @@ def test_query_k_default_and_override(sample_repo):
     engine = BaselineEngine(FakeEmbedder(dim=8), InMemoryStore(), COLL, S, default_k=2)
     engine.index(sample_repo)
     assert len(engine.query("x")) == 2              # default_k (REQ-008)
-    assert len(engine.query("x", k=1000)) >= 4      # k>disponibili -> tutti
+    assert len(engine.query("x", k=1000)) >= 4      # k > available -> all
 
 
 def test_query_missing_index_raises(sample_repo):
     engine = BaselineEngine(FakeEmbedder(dim=8), InMemoryStore(), "mai-creata", S)
-    with pytest.raises(IndexNotFoundError):          # REQ-009: errore esplicito, non []
+    with pytest.raises(IndexNotFoundError):          # REQ-009: explicit error, not []
         engine.query("x")
 
 
-# -------------------------------------------- FEAT-011: ensure_index (check strict estratto, D6)
+# -------------------------------------------- FEAT-011: ensure_index (strict check extracted, D6)
 def test_ensure_index_missing_raises():
     engine = BaselineEngine(FakeEmbedder(dim=8), InMemoryStore(), "mai-creata", S)
-    with pytest.raises(IndexNotFoundError):          # via strict riusabile dalla CLI (FR-012)
+    with pytest.raises(IndexNotFoundError):          # via strict reusable from CLI (FR-012)
         engine.ensure_index()
 
 
 def test_ensure_index_populated_returns_none(sample_repo):
     engine = _indexed_engine(sample_repo)
-    assert engine.ensure_index() is None             # indice presente -> nessuna eccezione
+    assert engine.ensure_index() is None             # index present -> no exception
 
 
 def test_query_delegates_to_ensure_index(sample_repo, monkeypatch):
-    # query() non deve duplicare il check: deve invocare ensure_index() (Boy Scout Rule, fix F1)
+    # query() must not duplicate the check: it must call ensure_index() (Boy Scout Rule, fix F1)
     engine = _indexed_engine(sample_repo)
     calls = {"n": 0}
     monkeypatch.setattr(engine, "ensure_index", lambda: calls.__setitem__("n", calls["n"] + 1))
@@ -95,13 +95,13 @@ def test_query_delegates_to_ensure_index(sample_repo, monkeypatch):
 
 def test_query_provider_down_raises(sample_repo):
     store = InMemoryStore()
-    BaselineEngine(FakeEmbedder(dim=8), store, COLL, S).index(sample_repo)  # popola l'indice
+    BaselineEngine(FakeEmbedder(dim=8), store, COLL, S).index(sample_repo)  # populate the index
     engine = BaselineEngine(_Boom(dim=8), store, COLL, S)
     with pytest.raises(EmbeddingError):              # REQ-010
         engine.query("x")
 
 
-# --------------------------------------------------------------------- US5: modalità/config
+# --------------------------------------------------------------------- US5: modes/config
 def test_mode_name_is_stable():
     assert BaselineEngine.name == "baseline"         # REQ-013
 
@@ -111,5 +111,5 @@ def test_build_baseline_engine_local(monkeypatch, tmp_path):
     monkeypatch.setenv("SERTOR_INDEX_DIR", str(tmp_path / "idx"))
     engine = build_baseline_engine(Settings.load(env_file=None))
     assert engine.name == "baseline"
-    assert isinstance(engine._embedder, OllamaEmbedder)   # provider locale via config (REQ-012)
+    assert isinstance(engine._embedder, OllamaEmbedder)   # local provider via config (REQ-012)
     assert isinstance(engine._store, ChromaStore)
