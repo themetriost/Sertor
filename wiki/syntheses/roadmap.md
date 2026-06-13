@@ -32,7 +32,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | CLI — installer (`sertor install`) | — | ✅ `wiki` (PR #22) + **`rag` su master (2026-06-12)** — validato live su Kaelen; `governance` = stub |
 | Distribuzione multi-assistente: GitHub Copilot (+ Codex Could) | — | 👍 **da decomporre** (decisione utente 2026-06-12) |
 | Tema lingua (asset installer + seed structure init) | — | ✅ **risolto come design (2026-06-12)**: asset in inglese canonico, contenuto nella lingua dell'ospite — confluito in FEAT-007 |
-| Igiene radice ospite (installer, asse DOVE) | — | 🔄 **analyze OK (2026-06-13, `specs/016`)** — copertura 100%, 0 critical; prossimo `/speckit-implement` |
+| Igiene radice ospite (installer, asse DOVE) | — | 🔄 **implementata (2026-06-13, `specs/016`)** — 24/25 task, 410 test verdi; PR su conferma |
 | **Collaborazione multiutente/enterprise** (asse CHI, workflow) | — | 📋 **EPICA aperta, differita (2026-06-12)** — `requirements/multiutente/epic.md`; da affrontare quando il caso d'uso team è concreto |
 
 *Legenda:* ✅ su master · 🧪 operativo, consolidamento aperto · 📋 pianificato · 💀 ramo morto (non su master).
@@ -61,8 +61,11 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   auto-discovery nel CLI (oltre alla convenzione `--root .`) per non rompere le invocazioni ad-hoc;
   `--mcp-scope project|local` via `claude` CLI dietro `CommandRunner`; fix Sertor one-shot. *Tasks:*
   25 task in 6 fasi (MVP=US1 radice minima; US2 auto-discovery+asset+Sertor one-shot; US3 scope MCP).
-  *Prossimo passo:* `/speckit-implement` (analyze OK: copertura 100%, 0 critical/high; 4 ritocchi
-  applicati). *Blocchi:* nessuno.
+  *Stato:* **implementata** (24/25 task; T025 re-index = post-merge). Consegnato: config in `wiki/`
+  con auto-discovery del CLI; `--mcp-scope project|local` via `claude` dietro `CommandRunner`
+  (`MCP_REGISTER`, fail-fast); fix Sertor one-shot (config spostata, asset ri-sync, auto-discovery
+  verificata dal vivo). 84+326 test verdi, ruff pulito. *Prossimo passo:* PR verso master su conferma
+  utente → al merge distill + re-index + riavvio MCP. *Blocchi:* nessuno.
 
 ### 📋 PLANNED (per priorità)
 - **Agenzia RAG incorporata — dote differita (Could)**: la capacità agentic RAG è ✅ **soddisfatta

@@ -12,8 +12,10 @@ sottile (Principio I): `uv` è dietro il `CommandRunner` iniettabile.
 from __future__ import annotations
 
 import json
+import logging
 
 from sertor_core.domain.errors import ConfigError, SertorError
+from sertor_core.observability.logging import log_event
 from sertor_installer.artifacts import (
     Artifact,
     ArtifactKind,
@@ -34,13 +36,30 @@ _UV = "uv"
 # nome esplicito valido per il progetto-runtime dell'ospite (mai pubblicato).
 _RUNTIME_NAME = "sertor-runtime"
 
+_CLAUDE = "claude"
+_SERVER_NAME = "sertor-rag"
+# Sentinel leggibile (NON un path di repo): in scope local non si scrive nulla nel repository
+# (feature 016, F1 analyze). Passa la validazione di `Artifact` (relativo, no `..`).
+_MCP_REGISTER_LABEL = "(mcp: client registry)"
+
 
 class DependencyError(SertorError):
     """Bootstrap delle dipendenze fallito: `uv` assente o `uv init`/`uv add` non riuscito."""
 
 
-def build_rag_plan(profile: RagHostProfile, with_deps: bool = True) -> list[Artifact]:
-    """Lista ordinata di `Artifact` (DEPENDENCIES saltato se `with_deps=False`)."""
+class McpRegistrationError(SertorError):
+    """Registrazione MCP in scope `local` non riuscita: `claude` assente o comando fallito."""
+
+
+def build_rag_plan(
+    profile: RagHostProfile, with_deps: bool = True, mcp_scope: str = "project"
+) -> list[Artifact]:
+    """Lista ordinata di `Artifact`.
+
+    `with_deps=False` salta DEPENDENCIES. `mcp_scope` (feature 016) sceglie come si rende noto il
+    server MCP: `project` → merge di `.mcp.json` in radice; `local` → registrazione nel client via
+    `claude` CLI (NESSUN file nel repo, `MCP_REGISTER` al posto di `MCP_MERGE`).
+    """
     plan: list[Artifact] = []
     if with_deps:
         plan.append(
@@ -54,14 +73,24 @@ def build_rag_plan(profile: RagHostProfile, with_deps: bool = True) -> list[Arti
             WriteStrategy.MERGE_ENV,
         )
     )
-    plan.append(
-        Artifact(
-            ArtifactKind.MCP_MERGE,
-            "rag/mcp.server.json.tmpl",
-            ".mcp.json",
-            WriteStrategy.MERGE_JSON,
+    if mcp_scope == "local":
+        plan.append(
+            Artifact(
+                ArtifactKind.MCP_REGISTER,
+                "rag/mcp.server.json.tmpl",
+                _MCP_REGISTER_LABEL,
+                WriteStrategy.REGISTER_CLI,
+            )
         )
-    )
+    else:
+        plan.append(
+            Artifact(
+                ArtifactKind.MCP_MERGE,
+                "rag/mcp.server.json.tmpl",
+                ".mcp.json",
+                WriteStrategy.MERGE_JSON,
+            )
+        )
     plan.append(
         Artifact(ArtifactKind.GITIGNORE_APPEND, None, ".gitignore", WriteStrategy.APPEND_LINES)
     )
@@ -112,6 +141,46 @@ def _apply_gitignore(profile: RagHostProfile) -> ArtifactOutcome:
     return ArtifactOutcome(".gitignore", outcome, detail)
 
 
+def _server_entry_json(profile: RagHostProfile) -> str:
+    """Entry JSON del server (compatta) per `claude mcp add-json` — stesso template di MCP_MERGE."""
+    entry = json.loads(read_asset_text("rag/mcp.server.json.tmpl").format(corpus=profile.corpus))
+    return json.dumps(entry, ensure_ascii=False)
+
+
+def _apply_mcp_register(profile: RagHostProfile, runner: CommandRunner) -> ArtifactOutcome:
+    """`REGISTER_CLI` (scope local): registra `sertor-rag` nel client, NESSUN file nel repo.
+
+    Idempotente: se il server è già registrato (`claude mcp get`) → SKIPPED. Fail-fast (REQ-305):
+    `claude` assente o `add-json` fallito → `McpRegistrationError` con comando manuale; non scrive
+    nulla in radice (l'artefatto `.mcp.json` non è nel piano in scope local).
+    """
+    entry_json = _server_entry_json(profile)
+    manual = f"claude mcp add-json {_SERVER_NAME} '{entry_json}' --scope local"
+    if not runner.is_available(_CLAUDE):
+        raise McpRegistrationError(
+            "`claude` non è disponibile sul PATH: impossibile registrare il server in scope local. "
+            f"Installa Claude Code oppure registra a mano: {manual}"
+        )
+    # idempotenza: server già presente → skip (nessuna seconda registrazione)
+    if runner.run([_CLAUDE, "mcp", "get", _SERVER_NAME], cwd=profile.target_root).ok:
+        log_event(logging.INFO, "mcp_register", server=_SERVER_NAME, scope="local",
+                  outcome="skipped")
+        return ArtifactOutcome(
+            _MCP_REGISTER_LABEL, Outcome.SKIPPED, f"{_SERVER_NAME} già registrato"
+        )
+    res = runner.run(
+        [_CLAUDE, "mcp", "add-json", _SERVER_NAME, entry_json, "--scope", "local"],
+        cwd=profile.target_root,
+    )
+    if not res.ok:
+        raise McpRegistrationError(
+            f"`claude mcp add-json` fallito: {res.stderr.strip() or res.returncode}. "
+            f"Comando manuale: {manual}"
+        )
+    log_event(logging.INFO, "mcp_register", server=_SERVER_NAME, scope="local", outcome="created")
+    return ArtifactOutcome(_MCP_REGISTER_LABEL, Outcome.CREATED, f"{_SERVER_NAME} (scope local)")
+
+
 def execute_rag_plan(
     plan: list[Artifact], profile: RagHostProfile, runner: CommandRunner
 ) -> InstallReport:
@@ -125,6 +194,8 @@ def execute_rag_plan(
                 outcome = _apply_env(profile)
             elif art.kind is ArtifactKind.MCP_MERGE:
                 outcome = _apply_mcp(profile)
+            elif art.kind is ArtifactKind.MCP_REGISTER:
+                outcome = _apply_mcp_register(profile, runner)
             elif art.kind is ArtifactKind.GITIGNORE_APPEND:
                 outcome = _apply_gitignore(profile)
             else:  # pragma: no cover — kind ignoto è un bug, non un input

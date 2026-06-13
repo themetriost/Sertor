@@ -15,7 +15,7 @@
 ## 0. Host-agnostico: l'ospite si configura, non si presume
 
 La capacità wiki è **disaccoppiata dal progetto-ospite** (Principio X della costituzione). Tutto ciò che
-varia tra progetti vive in **`wiki.config.toml`** alla radice dell'ospite — **unica fonte di specificità**:
+varia tra progetti vive in **`wiki.config.toml`** (in `wiki/` sull'ospite) — **unica fonte di specificità**:
 
 | Chiave config | Cosa definisce |
 |---|---|
@@ -65,8 +65,9 @@ Il bookkeeping **meccanico** è codice host-agnostico già pronto: la CLI **`ser
 | `migrate` | splitta retroattivamente il log monolitico in partizioni giornaliere | `wiki.migrate/1` |
 | `upsert-index` | inserisce/aggiorna la riga `- [[page]] — summary` nell'indice (sommario LLM-authored) | `wiki.upsert_index/1` |
 
-Invocazione: `sertor-wiki-tools <op> --config wiki.config.toml [--json]` (o il console-script
-`sertor-wiki-tools`). Con `--json` ottieni il contratto versionato; senza, un sommario umano.
+Invocazione: `sertor-wiki-tools <op> --config wiki/wiki.config.toml --root . [--json]` (oppure, da
+radice ospite, basta `sertor-wiki-tools <op>`: la CLI fa auto-discovery di `wiki/wiki.config.toml`).
+Con `--json` ottieni il contratto versionato; senza, un sommario umano.
 
 **A te (LLM) resta il GIUDIZIO**, che la CLI non fa: *cosa* scrivere e il *perché*, se una pagina è nuova
 o va aggiornata, *quali* backlink hanno senso, se due claim si **contraddicono**, se un claim è superato.

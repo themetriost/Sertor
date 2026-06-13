@@ -177,6 +177,7 @@ uv run sertor install rag --backend azure
 # varianti:
 uv run sertor install rag --backend local --no-rerank   # Ollama, senza reranker
 uv run sertor install rag --no-deps                      # solo scaffold di config (no uv add)
+uv run sertor install rag --mcp-scope local              # niente .mcp.json nel repo (registra nel client)
 uv run sertor install rag --target C:\path\repo --corpus mioprogetto --json
 ```
 
@@ -186,7 +187,8 @@ Cosa fa (tutto **senza** indicizzare — install ≠ run):
 |---|---|---|
 | Progetto Python + dipendenze (`uv init --bare` + `uv add sertor-core[azure,mcp,graph,rerank]`) | `<target>/.sertor/` | `uv add` idempotente; `uv init` saltato se già inizializzato |
 | `.env` (template per backend, **segreti vuoti** da riempire) | `<target>/.sertor/.env` | merge additivo per-chiave (mai sovrascrive i tuoi valori) |
-| `.mcp.json` (server `sertor-rag` via `uv run --directory .sertor`) | **radice host** | merge additivo (preserva gli altri server MCP) |
+| `.mcp.json` (server `sertor-rag` via `uv run --directory .sertor`) — scope `project` (default) | **radice host** | merge additivo (preserva gli altri server MCP) |
+| Registrazione MCP nel client (`claude mcp add-json … --scope local`) — scope `local` | **fuori dal repo** (`~/.claude.json`) | idempotente (skip se già registrato); fail-fast se `claude` manca |
 | `.gitignore` (`.sertor/.venv/`, `.sertor/.index*`, `.sertor/.env`) | **radice host** | append dedup |
 
 Default: backend `azure`, tutti gli extra (`mcp`+`graph`+`rerank`) + quello del backend; `--no-graph`
@@ -206,3 +208,24 @@ uv run --directory .sertor sertor-rag index ..   # indicizza i sorgenti host, es
 > **Nota distribuzione (interim).** L'esecuzione standalone via `uvx --from "git+…#subdirectory=packages/sertor"`
 > è **verificata**: `uv` risolve `sertor-core` scoprendo il workspace dal checkout git (lo costruisce
 > dallo stesso repo, non da PyPI). In sviluppo dal repo Sertor si usa `uv run sertor install rag`.
+
+## 7. Igiene della radice host: cosa resta e perché
+
+L'installer tiene la **radice dell'ospite minima e prevedibile**. Dopo `install wiki`/`install rag`
+in radice restano **solo** questi residenti, ciascuno per un motivo:
+
+| Residente | Perché è in radice |
+|---|---|
+| `.claude/`, `CLAUDE.md` | li legge il client (Claude Code) lì; posizione non configurabile |
+| `wiki/` | documentazione del progetto, by-design; **contiene** `wiki/wiki.config.toml` (la config del wiki non è più sparsa in radice) |
+| `.gitignore` | append delle voci di runtime |
+| `.sertor/` | **unica** sede del runtime RAG (progetto, `.venv`, indice, `.env`): nulla del runtime finisce in radice |
+| `.mcp.json` | **solo** con `--mcp-scope project` (default): il project-scope di Claude Code DEVE stare in radice. Con `--mcp-scope local` non c'è alcun file MCP nel repo |
+
+**Config del wiki in `wiki/`.** Gli strumenti la localizzano con `--config wiki/wiki.config.toml
+--root .` oppure, dalla radice host, senza flag (auto-discovery: `sertor-wiki-tools <op>` cerca
+`./wiki.config.toml` e poi `./wiki/wiki.config.toml`).
+
+> **Migrazione di ospiti già installati**: fuori ambito. Su un ospite con un vecchio
+> `wiki.config.toml` in radice, l'installer non lo sposta né lo rimuove; per adottare il nuovo layout
+> sposta il file in `wiki/` a mano (i path interni — `root = "wiki"` — restano validi con `--root .`).

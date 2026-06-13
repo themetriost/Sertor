@@ -31,7 +31,7 @@ verifiche per SC-001..006. Tutti i test girano **senza rete** (`FakeCommandRunne
 
 **Purpose**: baseline verde prima di toccare il codice.
 
-- [ ] T001 Stabilire la baseline: `uv run pytest packages/sertor -q` + `uv run pytest tests/unit -q -k wiki_tools` verdi e `uv run ruff check packages src` pulito (nessun nuovo pacchetto introdotto da questa feature).
+- [X] T001 Stabilire la baseline: `uv run pytest packages/sertor -q` + `uv run pytest tests/unit -q -k wiki_tools` verdi e `uv run ruff check packages src` pulito (nessun nuovo pacchetto introdotto da questa feature).
 
 ---
 
@@ -41,8 +41,8 @@ verifiche per SC-001..006. Tutti i test girano **senza rete** (`FakeCommandRunne
 
 **⚠️ CRITICAL**: completare prima delle story che li usano.
 
-- [ ] T002 [P] Estendere il doppio `FakeCommandRunner` (in `packages/sertor/tests/conftest.py`) per scriptare la disponibilità di `claude` e gli esiti di `claude mcp get`/`claude mcp add-json` (record delle chiamate, returncode configurabile). Blocca i test US3.
-- [ ] T003 [P] Aggiungere un helper di asserzione sul contenuto della radice host (set delle entry top-level di un `tmp_path`) in `packages/sertor/tests/conftest.py`. Blocca i test di collocazione US1/US3.
+- [X] T002 [P] Estendere il doppio `FakeCommandRunner` (in `packages/sertor/tests/conftest.py`) per scriptare la disponibilità di `claude` e gli esiti di `claude mcp get`/`claude mcp add-json` (record delle chiamate, returncode configurabile). Blocca i test US3.
+- [X] T003 [P] Aggiungere un helper di asserzione sul contenuto della radice host (set delle entry top-level di un `tmp_path`) in `packages/sertor/tests/conftest.py`. Blocca i test di collocazione US1/US3.
 
 **Checkpoint**: doppi pronti — le story possono procedere.
 
@@ -56,11 +56,11 @@ verifiche per SC-001..006. Tutti i test girano **senza rete** (`FakeCommandRunne
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] In `packages/sertor/src/sertor_installer/install_wiki.py`: cambiare `_CONFIG_TARGET` da `"wiki.config.toml"` a `"wiki/wiki.config.toml"`; in `_apply_config` aggiungere `dest.parent.mkdir(parents=True, exist_ok=True)` prima della scrittura (copre FR-002 lato collocazione).
-- [ ] T005 [US1] In `install_wiki._apply_structure`: chiamare `load_profile(config_path, root_override=target_root)` così la tassonomia si crea sotto `<host>/wiki` con la config in `wiki/` (verifica: `root="wiki"` del template invariato).
-- [ ] T006 [P] [US1] Test in `packages/sertor/tests/test_install_wiki.py`: `install wiki` scrive `wiki/wiki.config.toml` (non in radice), `load_profile` del file generato è valido, la struttura è creata sotto `<host>/wiki`; re-run → `wiki/wiki.config.toml` `skipped` (idempotenza).
-- [ ] T007 [P] [US1] Test-guardia REQ-301 in `packages/sertor/tests/test_install_rag.py`: nessun `Artifact` del piano RAG ha `target_rel` in radice oltre `.mcp.json` e `.gitignore` (tutto il resto sotto `.sertor/`).
-- [ ] T008 [P] [US1] Test REQ-306 (collocazione end-to-end) in `packages/sertor/tests/test_install_wiki.py` (o nuovo `test_root_hygiene.py`): dopo `install wiki` + piano RAG `--no-deps` con scope project, il set delle entry di radice è esattamente `{.claude, CLAUDE.md, wiki, .gitignore, .mcp.json, .sertor}` (usa l'helper T003).
+- [X] T004 [US1] In `packages/sertor/src/sertor_installer/install_wiki.py`: cambiare `_CONFIG_TARGET` da `"wiki.config.toml"` a `"wiki/wiki.config.toml"`; in `_apply_config` aggiungere `dest.parent.mkdir(parents=True, exist_ok=True)` prima della scrittura (copre FR-002 lato collocazione).
+- [X] T005 [US1] In `install_wiki._apply_structure`: chiamare `load_profile(config_path, root_override=target_root)` così la tassonomia si crea sotto `<host>/wiki` con la config in `wiki/` (verifica: `root="wiki"` del template invariato).
+- [X] T006 [P] [US1] Test in `packages/sertor/tests/test_install_wiki.py`: `install wiki` scrive `wiki/wiki.config.toml` (non in radice), `load_profile` del file generato è valido, la struttura è creata sotto `<host>/wiki`; re-run → `wiki/wiki.config.toml` `skipped` (idempotenza).
+- [X] T007 [P] [US1] Test-guardia REQ-301 in `packages/sertor/tests/test_install_rag.py`: nessun `Artifact` del piano RAG ha `target_rel` in radice oltre `.mcp.json` e `.gitignore` (tutto il resto sotto `.sertor/`).
+- [X] T008 [P] [US1] Test REQ-306 (collocazione end-to-end) in `packages/sertor/tests/test_install_wiki.py` (o nuovo `test_root_hygiene.py`): dopo `install wiki` + piano RAG `--no-deps` con scope project, il set delle entry di radice è esattamente `{.claude, CLAUDE.md, wiki, .gitignore, .mcp.json, .sertor}` (usa l'helper T003).
 
 **Checkpoint**: nuovo install → radice pulita e prevedibile (MVP consegnabile).
 
@@ -74,14 +74,14 @@ verifiche per SC-001..006. Tutti i test girano **senza rete** (`FakeCommandRunne
 
 ### Implementation for User Story 2
 
-- [ ] T009 [US2] Auto-discovery del `--config` in `src/sertor_core/wiki_tools/__main__.py`: se `--config` assente cerca `./wiki.config.toml` poi `./wiki/wiki.config.toml`; se trovata sotto `wiki/` e `--root` assente imposta `root_override=CWD`; nessuna trovata → `ConfigError` (Principio IV). `--config`/`--root` espliciti hanno precedenza (copre FR-002/FR-003, SC-002).
-- [ ] T010 [P] [US2] Test auto-discovery (suite wiki_tools, es. `tests/unit/test_wiki_tools_cli.py`): config in radice → usata; solo in `wiki/` → usata con root=CWD; entrambe assenti → `ConfigError`; `--config` esplicito bypassa la ricerca; `--root` esplicito vince sull'auto-impostazione. **Asserire host-agnosticità (F4 analyze):** la risoluzione usa solo path relativi alla CWD, nessun path Sertor cablato.
-- [ ] T011 [P] [US2] Aggiornare l'hook eseguibile `packages/sertor/src/sertor_installer/assets/claude/hooks/wiki-pending-check.ps1`: `$config = Join-Path $root 'wiki/wiki.config.toml'` e invocazione `scan --config $config` coerente.
-- [ ] T012 [P] [US2] Aggiornare prosa ed esempi di invocazione negli asset `packages/sertor/src/sertor_installer/assets/claude/**` (SKILL.md, wiki-playbook.md, ops/*.md, commands/wiki.md, agents/wiki-curator.md, page-craft.md, wiki-craft.md, log-craft.md) e `assets/claude-md-block.md` alla nuova sede/convenzione (`--config wiki/wiki.config.toml --root .`, "config in `wiki/`").
-- [ ] T013 [P] [US2] Aggiornare i commenti di `packages/sertor/src/sertor_installer/assets/wiki.config.toml.tmpl` (valore `root="wiki"` INVARIATO; annotare che il file vive in `wiki/`).
-- [ ] T014 [US2] Fix one-shot del repo Sertor: **spostare** `wiki.config.toml` → `wiki/wiki.config.toml` (il *rename* a livello git lo registra il `configuration-manager` in fase di commit; qui si sposta il file + si riallinea il contenuto); ri-sincronizzare `.claude/` dagli asset aggiornati; aggiornare `CLAUDE.md` di radice (esempi `append-log`, blocco rituale) e gli esempi del playbook in `.claude/skills/wiki-author/`. (Dipende da T004, T009, T011, T012, T013; F3 analyze.)
-- [ ] T015 [US2] Aggiornare/verificare la guardia di sync `packages/sertor/tests/test_host_agnostic.py`: `.claude/` di Sertor combacia con gli asset dopo il riallineamento (FR-007/FR-008).
-- [ ] T016 [P] [US2] Test-guardia REQ-303 in `packages/sertor/tests/` (nuovo `test_no_legacy_config_path.py`): nessun asset sotto `assets/claude/**` né `.claude/**` referenzia il vecchio path radice (`wiki.config.toml` senza prefisso `wiki/`) in un'invocazione `--config` o nel hook.
+- [X] T009 [US2] Auto-discovery del `--config` in `src/sertor_core/wiki_tools/__main__.py`: se `--config` assente cerca `./wiki.config.toml` poi `./wiki/wiki.config.toml`; se trovata sotto `wiki/` e `--root` assente imposta `root_override=CWD`; nessuna trovata → `ConfigError` (Principio IV). `--config`/`--root` espliciti hanno precedenza (copre FR-002/FR-003, SC-002).
+- [X] T010 [P] [US2] Test auto-discovery (suite wiki_tools, es. `tests/unit/test_wiki_tools_cli.py`): config in radice → usata; solo in `wiki/` → usata con root=CWD; entrambe assenti → `ConfigError`; `--config` esplicito bypassa la ricerca; `--root` esplicito vince sull'auto-impostazione. **Asserire host-agnosticità (F4 analyze):** la risoluzione usa solo path relativi alla CWD, nessun path Sertor cablato.
+- [X] T011 [P] [US2] Aggiornare l'hook eseguibile `packages/sertor/src/sertor_installer/assets/claude/hooks/wiki-pending-check.ps1`: `$config = Join-Path $root 'wiki/wiki.config.toml'` e invocazione `scan --config $config` coerente.
+- [X] T012 [P] [US2] Aggiornare prosa ed esempi di invocazione negli asset `packages/sertor/src/sertor_installer/assets/claude/**` (SKILL.md, wiki-playbook.md, ops/*.md, commands/wiki.md, agents/wiki-curator.md, page-craft.md, wiki-craft.md, log-craft.md) e `assets/claude-md-block.md` alla nuova sede/convenzione (`--config wiki/wiki.config.toml --root .`, "config in `wiki/`").
+- [X] T013 [P] [US2] Aggiornare i commenti di `packages/sertor/src/sertor_installer/assets/wiki.config.toml.tmpl` (valore `root="wiki"` INVARIATO; annotare che il file vive in `wiki/`).
+- [X] T014 [US2] Fix one-shot del repo Sertor: **spostare** `wiki.config.toml` → `wiki/wiki.config.toml` (il *rename* a livello git lo registra il `configuration-manager` in fase di commit; qui si sposta il file + si riallinea il contenuto); ri-sincronizzare `.claude/` dagli asset aggiornati; aggiornare `CLAUDE.md` di radice (esempi `append-log`, blocco rituale) e gli esempi del playbook in `.claude/skills/wiki-author/`. (Dipende da T004, T009, T011, T012, T013; F3 analyze.)
+- [X] T015 [US2] Aggiornare/verificare la guardia di sync `packages/sertor/tests/test_host_agnostic.py`: `.claude/` di Sertor combacia con gli asset dopo il riallineamento (FR-007/FR-008).
+- [X] T016 [P] [US2] Test-guardia REQ-303 in `packages/sertor/tests/` (nuovo `test_no_legacy_config_path.py`): nessun asset sotto `assets/claude/**` né `.claude/**` referenzia il vecchio path radice (`wiki.config.toml` senza prefisso `wiki/`) in un'invocazione `--config` o nel hook.
 
 **Checkpoint**: tooling pienamente funzionante con config in `wiki/`; Sertor verde.
 
@@ -95,11 +95,11 @@ verifiche per SC-001..006. Tutti i test girano **senza rete** (`FakeCommandRunne
 
 ### Implementation for User Story 3
 
-- [ ] T017 [P] [US3] In `packages/sertor/src/sertor_installer/artifacts.py`: aggiungere `ArtifactKind.MCP_REGISTER` e `WriteStrategy.REGISTER_CLI` (data-model §1); usare il `target_rel` sentinel leggibile `"(mcp: client registry)"` (F1 analyze) e verificare che `report.py` lo renderizzi come etichetta, non come path.
-- [ ] T018 [P] [US3] In `packages/sertor/src/sertor_installer/rag_profile.py`: aggiungere `RagInstallOptions.mcp_scope: str = "project"` con validazione `{"project","local"}` → `ConfigError` (data-model §2).
-- [ ] T019 [US3] In `packages/sertor/src/sertor_installer/install_rag.py`: aggiungere `McpRegistrationError(SertorError)`; `_apply_mcp_register(profile, runner)` (idempotente: `claude mcp get` → presente=SKIPPED, assente=`claude mcp add-json … --scope local`=CREATED; `is_available("claude")` falso o add fallito → `McpRegistrationError` + comando manuale; emette `log_event`); `build_rag_plan(profile, with_deps, mcp_scope)` seleziona `MCP_REGISTER` vs `MCP_MERGE`; `execute_rag_plan` gestisce il nuovo kind. (Dipende da T017, T018.) **F2 analyze:** verificare la sintassi CLI reale del client (`claude mcp add-json`/`get` e il nome esatto dello scope `local` vs `user`) **prima** di chiudere il metodo; il `CommandRunner` mantiene il comando un dettaglio sostituibile.
-- [ ] T020 [US3] In `packages/sertor/src/sertor_installer/__main__.py`: aggiungere `--mcp-scope {project,local}` (default `project`) a `install rag`; propagare a `RagInstallOptions`/`build_rag_plan`. (Dipende da T019.)
-- [ ] T021 [P] [US3] Test in `packages/sertor/tests/test_install_rag.py` (+ eventuale `test_mcp_register.py`): scope project invariato; scope local registra via `FakeCommandRunner` e NON crea `.mcp.json`; `claude` assente → `McpRegistrationError`, nessun file (SC-005); re-run con server presente → `skipped` (idempotenza); `--mcp-scope` invalido → `ConfigError`/exit 2.
+- [X] T017 [P] [US3] In `packages/sertor/src/sertor_installer/artifacts.py`: aggiungere `ArtifactKind.MCP_REGISTER` e `WriteStrategy.REGISTER_CLI` (data-model §1); usare il `target_rel` sentinel leggibile `"(mcp: client registry)"` (F1 analyze) e verificare che `report.py` lo renderizzi come etichetta, non come path.
+- [X] T018 [P] [US3] In `packages/sertor/src/sertor_installer/rag_profile.py`: aggiungere `RagInstallOptions.mcp_scope: str = "project"` con validazione `{"project","local"}` → `ConfigError` (data-model §2).
+- [X] T019 [US3] In `packages/sertor/src/sertor_installer/install_rag.py`: aggiungere `McpRegistrationError(SertorError)`; `_apply_mcp_register(profile, runner)` (idempotente: `claude mcp get` → presente=SKIPPED, assente=`claude mcp add-json … --scope local`=CREATED; `is_available("claude")` falso o add fallito → `McpRegistrationError` + comando manuale; emette `log_event`); `build_rag_plan(profile, with_deps, mcp_scope)` seleziona `MCP_REGISTER` vs `MCP_MERGE`; `execute_rag_plan` gestisce il nuovo kind. (Dipende da T017, T018.) **F2 analyze:** verificare la sintassi CLI reale del client (`claude mcp add-json`/`get` e il nome esatto dello scope `local` vs `user`) **prima** di chiudere il metodo; il `CommandRunner` mantiene il comando un dettaglio sostituibile.
+- [X] T020 [US3] In `packages/sertor/src/sertor_installer/__main__.py`: aggiungere `--mcp-scope {project,local}` (default `project`) a `install rag`; propagare a `RagInstallOptions`/`build_rag_plan`. (Dipende da T019.)
+- [X] T021 [P] [US3] Test in `packages/sertor/tests/test_install_rag.py` (+ eventuale `test_mcp_register.py`): scope project invariato; scope local registra via `FakeCommandRunner` e NON crea `.mcp.json`; `claude` assente → `McpRegistrationError`, nessun file (SC-005); re-run con server presente → `skipped` (idempotenza); `--mcp-scope` invalido → `ConfigError`/exit 2.
 
 **Checkpoint**: le tre story indipendentemente funzionanti.
 
@@ -107,9 +107,9 @@ verifiche per SC-001..006. Tutti i test girano **senza rete** (`FakeCommandRunne
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] T022 [P] `docs/install.md`: sezione "Cosa resta in radice host e perché" (residenti inevitabili + `.sertor/` + `.mcp.json` solo scope project) e documentazione di `--mcp-scope` (REQ-306, mossa #4).
-- [ ] T023 Suite completa verde: `uv run pytest -m "not cloud"` (root + packages) + `uv run ruff check packages src`.
-- [ ] T024 Validazione quickstart.md; annotare l'esito **live** della mappatura flag `local` → `--scope local` di Claude Code (come la validazione uvx della 015; differibile a post-merge).
+- [X] T022 [P] `docs/install.md`: sezione "Cosa resta in radice host e perché" (residenti inevitabili + `.sertor/` + `.mcp.json` solo scope project) e documentazione di `--mcp-scope` (REQ-306, mossa #4).
+- [X] T023 Suite completa verde: `uv run pytest -m "not cloud"` (root + packages) + `uv run ruff check packages src`.
+- [X] T024 Validazione quickstart.md; annotare l'esito **live** della mappatura flag `local` → `--scope local` di Claude Code (come la validazione uvx della 015; differibile a post-merge).
 - [ ] T025 Re-index del corpus `sertor` dopo le modifiche ad asset/`.claude/`/`docs`/`CLAUDE.md` (regola standing; obbligata dopo il merge su master).
 
 ---

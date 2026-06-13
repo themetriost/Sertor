@@ -6,6 +6,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
+from sertor_core.domain.errors import ConfigError
 from sertor_installer.install_rag import build_rag_plan, execute_rag_plan
 from sertor_installer.rag_profile import RagHostProfile, RagInstallOptions
 
@@ -13,7 +16,7 @@ from sertor_installer.rag_profile import RagHostProfile, RagInstallOptions
 def _run(target: Path, runner, **opts):
     options = RagInstallOptions(target_root=target, **opts)
     profile = RagHostProfile.from_options(options)
-    plan = build_rag_plan(profile, with_deps=options.with_deps)
+    plan = build_rag_plan(profile, with_deps=options.with_deps, mcp_scope=options.mcp_scope)
     return execute_rag_plan(plan, profile, runner), profile
 
 
@@ -133,6 +136,67 @@ def test_no_deps_skips_uv(tmp_path: Path, make_runner):
     assert runner.calls == []  # nessun comando uv
     assert (tmp_path / ".sertor" / ".env").is_file()  # ma lo scaffold c'è
     assert (tmp_path / ".mcp.json").is_file()
+
+
+# --- feature 016 (FR-001/REQ-301): runtime confinato in .sertor/ ----------------------------
+
+def test_rag_plan_no_runtime_file_in_root(tmp_path: Path):
+    """FR-001: nessun artefatto del piano RAG in radice oltre `.mcp.json` e `.gitignore`.
+
+    Guardia anti-regressione: un nuovo ArtifactKind che sbaglia `target_rel` (file di runtime in
+    radice invece che sotto `.sertor/`) fa fallire questo test.
+    """
+    profile = RagHostProfile.from_options(RagInstallOptions(target_root=tmp_path, backend="azure"))
+    allowed_root = {".mcp.json", ".gitignore"}
+    for art in build_rag_plan(profile, with_deps=True):
+        rel = art.target_rel.replace("\\", "/")
+        top = rel.split("/", 1)[0]
+        assert top == ".sertor" or rel in allowed_root, (
+            f"artefatto in radice non consentito: {rel}"
+        )
+
+
+# --- US3 (feature 016): --mcp-scope project|local --------------------------------------------
+
+def _calls(runner) -> list[list[str]]:
+    return [cmd for cmd, _ in runner.calls]
+
+
+def test_mcp_scope_project_writes_mcp_json(tmp_path: Path, make_runner):  # FR-004
+    runner = make_runner()
+    _run(tmp_path, runner, backend="azure", with_deps=False, mcp_scope="project")
+    assert (tmp_path / ".mcp.json").is_file()
+    assert not any("claude" in cmd for cmd in _calls(runner))  # nessuna CLI client in project
+
+
+def test_mcp_scope_local_registers_no_repo_file(tmp_path: Path, make_runner):  # FR-004/SC-003
+    runner = make_runner()
+    report, _ = _run(tmp_path, runner, backend="azure", with_deps=False, mcp_scope="local")
+    assert report.exit_code() == 0
+    assert not (tmp_path / ".mcp.json").exists()  # niente file nel repo
+    assert any(cmd[:3] == ["claude", "mcp", "add-json"] for cmd in _calls(runner))
+
+
+def test_mcp_scope_local_claude_missing_failfast(tmp_path: Path, make_runner):  # FR-005/SC-005
+    runner = make_runner(claude_available=False)
+    report, _ = _run(tmp_path, runner, backend="azure", with_deps=False, mcp_scope="local")
+    assert report.exit_code() == 1
+    assert report.failed_step == "(mcp: client registry)"
+    assert not (tmp_path / ".mcp.json").exists()  # nessun file scritto silenziosamente
+    assert not any("add-json" in cmd for cmd in _calls(runner))  # add non tentato
+
+
+def test_mcp_scope_local_idempotent_skip(tmp_path: Path, make_runner):  # SC-006
+    runner = make_runner(claude_has_server=True)
+    report, _ = _run(tmp_path, runner, backend="azure", with_deps=False, mcp_scope="local")
+    assert report.exit_code() == 0
+    assert any(cmd[:3] == ["claude", "mcp", "get"] for cmd in _calls(runner))
+    assert not any("add-json" in cmd for cmd in _calls(runner))  # già registrato → niente add
+
+
+def test_invalid_mcp_scope_rejected(tmp_path: Path):
+    with pytest.raises(ConfigError):
+        RagInstallOptions(target_root=tmp_path, mcp_scope="bogus")
 
 
 # --- M2 (SC-007): host non-Python NON toccato -----------------------------------------------

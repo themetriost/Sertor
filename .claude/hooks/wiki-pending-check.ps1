@@ -4,7 +4,7 @@
 
 .DESCRIPTION
   Delega la logica al nucleo deterministico host-agnostico: invoca
-    sertor-wiki-tools scan --config <root>/wiki.config.toml --json
+    sertor-wiki-tools scan --config <root>/wiki/wiki.config.toml --root <root> --json
   e mappa il contratto `wiki.scan/1` (`pending`, `message`) al formato dell'hook. Nessuna
   euristica mtime duplicata qui: la fonte unica e' la CLI (Principio X, niente path hard-coded).
     - Mode Stop:       JSON con additionalContext (NON bloccante; rispetta stop_hook_active).
@@ -31,14 +31,18 @@ $root = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR }
         elseif ($hook -and $hook.cwd) { $hook.cwd }
         else { '.' }
 
-$config = Join-Path $root 'wiki.config.toml'
-if (-not (Test-Path $config)) { exit 0 }   # nessuna config host → niente da fare
+# feature 016: la config vive in wiki/; fallback al vecchio path radice per ospiti in transizione.
+$config = Join-Path $root 'wiki/wiki.config.toml'
+if (-not (Test-Path $config)) {
+    $legacy = Join-Path $root 'wiki.config.toml'
+    if (Test-Path $legacy) { $config = $legacy } else { exit 0 }  # nessuna config host → niente
+}
 
 # --- delega al nucleo deterministico: scan --json → contratto wiki.scan/1 ---
 $scan = $null
 try {
     Push-Location $root
-    $out = sertor-wiki-tools scan --config $config --json 2>$null
+    $out = sertor-wiki-tools scan --config $config --root $root --json 2>$null
     Pop-Location
     if ($out) { $scan = ($out | Select-Object -Last 1 | ConvertFrom-Json) }
 } catch {

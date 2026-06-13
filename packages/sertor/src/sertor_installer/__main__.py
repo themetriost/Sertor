@@ -67,6 +67,11 @@ def _build_parser() -> argparse.ArgumentParser:
         "--no-deps", action="store_true",
         help="solo scaffold di config; non aggiungere le dipendenze (no uv)",
     )
+    rag.add_argument(
+        "--mcp-scope", choices=["project", "local"], default="project",
+        help="dove registrare il server MCP: project (.mcp.json in radice host, default) | "
+             "local (nel client via `claude`, nessun file nel repo)",
+    )
     rag.add_argument("--json", action="store_true", help="emette il report come JSON")
 
     install_sub.add_parser("governance", help="installa la governance (pianificato)")
@@ -111,9 +116,10 @@ def _cmd_install_rag(args) -> int:
         include_rerank=not args.no_rerank,
         with_deps=not args.no_deps,
         json_report=args.json,
+        mcp_scope=args.mcp_scope,
     )
     profile = RagHostProfile.from_options(opts)
-    plan = build_rag_plan(profile, with_deps=opts.with_deps)
+    plan = build_rag_plan(profile, with_deps=opts.with_deps, mcp_scope=opts.mcp_scope)
     report = execute_rag_plan(plan, profile, SubprocessRunner())
 
     print(report.render_json() if args.json else report.render_human())

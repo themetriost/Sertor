@@ -17,6 +17,7 @@ from sertor_core.domain.errors import ConfigError
 DIST_URL = "https://github.com/themetriost/Sertor.git"
 
 _BACKENDS = ("azure", "local")
+_MCP_SCOPES = ("project", "local")  # project = .mcp.json in radice · local = client ~/.claude.json
 
 
 def sanitize_corpus(name: str) -> str:
@@ -49,10 +50,13 @@ class RagInstallOptions:
     include_rerank: bool = True
     with_deps: bool = True
     json_report: bool = False
+    mcp_scope: str = "project"  # feature 016: project (.mcp.json radice) | local (client, no file)
 
     def __post_init__(self) -> None:
         if self.backend not in _BACKENDS:
             raise ConfigError(f"backend non valido: {self.backend}", key="backend")
+        if self.mcp_scope not in _MCP_SCOPES:
+            raise ConfigError(f"mcp-scope non valido: {self.mcp_scope}", key="mcp_scope")
 
     def resolved_corpus(self) -> str:
         return self.corpus or sanitize_corpus(self.target_root.name)

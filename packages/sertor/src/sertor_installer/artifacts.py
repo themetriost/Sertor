@@ -25,6 +25,8 @@ class ArtifactKind(Enum):
     ENV_MERGE = "env_merge"              # `.sertor/.env` da template, merge additivo per-chiave
     MCP_MERGE = "mcp_merge"              # `.mcp.json` in radice host, merge additivo dei server
     GITIGNORE_APPEND = "gitignore_append"  # `.gitignore` in radice, append dedup di righe
+    # `install rag --mcp-scope local` (feature 016): registra il server nel client, no file repo.
+    MCP_REGISTER = "mcp_register"        # `claude mcp add-json … --scope local` (fuori dal repo)
 
 
 class WriteStrategy(Enum):
@@ -40,6 +42,7 @@ class WriteStrategy(Enum):
     MERGE_ENV = "merge_env"              # merge additivo di chiavi `.env` (mai sovrascrive valori)
     MERGE_JSON = "merge_json"            # merge additivo di server in `.mcp.json`
     APPEND_LINES = "append_lines"        # append dedup di righe (`.gitignore`)
+    REGISTER_CLI = "register_cli"        # registra via CLI del client (idempotente, fail-fast)
 
 
 class Outcome(Enum):

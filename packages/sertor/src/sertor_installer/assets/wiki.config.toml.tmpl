@@ -3,6 +3,10 @@
 # UNICA fonte di specificità dell'ospite: il nucleo deterministico `sertor-wiki-tools` legge SOLO
 # questo file — nessun path/nome/lingua/tassonomia è hard-coded nel codice. Per portare la capacità
 # su un altro progetto basta un file diverso.
+#
+# Collocazione (feature 016): questo file vive in `wiki/wiki.config.toml`. `root = "wiki"` resta
+# relativo alla RADICE OSPITE, non a questa cartella: gli strumenti passano `--root .` (o usano
+# l'auto-discovery del CLI). Radice ospite pulita.
 
 profile = "code+doc"
 language = "{language}"
