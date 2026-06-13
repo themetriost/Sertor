@@ -1,4 +1,4 @@
-"""Test di `reconcile` (feature 017): detection read-only delle pagine `status: superseded`."""
+"""Test of `reconcile` (feature 017): read-only detection of `status: superseded` pages."""
 from __future__ import annotations
 
 import json
@@ -66,7 +66,7 @@ def test_reconcile_is_read_only(tmp_path):
     before = {f: f.read_bytes() for f in p.root_path.rglob("*.md")}
     reconcile(p)
     after = {f: f.read_bytes() for f in p.root_path.rglob("*.md")}
-    assert before == after  # nessun file creato/modificato/cancellato
+    assert before == after  # no file created/modified/deleted
 
 
 def test_reconcile_cli_contract(tmp_path, capsys):

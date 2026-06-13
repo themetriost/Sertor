@@ -1,9 +1,9 @@
-"""`InstallReport`: contratto di osservabilità dell'operazione `sertor install wiki`.
+"""`InstallReport`: observability contract for the `sertor install wiki` operation.
 
-Aggrega gli `ArtifactOutcome` in conteggi + exit code (data-model §5, contracts/install-report.md,
-D8). Due rese: umana (default, una riga per artefatto + riepilogo) e JSON (`--json`, schema
-`install.report/1`, F5). Il report **è** l'osservabilità dell'install (Principio IX): nessun side
-effect, solo formattazione di stato.
+Aggregates `ArtifactOutcome` entries into counts + exit code (data-model §5,
+contracts/install-report.md, D8). Two renderings: human (default, one line per artifact +
+summary) and JSON (`--json`, schema `install.report/1`, F5). The report **is** the install's
+observability (Principio IX): no side effects, only status formatting.
 """
 from __future__ import annotations
 
@@ -17,10 +17,10 @@ _SCHEMA = "install.report/1"
 
 @dataclass
 class InstallReport:
-    """Esito complessivo dell'install: esiti in ordine, conteggi, eventuale passo fallito."""
+    """Overall install outcome: ordered artifact outcomes, counts, and optional failed step."""
 
     target: str
-    capability: str = "wiki"  # "wiki" | "rag" — solo per il titolo della resa umana
+    capability: str = "wiki"  # "wiki" | "rag" — used only for the human rendering title
     outcomes: list[ArtifactOutcome] = field(default_factory=list)
     created: int = 0
     skipped: int = 0
@@ -30,7 +30,7 @@ class InstallReport:
     failed_step: str | None = None
 
     def add(self, outcome: ArtifactOutcome) -> None:
-        """Registra un esito e aggiorna i conteggi (più il `failed_step` su errore)."""
+        """Records an outcome and updates counts (including `failed_step` on error)."""
         self.outcomes.append(outcome)
         if outcome.outcome is Outcome.CREATED:
             self.created += 1
@@ -46,11 +46,11 @@ class InstallReport:
                 self.failed_step = outcome.target_rel
 
     def exit_code(self) -> int:
-        """0 se nessun errore (anche se tutto skipped — idempotenza); 1 su errore di dominio."""
+        """0 if no errors (even if everything was skipped — idempotency); 1 on domain error."""
         return 1 if self.errors else 0
 
     def render_human(self) -> str:
-        """Resa umana su stdout (contracts/install-report.md §Formato umano)."""
+        """Human rendering to stdout (contracts/install-report.md §Human format)."""
         lines = [f"sertor install {self.capability} — target: {self.target}"]
         for o in self.outcomes:
             suffix = f" ({o.detail})" if o.detail else ""
@@ -67,7 +67,7 @@ class InstallReport:
         return "\n".join(lines)
 
     def render_json(self) -> str:
-        """Resa JSON (`--json`, schema `install.report/1`)."""
+        """JSON rendering (`--json`, schema `install.report/1`)."""
         payload = {
             "schema": _SCHEMA,
             "target": self.target,

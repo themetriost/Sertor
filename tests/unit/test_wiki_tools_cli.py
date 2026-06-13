@@ -1,7 +1,7 @@
-"""Test della CLI `sertor-wiki-tools upsert-index` (feature 010, contracts/cli-upsert-index.md).
+"""Test of `sertor-wiki-tools upsert-index` CLI (feature 010, contracts/cli-upsert-index.md).
 
-Esercita `main(argv)` end-to-end su un wiki fittizio in `tmp_path`: parsing → funzione pura →
-output umano/JSON ed exit code. Nessuna rete; stdin simulato via monkeypatch.
+Exercises `main(argv)` end-to-end on a fake wiki in `tmp_path`: parsing → pure function →
+human/JSON output and exit code. No network; stdin simulated via monkeypatch.
 """
 from __future__ import annotations
 
@@ -48,7 +48,7 @@ def test_upsert_index_insert_then_noop(tmp_path, capsys):
     snapshot = index.read_bytes()
     assert _run(cfg, "--page", "concepts/rag.md", "--summary", "Sintesi RAG.") == 0
     assert "action=noop" in capsys.readouterr().out
-    assert index.read_bytes() == snapshot          # idempotenza byte-identica (FR-012)
+    assert index.read_bytes() == snapshot          # byte-identical idempotence (FR-012)
 
 
 def test_upsert_index_update_in_place(tmp_path, capsys):
@@ -70,7 +70,7 @@ def test_upsert_index_json_contract(tmp_path, capsys):
 
 
 def test_upsert_index_summary_from_stdin_utf8(tmp_path, capsys, monkeypatch):
-    # FR-017: sommario da stdin scritto fedelmente (caratteri non-ASCII, no mojibake).
+    # FR-017: summary from stdin written faithfully (non-ASCII characters, no mojibake).
     cfg = _wiki(tmp_path)
     monkeypatch.setattr("sys.stdin", io.StringIO("Schéma è già qui — übersicht\n"))
     assert _run(cfg, "--page", "concepts/intl.md") == 0
@@ -80,22 +80,22 @@ def test_upsert_index_summary_from_stdin_utf8(tmp_path, capsys, monkeypatch):
 
 def test_upsert_index_requires_page_and_summary(tmp_path, capsys, monkeypatch):
     cfg = _wiki(tmp_path)
-    assert _run(cfg, "--summary", "senza pagina") == 1            # --page mancante
+    assert _run(cfg, "--summary", "senza pagina") == 1            # --page missing
     assert "error" in capsys.readouterr().err
-    monkeypatch.setattr("sys.stdin", io.StringIO(""))             # niente summary, stdin vuoto
+    monkeypatch.setattr("sys.stdin", io.StringIO(""))             # no summary, empty stdin
     assert _run(cfg, "--page", "concepts/x.md") == 1
     assert "error" in capsys.readouterr().err
 
 
 def test_upsert_index_missing_index_fails_explicitly(tmp_path, capsys):
     cfg = tmp_path / "wiki.config.toml"
-    cfg.write_text(_CONFIG, encoding="utf-8")                     # struttura NON inizializzata
+    cfg.write_text(_CONFIG, encoding="utf-8")                     # structure NOT initialized
     assert _run(cfg, "--page", "concepts/x.md", "--summary", "s") == 1   # FR-015
     assert "error" in capsys.readouterr().err
 
 
 def test_upsert_index_rejects_empty_and_multiline(tmp_path, capsys):
-    # FR-018: errore esplicito, exit 1, indice invariato in entrambi i casi.
+    # FR-018: explicit error, exit 1, index unchanged in both cases.
     cfg = _wiki(tmp_path)
     index = tmp_path / "wiki" / "index.md"
     snapshot = index.read_bytes()

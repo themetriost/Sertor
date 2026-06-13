@@ -1,9 +1,9 @@
-"""Ingestione repo-agnostica: scopre e legge codice + documentazione di un repo qualunque.
+"""Repo-agnostic ingestion: discovers and reads code + documentation from any repository.
 
-Senza conoscenza a priori della struttura (REQ-001): scoperta **ordinata** per path relativo
-(determinismo, Principio VI), esclusione configurabile di artefatti/segreti (REQ-002), skip dei
-file illeggibili con warning (REQ-003), id stabile = path relativo POSIX (REQ-004), tipo e
-linguaggio rilevati dall'estensione (REQ-005).
+Without prior knowledge of the structure (REQ-001): **ordered** discovery by relative path
+(determinism, Principio VI), configurable exclusion of artifacts/secrets (REQ-002), skip of
+unreadable files with a warning (REQ-003), stable id = POSIX relative path (REQ-004), type and
+language detected from extension (REQ-005).
 """
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from sertor_core.domain.entities import DocType, Document
 from sertor_core.domain.errors import IngestionError
 from sertor_core.observability.logging import log_event
 
-# Estensione -> linguaggio. I nomi dei linguaggi sono quelli attesi dal chunker (tree-sitter).
+# Extension -> language. Language names match those expected by the chunker (tree-sitter).
 _EXT_LANG: dict[str, str] = {
     ".py": "python",
     ".js": "javascript", ".jsx": "javascript", ".mjs": "javascript", ".cjs": "javascript",
@@ -37,12 +37,12 @@ _DOC_EXTS = {".md", ".markdown"}
 
 
 def _read_text(path: Path) -> str:
-    """Legge un file come testo UTF-8, tollerando byte non decodificabili."""
+    """Reads a file as UTF-8 text, tolerating non-decodable bytes."""
     return path.read_text(encoding="utf-8", errors="ignore")
 
 
 def _is_excluded(rel_parts: tuple[str, ...], patterns: tuple[str, ...]) -> bool:
-    """True se un qualunque segmento del path relativo combacia con un pattern di esclusione."""
+    """True if any segment of the relative path matches an exclusion pattern."""
     for part in rel_parts:
         for pat in patterns:
             if part == pat or fnmatch(part, pat):
@@ -55,15 +55,15 @@ def _language_for(path: Path) -> str | None:
 
 
 def discover(root: Path | str, settings: Settings) -> list[Document]:
-    """Scopre e legge i documenti indicizzabili sotto `root`.
+    """Discovers and reads indexable documents under `root`.
 
-    Solleva `IngestionError` se la radice non è una directory accessibile (Principio IV). I file
-    illeggibili sono **saltati** con un warning (non sono un errore); i file con estensione non
-    riconosciuta (binari/altri) sono ignorati silenziosamente (fuori corpus MVP).
+    Raises `IngestionError` if the root is not an accessible directory (Principio IV). Unreadable
+    files are **skipped** with a warning (not an error); files with unrecognised extensions
+    (binaries/other) are silently ignored (out of MVP corpus).
     """
     root = Path(root)
     if not root.exists() or not root.is_dir():
-        raise IngestionError("radice del repository non accessibile", path=str(root))
+        raise IngestionError("repository root not accessible", path=str(root))
 
     documents: list[Document] = []
     skipped = 0
@@ -74,7 +74,7 @@ def discover(root: Path | str, settings: Settings) -> list[Document]:
             continue
         language = _language_for(path)
         if language is None:
-            continue  # estensione non indicizzabile (binari, formati non-testo): fuori MVP (A-2)
+            continue  # non-indexable extension (binaries, non-text formats): out of MVP (A-2)
         try:
             text = _read_text(path)
         except OSError as exc:

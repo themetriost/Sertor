@@ -1,8 +1,9 @@
-"""Blocco a marker nel `CLAUDE.md` (D4, contracts/claude-md-block.md).
+"""Marker-delimited block in `CLAUDE.md` (D4, contracts/claude-md-block.md).
 
-Algoritmo idempotente e non-distruttivo: il blocco step-ritual è delimitato da marker su riga
-propria; tutto ciò che sta **fuori** dai marker è dell'utente e resta byte-per-byte intatto. Tre
-casi: assente → crea col solo blocco; presente senza marker → appendi; presente con marker → skip.
+Idempotent and non-destructive algorithm: the step-ritual block is delimited by markers on their
+own line; everything **outside** the markers belongs to the user and is preserved byte-for-byte.
+Three cases: absent → create with the block only; present without markers → append; present with
+markers → skip.
 """
 from __future__ import annotations
 
@@ -15,20 +16,20 @@ MARKER_END = "<!-- SERTOR:WIKI-RITUAL END -->"
 
 
 def _wrap(block_content: str) -> str:
-    """Avvolge il contenuto del blocco fra i marker (marker su riga propria)."""
+    """Wraps block content between markers (each marker on its own line)."""
     return f"{MARKER_START}\n{block_content.rstrip()}\n{MARKER_END}\n"
 
 
 def write_ritual_block(claude_md_path: Path, block_content: str) -> Outcome:
-    """Scrive/non-tocca il blocco step-ritual nel `CLAUDE.md` (D4).
+    """Writes/leaves untouched the step-ritual block in `CLAUDE.md` (D4).
 
-    Garanzia di non-distruttività: nei casi "presente", il contenuto fuori dai marker è preservato
-    byte-per-byte (lettura con `read_text(encoding="utf-8")`, nessuna normalizzazione dei line
-    ending; il file esistente non viene riscritto se i marker ci sono già).
+    Non-destructive guarantee: in the "present" cases, content outside the markers is preserved
+    byte-for-byte (read via `read_text(encoding="utf-8")`, no line-ending normalization;
+    the existing file is not rewritten if the markers are already there).
 
-    - assente → crea il file col solo blocco → `Outcome.BLOCK`;
-    - presente, marker assenti → appendi il blocco in coda (riga vuota di separazione) → `BLOCK`;
-    - presente, marker presenti → non toccare nulla → `Outcome.SKIPPED`.
+    - absent → create the file with the block only → `Outcome.BLOCK`;
+    - present, markers absent → append the block at the end (empty separator line) → `BLOCK`;
+    - present, markers present → leave everything untouched → `Outcome.SKIPPED`.
     """
     block = _wrap(block_content)
 
@@ -40,8 +41,8 @@ def write_ritual_block(claude_md_path: Path, block_content: str) -> Outcome:
     if MARKER_START in existing:
         return Outcome.SKIPPED
 
-    # Append non-distruttivo: una riga vuota di separazione, poi il blocco. Il contenuto
-    # preesistente resta byte-per-byte (concateniamo, non riscriviamo).
+    # Non-destructive append: one empty separator line, then the block. The pre-existing content
+    # is preserved byte-for-byte (we concatenate, not rewrite).
     separator = "" if existing.endswith("\n\n") else ("\n" if existing.endswith("\n") else "\n\n")
     claude_md_path.write_text(existing + separator + block, encoding="utf-8")
     return Outcome.BLOCK

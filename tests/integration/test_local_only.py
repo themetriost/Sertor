@@ -1,8 +1,8 @@
-"""Polish — modalità local-only: nessun componente o chiamata cloud (SC-006, REQ-014/016/022).
+"""Polish — local-only mode: no cloud components or cloud calls (SC-006, REQ-014/016/022).
 
-Con `RAG_BACKEND=local` il composition root istanzia solo componenti locali (Ollama + Chroma);
-nessun adapter cloud viene creato. La garanzia a livello di rete (0 chiamate cloud durante embed)
-è verificata nei contract test degli embeddings (`test_local_only_contacts_only_local_host`).
+With `RAG_BACKEND=local` the composition root instantiates only local components (Ollama + Chroma);
+no cloud adapter is created. The network-level guarantee (0 cloud calls during embed)
+is verified in the embeddings contract tests (`test_local_only_contacts_only_local_host`).
 """
 from __future__ import annotations
 
@@ -21,11 +21,11 @@ def test_local_backend_builds_only_local_components(monkeypatch):
     assert embedder.name.startswith("ollama:")
 
     store = build_store(settings)
-    assert isinstance(store, ChromaStore)        # backend locale, nessun client cloud
+    assert isinstance(store, ChromaStore)        # local backend, no cloud client
 
 
 def test_local_embedder_targets_local_host(monkeypatch):
     monkeypatch.setenv("RAG_BACKEND", "local")
     monkeypatch.setenv("OLLAMA_HOST", "http://localhost:11434")
     embedder = build_embedder(Settings.load(env_file=None))
-    assert "localhost" in embedder._host       # nessun endpoint cloud (REQ-016)
+    assert "localhost" in embedder._host       # no cloud endpoint (REQ-016)

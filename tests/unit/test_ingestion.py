@@ -1,4 +1,4 @@
-"""Test US1 — ingestione repo-agnostica (REQ-001..005)."""
+"""Test US1 — repo-agnostic ingestion (REQ-001..005)."""
 from __future__ import annotations
 
 import logging
@@ -19,14 +19,14 @@ def test_discovers_code_and_markdown_with_stable_ids(sample_repo):
     docs = discover(sample_repo, Settings.load(env_file=None))
     by_id = _by_id(docs)
 
-    # codice + markdown scoperti (REQ-001), id = path relativo POSIX (REQ-004)
+    # code + markdown discovered (REQ-001), id = relative POSIX path (REQ-004)
     assert "app/calculator.py" in by_id
     assert "web/server.js" in by_id
     assert "svc/handler.go" in by_id
     assert "docs/guide.md" in by_id
     assert "legacy/deploy.ps1" in by_id
 
-    # tipo e linguaggio rilevati (REQ-005)
+    # type and language detected (REQ-005)
     assert by_id["app/calculator.py"].doc_type is DocType.CODE
     assert by_id["app/calculator.py"].language == "python"
     assert by_id["docs/guide.md"].doc_type is DocType.DOC
@@ -36,7 +36,7 @@ def test_discovers_code_and_markdown_with_stable_ids(sample_repo):
 def test_excludes_artifacts_and_secrets(sample_repo):
     docs = discover(sample_repo, Settings.load(env_file=None))
     ids = {d.id for d in docs}
-    # .venv e *.key esclusi (REQ-002)
+    # .venv and *.key excluded (REQ-002)
     assert not any(i.startswith(".venv") for i in ids)
     assert not any(i.endswith(".key") for i in ids)
 
@@ -44,11 +44,11 @@ def test_excludes_artifacts_and_secrets(sample_repo):
 def test_ids_are_stable_across_runs(sample_repo):
     a = {d.id for d in discover(sample_repo, Settings.load(env_file=None))}
     b = {d.id for d in discover(sample_repo, Settings.load(env_file=None))}
-    assert a == b  # idempotenza degli id (REQ-004)
+    assert a == b  # id idempotency (REQ-004)
 
 
 def test_skips_unreadable_file_with_warning(sample_repo, monkeypatch, caplog):
-    # Forza un errore di lettura su un file specifico (REQ-003).
+    # Force a read error on a specific file (REQ-003).
     import sertor_core.services.ingestion as ing
 
     real_read = ing._read_text
@@ -63,8 +63,8 @@ def test_skips_unreadable_file_with_warning(sample_repo, monkeypatch, caplog):
         docs = discover(sample_repo, Settings.load(env_file=None))
 
     ids = {d.id for d in docs}
-    assert "app/calculator.py" not in ids       # saltato, non incluso
-    assert "web/server.js" in ids               # gli altri proseguono
+    assert "app/calculator.py" not in ids       # skipped, not included
+    assert "web/server.js" in ids               # others continue
     assert any("calculator.py" in r.message for r in caplog.records)
 
 

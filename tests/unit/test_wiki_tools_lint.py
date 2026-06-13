@@ -1,4 +1,4 @@
-"""Test US3 — lint strutturale; SC-004 (100% difetti, 0 falsi positivi) e SC-005 (offline)."""
+"""Test US3 — structural lint; SC-004 (100% defects, 0 false positives) and SC-005 (offline)."""
 from __future__ import annotations
 
 import socket
@@ -30,7 +30,7 @@ def _clean_wiki(tmp_path: Path):
     cfg.write_text(_CONFIG, encoding="utf-8")
     wiki = tmp_path / "wiki"
     (wiki / "concepts").mkdir(parents=True)
-    # index referenzia entrambe le pagine; le pagine si linkano tra loro → nessun orfano.
+    # index references both pages; pages link to each other → no orphans.
     (wiki / "index.md").write_text("# Index\n\n- [[rag]]\n- [[chunking]]\n", "utf-8")
     (wiki / "log.md").write_text("# log\n", "utf-8")
     (wiki / "concepts" / "rag.md").write_text(
@@ -52,13 +52,13 @@ def test_sc004_clean_wiki_has_no_false_positives(tmp_path):
 def test_sc004_detects_all_injected_defects(tmp_path):
     p = _clean_wiki(tmp_path)
     wiki = tmp_path / "wiki"
-    # Difetto 1: link rotto verso pagina inesistente.
+    # Defect 1: broken link to a non-existent page.
     (wiki / "concepts" / "rag.md").write_text(
         _FM.format(t="RAG") + "\nVedi [[chunking]] e [[inesistente]].\n", "utf-8"
     )
-    # Difetto 2: pagina orfana (non referenziata da index né da altre pagine).
+    # Defect 2: orphan page (not referenced by index or any other page).
     (wiki / "concepts" / "orfana.md").write_text(_FM.format(t="Orfana") + "\nsola.\n", "utf-8")
-    # Difetto 3: pagina senza frontmatter (e referenziata per non essere anche orfana).
+    # Defect 3: page without frontmatter (referenced to avoid also being an orphan).
     (wiki / "concepts" / "nudo.md").write_text("# Nudo\n\nNiente frontmatter.\n", "utf-8")
     idx = wiki / "index.md"
     idx.write_text(idx.read_text("utf-8") + "- [[nudo]]\n", "utf-8")
@@ -70,9 +70,9 @@ def test_sc004_detects_all_injected_defects(tmp_path):
 
 
 def test_sc005_lint_is_offline(tmp_path, monkeypatch):
-    # SC-005: nessuna chiamata di rete durante il lint (zero LLM / offline).
+    # SC-005: no network calls during lint (zero LLM / offline).
     def _no_network(*args, **kwargs):  # noqa: ANN002, ANN003
-        raise AssertionError("il lint non deve aprire connessioni di rete")
+        raise AssertionError("lint must not open network connections")
 
     monkeypatch.setattr(socket, "socket", _no_network)
     res = lint(_clean_wiki(tmp_path))
@@ -93,16 +93,16 @@ def test_empty_wiki_lints_cleanly(tmp_path):
 def test_lint_no_wiki_dir_is_clean(tmp_path, missing_root):
     cfg = tmp_path / "wiki.config.toml"
     cfg.write_text(_CONFIG, encoding="utf-8")
-    res = lint(load_profile(cfg))  # wiki/ assente: nessuna pagina
+    res = lint(load_profile(cfg))  # wiki/ absent: no pages
     assert res.orphans == []
 
 
 def test_stub_is_wanted_not_broken_nor_orphan(tmp_path):
-    # Un forward-link risolto a uno stub (status: stub) è intenzionale: il link NON è broken, lo
-    # stub NON è orfano (lo linka chi l'ha motivato), e compare nella worklist `stubs`.
+    # A forward-link resolved to a stub (status: stub) is intentional: the link is NOT broken, the
+    # stub is NOT an orphan (linked by whoever motivated it), and appears in the `stubs` worklist.
     p = _clean_wiki(tmp_path)
     wiki = tmp_path / "wiki"
-    # rag punta in avanti a un nodo da creare, realizzato come stub.
+    # rag points forward to a node to be created, realized as a stub.
     (wiki / "concepts" / "rag.md").write_text(
         _FM.format(t="RAG") + "\nVedi [[chunking]] e [[futuro]].\n", "utf-8"
     )
@@ -113,7 +113,7 @@ def test_stub_is_wanted_not_broken_nor_orphan(tmp_path):
     (wiki / "concepts" / "futuro.md").write_text(stub_fm + "\n> 🚧 STUB\n", "utf-8")
 
     res = lint(p)
-    assert res.broken_links == []  # [[futuro]] risolve allo stub
-    assert "concepts/futuro.md" not in res.orphans  # linkato da rag
-    assert res.stubs == ["concepts/futuro.md"]  # worklist dei nodi da riempire
-    assert res.schema == "wiki.lint/1"  # additivo, nessun bump
+    assert res.broken_links == []  # [[futuro]] resolves to the stub
+    assert "concepts/futuro.md" not in res.orphans  # linked from rag
+    assert res.stubs == ["concepts/futuro.md"]  # worklist of nodes to fill in
+    assert res.schema == "wiki.lint/1"  # additive, no bump

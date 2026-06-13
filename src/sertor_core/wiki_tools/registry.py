@@ -1,13 +1,13 @@
-"""Scritture meccaniche di registro e indice, idempotenti (FR-008, SC-002).
+"""Mechanical, idempotent log and index writes (FR-008, SC-002).
 
-`append_log` appende **una** voce di log nel posto giusto: in modalità **rotazione** (`log_dir`
-configurato) la partizione giornaliera della data della voce, altrimenti il file di log unico
-(back-compat). Riceve un **corpo curato** opzionale (lead/bullet/esito, formato `log-craft`) e lo
-piazza **senza riformattarlo** — il confine deterministico↔giudizio: il codice fa il piazzamento,
-l'LLM fornisce il contenuto. `migrate_log` splitta retroattivamente il log monolitico in partizioni.
-`upsert_index` inserisce/aggiorna una riga link+sommario nell'indice. Tutto **idempotente**.
-L'identità di una voce di log è il suo **heading** (`data + op + titolo`); quella di una pagina, il
-suo path relativo POSIX.
+`append_log` appends **one** log entry to the right place: in **rotation** mode (`log_dir`
+configured) the daily partition for the entry date, otherwise the single log file (back-compat).
+Receives an optional **curated body** (lead/bullets/outcome, `log-craft` format) and places it
+**without reformatting** — the deterministic↔judgment boundary: the code does the placement,
+the LLM provides the content. `migrate_log` retroactively splits the monolithic log into
+partitions. `upsert_index` inserts/updates a link+summary row in the index. Everything is
+**idempotent**. A log entry's identity is its **heading** (`date + op + title`); a page's identity
+is its relative POSIX path.
 """
 from __future__ import annotations
 
@@ -26,12 +26,12 @@ _ENTRY_HEADING = re.compile(r"^## \[(\d{4}-\d{2}-\d{2})\]")
 
 
 def _partition_seed(day: date) -> str:
-    """Header seed minimo di una partizione giornaliera (file append-only, niente frontmatter)."""
-    return f"# Log {day.isoformat()}\n\nVoci di registro del {day.isoformat()}.\n"
+    """Minimal header seed for a daily partition (append-only file, no frontmatter)."""
+    return f"# Log {day.isoformat()}\n\nLog entries for {day.isoformat()}.\n"
 
 
 def _rel_to_root(profile: WikiProfile, path: Path) -> str:
-    """Path relativo POSIX rispetto alla radice del wiki (identità stabile, host-agnostica)."""
+    """Relative POSIX path with respect to the wiki root (stable, host-agnostic identity)."""
     try:
         return path.relative_to(profile.root_path).as_posix()
     except ValueError:
@@ -39,10 +39,10 @@ def _rel_to_root(profile: WikiProfile, path: Path) -> str:
 
 
 def _target_log(profile: WikiProfile, day: date) -> tuple[Path, bool]:
-    """File di destinazione per la data + flag `created`.
+    """Target file for the given date + `created` flag.
 
-    Rotazione: la partizione del giorno, creata col seed se assente (FR-002). File-unico
-    (back-compat): il registro `log_path`, che deve già esistere (Principio IV).
+    Rotation: the day's partition, created with the seed if absent (FR-002). Single-file
+    (back-compat): the `log_path` log, which must already exist (Principio IV).
     """
     if profile.rotation_enabled:
         path = profile.partition_path(day)
@@ -53,13 +53,13 @@ def _target_log(profile: WikiProfile, day: date) -> tuple[Path, bool]:
         return path, True
     path = profile.log_path
     if not path.is_file():
-        raise ConfigError("registro del wiki non trovato (inizializzare la struttura)",
+        raise ConfigError("wiki log not found (initialize the structure first)",
                           key=str(path))
     return path, False
 
 
 def _append_block(path: Path, block: str) -> None:
-    """Appende `block` separato dal contenuto precedente da una riga vuota; termina con newline."""
+    """Appends `block` separated from the previous content by a blank line; ends with newline."""
     existing = path.read_text(encoding="utf-8")
     prefix = existing
     if prefix and not prefix.endswith("\n"):
@@ -77,11 +77,11 @@ def append_log(
     on_date: date | None = None,
     body: str | None = None,
 ) -> AppendLogResult:
-    """Appende una voce di log nel file della sua data; ritorna l'esito (`wiki.append_log/1`).
+    """Appends a log entry to the file for its date; returns the outcome (`wiki.append_log/1`).
 
-    L'heading è costruito dal `log_format` del profilo; se `body` è dato, il **corpo curato** vi è
-    accodato **senza riformattazione**. Idempotente: se una voce con lo stesso heading esiste già
-    nel file target, non scrive nulla (SC-002, DA-5).
+    The heading is built from the profile's `log_format`; if `body` is given, the **curated body**
+    is appended **without reformatting**. Idempotent: if an entry with the same heading already
+    exists in the target file, nothing is written (SC-002, DA-5).
     """
     day = on_date or date.today()
     heading = profile.log_format.format(date=day.isoformat(), op=op, title=title)
@@ -106,15 +106,15 @@ def append_log(
 
 
 def update_log_index(profile: WikiProfile) -> bool:
-    """Rigenera l'indice delle partizioni (`<log_dir>/<log_index_file>`); idempotente.
+    """Regenerates the partition index (`<log_dir>/<log_index_file>`); idempotent.
 
-    No-op se la rotazione non è attiva o la directory non esiste. Usa link Markdown relativi (non
-    wikilink) per non interferire col lint dei wikilink della tassonomia.
+    No-op if rotation is not active or the directory does not exist. Uses relative Markdown links
+    (not wikilinks) to avoid interfering with the taxonomy wikilink lint.
     """
     if not profile.rotation_enabled or not profile.log_dir_path.is_dir():
         return False
     days = sorted(p.stem for p in profile.log_dir_path.glob("*.md") if _PARTITION_RE.match(p.stem))
-    lines = ["# Indice del log", "", "Partizioni giornaliere (cronologico):", ""]
+    lines = ["# Log Index", "", "Daily partitions (chronological):", ""]
     lines += [f"- [{d}]({d}.md)" for d in days]
     content = "\n".join(lines) + "\n"
 
@@ -128,15 +128,15 @@ def update_log_index(profile: WikiProfile) -> bool:
 
 
 def migrate_log(profile: WikiProfile) -> MigrateResult:
-    """Splitta il log monolitico (`log_path`) in partizioni giornaliere (`wiki.migrate/1`).
+    """Splits the monolithic log (`log_path`) into daily partitions (`wiki.migrate/1`).
 
-    Segmenta per heading datato `## [YYYY-MM-DD] ...`, raggruppa per data, scrive una partizione per
-    data distinta (preservando ordine e contenuto). **Idempotente** (data già presente → skip) e
-    **non distruttivo** (non cancella il log monolitico). Il preambolo prima della prima voce è
-    ignorato. Richiede la rotazione attiva.
+    Segments by dated heading `## [YYYY-MM-DD] ...`, groups by date, writes one partition per
+    distinct date (preserving order and content). **Idempotent** (date already present → skip) and
+    **non-destructive** (does not delete the monolithic log). The preamble before the first entry
+    is ignored. Requires rotation to be active.
     """
     if not profile.rotation_enabled:
-        raise ConfigError("rotazione non attiva: configurare `log_dir` prima di migrare",
+        raise ConfigError("rotation not active: configure `log_dir` before migrating",
                           key="log_dir")
     src = profile.log_path
     if not src.is_file():
@@ -160,7 +160,7 @@ def migrate_log(profile: WikiProfile) -> MigrateResult:
             buf = [line]
         elif current is not None:
             buf.append(line)
-        # preambolo (frontmatter/intro prima della prima voce): ignorato
+        # preamble (frontmatter/intro before the first entry): ignored
     _flush()
 
     created: list[str] = []
@@ -186,26 +186,26 @@ def migrate_log(profile: WikiProfile) -> MigrateResult:
 
 
 def upsert_index(profile: WikiProfile, page: str, summary: str) -> UpsertIndexResult:
-    """Inserisce/aggiorna la riga d'indice per `page` (id = path relativo); idempotente.
+    """Inserts/updates the index row for `page` (id = relative path); idempotent.
 
-    La riga ha forma `- [[page]] — summary`. Se esiste già una riga per la stessa `page` con lo
-    stesso sommario, non scrive (SC-002); se il sommario è cambiato, la riga viene aggiornata.
-    Il sommario è **autorato esternamente** e scritto fedelmente (solo trim, FR-014): vuoto o
-    multilinea → errore esplicito, nessuna scrittura e nessuna normalizzazione (FR-018).
+    The row has the form `- [[page]] — summary`. If a row for the same `page` with the same
+    summary already exists, nothing is written (SC-002); if the summary changed, the row is
+    updated. The summary is **externally authored** and written verbatim (trim only, FR-014):
+    empty or multiline → explicit error, no write and no normalisation (FR-018).
     """
     summary = summary.strip()
     if not summary:
-        raise ConfigError("sommario vuoto: upsert-index richiede una riga di testo non vuota",
+        raise ConfigError("empty summary: upsert-index requires a non-empty line of text",
                           key=page)
     if "\n" in summary or "\r" in summary:
         raise ConfigError(
-            "sommario multilinea: la riga d'indice è una riga singola (fornire il testo su una "
-            "riga, nessuna normalizzazione automatica)", key=page,
+            "multiline summary: the index row is a single line (provide the text on one line, "
+            "no automatic normalisation)", key=page,
         )
 
     index_path = profile.index_path
     if not index_path.is_file():
-        raise ConfigError("indice del wiki non trovato (inizializzare la struttura)",
+        raise ConfigError("wiki index not found (initialize the structure first)",
                           key=str(index_path))
 
     line = f"- [[{page}]] — {summary}"

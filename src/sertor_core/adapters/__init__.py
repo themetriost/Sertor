@@ -1,1 +1,1 @@
-"""Adapter concreti delle porte di dominio. Importano gli SDK esterni; isolano le dipendenze."""
+"""Concrete adapters for domain ports. Import external SDKs; isolate dependencies."""

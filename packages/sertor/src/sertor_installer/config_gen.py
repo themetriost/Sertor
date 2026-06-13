@@ -1,9 +1,10 @@
-"""`HostProfile` + generazione di `wiki.config.toml` (D7, data-model §2).
+"""`HostProfile` + generation of `wiki.config.toml` (D7, data-model §2).
 
-L'unico punto in cui l'installer "guarda" l'ospite: euristica delle `source_dirs` e iniezione di
-`language`/`source_dirs` nel template degli assets. I default NON sono hard-coded nel codice: stanno
-nel template `wiki.config.toml.tmpl` (Principio VIII / NFR-I-07); qui si inietta solo la specificità
-inferita. Il file generato MUST superare `load_profile` del core (invariante verificata da test).
+The only point where the installer "inspects" the host: heuristic for `source_dirs` and injection
+of `language`/`source_dirs` into the asset template. Defaults are NOT hard-coded here: they live in
+the `wiki.config.toml.tmpl` template (Principio VIII / NFR-I-07); only the inferred specifics are
+injected here. The generated file MUST pass `load_profile` of the core (invariant verified by
+tests).
 """
 from __future__ import annotations
 
@@ -12,7 +13,7 @@ from pathlib import Path
 
 from sertor_installer.resources import read_asset_text
 
-# Cartelle standard riconosciute (D7, ordine di controllo) — lista generica, host-agnostica.
+# Standard directories recognized (D7, inspection order) — generic, host-agnostic list.
 _STANDARD_SOURCE_DIRS = (
     "src", "lib", "app", "pkg", "packages",
     "docs", "doc", "tests", "test", "requirements", "specs",
@@ -23,7 +24,7 @@ _CONFIG_TEMPLATE = "wiki.config.toml.tmpl"
 
 @dataclass(frozen=True)
 class HostProfile:
-    """Specificità inferita dell'ospite, raccolta prima di generare `wiki.config.toml`."""
+    """Inferred specifics of the host, collected before generating `wiki.config.toml`."""
 
     target_root: Path
     source_dirs: list[str] = field(default_factory=lambda: ["."])
@@ -31,7 +32,8 @@ class HostProfile:
 
 
 def _infer_source_dirs(target_root: Path) -> list[str]:
-    """Cartelle standard presenti come sottocartelle dirette del target; nessuna → `["."]` (D7)."""
+    """Standard directories present as direct subdirectories of the target; none found → `["."]`
+    (D7)."""
     present = [d for d in _STANDARD_SOURCE_DIRS if (target_root / d).is_dir()]
     return present if present else ["."]
 
@@ -41,7 +43,7 @@ def build_host_profile(
     source_dirs_override: list[str] | None = None,
     language: str = "en",
 ) -> HostProfile:
-    """Costruisce l'`HostProfile`: `--source-dirs` (override) bypassa l'euristica (D7)."""
+    """Builds the `HostProfile`: `--source-dirs` (override) bypasses the heuristic (D7)."""
     if source_dirs_override:
         source_dirs = [d.strip() for d in source_dirs_override if d.strip()]
     else:
@@ -50,13 +52,13 @@ def build_host_profile(
 
 
 def _toml_str_list(values: list[str]) -> str:
-    """Serializza una lista di stringhe come array TOML inline (`["a", "b"]`)."""
+    """Serializes a list of strings as an inline TOML array (`["a", "b"]`)."""
     inner = ", ".join(f'"{v}"' for v in values)
     return f"[{inner}]"
 
 
 def generate_wiki_config(profile: HostProfile) -> str:
-    """Compila `wiki.config.toml.tmpl` iniettando `language` e `source_dirs` (D7)."""
+    """Compiles `wiki.config.toml.tmpl` by injecting `language` and `source_dirs` (D7)."""
     template = read_asset_text(_CONFIG_TEMPLATE)
     return template.format(
         language=profile.language,

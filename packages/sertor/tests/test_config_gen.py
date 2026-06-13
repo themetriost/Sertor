@@ -1,4 +1,5 @@
-"""Test di `config_gen` (T021, US1): euristica source_dirs, language, validità load_profile (D7)."""
+"""Tests for `config_gen` (T021, US1): source_dirs heuristic, language, load_profile validity (D7).
+"""
 from __future__ import annotations
 
 from pathlib import Path
@@ -61,7 +62,7 @@ def test_generated_config_source_dirs_serialized_as_toml_list(tmp_path: Path):
 
 
 def test_generated_config_has_no_secrets(tmp_path: Path):
-    """FR-019: il config generato non deve contenere segreti (api_key/endpoint/token)."""
+    """FR-019: the generated config must not contain secrets (api_key/endpoint/token)."""
     profile = build_host_profile(tmp_path, language="it")
     config_text = generate_wiki_config(profile).lower()
     for needle in ("api_key", "apikey", "endpoint", "token", "secret", "password"):

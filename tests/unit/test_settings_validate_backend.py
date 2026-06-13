@@ -1,7 +1,7 @@
-"""Test FEAT-011 — estensioni additive a Settings: validate_backend() e preview_chars (D3/D5).
+"""Test FEAT-011 — additive extensions to Settings: validate_backend() and preview_chars (D3/D5).
 
-Validazione **statica** dei parametri di backend (FR-015) e nuovo default centralizzato per
-l'anteprima dei risultati CLI. Tutto senza rete (NFR-02).
+**Static** validation of backend parameters (FR-015) and new centralized default for
+the CLI results preview. All without network access (NFR-02).
 """
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from sertor_core.config.settings import Settings
 
 
 def _base(env, **over):
-    """Settings caricate da un env controllato (mai dal .env del repo)."""
+    """Settings loaded from a controlled env (never from the repo .env)."""
     for k in list(env):
         env.delenv(k, raising=False)
     return replace(Settings.load(env_file=None), **over)
@@ -36,7 +36,7 @@ def test_validate_backend_azure_store_missing_key():
     missing = s.validate_backend()
     assert "AZURE_SEARCH_ENDPOINT" in missing
     assert "AZURE_SEARCH_API_KEY" in missing
-    # lo store azure non richiede i campi degli embeddings azure
+    # the azure store does not require the azure embeddings fields
     assert "AZURE_OPENAI_ENDPOINT" not in missing
 
 

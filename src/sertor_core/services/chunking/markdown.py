@@ -1,8 +1,8 @@
-"""Chunking della documentazione Markdown ai confini di heading (REQ-008).
+"""Markdown documentation chunking at heading boundaries (REQ-008).
 
-Ogni sezione (da un heading fino al successivo di livello pari o superiore) diventa un chunk, con
-la **gerarchia di sezione** (`heading_path`) come metadato. Il testo prima del primo heading
-diventa un chunk di preambolo con `heading_path` vuoto.
+Each section (from a heading up to the next one of equal or higher level) becomes a chunk, with
+the **section hierarchy** (`heading_path`) as metadata. Text before the first heading becomes a
+preamble chunk with an empty `heading_path`.
 """
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ _HEADING = re.compile(r"^(#{1,6})\s+(.*\S)\s*$")
 
 
 def markdown_chunks(text: str) -> list[dict]:
-    """Spezza `text` Markdown per heading. Chunk: {text, heading_path, start_line, end_line}."""
+    """Splits Markdown `text` by heading. Chunk: {text, heading_path, start_line, end_line}."""
     lines = text.split("\n")
     headings: list[tuple[int, int, str]] = []  # (line_index, level, title)
     for i, ln in enumerate(lines):
@@ -22,7 +22,7 @@ def markdown_chunks(text: str) -> list[dict]:
 
     chunks: list[dict] = []
 
-    # Preambolo prima del primo heading.
+    # Preamble before the first heading.
     first = headings[0][0] if headings else len(lines)
     preamble = "\n".join(lines[:first]).strip()
     if preamble:
@@ -33,7 +33,7 @@ def markdown_chunks(text: str) -> list[dict]:
             "end_line": first,
         })
 
-    stack: list[tuple[int, str]] = []  # (level, title) degli antenati correnti
+    stack: list[tuple[int, str]] = []  # (level, title) of current ancestors
     for idx, (start, level, title) in enumerate(headings):
         while stack and stack[-1][0] >= level:
             stack.pop()

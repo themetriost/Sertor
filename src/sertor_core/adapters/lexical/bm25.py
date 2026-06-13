@@ -1,13 +1,13 @@
-"""Adapter `LexicalIndex` su BM25 (rank-bm25) con sidecar JSON persistito (FEAT-004, gruppo A).
+"""Adapter `LexicalIndex` on BM25 (rank-bm25) with a persisted JSON sidecar (FEAT-004, group A).
 
-Il sidecar vive nella stessa directory di indici namespaced dello store vettoriale
-(`<index_dir>/lexical/<collection>.json`, REQ-072): il nome collezione codifica già
-`(corpus, provider)` → namespacing gratis (REQ-005). Persistere un artefatto rende
-**rilevabile l'assenza** dell'indice (corpus pre-ibrido), condizione della degradazione
-REQ-034 — la policy resta del motore, qui solo `exists()`.
+The sidecar lives in the same namespaced index directory as the vector store
+(`<index_dir>/lexical/<collection>.json`, REQ-072): the collection name already encodes
+`(corpus, provider)` → free namespacing (REQ-005). Persisting an artifact makes
+the **absence of the index detectable** (pre-hybrid corpus), the trigger for the degradation
+REQ-034 — the policy belongs to the engine, only `exists()` lives here.
 
-Il testo è memorizzato grezzo e tokenizzato al caricamento; l'indice BM25 è costruito
-in memoria una volta per collezione e cache-ato nell'istanza (corpora tipici < 10k chunk).
+Text is stored raw and tokenised on load; the BM25 index is built in memory once per
+collection and cached in the instance (typical corpora < 10k chunks).
 """
 from __future__ import annotations
 
@@ -27,9 +27,9 @@ _WORD = re.compile(r"[a-z0-9_]+")
 
 
 def tokenize(text: str) -> list[str]:
-    """Token lowercase; per gli snake_case aggiunge anche i sotto-token (REQ-001).
+    """Lowercase tokens; for snake_case also adds sub-tokens (REQ-001).
 
-    È il differenziatore sulle query a simbolo esatto (parità col prototipo 02).
+    This is the differentiator for exact-symbol queries (on par with prototype 02).
     """
     out: list[str] = []
     for word in _WORD.findall(text.lower()):
@@ -40,18 +40,18 @@ def tokenize(text: str) -> list[str]:
 
 
 class Bm25LexicalIndex:
-    """`LexicalIndex` su BM25Okapi + sidecar JSON atomico."""
+    """`LexicalIndex` on BM25Okapi + atomic JSON sidecar."""
 
     def __init__(self, index_dir: Path | str):
         self._dir = Path(index_dir) / "lexical"
-        # cache per collezione: (entries, bm25, token_sets) — invalidata da build/reset.
+        # per-collection cache: (entries, bm25, token_sets) — invalidated by build/reset.
         self._cache: dict[str, tuple[list[LexicalEntry], object, list[set[str]]]] = {}
 
     def _sidecar(self, collection: str) -> Path:
         return self._dir / f"{collection}.json"
 
     def build(self, collection: str, entries: list[LexicalEntry]) -> None:
-        """Sostituisce integralmente il sidecar (snapshot intero, idempotente, atomico)."""
+        """Fully replaces the sidecar (complete snapshot, idempotent, atomic)."""
         self._dir.mkdir(parents=True, exist_ok=True)
         payload = {
             "format": _FORMAT,
@@ -62,7 +62,7 @@ class Bm25LexicalIndex:
                 for e in entries
             ],
         }
-        # Scrittura atomica: tmp nella stessa directory + replace (mai sidecar troncato).
+        # Atomic write: tmp in the same directory + replace (sidecar never left truncated).
         fd, tmp_name = tempfile.mkstemp(dir=self._dir, suffix=".tmp")
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as handle:
@@ -81,12 +81,12 @@ class Bm25LexicalIndex:
             data = json.loads(path.read_text(encoding="utf-8"))
         except json.JSONDecodeError as exc:
             raise ConfigError(
-                f"sidecar lessicale corrotto: {path} — ricostruirlo con un re-index",
+                f"corrupt lexical sidecar: {path} — rebuild it with a re-index",
             ) from exc
         if data.get("format") != _FORMAT:
             raise ConfigError(
-                f"formato del sidecar lessicale non riconosciuto ({data.get('format')!r}): "
-                f"{path} — ricostruirlo con un re-index",
+                f"unrecognised lexical sidecar format ({data.get('format')!r}): "
+                f"{path} — rebuild it with a re-index",
             )
         entries = [
             LexicalEntry(item["chunk_id"], item["text"], item["doc_type"], item["path"])
@@ -118,15 +118,15 @@ class Bm25LexicalIndex:
         query_tokens = tokenize(query)
         query_set = set(query_tokens)
         scores = bm25.get_scores(query_tokens)
-        # Candidato = contiene almeno un token della query. Il rank arriva dallo score BM25 anche
-        # se ≤ 0: con corpora piccoli l'IDF Okapi dei termini molto comuni è negativo (epsilon
-        # floor di rank_bm25) e un filtro "score > 0" scarterebbe match legittimi.
+        # Candidate = contains at least one query token. Rank comes from the BM25 score even
+        # when ≤ 0: with small corpora Okapi IDF for very common terms is negative (epsilon
+        # floor of rank_bm25) and a "score > 0" filter would drop legitimate matches.
         scored = [
             (float(score), entry.chunk_id)
             for score, entry, tokens in zip(scores, entries, token_sets, strict=True)
             if tokens & query_set and (doc_type == "both" or entry.doc_type == doc_type)
         ]
-        scored.sort(key=lambda item: (-item[0], item[1]))  # pareggi per chunk_id (REQ-012)
+        scored.sort(key=lambda item: (-item[0], item[1]))  # ties broken by chunk_id (REQ-012)
         return [chunk_id for _, chunk_id in scored[:k]]
 
     def lookup(self, collection: str, chunk_ids: list[str]) -> list[LexicalEntry]:
@@ -138,5 +138,5 @@ class Bm25LexicalIndex:
         return self._sidecar(collection).exists()
 
     def reset(self, collection: str) -> None:
-        self._sidecar(collection).unlink(missing_ok=True)  # assente = no-op (idempotente)
+        self._sidecar(collection).unlink(missing_ok=True)  # absent = no-op (idempotent)
         self._cache.pop(collection, None)

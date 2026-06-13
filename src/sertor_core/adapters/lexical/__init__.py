@@ -1,1 +1,1 @@
-"""Adapter dell'indice lessicale (porta `LexicalIndex`)."""
+"""Adapter for the lexical index (port `LexicalIndex`)."""

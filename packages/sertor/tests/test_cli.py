@@ -1,4 +1,7 @@
-"""Test del backbone CLI `sertor` (T020, T029, US1/US3): help, stub, exit code, opzioni (SC-007)."""
+"""Tests for the `sertor` CLI backbone (T020, T029, US1/US3): help, stub, exit code, options.
+
+SC-007.
+"""
 from __future__ import annotations
 
 import json
@@ -40,7 +43,7 @@ def test_unknown_subcommand_exit_2(capsys):
 
 
 def test_install_rag_no_deps_exit_0(tmp_path: Path, capsys):
-    # --no-deps: scaffold senza invocare `uv` (no rete)
+    # --no-deps: scaffold without invoking `uv` (no network)
     rc = main(["install", "rag", "--target", str(tmp_path), "--no-deps"])
     assert rc == 0
     assert (tmp_path / ".sertor" / ".env").is_file()

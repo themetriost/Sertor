@@ -1,8 +1,8 @@
-"""Backbone CLI del comando `sertor` (contracts/cli-commands.md, D8).
+"""CLI backbone for the `sertor` command (contracts/cli-commands.md, D8).
 
-Layer **sottile** (Principio I): parsing argparse → funzioni dell'installer → formattazione report.
-Pattern di riferimento: `src/sertor_core/cli/__main__.py`. Exit code: `0` successo · `1` errore di
-dominio (`SertorError`) · `2` errore d'uso (argparse).
+Thin **layer** (Principio I): argparse parsing → installer functions → report formatting.
+Reference pattern: `src/sertor_core/cli/__main__.py`. Exit code: `0` success · `1` domain error
+(`SertorError`) · `2` usage error (argparse).
 """
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ from sertor_installer.rag_profile import RagHostProfile, RagInstallOptions
 
 
 class CapabilityNotAvailableError(SertorError):
-    """Una capacità d'install dichiarata ma non ancora implementata (stub; D8, REQ-104)."""
+    """An install capability declared but not yet implemented (stub; D8, REQ-104)."""
 
     def __init__(self, capability: str):
         self.capability = capability
@@ -80,7 +80,8 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def _cmd_install_wiki(args) -> int:
-    """Handler `install wiki`: valida il target, costruisce il piano, esegue, stampa il report."""
+    """Handler for `install wiki`: validates the target, builds the plan, executes, prints the
+    report."""
     target_root = Path(args.target).resolve()
     if not target_root.exists():
         raise ConfigError("target does not exist", key=str(target_root))
@@ -101,7 +102,7 @@ def _cmd_install_wiki(args) -> int:
 
 
 def _cmd_install_rag(args) -> int:
-    """Handler `install rag`: valida il target, esegue il piano RAG, stampa il report."""
+    """Handler for `install rag`: validates the target, executes the RAG plan, prints the report."""
     target_root = Path(args.target).resolve()
     if not target_root.exists():
         raise ConfigError("target does not exist", key=str(target_root))
@@ -132,13 +133,13 @@ def _dispatch(args) -> int:
             return _cmd_install_wiki(args)
         if args.capability == "rag":
             return _cmd_install_rag(args)
-        # stub leggibili: exit 1 via eccezione di dominio dedicata (governance)
+        # human-readable stubs: exit 1 via dedicated domain exception (governance)
         raise CapabilityNotAvailableError(args.capability)
     raise ConfigError(f"unsupported command: {args.command}")  # pragma: no cover
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Punto d'ingresso del console-script `sertor`. Ritorna l'exit code (0/1/2)."""
+    """Entry point for the `sertor` console-script. Returns the exit code (0/1/2)."""
     for stream in (sys.stdin, sys.stdout, sys.stderr):
         try:
             stream.reconfigure(encoding="utf-8")  # type: ignore[union-attr]

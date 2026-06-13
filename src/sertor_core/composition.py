@@ -1,8 +1,8 @@
-"""Composition root del nucleo (Principio I/VIII).
+"""Composition root for the core (Principio I/VIII).
 
-È l'UNICO componente che conosce gli adapter concreti e li cabla a partire dalla configurazione.
-I servizi e la facade dipendono solo dalle porte; qui si decide quale implementazione usare in base
-a `Settings`. Estendere qui (non nei servizi) per aggiungere provider/backend.
+This is the ONLY component that knows the concrete adapters and wires them from the configuration.
+Services and the facade depend only on ports; which implementation to use is decided here based
+on `Settings`. Extend here (not in services) to add providers/backends.
 """
 from __future__ import annotations
 
@@ -14,24 +14,24 @@ _VALID_ENGINES = ("baseline", "hybrid")
 
 
 def _validated_engine(settings: Settings) -> str:
-    """Valore di `Settings.engine` validato: sconosciuto → `ConfigError` coi valori ammessi."""
+    """Validated `Settings.engine` value: unknown → `ConfigError` with allowed values."""
     if settings.engine not in _VALID_ENGINES:
         raise ConfigError(
-            f"motore sconosciuto: {settings.engine!r} (ammessi: {', '.join(_VALID_ENGINES)})",
+            f"unknown engine: {settings.engine!r} (allowed: {', '.join(_VALID_ENGINES)})",
             key="SERTOR_ENGINE",
         )
     return settings.engine
 
 
 def _build_lexical(settings: Settings) -> LexicalIndex:
-    """Indice lessicale del motore ibrido: sidecar BM25 nella dir indici (FEAT-004)."""
+    """Lexical index for the hybrid engine: BM25 sidecar in the index directory (FEAT-004)."""
     from sertor_core.adapters.lexical.bm25 import Bm25LexicalIndex
 
     return Bm25LexicalIndex(settings.index_dir)
 
 
 def _build_reranker(settings: Settings) -> Reranker | None:
-    """Reranker opzionale (extra `rerank`, lazy): configurato ma assente → errore (REQ-022)."""
+    """Optional reranker (extra `rerank`, lazy): configured but missing → error (REQ-022)."""
     if not settings.rerank_enabled:
         return None
     try:
@@ -40,14 +40,14 @@ def _build_reranker(settings: Settings) -> Reranker | None:
         return FlashRankReranker()
     except ImportError as exc:
         raise ConfigError(
-            "reranking abilitato ma l'extra non è installato: "
-            'uv add "sertor-core[rerank]" (oppure SERTOR_RERANK=false)',
+            "reranking enabled but the extra is not installed: "
+            'uv add "sertor-core[rerank]" (or SERTOR_RERANK=false)',
             key="SERTOR_RERANK",
         ) from exc
 
 
 def build_embedder(settings: Settings | None = None) -> EmbeddingProvider:
-    """Costruisce il provider di embeddings selezionato dalla configurazione (REQ-013/030)."""
+    """Build the embedding provider selected by the configuration (REQ-013/030)."""
     settings = settings or Settings.load()
     if settings.embed_provider == "azure":
         from sertor_core.adapters.embeddings.azure import AzureEmbedder
@@ -68,11 +68,11 @@ def build_embedder(settings: Settings | None = None) -> EmbeddingProvider:
 
 
 def build_store(settings: Settings | None = None) -> VectorStore:
-    """Costruisce il backend di vector store selezionato dalla configurazione (REQ-018/030).
+    """Build the vector store backend selected by the configuration (REQ-018/030).
 
-    Il backend dello store è **disaccoppiato** dal provider di embeddings (`store_backend`, non
-    `backend`): si possono combinare embeddings Azure con store Chroma locale (o viceversa),
-    restando fedeli al local-first (Principio II). Default: vedi `Settings.store_backend`.
+    The store backend is **decoupled** from the embedding provider (`store_backend`, not
+    `backend`): Azure embeddings can be combined with a local Chroma store (or vice versa),
+    staying true to local-first (Principio II). Default: see `Settings.store_backend`.
     """
     settings = settings or Settings.load()
     if settings.store_backend == "azure":
@@ -92,25 +92,25 @@ def _sanitize(name: str) -> str:
 
 
 def collection_name(settings: Settings, embedder: EmbeddingProvider) -> str:
-    """Nome di collezione namespaced per (corpus, provider): isola corpora e provider (REQ-019).
+    """Collection name namespaced by (corpus, provider): isolates corpora and providers (REQ-019).
 
-    Il provider (nome+modello) determina la dimensione dei vettori: includerlo evita di mescolare
-    embedding di dimensioni diverse nella stessa collezione.
+    The provider (name+model) determines vector dimension: including it prevents mixing
+    embeddings of different dimensions in the same collection.
     """
     base = f"{settings.corpus}__{_sanitize(embedder.name)}"
     if settings.store_backend == "azure":
-        # Azure AI Search: gli index hanno vincoli di naming (minuscolo, lettera iniziale).
+        # Azure AI Search: index names have naming constraints (lowercase, letter-initial).
         base = base.lower().lstrip("0123456789_") or "sertor"
-    # Chroma/Azure richiedono nomi di 3+ caratteri: garantisce la lunghezza minima.
+    # Chroma/Azure require names of 3+ characters: guarantees the minimum length.
     return base if len(base) >= 3 else f"{base}_idx"
 
 
 def build_graph_service(settings: Settings | None = None):
-    """Costruisce il servizio di code-graph (FEAT-005) — ORTOGONALE a `SERTOR_ENGINE` (REQ-013).
+    """Build the code graph service (FEAT-005) — ORTHOGONAL to `SERTOR_ENGINE` (REQ-013).
 
-    Factory dedicata: il grafo è navigazione strutturale, non retrieval per similarità; non
-    passa dalla manopola dei motori. L'adapter costruisce l'artefatto SENZA l'extra `graph`;
-    la navigazione lo richiede (import lazy nei metodi di query, errore azionabile — DA-5).
+    Dedicated factory: the graph is structural navigation, not similarity retrieval; it does
+    not go through the engine knob. The adapter builds the artifact WITHOUT the `graph` extra;
+    navigation requires it (lazy imports in query methods, actionable error — DA-5).
     """
     from sertor_core.adapters.graph.networkx_graph import NetworkxCodeGraph
 
@@ -127,13 +127,13 @@ def build_graph_service(settings: Settings | None = None):
 
 
 def build_indexer(settings: Settings | None = None):
-    """Costruisce l'orchestratore di indicizzazione cablato dalla configurazione (REQ-029).
+    """Build the indexing orchestrator wired from the configuration (REQ-029).
 
-    Con `engine=hybrid` (default) la pipeline riceve il sink lessicale: ogni `index()` scrive
-    anche il sidecar BM25 — è ciò che rende vero l'hint «re-index abilita l'ibrido» (REQ-034).
-    Con `baseline` la pipeline è identica a prima della FEAT-004 (REQ-071).
-    Con `graph_enabled` (default) riceve anche il sink del code-graph (FEAT-005, DA-2):
-    un solo comando tiene freschi retrieval e grafo.
+    With `engine=hybrid` (default) the pipeline receives the lexical sink: each `index()` also
+    writes the BM25 sidecar — this is what makes the hint «re-index enables hybrid» true (REQ-034).
+    With `baseline` the pipeline is identical to before FEAT-004 (REQ-071).
+    With `graph_enabled` (default) it also receives the code graph sink (FEAT-005, DA-2):
+    a single command keeps both retrieval and graph up to date.
     """
     from sertor_core.services.indexing import IndexingService
 
@@ -150,12 +150,12 @@ def build_indexer(settings: Settings | None = None):
 
 
 def build_facade(settings: Settings | None = None):
-    """Costruisce la facade di retrieval cablata dalla configurazione (REQ-029).
+    """Build the retrieval facade wired from the configuration (REQ-029).
 
-    Punto d'ingresso per i consumatori: importano e usano la facade senza conoscere
-    store/embeddings. I corpora extra (`Settings.extra_corpora`, FR-007) diventano la mappa
-    corpus→collezione del fan-out della ricerca combinata: il nome è derivato con la stessa
-    `collection_name`, quindi con il provider di embeddings corrente.
+    Entry point for consumers: they import and use the facade without knowing the
+    store/embeddings details. Extra corpora (`Settings.extra_corpora`, FR-007) become the
+    corpus→collection map for the combined-search fan-out: the name is derived with the same
+    `collection_name`, hence with the current embedding provider.
     """
     from dataclasses import replace
 
@@ -171,8 +171,8 @@ def build_facade(settings: Settings | None = None):
     }
     retriever = None
     if engine == "hybrid":
-        # Strategia iniettata (FR-017/018): stesso embedder/store della facade, mai istanze
-        # duplicate. Il fan-out multi-collezione resta dense-only (research D6).
+        # Injected strategy (FR-017/018): same embedder/store as the facade, never duplicate
+        # instances. The multi-collection fan-out remains dense-only (research D6).
         from sertor_core.engines.hybrid import HybridEngine
 
         retriever = HybridEngine(
@@ -194,7 +194,7 @@ def build_facade(settings: Settings | None = None):
 
 
 def build_baseline_engine(settings: Settings | None = None):
-    """Costruisce il motore RAG vettoriale baseline cablato dalla configurazione (REQ-012)."""
+    """Build the baseline vector RAG engine wired from the configuration (REQ-012)."""
     from sertor_core.engines.baseline import BaselineEngine
 
     settings = settings or Settings.load()
@@ -204,10 +204,10 @@ def build_baseline_engine(settings: Settings | None = None):
 
 
 def build_engine(settings: Settings | None = None):
-    """Costruisce il motore RAG selezionato da `Settings.engine` (FEAT-004, REQ-030/031).
+    """Build the RAG engine selected by `Settings.engine` (FEAT-004, REQ-030/031).
 
-    UNICO punto di scelta del motore (Principio I): `baseline` → `BaselineEngine` (identico a
-    oggi), `hybrid` (default) → `HybridEngine`; valore sconosciuto → `ConfigError`.
+    SINGLE engine selection point (Principio I): `baseline` → `BaselineEngine` (unchanged),
+    `hybrid` (default) → `HybridEngine`; unknown value → `ConfigError`.
     """
     settings = settings or Settings.load()
     if _validated_engine(settings) == "baseline":

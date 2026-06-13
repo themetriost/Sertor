@@ -1,27 +1,27 @@
-"""Eccezioni di dominio del nucleo (Principio IV: errori espliciti, niente None silenzioso).
+"""Domain exceptions for the core (Principio IV: explicit errors, no silent None).
 
-Gli errori di terze parti (SDK di provider/store) vanno **avvolti** in queste eccezioni al
-boundary degli adapter, così il core non espone tipi esterni. Un'assenza lecita (file
-illeggibile, indice vuoto) NON è un errore: si gestisce con warning + prosecuzione / risultato
-vuoto, non sollevando queste eccezioni.
+Third-party errors (provider/store SDKs) must be **wrapped** in these exceptions at the
+adapter boundary, so the core never exposes external types. A legitimate absence (unreadable
+file, empty index) is NOT an error: handle it with a warning + continuation / empty result,
+not by raising these exceptions.
 """
 from __future__ import annotations
 
 
 class SertorError(Exception):
-    """Radice di tutte le eccezioni di dominio Sertor."""
+    """Root of all Sertor domain exceptions."""
 
 
 class ConfigError(SertorError):
-    """Configurazione mancante o incoerente."""
+    """Missing or inconsistent configuration."""
 
     def __init__(self, message: str, *, key: str | None = None):
         self.key = key
-        super().__init__(message if key is None else f"{message} (chiave: {key})")
+        super().__init__(message if key is None else f"{message} (key: {key})")
 
 
 class IngestionError(SertorError):
-    """La radice del repository non è accessibile o non è una directory valida."""
+    """The repository root is not accessible or is not a valid directory."""
 
     def __init__(self, message: str, *, path: str | None = None):
         self.path = path
@@ -29,9 +29,9 @@ class IngestionError(SertorError):
 
 
 class EmbeddingError(SertorError):
-    """Il provider di embeddings non è disponibile o ha restituito un errore (REQ-015).
+    """The embedding provider is unavailable or returned an error (REQ-015).
 
-    Identifica provider, causa e ritentabilità per consentire al chiamante una decisione.
+    Exposes provider, reason, and retriability so the caller can make an informed decision.
     """
 
     def __init__(self, message: str, *, provider: str, reason: str, retriable: bool):
@@ -44,9 +44,9 @@ class EmbeddingError(SertorError):
 
 
 class VectorStoreError(SertorError):
-    """Il backend di vector store non è disponibile (REQ-021).
+    """The vector store backend is unavailable (REQ-021).
 
-    Sollevato invece di restituire silenziosamente risultati vuoti.
+    Raised instead of silently returning empty results.
     """
 
     def __init__(self, message: str, *, backend: str, reason: str):
@@ -56,11 +56,10 @@ class VectorStoreError(SertorError):
 
 
 class ProviderMismatchError(SertorError):
-    """Un corpus bersaglio della ricerca combinata è indicizzato con un altro provider (FR-009).
+    """A corpus targeted by a combined search is indexed with a different provider (FR-009).
 
-    Gli score di spazi vettoriali diversi non sono confrontabili: meglio nessuna risposta che
-    una fusione fuorviante (deroga deliberata alla policy tollerante della facade, clarify
-    2026-06-10).
+    Scores from different vector spaces are not comparable: no answer is better than a
+    misleading merge (deliberate waiver of the facade's tolerant policy, clarify 2026-06-10).
     """
 
     def __init__(self, message: str, *, corpus: str, expected: str, found: list[str]):
@@ -68,16 +67,16 @@ class ProviderMismatchError(SertorError):
         self.expected = expected
         self.found = found
         super().__init__(
-            f"{message} [corpus={corpus}, attesa={expected}, trovate={found}] — "
-            "reindicizzare il corpus con il provider corrente o cambiare provider"
+            f"{message} [corpus={corpus}, expected={expected}, found={found}] — "
+            "re-index the corpus with the current provider or switch provider"
         )
 
 
 class GraphNotFoundError(SertorError):
-    """Si interroga un code-graph che non è stato costruito (FEAT-005, FR-007).
+    """A code graph is queried before it has been built (FEAT-005, FR-007).
 
-    Assenza del GRAFO = errore d'uso esplicito (costruirlo con un index); l'assenza di un
-    SIMBOLO nel grafo è invece un risultato vuoto legittimo (FR-017) — due semantiche distinte.
+    Absence of the GRAPH = explicit usage error (build it with an index); absence of a
+    SYMBOL in the graph is instead a legitimate empty result (FR-017) — two distinct semantics.
     """
 
     def __init__(self, message: str, *, corpus: str):
@@ -86,10 +85,10 @@ class GraphNotFoundError(SertorError):
 
 
 class IndexNotFoundError(SertorError):
-    """Si interroga un indice che non esiste ancora (REQ-009 di FEAT-002).
+    """An index is queried before it exists (REQ-009 from FEAT-002).
 
-    A livello di motore l'assenza dell'indice è un errore d'uso esplicito (costruire l'indice
-    prima di interrogare), non un risultato vuoto silenzioso.
+    At engine level, a missing index is an explicit usage error (build the index before
+    querying), not a silent empty result.
     """
 
     def __init__(self, message: str, *, collection: str):

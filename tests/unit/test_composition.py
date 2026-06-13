@@ -1,8 +1,8 @@
-"""Test del composition root — disaccoppiamento store ↔ provider di embeddings (Principio II/VIII).
+"""Test of the composition root — decoupling vector store ↔ embedding provider (Principio II/VIII).
 
-Lo store del vettore (`store_backend`) è scelto indipendentemente dal provider di embeddings
-(`backend`): si possono combinare embeddings Azure con store Chroma locale. Il naming della
-collezione applica i vincoli di Azure Search **solo** quando lo store è Azure.
+The vector store (`store_backend`) is chosen independently from the embedding provider
+(`backend`): Azure embeddings can be combined with a local Chroma store. Collection naming
+applies Azure Search constraints **only** when the store is Azure.
 """
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from tests.fixtures.mocks import FakeEmbedder
 
 
 def test_azure_embeddings_with_local_store(monkeypatch):
-    # Embeddings su Azure ma store Chroma locale: combinazione del prototipo (decoupling Princ. II).
+    # Azure embeddings but local Chroma store: prototype combination (decoupling Princ. II).
     monkeypatch.setenv("RAG_BACKEND", "azure")
     monkeypatch.setenv("SERTOR_STORE_BACKEND", "local")
     monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://x.openai.azure.com/openai/v1")
@@ -23,11 +23,11 @@ def test_azure_embeddings_with_local_store(monkeypatch):
     settings = Settings.load(env_file=None)
 
     assert isinstance(build_embedder(settings), AzureEmbedder)
-    assert isinstance(build_store(settings), ChromaStore)   # store locale nonostante backend=azure
+    assert isinstance(build_store(settings), ChromaStore)   # local store despite backend=azure
 
 
 def test_build_facade_wires_extra_corpora(monkeypatch):
-    # I corpora extra (FR-007) diventano collezioni derivate col provider corrente (feature 010).
+    # Extra corpora (FR-007) become derived collections with the current provider (feature 010).
     monkeypatch.setenv("RAG_BACKEND", "local")
     monkeypatch.setenv("SERTOR_STORE_BACKEND", "local")
     monkeypatch.setenv("SERTOR_CORPUS", "sertor")
@@ -41,7 +41,7 @@ def test_build_facade_wires_extra_corpora(monkeypatch):
     facade = build_facade(settings)
     expected = collection_name(replace(settings, corpus="wiki"), facade._embedder)
     assert facade._extra_collections == {"wiki": expected}
-    assert expected.startswith("wiki__")          # namespaced per (corpus, provider)
+    assert expected.startswith("wiki__")          # namespaced by (corpus, provider)
 
 
 def test_build_facade_without_extra_corpora_has_empty_map(monkeypatch):
@@ -56,12 +56,12 @@ def test_build_facade_without_extra_corpora_has_empty_map(monkeypatch):
 
 
 def test_collection_name_keys_on_store_backend():
-    emb = FakeEmbedder()  # .name == "fake:8" → sanitizzato "fake_8"
+    emb = FakeEmbedder()  # .name == "fake:8" → sanitized to "fake_8"
 
-    # Store locale (Chroma): nessun vincolo di naming → preserva il case del corpus.
+    # Local store (Chroma): no naming constraints → preserves corpus case.
     local = collection_name(Settings(corpus="Sertor", store_backend="local"), emb)
     assert local == "Sertor__fake_8"
 
-    # Store Azure: vincoli dell'index (minuscolo, niente cifra iniziale) → forzato lowercase.
+    # Azure store: index constraints (lowercase, no leading digit) → forced lowercase.
     azure = collection_name(Settings(corpus="Sertor", store_backend="azure"), emb)
     assert azure == "sertor__fake_8"

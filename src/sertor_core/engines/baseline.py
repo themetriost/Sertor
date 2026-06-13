@@ -1,9 +1,9 @@
-"""Motore RAG vettoriale — modalità "baseline" (FEAT-002).
+"""Vector RAG engine — "baseline" mode (FEAT-002).
 
-Motore sottile sopra il nucleo: orchestra ingestione/chunking/embeddings/vector store (FEAT-001)
-per indicizzare una codebase e interrogarla per similarità. Non ridefinisce le primitive del nucleo
-(Principio III). Usa **solo** retrieval per similarità vettoriale (REQ-014): nessun meccanismo
-ibrido/grafo/agentico.
+Thin engine on top of the core: orchestrates ingestion/chunking/embeddings/vector store (FEAT-001)
+to index a codebase and query it by similarity. Does not redefine core primitives
+(Principle III). Uses **only** vector similarity retrieval (REQ-014): no hybrid/graph/agentic
+mechanism.
 """
 from __future__ import annotations
 
@@ -20,9 +20,9 @@ from sertor_core.services.indexing import IndexingService
 
 
 class BaselineEngine:
-    """Modalità RAG vettoriale baseline. Costruita via `composition.build_baseline_engine`."""
+    """Baseline vector RAG mode. Built via `composition.build_baseline_engine`."""
 
-    name = "baseline"  # nome stabile della modalità (REQ-013)
+    name = "baseline"  # stable mode name (REQ-013)
 
     def __init__(
         self,
@@ -43,33 +43,33 @@ class BaselineEngine:
         return self._embedder.name
 
     def index(self, root: Path | str) -> IndexReport:
-        """Indicizza la codebase ricostruendo l'indice da zero (rebuild idempotente, REQ-001/002).
+        """Indexes the codebase by rebuilding the index from scratch (idempotent rebuild,
+        REQ-001/002).
 
-        Delega all'orchestratore del nucleo con `rebuild=True`: un errore del provider durante
-        l'embedding lascia l'indice preesistente intatto (REQ-004).
+        Delegates to the core orchestrator with `rebuild=True`: a provider error during
+        embedding leaves the pre-existing index intact (REQ-004).
         """
         indexer = IndexingService(self._embedder, self._store, self._collection, self._settings)
         return indexer.index(root, rebuild=True)
 
     def ensure_index(self) -> None:
-        """Verifica strict che l'indice esista, altrimenti `IndexNotFoundError` (REQ-009).
+        """Strictly checks that the index exists, otherwise raises `IndexNotFoundError` (REQ-009).
 
-        Check **esplicito** (niente lista vuota silenziosa) riusabile dai consumatori — es. la CLI
-        lo invoca prima di instradare la ricerca per `--type code|doc|both`, mantenendo la via
-        strict per tutti i filtri (FEAT-011, D6). `query()` vi delega: il check vive in un solo
-        punto.
+        **Explicit** check (no silent empty list) reusable by consumers — e.g. the CLI
+        invokes it before routing the search by `--type code|doc|both`, keeping the strict path
+        for all filters (FEAT-011, D6). `query()` delegates here: the check lives in one place.
         """
         if not self._store.exists(self._collection):
             raise IndexNotFoundError(
-                "indice inesistente: costruiscilo (index) prima di interrogare",
+                "index not found: build it (index) before querying",
                 collection=self._collection,
             )
 
     def query(self, query: str, k: int | None = None) -> list[RetrievalResult]:
-        """Top-k chunk per similarità vettoriale (REQ-005..008).
+        """Top-k chunks by vector similarity (REQ-005..008).
 
-        Se l'indice non esiste solleva `IndexNotFoundError` (REQ-009) — niente lista vuota
-        silenziosa. Un provider non disponibile propaga `EmbeddingError` (REQ-010).
+        If the index does not exist raises `IndexNotFoundError` (REQ-009) — no silent empty list.
+        An unavailable provider propagates `EmbeddingError` (REQ-010).
         """
         k = k or self._default_k
         self.ensure_index()

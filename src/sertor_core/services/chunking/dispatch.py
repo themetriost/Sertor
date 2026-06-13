@@ -1,9 +1,9 @@
-"""Dispatcher di chunking: seleziona il chunker giusto per documento e produce `Chunk` di dominio.
+"""Chunking dispatcher: selects the right chunker for a document and produces domain `Chunk`s.
 
-Codice → chunker sintattico (con fallback dimensionale se la lingua non è supportata, REQ-009);
-Markdown → chunker per heading (REQ-008); altro testo → fallback dimensionale. Assegna a ogni
-chunk un id stabile `f"{document_id}#{index}"` (ordinale posizionale, REQ-010) per garantire
-l'idempotenza a contenuto invariato (Principio VI).
+Code → syntactic chunker (with size-based fallback if the language is not supported, REQ-009);
+Markdown → heading-based chunker (REQ-008); other text → size-based fallback. Assigns each
+chunk a stable id `f"{document_id}#{index}"` (positional ordinal, REQ-010) to guarantee
+idempotency when content is unchanged (Principio VI).
 """
 from __future__ import annotations
 
@@ -49,13 +49,13 @@ def _markdown_metadata(doc: Document, raw: dict) -> ChunkMetadata:
 
 
 def chunk_document(doc: Document, settings: Settings) -> list[Chunk]:
-    """Produce i `Chunk` di un documento, con id stabili e metadati strutturali."""
+    """Produces the `Chunk`s for a document, with stable ids and structural metadata."""
     if doc.doc_type is DocType.DOC:
         raws = markdown_chunks(doc.text)
         meta_of = _markdown_metadata
     else:
         raws = code_chunks(doc.text, doc.language, settings.chunk_size)
-        if raws is None:  # lingua non supportata sintatticamente -> fallback dimensionale
+        if raws is None:  # language not supported syntactically -> size-based fallback
             raws = size_chunks(doc.text, settings.chunk_size, settings.chunk_overlap)
             meta_of = _fallback_metadata
         else:

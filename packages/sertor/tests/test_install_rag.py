@@ -1,6 +1,6 @@
-"""Test dell'orchestrazione `install rag` (T016/T018/T020/T024/T025, M2, L1).
+"""Tests for `install rag` orchestration (T016/T018/T020/T024/T025, M2, L1).
 
-Usano `FakeCommandRunner` (fixture `make_runner`): nessuna rete, nessun `uv` reale.
+Use `FakeCommandRunner` (fixture `make_runner`): no network, no real `uv`.
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ def _uv_calls(runner) -> list[list[str]]:
     return [cmd for cmd, _ in runner.calls]
 
 
-# --- US1: un comando, RAG pronto -------------------------------------------------------------
+# --- US1: one command, RAG ready -------------------------------------------------------------
 
 def test_full_install_azure(tmp_path: Path, make_runner):
     runner = make_runner()
@@ -38,9 +38,9 @@ def test_full_install_azure(tmp_path: Path, make_runner):
 def test_install_never_indexes(tmp_path: Path, make_runner):
     runner = make_runner()
     _run(tmp_path, runner, backend="azure")
-    # install != run: nessun comando di indicizzazione/ricerca
+    # install != run: no indexing/search commands
     assert all("index" not in cmd and "search" not in cmd for cmd in _uv_calls(runner))
-    # solo uv init + uv add (init con --name esplicito: `.sertor` non è un package name valido)
+    # only uv init + uv add (init with explicit --name: `.sertor` is not a valid package name)
     assert any(cmd[:3] == ["uv", "init", "--bare"] for cmd in _uv_calls(runner))
     assert any(cmd[:2] == ["uv", "add"] for cmd in _uv_calls(runner))
 
@@ -74,14 +74,14 @@ def test_corpus_in_env_and_mcp(tmp_path: Path, make_runner):
     assert "mycorp" in (tmp_path / ".mcp.json").read_text()
 
 
-# --- US2: idempotenza e non distruttività ----------------------------------------------------
+# --- US2: idempotence and non-destructiveness ------------------------------------------------
 
 def test_idempotent_config_only(tmp_path: Path, make_runner):
     runner = make_runner()
     _run(tmp_path, runner, backend="azure", with_deps=False)
     report2, _ = _run(tmp_path, runner, backend="azure", with_deps=False)
     assert report2.exit_code() == 0
-    assert report2.created == 0  # tutto già presente
+    assert report2.created == 0  # everything already present
     assert all(o.outcome.value in ("skipped", "merged") for o in report2.outcomes)
 
 
@@ -90,7 +90,7 @@ def test_deps_skips_init_when_pyproject_exists(tmp_path: Path, make_runner):
     (tmp_path / ".sertor" / "pyproject.toml").write_text("[project]\n", encoding="utf-8")
     runner = make_runner()
     _run(tmp_path, runner, backend="azure")
-    # nessun uv init (già inizializzato), solo uv add
+    # no uv init (already initialized), only uv add
     assert not any(cmd[:2] == ["uv", "init"] for cmd in _uv_calls(runner))
     assert any(cmd[:2] == ["uv", "add"] for cmd in _uv_calls(runner))
 
@@ -100,8 +100,8 @@ def test_uv_missing_failfast_no_sertor_dir(tmp_path: Path, make_runner):  # T020
     report, _ = _run(tmp_path, runner, backend="azure")
     assert report.exit_code() == 1
     assert report.failed_step == ".sertor"
-    assert not (tmp_path / ".sertor").exists()  # nessuno stato a metà
-    assert not (tmp_path / ".mcp.json").exists()  # step successivi non eseguiti
+    assert not (tmp_path / ".sertor").exists()  # no partial state
+    assert not (tmp_path / ".mcp.json").exists()  # subsequent steps not executed
 
 
 def test_uv_add_failure_failfast(tmp_path: Path, make_runner):  # T020 / REQ-215
@@ -109,10 +109,10 @@ def test_uv_add_failure_failfast(tmp_path: Path, make_runner):  # T020 / REQ-215
     report, _ = _run(tmp_path, runner, backend="azure")
     assert report.exit_code() == 1
     assert report.failed_step == ".sertor"
-    assert not (tmp_path / ".sertor" / ".env").exists()  # no rollback, ma step dopo non eseguiti
+    assert not (tmp_path / ".sertor" / ".env").exists()  # no rollback; subsequent steps not run
 
 
-# --- US4: backend locale e flag --------------------------------------------------------------
+# --- US4: local backend and flags ------------------------------------------------------------
 
 def test_backend_local_env_and_extras(tmp_path: Path, make_runner):  # SC-006
     runner = make_runner()
@@ -120,7 +120,7 @@ def test_backend_local_env_and_extras(tmp_path: Path, make_runner):  # SC-006
     env = (tmp_path / ".sertor" / ".env").read_text(encoding="utf-8")
     assert "RAG_BACKEND=local" in env and "AZURE_OPENAI" not in env
     add = next(cmd for cmd in _uv_calls(runner) if cmd[:2] == ["uv", "add"])
-    assert "sertor-core[mcp,graph,rerank] @ git+" in add[2]  # niente azure
+    assert "sertor-core[mcp,graph,rerank] @ git+" in add[2]  # no azure
 
 
 def test_optout_extras(tmp_path: Path, make_runner):
@@ -133,18 +133,18 @@ def test_optout_extras(tmp_path: Path, make_runner):
 def test_no_deps_skips_uv(tmp_path: Path, make_runner):
     runner = make_runner()
     _run(tmp_path, runner, backend="azure", with_deps=False)
-    assert runner.calls == []  # nessun comando uv
-    assert (tmp_path / ".sertor" / ".env").is_file()  # ma lo scaffold c'è
+    assert runner.calls == []  # no uv commands
+    assert (tmp_path / ".sertor" / ".env").is_file()  # but the scaffold is present
     assert (tmp_path / ".mcp.json").is_file()
 
 
-# --- feature 016 (FR-001/REQ-301): runtime confinato in .sertor/ ----------------------------
+# --- feature 016 (FR-001/REQ-301): runtime confined to .sertor/ -----------------------------
 
 def test_rag_plan_no_runtime_file_in_root(tmp_path: Path):
-    """FR-001: nessun artefatto del piano RAG in radice oltre `.mcp.json` e `.gitignore`.
+    """FR-001: no RAG plan artifact in root beyond `.mcp.json` and `.gitignore`.
 
-    Guardia anti-regressione: un nuovo ArtifactKind che sbaglia `target_rel` (file di runtime in
-    radice invece che sotto `.sertor/`) fa fallire questo test.
+    Anti-regression guard: a new ArtifactKind that sets the wrong `target_rel` (runtime file in
+    root instead of under `.sertor/`) will fail this test.
     """
     profile = RagHostProfile.from_options(RagInstallOptions(target_root=tmp_path, backend="azure"))
     allowed_root = {".mcp.json", ".gitignore"}
@@ -152,11 +152,11 @@ def test_rag_plan_no_runtime_file_in_root(tmp_path: Path):
         rel = art.target_rel.replace("\\", "/")
         top = rel.split("/", 1)[0]
         assert top == ".sertor" or rel in allowed_root, (
-            f"artefatto in radice non consentito: {rel}"
+            f"artifact in root not allowed: {rel}"
         )
 
 
-# --- US3 (feature 016): --mcp-scope project|local --------------------------------------------
+# --- US3 (feature 016): --mcp-scope project|local -------------------------------------------
 
 def _calls(runner) -> list[list[str]]:
     return [cmd for cmd, _ in runner.calls]
@@ -166,14 +166,14 @@ def test_mcp_scope_project_writes_mcp_json(tmp_path: Path, make_runner):  # FR-0
     runner = make_runner()
     _run(tmp_path, runner, backend="azure", with_deps=False, mcp_scope="project")
     assert (tmp_path / ".mcp.json").is_file()
-    assert not any("claude" in cmd for cmd in _calls(runner))  # nessuna CLI client in project
+    assert not any("claude" in cmd for cmd in _calls(runner))  # no client CLI call in project scope
 
 
 def test_mcp_scope_local_registers_no_repo_file(tmp_path: Path, make_runner):  # FR-004/SC-003
     runner = make_runner()
     report, _ = _run(tmp_path, runner, backend="azure", with_deps=False, mcp_scope="local")
     assert report.exit_code() == 0
-    assert not (tmp_path / ".mcp.json").exists()  # niente file nel repo
+    assert not (tmp_path / ".mcp.json").exists()  # no file in the repo
     assert any(cmd[:3] == ["claude", "mcp", "add-json"] for cmd in _calls(runner))
 
 
@@ -182,8 +182,8 @@ def test_mcp_scope_local_claude_missing_failfast(tmp_path: Path, make_runner):  
     report, _ = _run(tmp_path, runner, backend="azure", with_deps=False, mcp_scope="local")
     assert report.exit_code() == 1
     assert report.failed_step == "(mcp: client registry)"
-    assert not (tmp_path / ".mcp.json").exists()  # nessun file scritto silenziosamente
-    assert not any("add-json" in cmd for cmd in _calls(runner))  # add non tentato
+    assert not (tmp_path / ".mcp.json").exists()  # no file written silently
+    assert not any("add-json" in cmd for cmd in _calls(runner))  # add not attempted
 
 
 def test_mcp_scope_local_idempotent_skip(tmp_path: Path, make_runner):  # SC-006
@@ -191,7 +191,7 @@ def test_mcp_scope_local_idempotent_skip(tmp_path: Path, make_runner):  # SC-006
     report, _ = _run(tmp_path, runner, backend="azure", with_deps=False, mcp_scope="local")
     assert report.exit_code() == 0
     assert any(cmd[:3] == ["claude", "mcp", "get"] for cmd in _calls(runner))
-    assert not any("add-json" in cmd for cmd in _calls(runner))  # già registrato → niente add
+    assert not any("add-json" in cmd for cmd in _calls(runner))  # already registered → no add
 
 
 def test_invalid_mcp_scope_rejected(tmp_path: Path):
@@ -199,7 +199,7 @@ def test_invalid_mcp_scope_rejected(tmp_path: Path):
         RagInstallOptions(target_root=tmp_path, mcp_scope="bogus")
 
 
-# --- M2 (SC-007): host non-Python NON toccato -----------------------------------------------
+# --- M2 (SC-007): non-Python host NOT touched -----------------------------------------------
 
 def test_non_python_host_sources_untouched(tmp_path: Path, make_runner):
     sln = tmp_path / "App.sln"
@@ -212,8 +212,8 @@ def test_non_python_host_sources_untouched(tmp_path: Path, make_runner):
     report, _ = _run(tmp_path, runner, backend="azure")
 
     assert report.exit_code() == 0
-    assert sln.read_text() == sln_before  # sorgenti .NET immutati
+    assert sln.read_text() == sln_before  # .NET sources unchanged
     assert csproj.read_text() == csproj_before
-    # le novità stanno solo in .sertor/ + .mcp.json/.gitignore in radice
+    # new files are only in .sertor/ + .mcp.json/.gitignore in root
     assert (tmp_path / ".sertor").is_dir()
     assert (tmp_path / ".mcp.json").is_file()

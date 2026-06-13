@@ -1,121 +1,120 @@
-# Installare Sertor su un altro repository
+# Installing Sertor on another repository
 
-> **Stato.** Sertor non è ancora su PyPI: la distribuzione interim è **`git+url`** (decisione DA-4
-> dell'epica CLI). La guida copre: **capacità RAG completa** (indicizzazione + ricerca + server MCP),
-> **tooling wiki deterministico** e — dalla feature 012 — l'**installer guidato `sertor install
-> wiki`** che porta sull'ospite l'intero sistema-wiki (skill agentiche, rituale, config, struttura)
-> con un solo comando.
+> **Status.** Sertor is not yet on PyPI: the interim distribution is **`git+url`** (decision DA-4
+> of the CLI epic). This guide covers: **full RAG capability** (indexing + search + MCP server),
+> **deterministic wiki tooling**, and — from feature 012 — the **guided installer `sertor install
+> wiki`** that brings the entire wiki system (agentic skills, ritual, config, structure) to the host
+> with a single command.
 
-## Prerequisiti
+## Prerequisites
 
-- **Python ≥ 3.11** e [`uv`](https://github.com/astral-sh/uv) (consigliato; in alternativa `pip`).
-- Un provider di **embeddings**, a scelta:
-  - **locale** — [Ollama](https://ollama.com) in esecuzione (`ollama serve`) con un modello di
-    embedding: `ollama pull nomic-embed-text`;
-  - **cloud** — un deployment **Azure OpenAI** di `text-embedding-3-*`.
+- **Python ≥ 3.11** and [`uv`](https://github.com/astral-sh/uv) (recommended; `pip` as an alternative).
+- An **embeddings** provider, of your choice:
+  - **local** — [Ollama](https://ollama.com) running (`ollama serve`) with an embedding model:
+    `ollama pull nomic-embed-text`;
+  - **cloud** — an **Azure OpenAI** deployment of `text-embedding-3-*`.
 
-## 1. Installazione del pacchetto
+## 1. Package installation
 
-Nel repository target:
+In the target repository:
 
 ```bash
-# base (locale: Ollama + Chroma)
+# base (local: Ollama + Chroma)
 uv add "sertor-core @ git+https://github.com/themetriost/Sertor"
 
-# con gli extra cloud e/o server MCP
+# with cloud extras and/or MCP server
 uv add "sertor-core[azure,mcp] @ git+https://github.com/themetriost/Sertor"
 ```
 
-Con `pip`: `pip install "sertor-core @ git+https://github.com/themetriost/Sertor"`.
+With `pip`: `pip install "sertor-core @ git+https://github.com/themetriost/Sertor"`.
 
-L'installazione porta **tre cose**: la libreria `sertor_core` (importabile) e i due console-script
-**`sertor-rag`** (esecuzione RAG) e **`sertor-wiki-tools`** (nucleo wiki deterministico).
+The installation brings **three things**: the `sertor_core` library (importable) and two console
+scripts — **`sertor-rag`** (RAG execution) and **`sertor-wiki-tools`** (deterministic wiki core).
 
-> **install ≠ run**: installare o importare non avvia mai indicizzazioni — ogni operazione richiede
-> un comando esplicito.
+> **install ≠ run**: installing or importing never starts any indexing — every operation requires
+> an explicit command.
 
-## 2. Configurazione (`.env` nel repo target, mai committato)
+## 2. Configuration (`.env` in the target repo, never committed)
 
-Tutte le scelte operative si leggono dalla configurazione centralizzata (env e/o `.env`). Minimo
-indispensabile:
+All operational choices are read from the centralised configuration (env and/or `.env`). Minimum
+required:
 
-**Locale (default):**
+**Local (default):**
 ```bash
 RAG_BACKEND=local
-OLLAMA_HOST=http://localhost:11434     # default, omettibile
-SERTOR_CORPUS=nome-progetto            # namespace della collezione (consigliato)
+OLLAMA_HOST=http://localhost:11434     # default, can be omitted
+SERTOR_CORPUS=my-project              # collection namespace (recommended)
 ```
 
-**Azure (embeddings cloud + store Chroma locale — combinazione consigliata):**
+**Azure (cloud embeddings + local Chroma store — recommended combination):**
 ```bash
 RAG_BACKEND=azure
-SERTOR_STORE_BACKEND=local             # vector store Chroma locale
+SERTOR_STORE_BACKEND=local             # local Chroma vector store
 AZURE_OPENAI_ENDPOINT=...
 AZURE_OPENAI_API_KEY=...
 AZURE_OPENAI_EMBED_DEPLOYMENT=text-embedding-3-large
-SERTOR_CORPUS=nome-progetto
+SERTOR_CORPUS=my-project
 ```
 
-Se la configurazione del backend scelto è incompleta, ogni comando si **blocca prima di contattare
-qualunque servizio**, elencando le variabili mancanti. Opzionali utili: `SERTOR_INDEX_DIR` (cartella
-dell'indice, default `.index` — aggiungila al `.gitignore` dell'ospite), `SERTOR_EXCLUDE_PATTERNS`,
+If the configuration for the chosen backend is incomplete, every command **stops before contacting
+any service**, listing the missing variables. Useful optional settings: `SERTOR_INDEX_DIR` (index
+directory, default `.index` — add it to the host's `.gitignore`), `SERTOR_EXCLUDE_PATTERNS`,
 `DEFAULT_K`, `SERTOR_PREVIEW_CHARS`.
 
-**Motore di retrieval (FEAT-004):** il default è il motore **ibrido** (BM25 lessicale + vettoriale
-fusi con RRF) — migliora nettamente le query a simbolo/termine esatto:
+**Retrieval engine (FEAT-004):** the default is the **hybrid** engine (lexical BM25 + vector
+fused with RRF) — significantly improves symbol/exact-term queries:
 
 ```bash
 SERTOR_ENGINE=hybrid       # baseline | hybrid (default: hybrid)
-SERTOR_RRF_C=60            # costante della fusione RRF
-SERTOR_RRF_POOL=30         # candidati per fonte prima della fusione
-SERTOR_RERANK=false        # secondo stadio cross-encoder (richiede l'extra `rerank`)
-SERTOR_RERANK_POOL=15      # pool fuso passato al reranker (~3×k)
+SERTOR_RRF_C=60            # RRF fusion constant
+SERTOR_RRF_POOL=30         # candidates per source before fusion
+SERTOR_RERANK=false        # second-stage cross-encoder (requires the `rerank` extra)
+SERTOR_RERANK_POOL=15      # fused pool passed to the reranker (~3×k)
 ```
 
-> **Migrazione:** un corpus indicizzato **prima** dell'ibrido continua a funzionare (degradazione
-> a solo-vettoriale con warning nei log); un **re-index** (`sertor-rag index .`) costruisce anche
-> l'indice lessicale e abilita l'ibrido. Per il reranking opzionale: installare l'extra
-> (`uv add "sertor-core[rerank] @ git+…"`) e impostare `SERTOR_RERANK=true` — senza extra,
-> `SERTOR_RERANK=true` produce un errore esplicito con l'istruzione d'installazione.
+> **Migration:** a corpus indexed **before** the hybrid engine continues to work (degrades to
+> vector-only with a log warning); a **re-index** (`sertor-rag index .`) also builds the lexical
+> index and enables the hybrid engine. For optional reranking: install the extra
+> (`uv add "sertor-core[rerank] @ git+…"`) and set `SERTOR_RERANK=true` — without the extra,
+> `SERTOR_RERANK=true` produces an explicit error with the installation instruction.
 
-**Code-graph strutturale (FEAT-005):** ogni `sertor-rag index .` costruisce anche il **grafo del
-codice** (nodi modulo/classe/funzione/metodo/doc; archi contains/calls/imports/inherits/mentions),
-persistito in `<index_dir>/graph/<corpus>.json` — il build non richiede dipendenze extra. Per
-**navigarlo** (i 4 tool MCP `find_symbol` / `who_calls` / `related_docs` / `get_context`) serve
-l'extra:
+**Structural code-graph (FEAT-005):** every `sertor-rag index .` also builds the **code graph**
+(module/class/function/method/doc nodes; contains/calls/imports/inherits/mentions edges),
+persisted to `<index_dir>/graph/<corpus>.json` — the build requires no extra dependencies. To
+**navigate it** (the 4 MCP tools `find_symbol` / `who_calls` / `related_docs` / `get_context`) the
+extra is needed:
 
 ```bash
 uv add "sertor-core[graph] @ git+https://github.com/themetriost/Sertor"   # networkx
 ```
 
 ```bash
-SERTOR_GRAPH=true               # build del grafo dentro index() (default)
-SERTOR_GRAPH_AMBIGUITY=2        # nomi più ambigui di così non generano archi calls
-SERTOR_GRAPH_LIMIT_DEFS=10      # limiti per sezione di get_context
+SERTOR_GRAPH=true               # graph build inside index() (default)
+SERTOR_GRAPH_AMBIGUITY=2        # names more ambiguous than this do not generate calls edges
+SERTOR_GRAPH_LIMIT_DEFS=10      # limits per section of get_context
 SERTOR_GRAPH_LIMIT_RELS=8
 SERTOR_GRAPH_LIMIT_DOCS=8
 ```
 
-Simbolo assente → liste vuote; grafo non costruito → errore che dice di indicizzare; extra
-assente → errore con l'istruzione d'installazione. La copertura degli archi per linguaggio è
-**dichiarata**: nodi e gerarchia per tutti i 10 linguaggi sintattici, chiamate per tutti,
-import/ereditarietà per Python.
+Missing symbol → empty lists; graph not built → error telling you to index; extra not installed →
+error with the installation instruction. Edge coverage per language is **declared**: nodes and
+hierarchy for all 10 syntactic languages, calls for all, imports/inheritance for Python.
 
-## 3. Primi comandi
+## 3. First commands
 
 ```bash
-uv run sertor-rag index .                          # indicizza il repository (full rebuild)
-uv run sertor-rag search "come funziona X?"        # top-k con path, tipo, score, anteprima
-uv run sertor-rag search "build pipeline" -k 10 --type code --json   # per script/agenti
-uv run sertor-rag index . -v                       # con log strutturati visibili
+uv run sertor-rag index .                          # index the repository (full rebuild)
+uv run sertor-rag search "how does X work?"        # top-k with path, type, score, preview
+uv run sertor-rag search "build pipeline" -k 10 --type code --json   # for scripts/agents
+uv run sertor-rag index . -v                       # with structured logs visible
 ```
 
-Exit code: `0` successo · `1` errore di dominio (messaggio leggibile su stderr) · `2` uso errato.
-Guida completa della CLI: [`specs/011-cli-esecuzione-rag/quickstart.md`](../specs/011-cli-esecuzione-rag/quickstart.md).
+Exit code: `0` success · `1` domain error (human-readable message on stderr) · `2` wrong usage.
+Full CLI guide: [`specs/011-cli-esecuzione-rag/quickstart.md`](../specs/011-cli-esecuzione-rag/quickstart.md).
 
-## 4. Server MCP (per Claude Code e altri client MCP)
+## 4. MCP server (for Claude Code and other MCP clients)
 
-Con l'extra `mcp` installato, aggiungi al repo target un `.mcp.json`:
+With the `mcp` extra installed, add a `.mcp.json` to the target repo:
 
 ```json
 {
@@ -123,123 +122,126 @@ Con l'extra `mcp` installato, aggiungi al repo target un `.mcp.json`:
     "sertor-rag": {
       "command": "uv",
       "args": ["run", "python", "-m", "sertor_mcp.server"],
-      "env": { "SERTOR_CORPUS": "nome-progetto" }
+      "env": { "SERTOR_CORPUS": "my-project" }
     }
   }
 }
 ```
 
-Il server espone `search_code` / `search_docs` / `search_combined` sullo stesso indice della CLI
-(stessi risultati a parità di configurazione).
+The server exposes `search_code` / `search_docs` / `search_combined` over the same index as the
+CLI (identical results given the same configuration).
 
-## 5. Sistema-wiki completo: `sertor install wiki`
+## 5. Full wiki system: `sertor install wiki`
 
-Col pacchetto installer (`sertor`, fornito dal workspace — arriva con l'install `git+url`), un solo
-comando porta sull'ospite l'intero sistema-wiki:
+With the installer package (`sertor`, provided by the workspace — included in the `git+url` install),
+a single command brings the entire wiki system to the host:
 
 ```bash
-uv run sertor install wiki                          # nella radice del repo target
-uv run sertor install wiki --target C:\path\repo    # oppure su un path esplicito
-uv run sertor install wiki --language it --source-dirs src,docs   # override dei default
+uv run sertor install wiki                          # in the root of the target repo
+uv run sertor install wiki --target C:\path\repo    # or on an explicit path
+uv run sertor install wiki --language it --source-dirs src,docs   # override defaults
 ```
 
-Cosa installa (tutto **senza** avviare indicizzazioni, LLM o rete — install ≠ run):
+What it installs (all **without** starting any indexing, LLM, or network — install ≠ run):
 
-| Artefatto | Comportamento se esiste già |
+| Artifact | Behaviour if already present |
 |---|---|
-| Skill `wiki-author` (playbook + moduli ops), comando `/wiki`, agente `wiki-curator`, hook di sessione | skip **file-per-file** (mai sovrascritti) |
-| Voci hook in `.claude/settings.json` | **merge additivo** con deduplicazione (gli hook tuoi restano) |
-| Sezione *rituale di step* nel `CLAUDE.md` | inserita in un **blocco a marker** `SERTOR:WIKI-RITUAL`; tutto il resto del file è intoccato |
-| `wiki.config.toml` | generato con default inferiti (lingua `en`, `source_dirs` dalle cartelle standard presenti); mai sovrascritto |
-| Struttura `wiki/` (tassonomia, indice, log) | `structure init` idempotente |
+| `wiki-author` skill (playbook + ops modules), `/wiki` command, `wiki-curator` agent, session hooks | skip **file-by-file** (never overwritten) |
+| Hook entries in `.claude/settings.json` | **additive merge** with deduplication (your hooks stay) |
+| *Step ritual* section in `CLAUDE.md` | inserted in a **marker block** `SERTOR:WIKI-RITUAL`; the rest of the file is untouched |
+| `wiki.config.toml` | generated with inferred defaults (language `en`, `source_dirs` from standard folders present); never overwritten |
+| `wiki/` structure (taxonomy, index, log) | `structure init` idempotent |
 
-Il comando stampa un **report** per artefatto (`created`/`skipped`/`merged`/`block`) ed esce con
-`0` (successo), `1` (errore di dominio, fail-fast con stato parziale esplicito — il re-run completa
-i buchi) o `2` (uso errato). Rieseguirlo è sicuro: stato identico, zero duplicati. Prerequisito per
-l'hook di sessione: PowerShell (`pwsh`) sull'ospite; senza, il wiki resta pienamente usabile (i
-promemoria automatici non scattano).
+The command prints a **report** per artifact (`created`/`skipped`/`merged`/`block`) and exits with
+`0` (success), `1` (domain error, fail-fast with explicit partial state — re-running fills the gaps),
+or `2` (wrong usage). Re-running is safe: identical state, zero duplicates. Prerequisite for the
+session hook: PowerShell (`pwsh`) on the host; without it, the wiki remains fully usable (automatic
+reminders do not fire).
 
-### Tooling wiki deterministico (già incluso nel pacchetto core)
+### Deterministic wiki tooling (already included in the core package)
 
-`sertor-wiki-tools` (scan/lint/structure/collect/index/append-log/…) funziona su qualunque ospite a
-partire dalla **`wiki.config.toml`** (quella generata dall'installer, o scritta a mano usando quella
-di Sertor come esempio). Il sottocomando `install governance` è pianificato ma non ancora disponibile.
+`sertor-wiki-tools` (scan/lint/structure/collect/index/append-log/…) works on any host from the
+**`wiki.config.toml`** (the one generated by the installer, or written by hand using Sertor's own
+as an example). The `install governance` subcommand is planned but not yet available.
 
-**Manutenzione del wiki (feature 017):**
-- `sertor-wiki-tools move <src> <dest> [--dry-run]` — sposta/rinomina una pagina e **riscrive tutti i
-  link entranti** (wikilink `[[...]]` e link relativi), senza romperli; `--dry-run` mostra il piano
-  senza modificare nulla; fallisce se la destinazione esiste già.
-- `sertor-wiki-tools reconcile [--json]` — elenca (sola lettura) le pagine marcate
-  `status: superseded` (con l'eventuale `superseded_by`), come check delle obsolescenze; non modifica
-  mai nulla. Per un report **periodico**, schedula tu il comando con l'ambiente ospite (cron / Task
-  Scheduler / hook CI), es. `sertor-wiki-tools reconcile --json > reports/wiki-obsolete.json` —
-  il prodotto non incorpora uno scheduler.
+**Wiki maintenance (feature 017):**
+- `sertor-wiki-tools move <src> <dest> [--dry-run]` — moves/renames a page and **rewrites all
+  incoming links** (wikilinks `[[...]]` and relative links), without breaking them; `--dry-run`
+  shows the plan without modifying anything; fails if the destination already exists.
+- `sertor-wiki-tools reconcile [--json]` — lists (read-only) pages marked
+  `status: superseded` (with the optional `superseded_by`), as an obsolescence check; never
+  modifies anything. For a **periodic** report, schedule the command with the host environment
+  (cron / Task Scheduler / CI hook), e.g. `sertor-wiki-tools reconcile --json > reports/wiki-obsolete.json` —
+  the product does not include a built-in scheduler.
 
-## 6. Capacità RAG con un comando: `sertor install rag`
+## 6. RAG capability with one command: `sertor install rag`
 
-`sertor install rag` porta l'intera capacità RAG su un repo ospite — **anche non-Python** (es. .NET):
-il runtime Python vive **isolato** in una dotfolder `.sertor/` (i tuoi sorgenti non vengono toccati),
-in radice restano solo il `.mcp.json` (il ponte verso Claude/client MCP) e il `.gitignore` aggiornato.
+`sertor install rag` brings the full RAG capability to a host repo — **even non-Python ones** (e.g. .NET):
+the Python runtime lives **isolated** in a `.sertor/` dotfolder (your sources are not touched);
+only the `.mcp.json` (the bridge to Claude/MCP clients) and the updated `.gitignore` remain in the
+root.
 
 ```bash
-# da una macchina con `uv`, nella radice del repo target (Azure embeddings):
+# from a machine with `uv`, in the root of the target repo (Azure embeddings):
 uv run sertor install rag --backend azure
-# varianti:
-uv run sertor install rag --backend local --no-rerank   # Ollama, senza reranker
-uv run sertor install rag --no-deps                      # solo scaffold di config (no uv add)
-uv run sertor install rag --mcp-scope local              # niente .mcp.json nel repo (registra nel client)
-uv run sertor install rag --target C:\path\repo --corpus mioprogetto --json
+# variants:
+uv run sertor install rag --backend local --no-rerank   # Ollama, without reranker
+uv run sertor install rag --no-deps                      # config scaffold only (no uv add)
+uv run sertor install rag --mcp-scope local              # no .mcp.json in the repo (registers in the client)
+uv run sertor install rag --target C:\path\repo --corpus myproject --json
 ```
 
-Cosa fa (tutto **senza** indicizzare — install ≠ run):
+What it does (all **without** indexing — install ≠ run):
 
-| Artefatto | Dove | Comportamento se esiste già |
+| Artifact | Where | Behaviour if already present |
 |---|---|---|
-| Progetto Python + dipendenze (`uv init --bare` + `uv add sertor-core[azure,mcp,graph,rerank]`) | `<target>/.sertor/` | `uv add` idempotente; `uv init` saltato se già inizializzato |
-| `.env` (template per backend, **segreti vuoti** da riempire) | `<target>/.sertor/.env` | merge additivo per-chiave (mai sovrascrive i tuoi valori) |
-| `.mcp.json` (server `sertor-rag` via `uv run --directory .sertor`) — scope `project` (default) | **radice host** | merge additivo (preserva gli altri server MCP) |
-| Registrazione MCP nel client (`claude mcp add-json … --scope local`) — scope `local` | **fuori dal repo** (`~/.claude.json`) | idempotente (skip se già registrato); fail-fast se `claude` manca |
-| `.gitignore` (`.sertor/.venv/`, `.sertor/.index*`, `.sertor/.env`) | **radice host** | append dedup |
+| Python project + dependencies (`uv init --bare` + `uv add sertor-core[azure,mcp,graph,rerank]`) | `<target>/.sertor/` | `uv add` idempotent; `uv init` skipped if already initialised |
+| `.env` (backend template, **empty secrets** to fill in) | `<target>/.sertor/.env` | additive per-key merge (never overwrites your values) |
+| `.mcp.json` (`sertor-rag` server via `uv run --directory .sertor`) — scope `project` (default) | **host root** | additive merge (preserves other MCP servers) |
+| MCP registration in the client (`claude mcp add-json … --scope local`) — scope `local` | **outside the repo** (`~/.claude.json`) | idempotent (skip if already registered); fail-fast if `claude` is missing |
+| `.gitignore` (`.sertor/.venv/`, `.sertor/.index*`, `.sertor/.env`) | **host root** | append dedup |
 
-Default: backend `azure`, tutti gli extra (`mcp`+`graph`+`rerank`) + quello del backend; `--no-graph`
-/`--no-rerank` per alleggerire, `--no-deps` per il solo scaffold. Exit `0`/`1` (errore di dominio,
-fail-fast: `uv` assente o `uv add` fallito)/`2` (uso). Rieseguirlo è sicuro (stato identico).
+Default: `azure` backend, all extras (`mcp`+`graph`+`rerank`) plus the backend's own; `--no-graph`
+/`--no-rerank` to reduce scope, `--no-deps` for scaffold only. Exit `0`/`1` (domain error,
+fail-fast: `uv` absent or `uv add` failed)/`2` (wrong usage). Re-running is safe (identical state).
 
-Dopo l'install (passo esplicito separato — riempi prima i segreti in `.sertor/.env`):
+After installation (explicit separate step — fill in the secrets in `.sertor/.env` first):
 
 ```bash
-uv run --directory .sertor sertor-rag index ..   # indicizza i sorgenti host, esclude `.sertor/`
-# poi ricarica il client MCP: approva il server `sertor-rag` → search_code/docs/combined (+ grafo)
+uv run --directory .sertor sertor-rag index ..   # index host sources, excluding `.sertor/`
+# then reload the MCP client: approve the `sertor-rag` server → search_code/docs/combined (+ graph)
 ```
 
-> **Runtime auto-localizzante.** `sertor-rag`/`sertor-wiki-tools` caricano `.sertor/.env` e tengono
-> indice e grafo dentro `.sertor/` **da qualsiasi cwd**: se nel cwd non c'è un `.env`, la CLI usa
-> quello accanto al proprio venv (`.sertor/`). La forma `uv run --directory .sertor …` resta quella
-> raccomandata (il server MCP la usa), ma non sei più costretto a lanciare da dentro `.sertor/`. Se
-> non trova alcun `.env` né `RAG_BACKEND`, avvisa invece di ricadere in silenzio su `local`/Ollama.
-> **Disinstallare** ≈ cancellare `.sertor/` e la voce `sertor-rag` da `.mcp.json`.
+> **Self-locating runtime.** `sertor-rag`/`sertor-wiki-tools` load `.sertor/.env` and keep the
+> index and graph inside `.sertor/` **from any cwd**: if there is no `.env` in the cwd, the CLI
+> uses the one next to its own venv (`.sertor/`). The `uv run --directory .sertor …` form remains
+> recommended (the MCP server uses it), but you are no longer forced to launch from inside
+> `.sertor/`. If no `.env` or `RAG_BACKEND` is found, it warns instead of silently falling back to
+> `local`/Ollama.
+> **Uninstall** ≈ delete `.sertor/` and the `sertor-rag` entry from `.mcp.json`.
 
-> **Nota distribuzione (interim).** L'esecuzione standalone via `uvx --from "git+…#subdirectory=packages/sertor"`
-> è **verificata**: `uv` risolve `sertor-core` scoprendo il workspace dal checkout git (lo costruisce
-> dallo stesso repo, non da PyPI). In sviluppo dal repo Sertor si usa `uv run sertor install rag`.
+> **Distribution note (interim).** Standalone execution via `uvx --from "git+…#subdirectory=packages/sertor"`
+> is **verified**: `uv` resolves `sertor-core` by discovering the workspace from the git checkout
+> (it builds it from the same repo, not from PyPI). When developing from the Sertor repo, use
+> `uv run sertor install rag`.
 
-## 7. Igiene della radice host: cosa resta e perché
+## 7. Host root hygiene: what stays and why
 
-L'installer tiene la **radice dell'ospite minima e prevedibile**. Dopo `install wiki`/`install rag`
-in radice restano **solo** questi residenti, ciascuno per un motivo:
+The installer keeps the **host root minimal and predictable**. After `install wiki`/`install rag`,
+only these residents remain in the root, each for a reason:
 
-| Residente | Perché è in radice |
+| Resident | Why it is in the root |
 |---|---|
-| `.claude/`, `CLAUDE.md` | li legge il client (Claude Code) lì; posizione non configurabile |
-| `wiki/` | documentazione del progetto, by-design; **contiene** `wiki/wiki.config.toml` (la config del wiki non è più sparsa in radice) |
-| `.gitignore` | append delle voci di runtime |
-| `.sertor/` | **unica** sede del runtime RAG (progetto, `.venv`, indice, `.env`): nulla del runtime finisce in radice |
-| `.mcp.json` | **solo** con `--mcp-scope project` (default): il project-scope di Claude Code DEVE stare in radice. Con `--mcp-scope local` non c'è alcun file MCP nel repo |
+| `.claude/`, `CLAUDE.md` | read by the client (Claude Code) there; position not configurable |
+| `wiki/` | project documentation, by design; **contains** `wiki/wiki.config.toml` (wiki config is no longer scattered in the root) |
+| `.gitignore` | append of runtime entries |
+| `.sertor/` | **sole** home of the RAG runtime (project, `.venv`, index, `.env`): nothing from the runtime ends up in the root |
+| `.mcp.json` | **only** with `--mcp-scope project` (default): Claude Code's project scope MUST reside in the root. With `--mcp-scope local` there is no MCP file in the repo |
 
-**Config del wiki in `wiki/`.** Gli strumenti la localizzano con `--config wiki/wiki.config.toml
---root .` oppure, dalla radice host, senza flag (auto-discovery: `sertor-wiki-tools <op>` cerca
-`./wiki.config.toml` e poi `./wiki/wiki.config.toml`).
+**Wiki config in `wiki/`.** Tools locate it with `--config wiki/wiki.config.toml
+--root .` or, from the host root, without flags (auto-discovery: `sertor-wiki-tools <op>` looks for
+`./wiki.config.toml` and then `./wiki/wiki.config.toml`).
 
-> **Migrazione di ospiti già installati**: fuori ambito. Su un ospite con un vecchio
-> `wiki.config.toml` in radice, l'installer non lo sposta né lo rimuove; per adottare il nuovo layout
-> sposta il file in `wiki/` a mano (i path interni — `root = "wiki"` — restano validi con `--root .`).
+> **Migration of already-installed hosts**: out of scope. On a host with an old
+> `wiki.config.toml` in the root, the installer does not move or remove it; to adopt the new layout
+> move the file to `wiki/` manually (the internal paths — `root = "wiki"` — remain valid with `--root .`).

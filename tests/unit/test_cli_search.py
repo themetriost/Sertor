@@ -1,7 +1,7 @@
 """Test US2 — CLI `sertor-rag search <query>` (FR-009..013, FR-015, SC-002).
 
-Indice mock precostruito (`InMemoryStore` + `FakeEmbedder`) condiviso fra `BaselineEngine` (via
-strict) e `RetrievalFacade` (filtri di tipo): nessuna rete (NFR-02).
+Pre-built mock index (`InMemoryStore` + `FakeEmbedder`) shared between `BaselineEngine` (via
+strict) and `RetrievalFacade` (type filters): no network (NFR-02).
 """
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ def _payload(text, path, doc_type):
 
 @pytest.fixture(autouse=True)
 def _no_dotenv(monkeypatch):
-    """Isola dal `.env` del repo (load_dotenv override muterebbe os.environ in modo persistente)."""
+    """Isolate from the repo `.env` (load_dotenv override would mutate os.environ persistently)."""
     _orig = Settings.load.__func__
     monkeypatch.setattr(
         Settings, "load", classmethod(lambda c, env_file=".env": _orig(c, env_file=None))
@@ -34,7 +34,7 @@ def _no_dotenv(monkeypatch):
 
 @pytest.fixture
 def populated(monkeypatch):
-    """Indice in memoria popolato con hit code e doc; cabla CLI su engine/facade mock."""
+    """In-memory index populated with code and doc hits; wires CLI to mock engine/facade."""
     embedder = FakeEmbedder(dim=8)
     store = InMemoryStore()
     records = []
@@ -70,7 +70,7 @@ def _run(argv):
     return cli.main(argv)
 
 
-# --------------------------------------------------------------------- successo both
+# --------------------------------------------------------------------- success both
 def test_search_both_human_output(populated, capsys):
     code = _run(["search", "composition"])
     out = capsys.readouterr().out
@@ -97,7 +97,7 @@ def test_search_full_returns_text_field(populated, capsys):
     assert code == 0
     arr = json.loads(out)
     assert all("text" in h and "preview" not in h for h in arr)
-    # nessuna ellissi nel testo integrale
+    # no ellipsis in the full text
     assert all("…" not in h["text"] for h in arr)
 
 
@@ -106,7 +106,7 @@ def test_search_truncates_preview(populated, capsys):
     out = capsys.readouterr().out
     assert code == 0
     arr = json.loads(out)
-    # l'hit lungo deve risultare troncato con ellissi
+    # the long hit must be truncated with ellipsis
     assert any(h["preview"].endswith("…") for h in arr)
 
 
@@ -134,7 +134,7 @@ def test_search_type_doc_only(populated, capsys):
     assert arr and all(h["doc_type"] == "doc" for h in arr)
 
 
-# --------------------------------------------------------------------- indice assente (FR-012/D6)
+# --------------------------------------------------------------------- missing index (FR-012/D6)
 @pytest.mark.parametrize("dtype", ["both", "code", "doc"])
 def test_search_missing_index_exit_1(monkeypatch, capsys, dtype):
     embedder = FakeEmbedder(dim=8)
@@ -149,10 +149,10 @@ def test_search_missing_index_exit_1(monkeypatch, capsys, dtype):
     err = capsys.readouterr().err
     assert code == 1
     assert "error:" in err
-    assert "inesistente" in err
+    assert "not found" in err
 
 
-# --------------------------------------------------------------------- query vuota (edge case)
+# --------------------------------------------------------------------- empty query (edge case)
 def test_search_empty_query_exit_1(populated, capsys):
     code = _run(["search", "   "])
     err = capsys.readouterr().err

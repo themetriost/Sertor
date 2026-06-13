@@ -3,7 +3,7 @@ title: Indice del Wiki — Produzione Sertor
 type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
-updated: 2026-06-12 (sera: + [[code-graph]] — i 4 tool MCP tornati, feature 014/PR #25, porte a sei; pomeriggio: + [[hybrid-retrieval]] PR #24; mattina: troubleshooting [[mcp-server]] PR #23)
+updated: 2026-06-13 (+ [[second-brain-cross-progetto]] — idea-visione Meta-Sertor, da espandere) · 2026-06-12 (sera: + [[code-graph]] — i 4 tool MCP tornati, feature 014/PR #25, porte a sei; pomeriggio: + [[hybrid-retrieval]] PR #24; mattina: troubleshooting [[mcp-server]] PR #23)
 sources: ["requirements/sertor-core/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "src/sertor_core/**", "CLAUDE.md"]
 ---
 
@@ -99,6 +99,7 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 ### Syntheses (viste d'insieme e sintesi trasversali)
 
 - **[[roadmap]]** — 🗺️ **Roadmap & stato di prodotto (pagina viva).** Mappa feature epica × stato reale (master/branch), lavori abilitanti mergiati (incl. FEAT-009 indice dogfood), fasi, backlog e idee da discutere. Reconcilia le due numerazioni (epica `FEAT-NNN` ≠ `specs/NNN`).
+- **[[second-brain-cross-progetto]]** — 💡 **Idea da espandere: il «Sertor dei Sertor» (Meta-Sertor).** Visione del second brain cross-progetto: Sertor ricorsivo a tre altitudini (L0/L1/L2), conoscenza e asset come stessa sostanza a diversi gradi di cristallizzazione, i due flussi (harvest/promote ↑, seed/apply ↓), la sintesi N→1 di asset da più progetti, la query federata con escalation, il modello a due strati intento/binding + verifica, la tensione grounding↔astrazione e la sua riconciliazione (provenance). Con diagrammi mermaid, prior art, rischi e bivi aperti. Sertor da autore a **giardiniere della flotta**.
 - **[[architettura-wiki-llm]]** — 🗺️ **Vista d'insieme + roadmap.** Architettura del Wiki LLM dopo il ponte D→N: nucleo deterministico (`wiki_tools`) + layer agentico (4 entità host-agnostiche) + hook, separati dal confine D (meccanico) ↔ N (giudizio); una sola config. Schemi a strati, confine per operazione, lint a tre livelli (A strutturale / B semantico / C organizzativo). **Roadmap** con grafo di dipendenze e priorità. Pagina d'ingresso all'architettura.
 - **[[sistema-wiki-fonte-unica]]** — Consolidamento del wiki (fonte unica playbook + tre interfacce sottili + automazione hook). Tassonomia consolidata; convenzioni esplicite; operazioni del playbook. **Modularizzato (2026-06-07):** playbook = indice + moduli `ops/*.md` caricati on-demand (progressive disclosure, resta DRY e portabile).
 - **[[lint-semantico-host-agnostico]]** — 🔍 **Estensione del lint a audit globale.** 4 `kind` di artefatti (`wiki`/`requirements`/`spec`/`tracker`) dichiarati in config `[[audit]]` con profili universali nel playbook; per ogni `kind`, tassonomia di coerenza e procedura ripetibile. Host-agnostico: la rete di anti-deriva è globale, non solo wiki.

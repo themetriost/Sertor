@@ -1,8 +1,8 @@
-"""Test del server MCP basato su sertor-core (tool registrati, formato risultati, degrado).
+"""Tests for the sertor-core-based MCP server (registered tools, result format, degradation).
 
-Tutto con facade/store mock (NFR-02): nessuna rete né indici reali. Copre:
-US1 — i 3 tool registrati, formato stabile, filtro per tipo;
-US2 — indice mancante -> lista vuota (degrado pulito) e propagazione di un errore reale.
+All with mock facade/store (NFR-02): no network, no real indexes. Covers:
+US1 — the 3 registered tools, stable format, filter by type;
+US2 — missing index -> empty list (clean degradation) and propagation of a real error.
 """
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ COLL = "mcp-test"
 
 
 def _populated_facade(_settings=None) -> RetrievalFacade:
-    """Facade mock con un indice popolato (un chunk code + uno doc)."""
+    """Mock facade with a populated index (one code chunk + one doc chunk)."""
     emb = FakeEmbedder(dim=8)
     store = InMemoryStore()
     store.upsert(COLL, [
@@ -32,16 +32,16 @@ def _populated_facade(_settings=None) -> RetrievalFacade:
 
 
 def _empty_facade(_settings=None) -> RetrievalFacade:
-    """Facade mock SENZA indice: lo store è vuoto -> exists() == False."""
+    """Mock facade WITHOUT an index: the store is empty -> exists() == False."""
     return RetrievalFacade(FakeEmbedder(dim=8), InMemoryStore(), COLL, default_k=5)
 
 
 def _use(monkeypatch, factory) -> None:
-    """Sostituisce la costruzione della facade e azzera la cache memoizzata.
+    """Replaces facade construction and clears the memoized cache.
 
-    Neutralizza anche `Settings.load`: `_facade()` lo invoca col default `env_file=".env"`, che con
-    `override=True` inquinerebbe `os.environ` globale (es. `RAG_BACKEND`) rompendo l'isolamento dei
-    test successivi. Le factory mock ignorano comunque le impostazioni.
+    Also neutralises `Settings.load`: `_facade()` calls it with the default `env_file=".env"`, which
+    with `override=True` would pollute the global `os.environ` (e.g. `RAG_BACKEND`), breaking
+    isolation for subsequent tests. Mock factories ignore settings anyway.
     """
     monkeypatch.setattr(srv, "build_facade", factory)
     monkeypatch.setattr(srv.Settings, "load", lambda *a, **k: None)
@@ -77,7 +77,7 @@ def test_tool_filters_by_type(monkeypatch):
 
 
 def test_preview_is_truncated(monkeypatch):
-    """Anteprima troncata oltre la soglia, con marcatore (FR-011)."""
+    """Preview truncated beyond the threshold, with ellipsis marker (FR-011)."""
     long_text = "parola " * 200
     emb = FakeEmbedder(dim=8)
     store = InMemoryStore()
@@ -88,7 +88,7 @@ def test_preview_is_truncated(monkeypatch):
     _use(monkeypatch, lambda _s=None: RetrievalFacade(FakeEmbedder(8), store, COLL, default_k=5))
     try:
         out = srv.search_code("big")
-        assert out and len(out[0]["preview"]) <= srv._PREVIEW + 1  # +1 = marcatore "…"
+        assert out and len(out[0]["preview"]) <= srv._PREVIEW + 1  # +1 = "…" marker
         assert out[0]["preview"].endswith("…")
     finally:
         srv._facade.cache_clear()
@@ -97,22 +97,22 @@ def test_preview_is_truncated(monkeypatch):
 # --- US2 ---------------------------------------------------------------------------------------
 
 def test_missing_index_returns_empty_without_crash(monkeypatch):
-    """Indice assente -> lista vuota + (warning loggato dal core), nessuna eccezione (FR-012)."""
+    """Missing index -> empty list + (warning logged by core), no exception (FR-012)."""
     _use(monkeypatch, _empty_facade)
     try:
         assert srv.search_code("x") == []
         assert srv.search_docs("x") == []
-        assert srv.search_combined("x") == []  # il server resta invocabile dopo
+        assert srv.search_combined("x") == []  # server remains callable afterwards
     finally:
         srv._facade.cache_clear()
 
 
 def test_main_warms_facade_before_stdio_loop(monkeypatch):
-    """`main()` costruisce la facade PRIMA di avviare il loop stdio (warm-up eager).
+    """`main()` builds the facade BEFORE starting the stdio loop (eager warm-up).
 
-    L'init pigro di Chroma dentro la prima tool call parcheggia la risposta su Windows finché
-    stdin non riceve un altro evento (hang osservato il 2026-06-12): il warm-up all'avvio è il
-    contratto che lo previene.
+    Chroma's lazy init inside the first tool call stalls the response on Windows until
+    stdin receives another event (hang observed on 2026-06-12): the startup warm-up is the
+    contract that prevents it.
     """
     calls: list[str] = []
     _use(monkeypatch, lambda _s=None: calls.append("facade"))
@@ -125,7 +125,7 @@ def test_main_warms_facade_before_stdio_loop(monkeypatch):
 
 
 def test_internal_error_propagates_then_server_recovers(monkeypatch):
-    """Un errore reale del motore NON viene inghiottito (FR-013); dopo, il server torna usabile."""
+    """A real engine error is NOT swallowed (FR-013); afterwards, the server is usable again."""
     class _Boom:
         def search_code(self, *_a, **_k):
             raise RuntimeError("store non raggiungibile")
@@ -137,7 +137,7 @@ def test_internal_error_propagates_then_server_recovers(monkeypatch):
     finally:
         srv._facade.cache_clear()
 
-    # Ripristino di una facade sana: le chiamate successive funzionano (server vivo).
+    # Restore a healthy facade: subsequent calls work (server alive).
     _use(monkeypatch, _populated_facade)
     try:
         assert isinstance(srv.search_code("x"), list)

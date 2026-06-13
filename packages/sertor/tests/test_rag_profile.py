@@ -1,4 +1,4 @@
-"""Test di `rag_profile`: compose_extras (DA-3), default corpus, validazioni (T009)."""
+"""Tests for `rag_profile`: compose_extras (DA-3), default corpus, validations (T009)."""
 from __future__ import annotations
 
 from pathlib import Path

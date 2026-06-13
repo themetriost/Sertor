@@ -1,7 +1,7 @@
-"""Polish — validazione quickstart end-to-end (T040): index → search (REQ-023..029).
+"""Polish — end-to-end quickstart validation (T040): index → search (REQ-023..029).
 
-Pipeline completa offline: ingestione del mini-repo → chunking → embeddings (FakeEmbedder) →
-store (Chroma su temp) → facade di retrieval. Verifica i flussi di `quickstart.md`.
+Full offline pipeline: mini-repo ingestion → chunking → embeddings (FakeEmbedder) →
+store (Chroma on temp) → retrieval facade. Verifies the flows in `quickstart.md`.
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ def _index_and_facade(sample_repo, tmp_path):
 
 def test_index_reports_documents_and_chunks(sample_repo, tmp_path):
     report, _ = _index_and_facade(sample_repo, tmp_path)
-    assert report.documents >= 4          # py, js, go, md, ps1 (esclusi .venv/secret.key)
+    assert report.documents >= 4          # py, js, go, md, ps1 (excluding .venv/secret.key)
     assert report.chunks >= report.documents
     assert report.embedding_dim == 8
 

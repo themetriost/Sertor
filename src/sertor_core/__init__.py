@@ -1,8 +1,8 @@
-"""sertor-core — nucleo di retrieval condiviso (FEAT-001).
+"""sertor-core — shared retrieval core (FEAT-001).
 
-API pubblica per i consumatori (motori RAG, skill wiki, layer CLI): la facade di retrieval e
-l'orchestratore di indicizzazione si costruiscono dalla configurazione centralizzata tramite il
-composition root, senza conoscere i dettagli di store/embeddings.
+Public API for consumers (RAG engines, wiki skill, CLI layer): the retrieval facade and the
+indexing orchestrator are built from the centralised configuration via the composition root,
+without knowing the store/embeddings details.
 """
 from __future__ import annotations
 

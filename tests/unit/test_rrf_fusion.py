@@ -1,7 +1,7 @@
-"""Test US1 — fusione Reciprocal Rank Fusion (FR-006/007/008).
+"""Test US1 — Reciprocal Rank Fusion (FR-006/007/008).
 
-Funzione pura: nessun mock necessario. Copre formula `1/(c+rank)`, pareggi per chunk_id,
-contributo singolo per elementi in una sola lista, taglio a k, costante `c` configurabile.
+Pure function: no mocks needed. Covers formula `1/(c+rank)`, ties broken by chunk_id,
+single contribution for items in only one list, cut to k, configurable constant `c`.
 """
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from sertor_core.engines.hybrid import rrf
 
 
 def test_score_formula_sums_reciprocal_ranks():
-    # "x" è rank 1 in entrambe le liste: score = 2/(c+1).
+    # "x" is rank 1 in both lists: score = 2/(c+1).
     fused = rrf([["x", "y"], ["x", "z"]], k=10, c=60)
     scores = dict(fused)
     assert scores["x"] == pytest.approx(2 / 61)
@@ -22,7 +22,7 @@ def test_score_formula_sums_reciprocal_ranks():
 def test_item_in_both_lists_outranks_single_list_items():
     fused = rrf([["a", "b", "c"], ["c", "d"]], k=10)
     assert fused[0][0] == "c" or fused[0][0] == "a"
-    # "c" (rank 3 + rank 1) batte "b" (solo rank 2): 1/63+1/61 > 1/62
+    # "c" (rank 3 + rank 1) beats "b" (rank 2 only): 1/63+1/61 > 1/62
     order = [cid for cid, _ in fused]
     assert order.index("c") < order.index("b")
 
@@ -33,7 +33,7 @@ def test_single_source_item_is_included_with_single_contribution():
 
 
 def test_ties_break_by_chunk_id():
-    # "b" e "a" hanno score identico (stesso rank in liste diverse): vince l'id minore.
+    # "b" and "a" have identical scores (same rank in different lists): lower id wins.
     fused = rrf([["b"], ["a"]], k=10)
     assert [cid for cid, _ in fused] == ["a", "b"]
 
@@ -44,7 +44,7 @@ def test_k_cuts_the_fused_ranking():
 
 
 def test_c_constant_is_configurable():
-    # Con c piccolo i rank alti pesano molto di più (FR-007).
+    # With small c, high ranks weigh much more (FR-007).
     small_c = dict(rrf([["a", "b"]], k=2, c=1))
     big_c = dict(rrf([["a", "b"]], k=2, c=1000))
     assert small_c["a"] / small_c["b"] > big_c["a"] / big_c["b"]

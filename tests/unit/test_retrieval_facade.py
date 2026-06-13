@@ -1,4 +1,4 @@
-"""Test US5 — facade di retrieval riusabile come libreria (REQ-023..029)."""
+"""Test US5 — retrieval facade reusable as a library (REQ-023..029)."""
 from __future__ import annotations
 
 import logging
@@ -53,7 +53,7 @@ def test_k_default_and_override():
     emb = FakeEmbedder(dim=8)
     facade = RetrievalFacade(emb, _populated_store(emb), COLL, default_k=1)
     assert len(facade.search_combined("x")) == 1            # default_k
-    assert len(facade.search_combined("x", k=10)) == 3      # k>disponibili -> tutti (REQ-026)
+    assert len(facade.search_combined("x", k=10)) == 3      # k>available -> all (REQ-026)
 
 
 def test_empty_index_returns_empty_with_warning(caplog):
@@ -61,9 +61,9 @@ def test_empty_index_returns_empty_with_warning(caplog):
     facade = RetrievalFacade(emb, InMemoryStore(), "vuota", default_k=5)
     with caplog.at_level(logging.WARNING, logger="sertor_core"):
         out = facade.search_combined("qualsiasi")
-    assert out == []                                       # REQ-028: vuoto, non eccezione
+    assert out == []                                       # REQ-028: empty, not an exception
     assert any("no_index" in r.message for r in caplog.records)
-    assert emb.calls == 0                                  # non interroga l'embedder se vuoto
+    assert emb.calls == 0                                  # does not query the embedder when empty
 
 
 def test_errors_propagate_not_silently_empty():
@@ -74,24 +74,24 @@ def test_errors_propagate_not_silently_empty():
     emb = FakeEmbedder(dim=8)
     store = _populated_store(emb)
     facade = RetrievalFacade(BrokenEmbedder(dim=8), store, COLL, default_k=5)
-    with pytest.raises(EmbeddingError):                    # REQ-012: errore esplicito
+    with pytest.raises(EmbeddingError):                    # REQ-012: explicit error
         facade.search_combined("x")
 
 
 def test_usable_as_imported_library():
-    # Importabile e usabile senza toccare store/embeddings concreti (REQ-029).
+    # Importable and usable without touching concrete store/embeddings (REQ-029).
     from sertor_core import RetrievalResult, build_facade  # noqa: F401
 
     assert callable(build_facade)
 
 
-# --- Fan-out multi-collezione della ricerca combinata (feature 010, FR-001..009) ---
+# --- Multi-collection fan-out of combined search (feature 010, FR-001..009) ---
 
 WIKI_COLL = "wiki__fake_8"
 
 
 def _two_collection_store(emb: FakeEmbedder) -> InMemoryStore:
-    """Primaria (codice) + collezione wiki, popolate con contenuti distinti."""
+    """Primary (code) + wiki collection, populated with distinct contents."""
     store = _populated_store(emb)
     wiki_items = [
         ("concepts/retrieval.md#0", "doc", "concepts/retrieval.md", "come configurare il backend"),
@@ -118,15 +118,15 @@ def test_combined_fuses_results_from_both_collections():
     facade = _multi_facade(emb, _two_collection_store(emb))
     hits = facade.search_combined("come configurare il backend")
     sources = {h.chunk_id.split("#")[0] for h in hits}
-    assert any(s.endswith(".md") and "/" in s for s in sources)   # hit dal wiki (FR-001)
-    assert any(s in ("a.py", "b.md", "c.py") for s in sources)    # hit dalla primaria
-    assert len(hits) <= 5                                          # ≤ k complessivi (FR-002)
+    assert any(s.endswith(".md") and "/" in s for s in sources)   # hit from wiki (FR-001)
+    assert any(s in ("a.py", "b.md", "c.py") for s in sources)    # hit from primary
+    assert len(hits) <= 5                                          # ≤ k overall (FR-002)
     scores = [h.score for h in hits]
-    assert scores == sorted(scores, reverse=True)                  # ordinati per pertinenza
+    assert scores == sorted(scores, reverse=True)                  # ordered by relevance
 
 
 def test_combined_merge_is_deterministic_on_ties():
-    # A parità di score l'ordinamento è stabile per chunk_id (FR-003, Principio VI).
+    # On equal scores the ordering is stable by chunk_id (FR-003, Principio VI).
     emb = FakeEmbedder(dim=8)
     store = InMemoryStore()
     same_text = "identico"
@@ -138,18 +138,18 @@ def test_combined_merge_is_deterministic_on_ties():
         )])
     facade = _multi_facade(emb, store)
     first = facade.search_combined(same_text)
-    assert [h.chunk_id for h in first] == ["a.md#0", "z.py#0"]    # tie-break per chunk_id
+    assert [h.chunk_id for h in first] == ["a.md#0", "z.py#0"]    # tie-break by chunk_id
     assert [h.chunk_id for h in facade.search_combined(same_text)] == \
-        [h.chunk_id for h in first]                                # output stabile
+        [h.chunk_id for h in first]                                # stable output
 
 
 def test_combined_no_quota_when_relevance_is_concentrated():
-    # Se i migliori k stanno tutti in una collezione, nessuna quota minima (edge case).
+    # If the top k all come from one collection, no minimum quota applies (edge case).
     emb = FakeEmbedder(dim=8)
-    store = _populated_store(emb)   # solo primaria popolata
+    store = _populated_store(emb)   # only primary populated
     store.upsert(WIKI_COLL, [EmbeddedChunk(
         chunk_id="lontano.md#0",
-        vector=[0.0] * 8,           # ortogonale: pertinenza nulla
+        vector=[0.0] * 8,           # orthogonal: zero relevance
         payload={"text": "x", "path": "lontano.md", "doc_type": "doc"},
     )])
     facade = _multi_facade(emb, store, k=3)
@@ -159,12 +159,12 @@ def test_combined_no_quota_when_relevance_is_concentrated():
 
 
 def test_combined_degrades_when_extra_corpus_never_indexed(caplog):
-    # Corpus extra mai indicizzato → warning + risultati della sola primaria (FR-004).
+    # Extra corpus never indexed → warning + results from primary only (FR-004).
     emb = FakeEmbedder(dim=8)
     facade = _multi_facade(emb, _populated_store(emb))
     with caplog.at_level(logging.WARNING, logger="sertor_core"):
         hits = facade.search_combined("validate")
-    assert hits                                                    # la primaria risponde
+    assert hits                                                    # primary responds
     assert any("no_index" in r.message for r in caplog.records)
 
 
@@ -176,11 +176,11 @@ def test_combined_all_collections_absent_returns_empty(caplog):
         out = facade.search_combined("qualsiasi")
     assert out == []                                               # FR-005
     assert any("no_index" in r.message for r in caplog.records)
-    assert emb.calls == 0                                          # niente embed a vuoto
+    assert emb.calls == 0                                          # no embed on empty
 
 
 def test_combined_raises_on_provider_mismatch():
-    # Corpus wiki indicizzato con un ALTRO provider → errore esplicito, mai fusione (FR-009).
+    # Wiki corpus indexed with a DIFFERENT provider → explicit error, never fused (FR-009).
     from sertor_core.domain.errors import ProviderMismatchError
 
     emb = FakeEmbedder(dim=8)
@@ -196,7 +196,7 @@ def test_combined_raises_on_provider_mismatch():
 
 
 def test_combined_without_extra_collections_unchanged():
-    # Regressione: senza corpora extra il percorso è quello storico (FR-006).
+    # Regression: without extra corpora the legacy code path is taken (FR-006).
     emb = FakeEmbedder(dim=8)
     store = _populated_store(emb)
     legacy = RetrievalFacade(emb, store, COLL, default_k=5)
@@ -207,7 +207,7 @@ def test_combined_without_extra_collections_unchanged():
 
 
 def test_code_and_docs_do_not_fan_out():
-    # FR-006bis: il fan-out è solo della ricerca combinata.
+    # FR-006bis: fan-out applies only to combined search.
     emb = FakeEmbedder(dim=8)
     facade = _multi_facade(emb, _two_collection_store(emb))
     assert all(not h.path.startswith(("concepts/", "tech/"))

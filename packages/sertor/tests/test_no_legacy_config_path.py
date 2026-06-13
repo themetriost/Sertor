@@ -1,16 +1,16 @@
-"""Guardia REQ-303 (feature 016, T016): nessun asset invoca il vecchio path radice della config.
+"""Guard REQ-303 (feature 016, T016): no asset invokes the old root config path.
 
-Dopo lo spostamento di `wiki.config.toml` in `wiki/`, nessuna invocazione installata deve usare la
-forma legacy `--config wiki.config.toml` (path in radice). La forma corretta è
-`--config wiki/wiki.config.toml --root .` o l'auto-discovery del CLI. Il fallback legacy nel hook
-usa una variabile (`--config $config`), non il literal, quindi non è un'occorrenza.
+After moving `wiki.config.toml` to `wiki/`, no installed invocation should use the legacy form
+`--config wiki.config.toml` (root path). The correct form is
+`--config wiki/wiki.config.toml --root .` or the CLI auto-discovery. The legacy fallback in the hook
+uses a variable (`--config $config`), not the literal, so it is not an occurrence.
 """
 from __future__ import annotations
 
 from sertor_installer.resources import iter_asset_dir, read_asset_text
 
-# Forma legacy del FLAG (con path radice). NB: `--config wiki/wiki.config.toml` NON contiene questo
-# literal, quindi la nuova forma non genera falsi positivi.
+# Legacy form of the FLAG (with root path). NB: `--config wiki/wiki.config.toml` does NOT contain
+# this literal, so the new form does not generate false positives.
 _LEGACY_FLAG = "--config wiki.config.toml"
 
 

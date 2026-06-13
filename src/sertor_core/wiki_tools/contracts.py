@@ -1,9 +1,9 @@
-"""Contratti di risultato versionati delle operazioni wiki (FR-011, research D4).
+"""Versioned result contracts for wiki operations (FR-011, research D4).
 
-Ogni operazione restituisce una dataclass pura e serializzabile con un campo `schema`
-versionato (`<nome>/<versione>`). I contratti contengono **metadati e riferimenti**, mai il
-contenuto integrale delle pagine. I consumatori (hook, skill, metà LLM FEAT-003-N) verificano
-`schema` e tollerano campi aggiuntivi futuri (forward-compatible).
+Each operation returns a pure, serialisable dataclass with a versioned `schema` field
+(`<name>/<version>`). Contracts contain **metadata and references**, never the full page content.
+Consumers (hooks, skills, LLM half FEAT-003-N) verify `schema` and tolerate future additional
+fields (forward-compatible).
 """
 from __future__ import annotations
 
@@ -12,13 +12,13 @@ from dataclasses import asdict, dataclass, field
 
 
 def _to_json(payload: dict) -> str:
-    """Serializza un contratto in JSON stabile (chiavi ordinate, UTF-8 non-escaped)."""
+    """Serialises a contract to stable JSON (ordered keys, non-escaped UTF-8)."""
     return json.dumps(payload, ensure_ascii=False, sort_keys=False)
 
 
 @dataclass(frozen=True)
 class ScanResult:
-    """`wiki.scan/1` — esito della ricerca di lavoro pendente (FR-005)."""
+    """`wiki.scan/1` — outcome of the pending-work scan (FR-005)."""
 
     pending: int
     anchor: str | None
@@ -35,7 +35,7 @@ class ScanResult:
 
 @dataclass(frozen=True)
 class StructureResult:
-    """`wiki.structure/1` — esito dell'inizializzazione struttura (FR-003, SC-006)."""
+    """`wiki.structure/1` — outcome of structure initialisation (FR-003, SC-006)."""
 
     created: list[str]
     skipped_existing: list[str]
@@ -50,12 +50,12 @@ class StructureResult:
 
 @dataclass(frozen=True)
 class LintResult:
-    """`wiki.lint/1` — difetti strutturali (FR-006); usato anche da `validate`.
+    """`wiki.lint/1` — structural defects (FR-006); also used by `validate`.
 
-    `stubs` elenca le pagine-segnaposto (frontmatter `status: stub`) da riempire: NON sono difetti
-    (un forward-link risolto a uno stub è intenzionale, non `broken`), ma una worklist di nodi
-    voluti.
-    Campo additivo, forward-compatible (i consumatori più vecchi lo ignorano).
+    `stubs` lists placeholder pages (frontmatter `status: stub`) to be filled in: they are NOT
+    defects (a forward-link resolved to a stub is intentional, not `broken`), but a worklist of
+    intentional nodes.
+    Additive field, forward-compatible (older consumers ignore it).
     """
 
     broken_links: list[dict] = field(default_factory=list)
@@ -74,7 +74,7 @@ class LintResult:
 
 @dataclass(frozen=True)
 class CollectResult:
-    """`wiki.collect/1` — mappa delle pagine + metadati, senza corpo (FR-007)."""
+    """`wiki.collect/1` — page map + metadata, without body content (FR-007)."""
 
     root: str
     index: str
@@ -91,7 +91,7 @@ class CollectResult:
 
 @dataclass(frozen=True)
 class IndexResult:
-    """`wiki.index/1` — esito orchestrazione indicizzazione (FR-010, US5)."""
+    """`wiki.index/1` — indexing orchestration outcome (FR-010, US5)."""
 
     collection: str | None
     documents: int
@@ -107,7 +107,7 @@ class IndexResult:
 
 @dataclass(frozen=True)
 class AppendLogResult:
-    """`wiki.append_log/1` — esito del write-back di una voce di log (FR-005/007)."""
+    """`wiki.append_log/1` — outcome of a log entry write-back (FR-005/007)."""
 
     written: bool
     partition: str | None
@@ -123,10 +123,10 @@ class AppendLogResult:
 
 @dataclass(frozen=True)
 class UpsertIndexResult:
-    """`wiki.upsert_index/1` — esito del write idempotente di una riga d'indice (feature 010).
+    """`wiki.upsert_index/1` — outcome of an idempotent index row write (feature 010).
 
-    `action`: `insert` (riga nuova) | `update` (sommario cambiato, riga sostituita in place) |
-    `noop` (riga identica già presente, nessuna scrittura).
+    `action`: `insert` (new row) | `update` (summary changed, row replaced in place) |
+    `noop` (identical row already present, nothing written).
     """
 
     written: bool
@@ -143,7 +143,7 @@ class UpsertIndexResult:
 
 @dataclass(frozen=True)
 class MigrateResult:
-    """`wiki.migrate/1` — esito dello split retroattivo del log monolitico (FR-009)."""
+    """`wiki.migrate/1` — outcome of the retroactive monolithic log split (FR-009)."""
 
     migrated_entries: int
     created: list[str] = field(default_factory=list)
@@ -159,11 +159,11 @@ class MigrateResult:
 
 @dataclass(frozen=True)
 class MoveResult:
-    """`wiki.move/1` — esito dello spostamento di una pagina con riscrittura dei link (feature 017).
+    """`wiki.move/1` — outcome of a page move with link rewriting (feature 017).
 
-    `rewritten`: lista di `{"page": rel_path, "occurrences": int}` per i file in cui sono stati
-    riscritti link. `moved`: True se il file è stato spostato (False in `--dry-run` o in recovery
-    quando il file era già a destinazione).
+    `rewritten`: list of `{"page": rel_path, "occurrences": int}` for files where links were
+    rewritten. `moved`: True if the file was moved (False in `--dry-run` or in recovery when
+    the file was already at the destination).
     """
 
     source: str
@@ -182,10 +182,10 @@ class MoveResult:
 
 @dataclass(frozen=True)
 class ReconcileResult:
-    """`wiki.reconcile/1` — candidate all'obsolescenza (sola lettura, feature 017).
+    """`wiki.reconcile/1` — candidates for obsolescence (read-only, feature 017).
 
-    `candidates`: lista di `{"path", "status", "updated", "superseded_by", "reason"}`. `clean`:
-    True se non ci sono pagine `status: superseded`. Il comando non modifica mai alcun file.
+    `candidates`: list of `{"path", "status", "updated", "superseded_by", "reason"}`. `clean`:
+    True if there are no pages with `status: superseded`. The command never modifies any file.
     """
 
     candidates: list[dict] = field(default_factory=list)
@@ -201,7 +201,7 @@ class ReconcileResult:
 
 @dataclass(frozen=True)
 class ErrorResult:
-    """`wiki.error/1` — errore esplicito (Principio IV); niente stato parziale."""
+    """`wiki.error/1` — explicit error (Principio IV); no partial state."""
 
     error: str
     message: str

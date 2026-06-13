@@ -1,7 +1,7 @@
-"""Mock delle porte di dominio per i test del core, senza cloud né rete (NFR-01).
+"""Mocks of the domain ports for core tests, without cloud or network access (NFR-01).
 
-`FakeEmbedder` è deterministico (stesso testo → stesso vettore) per esercitare l'idempotenza;
-`InMemoryStore` implementa `VectorStore` con similarità coseno in memoria.
+`FakeEmbedder` is deterministic (same text → same vector) to exercise idempotency;
+`InMemoryStore` implements `VectorStore` with in-memory cosine similarity.
 """
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ from sertor_core.domain.errors import GraphNotFoundError
 
 
 class FakeEmbedder:
-    """Provider di embeddings finto e deterministico (dim piccola)."""
+    """Fake and deterministic embedding provider (small dimension)."""
 
     def __init__(self, dim: int = 8, batch_size: int = 64):
         self.name = f"fake:{dim}"
@@ -32,7 +32,7 @@ class FakeEmbedder:
     def _vector(self, text: str) -> list[float]:
         out: list[float] = []
         i = 0
-        # Espande un digest deterministico fino a `dim` componenti.
+        # Expands a deterministic digest to `dim` components.
         while len(out) < self.dim:
             h = hashlib.sha256(f"{i}:{text}".encode()).digest()
             for b in h:
@@ -59,7 +59,7 @@ def _cosine(a: list[float], b: list[float]) -> float:
 
 
 class InMemoryStore:
-    """Vector store in memoria con similarità coseno; namespacing per collezione."""
+    """In-memory vector store with cosine similarity; namespaced by collection."""
 
     def __init__(self) -> None:
         # collection -> {chunk_id: (vector, payload)}
@@ -68,7 +68,7 @@ class InMemoryStore:
     def upsert(self, collection: str, records: list[EmbeddedChunk]) -> None:
         coll = self._data.setdefault(collection, {})
         for r in records:
-            coll[r.chunk_id] = (r.vector, r.payload)  # idempotente: sostituisce sugli stessi id
+            coll[r.chunk_id] = (r.vector, r.payload)  # idempotent: replaces on same ids
 
     def query(
         self,
@@ -108,7 +108,7 @@ class InMemoryStore:
             coll.pop(cid, None)
 
     def reset(self, collection: str) -> None:
-        self._data.pop(collection, None)   # rebuild-from-scratch (idempotente)
+        self._data.pop(collection, None)   # rebuild-from-scratch (idempotent)
 
     def exists(self, collection: str) -> bool:
         return bool(self._data.get(collection))
@@ -118,17 +118,17 @@ class InMemoryStore:
 
 
 class InMemoryLexicalIndex:
-    """`LexicalIndex` in memoria per i test del motore ibrido (NFR-03): niente file system.
+    """`LexicalIndex` in memory for hybrid engine tests (NFR-03): no file system.
 
-    Ranking lessicale elementare ma deterministico: conta le occorrenze dei token della query nel
-    testo (lowercase), pareggi risolti per `chunk_id` — sufficiente a esercitare fusione e policy.
+    Elementary but deterministic lexical ranking: counts query token occurrences in the text
+    (lowercase), ties resolved by `chunk_id` — sufficient to exercise fusion and policy.
     """
 
     def __init__(self) -> None:
         self._data: dict[str, list[LexicalEntry]] = {}
 
     def build(self, collection: str, entries: list[LexicalEntry]) -> None:
-        self._data[collection] = list(entries)  # sostituzione integrale (idempotente)
+        self._data[collection] = list(entries)  # full replacement (idempotent)
 
     def query(
         self, collection: str, query: str, k: int, doc_type: str = "both"
@@ -160,10 +160,10 @@ class InMemoryLexicalIndex:
 
 
 class FakeCodeGraph:
-    """`CodeGraph` in memoria per i test (NFR-03): due assenze distinte, niente networkx.
+    """`CodeGraph` in memory for tests (NFR-03): two distinct absences, no networkx.
 
-    Costruito su `GraphData`; il corpus attivo è quello passato al costruttore (come l'adapter
-    reale, che riceve corpus/limiti dalla composition).
+    Built on `GraphData`; the active corpus is the one passed to the constructor (like the real
+    adapter, which receives corpus/limits from the composition root).
     """
 
     def __init__(self, corpus: str = "fake", *, limits: tuple[int, int, int] = (10, 8, 8)):
@@ -172,12 +172,12 @@ class FakeCodeGraph:
         self._data: dict[str, GraphData] = {}
 
     def build(self, corpus: str, data: GraphData) -> None:
-        self._data[corpus] = data  # sostituzione integrale (idempotente)
+        self._data[corpus] = data  # full replacement (idempotent)
 
     def _graph(self) -> GraphData:
         if self._corpus not in self._data:
             raise GraphNotFoundError(
-                "grafo inesistente: costruiscilo (index) prima di interrogare",
+                "graph not found: build it (index) before querying",
                 corpus=self._corpus,
             )
         return self._data[self._corpus]

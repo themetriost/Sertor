@@ -1,9 +1,9 @@
-"""CLI sottile del nucleo wiki deterministico (research D6, contracts/cli-commands.md).
+"""Thin CLI of the deterministic wiki core (research D6, contracts/cli-commands.md).
 
-`python -m sertor_core.wiki_tools <op> --config <path> [--root <override>] [--json]` (equivalente al
-console-script `sertor-wiki-tools`). Entry-point **sottile** (Principio I): fa parsing → chiama le
-funzioni pure → stampa il contratto JSON o un output umano. Exit code: `0` ok · `1` errore esplicito
-(`ConfigError`) con messaggio su stderr e, con `--json`, `wiki.error/1`.
+`python -m sertor_core.wiki_tools <op> --config <path> [--root <override>] [--json]` (equivalent
+to the console-script `sertor-wiki-tools`). **Thin** entry-point (Principio I): parses args →
+calls pure functions → prints the JSON contract or a human summary. Exit code: `0` ok · `1`
+explicit error (`ConfigError`) with message on stderr and, with `--json`, `wiki.error/1`.
 """
 from __future__ import annotations
 
@@ -84,13 +84,14 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def _resolve_config(config_arg: str | None, root_arg: str | None) -> tuple[str, str | None]:
-    """Risolve `--config` (esplicito o auto-discovery) e il `root_override` effettivo (feature 016).
+    """Resolves `--config` (explicit or auto-discovery) and the effective `root_override`
+    (feature 016).
 
-    Se `--config` è esplicito, è usato così com'è (root = `--root` se dato). Altrimenti cerca, in
-    ordine, `./wiki.config.toml` (config in radice, retro-compat) e `./wiki/wiki.config.toml` (nuova
-    collocazione): nel secondo caso, se `--root` non è dato, il root effettivo è la CWD, così i path
-    relativi (`root="wiki"`, `source_dirs`) si risolvono dalla radice ospite. Nessuna trovata →
-    `ConfigError` esplicito (Principio IV). Ordine di ricerca generico, nessun path Sertor (P. X).
+    If `--config` is explicit, it is used as-is (root = `--root` if given). Otherwise searches,
+    in order, `./wiki.config.toml` (root config, back-compat) and `./wiki/wiki.config.toml` (new
+    placement): in the second case, if `--root` is not given, the effective root is the CWD so
+    relative paths (`root="wiki"`, `source_dirs`) resolve from the host root. None found →
+    explicit `ConfigError` (Principio IV). Generic search order, no Sertor-specific path (P. X).
     """
     if config_arg is not None:
         return config_arg, root_arg
@@ -100,8 +101,8 @@ def _resolve_config(config_arg: str | None, root_arg: str | None) -> tuple[str, 
     if (cwd / "wiki" / "wiki.config.toml").is_file():
         return "wiki/wiki.config.toml", (root_arg if root_arg is not None else ".")
     raise ConfigError(
-        "configurazione del wiki non trovata: attese ./wiki.config.toml o "
-        "./wiki/wiki.config.toml (oppure indicala con --config)"
+        "wiki configuration not found: expected ./wiki.config.toml or "
+        "./wiki/wiki.config.toml (or specify it with --config)"
     )
 
 
@@ -115,7 +116,7 @@ def _parse_date(value: str | None) -> date | None:
 
 
 def _read_body(args) -> str | None:
-    """Corpo curato della voce: da `--body-file`, altrimenti da stdin se non è un terminale."""
+    """Curated entry body: from `--body-file`, otherwise from stdin if not a terminal."""
     if args.body_file:
         return Path(args.body_file).read_text(encoding="utf-8")
     if not sys.stdin.isatty():
@@ -216,14 +217,14 @@ def _human(op: str, result) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Punto d'ingresso del console-script. Ritorna l'exit code."""
-    # I/O UTF-8 stabile su QUALSIASI console (es. Windows cp1252 non sa codificare → e i contenuti
-    # del wiki contengono caratteri non-ASCII). stdout/stderr per l'output; **stdin** per il corpo
-    # curato di `append-log` (altrimenti il body verrebbe decodificato in cp1252 → mojibake).
+    """Console-script entry point. Returns the exit code."""
+    # Stable UTF-8 I/O on ANY console (e.g. Windows cp1252 cannot encode → wiki content has
+    # non-ASCII characters). stdout/stderr for output; **stdin** for the curated body of
+    # `append-log` (otherwise the body would be decoded as cp1252 → mojibake).
     for stream in (sys.stdin, sys.stdout, sys.stderr):
         try:
             stream.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
-        except (AttributeError, ValueError):  # stream non riconfigurabile (es. redirezione): ok
+        except (AttributeError, ValueError):  # stream not reconfigurable (e.g. redirect): ok
             pass
 
     args = _build_parser().parse_args(argv)

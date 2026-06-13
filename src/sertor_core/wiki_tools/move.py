@@ -1,10 +1,11 @@
-"""`move`: sposta una pagina wiki e riscrive i link entranti (FR-001..006, feature 017).
+"""`move`: moves a wiki page and rewrites incoming links (FR-001..006, feature 017).
 
-Deterministico/offline (parte D del confine D↔N). Riscrive i wikilink **form-preserving** (le stesse
-forme che `lint` riconosce: path POSIX, senza estensione, stem) preservando `|alias`/`#anchor`, e i
-link Markdown **relativi** che risolvono alla pagina spostata. Processa le pagine + il file indice;
-**non** le partizioni di log (storico append-only). Ordine `rewrite-then-move` con recovery da stato
-parziale; collisione (destinazione esistente con sorgente presente) → errore esplicito.
+Deterministic/offline (D side of the D↔N boundary). Rewrites wikilinks **form-preserving**
+(the same forms that `lint` recognises: POSIX path, without extension, stem) preserving
+`|alias`/`#anchor`, and **relative** Markdown links that resolve to the moved page. Processes
+content pages + the index file; **not** log partitions (append-only history). Order
+`rewrite-then-move` with recovery from partial state; collision (destination exists with
+source present) → explicit error.
 """
 from __future__ import annotations
 
@@ -18,15 +19,15 @@ from sertor_core.wiki_tools.collect import iter_pages
 from sertor_core.wiki_tools.contracts import MoveResult
 from sertor_core.wiki_tools.profile import WikiProfile
 
-# Wikilink `[[target(|alias)(#anchor)]]`: gruppo 1 = target, gruppo 2 = suffisso (alias/anchor).
-# Coerente con `_WIKILINK` di frontmatter.py (RNF-006: move ↔ lint vedono gli stessi link).
+# Wikilink `[[target(|alias)(#anchor)]]`: group 1 = target, group 2 = suffix (alias/anchor).
+# Consistent with `_WIKILINK` in frontmatter.py (RNF-006: move ↔ lint see the same links).
 _WIKILINK = re.compile(r"\[\[([^\[\]|#]+)((?:[#|][^\[\]]*)?)\]\]")
-# Link Markdown `](path)` (cattura il contenuto tra parentesi).
+# Markdown link `](path)` (captures the content inside the parentheses).
 _MDLINK = re.compile(r"\]\(([^)]+)\)")
 
 
 def _forms(rel: str) -> dict[str, str]:
-    """Le 3 forme di un wikilink verso `rel` (come `lint._link_targets`, ma per categoria)."""
+    """The 3 forms of a wikilink to `rel` (like `lint._link_targets`, but by category)."""
     posix = rel
     no_ext = posix[:-3] if posix.endswith(".md") else posix
     stem = posix.rsplit("/", 1)[-1]
@@ -37,15 +38,15 @@ def _forms(rel: str) -> dict[str, str]:
 def _validate_rel(rel: str, label: str) -> str:
     rel = rel.replace("\\", "/").strip()
     if not rel.endswith(".md"):
-        raise ConfigError(f"{label} deve essere una pagina .md", key=rel)
+        raise ConfigError(f"{label} must be a .md page", key=rel)
     if rel.startswith("/") or ".." in rel.split("/"):
-        raise ConfigError(f"{label} deve essere relativo alla radice del wiki", key=rel)
+        raise ConfigError(f"{label} must be relative to the wiki root", key=rel)
     return rel
 
 
 def _rewrite(text: str, page_rel: str, src_posix: str, dest_posix: str,
              mapping: dict[str, str]) -> tuple[str, int]:
-    """Riscrive wikilink e link relativi che risolvono a `src_posix`. Ritorna (nuovo_testo, n)."""
+    """Rewrites wikilinks and relative links that resolve to `src_posix`. Returns (new_text, n)."""
     occ = 0
 
     def _wl(m: re.Match) -> str:
@@ -82,13 +83,13 @@ def _rewrite(text: str, page_rel: str, src_posix: str, dest_posix: str,
 
 
 def move(profile: WikiProfile, src: str, dest: str, dry_run: bool = False) -> MoveResult:
-    """Sposta `src`→`dest` (relativi alla radice wiki) e riscrive tutti i link entranti.
+    """Moves `src`→`dest` (relative to the wiki root) and rewrites all incoming links.
 
-    Stati (D5): src+!dest = spostamento; src+dest = collisione (errore, REQ-013); !src+dest =
-    recovery (completa solo le riscritture, REQ-014); !src+!dest = sorgente non trovata.
+    States (D5): src+!dest = move; src+dest = collision (error, REQ-013); !src+dest =
+    recovery (only completes rewrites, REQ-014); !src+!dest = source not found.
     """
-    src = _validate_rel(src, "sorgente")
-    dest = _validate_rel(dest, "destinazione")
+    src = _validate_rel(src, "source")
+    dest = _validate_rel(dest, "destination")
     root = profile.root_path
     src_path = root / src
     dest_path = root / dest
@@ -96,14 +97,14 @@ def move(profile: WikiProfile, src: str, dest: str, dry_run: bool = False) -> Mo
     dest_exists = dest_path.is_file()
 
     if not src_exists and not dest_exists:
-        raise ConfigError("pagina sorgente non trovata", key=src)
+        raise ConfigError("source page not found", key=src)
     if src_exists and dest_exists and src != dest:
-        raise ConfigError("destinazione già esistente (nessuna sovrascrittura)", key=dest)
+        raise ConfigError("destination already exists (no overwrite)", key=dest)
 
     old, new = _forms(src), _forms(dest)
     mapping = {old[k]: new[k] for k in ("posix", "no_ext", "stem")}
 
-    # File da scansionare: pagine di contenuto + indice; mai le partizioni di log (D3).
+    # Files to scan: content pages + index; never log partitions (D3).
     targets = list(iter_pages(profile))
     if profile.index_path.is_file():
         targets.append((profile.index_file, profile.index_path))

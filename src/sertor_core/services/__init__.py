@@ -1,1 +1,1 @@
-"""Logica applicativa: ingestione, chunking, indicizzazione, retrieval. Dipende solo dal dominio."""
+"""Application logic: ingestion, chunking, indexing, retrieval. Depends only on the domain."""

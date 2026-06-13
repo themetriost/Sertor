@@ -1,7 +1,7 @@
-"""Test US1/US2 — adapter `NetworkxCodeGraph`: build JSON (senza extra), navigazione (con extra).
+"""Test US1/US2 — `NetworkxCodeGraph` adapter: JSON build (no extra), navigation (with extra).
 
-Le due semantiche di assenza (FR-007/FR-017), l'artefatto versionato `sertor.graph/1` (FR-005),
-gli eventi `graph_build`/`graph_query` (FR-026/027). Senza rete.
+The two absence semantics (FR-007/FR-017), the versioned artifact `sertor.graph/1` (FR-005),
+the `graph_build`/`graph_query` events (FR-026/027). No network.
 """
 from __future__ import annotations
 
@@ -45,10 +45,10 @@ def _graph(tmp_path, *, build: bool = True) -> NetworkxCodeGraph:
     return g
 
 
-# --- build e artefatto (FR-005/FR-008, US1) -----------------------------------------------------
+# --- build and artifact (FR-005/FR-008, US1) ----------------------------------------------------
 
 def test_build_writes_versioned_json_without_networkx(tmp_path, monkeypatch):
-    monkeypatch.setitem(sys.modules, "networkx", None)   # il BUILD non richiede l'extra (G1)
+    monkeypatch.setitem(sys.modules, "networkx", None)   # BUILD does not require the extra (G1)
     _graph(tmp_path)
     artifact = tmp_path / "graph" / f"{CORPUS}.json"
     assert artifact.exists()
@@ -64,16 +64,16 @@ def test_build_is_idempotent_and_atomic(tmp_path):
     artifact = tmp_path / "graph" / f"{CORPUS}.json"
     first = artifact.read_text(encoding="utf-8")
     g.build(CORPUS, _data())
-    assert artifact.read_text(encoding="utf-8") == first  # stesso input → stesso artefatto
+    assert artifact.read_text(encoding="utf-8") == first  # same input → same artifact
     leftovers = [p for p in (tmp_path / "graph").iterdir() if p.suffix != ".json"]
-    assert leftovers == []                                # niente tmp residui (atomico)
+    assert leftovers == []                                # no leftover tmp files (atomic)
 
 
 def test_build_event_emitted_by_adapter(tmp_path, caplog):
     with caplog.at_level(logging.INFO, logger="sertor_core"):
         _graph(tmp_path)
     events = [r for r in caplog.records if getattr(r, "operation", "") == "graph_build"]
-    assert events, "manca l'evento graph_build (FR-026, fix analyze I1)"
+    assert events, "missing graph_build event (FR-026, fix analyze I1)"
     rec = events[-1]
     for field in ("corpus", "graph_path", "nodes_by_kind", "edges_by_type", "elapsed_ms"):
         assert hasattr(rec, field), field
@@ -84,11 +84,11 @@ def test_exists_and_reset_are_idempotent(tmp_path):
     g = _graph(tmp_path)
     assert g.exists(CORPUS)
     g.reset(CORPUS)
-    g.reset(CORPUS)  # assente = no-op
+    g.reset(CORPUS)  # absent = no-op
     assert not g.exists(CORPUS)
 
 
-# --- le due semantiche di assenza (FR-007/FR-017) ------------------------------------------------
+# --- the two absence semantics (FR-007/FR-017) ---------------------------------------------------
 
 def test_query_without_graph_raises_explicit_error(tmp_path):
     g = _graph(tmp_path, build=False)
@@ -117,22 +117,22 @@ def test_unknown_format_raises_config_error(tmp_path):
 
 
 def test_query_without_extra_raises_actionable_config_error(tmp_path, monkeypatch):
-    _graph(tmp_path)                                       # build ok senza extra
-    monkeypatch.setitem(sys.modules, "networkx", None)     # simula extra assente (DA-5)
+    _graph(tmp_path)                                       # build ok without extra
+    monkeypatch.setitem(sys.modules, "networkx", None)     # simulate absent extra (DA-5)
     fresh = NetworkxCodeGraph(tmp_path, CORPUS)
     with pytest.raises(ConfigError) as exc:
         fresh.find_symbol("aiuta")
     assert "sertor-core[graph]" in str(exc.value)
 
 
-# --- navigazione (US2: FR-013..018) --------------------------------------------------------------
+# --- navigation (US2: FR-013..018) ---------------------------------------------------------------
 
 def test_find_symbol_returns_citable_hits(tmp_path):
     hits = _graph(tmp_path).find_symbol("aiuta")
     assert len(hits) == 1
     hit = hits[0]
     assert (hit.path, hit.line, hit.kind, hit.qualname) == ("mod.py", 10, "function", "aiuta")
-    assert hit.ref == "mod.py#aiuta"                       # citabile (FR-018)
+    assert hit.ref == "mod.py#aiuta"                       # citable (FR-018)
 
 
 def test_who_calls_follows_calls_edges(tmp_path):
@@ -149,11 +149,11 @@ def test_get_context_bundle_with_limits(tmp_path):
     g.build(CORPUS, _data())
     bundle = g.get_context("Greeter")
     assert [h.qualname for h in bundle.definitions] == ["Greeter"]
-    assert [h.qualname for h in bundle.bases] == ["Base"]          # classi base (FR-016)
+    assert [h.qualname for h in bundle.bases] == ["Base"]          # base classes (FR-016)
     salute = g.get_context("salute")
-    assert [h.qualname for h in salute.callees] == ["aiuta"]       # chiamate uscenti
+    assert [h.qualname for h in salute.callees] == ["aiuta"]       # outgoing calls
     tight = NetworkxCodeGraph(tmp_path, CORPUS, limits=(10, 0, 0))
-    assert tight.get_context("aiuta").callers == ()                # limiti rispettati
+    assert tight.get_context("aiuta").callers == ()                # limits respected
 
 
 def test_query_event_emitted(tmp_path, caplog):
@@ -161,7 +161,7 @@ def test_query_event_emitted(tmp_path, caplog):
     with caplog.at_level(logging.INFO, logger="sertor_core"):
         g.who_calls("aiuta")
     events = [r for r in caplog.records if getattr(r, "operation", "") == "graph_query"]
-    assert events, "manca l'evento graph_query (FR-027)"
+    assert events, "missing graph_query event (FR-027)"
     rec = events[-1]
     assert rec.graph_operation == "who_calls" and rec.symbol == "aiuta" and rec.results == 1
     assert hasattr(rec, "elapsed_ms")

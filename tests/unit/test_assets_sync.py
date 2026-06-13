@@ -1,15 +1,15 @@
-"""Test di guardia anti-drift assets ⇄ `.claude/` (T031, D2).
+"""Guard test against assets ⇄ `.claude/` drift (T031, D2).
 
-Fonte canonica = gli assets nel pacchetto `sertor_installer`; `.claude/` del repo è il **derivato**
-mantenuto allineato da `python -m sertor_installer.sync`. Questo test confronta ogni file di
-`assets/claude/**` con il corrispondente in `.claude/`: se divergono (senza una giustificazione
-nell'allowlist), il drift diventa un errore CI.
+Canonical source = assets in the `sertor_installer` package; the repo's `.claude/` is the
+**derived** copy kept in sync by `python -m sertor_installer.sync`. This test compares each file in
+`assets/claude/**` with its counterpart in `.claude/`: if they diverge (without a justification
+in the allowlist), the drift becomes a CI error.
 
-**Allowlist (differenze ammesse, D3).** Il `.claude/` di sviluppo può reintrodurre `uv run` davanti
-ai console-script (l'ospite generico non assume `uv`; lo sviluppo del monorepo sì). La
-normalizzazione qui sotto neutralizza quella differenza prima del confronto. Allo stato attuale il
-sync propaga gli assets *as-is* (senza `uv run`), quindi le copie sono identiche; l'allowlist resta
-documentata per il caso in cui lo sviluppo reintroduca `uv run`.
+**Allowlist (permitted differences, D3).** The development `.claude/` may reintroduce `uv run`
+before console-scripts (a generic host does not assume `uv`; monorepo development does). The
+normalization below neutralizes that difference before comparison. Currently the sync propagates
+assets *as-is* (without `uv run`), so copies are identical; the allowlist is documented for the
+case where development reintroduces `uv run`.
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ _CLAUDE = _REPO_ROOT / ".claude"
 
 
 def _normalize(text: str) -> str:
-    """Neutralizza la differenza ammessa (allowlist): `uv run sertor-wiki-tools` ↔ script."""
+    """Neutralize the permitted difference (allowlist): `uv run sertor-wiki-tools` ↔ script."""
     return text.replace("uv run sertor-wiki-tools", "sertor-wiki-tools")
 
 

@@ -1,7 +1,7 @@
-"""Test US3 — osservabilità a runtime della CLI (FR-017..022, SC-006, LSC-7).
+"""Test US3 — CLI runtime observability (FR-017..022, SC-006, LSC-7).
 
-Verifica le leve `-v`/`--log-json`/`--log-config`, gli eventi strutturati ai boundary del core e la
-redazione dei segreti. Nessuna rete (NFR-02).
+Verifies the `-v`/`--log-json`/`--log-config` levers, structured events at core boundaries, and
+secret redaction. No network (NFR-02).
 """
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ from sertor_core.observability.logging import log_event
 
 @pytest.fixture(autouse=True)
 def _clean_logger():
-    """Ripristina il logger sertor_core fra i test (gli handler si accumulerebbero)."""
+    """Restore the sertor_core logger between tests (handlers would otherwise accumulate)."""
     logger = logging.getLogger("sertor_core")
     before = list(logger.handlers)
     level = logger.level
@@ -85,7 +85,7 @@ def test_log_config_json_loaded(tmp_path):
 def test_log_config_missing_file_raises_config_error(tmp_path):
     with pytest.raises(ConfigError) as exc:
         setup_logging(_args(log_config=str(tmp_path / "non-esiste.json")))
-    assert "non trovato" in str(exc.value)
+    assert "not found" in str(exc.value)
 
 
 def test_log_config_invalid_json_raises_config_error(tmp_path):
@@ -98,7 +98,7 @@ def test_log_config_invalid_json_raises_config_error(tmp_path):
 def test_log_config_yaml_without_pyyaml_degrades(tmp_path, monkeypatch):
     f = tmp_path / "cfg.yaml"
     f.write_text("version: 1\n", encoding="utf-8")
-    # simula assenza di pyyaml
+    # simulate absence of pyyaml
     import builtins
 
     real_import = builtins.__import__
@@ -114,7 +114,7 @@ def test_log_config_yaml_without_pyyaml_degrades(tmp_path, monkeypatch):
     assert "pyyaml" in str(exc.value)
 
 
-# --------------------------------------------------------------------- no segreti (FR-022)
+# --------------------------------------------------------------------- no secrets (FR-022)
 def test_no_secrets_in_log_records(capsys):
     setup_logging(_args(log_json=True))
     log_event(logging.INFO, "index", provider="azure", api_key="super-secret", token="tok")
@@ -124,7 +124,7 @@ def test_no_secrets_in_log_records(capsys):
     assert rec["provider"] == "azure"
 
 
-# --------------------------------------------------------------------- evento boundary (FR-020)
+# --------------------------------------------------------------------- boundary event (FR-020)
 def test_embeddings_error_event_at_boundary(caplog):
     import httpx
 

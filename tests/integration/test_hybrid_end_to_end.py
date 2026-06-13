@@ -1,9 +1,9 @@
-"""Test US2 — end-to-end ibrido via composition root su un corpus fixture (FR-031, SC-002/007).
+"""Test US2 — hybrid end-to-end via composition root on a fixture corpus (FR-031, SC-002/007).
 
-Wiring reale (composition → IndexingService → Chroma su tmp_path → facade con strategia), embedder
-mock iniettato monkeypatchando la factory (l'unico punto che conosce i provider): nessuna rete.
-Il corpus fixture su tmp_path È la verifica SC-007: un corpus diverso da sertor, zero adattamenti
-del motore — solo configurazione.
+Real wiring (composition → IndexingService → Chroma on tmp_path → facade with strategy), mock
+embedder injected by monkeypatching the factory (the only place that knows the providers): no net.
+The fixture corpus on tmp_path IS the SC-007 verification: a corpus different from sertor, zero
+engine adaptations — configuration only.
 """
 from __future__ import annotations
 
@@ -49,24 +49,24 @@ def _fake_embedder(monkeypatch):
 def test_index_then_search_through_facade(corpus, settings):
     report = composition.build_indexer(settings).index(corpus, rebuild=True)
     assert report.chunks > 0
-    # Il re-index col default hybrid produce anche il sidecar lessicale (REQ-034 hint).
+    # Re-indexing with the default hybrid also produces the lexical sidecar (REQ-034 hint).
     sidecar_dir = settings.index_dir / "lexical"
     assert any(sidecar_dir.glob("e2e-demo__*.json"))
 
     facade = composition.build_facade(settings)
     hits = facade.search_code("collection_name", k=3)
-    assert hits and hits[0].path == "app.py"          # simbolo esatto in cima via fusione
+    assert hits and hits[0].path == "app.py"          # exact symbol on top via fusion
     assert facade.search_docs("guida del progetto", k=3)
 
 
 def test_baseline_explicit_uses_legacy_dense_path(corpus, settings):
     composition.build_indexer(settings).index(corpus, rebuild=True)
     baseline = composition.build_facade(replace(settings, engine="baseline"))
-    assert baseline._retriever is None                 # percorso attuale, identico a oggi (FR-031)
+    assert baseline._retriever is None                 # current path, identical to today (FR-031)
     hits = baseline.search_combined("configurazione", k=3)
-    assert isinstance(hits, list)                      # funzionante senza strategia
+    assert isinstance(hits, list)                      # functional without strategy
 
 
 def test_facade_stays_tolerant_when_collection_missing(settings):
-    facade = composition.build_facade(settings)        # nessun index() eseguito
-    assert facade.search_code("qualunque") == []       # policy tollerante INVARIATA (no eccezioni)
+    facade = composition.build_facade(settings)        # no index() executed
+    assert facade.search_code("qualunque") == []       # tolerant policy UNCHANGED (no exceptions)

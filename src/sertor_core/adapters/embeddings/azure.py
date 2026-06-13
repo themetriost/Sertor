@@ -1,11 +1,12 @@
-"""Adapter di embeddings per Azure OpenAI (provider cloud, REQ-013).
+"""Embedding adapter for Azure OpenAI (cloud provider, REQ-013).
 
-Implementa la porta `EmbeddingProvider` via REST (`/embeddings`). Le credenziali (endpoint, chiave)
-arrivano dalla configurazione centralizzata e non vengono mai loggate (REQ-032). Gli errori sono
-avvolti in `EmbeddingError` (Principio IV).
+Implements the `EmbeddingProvider` port via REST (`/embeddings`). Credentials (endpoint, key)
+come from centralised configuration and are never logged (REQ-032). Errors are
+wrapped in `EmbeddingError` (Principle IV).
 
-Supporta due superfici Azure: la "v1" (endpoint `.../openai/v1`, che NON accetta `api-version`) e
-quella classica (con `?api-version=`). `api-version` è inviato solo se l'endpoint NON è v1.
+Supports two Azure surfaces: "v1" (endpoint `.../openai/v1`, which does NOT accept `api-version`)
+and the classic surface (with `?api-version=`). `api-version` is sent only when the endpoint is
+NOT v1.
 """
 from __future__ import annotations
 
@@ -18,7 +19,7 @@ from sertor_core.observability.logging import log_event
 
 
 class AzureEmbedder:
-    """`EmbeddingProvider` su Azure OpenAI. `client` è iniettabile per i test (NFR-01)."""
+    """`EmbeddingProvider` on Azure OpenAI. `client` is injectable for tests (NFR-01)."""
 
     def __init__(
         self,
@@ -31,9 +32,9 @@ class AzureEmbedder:
     ):
         if not endpoint or not api_key or not deployment:
             raise EmbeddingError(
-                "configurazione Azure incompleta",
+                "incomplete Azure configuration",
                 provider="azure",
-                reason="endpoint/api_key/deployment mancanti",
+                reason="endpoint/api_key/deployment missing",
                 retriable=False,
             )
         self.name = f"azure:{deployment}"
@@ -43,7 +44,7 @@ class AzureEmbedder:
         self._key = api_key
         self._deployment = deployment
         self._api_version = api_version
-        self._v1 = "/openai/v1" in endpoint  # superficie v1: niente api-version
+        self._v1 = "/openai/v1" in endpoint  # v1 surface: no api-version
         self._client = client or httpx.Client(timeout=300)
 
     def _embed_batch(self, texts: list[str]) -> list[list[float]]:
@@ -60,12 +61,12 @@ class AzureEmbedder:
         except httpx.HTTPStatusError as exc:
             status = exc.response.status_code
             retriable = status >= 500 or status == 429
-            # Evento strutturato al boundary PRIMA di propagare (FR-020): osservabilità additiva,
-            # il comportamento d'errore resta invariato.
+            # Structured event at the boundary BEFORE propagating (FR-020): additive observability,
+            # error behaviour is unchanged.
             log_event(logging.ERROR, "embeddings_error",
                       provider=self.name, reason=f"http {status}", retriable=retriable)
             raise EmbeddingError(
-                "errore dal provider di embeddings",
+                "error from embedding provider",
                 provider=self.name,
                 reason=f"http {status}",
                 retriable=retriable,
@@ -74,7 +75,7 @@ class AzureEmbedder:
             log_event(logging.ERROR, "embeddings_error",
                       provider=self.name, reason=type(exc).__name__, retriable=True)
             raise EmbeddingError(
-                "provider di embeddings non raggiungibile",
+                "embedding provider unreachable",
                 provider=self.name,
                 reason=type(exc).__name__,
                 retriable=True,

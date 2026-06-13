@@ -1,9 +1,10 @@
-"""Confine iniettabile sui comandi esterni dell'installer (R3, NFR-5).
+"""Injectable boundary for external commands in the installer (R3, NFR-5).
 
-`install rag` deve lanciare `uv` (init/add) sull'ospite: l'unico side-effect non puro del layer
-di setup. Lo si isola dietro il Protocol `CommandRunner` così i test usano un fake (nessuna rete,
-nessun `uv` reale) e l'impl di produzione (`SubprocessRunner`) resta sottile. Non solleva su
-returncode != 0: l'esito è dato a chi chiama, che decide la policy (fail-fast nel piano).
+`install rag` must invoke `uv` (init/add) on the host: the only impure side-effect of the setup
+layer. It is isolated behind the `CommandRunner` Protocol so tests can use a fake (no network, no
+real `uv`) and the production implementation (`SubprocessRunner`) stays thin. Does not raise on
+returncode != 0: the result is returned to the caller, which decides the policy (fail-fast in the
+plan).
 """
 from __future__ import annotations
 
@@ -16,7 +17,7 @@ from typing import Protocol
 
 @dataclass(frozen=True)
 class CommandResult:
-    """Esito di un comando esterno."""
+    """Result of an external command."""
 
     returncode: int
     stdout: str = ""
@@ -28,7 +29,7 @@ class CommandResult:
 
 
 class CommandRunner(Protocol):
-    """Porta dell'installer (NON del core) per eseguire tool esterni in modo testabile."""
+    """Installer port (NOT a core port) for running external tools in a testable way."""
 
     def is_available(self, tool: str) -> bool: ...
 
@@ -36,7 +37,7 @@ class CommandRunner(Protocol):
 
 
 class SubprocessRunner:
-    """Impl reale via `subprocess`. `is_available` usa `shutil.which`."""
+    """Real implementation via `subprocess`. `is_available` uses `shutil.which`."""
 
     def is_available(self, tool: str) -> bool:
         return shutil.which(tool) is not None

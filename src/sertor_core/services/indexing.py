@@ -1,10 +1,9 @@
-"""Orchestratore di indicizzazione: la pipeline completa ingest → chunk → embed → store.
+"""Indexing orchestrator: the full pipeline ingest → chunk → embed → store.
 
-Concatena i servizi e gli adapter dietro le porte (Principio I) per indicizzare un repository in
-una collezione namespaced. Full re-index idempotente (A-4/DA-004): rieseguire su un corpus
-invariato produce lo stesso insieme di chunk id (REQ-010, SC-005). Emette log strutturati
-(REQ-031). `installazione ≠ esecuzione`: l'indicizzazione avviene solo quando `index()` è chiamato
-(Principio VI).
+Wires services and adapters behind ports (Principio I) to index a repository into a namespaced
+collection. Full idempotent re-index (A-4/DA-004): re-running on an unchanged corpus produces the
+same set of chunk ids (REQ-010, SC-005). Emits structured logs (REQ-031).
+`install ≠ run`: indexing only happens when `index()` is called (Principio VI).
 """
 from __future__ import annotations
 
@@ -38,7 +37,7 @@ def _payload(chunk: Chunk) -> dict:
 
 
 class IndexingService:
-    """Indicizza un repository in una collezione, cablando ingestione/chunking/embeddings/store."""
+    """Indexes a repository into a collection, wiring ingestion/chunking/embeddings/store."""
 
     def __init__(
         self,
@@ -53,20 +52,20 @@ class IndexingService:
         self._store = store
         self._collection = collection
         self._settings = settings
-        # Sink lessicale del motore ibrido (FEAT-004): se presente, ogni index() scrive anche il
-        # sidecar come SNAPSHOT DELL'INTERO set di chunk (semantica specchio, REQ-002) — i flussi
-        # di upsert parziale non devono cablarlo (un sidecar-sottoinsieme violerebbe REQ-002).
+        # Lexical sink for the hybrid engine (FEAT-004): when present, every index() also writes
+        # the sidecar as a SNAPSHOT OF THE FULL chunk set (mirror semantics, REQ-002) — partial
+        # upsert flows must not wire it (a partial sidecar would violate REQ-002).
         self._lexical = lexical
-        # Sink del code-graph (FEAT-005, DA-2): stesso principio specchio — il grafo si
-        # ricostruisce a ogni index() dagli stessi documents/chunks, mai stantio.
+        # Code-graph sink (FEAT-005, DA-2): same mirror principle — the graph is rebuilt on every
+        # index() from the same documents/chunks, never stale.
         self._graph = graph
 
     def index(self, root: Path | str, rebuild: bool = False) -> IndexReport:
-        """Esegue la pipeline completa e restituisce un report con i conteggi.
+        """Runs the full pipeline and returns a report with counts.
 
-        Con `rebuild=True` ricostruisce l'indice da zero: il `reset` della collezione avviene
-        **dopo** l'embedding e **prima** dell'upsert, così un errore del provider (durante l'embed)
-        lascia l'indice preesistente intatto (atomicità del rebuild, REQ-004/NFR-004 di FEAT-002).
+        With `rebuild=True` rebuilds the index from scratch: the collection `reset` happens
+        **after** embedding and **before** upsert, so a provider error (during embed)
+        leaves the pre-existing index intact (rebuild atomicity, REQ-004/NFR-004 of FEAT-002).
         """
         started = time.perf_counter()
         documents = discover(root, self._settings)
@@ -76,30 +75,30 @@ class IndexingService:
             chunks.extend(chunk_document(doc, self._settings))
 
         if chunks:
-            vectors = self._embedder.embed([c.text for c in chunks])  # può fallire: indice intatto
+            vectors = self._embedder.embed([c.text for c in chunks])  # may fail: index intact
             records = [
                 EmbeddedChunk(chunk_id=c.id, vector=v, payload=_payload(c))
                 for c, v in zip(chunks, vectors, strict=True)
             ]
             if rebuild:
-                self._store.reset(self._collection)  # scarta l'indice precedente, poi ricostruisce
+                self._store.reset(self._collection)  # discard the previous index, then rebuild
             self._store.upsert(self._collection, records)
             if self._lexical is not None:
-                # Rebuild congiunto (REQ-003): stesso insieme di chunk delle due vie, scritto dopo
-                # l'embedding riuscito (un errore del provider lascia intatti ENTRAMBI gli indici).
+                # Joint rebuild (REQ-003): same chunk set for both paths, written after a
+                # successful embed (a provider error leaves BOTH indexes intact).
                 self._lexical.build(self._collection, [
                     LexicalEntry(c.id, c.text, c.doc_type.value, c.metadata.path) for c in chunks
                 ])
             if self._graph is not None:
-                # La soglia di ambiguità arriva da Settings (Principio VIII, fix analyze W1).
+                # The ambiguity threshold comes from Settings (Principio VIII, fix analyze W1).
                 self._graph.build(self._settings.corpus, extract_graph(
                     documents, chunks,
                     ambiguity_threshold=self._settings.graph_ambiguity_threshold,
                 ))
         elif rebuild:
-            self._store.reset(self._collection)  # corpus vuoto in rebuild: azzera l'indice
+            self._store.reset(self._collection)  # empty corpus on rebuild: clear the index
             if self._lexical is not None:
-                self._lexical.build(self._collection, [])  # specchio: anche il lessicale si azzera
+                self._lexical.build(self._collection, [])  # mirror: lexical index is also cleared
             if self._graph is not None:
                 self._graph.build(self._settings.corpus, extract_graph(
                     [], [], ambiguity_threshold=self._settings.graph_ambiguity_threshold,

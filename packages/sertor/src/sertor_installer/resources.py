@@ -1,9 +1,9 @@
-"""Accesso agli assets bundlati via `importlib.resources` (D2).
+"""Access to bundled assets via `importlib.resources` (D2).
 
-Gli artefatti non-Python (skill, comando, agente, hook, template di config) vivono come
-package-data sotto `sertor_installer/assets/`. Si leggono **solo** con `importlib.resources`
-(niente `__file__`/`pathlib` sul layout del disco): funziona identico da editable e da wheel
-installato/zippato.
+Non-Python artifacts (skill, command, agent, hook, config templates) live as package-data under
+`sertor_installer/assets/`. They are read **only** via `importlib.resources` (no
+`__file__`/`pathlib` on disk layout): works identically from editable installs and from
+installed/zipped wheels.
 """
 from __future__ import annotations
 
@@ -16,7 +16,8 @@ _ASSETS = "assets"
 
 
 def asset_path(relative: str) -> Traversable:
-    """`Traversable` di un asset relativo a `sertor_installer/assets/` (es. il template config)."""
+    """`Traversable` for an asset relative to `sertor_installer/assets/` (e.g. the config
+    template)."""
     node: Traversable = files(_ANCHOR) / _ASSETS
     for part in relative.replace("\\", "/").split("/"):
         if part:
@@ -25,16 +26,16 @@ def asset_path(relative: str) -> Traversable:
 
 
 def read_asset_text(relative: str) -> str:
-    """Contenuto testuale (UTF-8) di un asset."""
+    """Text content (UTF-8) of an asset."""
     return asset_path(relative).read_text(encoding="utf-8")
 
 
 def iter_asset_dir(relative: str) -> Iterator[tuple[str, str]]:
-    """Percorre ricorsivamente una sottodirectory degli assets.
+    """Recursively walks an asset subdirectory.
 
-    Restituisce coppie `(rel_path, content)` dove `rel_path` è relativo alla directory passata
-    (separatori `/`), e `content` è il testo UTF-8 del file. Ordine deterministico (alfabetico)
-    per rendere riproducibili report e test.
+    Yields pairs `(rel_path, content)` where `rel_path` is relative to the given directory
+    (using `/` separators), and `content` is the UTF-8 text of the file. Deterministic
+    (alphabetical) order makes reports and tests reproducible.
     """
     base = asset_path(relative)
 

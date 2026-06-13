@@ -1,1 +1,1 @@
-"""Adapter del code-graph (porta `CodeGraph`) — navigazione dietro l'extra `graph`."""
+"""Code-graph adapter (port `CodeGraph`) — navigation behind the `graph` extra."""

@@ -1,7 +1,8 @@
-"""Valutazione della pertinenza del retrieval (REQ-011 di FEAT-002).
+"""Retrieval relevance evaluation (REQ-011 of FEAT-002).
 
-Misura hit-rate@k e MRR@10 su un ground-truth esterno (query → file attesi). "Una feature senza
-misura non è fatta" (Principio V): la misura è il criterio oggettivo di accettazione.
+Measures hit-rate@k and MRR@10 against an external ground-truth (query → expected files).
+"A feature without a measure is not done" (Principle V): the measure is the objective
+acceptance criterion.
 """
 from __future__ import annotations
 
@@ -15,10 +16,10 @@ GroundTruth = list[tuple[str, list[str]]]  # (query, expected_paths)
 
 @runtime_checkable
 class QueryableEngine(Protocol):
-    """Qualsiasi motore RAG misurabile: basta `query` + `provider` (structural typing).
+    """Any measurable RAG engine: only `query` + `provider` needed (structural typing).
 
-    Generalizzazione FEAT-004 (REQ-051): la valutazione confronta baseline, ibrido e
-    ibrido+rerank con la stessa funzione — solo annotazione, zero cambi di comportamento.
+    Generalisation FEAT-004 (REQ-051): evaluation compares baseline, hybrid and
+    hybrid+rerank with the same function — annotation only, zero behaviour changes.
     """
 
     @property
@@ -29,7 +30,7 @@ class QueryableEngine(Protocol):
 
 @dataclass(frozen=True)
 class EvalReport:
-    """Esito della valutazione."""
+    """Evaluation result."""
 
     hit_rate: dict[int, float]
     mrr: float
@@ -42,10 +43,10 @@ def evaluate(
     ground_truth: GroundTruth,
     ks: tuple[int, ...] = (1, 3, 5, 10),
 ) -> EvalReport:
-    """Calcola hit-rate@k (per ogni k) e MRR@10 sul ground-truth.
+    """Computes hit-rate@k (for each k) and MRR@10 on the ground-truth.
 
-    Un risultato è pertinente se il suo `path` è tra gli `expected_paths` della query. Ground-truth
-    vuoto → metriche a 0, senza errore.
+    A result is relevant if its `path` is among the `expected_paths` for the query. Empty
+    ground-truth → metrics at 0, no error.
     """
     n = len(ground_truth)
     if n == 0:

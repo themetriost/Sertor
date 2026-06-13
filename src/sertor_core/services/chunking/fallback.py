@@ -1,14 +1,14 @@
-"""Chunking dimensionale di fallback (REQ-009).
+"""Size-based fallback chunking (REQ-009).
 
-Usato quando il chunker sintattico non copre la lingua, o per testo generico. Spezza il contenuto
-in finestre di `chunk_size` caratteri con `overlap` di sovrapposizione, rispettando i confini di
-riga (non taglia a metà riga). Non solleva mai errore: garantisce la copertura di qualunque file.
+Used when the syntactic chunker does not cover the language, or for generic text. Splits the
+content into windows of `chunk_size` characters with `overlap` overlap, respecting line boundaries
+(never cuts mid-line). Never raises an error: guarantees coverage of any file.
 """
 from __future__ import annotations
 
 
 def size_chunks(text: str, chunk_size: int = 1600, overlap: int = 200) -> list[dict]:
-    """Finestre dimensionali su confini di riga. Chunk: {text, start_line, end_line} (1-based)."""
+    """Size-based windows on line boundaries. Chunk: {text, start_line, end_line} (1-based)."""
     if not text.strip():
         return []
     chunk_size = max(1, chunk_size)
@@ -29,7 +29,7 @@ def size_chunks(text: str, chunk_size: int = 1600, overlap: int = 200) -> list[d
         )
         if end >= n:
             break
-        # Sovrapposizione: indietreggia di alcune righe fino a coprire ~overlap caratteri.
+        # Overlap: step back some lines to cover ~overlap characters.
         back = 0
         ov = 0
         while end - back - 1 > start and ov < overlap:

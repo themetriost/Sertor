@@ -1,23 +1,24 @@
-"""Chunking code-aware via tree-sitter (REQ-006/007/011).
+"""Code-aware chunking via tree-sitter (REQ-006/007/011).
 
-Spezza il codice ai confini sintattici: ogni funzione/metodo/classe diventa un chunk coerente con
-metadati strutturali (qualname, tipo di nodo, righe); il codice a livello modulo (import,
-costanti) è raggruppato in chunk propri. Le unità troppo grandi sono sotto-divise per righe.
+Splits code at syntactic boundaries: each function/method/class becomes a coherent chunk with
+structural metadata (qualname, node type, lines); module-level code (imports, constants) is
+grouped into its own chunks. Oversized units are sub-divided by lines.
 
-Repo-agnostico: la lingua è mappata sui tipi di nodo della relativa grammatica. Solo i linguaggi
-in `_LANG` (node-type validati) sono chunkati sintatticamente; per gli altri `code_chunks`
-ritorna `None` e il chiamante fa il fallback dimensionale (REQ-009). PowerShell e i dialetti SQL,
-pur avendo una grammatica nel pack, sono volutamente esclusi al 1° rilascio (R-N2): andranno in
-fallback finché i loro node-type non sono validati — estensione incrementale (REQ-011).
+Repo-agnostic: the language is mapped to the node types of the corresponding grammar. Only the
+languages in `_LANG` (validated node-types) are chunked syntactically; for the others
+`code_chunks` returns `None` and the caller applies the size-based fallback (REQ-009). PowerShell
+and SQL dialects, despite having a grammar in the pack, are intentionally excluded in the first
+release (R-N2): they fall back until their node-types are validated — incremental extension
+(REQ-011).
 
-Il binding fornito da `tree-sitter-language-pack` espone l'API come metodi (`kind()`,
-`byte_range()`, `start_position()`); `_Node` la avvolge in un'interfaccia leggibile.
+The binding provided by `tree-sitter-language-pack` exposes the API as methods (`kind()`,
+`byte_range()`, `start_position()`); `_Node` wraps it in a readable interface.
 """
 from __future__ import annotations
 
 DEFAULT_MAX_CHARS = 1600
 
-# linguaggio Sertor -> nome grammatica nel pack
+# Sertor language -> grammar name in the pack
 _TS_NAME: dict[str, str] = {
     "python": "python",
     "javascript": "javascript",
@@ -31,7 +32,7 @@ _TS_NAME: dict[str, str] = {
     "ruby": "ruby",
 }
 
-# linguaggio -> tipi di nodo per definizioni (funzioni/metodi) e contenitori (classi)
+# language -> node types for definitions (functions/methods) and containers (classes)
 _LANG: dict[str, dict[str, set[str]]] = {
     "python": {
         "def": {"function_definition"},
@@ -70,7 +71,7 @@ _BODY_FIELDS = ("body", "declaration_list")
 
 
 class _Node:
-    """Wrapper leggibile sul nodo del binding (API a metodi)."""
+    """Readable wrapper around a binding node (method-based API)."""
 
     __slots__ = ("n", "src")
 
@@ -114,7 +115,7 @@ class _Node:
 
 
 def _split_oversize(body: str, max_chars: int) -> list[str]:
-    """Sotto-divide un blocco troppo grande per righe, in finestre <= max_chars."""
+    """Sub-divides an oversized block by lines, into windows <= max_chars."""
     lines = body.split("\n")
     parts: list[str] = []
     cur: list[str] = []
@@ -131,7 +132,7 @@ def _split_oversize(body: str, max_chars: int) -> list[str]:
 
 
 def _effective(node: _Node) -> _Node:
-    """Per i nodi 'decorati' (es. decorated_definition) ritorna la definizione interna."""
+    """For 'decorated' nodes (e.g. decorated_definition) returns the inner definition."""
     if node.kind == "decorated_definition":
         for c in node.named_children():
             if c.kind.endswith("definition") or c.kind.endswith("declaration"):
@@ -142,9 +143,10 @@ def _effective(node: _Node) -> _Node:
 def code_chunks(
     text: str, language: str = "python", max_chars: int = DEFAULT_MAX_CHARS
 ) -> list[dict] | None:
-    """Spezza `text` ai confini sintattici. `None` se la lingua non è chunkabile sintatticamente.
+    """Splits `text` at syntactic boundaries. `None` if the language cannot be chunked
+    syntactically.
 
-    Ogni chunk: {text, symbol, symbol_kind, qualname, start_line, end_line} (righe 1-based).
+    Each chunk: {text, symbol, symbol_kind, qualname, start_line, end_line} (1-based lines).
     """
     cfg = _LANG.get(language)
     if cfg is None:
@@ -171,7 +173,7 @@ def code_chunks(
         parts = [body] if len(body) <= max_chars else _split_oversize(body, max_chars)
         multi = len(parts) > 1
         for j, part in enumerate(parts):
-            ql = qualname if not multi else f"{qualname or symbol or kind} (parte {j + 1})"
+            ql = qualname if not multi else f"{qualname or symbol or kind} (part {j + 1})"
             chunks.append(
                 {
                     "text": part,

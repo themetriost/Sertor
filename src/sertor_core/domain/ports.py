@@ -1,8 +1,8 @@
-"""Porte (astrazioni) del nucleo: i boundary dietro cui vivono i provider concreti.
+"""Core ports (abstractions): the boundaries behind which concrete providers live.
 
-Il core dipende SOLO da queste astrazioni (Principio I/II); gli adapter in `adapters/` le
-implementano importando gli SDK esterni. Definite come `Protocol` (structural typing): un
-adapter è conforme se ha i metodi giusti, senza ereditare nulla — facile da mockare nei test.
+The core depends ONLY on these abstractions (Principio I/II); adapters in `adapters/` implement
+them by importing external SDKs. Defined as `Protocol` (structural typing): an adapter is
+compliant if it has the right methods, without any inheritance — easy to mock in tests.
 """
 from __future__ import annotations
 
@@ -22,10 +22,10 @@ DocTypeFilter = Literal["code", "doc", "both"]
 
 @runtime_checkable
 class EmbeddingProvider(Protocol):
-    """Astrazione del provider di embeddings (contracts/embedding-provider.md).
+    """Abstraction for the embedding provider (contracts/embedding-provider.md).
 
-    `embed` processa i testi a batch e preserva l'ordine; `dim` è la dimensione del vettore,
-    scoperta al primo batch se inizialmente `None`.
+    `embed` processes texts in batches and preserves order; `dim` is the vector dimension,
+    discovered on the first batch if initially `None`.
     """
 
     name: str
@@ -33,21 +33,21 @@ class EmbeddingProvider(Protocol):
     batch_size: int
 
     def embed(self, texts: list[str]) -> list[list[float]]:
-        """Vettori per ciascun testo (ordine preservato). `[]` per input vuoto."""
+        """Vectors for each text (order preserved). `[]` for empty input."""
         ...
 
 
 @runtime_checkable
 class VectorStore(Protocol):
-    """Astrazione del backend di persistenza+ricerca vettoriale (contracts/vector-store.md).
+    """Abstraction for the vector persistence+search backend (contracts/vector-store.md).
 
-    Namespacing per `collection`. `query` filtra per tipo di documento senza indici separati.
-    Una collezione assente fa restituire `[]` a `query` ed è `exists()==False`; un backend
-    irraggiungibile solleva `VectorStoreError` (Principio IV).
+    Namespaced by `collection`. `query` filters by document type without separate indexes.
+    A missing collection causes `query` to return `[]` and `exists()==False`; an unreachable
+    backend raises `VectorStoreError` (Principio IV).
     """
 
     def upsert(self, collection: str, records: list[EmbeddedChunk]) -> None:
-        """Inserisce/sostituisce chunk (id, vettore, payload). Idempotente sugli stessi id."""
+        """Insert/replace chunks (id, vector, payload). Idempotent for the same ids."""
         ...
 
     def query(
@@ -57,44 +57,45 @@ class VectorStore(Protocol):
         k: int,
         doc_type: DocTypeFilter = "both",
     ) -> list[RetrievalResult]:
-        """Top-k per similarità, con filtro opzionale su doc_type. `[]` se collezione assente."""
+        """Top-k by similarity, with optional doc_type filter. `[]` if collection is absent."""
         ...
 
     def delete(self, collection: str, ids: list[str]) -> None:
-        """Rimuove i chunk indicati dalla collezione."""
+        """Remove the given chunks from the collection."""
         ...
 
     def reset(self, collection: str) -> None:
-        """Svuota/elimina la collezione (per il rebuild-from-scratch idempotente).
+        """Empty/delete the collection (for idempotent rebuild-from-scratch).
 
-        Idempotente: resettare una collezione assente non è un errore.
+        Idempotent: resetting a missing collection is not an error.
         """
         ...
 
     def exists(self, collection: str) -> bool:
-        """True se la collezione esiste ed è inizializzata."""
+        """True if the collection exists and is initialised."""
         ...
 
     def list_collections(self) -> list[str]:
-        """Nomi delle collezioni esistenti nel backend.
+        """Names of existing collections in the backend.
 
-        Serve alla ricerca combinata multi-collezione per distinguere un corpus mai indicizzato
-        (degradazione morbida) da uno indicizzato con un altro provider (errore esplicito, FR-009).
+        Used by the multi-collection combined search to distinguish a corpus that has never
+        been indexed (soft degradation) from one indexed with a different provider (explicit
+        error, FR-009).
         """
         ...
 
 
 @runtime_checkable
 class LexicalIndex(Protocol):
-    """Astrazione dell'indice lessicale del motore ibrido (contracts/lexical-index-port.md).
+    """Abstraction for the lexical index of the hybrid engine (contracts/lexical-index-port.md).
 
-    Namespacing per `collection` (lo stesso nome namespaced per corpus+provider della collezione
-    vettoriale che rispecchia, FR-005). La policy sull'assenza dell'indice (degradazione REQ-034)
-    è del motore: il chiamante verifica `exists()` prima di `query`.
+    Namespaced by `collection` (the same corpus+provider namespaced name as the vector
+    collection it mirrors, FR-005). The policy for a missing index (degradation REQ-034) belongs
+    to the engine: the caller checks `exists()` before `query`.
     """
 
     def build(self, collection: str, entries: list[LexicalEntry]) -> None:
-        """Sostituisce integralmente l'indice della collezione (rebuild idempotente, atomico)."""
+        """Fully replace the collection's index (idempotent, atomic rebuild)."""
         ...
 
     def query(
@@ -104,31 +105,31 @@ class LexicalIndex(Protocol):
         k: int,
         doc_type: DocTypeFilter = "both",
     ) -> list[str]:
-        """Chunk id in ordine di rilevanza lessicale, max `k`; filtro doc_type PRIMA del taglio."""
+        """Chunk ids in lexical relevance order, max `k`; doc_type filter applied BEFORE cut."""
         ...
 
     def lookup(self, collection: str, chunk_ids: list[str]) -> list[LexicalEntry]:
-        """Voci per gli id richiesti (ordine preservato, assenti saltati).
+        """Entries for the requested ids (order preserved, missing ones skipped).
 
-        Serve al motore ibrido per materializzare i `RetrievalResult` dei candidati arrivati
-        dalla sola via lessicale (assenti dal pool denso).
+        Used by the hybrid engine to materialise `RetrievalResult`s for candidates that
+        arrived via the lexical path only (absent from the dense pool).
         """
         ...
 
     def exists(self, collection: str) -> bool:
-        """True se l'indice lessicale della collezione è presente."""
+        """True if the lexical index for the collection is present."""
         ...
 
     def reset(self, collection: str) -> None:
-        """Elimina l'indice della collezione (assente = no-op)."""
+        """Delete the collection's index (absent = no-op)."""
         ...
 
 
 @runtime_checkable
 class Reranker(Protocol):
-    """Astrazione del secondo stadio di reranking (FEAT-004, gruppo C — extra opzionale).
+    """Abstraction for the second reranking stage (FEAT-004, group C — optional extra).
 
-    `model` identifica il cross-encoder per l'evento di log `rerank` (REQ-061).
+    `model` identifies the cross-encoder for the `rerank` log event (REQ-061).
     """
 
     model: str
@@ -136,56 +137,56 @@ class Reranker(Protocol):
     def rerank(
         self, query: str, results: list[RetrievalResult], k: int
     ) -> list[RetrievalResult]:
-        """Top-k ri-ordinati per rilevanza query-passaggio; `score` = punteggio cross-encoder."""
+        """Top-k re-ordered by query-passage relevance; `score` = cross-encoder score."""
         ...
 
 
 @runtime_checkable
 class CodeGraph(Protocol):
-    """Astrazione del code-graph strutturale (FEAT-005, contracts/code-graph-port.md).
+    """Abstraction for the structural code graph (FEAT-005, contracts/code-graph-port.md).
 
-    Namespacing per SOLO corpus (il grafo non dipende dal provider di embeddings). Due
-    semantiche di assenza: grafo non costruito → `GraphNotFoundError` (esplicito); simbolo
-    assente → risultati vuoti (legittimo). `build` non richiede la libreria di grafi.
+    Namespaced by corpus ONLY (the graph does not depend on the embedding provider). Two
+    absence semantics: graph not built → `GraphNotFoundError` (explicit); symbol absent →
+    empty results (legitimate). `build` does not require the graph library.
     """
 
     def build(self, corpus: str, data: GraphData) -> None:
-        """Sostituisce integralmente l'artefatto del corpus (snapshot, atomico, idempotente)."""
+        """Fully replace the corpus artifact (snapshot, atomic, idempotent)."""
         ...
 
     def find_symbol(self, name: str) -> list[SymbolHit]:
-        """Definizioni con match esatto del nome (class/function/method); vuoto se assente."""
+        """Definitions with an exact name match (class/function/method); empty if absent."""
         ...
 
     def who_calls(self, name: str) -> list[SymbolHit]:
-        """Nodi con arco `calls` uscente verso il simbolo."""
+        """Nodes with an outgoing `calls` edge to the symbol."""
         ...
 
     def related_docs(self, name: str) -> list[str]:
-        """Path dei documenti con arco `mentions` verso il simbolo."""
+        """Paths of documents with a `mentions` edge to the symbol."""
         ...
 
     def get_context(self, name: str) -> ContextBundle:
-        """Bundle multi-hop (definizioni, chiamanti, chiamate, basi, doc), sezioni limitate."""
+        """Multi-hop bundle (definitions, callers, callees, bases, docs), sections limited."""
         ...
 
     def exists(self, corpus: str) -> bool:
-        """True se l'artefatto grafo del corpus è presente."""
+        """True if the graph artifact for the corpus is present."""
         ...
 
     def reset(self, corpus: str) -> None:
-        """Elimina l'artefatto del corpus (assente = no-op)."""
+        """Delete the corpus artifact (absent = no-op)."""
         ...
 
 
 @runtime_checkable
 class RetrieverStrategy(Protocol):
-    """Strategia di retrieval iniettata nella facade dal composition root (FR-017/018).
+    """Retrieval strategy injected into the facade by the composition root (FR-017/018).
 
-    Il chiamante garantisce che la collezione primaria esista (la facade conserva la sua policy
-    tollerante: il check `exists()` + warning restano suoi).
+    The caller guarantees that the primary collection exists (the facade keeps its tolerant
+    policy: the `exists()` check + warning remain its responsibility).
     """
 
     def retrieve(self, query: str, k: int, doc_type: DocTypeFilter) -> list[RetrievalResult]:
-        """Retrieval sulla collezione primaria, già verificata esistente."""
+        """Retrieval on the primary collection, already verified to exist."""
         ...

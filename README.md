@@ -1,91 +1,90 @@
 # Sertor
 
-> Un framework per dare a **qualsiasi progetto** una conoscenza di sé **viva, interrogabile e auto-manutenuta** — indicizzazione, RAG e LLM Wiki, senza lock-in.
+> A framework to give **any project** a **living, queryable, self-maintaining** knowledge of itself — indexing, RAG, and LLM Wiki, without lock-in.
 
 ## 🌅 Vision
 
-Ogni progetto software — che sia codice, documentazione, o entrambi — dovrebbe poter
-**conoscere e interrogare sé stesso**. La conoscenza di una codebase e dei suoi documenti smette
-di essere sparsa, volatile e ricostruita da zero a ogni sessione, e diventa un **asset vivo,
-persistente e auto-manutenuto**. E questo deve essere possibile **ovunque e senza lock-in**:
-portabile da un progetto all'altro, eseguibile in locale, neutrale rispetto al provider di LLM e
-di storage.
+Every software project — whether it is code, documentation, or both — should be able to
+**know and query itself**. Knowledge of a codebase and its documents stops being scattered,
+volatile, and rebuilt from scratch every session, and becomes a **living, persistent, self-maintaining
+asset**. And this must be possible **anywhere and without lock-in**: portable from one project to
+another, runnable locally, neutral with respect to the LLM and storage provider.
 
 ## 🎯 Mission
 
-Sertor è un **framework installabile** che dota **qualsiasi progetto** — *code+doc*, *solo-doc* o
-*solo-code* — di tre capacità componibili:
+Sertor is an **installable framework** that equips **any project** — *code+doc*, *doc-only*, or
+*code-only* — with three composable capabilities:
 
-1. **Indicizzazione repo-agnostica** dei contenuti (codice e documenti);
-2. **Retrieval RAG** con più motori, da locale ad Azure;
-3. un **LLM Wiki** cumulativo che cresce con il lavoro.
+1. **Repo-agnostic indexing** of content (code and documents);
+2. **RAG retrieval** with multiple engines, from local to Azure;
+3. a **cumulative LLM Wiki** that grows with the work.
 
-Ogni capacità è **disaccoppiata dal dominio dell'ospite**: Sertor si aggancia a un progetto solo
-come *consumatore* — oggi a sé stesso, in modo strumentale, via **dogfooding**. È consegnato come
-**libreria importabile** (è quello il prodotto) — riproducibile e adatta a contesti di ogni scala,
-**enterprise inclusa** — mentre CLI e MCP ne sono veicoli sottili.
+Each capability is **decoupled from the host's domain**: Sertor attaches to a project only
+as a *consumer* — today applied to itself, instrumentally, via **dogfooding**. It is delivered as an
+**importable library** (that is the product) — reproducible and suited to contexts of every scale,
+**enterprise included** — while the CLI and MCP are thin vehicles on top.
 
-## I tre profili di progetto
+## The three project profiles
 
-Sertor non assume nulla sulla forma dell'ospite. Si installa e si adatta a:
+Sertor makes no assumptions about the shape of the host. It installs and adapts to:
 
-| Profilo | Esempio | Cosa indicizza |
+| Profile | Example | What it indexes |
 |---------|---------|----------------|
-| **code + doc** | un repository applicativo con i suoi `docs/` | sorgenti *e* documentazione |
-| **solo doc** | un knowledge base, un wiki, una raccolta di PDF/MD | solo documenti |
-| **solo code** | una libreria senza documentazione narrativa | solo sorgenti |
+| **code + doc** | an application repository with its `docs/` | sources *and* documentation |
+| **doc-only** | a knowledge base, a wiki, a collection of PDF/MD | documents only |
+| **code-only** | a library with no narrative documentation | sources only |
 
-## Le tre capacità
+## The three capabilities
 
-- **Indicizzazione** — ingestione repo-agnostica, chunking *code-aware* (multi-linguaggio) e
-  *markdown-aware*, embeddings multi-provider, vector store astratto.
-- **RAG** — recupero su quei contenuti; più motori (baseline vettoriale oggi; ibrido+reranking,
-  a grafo e agentico come incrementi).
-- **LLM Wiki** — una base di conoscenza del progetto che si scrive e si mantiene durante il lavoro
-  (pattern "LLM Wiki"), interrogabile a sua volta via RAG.
+- **Indexing** — repo-agnostic ingestion, *code-aware* (multi-language) and *markdown-aware*
+  chunking, multi-provider embeddings, abstract vector store.
+- **RAG** — retrieval over that content; multiple engines (vector baseline today; hybrid+reranking,
+  graph-based, and agentic as increments).
+- **LLM Wiki** — a project knowledge base that is written and maintained during the work
+  ("LLM Wiki" pattern), itself queryable via RAG.
 
-## Disaccoppiamento (perché conta)
+## Decoupling (why it matters)
 
-Le funzionalità e le skill di Sertor **non devono conoscere il business dell'ospite**. Il fatto che
-in questo repository siano applicate a Sertor stesso è **strumentale** (dogfooding), non un permesso
-a incorporare assunzioni specifiche del progetto. Questo principio è vincolante: vedi la
-[costituzione](.specify/memory/constitution.md).
+Sertor's features and skills **must not know the host's business domain**. The fact that in this
+repository they are applied to Sertor itself is **instrumental** (dogfooding), not a licence to
+embed project-specific assumptions. This principle is binding: see the
+[constitution](.specify/memory/constitution.md).
 
-## Architettura in breve
+## Architecture at a glance
 
-- **La libreria è il prodotto.** Il nucleo vive in [`src/sertor_core/`](src/sertor_core/) in
-  **Clean Architecture** (le dipendenze puntano verso l'interno; il `domain` non importa SDK).
-- **Local-first ↔ Azure**, intercambiabili via configurazione (`RAG_BACKEND=local|azure`), senza
-  toccare il codice. Provider LLM/embeddings e vector store sono dietro *porte* astratte.
-- **CLI e MCP** sono consumatori sottili della libreria.
+- **The library is the product.** The core lives in [`src/sertor_core/`](src/sertor_core/) in
+  **Clean Architecture** (dependencies point inward; the `domain` does not import any SDK).
+- **Local-first ↔ Azure**, swappable via configuration (`RAG_BACKEND=local|azure`), without
+  touching the code. LLM/embeddings providers and vector store are behind abstract *ports*.
+- **CLI and MCP** are thin consumers of the library.
 
-## Stato
+## Status
 
-In **costruzione attiva**. Disponibile oggi su `master`:
+**Actively under construction.** Available today on `master`:
 
-- ✅ **`sertor-core`** — libreria di retrieval prod-ready (ingestione, chunking, embeddings, facade).
-- ✅ **Motore RAG baseline** (vettoriale) con valutazione (hit\@k, MRR) e query congiunta multi-collezione.
-- ✅ **Server MCP** (`sertor_mcp`) — `search_code`/`search_docs`/`search_combined` per Claude Code e client MCP.
-- ✅ **CLI di esecuzione `sertor-rag`** — `index`/`search` dal terminale, osservabilità a runtime.
-- ✅ **LLM Wiki** — nucleo deterministico `sertor-wiki-tools` (scan/lint/structure/index/log) +
-  operazioni di giudizio come skill agentiche.
+- ✅ **`sertor-core`** — prod-ready retrieval library (ingestion, chunking, embeddings, facade).
+- ✅ **Baseline RAG engine** (vector) with evaluation (hit\@k, MRR) and joint multi-collection query.
+- ✅ **MCP server** (`sertor_mcp`) — `search_code`/`search_docs`/`search_combined` for Claude Code and MCP clients.
+- ✅ **`sertor-rag` execution CLI** — `index`/`search` from the terminal, runtime observability.
+- ✅ **LLM Wiki** — deterministic core `sertor-wiki-tools` (scan/lint/structure/index/log) +
+  judgment operations as agentic skills.
 
-In sviluppo: installer `sertor install <capacità>`, motori avanzati (ibrido/grafo/agentico),
-refresh incrementale dell'indice, distribuzione PyPI.
+In development: `sertor install <capability>` installer, advanced engines (hybrid/graph/agentic),
+incremental index refresh, PyPI distribution.
 
-## Installazione su un altro repository
+## Installation on another repository
 
-Vedi **[`docs/install.md`](docs/install.md)** — installazione interim via `git+url`, configurazione
-`.env`, primi comandi `sertor-rag`, server MCP e tooling wiki.
+See **[`docs/install.md`](docs/install.md)** — interim installation via `git+url`, `.env`
+configuration, first `sertor-rag` commands, MCP server, and wiki tooling.
 
-## Sviluppo
+## Development
 
-Si usa [`uv`](https://github.com/astral-sh/uv):
+Uses [`uv`](https://github.com/astral-sh/uv):
 
 ```bash
-uv sync --extra dev          # ambiente con dipendenze di sviluppo
-uv run pytest -m "not cloud" # suite senza servizi cloud
+uv sync --extra dev          # environment with development dependencies
+uv run pytest -m "not cloud" # suite without cloud services
 uv run ruff check .          # lint
 ```
 
-Vedi [`CLAUDE.md`](CLAUDE.md) per la guida operativa completa.
+See [`CLAUDE.md`](CLAUDE.md) for the full operational guide.
