@@ -278,7 +278,17 @@ automazione *unattended*: la distinzione è netta —
    ospiti con corpora **davvero disgiunti**; il rag-sync del wiki (`sertor-wiki-tools index`) resta
    esercitabile come test della capacità, non è parte del rituale.
 
-6. **\<altre azioni\>** — questa lista è **estendibile**: ogni azione che l'utente chiede di rendere
+6. **Mostra la roadmap dopo il merge su main** — **quando** uno step si chiude con un **merge su
+   `master`/`main`** (consegna di una feature/fix), a valle del rituale **mostra all'utente
+   l'executive summary** della roadmap (il blocco tra i marker `<!-- EXEC:START -->` e
+   `<!-- EXEC:END -->` di `wiki/syntheses/roadmap.md`), così dopo ogni consegna si vede subito *dove
+   siamo e cosa fare adesso*. È **giudizio del flusso principale** (presuppone che lo step 4 abbia già
+   reso vero l'EXEC). **Fallback:** se `wiki/syntheses/roadmap.md` **non esiste**, non inventarla a
+   freddo — **chiedi all'utente** (con contesto: cosa contiene una roadmap di prodotto, perché serve)
+   e, su conferma, **creala** (struttura: blocco EXEC con tabella a colpo d'occhio + IN PROGRESS /
+   PLANNED / DONE, poi mappa feature × stato). Si innesca **solo** al merge, non a ogni step.
+
+7. **\<altre azioni\>** — questa lista è **estendibile**: ogni azione che l'utente chiede di rendere
    *standing* va aggiunta qui, e da quel momento fa parte del rituale a ogni step.
 
 **Responsabilità & delega.** Che queste azioni **avvengano** a ogni step è responsabilità del flusso

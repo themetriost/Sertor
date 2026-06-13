@@ -65,7 +65,11 @@ Codificato in `CLAUDE.md`. A fine di ogni step significativo, di propria iniziat
    del corpus RAG toccato (full ma atomico e namespaced), così il [[dogfooding]] non serve mai contesto
    stantio; momento obbligato: dopo un merge su `master`. Mitigante operativo del refresh incrementale
    (FEAT-009 d'epica, Could).
-6. **\<altre azioni\>** — lista estendibile: ciò che l'utente chiede di rendere standing si aggiunge qui.
+6. **Mostra la roadmap dopo il merge su main** (dal 2026-06-13) — quando lo step si chiude con un merge su
+   `master`/`main`, mostra all'utente l'executive summary della [[roadmap]] (blocco `EXEC:START/END`), così
+   dopo ogni consegna si vede subito «dove siamo e cosa fare adesso». Si innesca **solo** al merge. Fallback:
+   se la roadmap non esiste, **chiedi** all'utente e creala su conferma (non inventarla a freddo).
+7. **\<altre azioni\>** — lista estendibile: ciò che l'utente chiede di rendere standing si aggiunge qui.
 
 La voce di log **non è posticipabile**: si scrive **nello stesso momento del commit** dello step.
 
