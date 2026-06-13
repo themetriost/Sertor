@@ -22,7 +22,7 @@ from sertor_core.wiki_tools.scan import scan
 from sertor_core.wiki_tools.structure import init_structure, validate
 
 _OPS = ("scan", "structure", "validate", "lint", "collect", "index", "append-log", "migrate",
-        "upsert-index")
+        "upsert-index", "move", "reconcile")
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -33,7 +33,15 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("op", choices=_OPS, help="operation to run")
     parser.add_argument(
         "subcommand", nargs="?", default=None,
-        help="subcommand (e.g. 'init' for 'structure')",
+        help="subcommand (e.g. 'init' for 'structure') or source page (for 'move')",
+    )
+    parser.add_argument(
+        "dest", nargs="?", default=None,
+        help="destination page (for 'move')",
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true",
+        help="for 'move': compute the plan without modifying any file",
     )
     parser.add_argument(
         "--config", default=None,
@@ -152,6 +160,16 @@ def _run(args, profile):
         if summary is None:
             raise ConfigError("upsert-index requires the summary (--summary or stdin)")
         return upsert_index(profile, args.page, summary)
+    if op == "move":
+        from sertor_core.wiki_tools.move import move
+
+        if not args.subcommand or not args.dest:
+            raise ConfigError("move requires <src> <dest>")
+        return move(profile, args.subcommand, args.dest, dry_run=args.dry_run)
+    if op == "reconcile":
+        from sertor_core.wiki_tools.reconcile import reconcile
+
+        return reconcile(profile)
     raise ConfigError(f"unsupported operation: {op}")  # pragma: no cover
 
 
@@ -186,6 +204,14 @@ def _human(op: str, result) -> str:
         )
     if op == "upsert-index":
         return f"written={data['written']} action={data['action']} page={data['page']}"
+    if op == "move":
+        occ = sum(r["occurrences"] for r in data["rewritten"])
+        return (
+            f"moved={data['moved']} dry_run={data['dry_run']} "
+            f"rewritten={len(data['rewritten'])} occurrences={occ}"
+        )
+    if op == "reconcile":
+        return f"candidates={len(data['candidates'])} clean={data['clean']}"
     return result.to_json()  # pragma: no cover
 
 

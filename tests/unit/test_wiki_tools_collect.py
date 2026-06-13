@@ -71,3 +71,19 @@ def test_collect_is_deterministically_ordered(tmp_path):
     res = collect(load_profile(cfg))
     rels = [p["rel_path"] for p in res.pages]
     assert rels == sorted(rels)
+
+
+def test_collect_exposes_status_field(tmp_path):
+    # feature 017 (REQ-021): `status` nei metadati, additivo e forward-compatible.
+    cfg = tmp_path / "wiki.config.toml"
+    cfg.write_text(_CONFIG, encoding="utf-8")
+    wiki = tmp_path / "wiki" / "concepts"
+    wiki.mkdir(parents=True)
+    (wiki / "old.md").write_text(
+        "---\ntitle: Old\ntype: concept\ntags: [x]\ncreated: 2026-01-01\n"
+        "updated: 2026-01-02\nstatus: superseded\n---\nbody\n", "utf-8"
+    )
+    (wiki / "cur.md").write_text(_FM + "body\n", "utf-8")  # senza status
+    meta = {p["rel_path"]: p for p in collect(load_profile(cfg)).pages}
+    assert meta["concepts/old.md"]["status"] == "superseded"
+    assert meta["concepts/cur.md"]["status"] == ""  # assente → stringa vuota

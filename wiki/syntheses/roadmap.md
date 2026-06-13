@@ -27,7 +27,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | RAG ibrido + reranking (FEAT-004) | Should | ✅ **master (2026-06-12, PR #24)** — motore di default |
 | GraphRAG / code-graph (FEAT-005) | Should | ✅ **master (2026-06-12, PR #25)** — i 4 tool MCP tornati |
 | RAG agentico (FEAT-006) | Should | ✅ **soddisfatta in forma composita (2026-06-13)** — il sistema MCP+agente È agentic RAG; agenzia incorporata = dote differita (Could) |
-| Manutenzione wiki (FEAT-007) | Should | 🔄 **plan+tasks+analyze OK (2026-06-13, `specs/017`)** — Constitution PASS 10/10; in implementazione (`move`/`reconcile`/`collect`+status) |
+| Manutenzione wiki (FEAT-007) | Should | 🔄 **implementata (2026-06-13, `specs/017`)** — `move`/`reconcile`/`collect`+status; 434 test verdi; PR su conferma |
 | CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
 | CLI — installer (`sertor install`) | — | ✅ `wiki` (PR #22) + **`rag` su master (2026-06-12)** — validato live su Kaelen; `governance` = stub |
 | Distribuzione multi-assistente: GitHub Copilot (+ Codex Could) | — | 👍 **da decomporre** (decisione utente 2026-06-12) |
@@ -49,7 +49,10 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   story (US1 `move`-con-link = MVP; US2 `reconcile`+`collect`/status; US3 trigger periodico Could),
   15 FR. *Design:* plan+research+data-model+contracts+tasks (14 task); decisione D6 = successore da
   frontmatter `superseded_by` (no banner). Constitution PASS 10/10 senza deroghe; analyze 100% copertura.
-  *Prossimo passo:* implement (in corso). *Blocchi:* nessuno.
+  *Stato:* **implementata** (13/14 task; T014 re-index = post-merge). Consegnato: `move.py` (riscrittura
+  wikilink form-preserving + link relativi, dry-run, recovery, contratto `wiki.move/1`), `reconcile.py`
+  (read-only, `wiki.reconcile/1`), `collect`+`status`, wiring CLI; 434 test verdi (349 root + 85 pkg),
+  ruff pulito. *Prossimo passo:* PR verso master su conferma. *Blocchi:* nessuno.
 
 ### 📋 PLANNED (per priorità)
 - **Agenzia RAG incorporata — dote differita (Could)**: la capacità agentic RAG è ✅ **soddisfatta
