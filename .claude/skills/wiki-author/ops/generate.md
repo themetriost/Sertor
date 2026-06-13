@@ -36,7 +36,7 @@ Tutte le chiamate CLI usano `--config <config dell'ospite>`: i path si risolvono
 del file di config, quindi l'operazione funziona anche su un ospite diverso dalla cwd. **Ogni scrittura
 (pagine, log, indice) avviene nel wiki dell'ospite** — mai in quello di chi esegue.
 
-0. **Config dell'ospite (giudizio — prerequisito).** Se manca `wiki.config.toml` alla radice dell'ospite,
+0. **Config dell'ospite (giudizio — prerequisito).** Se manca `wiki.config.toml` (cercato in radice e in `wiki/`) sull'ospite,
    **autoralo minimale** guardando il repo, senza presumere: `language` (la lingua della doc dell'ospite —
    il wiki si scrive in quella; chiedi se ambiguo), `root`/`index_file`/`log_file`/`log_dir`,
    `[[taxonomy]]` (le 5 aree del profilo standard come base, adattate alla natura dell'ospite),

@@ -19,7 +19,7 @@ puoi `ops/ingest.md`/`ops/query.md`/lint **A**). Non caricare i moduli che non t
 
 ## Host-agnostico: l'ospite si configura, non si presume
 Tutto ciò che varia tra progetti (radice del wiki, tassonomia, campi frontmatter, ruoli, stringhe) vive in
-**`wiki.config.toml`** alla radice dell'ospite, NON nel tuo prompt. Non assumere `wiki/`, `src/`, nomi di
+**`wiki.config.toml`** (in `wiki/` sull'ospite), NON nel tuo prompt. Non assumere `wiki/`, `src/`, nomi di
 cartelle o di agenti: leggili dal profilo. Il playbook ti dice come.
 
 ## Appòggiati al nucleo deterministico (non rifare il meccanico a mano)

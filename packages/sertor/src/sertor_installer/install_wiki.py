@@ -33,7 +33,10 @@ _CONFIG_TEMPLATE = "wiki.config.toml.tmpl"
 
 _SETTINGS_TARGET = ".claude/settings.json"
 _CLAUDE_MD_TARGET = "CLAUDE.md"
-_CONFIG_TARGET = "wiki.config.toml"
+# La config del wiki vive DENTRO `wiki/` (feature 016, igiene radice host): radice ospite pulita.
+# Gli strumenti la localizzano via convenzione `--config wiki/wiki.config.toml --root .` o via
+# auto-discovery del CLI (`wiki_tools/__main__`).
+_CONFIG_TARGET = "wiki/wiki.config.toml"
 
 
 def build_install_plan() -> list[Artifact]:
@@ -139,15 +142,20 @@ def _apply_config(target_root: Path, art: Artifact, profile: HostProfile) -> Art
     dest = _resolve(target_root, art.target_rel)
     if dest.exists():
         return ArtifactOutcome(art.target_rel, Outcome.SKIPPED, "già presente")
+    dest.parent.mkdir(parents=True, exist_ok=True)  # `wiki/` può non esistere ancora (feature 016)
     dest.write_text(config_gen.generate_wiki_config(profile), encoding="utf-8")
     detail = f"language={profile.language}, source_dirs={','.join(profile.source_dirs)}"
     return ArtifactOutcome(art.target_rel, Outcome.CREATED, detail)
 
 
 def _apply_structure(target_root: Path, art: Artifact) -> ArtifactOutcome:
-    """`INIT_STRUCTURE`: delega a `init_structure` del core (idempotente). Serve la config."""
+    """`INIT_STRUCTURE`: delega a `init_structure` del core (idempotente). Serve la config.
+
+    Con la config in `wiki/` (feature 016) i path relativi (`root="wiki"`, `source_dirs`) vanno
+    risolti dalla radice ospite, non dalla cartella della config → `root_override=target_root`.
+    """
     config_path = _resolve(target_root, _CONFIG_TARGET)
-    wiki_profile = load_profile(config_path)
+    wiki_profile = load_profile(config_path, root_override=target_root)
     result = init_structure(wiki_profile)
     detail = f"{len(result.created)} create, {len(result.skipped_existing)} esistenti"
     outcome = Outcome.CREATED if result.created else Outcome.SKIPPED

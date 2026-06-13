@@ -36,8 +36,9 @@ def _build_parser() -> argparse.ArgumentParser:
         help="sotto-comando (es. 'init' per 'structure')",
     )
     parser.add_argument(
-        "--config", default="wiki.config.toml",
-        help="percorso del profilo dell'ospite (TOML); default ./wiki.config.toml",
+        "--config", default=None,
+        help="percorso del profilo dell'ospite (TOML); se omesso, auto-discovery: "
+             "./wiki.config.toml poi ./wiki/wiki.config.toml",
     )
     parser.add_argument(
         "--root", default=None,
@@ -72,6 +73,28 @@ def _build_parser() -> argparse.ArgumentParser:
              "Il testo è fornito dall'autore (LLM), la CLI non lo genera né lo riscrive",
     )
     return parser
+
+
+def _resolve_config(config_arg: str | None, root_arg: str | None) -> tuple[str, str | None]:
+    """Risolve `--config` (esplicito o auto-discovery) e il `root_override` effettivo (feature 016).
+
+    Se `--config` è esplicito, è usato così com'è (root = `--root` se dato). Altrimenti cerca, in
+    ordine, `./wiki.config.toml` (config in radice, retro-compat) e `./wiki/wiki.config.toml` (nuova
+    collocazione): nel secondo caso, se `--root` non è dato, il root effettivo è la CWD, così i path
+    relativi (`root="wiki"`, `source_dirs`) si risolvono dalla radice ospite. Nessuna trovata →
+    `ConfigError` esplicito (Principio IV). Ordine di ricerca generico, nessun path Sertor (P. X).
+    """
+    if config_arg is not None:
+        return config_arg, root_arg
+    cwd = Path.cwd()
+    if (cwd / "wiki.config.toml").is_file():
+        return "wiki.config.toml", root_arg
+    if (cwd / "wiki" / "wiki.config.toml").is_file():
+        return "wiki/wiki.config.toml", (root_arg if root_arg is not None else ".")
+    raise ConfigError(
+        "configurazione del wiki non trovata: attese ./wiki.config.toml o "
+        "./wiki/wiki.config.toml (oppure indicala con --config)"
+    )
 
 
 def _parse_date(value: str | None) -> date | None:
@@ -179,7 +202,8 @@ def main(argv: list[str] | None = None) -> int:
 
     args = _build_parser().parse_args(argv)
     try:
-        profile = load_profile(args.config, root_override=args.root)
+        config_path, root_override = _resolve_config(args.config, args.root)
+        profile = load_profile(config_path, root_override=root_override)
         result = _run(args, profile)
     except SertorError as exc:
         error = ErrorResult(error=type(exc).__name__, message=str(exc))

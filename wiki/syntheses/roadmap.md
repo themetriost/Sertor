@@ -32,7 +32,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | CLI — installer (`sertor install`) | — | ✅ `wiki` (PR #22) + **`rag` su master (2026-06-12)** — validato live su Kaelen; `governance` = stub |
 | Distribuzione multi-assistente: GitHub Copilot (+ Codex Could) | — | 👍 **da decomporre** (decisione utente 2026-06-12) |
 | Tema lingua (asset installer + seed structure init) | — | ✅ **risolto come design (2026-06-12)**: asset in inglese canonico, contenuto nella lingua dell'ospite — confluito in FEAT-007 |
-| Igiene radice ospite (installer, asse DOVE) | — | 🔄 **requirements pronti (2026-06-12)** — `sertor-cli/igiene-radice-host`, 0 domande aperte → specify |
+| Igiene radice ospite (installer, asse DOVE) | — | 🔄 **implementata (2026-06-13, `specs/016`)** — 24/25 task, 410 test verdi; PR su conferma |
 | **Collaborazione multiutente/enterprise** (asse CHI, workflow) | — | 📋 **EPICA aperta, differita (2026-06-12)** — `requirements/multiutente/epic.md`; da affrontare quando il caso d'uso team è concreto |
 
 *Legenda:* ✅ su master · 🧪 operativo, consolidamento aperto · 📋 pianificato · 💀 ramo morto (non su master).
@@ -51,6 +51,21 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   D1..D4 risolte). *Prossimo passo:* `/speckit-specify` (prossimo numero SpecKit: **016** — 015 è stato usato da `install rag`). *Blocchi:* nessuno. *(Il riavvio MCP è avvenuto: server riconnesso
   il 2026-06-12 sera, 7 tool verificati live — `get_context("HybridEngine")` risponde esatto;
   extra `graph` installato anche in `.venv-core`, il venv del server.)*
+
+- **Igiene radice ospite (installer, asse DOVE)** — *cosa:* radice host pulita e prevedibile —
+  `wiki.config.toml` dentro `wiki/` + ogni invocazione asset riallineata, `.sertor/` unica sede del
+  runtime, meccanismo `--mcp-scope project|local`, doc dei residenti inevitabili. Retrocompat ospiti
+  esterni **fuori ambito** (D4); Sertor stesso spostato **one-shot**. *Dove:* `specs/016-igiene-radice-host/`
+  (spec + checklist + plan + research + data-model + contracts + quickstart), requirements
+  `requirements/sertor-cli/igiene-radice-host/`. *Design chiave:* `wiki.config.toml`→`wiki/` con
+  auto-discovery nel CLI (oltre alla convenzione `--root .`) per non rompere le invocazioni ad-hoc;
+  `--mcp-scope project|local` via `claude` CLI dietro `CommandRunner`; fix Sertor one-shot. *Tasks:*
+  25 task in 6 fasi (MVP=US1 radice minima; US2 auto-discovery+asset+Sertor one-shot; US3 scope MCP).
+  *Stato:* **implementata** (24/25 task; T025 re-index = post-merge). Consegnato: config in `wiki/`
+  con auto-discovery del CLI; `--mcp-scope project|local` via `claude` dietro `CommandRunner`
+  (`MCP_REGISTER`, fail-fast); fix Sertor one-shot (config spostata, asset ri-sync, auto-discovery
+  verificata dal vivo). 84+326 test verdi, ruff pulito. *Prossimo passo:* PR verso master su conferma
+  utente → al merge distill + re-index + riavvio MCP. *Blocchi:* nessuno.
 
 ### 📋 PLANNED (per priorità)
 - **Agenzia RAG incorporata — dote differita (Could)**: la capacità agentic RAG è ✅ **soddisfatta

@@ -13,7 +13,7 @@ operazione** sta in un modulo `ops/<operazione>.md` da `Read` on-demand (vedi §
 skill l'operazione tipica è `record` → carica `ops/record.md`. Non duplicare qui quelle regole.
 
 **Host-agnostico:** radice del wiki, tassonomia, campi frontmatter, ruoli e cartelle-sorgente vengono da
-`wiki.config.toml` alla radice dell'ospite — non assumerli. Per il *meccanico* (inventario, lint) usa la
+`wiki.config.toml` (in `wiki/` sull'ospite) — non assumerli. Per il *meccanico* (inventario, lint) usa la
 CLI `sertor-wiki-tools` invece di Glob/Grep a mano (vedi playbook).
 
 ## Specifico di questa skill (operazione `record` dal repo)

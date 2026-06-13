@@ -45,25 +45,41 @@ def test_empty_repo_expected_files_present(tmp_path: Path):
     assert (tmp_path / ".claude/hooks/wiki-pending-check.ps1").is_file()
     assert (tmp_path / ".claude/settings.json").is_file()
     assert (tmp_path / "CLAUDE.md").is_file()
-    assert (tmp_path / "wiki.config.toml").is_file()
+    # feature 016: la config vive in wiki/, NON in radice (radice host pulita)
+    assert (tmp_path / "wiki/wiki.config.toml").is_file()
+    assert not (tmp_path / "wiki.config.toml").exists()
     assert (tmp_path / "wiki/index.md").is_file()
     assert (tmp_path / "wiki/concepts").is_dir()
 
 
+def test_root_hygiene_only_unavoidable_residents(tmp_path: Path):
+    """SC-001/FR-006 (feature 016): la radice host contiene solo i residenti inevitabili."""
+    _install(tmp_path)
+    roots = {p.name for p in tmp_path.iterdir()}
+    assert roots == {".claude", "CLAUDE.md", "wiki"}, (
+        f"radice non minima dopo install wiki: {sorted(roots)}"
+    )
+    # in particolare: nessun wiki.config.toml sparso in radice
+    assert "wiki.config.toml" not in roots
+
+
 def test_generated_config_passes_core_load_profile(tmp_path: Path):
     _install(tmp_path, language="it")
-    profile = load_profile(tmp_path / "wiki.config.toml")
+    # config in wiki/; root relativo alla radice ospite (feature 016)
+    profile = load_profile(tmp_path / "wiki/wiki.config.toml", root_override=tmp_path)
     assert profile.language == "it"
     assert len(profile.taxonomy) == 5
+    assert profile.root_path == tmp_path / "wiki"  # root="wiki" risolto dalla radice host
 
 
 def test_dogfood_wiki_tools_scan_runs_on_generated_config(tmp_path: Path):
     """SC-008: sertor-wiki-tools gira sulla config generata (import diretto, no rete)."""
     _install(tmp_path)
-    # invocazione via subprocess del console-script del core, sulla config generata
+    # invocazione via subprocess del console-script del core, sulla config generata in wiki/
+    # (forma canonica feature 016: --config wiki/wiki.config.toml --root <host>)
     result = subprocess.run(
         [sys.executable, "-m", "sertor_core.wiki_tools", "scan",
-         "--config", str(tmp_path / "wiki.config.toml"), "--json"],
+         "--config", str(tmp_path / "wiki/wiki.config.toml"), "--root", str(tmp_path), "--json"],
         capture_output=True, text=True,
     )
     assert result.returncode == 0, result.stderr
@@ -74,7 +90,7 @@ def test_dogfood_wiki_tools_scan_runs_on_generated_config(tmp_path: Path):
 def test_no_network_no_rag_in_config(tmp_path: Path):
     """SC-005: install ≠ run — [rag] enabled=false nel config generato."""
     _install(tmp_path)
-    profile = load_profile(tmp_path / "wiki.config.toml")
+    profile = load_profile(tmp_path / "wiki/wiki.config.toml", root_override=tmp_path)
     assert profile.rag.get("enabled") is False
 
 

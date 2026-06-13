@@ -79,20 +79,21 @@ def test_target_nonexistent_exit_1_no_artifacts(tmp_path: Path, capsys):
 def test_target_writes_under_target_not_cwd(tmp_path: Path, capsys):
     rc = main(["install", "wiki", "--target", str(tmp_path)])
     assert rc == 0
-    assert (tmp_path / "wiki.config.toml").is_file()
+    assert (tmp_path / "wiki/wiki.config.toml").is_file()  # feature 016: config in wiki/
+    assert not (tmp_path / "wiki.config.toml").exists()
     assert (tmp_path / ".claude/skills/wiki-author/SKILL.md").is_file()
 
 
 def test_language_it_in_config(tmp_path: Path):
     main(["install", "wiki", "--target", str(tmp_path), "--language", "it"])
-    config = (tmp_path / "wiki.config.toml").read_text(encoding="utf-8")
+    config = (tmp_path / "wiki/wiki.config.toml").read_text(encoding="utf-8")
     assert 'language = "it"' in config
 
 
 def test_source_dirs_override_in_config(tmp_path: Path):
     (tmp_path / "src").mkdir()
     main(["install", "wiki", "--target", str(tmp_path), "--source-dirs", "src,docs"])
-    config = (tmp_path / "wiki.config.toml").read_text(encoding="utf-8")
+    config = (tmp_path / "wiki/wiki.config.toml").read_text(encoding="utf-8")
     assert 'source_dirs = ["src", "docs"]' in config
 
 

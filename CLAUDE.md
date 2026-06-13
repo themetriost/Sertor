@@ -388,18 +388,20 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/015-sertor-install-rag/plan.md` (FEAT-002 taglio rag — installer `sertor install rag`: porta
-la capacità RAG su un repo ospite con UN comando, scope B "bootstrap completo" (scaffold config +
-aggiunta dipendenze via `uv`). Runtime RAG isolato in `<target>/.sertor/` (progetto Python + .venv +
-indice + `.env`); in radice host solo `.mcp.json` (ponte `uv run --directory .sertor`) e gli
-artefatti wiki. Riusa il backbone di `install wiki` (`Artifact`/`Outcome`/`InstallReport`, fail-fast
-no-rollback) + 4 nuovi `ArtifactKind` (DEPENDENCIES/ENV_MERGE/MCP_MERGE/GITIGNORE_APPEND) + un
-`CommandRunner` iniettabile che isola `uv` (testabile senza rete); include il fix del `pyproject` del
-pacchetto installer (risoluzione standalone di `sertor-core` da git → sblocca `uvx sertor install`).
-install ≠ run, segreti vuoti, idempotente. Lavorazione su `master` (bugfix, autorizzato). In `master`:
-FEAT-001 `specs/001-nucleo-retrieval/plan.md`, FEAT-002 `specs/002-rag-baseline/plan.md`, FEAT-003-D
+`specs/016-igiene-radice-host/plan.md` (igiene radice ospite — asse DOVE/collocazione, epica
+`sertor-cli`: radice host pulita e prevedibile. (1) `wiki.config.toml` spostato in `wiki/` + ogni
+invocazione `sertor-wiki-tools` la localizza via convenzione `--config wiki/wiki.config.toml
+--root .` E via auto-discovery del CLI (`wiki_tools/__main__`: cerca `./wiki.config.toml` poi
+`./wiki/wiki.config.toml`, root=CWD); (2) `.sertor/` confermata unica sede runtime (guardia di test);
+(3) nuovo `--mcp-scope project|local` su `install rag` (project=`.mcp.json` in radice; local=registra
+via `claude` CLI dietro `CommandRunner`, niente file nel repo, fail-fast `McpRegistrationError` +
+nuovo `ArtifactKind.MCP_REGISTER`); (4) doc residenti a root. Fix Sertor stesso ONE-SHOT (git mv +
+ri-sync `.claude/` + `CLAUDE.md`); retrocompat ospiti esterni FUORI AMBITO (D4). Constitution Check
+PASS 10/10 senza deroghe. Branch `016-igiene-radice-host`. In `master`: FEAT-001
+`specs/001-nucleo-retrieval/plan.md`, FEAT-002 `specs/002-rag-baseline/plan.md`, FEAT-003-D
 `specs/006-nucleo-wiki-deterministico/plan.md`, FEAT-MCP `specs/007-mcp-sertor-core/plan.md`, FEAT-011
 `specs/011-cli-esecuzione-rag/plan.md`, FEAT-012 `specs/012-sertor-install-wiki/plan.md`, FEAT-004
-`specs/013-motore-ibrido-reranking/plan.md`, FEAT-005 `specs/014-motore-grafo/plan.md`; feature 010
+`specs/013-motore-ibrido-reranking/plan.md`, FEAT-005 `specs/014-motore-grafo/plan.md`, FEAT-002-rag
+`specs/015-sertor-install-rag/plan.md`; feature 010
 (query congiunta + `upsert-index`) `specs/010-query-congiunta-e-upsert-index/plan.md`.
 <!-- SPECKIT END -->

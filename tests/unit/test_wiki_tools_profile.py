@@ -9,7 +9,7 @@ from sertor_core.domain.errors import ConfigError
 from sertor_core.wiki_tools.profile import load_profile
 
 _DOC_ONLY = Path(__file__).parents[1] / "fixtures" / "doc_only_host" / "wiki.config.toml"
-_SERTOR = Path(__file__).parents[2] / "wiki.config.toml"
+_SERTOR = Path(__file__).parents[2] / "wiki" / "wiki.config.toml"  # feature 016: config in wiki/
 
 
 def _write(tmp: Path, body: str) -> Path:
