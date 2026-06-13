@@ -3,7 +3,7 @@ title: Mission, vision & Principle X (host-agnosticity)
 type: concept
 tags: [missione, visione, host-agnostico, principio-x, disaccoppiamento, costituzione]
 created: 2026-06-05
-updated: 2026-06-10 (lint B: il backlog host-agnostico era superato — chiuso dal ponte D→N e da wiki_tools; resta differita solo la ri-esportazione del rituale)
+updated: 2026-06-13 (+ sezione "Posizionamento: retrieval tool per agenti" — generate=agente, serve=MCP delegati per design; fronte competitivo = precisione/confidenza/freschezza; wiki = generazione precalcolata)
 sources: ["README.md", ".specify/memory/constitution.md"]
 ---
 
@@ -106,6 +106,48 @@ Ogni nuova capacità passa dal **gate Principio X** del Constitution Check (es. 
 **Non è mai stato un difetto:** è l'evoluzione naturale di uno strumento — MVP tight su un'istanza
 (Sertor), generalizzazione come vincolo costituzionale. Il Principio X impedisce che il dogfooding
 diventi lock-in silenzioso.
+
+## Posizionamento: retrieval tool per agenti, non app RAG end-to-end
+
+Un equivoco ricorrente è leggere Sertor come *"un'app RAG a cui mancano due fasi"*. Il framing corretto
+è un altro: Sertor è una **forma diversa** — un **retrieval tool per agenti** — in cui le fasi di una
+pipeline RAG completa (`retrieve → generate → serve`) **esistono tutte**, ma due sono **delegate per
+design**, non assenti.
+
+- **GENERATE = l'agente.** La sintesi della risposta in linguaggio naturale (prompt → LLM → risposta
+  citata, con grounding/abstention) la fa l'**agente frontier** che consuma Sertor via MCP. Cablare un
+  LLM generativo dentro la libreria sarebbe **ridondante e peggiore**: duplicheremmo (male) ciò che
+  l'agente già fa benissimo. È la scommessa del **RAG agentico composito** (FEAT-006 ✅ in forma
+  composita): il miglior generatore è un agente esterno, non un LLM cablato.
+- **SERVE = MCP.** Il protocollo **MCP è il livello di serving** — il modo standard con cui un agente
+  invoca lo strumento. Non è un endpoint HTTP pubblico multi-tenant perché il "client" non è internet
+  ma **l'agente sulla stessa sessione/macchina**: auth/rate-limit/multi-tenant risolverebbero un
+  problema che non abbiamo.
+
+**Quindi non fare generate/serve NON è un limite:** è la scelta di essere *il miglior retriever per
+agenti* invece di *un'app RAG mediocre ma completa*. Il fronte competitivo reale — dove il prodotto
+vince o perde — **non** è generate/serve, ma la **qualità di ciò che si restituisce all'agente**:
+
+1. **Precisione/recall dei chunk** — il pezzo giusto fa brillare l'agente, il rumore lo fa allucinare.
+   È il perché di chunking-AST ([[chunking-dispatch]]), ibrido+reranking ([[hybrid-retrieval]]),
+   code-graph ([[code-graph]]).
+2. **Segnale di confidenza** — oggi si restituisce top-k *sempre*: l'agente non sa *quando* il
+   retrieval è debole, quindi non sa quando astenersi. È l'unico buco che indebolisce il grounding
+   *dentro* il modello composito → Must in `requirements/sertor-core/hardening-produzione/`.
+3. **Freschezza** — un indice stantio serve all'agente contesto non reale: è letteralmente l'essenza
+   *"contesto dell'agente sempre reale"* (retry, cache, refresh incrementale; vedi [[dogfooding]]).
+
+Questi tre — non generate/serve — sono il terreno di gioco. I gap reali sono tracciati e prioritizzati
+in `requirements/sertor-core/hardening-produzione/` (dal RAG audit 2026-06-13).
+
+### Dove si colloca il wiki
+
+Il wiki è **generazione precalcolata**: la distillazione che un'app e2e farebbe *a query-time* (pagando
+token a ogni richiesta), Sertor la fa **offline e una volta sola** e la persiste come documentazione
+indicizzabile (`doc_type=doc`). In termini di retrieval è **contesto ad altissimo segnale/rumore** — il
+codice dice *cosa fa*, il wiki dice *perché* ed espone l'astrazione giusta — ed è **memoria cumulativa
+tra sessioni**. Non è una fase a parte: è una sorgente di **prima classe dentro il corpus** e il
+**moltiplicatore di precisione** del retriever. Dettaglio in [[wiki-role-da-w1]].
 
 ## Allineamento
 
