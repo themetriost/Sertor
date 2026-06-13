@@ -1,128 +1,127 @@
-# Come si scrive una voce di log ben fatta — anatomia del log-craft
+# How to write a well-crafted log entry — anatomy of log-craft
 
-> **Pagina di riferimento (foglia).** Descrive *com'è fatta una buona voce del log* — cosa ci va, cosa no,
-> quanto, come. È **linkata da** chi appende una voce: il playbook §6 (la *convenzione*: grammatica
-> dell'heading + vocabolario delle operazioni) e ogni operazione che chiude con una voce di log
-> (`ops/record.md`, `ops/ingest.md`, `ops/lint.md`, `ops/reorg.md`, …). È una **foglia**: non dipende da
-> altri documenti del sistema — le operazioni la referenziano, non viceversa. È la **gemella** di
-> [`page-craft.md`](page-craft.md): se quella dice come si scrive una *pagina* (evergreen), questa dice come
-> si scrive una *voce di log* (datata).
+> **Reference page (leaf).** Describes *what a good log entry looks like* — what belongs in it, what does not,
+> how much, how. It is **linked from** whoever appends an entry: the playbook §6 (the *convention*: heading
+> grammar + operation vocabulary) and every operation that closes with a log entry
+> (`ops/record.md`, `ops/ingest.md`, `ops/lint.md`, `ops/reorg.md`, …). It is a **leaf**: it does not depend on
+> other documents in the system — the operations reference it, not the other way around. It is the **twin** of
+> [`page-craft.md`](page-craft.md): if that one says how to write a *page* (evergreen), this one says how to
+> write a *log entry* (dated).
 >
-> **Host-agnostica (Principio X).** I principi valgono su qualunque host; ciò che *varia* — il vocabolario
-> delle operazioni, la sintassi dei link, il formato dell'heading — viene dal profilo (`wiki.config.toml`) e
-> dal playbook §6. Gli esempi concreti (`[[wikilink]]`, `record`, `lint A`) sono **illustrativi**.
+> **Host-agnostic (Principle X).** The principles apply on any host; what *varies* — the operation
+> vocabulary, link syntax, the heading format — comes from the profile (`wiki.config.toml`) and
+> from the playbook §6. The concrete examples (`[[wikilink]]`, `record`, `lint A`) are **illustrative**.
 
-Il log è l'artefatto **append-only** del wiki: non si riscrive. Con la rotazione è **un file per giorno**
-(`log/YYYY-MM-DD.md`); la voce la scrive `append-log` — tu componi il **corpo curato**, il deterministico la
-**piazza** nel file del giorno. È un *diario
-datato*, non una pagina. Una voce ben fatta ha tre qualità: sta dalla **parte giusta del confine
-log↔pagina**, ha un'**anatomia** prevedibile, ed è **densa** (niente deriva verso il dump).
+The log is the wiki's **append-only** artifact: it is never rewritten. With rotation it is **one file per day**
+(`log/YYYY-MM-DD.md`); the entry is written by `append-log` — you compose the **curated body**, the deterministic core
+**places it** in today's file. It is a *dated
+diary*, not a page. A well-crafted entry has three qualities: it stands on the **right side of the
+log↔page boundary**, has a predictable **anatomy**, and is **dense** (no drift toward dumps).
 
-## 1. Cos'è una voce — e cosa NON è (il confine log↔pagina)
+## 1. What an entry is — and what it is NOT (the log↔page boundary)
 
-È il **duale** di [`page-craft.md`](page-craft.md) §3. La pagina cattura la **conoscenza distillata e
-riusabile** (*cosa resta*, evergreen); la voce di log registra l'**evento datato** (*cosa è successo*, e
-dove vive ora ciò che resta).
+It is the **dual** of [`page-craft.md`](page-craft.md) §3. The page captures **distilled, reusable knowledge**
+(*what remains*, evergreen); the log entry records the **dated event** (*what happened*, and where what remains now lives).
 
-| Va nel **log** (voce datata) | Va nella **pagina** (evergreen) |
+| Goes in the **log** (dated entry) | Goes in the **page** (evergreen) |
 |---|---|
-| *cosa* è stato fatto in questo step e *quando* | il *concetto* / il metodo / il razionale riusabile |
-| la decisione presa + un **puntatore** al *perché* | il *perché* esteso, le alternative scartate |
-| **dove** vive il risultato (`[[pagina]]`, file, commit) | il contenuto vero e proprio |
-| l'**esito/verifica** (test, lint, hash) | claim atemporale ancorato |
+| *what* was done in this step and *when* | the *concept* / the method / the reusable rationale |
+| the decision made + a **pointer** to the *why* | the extended *why*, the rejected alternatives |
+| **where** the result lives (`[[page]]`, file, commit) | the actual content |
+| the **outcome/verification** (tests, lint, hash) | anchored, timeless claim |
 
-- **La voce punta, non ri-dumpa.** Se uno step ha creato/aggiornato una pagina, la voce dice *quale* pagina
-  e *in una riga* il succo, poi linka — **non** ricopia il contenuto della pagina. Il contenuto duplicato
-  invecchia in due posti (il log non si aggiorna mai: è append-only → la copia diventa subito stale).
-- **La voce è una traccia, non un backup.** Non serve a ricostruire *tutto* lo step: serve a sapere, a
-  freddo, *che* è successo, *dove* guardare e *com'è andata*. Git traccia già i file e i diff: la voce non
-  è l'elenco dei file toccati.
+- **The entry points, it does not re-dump.** If a step created/updated a page, the entry says *which* page
+  and *in one line* the gist, then links — **not** a copy of the page's content. Duplicated content
+  ages in two places (the log is never updated: it is append-only → the copy immediately becomes stale).
+- **The entry is a trace, not a backup.** It is not meant to reconstruct *everything* about the step: it is meant to tell,
+  cold, *what* happened, *where* to look and *how it went*. Git already tracks the files and diffs: the entry is not
+  the list of touched files.
 
-## 2. Anatomia di una voce
+## 2. Anatomy of an entry
 
 ```
-## [YYYY-MM-DD] <operazione> | <titolo>
+## [YYYY-MM-DD] <operation> | <title>
 
-<lead: 1–2 frasi — il perché/contesto/trigger dello step>
-- **<etichetta>:** <fatto saliente, una riga>
-- **Verifica:** <esito ancorato: lint A 0/0/0/0 · test verdi · commit hash>
+<lead: 1–2 sentences — the why/context/trigger of the step>
+- **<label>:** <salient fact, one line>
+- **Verification:** <anchored outcome: lint A 0/0/0/0 · green tests · commit hash>
 ```
 
-1. **Heading** — `## [data] <op> | <titolo>`. `<op>` dal **vocabolario del playbook §6**
-   (`setup·record·distill·ingest·query·lint·reorg·generate·rag-sync`); `<titolo>` descrive **una** cosa,
-   come il titolo di una pagina (no "varie", no due step in un titolo).
-2. **Lead (1–2 frasi)** — apre col **perché/contesto/trigger**, non col primo file toccato. È ciò che si
-   legge a colpo d'occhio scorrendo il log. («Risolto uno smell segnalato dal proprietario: …», non
-   «Pagina creata: …»).
-3. **Bullet piatti con etichetta in grassetto** — `**Cosa** · **Perché** · **File** · **Verifica** ·
-   **Origine**`. Etichette stabili rendono il log scansionabile. **Massimo un livello di nesting**: se ti
-   serve il quarto livello di indentazione, stai mettendo nel log il *contenuto* (→ pagina) o stai facendo
-   il dump dei file (→ togli).
-4. **Riga di esito** quando applicabile — il log è anche la prova che lo step è *chiuso*: `lint A 0/0/0/0`,
-   `6 test verdi`, `commit c6930e9`. Una riga, ancorata.
+1. **Heading** — `## [date] <op> | <title>`. `<op>` from the **playbook §6 vocabulary**
+   (`setup·record·distill·ingest·query·lint·reorg·generate·rag-sync`); `<title>` describes **one** thing,
+   like the title of a page (no "misc", no two steps in one title).
+2. **Lead (1–2 sentences)** — opens with the **why/context/trigger**, not with the first touched file. This is what is
+   read at a glance when scrolling through the log. («Fixed a smell flagged by the owner: …», not
+   «Page created: …»).
+3. **Flat bullets with bold label** — `**What** · **Why** · **File** · **Verification** ·
+   **Origin**`. Stable labels make the log scannable. **Maximum one level of nesting**: if you
+   need a fourth level of indentation, you are putting *content* in the log (→ page) or doing a file dump
+   (→ remove it).
+4. **Outcome line** when applicable — the log is also proof that the step is *closed*: `lint A 0/0/0/0`,
+   `6 green tests`, `commit c6930e9`. One line, anchored.
 
-## 3. Granularità — quando una voce, quante voci
+## 3. Granularity — when an entry, how many entries
 
-- **Una voce per operazione.** L'heading porta *una* `<op>`: se uno step ha fatto cose di natura diversa
-  (un `record` **e** un `lint`), sono **due voci** con la loro `<op>`. Operazioni della **stessa** natura
-  nello stesso step si **accorpano** in una voce.
-- **La voce segue lo step significativo,** non il singolo Edit. Cinque modifiche che realizzano *una*
-  decisione = *una* voce.
-- **Regola anti-banale (quando NON loggare).** Modifiche puramente meccaniche o di poco conto non meritano
-  una voce (è la stessa *regola aurea* del wiki). Casi tipici: `structure` che non ha creato nulla
-  (tutto `skipped_existing` → niente voce, è idempotente); refactoring di battitura; rinomina senza
-  conseguenze. Se la voce direbbe solo «sistemati typo», non scriverla.
+- **One entry per operation.** The heading carries *one* `<op>`: if a step did things of different natures
+  (a `record` **and** a `lint`), those are **two entries** with their own `<op>`. Operations of the **same** nature
+  in the same step are **combined** into one entry.
+- **The entry follows the significant step,** not the individual Edit. Five changes that implement *one*
+  decision = *one* entry.
+- **Anti-trivial rule (when NOT to log).** Purely mechanical or minor changes do not deserve
+  an entry (it is the same *golden rule* as the wiki). Typical cases: `structure` that created nothing
+  (everything `skipped_existing` → no entry, it is idempotent); typo refactoring; rename with no
+  consequences. If the entry would only say «fixed typo», do not write it.
 
-## 4. Densità — l'anti-deriva (il difetto storico del log)
+## 4. Density — anti-drift (the historical defect of the log)
 
-Il log degenera quando le voci diventano **mini-pagine**: nesting profondo, contenuto ricopiato dalle
-pagine, elenchi esaustivi. Le contromisure:
+The log degenerates when entries become **mini-pages**: deep nesting, content copied from
+pages, exhaustive lists. Countermeasures:
 
-- **Soft cap.** Una voce sta di norma in **~6–10 bullet di un livello**. Se cresce, di solito è perché stai
-  mettendoci *contenuto* (→ pagina) o *file* (→ git): togli, non comprimere.
-- **Niente liste-file esaustive.** Cita 1–2 file **chiave** inline; l'elenco completo lo dà `git` (delegato
-  al ruolo VCS). Una sotto-lista «File toccati» con tutti i path è rumore.
-- **Niente "Benefici" ad aggettivi.** Frasi-riassunto tipo «più manutenibile, più pulito, pronto a scalare»
-  non portano informazione: tagliale. Se un beneficio è reale e riusabile, è un claim da **pagina**.
-- **Niente duplicazione del contenuto della pagina.** Il succo in una riga + `[[pagina]]`; il resto vive
-  nella pagina (vedi §1).
+- **Soft cap.** An entry normally fits in **~6–10 one-level bullets**. If it grows, it is usually because you are
+  putting *content* in it (→ page) or *files* (→ git): remove, do not compress.
+- **No exhaustive file lists.** Cite 1–2 **key** files inline; the complete list comes from `git` (delegated
+  to the VCS role). A «Files touched» sub-list with all paths is noise.
+- **No adjective-laden "Benefits".** Summary phrases like «more maintainable, cleaner, ready to scale»
+  carry no information: cut them. If a benefit is real and reusable, it is a **page** claim.
+- **No duplication of page content.** The gist in one line + `[[page]]`; the rest lives
+  in the page (see §1).
 
-## 5. Esempio — la stessa attività, scritta male → bene
+## 5. Example — the same activity, written poorly → well
 
-✗ **Deriva** (mini-pagina nel log):
+✗ **Drift** (mini-page in the log):
 ```
-## [data] record | Consolidamento sistema wiki
-- **Pagina creata:** syntheses/sistema-wiki-fonte-unica.md documenta:
-  - Visione: wiki è LLM Wiki Karpathy; regole erano duplicate → fonte unica…
-  - Fonte unica: nuovo file playbook.md (identità + tassonomia + 6 operazioni: record, ingest…)
-    1. Skill: hyperlink a playbook…
-    2. Comando: brief + parametri…
-- **File toccati:** Nuovi: …; Aggiornati: SKILL.md, wiki.md, agente, settings.json, CLAUDE.md
-- **Benefici:** Regole consolidate, tassonomia univoca, meno duplicazione, manutenzione centralizzata. Pronto a scalare.
+## [date] record | Wiki system consolidation
+- **Page created:** syntheses/wiki-system-single-source.md documents:
+  - Vision: wiki is Karpathy LLM Wiki; rules were duplicated → single source…
+  - Single source: new file playbook.md (identity + taxonomy + 6 operations: record, ingest…)
+    1. Skill: hyperlink to playbook…
+    2. Command: brief + parameters…
+- **Files touched:** New: …; Updated: SKILL.md, wiki.md, agent, settings.json, CLAUDE.md
+- **Benefits:** Rules consolidated, unique taxonomy, less duplication, centralized maintenance. Ready to scale.
 ```
-*— 4 livelli di nesting, ricopia il contenuto della pagina, dump dei file (li traccia git), "Benefici" ad
-aggettivi. Il log fa il lavoro della pagina.*
+*— 4 levels of nesting, copies the page content, file dump (git tracks them), adjective-laden "Benefits".
+The log does the page's job.*
 
-✓ **Buona** (traccia + puntatori + esito):
+✓ **Good** (trace + pointers + outcome):
 ```
-## [data] record | Consolidamento sistema wiki (fonte unica + tre interfacce)
-Le regole del wiki erano duplicate in skill/comando/agente → consolidate in una fonte unica con interfacce sottili.
-- **Cosa:** nuovo playbook come fonte unica; skill/comando/agente diventano wrapper che lo leggono.
-- **Dove:** il razionale e l'architettura in [[sistema-wiki-fonte-unica]].
-- **File chiave:** `.claude/skills/.../wiki-playbook.md` (nuovo).
-- **Verifica:** lint A 0/0/0/0.
+## [date] record | Wiki system consolidation (single source + three interfaces)
+Wiki rules were duplicated across skill/command/agent → consolidated into a single source with thin interfaces.
+- **What:** new playbook as single source; skill/command/agent become wrappers that read it.
+- **Where:** rationale and architecture in [[wiki-system-single-source]].
+- **Key file:** `.claude/skills/.../wiki-playbook.md` (new).
+- **Verification:** lint A 0/0/0/0.
 ```
-*— lead col perché, bullet piatti, punta alla pagina per il contenuto, chiude con l'esito.*
+*— lead with the why, flat bullets, points to the page for content, closes with the outcome.*
 
-## Checklist veloce
+## Quick checklist
 
-| Criterio | Domanda da farsi |
+| Criterion | Question to ask yourself |
 |---|---|
-| Confine | Sto registrando *cosa è successo* (log) e non *la conoscenza* (→ pagina)? |
-| Heading | `<op>` dal vocabolario §6, titolo su **una** cosa? |
-| Lead | Apre col **perché/trigger**, non col primo file? |
-| Bullet | Piatti, con etichetta, **max 1 livello**? |
-| Puntatori | Il contenuto è **linkato** alla pagina, non ricopiato? |
-| Rumore | Niente lista-file esaustiva (git) né "Benefici" ad aggettivi? |
-| Esito | C'è la riga di verifica (lint/test/commit) se applicabile? |
-| Anti-banale | Vale la pena? (meccanico/banale → niente voce) |
+| Boundary | Am I recording *what happened* (log) and not *the knowledge* (→ page)? |
+| Heading | `<op>` from the §6 vocabulary, title on **one** thing? |
+| Lead | Opens with the **why/trigger**, not the first file? |
+| Bullets | Flat, labeled, **max 1 level**? |
+| Pointers | Is the content **linked** to the page, not copied? |
+| Noise | No exhaustive file list (git) and no adjective-laden "Benefits"? |
+| Outcome | Is there a verification line (lint/tests/commit) if applicable? |
+| Anti-trivial | Is it worth it? (mechanical/trivial → no entry) |

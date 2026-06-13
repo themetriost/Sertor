@@ -148,7 +148,7 @@ def test_search_missing_index_exit_1(monkeypatch, capsys, dtype):
     code = _run(["search", "x", "--type", dtype])
     err = capsys.readouterr().err
     assert code == 1
-    assert "errore:" in err
+    assert "error:" in err
     assert "inesistente" in err
 
 
@@ -157,7 +157,7 @@ def test_search_empty_query_exit_1(populated, capsys):
     code = _run(["search", "   "])
     err = capsys.readouterr().err
     assert code == 1
-    assert "errore:" in err
+    assert "error:" in err
 
 
 # ------------------------------------------------------------- --corpus override (FR-009/D7)

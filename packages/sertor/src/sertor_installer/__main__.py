@@ -23,58 +23,58 @@ class CapabilityNotAvailableError(SertorError):
 
     def __init__(self, capability: str):
         self.capability = capability
-        super().__init__(f"install {capability} non è ancora disponibile (taglio futuro)")
+        super().__init__(f"install {capability} is not available yet (future slice)")
 
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="sertor",
-        description="Installer del sistema-wiki (LLM Wiki) su un repo ospite.",
+        description="Installer for Sertor capabilities on a host repository.",
     )
-    sub = parser.add_subparsers(dest="command", required=True, metavar="<comando>")
+    sub = parser.add_subparsers(dest="command", required=True, metavar="<command>")
 
     install = sub.add_parser(
-        "install", help="installa una capacità sull'ospite (wiki | rag | governance)"
+        "install", help="install a capability on the host (wiki | rag | governance)"
     )
     install_sub = install.add_subparsers(
-        dest="capability", required=True, metavar="<capacità>"
+        dest="capability", required=True, metavar="<capability>"
     )
 
-    wiki = install_sub.add_parser("wiki", help="installa il sistema-wiki (disponibile)")
-    wiki.add_argument("--target", default=".", help="radice del repo ospite (default: cwd)")
+    wiki = install_sub.add_parser("wiki", help="install the wiki system (available)")
+    wiki.add_argument("--target", default=".", help="host repo root (default: cwd)")
     wiki.add_argument(
-        "--language", default="en", help="lingua del wiki.config.toml generato (default: en)"
+        "--language", default="en", help="language of the generated wiki.config.toml (default: en)"
     )
     wiki.add_argument(
         "--source-dirs", default=None,
-        help="override CSV delle cartelle sorgente (es. 'src,docs'); bypassa l'euristica",
+        help="CSV override of source folders (e.g. 'src,docs'); bypasses the heuristic",
     )
-    wiki.add_argument("--json", action="store_true", help="emette il report come JSON")
+    wiki.add_argument("--json", action="store_true", help="emit the report as JSON")
 
-    rag = install_sub.add_parser("rag", help="installa la capacità RAG (.sertor/ + .mcp.json)")
-    rag.add_argument("--target", default=".", help="radice del repo ospite (default: cwd)")
+    rag = install_sub.add_parser("rag", help="install the RAG capability (.sertor/ + .mcp.json)")
+    rag.add_argument("--target", default=".", help="host repo root (default: cwd)")
     rag.add_argument(
         "--backend", choices=["azure", "local"], default="azure",
-        help="provider di embeddings (default: azure)",
+        help="embeddings provider (default: azure)",
     )
     rag.add_argument(
         "--corpus", default=None,
-        help="nome del corpus (SERTOR_CORPUS); default: nome sanitizzato della dir target",
+        help="corpus name (SERTOR_CORPUS); default: sanitized name of the target dir",
     )
-    rag.add_argument("--no-graph", action="store_true", help="escludi l'extra `graph` (networkx)")
-    rag.add_argument("--no-rerank", action="store_true", help="escludi l'extra `rerank`")
+    rag.add_argument("--no-graph", action="store_true", help="exclude the `graph` extra (networkx)")
+    rag.add_argument("--no-rerank", action="store_true", help="exclude the `rerank` extra")
     rag.add_argument(
         "--no-deps", action="store_true",
-        help="solo scaffold di config; non aggiungere le dipendenze (no uv)",
+        help="config scaffold only; do not add dependencies (no uv)",
     )
     rag.add_argument(
         "--mcp-scope", choices=["project", "local"], default="project",
-        help="dove registrare il server MCP: project (.mcp.json in radice host, default) | "
-             "local (nel client via `claude`, nessun file nel repo)",
+        help="where to register the MCP server: project (.mcp.json in host root, default) | "
+             "local (in the client via `claude`, no file in the repo)",
     )
-    rag.add_argument("--json", action="store_true", help="emette il report come JSON")
+    rag.add_argument("--json", action="store_true", help="emit the report as JSON")
 
-    install_sub.add_parser("governance", help="installa la governance (pianificato)")
+    install_sub.add_parser("governance", help="install governance (planned)")
 
     return parser
 
@@ -83,9 +83,9 @@ def _cmd_install_wiki(args) -> int:
     """Handler `install wiki`: valida il target, costruisce il piano, esegue, stampa il report."""
     target_root = Path(args.target).resolve()
     if not target_root.exists():
-        raise ConfigError("target inesistente", key=str(target_root))
+        raise ConfigError("target does not exist", key=str(target_root))
     if not target_root.is_dir():
-        raise IngestionError("il target non è una directory", path=str(target_root))
+        raise IngestionError("target is not a directory", path=str(target_root))
 
     source_dirs = (
         [d for d in args.source_dirs.split(",")] if args.source_dirs else None
@@ -104,9 +104,9 @@ def _cmd_install_rag(args) -> int:
     """Handler `install rag`: valida il target, esegue il piano RAG, stampa il report."""
     target_root = Path(args.target).resolve()
     if not target_root.exists():
-        raise ConfigError("target inesistente", key=str(target_root))
+        raise ConfigError("target does not exist", key=str(target_root))
     if not target_root.is_dir():
-        raise IngestionError("il target non è una directory", path=str(target_root))
+        raise IngestionError("target is not a directory", path=str(target_root))
 
     opts = RagInstallOptions(
         target_root=target_root,
@@ -134,7 +134,7 @@ def _dispatch(args) -> int:
             return _cmd_install_rag(args)
         # stub leggibili: exit 1 via eccezione di dominio dedicata (governance)
         raise CapabilityNotAvailableError(args.capability)
-    raise ConfigError(f"comando non supportato: {args.command}")  # pragma: no cover
+    raise ConfigError(f"unsupported command: {args.command}")  # pragma: no cover
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -149,7 +149,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         return _dispatch(args)
     except SertorError as exc:
-        print(f"errore: {exc}", file=sys.stderr)
+        print(f"error: {exc}", file=sys.stderr)
         return 1
 
 

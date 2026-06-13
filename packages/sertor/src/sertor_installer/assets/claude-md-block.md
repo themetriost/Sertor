@@ -1,57 +1,57 @@
-## Rituale di step / Definition of Done (LLM Wiki)
+## Step Ritual / Definition of Done (LLM Wiki)
 
-Questo progetto mantiene un **wiki locale** in `wiki/`, ispirato al pattern "LLM Wiki" di Karpathy:
-un artefatto persistente e cumulativo che cresce a ogni sessione, invece di ricostruire la
-conoscenza ogni volta. La configurazione vive in `wiki.config.toml` (l'unica fonte di specificità
-dell'ospite: radice, tassonomia, cartelle-sorgente, lingua).
+This project maintains a **local wiki** in `wiki/`, inspired by Karpathy's "LLM Wiki" pattern:
+a persistent, cumulative artifact that grows with each session instead of rebuilding
+knowledge from scratch every time. Configuration lives in `wiki.config.toml` (the single source of
+host-specific settings: root, taxonomy, source folders, language).
 
-> **Regola aurea:** ogni cosa di rilievo che si fa va documentata nel wiki — esperimenti, decisioni,
-> concetti/tecnologie approfonditi, fonti ingerite. Non aspettare che l'utente lo chieda.
-> Le modifiche puramente meccaniche e di poco conto non richiedono una voce.
+> **Golden rule:** every significant thing that is done must be documented in the wiki — experiments, decisions,
+> concepts/technologies explored, ingested sources. Do not wait for the user to ask.
+> Purely mechanical, minor changes do not require a log entry.
 
-Uno **step** è un'unità di lavoro significativa (una feature, un fix, una decisione, una ricerca,
-un'analisi). **Alla fine di ogni step**, il flusso principale esegue — di propria iniziativa — questa
+A **step** is a meaningful unit of work (a feature, a fix, a decision, a research task,
+an analysis). **At the end of each step**, the main flow executes — on its own initiative — this
 checklist:
 
-1. **Registra** (`record`) — crea/aggiorna le pagine impattate, i backlink e `index.md`, e appende
-   la voce nel registro (file del giorno in `wiki/log/`). Lavoro di forma → delegabile all'agente
-   `wiki-curator`.
-2. **Distilla le entità** (`distill`) — identifica le entità/concetti durevoli che lo step ha fatto
-   emergere e, se hanno identità propria e sono referenziate da più punti, dà a ciascuna una pagina
-   propria in `concepts/`/`tech/`; il record datato resta magro e vi punta. È **giudizio** → resta
-   nel flusso principale.
-3. **Lint semantico** (`lint` liv. B) — verifica che il wiki non sia andato alla deriva rispetto alla
-   realtà del progetto (codice, requisiti, stato VCS): segnala ogni claim che il repo contraddice,
-   correggi su conferma. È **giudizio** → resta nel flusso principale.
+1. **Record** (`record`) — create/update the impacted pages, backlinks, and `index.md`, and append
+   the log entry (today's file in `wiki/log/`). Structural work → delegatable to the
+   `wiki-curator` agent.
+2. **Distill entities** (`distill`) — identify the durable entities/concepts the step surfaced
+   and, if they have their own identity and are referenced from multiple points, give each a
+   dedicated page in `concepts/`/`tech/`; the dated record stays lean and points to them. This is **judgment** → stays
+   in the main flow.
+3. **Semantic lint** (`lint` level B) — verify that the wiki has not drifted away from the
+   reality of the project (code, requirements, VCS state): flag every claim the repo contradicts,
+   fix on confirmation. This is **judgment** → stays in the main flow.
 
-**Delega.** Che queste azioni avvengano è responsabilità del flusso principale; eseguirle o delegarle
-è solo una scelta per non bloccarsi. Il `record` (trascrizione strutturata) si delega all'agente
-`wiki-curator`; la distillazione e il lint semantico, essendo giudizio, restano nel flusso
-principale. Per innescare manualmente un consolidamento usa il comando `/wiki` (flusso principale)
-oppure delega al `wiki-curator` (in background).
+**Delegation.** That these actions happen is the main flow's responsibility; executing or delegating them
+is merely a choice to avoid blocking. The `record` (structured transcription) is delegatable to the
+`wiki-curator` agent; distillation and semantic lint, being judgment, stay in the main flow.
+To manually trigger a consolidation use the `/wiki` command (main flow)
+or delegate to `wiki-curator` (background).
 
-**Quando registrare:** nello stesso momento del commit dello step. La voce di log non è
-posticipabile: un passo non è chiuso finché commit **e** voce di log non sono entrambi fatti.
+**When to record:** at the same moment as the step commit. The log entry is
+not deferrable: a step is not closed until both the commit **and** the log entry are done.
 
-### Operazioni del wiki
+### Wiki operations
 
-- **record** — registra lavoro/decisioni: pagine + backlink + `index.md` + voce di log.
-- **distill** — estrae le entità durevoli che un lavoro fa emergere in pagine proprie.
-- **ingest** — acquisisce una fonte esterna (file/PDF/URL) → riassunto in `sources/`, integra nelle
-  pagine collegate, segnala contraddizioni.
-- **query** — risponde citando le pagine; archivia un'esplorazione preziosa come nuova pagina.
-- **lint** — coerenza a tre livelli: A strutturale (frontmatter/wikilink rotti/orfani/naming), B
-  semantico (claim ↔ realtà del repo), C organizzativo (collocazione/atomicità/link).
-- **reorg** — applica il refactoring organizzativo emerso dal lint C, su conferma.
-- **generate** — genera/aggiorna il wiki dal repo (da-zero o da-diff).
-- **rag-sync** — ri-indicizza il wiki nel RAG (se abilitato in `wiki.config.toml`).
-- **structure** — bootstrap idempotente della struttura del wiki.
+- **record** — records work/decisions: pages + backlinks + `index.md` + log entry.
+- **distill** — extracts durable entities surfaced by a piece of work into dedicated pages.
+- **ingest** — acquires an external source (file/PDF/URL) → summary in `sources/`, integrates into
+  linked pages, flags contradictions.
+- **query** — answers by citing pages; archives a valuable exploration as a new page.
+- **lint** — consistency at three levels: A structural (frontmatter/broken wikilinks/orphans/naming), B
+  semantic (claims vs. repo reality), C organizational (placement/atomicity/links).
+- **reorg** — applies the organizational refactoring surfaced by lint C, on confirmation.
+- **generate** — generates/updates the wiki from the repo (from-scratch or from-diff).
+- **rag-sync** — re-indexes the wiki into the RAG (if enabled in `wiki.config.toml`).
+- **structure** — idempotent bootstrap of the wiki structure.
 
-### Convenzioni
+### Conventions
 
-- **Frontmatter YAML** in ogni pagina: `title`, `type`, `tags`, `created`, `updated`, `sources`.
-- **Backlink** in stile wikilink `[[nome-pagina]]` (compatibile Obsidian).
-- **Naming** file: kebab-case descrittivo (es. `azure-ai-search.md`).
-- **Voce di log:** `## [YYYY-MM-DD] <operazione> | <titolo>`.
-- Crea una nuova pagina per un concetto/entità nuovo; aggiorna quella esistente altrimenti.
-- Quando una fonte nuova contraddice una pagina, segnala esplicitamente la contraddizione.
+- **YAML frontmatter** on every page: `title`, `type`, `tags`, `created`, `updated`, `sources`.
+- **Backlinks** in wikilink style `[[page-name]]` (Obsidian-compatible).
+- **File naming**: descriptive kebab-case (e.g. `azure-ai-search.md`).
+- **Log entry format:** `## [YYYY-MM-DD] <operation> | <title>`.
+- Create a new page for a new concept/entity; update the existing one otherwise.
+- When a new source contradicts a page, explicitly flag the contradiction.

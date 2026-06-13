@@ -1,85 +1,84 @@
-# Operazione `generate` — genera il wiki dal repo (da-zero) o aggiornalo dalle modifiche (da-diff)
+# Operation `generate` — generate the wiki from the repo (from-scratch) or update it from changes (from-diff)
 
-> **Modulo operazione.** Esecutore: **solo flusso principale (Opus)** — il piano-pagine e il contenuto
-> sono giudizio. Per il **substrato condiviso** (confine D↔N §2, tassonomia §3, convenzioni §4, voce di
-> log §6) vedi il playbook `wiki-playbook.md`; per **se/cosa merita una pagina**
-> [`../wiki-craft.md`](../wiki-craft.md) (test link/nome §1, archetipi e lente di prodotto §2, pagine di
-> struttura §3), per **come si scrive** [`../page-craft.md`](../page-craft.md). Qui solo la procedura.
+> **Operation module.** Executor: **main flow only (Opus)** — the page plan and content
+> are judgment. For the **shared substrate** (D↔N boundary §2, taxonomy §3, conventions §4, log entry
+> §6) see the playbook `wiki-playbook.md`; for **whether/what deserves a page**
+> [`../wiki-craft.md`](../wiki-craft.md) (link/name test §1, archetypes and product lens §2, structure
+> pages §3), for **how to write it** [`../page-craft.md`](../page-craft.md). Only the procedure is described here.
 
-La generazione è **una capacità, due ingressi** (contenuto in linguaggio naturale a concetti
-linkati, *aggiornabile incrementalmente*). **Selettore:** se l'ospite **non ha** `wiki.config.toml`, o la
-root del wiki non esiste/è vuota → **da-zero** (bootstrap); altrimenti → **da-diff** (il default di
+Generation is **one capability, two inputs** (natural-language content to linked concepts,
+*incrementally updatable*). **Selector:** if the host **does not have** `wiki.config.toml`, or the
+wiki root does not exist/is empty → **from-scratch** (bootstrap); otherwise → **from-diff** (the default of
 `/wiki generate`).
 
-## Profondità di ricognizione (parametro, default `leggera`)
+## Reconnaissance depth (parameter, default `light`)
 
-Quanto a fondo leggere le fonti è una scelta dichiarata, non un giudizio implicito: la profondità si
-indica all'invocazione (es. `/wiki generate media`) e va **registrata nella voce di log** — così il wiki
-sa a che profondità è nato e un lint B futuro distingue «pagina magra per scelta» dalla deriva. Sono
-**preset di lettura nominati** (è "calibra al valore" reso parametro): i confini restano giudizio sul
-caso concreto, non regole rigide.
+How deeply to read the sources is an explicit choice, not an implicit judgment: depth is
+stated at invocation (e.g. `/wiki generate medium`) and must be **recorded in the log entry** — so the wiki
+knows at what depth it was born and a future lint B can distinguish "lean page by choice" from drift. These are
+**named reading presets** ("calibrate to value" made into a parameter): the boundaries remain judgment on
+the concrete case, not rigid rules.
 
-| Livello | Cosa legge (passo 2) | Piano-pagine (passo 3) | Quando |
+| Level | What it reads (step 2) | Page plan (step 3) | When |
 |---|---|---|---|
-| **leggera** (default) | README + struttura del repo (mappa, non mirror) | 6–12 pagine corrette ma magre | bootstrap standard |
-| **media** | + le fonti documentali primarie **per intero** (metodologia, reference, doc dedicata) | 10–18 pagine, ispessite | ospite con doc ricca da cui distillare davvero |
-| **massiva** | + il codice (entry point, contratti pubblici, test) su tutto `source_dirs`, in più ondate | a ondate, senza tetto fisso | ospite con doc povera: il wiki *è* la documentazione |
+| **light** (default) | README + repo structure (map, not mirror) | 6–12 correct but lean pages | standard bootstrap |
+| **medium** | + primary documentation sources **in full** (methodology, reference, dedicated doc) | 10–18 pages, thickened | host with rich doc to truly distill |
+| **massive** | + code (entry points, public contracts, tests) across all `source_dirs`, in multiple passes | in passes, no hard cap | host with sparse doc: the wiki *is* the documentation |
 
-I livelli **si compongono col modello cumulativo**, non lo sostituiscono: una run `media` su un wiki nato
-`leggera` è il modo standard di ispessirlo (l'arricchimento passa dall'ingresso che si applica — da-zero
-se si riparte, da-diff/`distill` se si integra). *(Superficie futura: un'opzione `--depth` di un
-comando d'install.)*
+Levels **compose with the cumulative model**, they do not replace it: a `medium` run on a wiki born at
+`light` is the standard way to thicken it (enrichment flows through the applicable input — from-scratch
+if restarting, from-diff/`distill` if integrating). *(Future surface: a `--depth` option for an
+install command.)*
 
-## Ingresso A — da-zero (bootstrap su un repo privo di wiki)
+## Input A — from-scratch (bootstrap on a repo without a wiki)
 
-Tutte le chiamate CLI usano `--config <config dell'ospite>`: i path si risolvono relativi alla cartella
-del file di config, quindi l'operazione funziona anche su un ospite diverso dalla cwd. **Ogni scrittura
-(pagine, log, indice) avviene nel wiki dell'ospite** — mai in quello di chi esegue.
+All CLI calls use `--config <host config>`: paths resolve relative to the config file's folder, so the
+operation works on a host different from the cwd. **Every write (pages, log, index) happens in the host's
+wiki** — never in the executor's wiki.
 
-0. **Config dell'ospite (giudizio — prerequisito).** Se manca `wiki.config.toml` (cercato in radice e in `wiki/`) sull'ospite,
-   **autoralo minimale** guardando il repo, senza presumere: `language` (la lingua della doc dell'ospite —
-   il wiki si scrive in quella; chiedi se ambiguo), `root`/`index_file`/`log_file`/`log_dir`,
-   `[[taxonomy]]` (le 5 aree del profilo standard come base, adattate alla natura dell'ospite),
-   `source_dirs` (doc, codice, test, specs **se esistono**: verificalo), `exclude` (VCS, build,
-   dipendenze, media), `[rag] enabled=false` se l'ospite non ha infrastruttura RAG, `[roles]` solo se
-   l'host ha gli agenti. *Questo passo è il segnaposto-giudizio del bootstrap della config: quando un
-   comando d'install la genera, la parte meccanica diventa sua.*
-1. **Struttura (D).** `sertor-wiki-tools structure init --config <config> --json` — idempotente: crea
-   cartelle della tassonomia + index + log, non sovrascrive nulla.
-2. **Ricognizione delle fonti (D+N).** `collect --json` per l'inventario (al bootstrap è vuoto; alla
-   seconda run è l'anti-duplicato). Ordine di lettura delle fonti-input: **README** → **doc dedicata** →
-   **specs/requirements** se esistono → **struttura del codice** (albero, entry point, contratti
-   pubblici — input *opzionale*: su un ospite solo-documentale si salta) → **test** (il
-   comportamento). **L'ampiezza la decide la profondità dichiarata** (tabella sopra); a ogni livello
-   vale: serve la **mappa**, non il mirror — si legge per capire, non per ricopiare.
-3. **Piano-pagine bounded (N — il passo distintivo).** Enumera i candidati col test del link/nome
-   (wiki-craft §1) e la lente di prodotto (§2 se l'ospite è codice); applica l'**anti-frammentazione**
-   (poche pagine vive). **Proponi il piano prima di scrivere** — elenco `pagina → area → scopo in una
-   riga` — e sottoponilo all'utente se il flusso è interattivo. **Dimensione secondo la profondità**
-   (tabella sopra; per `leggera`: 6–12 pagine — sotto manca il cuore del dominio, sopra è frammentazione:
-   il wiki è cumulativo, il resto arriva con le run successive). Includi le pagine di struttura necessarie (la home coincide con l'`index_file`;
-   un'overview solo se il dominio la richiede — wiki-craft §3).
-4. **Scrittura (N).** Pagine conformi a page-craft: definizione in apertura, il *perché*, le relazioni coi
-   vicini, claim ancorati alle fonti — **linka la fonte, non ricopiarla** (né doc né codice in snippet).
-   Tessi la rete `[[wikilink]]`; riga d'indice per pagina (`upsert-index`, o curata a mano se l'indice
-   dell'ospite è curato — giudizio).
-5. **Log (D).** **UNA** voce di log `generate` via `append-log --config <config>` — nel **wiki
-   dell'ospite** — con lead «bootstrap da-zero» e l'essenziale (**profondità usata**, n. pagine, fonti
-   lette). La prima voce fa
-   anche da àncora temporale per i futuri run da-diff/`scan`. Questo ingresso **non richiede git**.
-6. **Verifica (D).** `lint --json` + `validate --json` sull'ospite: zero broken link, zero orfani,
-   frontmatter completo. **Idempotenza:** una seconda invocazione su un wiki già accurato non riscrive
-   nulla — `structure init` risponde tutto `skipped_existing`, il `collect` mostra le pagine esistenti, e
-   senza delta non c'è seconda ondata né nuova voce di log (regola anti-banale, playbook §6).
+0. **Host config (judgment — prerequisite).** If `wiki.config.toml` is missing (searched in root and in `wiki/`) on the host,
+   **author a minimal one** by inspecting the repo, without assumptions: `language` (the language of the host's doc —
+   the wiki is written in that language; ask if ambiguous), `root`/`index_file`/`log_file`/`log_dir`,
+   `[[taxonomy]]` (the 5 areas of the standard profile as a base, adapted to the host's nature),
+   `source_dirs` (doc, code, tests, specs **if they exist**: verify this), `exclude` (VCS, build,
+   dependencies, media), `[rag] enabled=false` if the host has no RAG infrastructure, `[roles]` only if
+   the host has agents. *This step is the judgment placeholder for the bootstrap of the config: when an
+   install command generates it, the mechanical part becomes its responsibility.*
+1. **Structure (D).** `sertor-wiki-tools structure init --config <config> --json` — idempotent: creates
+   taxonomy folders + index + log, overwrites nothing.
+2. **Source reconnaissance (D+N).** `collect --json` for the inventory (at bootstrap it is empty; on the
+   second run it is the anti-duplication check). Reading order for input sources: **README** → **dedicated doc** →
+   **specs/requirements** if they exist → **code structure** (tree, entry points, public contracts —
+   *optional* input: skipped on a doc-only host) → **tests** (the
+   behavior). **Breadth is decided by the declared depth** (table above); at every level:
+   the **map** is what matters, not the mirror — read to understand, not to copy.
+3. **Bounded page plan (N — the distinctive step).** Enumerate candidates with the link/name test
+   (wiki-craft §1) and the product lens (§2 if the host is code); apply **anti-fragmentation**
+   (few living pages). **Propose the plan before writing** — list `page → area → purpose in one line` —
+   and submit it to the user if the flow is interactive. **Size according to depth**
+   (table above; for `light`: 6–12 pages — below that the domain core is missing, above is fragmentation:
+   the wiki is cumulative, the rest comes with subsequent runs). Include the required structure pages (the home coincides with the `index_file`;
+   an overview only if the domain requires it — wiki-craft §3).
+4. **Writing (N).** Pages compliant with page-craft: definition at the top, the *why*, relationships with
+   neighbors, claims anchored to sources — **link the source, do not copy it** (neither doc nor code in snippets).
+   Weave the `[[wikilink]]` network; an index line per page (`upsert-index`, or curated by hand if the
+   host's index is curated — judgment).
+5. **Log (D).** **ONE** log entry `generate` via `append-log --config <config>` — in the **host's
+   wiki** — with lead "from-scratch bootstrap" and the essentials (**depth used**, page count, sources
+   read). The first entry also serves as a temporal anchor for future from-diff/`scan` runs. This input **does not require git**.
+6. **Verification (D).** `lint --json` + `validate --json` on the host: zero broken links, zero orphans,
+   complete frontmatter. **Idempotency:** a second invocation on an already accurate wiki rewrites
+   nothing — `structure init` reports everything as `skipped_existing`, `collect` shows existing pages, and
+   without a delta there is no second pass and no new log entry (anti-trivial rule, playbook §6).
 
-## Ingresso B — da-diff (aggiorna dalle modifiche recenti)
+## Input B — from-diff (update from recent changes)
 
-Evita di rileggere l'intero repo: aggiorna solo ciò che è cambiato. Trigger = comando manuale `/wiki`;
-ambito = changeset dell'ultimo commit. Lint/freschezza qui sono **non bloccanti**.
+Avoids re-reading the entire repo: updates only what changed. Trigger = manual command `/wiki`;
+scope = changeset of the last commit. Lint/freshness here are **non-blocking**.
 
-1. Ancora il punto di partenza con `sertor-wiki-tools scan --json` (file pendenti via mtime) e/o
-   **delega al ruolo VCS** (`[roles].vcs`) un brief di sola lettura «`git log` + `git diff` dal punto X».
-   X = data dell'ultima voce di log (o l'ultimo commit che tocca il wiki). *(Le operazioni git si
-   delegano; se l'ospite non ha un ruolo VCS configurato, chiedi all'utente come ottenere il diff.)*
-2. Col diff ricevuto, aggiorna **solo** le pagine impattate (giudizio).
-3. Aggiorna l'indice e appendi una voce di log `generate` che cita il range di commit.
+1. Anchor the starting point with `sertor-wiki-tools scan --json` (pending files via mtime) and/or
+   **delegate to the VCS role** (`[roles].vcs`) a read-only brief "`git log` + `git diff` from point X".
+   X = date of the last log entry (or the last commit that touches the wiki). *(Git operations are
+   delegated; if the host has no VCS role configured, ask the user how to obtain the diff.)*
+2. With the received diff, update **only** the impacted pages (judgment).
+3. Update the index and append a log entry `generate` citing the commit range.

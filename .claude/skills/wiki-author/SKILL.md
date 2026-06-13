@@ -1,37 +1,37 @@
 ---
 name: wiki-author
-description: Genera/aggiorna l'LLM Wiki del progetto leggendo il repo e scrivendo le pagine. Usala quando l'utente dice "genera il wiki", "aggiorna il wiki", "documenta il progetto nel wiki". Pattern Karpathy: l'agente legge le fonti e scrive i .md.
+description: Generates/updates the project LLM Wiki by reading the repo and writing pages. Use it when the user says "generate the wiki", "update the wiki", "document the project in the wiki". Karpathy pattern: the agent reads the sources and writes the .md files.
 ---
 
-# Genera l'LLM Wiki (autore)
+# Generate the LLM Wiki (author)
 
-Sei l'**autore** dell'LLM Wiki del progetto: leggi il repo e scrivi/aggiorni le pagine del wiki.
+You are the **author** of the project's LLM Wiki: you read the repo and write/update wiki pages.
 
-**Fonte di verità unica:** leggi `.claude/skills/wiki-author/wiki-playbook.md` (stessa cartella) e
-**seguilo**. È l'**indice** con identità, tassonomia, convenzioni e il confine D↔N; la **procedura di ogni
-operazione** sta in un modulo `ops/<operazione>.md` da `Read` on-demand (vedi §5 del playbook). Per questa
-skill l'operazione tipica è `record` → carica `ops/record.md`. Non duplicare qui quelle regole.
+**Single source of truth:** read `.claude/skills/wiki-author/wiki-playbook.md` (same folder) and
+**follow it**. It is the **index** with identity, taxonomy, conventions and the D↔N boundary; the **procedure for each
+operation** lives in an `ops/<operation>.md` module to `Read` on-demand (see §5 of the playbook). For this
+skill the typical operation is `record` → load `ops/record.md`. Do not duplicate those rules here.
 
-**Host-agnostico:** radice del wiki, tassonomia, campi frontmatter, ruoli e cartelle-sorgente vengono da
-`wiki.config.toml` (in `wiki/` sull'ospite) — non assumerli. Per il *meccanico* (inventario, lint) usa la
-CLI `sertor-wiki-tools` invece di Glob/Grep a mano (vedi playbook).
+**Host-agnostic:** wiki root, taxonomy, frontmatter fields, roles and source folders come from
+`wiki.config.toml` (in `wiki/` on the host) — do not assume them. For the *mechanical* work (inventory, lint) use the
+CLI `sertor-wiki-tools` instead of Glob/Grep by hand (see playbook).
 
-## Specifico di questa skill (operazione `record` dal repo)
+## Specific to this skill (operation `record` from the repo)
 
-1. **Leggi prima il playbook**, poi l'indice del wiki (catalogo) per sapere cosa esiste già; lancia
-   `sertor-wiki-tools collect --json` per l'inventario meccanico delle pagine.
-2. Determina l'**ambito**:
-   - se l'utente indica un'area/feature, **limitati a quella**;
-   - altrimenti copri le parti rilevanti del repo partendo dalle **`source_dirs`** della config (codice e
-     test → il *cosa/come*; specifiche/requisiti → il *perché*).
-3. Applica l'operazione `record` del playbook: crea/aggiorna le pagine (una per concetto, idempotente),
-   aggiorna i backlink e l'indice, appendi la voce al log.
-4. Segnala le contraddizioni invece di risolverle in silenzio (vedi playbook).
+1. **Read the playbook first**, then the wiki index (catalog) to know what already exists; run
+   `sertor-wiki-tools collect --json` for the mechanical inventory of pages.
+2. Determine the **scope**:
+   - if the user specifies an area/feature, **limit yourself to that**;
+   - otherwise cover the relevant parts of the repo starting from the **`source_dirs`** in the config (code and
+     tests → the *what/how*; specs/requirements → the *why*).
+3. Apply the `record` operation from the playbook: create/update pages (one per concept, idempotent),
+   update backlinks and the index, append the log entry.
+4. Report contradictions instead of resolving them silently (see playbook).
 
-Per ingerire una fonte esterna, fare il lint di coerenza, generare il wiki dal repo o aggiornarlo dal
-diff git (operazione `generate`, ingressi da-zero/da-diff) o ri-indicizzare nel RAG, usa le operazioni
-omonime del playbook (tipicamente via il comando `/wiki <operazione>`).
+To ingest an external source, lint for consistency, generate the wiki from the repo or update it from
+the git diff (operation `generate`, inputs from-scratch/from-diff) or re-index in the RAG, use the
+corresponding operations in the playbook (typically via the `/wiki <operation>` command).
 
-## Versionamento (opzionale)
-A fine generazione, se l'utente vuole versionare, **delega al ruolo VCS** (`[roles].vcs` in config; mai git
-diretto): commit `docs(wiki): genera/aggiorna pagine` con staging selettivo della radice del wiki.
+## Versioning (optional)
+At the end of generation, if the user wants to version, **delegate to the VCS role** (`[roles].vcs` in config; never direct git):
+commit `docs(wiki): generate/update pages` with selective staging of the wiki root.

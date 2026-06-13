@@ -1,19 +1,18 @@
-# Profilo host del LLM Wiki.
+# Host profile for the LLM Wiki.
 #
-# UNICA fonte di specificità dell'ospite: il nucleo deterministico `sertor-wiki-tools` legge SOLO
-# questo file — nessun path/nome/lingua/tassonomia è hard-coded nel codice. Per portare la capacità
-# su un altro progetto basta un file diverso.
+# The SINGLE source of host-specifics: the `sertor-wiki-tools` deterministic core reads ONLY this
+# file — no path/name/language/taxonomy is hard-coded in the code. To bring the capability to another
+# project, all you need is a different file.
 #
-# Collocazione (feature 016): questo file vive in `wiki/wiki.config.toml`. `root = "wiki"` resta
-# relativo alla RADICE OSPITE, non a questa cartella: gli strumenti passano `--root .` (o usano
-# l'auto-discovery del CLI). Radice ospite pulita.
+# Location: this file lives at `wiki/wiki.config.toml`. `root = "wiki"` stays relative to the HOST
+# ROOT, not to this folder: tools pass `--root .` (or rely on the CLI auto-discovery). Clean host root.
 
 profile = "code+doc"
 language = "{language}"
 root = "wiki"
 index_file = "index.md"
 log_file = "log.md"
-log_dir = "log"  # rotazione del log a un file per giorno
+log_dir = "log"  # log rotation: one file per day
 
 source_dirs = {source_dirs}
 exclude = [

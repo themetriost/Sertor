@@ -28,49 +28,49 @@ _OPS = ("scan", "structure", "validate", "lint", "collect", "index", "append-log
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="sertor-wiki-tools",
-        description="Nucleo wiki deterministico host-agnostico (zero LLM, offline).",
+        description="Host-agnostic deterministic wiki core (zero LLM, offline).",
     )
-    parser.add_argument("op", choices=_OPS, help="operazione da eseguire")
+    parser.add_argument("op", choices=_OPS, help="operation to run")
     parser.add_argument(
         "subcommand", nargs="?", default=None,
-        help="sotto-comando (es. 'init' per 'structure')",
+        help="subcommand (e.g. 'init' for 'structure')",
     )
     parser.add_argument(
         "--config", default=None,
-        help="percorso del profilo dell'ospite (TOML); se omesso, auto-discovery: "
-             "./wiki.config.toml poi ./wiki/wiki.config.toml",
+        help="path to the host profile (TOML); if omitted, auto-discovery: "
+             "./wiki.config.toml then ./wiki/wiki.config.toml",
     )
     parser.add_argument(
         "--root", default=None,
-        help="override della radice del progetto-ospite (stile Transcriptio --root)",
+        help="override of the host project root (Transcriptio-style --root)",
     )
     parser.add_argument(
         "--json", action="store_true",
-        help="emette il contratto JSON su stdout (altrimenti output umano sintetico)",
+        help="emit the JSON contract on stdout (otherwise a terse human summary)",
     )
     parser.add_argument(
         "--entry-op", default=None,
-        help="operazione della voce di log (per 'append-log': record|lint|distill|...)",
+        help="log entry operation (for 'append-log': record|lint|distill|...)",
     )
     parser.add_argument(
-        "--title", default=None, help="titolo della voce di log (per 'append-log')",
+        "--title", default=None, help="log entry title (for 'append-log')",
     )
     parser.add_argument(
         "--date", default=None,
-        help="data della voce YYYY-MM-DD (per 'append-log'; default: oggi)",
+        help="entry date YYYY-MM-DD (for 'append-log'; default: today)",
     )
     parser.add_argument(
         "--body-file", default=None,
-        help="file col corpo curato della voce (per 'append-log'; altrimenti letto da stdin)",
+        help="file with the curated entry body (for 'append-log'; otherwise read from stdin)",
     )
     parser.add_argument(
         "--page", default=None,
-        help="path relativo della pagina nel wiki (per 'upsert-index')",
+        help="relative path of the page in the wiki (for 'upsert-index')",
     )
     parser.add_argument(
         "--summary", default=None,
-        help="sommario della riga d'indice (per 'upsert-index'; altrimenti letto da stdin). "
-             "Il testo è fornito dall'autore (LLM), la CLI non lo genera né lo riscrive",
+        help="index-line summary (for 'upsert-index'; otherwise read from stdin). "
+             "The text is author-provided (LLM); the CLI neither generates nor rewrites it",
     )
     return parser
 
@@ -103,7 +103,7 @@ def _parse_date(value: str | None) -> date | None:
     try:
         return date.fromisoformat(value)
     except ValueError as exc:
-        raise ConfigError(f"data non valida (atteso YYYY-MM-DD): {value}") from exc
+        raise ConfigError(f"invalid date (expected YYYY-MM-DD): {value}") from exc
 
 
 def _read_body(args) -> str | None:
@@ -129,7 +129,7 @@ def _run(args, profile):
     if op == "structure":
         if args.subcommand not in (None, "init"):
             raise ConfigError(
-                f"sotto-comando 'structure {args.subcommand}' non supportato (usa 'init')"
+                f"subcommand 'structure {args.subcommand}' not supported (use 'init')"
             )
         return init_structure(profile)
     if op == "index":
@@ -138,7 +138,7 @@ def _run(args, profile):
         return index_wiki(profile)
     if op == "append-log":
         if not args.entry_op or not args.title:
-            raise ConfigError("append-log richiede --entry-op e --title")
+            raise ConfigError("append-log requires --entry-op and --title")
         return append_log(
             profile, args.entry_op, args.title,
             on_date=_parse_date(args.date), body=_read_body(args),
@@ -147,12 +147,12 @@ def _run(args, profile):
         return migrate_log(profile)
     if op == "upsert-index":
         if not args.page:
-            raise ConfigError("upsert-index richiede --page")
+            raise ConfigError("upsert-index requires --page")
         summary = args.summary if args.summary is not None else _read_body(args)
         if summary is None:
-            raise ConfigError("upsert-index richiede il sommario (--summary o stdin)")
+            raise ConfigError("upsert-index requires the summary (--summary or stdin)")
         return upsert_index(profile, args.page, summary)
-    raise ConfigError(f"operazione non supportata: {op}")  # pragma: no cover
+    raise ConfigError(f"unsupported operation: {op}")  # pragma: no cover
 
 
 def _human(op: str, result) -> str:
@@ -209,7 +209,7 @@ def main(argv: list[str] | None = None) -> int:
         error = ErrorResult(error=type(exc).__name__, message=str(exc))
         if args.json:
             print(error.to_json())
-        print(f"errore: {exc}", file=sys.stderr)
+        print(f"error: {exc}", file=sys.stderr)
         return 1
 
     print(result.to_json() if args.json else _human(args.op, result))

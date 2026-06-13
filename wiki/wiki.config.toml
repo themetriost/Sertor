@@ -74,5 +74,5 @@ enabled = true
 corpus = "wiki"
 
 [strings]
-pending = "Lavoro non ancora registrato nel wiki: {n} file più recenti dell'ultima voce di log."
-clean = "Wiki allineato: nessun file più recente dell'ultima voce di log."
+pending = "Work not yet recorded in the wiki: {n} files newer than the last log entry."
+clean = "Wiki aligned: no files newer than the last log entry."
