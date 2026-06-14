@@ -7,6 +7,7 @@ US2 — missing index -> empty list (clean degradation) and propagation of a rea
 from __future__ import annotations
 
 import asyncio
+import logging
 
 import pytest
 
@@ -117,6 +118,7 @@ def test_main_warms_facade_before_stdio_loop(monkeypatch):
     calls: list[str] = []
     _use(monkeypatch, lambda _s=None: calls.append("facade"))
     monkeypatch.setattr(srv, "enable_observability", lambda *a, **k: False)
+    monkeypatch.setattr(srv, "_self_test", lambda: True)
     monkeypatch.setattr(srv.mcp, "run", lambda *a, **k: calls.append("run"))
     try:
         srv.main()
@@ -130,10 +132,70 @@ def test_main_wires_observability(monkeypatch):
     enabled: list[object] = []
     _use(monkeypatch, lambda _s=None: None)
     monkeypatch.setattr(srv, "enable_observability", lambda s: enabled.append(s) or False)
+    monkeypatch.setattr(srv, "_self_test", lambda: True)
     monkeypatch.setattr(srv.mcp, "run", lambda *a, **k: None)
     try:
         srv.main()
         assert len(enabled) == 1
+    finally:
+        srv._facade.cache_clear()
+
+
+def test_main_runs_self_test_before_stdio_loop(monkeypatch):
+    """`main()` runs the end-to-end self-test BEFORE the stdio loop (catches faults at connect)."""
+    calls: list[str] = []
+    _use(monkeypatch, lambda _s=None: None)
+    monkeypatch.setattr(srv, "enable_observability", lambda *a, **k: False)
+    monkeypatch.setattr(srv, "_self_test", lambda: calls.append("self_test") or True)
+    monkeypatch.setattr(srv.mcp, "run", lambda *a, **k: calls.append("run"))
+    try:
+        srv.main()
+        assert calls == ["self_test", "run"]  # probe runs, then the loop starts
+    finally:
+        srv._facade.cache_clear()
+
+
+# --- error signalling (observability) -----------------------------------------------------------
+
+def test_tool_error_emits_event_and_reraises(monkeypatch, caplog):
+    """A failing tool re-raises (FR-013) AND records an `mcp.<tool>.error` event (not swallowed)."""
+    class _Boom:
+        def search_code(self, *_a, **_k):
+            raise RuntimeError("store non raggiungibile")
+
+    _use(monkeypatch, lambda _s=None: _Boom())
+    try:
+        with caplog.at_level(logging.ERROR, logger="sertor_core"):
+            with pytest.raises(RuntimeError):
+                srv.search_code("x")
+        ops = [getattr(r, "operation", None) for r in caplog.records]
+        assert "mcp.search_code.error" in ops
+    finally:
+        srv._facade.cache_clear()
+
+
+def test_self_test_ok_on_healthy_facade(monkeypatch):
+    """The self-test returns True and logs an ok event when a search completes (even empty)."""
+    _use(monkeypatch, _empty_facade)  # empty index -> [] is NOT a failure
+    try:
+        assert srv._self_test() is True
+    finally:
+        srv._facade.cache_clear()
+
+
+def test_self_test_is_loud_and_nonfatal_on_failure(monkeypatch, capsys, caplog):
+    """A broken search makes the self-test return False (non-fatal): stderr print + error event."""
+    class _Boom:
+        def search_code(self, *_a, **_k):
+            raise RuntimeError("http 401")
+
+    _use(monkeypatch, lambda _s=None: _Boom())
+    try:
+        with caplog.at_level(logging.ERROR, logger="sertor_core"):
+            assert srv._self_test() is False  # does not raise
+        assert "self-test FAILED" in capsys.readouterr().err
+        ops = [getattr(r, "operation", None) for r in caplog.records]
+        assert "mcp.self_test.error" in ops
     finally:
         srv._facade.cache_clear()
 

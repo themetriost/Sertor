@@ -46,7 +46,10 @@ le giri all'utente. Su re-invocazione con le risposte, incorporale nel documento
 Se l'esigenza tocca codice già esistente nel repo, usa i tool `mcp__sertor-rag__*`
 (`search_code`/`search_docs`/`search_combined`, `find_symbol`, `who_calls`, `related_docs`,
 `get_context`) per capire cosa esiste già e ancorare i requisiti alla realtà (cita i file
-`path:lineno`). Fallback su Grep/Glob/Read se il server MCP non risponde.
+`path:lineno`). **Se un tool `mcp__sertor-rag__*` ritorna un errore (es. 401, modulo mancante,
+indice assente), NON degradare in silenzio:** ripiega su Grep/Glob/Read per non bloccarti, ma
+**riporta l'errore esplicitamente nel report finale** (tool, messaggio) — un MCP rotto è esso stesso
+un segnale, non va sepolto dal fallback.
 
 ## Regole del workspace (sempre attive)
 - **Output e report in italiano.** Le formulazioni EARS possono restare in inglese (keyword standard).

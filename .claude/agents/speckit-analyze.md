@@ -25,7 +25,9 @@ Produci solo un report; le correzioni le decide il flusso principale (di norma t
 ## Dogfooding — usa sertor-rag
 Per verificare che il piano/i task siano realistici rispetto **alla nostra codebase**, usa i tool
 `mcp__sertor-rag__*` (es. `find_symbol`/`who_calls`/`get_context`) e cita i file (`path:lineno`).
-Fallback su Grep/Read se il server non risponde.
+**Se un tool `mcp__sertor-rag__*` ritorna un errore (es. 401, modulo mancante, indice assente), NON
+degradare in silenzio:** ripiega su Grep/Read per non bloccarti, ma **riporta l'errore esplicitamente
+nel report finale** (tool, messaggio) — un MCP rotto è esso stesso un segnale, non va sepolto dal fallback.
 
 ## Regole del workspace (sempre attive)
 - **Output e report in italiano.** Script = PowerShell (Windows).

@@ -33,6 +33,14 @@ RAG**. Il server MCP **`sertor-rag`** (in `.mcp.json`) è puntato sul **prototip
 dogfood: `SERTOR_CORPUS=prototype python prototype/01-baseline/index.py --provider azure-large`
 (Chroma) e `… prototype/03-graphrag/build_graph.py` (grafo AST).
 
+> **Errori MCP = segnale, non rumore (regola standing).** Se un tool `mcp__sertor-rag__*` ritorna un
+> errore (es. `http 401` per key scaduta, `No module named …` per venv `.venv-core` stantio, indice
+> assente), **non degradare in silenzio** su `Read`/`Grep`: ripiega pure per non bloccarti, ma
+> **segnala esplicitamente** l'errore (è dogfooding — un nostro strumento rotto va visto, non sepolto).
+> Il server stesso ora persiste ogni errore tool come evento `mcp.<tool>.error` e fa un self-test
+> all'avvio (vedi `src/sertor_mcp/server.py`): i guasti compaiono nel report affidabilità e a
+> reconnect. La stessa regola è nelle definizioni degli agenti che usano `sertor-rag`.
+
 ## Stack tecnologico
 
 Lo stack ha due "tracce" intercambiabili via config (vedi `RAG_BACKEND` sotto):

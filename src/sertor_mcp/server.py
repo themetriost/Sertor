@@ -16,8 +16,10 @@ Startup (stdio): normally launched by the MCP client via `.mcp.json`
 from __future__ import annotations
 
 import logging
+import sys
 from collections.abc import Callable
 from functools import lru_cache
+from typing import TypeVar
 
 from mcp.server.fastmcp import FastMCP
 
@@ -64,16 +66,37 @@ def _fmt(r: RetrievalResult) -> dict:
     }
 
 
+_T = TypeVar("_T")
+
+
+def _guard(tool: str, body: Callable[[], _T]) -> _T:
+    """Run a tool body; on failure persist an error event (`mcp.<tool>.error`) then RE-RAISE.
+
+    Visibility, not swallowing: the exception still reaches the MCP client unchanged, but the
+    failure is also recorded in the observability store (reliability report) instead of vanishing
+    at end-of-turn. This way a broken server (bad key, missing extra, store fault) is not masked
+    when a caller degrades to other tools — the failure leaves a durable trace.
+    """
+    try:
+        return body()
+    except Exception as exc:
+        log_event(logging.ERROR, f"mcp.{tool}.error",
+                  error=type(exc).__name__, detail=str(exc))
+        raise
+
+
 def _run(
     tool: str,
     search: Callable[[str, int], list[RetrievalResult]],
     query: str,
     k: int,
 ) -> list[dict]:
-    """Runs a facade search, formats the results and emits a surface-level log."""
-    results = [_fmt(r) for r in search(query, k)]
-    log_event(logging.INFO, f"mcp.{tool}", k=k, results=len(results))
-    return results
+    """Runs a facade search, formats the results and emits a surface-level log (or error event)."""
+    def _body() -> list[dict]:
+        results = [_fmt(r) for r in search(query, k)]
+        log_event(logging.INFO, f"mcp.{tool}", k=k, results=len(results))
+        return results
+    return _guard(tool, _body)
 
 
 @mcp.tool()
@@ -109,40 +132,69 @@ def find_symbol(name: str) -> list[dict]:
     Exact lookup on the code-graph, without similarity retrieval. Empty list = symbol
     absent from the graph; explicit error = graph not built (run index first).
     """
-    hits = [_hit_dict(h) for h in _graph().find_symbol(name)]
-    log_event(logging.INFO, "mcp.find_symbol", results=len(hits))
-    return hits
+    def _body() -> list[dict]:
+        hits = [_hit_dict(h) for h in _graph().find_symbol(name)]
+        log_event(logging.INFO, "mcp.find_symbol", results=len(hits))
+        return hits
+    return _guard("find_symbol", _body)
 
 
 @mcp.tool()
 def who_calls(name: str) -> list[dict]:
     """WHO CALLS the symbol: direct callers in the corpus (`calls` edges of the code-graph)."""
-    hits = [_hit_dict(h) for h in _graph().who_calls(name)]
-    log_event(logging.INFO, "mcp.who_calls", results=len(hits))
-    return hits
+    def _body() -> list[dict]:
+        hits = [_hit_dict(h) for h in _graph().who_calls(name)]
+        log_event(logging.INFO, "mcp.who_calls", results=len(hits))
+        return hits
+    return _guard("who_calls", _body)
 
 
 @mcp.tool()
 def related_docs(name: str) -> list[dict]:
     """Which DOCUMENTS mention the symbol (`mentions` edges doc→symbol)."""
-    docs = [{"path": p, "ref": p} for p in _graph().related_docs(name)]
-    log_event(logging.INFO, "mcp.related_docs", results=len(docs))
-    return docs
+    def _body() -> list[dict]:
+        docs = [{"path": p, "ref": p} for p in _graph().related_docs(name)]
+        log_event(logging.INFO, "mcp.related_docs", results=len(docs))
+        return docs
+    return _guard("related_docs", _body)
 
 
 @mcp.tool()
 def get_context(name: str) -> dict:
     """Multi-hop CONTEXT of the symbol: definitions + callers + callees + bases + linked docs."""
-    bundle = _graph().get_context(name)
-    out = {
-        "definitions": [_hit_dict(h) for h in bundle.definitions],
-        "callers": [_hit_dict(h) for h in bundle.callers],
-        "callees": [_hit_dict(h) for h in bundle.callees],
-        "bases": [_hit_dict(h) for h in bundle.bases],
-        "docs": list(bundle.docs),
-    }
-    log_event(logging.INFO, "mcp.get_context", results=len(out["definitions"]))
-    return out
+    def _body() -> dict:
+        bundle = _graph().get_context(name)
+        out = {
+            "definitions": [_hit_dict(h) for h in bundle.definitions],
+            "callers": [_hit_dict(h) for h in bundle.callers],
+            "callees": [_hit_dict(h) for h in bundle.callees],
+            "bases": [_hit_dict(h) for h in bundle.bases],
+            "docs": list(bundle.docs),
+        }
+        log_event(logging.INFO, "mcp.get_context", results=len(out["definitions"]))
+        return out
+    return _guard("get_context", _body)
+
+
+def _self_test() -> bool:
+    """Exercise the end-to-end search path ONCE at startup so latent faults surface at connect
+    time, not at the first real query.
+
+    A trivial search drives both the embedding provider (catches a bad/rotated key → http 401) and
+    the lexical/engine path (catches a missing extra → `No module named 'rank_bm25'`) and the store.
+    A missing index is NOT a failure (the core degrades to an empty list): only a real fault raises.
+    Non-fatal and LOUD: on failure it records an error event AND prints a diagnostic to stderr (so a
+    broken server is visible at reconnect), but never blocks startup. Returns True on success.
+    """
+    try:
+        _facade().search_code("__healthcheck__", k=1)
+    except Exception as exc:  # noqa: BLE001 — diagnostic probe, must not crash the server
+        log_event(logging.ERROR, "mcp.self_test.error", error=type(exc).__name__, detail=str(exc))
+        print(f"[sertor-rag] self-test FAILED: {type(exc).__name__}: {exc}",
+              file=sys.stderr, flush=True)
+        return False
+    log_event(logging.INFO, "mcp.self_test", status="ok")
+    return True
 
 
 def main() -> None:
@@ -163,6 +215,7 @@ def main() -> None:
         _graph().find_symbol("__warmup__")  # load artifact + networkx, if available
     except Exception:  # noqa: BLE001 — warm-up best-effort, never blocking for startup
         pass
+    _self_test()  # end-to-end probe: surface a bad key / missing extra at connect time, loudly
     mcp.run()
 
 

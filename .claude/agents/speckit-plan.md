@@ -21,8 +21,10 @@ interfacce esterne), `quickstart.md`, e aggiorna il riferimento al piano in `CLA
 ## Dogfooding — usa sertor-rag
 Per ricerca e decisioni di design **sulla nostra codebase**, usa i tool `mcp__sertor-rag__*`
 (`search_code`/`search_docs`/`search_combined`, `find_symbol`, `who_calls`, `related_docs`,
-`get_context`) invece di esplorare a mano. Cita sempre i file (`path:lineno`). Se il server MCP non
-risponde, fai fallback su Grep/Glob/Read e segnalalo.
+`get_context`) invece di esplorare a mano. Cita sempre i file (`path:lineno`). **Se un tool
+`mcp__sertor-rag__*` ritorna un errore (es. 401, modulo mancante, indice assente), NON degradare in
+silenzio:** ripiega su Grep/Glob/Read per non bloccarti, ma **riporta l'errore esplicitamente nel
+report finale** (tool, messaggio) — un MCP rotto è esso stesso un segnale, non va sepolto dal fallback.
 
 ## Regole del workspace (sempre attive)
 - **Output e report in italiano.** Path assoluti per le operazioni su file; path relativi nei
