@@ -8,11 +8,14 @@ from __future__ import annotations
 
 from sertor_core.composition import (
     build_baseline_engine,
+    build_capture_adapter,
     build_embedder,
     build_engine,
     build_facade,
     build_graph_service,
     build_indexer,
+    build_memory_archive,
+    build_memory_archiver,
     build_observability_reports,
     build_observability_store,
     build_store,
@@ -39,6 +42,7 @@ from sertor_core.domain.errors import (
 )
 from sertor_core.engines.baseline import BaselineEngine
 from sertor_core.engines.evaluation import EvalReport, evaluate
+from sertor_core.services.memory_archive import ArchiveRunReport, MemoryArchiveService
 
 __all__ = [
     "build_facade",
@@ -50,6 +54,11 @@ __all__ = [
     "build_store",
     "build_observability_store",
     "build_observability_reports",
+    "build_capture_adapter",
+    "build_memory_archive",
+    "build_memory_archiver",
+    "MemoryArchiveService",
+    "ArchiveRunReport",
     "enable_observability",
     "collection_name",
     "Settings",

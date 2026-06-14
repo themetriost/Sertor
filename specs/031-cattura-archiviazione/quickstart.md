@@ -51,7 +51,11 @@ duplicato, i record esistenti restano invariati.
 ## Test offline
 
 ```bash
-uv run pytest tests/unit/test_memory_archive.py tests/unit/test_scrub.py \
+uv run pytest tests/unit/test_memory_archive_store.py \
+              tests/unit/test_memory_archive_service.py \
+              tests/unit/test_memory_archive_e2e.py \
+              tests/unit/test_memory_privacy.py \
+              tests/unit/test_scrub.py \
               tests/unit/test_claude_code_capture.py -q
 ```
 

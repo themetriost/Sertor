@@ -6,11 +6,20 @@ on `Settings`. Extend here (not in services) to add providers/backends.
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 from sertor_core.config.settings import Settings
 from sertor_core.domain.errors import ConfigError
-from sertor_core.domain.ports import EmbeddingProvider, LexicalIndex, Reranker, VectorStore
+from sertor_core.domain.ports import (
+    EmbeddingProvider,
+    LexicalIndex,
+    Reranker,
+    TranscriptCaptureAdapter,
+    VectorStore,
+)
 
 _VALID_ENGINES = ("baseline", "hybrid")
+_VALID_MEMORY_ADAPTERS = ("claude-code",)
 
 
 def _validated_engine(settings: Settings) -> str:
@@ -307,6 +316,55 @@ def build_baseline_engine(settings: Settings | None = None):
     embedder = build_embedder(settings)
     store = build_store(settings)
     return BaselineEngine(embedder, store, collection_name(settings, embedder), settings)
+
+
+def build_capture_adapter(settings: Settings | None = None) -> TranscriptCaptureAdapter:
+    """Build the transcript capture adapter selected by `Settings.memory_adapter` (031, FR-005).
+
+    Single selection point (Principio I/X): `claude-code` → `ClaudeCodeCaptureAdapter`; unknown
+    value → `ConfigError` with the allowed values (like `_validated_engine`). The import of the
+    host-specific adapter is LAZY (inside this function), so it never runs at flag off (FR-002).
+    """
+    settings = settings or Settings.load()
+    if settings.memory_adapter not in _VALID_MEMORY_ADAPTERS:
+        raise ConfigError(
+            f"unknown memory adapter: {settings.memory_adapter!r} "
+            f"(allowed: {', '.join(_VALID_MEMORY_ADAPTERS)})",
+            key="SERTOR_MEMORY_ADAPTER",
+        )
+    from sertor_core.adapters.capture.claude_code import (
+        ClaudeCodeCaptureAdapter,
+        encode_project_path,
+    )
+
+    project_id = str(Path.cwd())
+    project_source_dir = settings.claude_projects_dir / encode_project_path(project_id)
+    return ClaudeCodeCaptureAdapter(project_source_dir, project_id=project_id)
+
+
+def build_memory_archive(settings: Settings | None = None):
+    """Build the memory archive store (031): SQLite at `<index_dir>/memory.sqlite` (git-ignored)."""
+    from sertor_core.adapters.memory.archive import MemoryArchive
+
+    settings = settings or Settings.load()
+    return MemoryArchive(settings.index_dir)
+
+
+def build_memory_archiver(settings: Settings | None = None):
+    """Build the transcript archiving service, or `None` when capture is off (031, FR-002, D8).
+
+    Privacy-by-default gate: with `SERTOR_MEMORY=false` (default) this returns `None` WITHOUT
+    importing the host-specific adapter — no adapter, no store, no file opened (SC-003). Only when
+    opted in does it wire adapter + store + service.
+    """
+    from sertor_core.services.memory_archive import MemoryArchiveService
+
+    settings = settings or Settings.load()
+    if not settings.memory_enabled:
+        return None
+    return MemoryArchiveService(
+        build_capture_adapter(settings), build_memory_archive(settings), settings
+    )
 
 
 def build_engine(settings: Settings | None = None):
