@@ -31,7 +31,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
 | CLI — installer (`sertor install`) | — | ✅ `wiki` (PR #22) + **`rag` su master (2026-06-12)** — validato live su Kaelen; `governance` = stub |
 | **Hardening produzione (retrieval)** | — | 🔄 **IN PROGRESS** — Must ✅ su master (PR #32); Should gruppo C (cache embeddings + token log, feature 019) ✅ **su master (PR #33)**; restano i Could in `requirements/sertor-core/hardening-produzione/` |
-| **Memoria conversazioni** (epica, 2 Must) | — | 🔄 **IN PROGRESS** — FEAT-001 cattura & archivio ✅ **master (2026-06-14, PR #45)**; manca la *superficie d'avvio* (comando/trigger) e **FEAT-002** ricerca episodica (prossimo Must) |
+| **Memoria conversazioni** (epica, MVP) | — | 🔄 **IN PROGRESS** — **MVP ✅ completo**: FEAT-001 cattura & archivio (PR #45) + FEAT-002 ricerca episodica (PR #47), entrambi su master 2026-06-14. *Provato live* su 36 sessioni/5062 turni. Manca solo la **superficie CLI** (`sertor-rag memory archive`/`search`); poi Should/Could (003/004/005/006/008) |
 | **Osservabilità accesa sul dogfood** + errori MCP segnalati | — | ✅ **master (2026-06-14, PR #40/#43)** — `SERTOR_OBSERVABILITY=true` cablato e attivo; ogni errore del server MCP = evento + self-test allo startup |
 | Distribuzione multi-assistente: GitHub Copilot (+ Codex Could) | — | 👍 **da decomporre** (decisione utente 2026-06-12) |
 | Tema lingua (tutto il prodotto in inglese) | — | ✅ **completato totale (2026-06-13, PR #27/#28/#29/#31)**: codice (72 .py: docstring/commenti/**errori**), test (75 .py: commenti/docstring), documentazione di prodotto (README + `docs/`), asset installer, CLI, seed it/en. Restano IT **per scelta**: `wiki/`, `specs/`, `requirements/`, `CLAUDE.md`, `prototype/` (congelato) |
@@ -42,28 +42,23 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- **Memoria conversazioni (MVP, epica `memoria-conversazioni`)** — *cosa:* il tier grezzo episodico
-  (archivio interrogabile di tutte le conversazioni). *Dove:* `requirements/memoria-conversazioni/`,
-  `specs/031-cattura-archiviazione/`; codice su master. *Fatto:* **FEAT-001 cattura & archivio ✅
-  master (PR #45)** — porta `TranscriptCaptureAdapter` + adapter Claude-Code (legge i JSONL di
-  sessione), store `MemoryArchive` SQLite conservato/idempotente (granularità ibrida sessione+turni),
-  `scrub_text` segreti, privacy-by-default off. *Prossimo passo concreto:* **(B)** una **superficie
-  d'avvio** (comando `sertor-rag memory archive` o trigger) — oggi il motore non ha un pulsante che lo
-  invochi — **e/o (C) decomporre+costruire FEAT-002** (ricerca episodica full-text locale). *Decisioni
-  chiuse:* granularità ibrida, cattura tutto-con-opt-in. *Aperto:* quale tra B e C per primo.
+- **Memoria conversazioni — MVP ✅ COMPLETO (epica `memoria-conversazioni`)** — *cosa:* il tier grezzo
+  episodico, archivio interrogabile di tutte le conversazioni. *Dove:* `specs/031-cattura-archiviazione/`
+  + `specs/033-ricerca-episodica/`; codice su master. *Fatto:* **FEAT-001 cattura & archivio (PR #45)**
+  + **FEAT-002 ricerca episodica FTS5 (PR #47)** — il ciclo cattura→archivia(scrub)→cerca gira
+  end-to-end, *provato live* (36 sessioni/5062 turni; query «Langfuse» → turno reale, ~78 ms).
+  *Prossimo passo concreto:* **(B) superficie CLI** (`sertor-rag memory archive` / `memory search`) —
+  oggi cattura e ricerca si invocano solo via libreria, manca il comando da terminale. *Decisione
+  aperta (utente):* avviare B o fermarsi all'MVP-libreria. *Poi:* Should/Could (003/004/005/006/008).
 
 ### 📋 PLANNED (per priorità)
-- **FEAT-002 — ricerca episodica full-text locale (prossimo Must memoria)** — rende l'archivio di
-  FEAT-001 interrogabile («ne avevamo già parlato?»), full-text locale, niente embedding → contenuto
-  on-machine (privacy by design). Requisiti decomposti (21 REQ EARS) in
-  `requirements/memoria-conversazioni/ricerca-episodica-fulltext/`, decisione granularità ibrida già
-  recepita (ricerca per turno). Pronta per SpecKit. *(FEAT-001 ✅ master, vedi DONE.)*
-- **Superficie d'avvio della cattura (gap FEAT-001)** — il motore di cattura/archivio è su master ma
-  **nessuna superficie lo invoca**: serve un comando `sertor-rag memory archive` (consumer sottile) o
-  un trigger. Piccola feature CLI dell'epica; prerequisito perché la memoria sia *usabile* davvero.
+- **Superficie CLI della memoria (gap MVP, prossimo naturale)** — cattura e ricerca esistono su master
+  ma **si invocano solo via libreria**: servono comandi sottili `sertor-rag memory archive` e
+  `sertor-rag memory search "..."` (eventualmente un trigger di cattura). Piccola feature CLI; rende
+  l'MVP *usabile dal terminale*, non solo da Python.
 - **Memoria — Should/Could** — FEAT-003 (la distillazione del wiki attinge all'archivio), FEAT-004
   (ricerca semantica opt-in), FEAT-005 (remember-this selettivo), FEAT-006 (governance/retention),
-  FEAT-007 (ponte second-brain), FEAT-008 (cattura multi-assistente). Dopo l'MVP 001→002.
+  FEAT-007 (ponte second-brain), FEAT-008 (cattura multi-assistente). Dopo la superficie CLI.
 - **Agenzia RAG incorporata — dote differita (Could)**: la capacità agentic RAG è ✅ **soddisfatta
   in forma composita** (MCP + agente, vedi DONE). Resta opzionale l'**agenzia incorporata nel core**
   (`sertor-rag ask` per umani/script senza assistente, digest MCP per economia di contesto, porta
@@ -79,6 +74,14 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### ✅ DONE (su `master`, le rilevanti)
 
+- **🚢 Memoria conversazioni — FEAT-002 ricerca episodica full-text (feature 033, PR #47, 2026-06-14)** —
+  chiude l'**MVP memoria** ([[ricerca-episodica-fts5]]): l'archivio di FEAT-001 è ora **interrogabile**
+  («ne avevamo già parlato?»). Componente concreto `EpisodicSearch` (no porta) su **SQLite FTS5 nativo**
+  (`bm25()`+`snippet()`, tabella virtuale `turns_fts` mantenuta da trigger di sync), ricerca a grana di
+  **turno** con citazione (sessione, ruolo, snippet, score) + filtro temporale; **sola lettura** sui dati
+  (indice FTS derivato/ricostruibile), stdlib-only, **zero cloud** nel percorso query (privacy by design),
+  query **hashata** nei log. Constitution PASS 10/10, 27 test, 515 non-cloud verdi. *Provato live* sul
+  dogfood (5062 turni). *Resta:* superficie CLI (PLANNED) + ricerca semantica FEAT-004 (Should).
 - **🚢 Memoria conversazioni — FEAT-001 cattura & archiviazione (feature 031, PR #45, 2026-06-14)** —
   il **tier grezzo episodico** che mancava ([[memoria-conversazioni]]): 8ª porta
   `TranscriptCaptureAdapter` + adapter Claude-Code (legge i JSONL di sessione `~/.claude/projects/…`),

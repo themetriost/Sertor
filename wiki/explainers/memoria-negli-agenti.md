@@ -3,7 +3,7 @@ title: La memoria della conversazione (in parole semplici)
 type: explainer
 tags: [non-tecnici, memoria, conversazioni, archivio, privacy, spiegazione]
 created: 2026-06-14
-updated: 2026-06-14
+updated: 2026-06-14 (+ FEAT-002: ricerca episodica FTS5)
 sources: ["wiki/concepts/memoria-conversazioni.md", "wiki/tech/transcript-capture-adapter-e-storage.md", "requirements/memoria-conversazioni/epic.md"]
 ---
 
@@ -41,8 +41,9 @@ L'archivio conserva:
 
 ## Perché serve
 
-- **Ritornare al contesto** — se dimandi "dove avevamo detto di mettere quella logica", il sistema sa cercare tra le vecchie conversazioni.
-- **Ricerca nel passato** — a breve sarà possibile dire "trovami una conversazione dove abbiamo discusso di autenticazione".
+- **Ritornare al contesto** — se dimandi "dove avevamo detto di mettere quella logica", il sistema sa cercare tra le vecchie conversazioni e trovare il turno giusto.
+- **Ricerca nel passato** — FATTO (FEAT-002): puoi dire "trovami una conversazione dove abbiamo discusso di autenticazione" e il sistema esegue una ricerca testuale locale nelle conversazioni passate.
+- **Ricerca temporale** — se ricordi vago ("tre settimane fa"), puoi limitare la ricerca a quel periodo.
 - **Fonte grezza** — il wiki distilla la conoscenza, ma l'archivio tiene il grezzo. Se una pagina del wiki è incomplete, l'archivio sa dove cercare.
 - **Prova** — se qualcuno chiede "su cosa vi siete decisi?", hai una traccia immutabile.
 
@@ -51,7 +52,7 @@ L'archivio conserva:
 1. **Cattura** — ogni volta che parli con Claude Code, il sistema sa che sta salvando la sessione. Il nostro sistema legge quelle sessioni.
 2. **Ripulitura** — prima di mettere la conversazione nell'archivio, il sistema scandisce il testo e sostituisce i segreti con marcatori (`sk-abc → [SEGRETO: openai_key]`). Non resta nulla in chiaro.
 3. **Archiviazione** — la conversazione ripulita finisce in una tabella SQL locale. Non va su cloud, resta sul tuo computer, esclusa da git.
-4. **Attesa di ricerca** — il grosso del valore arriverà quando potrai **cercare** in questo archivio (feature successiva).
+4. **Ricerca locale** — quando fai una domanda come "trovami una conversazione su X", il sistema esegue una ricerca **testuale locale** (senza rete, senza IA) nell'archivio e restituisce i turni che corrispondono, citati con la sessione e il momento.
 
 ## Privacy
 
@@ -62,7 +63,7 @@ L'archivio conserva:
 
 ## Limitazioni attuali
 
-- **Non puoi cercarlo ancora.** Per adesso il sistema archivia, ma la ricerca viene dopo (FEAT-002).
+- **Ricerca solo testuale.** Per ora il sistema cerca per parole chiave e frasi (ricerca testuale), non per significato. Una ricerca «memoria» non troverà turni che parlano di «storage» sebbene il significato sia correlato (estensione semantica: FEAT-004).
 - **Segreto dimenticato?** Il sistema riconosce i pattern comuni (chiavi OpenAI, token AWS, password), ma se un segreto è in un formato strano, il sistema potrebbe non riconoscerlo. Se pensi di aver detto qualcosa di sensibile, disattiva la memoria.
 
 ## Come attivarlo
@@ -76,12 +77,16 @@ Al prossimo uso, il sistema inizia a leggere e archiviare le conversazioni.
 
 ## Il futuro
 
-- **Ricerca episodica** (FEAT-002) — "trovami conversazioni su X" (ricerca testuale, senza IA).
-- **Distillazione** — il sistema attingerà dall'archivio per migliorare il wiki.
-- **Multi-assistente** — il registratore funzionerà anche con altri assistenti, non solo Claude Code.
+- **Ricerca semantica** (FEAT-004) — estensione: "trovami conversazioni di significato correlato a X" (con embedding, opt-in separato).
+- **Distillazione** (FEAT-003) — il sistema attingerà dall'archivio ricercabile per migliorare il wiki distillando il grezzo.
+- **Marcare i turni importanti** (FEAT-005) — dire "ricorda questo turno" per segnalarlo come importante.
+- **Retention** (FEAT-006) — governance dell'archivio: decidere quando i turni vanno in scadenza.
+- **Multi-assistente** (FEAT-008) — il registratore funzionerà anche con altri assistenti, non solo Claude Code.
 
 ---
 
 ## Approfondimento tecnico
 
-Vedi [[memoria-conversazioni]] per il concetto, [[transcript-capture-adapter-e-storage]] per le componentitecniche.
+- [[memoria-conversazioni]] — il concetto e il tier episodico della memoria.
+- [[transcript-capture-adapter-e-storage]] — come si catturano e si archiaviano i transcript.
+- [[ricerca-episodica-fts5]] — il motore FTS5 che fa funzionare la ricerca locale.
