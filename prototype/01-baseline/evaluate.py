@@ -13,9 +13,8 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
-from shared.embeddings import PROVIDERS  # noqa: E402
-
 from search import search  # noqa: E402  (modulo locale)
+from shared.embeddings import PROVIDERS  # noqa: E402
 
 HERE = pathlib.Path(__file__).resolve().parent
 QUERIES = json.loads((HERE / "eval_queries.json").read_text(encoding="utf-8"))

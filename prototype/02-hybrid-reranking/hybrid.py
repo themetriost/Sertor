@@ -18,7 +18,6 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 import chromadb  # noqa: E402
 from rank_bm25 import BM25Okapi  # noqa: E402
-
 from shared.config import settings  # noqa: E402
 from shared.embeddings import get_embedder  # noqa: E402
 

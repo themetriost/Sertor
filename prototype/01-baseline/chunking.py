@@ -11,7 +11,6 @@ I documenti Markdown usano sempre lo splitter ricorsivo per heading.
 from __future__ import annotations
 
 from langchain_text_splitters import Language, RecursiveCharacterTextSplitter
-
 from shared.chunking_code import code_chunks
 from shared.config import settings
 

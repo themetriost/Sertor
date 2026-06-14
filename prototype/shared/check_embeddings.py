@@ -4,8 +4,8 @@ Legge i valori da `.env` nella root del progetto. Stampa solo esito e dimensione
 del vettore: NON stampa mai la API key. Usa solo la stdlib (eseguibile con `python -S`).
 """
 import json
-import urllib.request
 import urllib.error
+import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent

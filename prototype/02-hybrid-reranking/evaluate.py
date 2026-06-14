@@ -18,10 +18,9 @@ HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 sys.path.insert(0, str(HERE))
 
-from shared.embeddings import PROVIDERS  # noqa: E402
-
 from hybrid import HybridIndex  # noqa: E402
 from rerank import rerank  # noqa: E402
+from shared.embeddings import PROVIDERS  # noqa: E402
 
 QUERIES = json.loads((HERE / "eval_queries.json").read_text(encoding="utf-8"))
 K = 10

@@ -22,11 +22,10 @@ for _p in (HERE, HERE.parent):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
+import tools  # noqa: E402
 from langchain_core.tools import tool  # noqa: E402
 from langchain_openai import AzureChatOpenAI, ChatOpenAI  # noqa: E402
 from langgraph.prebuilt import create_react_agent  # noqa: E402
-
-import tools  # noqa: E402
 from shared import retrieval  # noqa: E402
 from shared.config import settings  # noqa: E402
 
