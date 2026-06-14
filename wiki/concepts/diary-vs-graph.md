@@ -49,10 +49,14 @@ Il travaso ha un solo giudizio (filtrare il durevole dall'effimero) ma tre prove
 
 1. **di step** — il caso tipico del rituale: il record appena scritto, le entità in pagine;
 2. **da backlog** — un vecchio record già grasso da assottigliare;
-3. **da conversazione** — il *brief condensato* di una sessione intera (anche vecchia, mai registrata in
-   tempo reale, o avvenuta altrove). Mai il transcript grezzo: chi invoca condensa prima. È il
-   **paracadute** per quando il diario non è stato tenuto: il rituale è il tempo reale, questo ingresso è
-   il recupero a posteriori.
+3. **da conversazione** — una **sessione mirata recuperata dall'archivio episodico** (anche vecchia,
+   mai registrata in tempo reale), condensata e poi versata nel grafo. Dal 2026-06-14 (FEAT-003,
+   feature 036) questo ingresso ha una **fonte reale**: `sertor-rag memory list`/`show` recuperano il
+   transcript dall'archivio della [[memoria-conversazioni]] invece di pretendere un brief scritto a
+   mano. Il transcript grezzo **non entra mai** nel grafo: il flusso principale lo condensa prima
+   (giudizio). È il **paracadute** per quando il diario non è stato tenuto. **Vincolo (FR-013):**
+   sempre una **singola sessione mirata su invocazione esplicita** — mai sull'intero archivio, mai
+   automatico; cattura (economica) e distillazione (costosa) restano disaccoppiate.
 
 ## Vedi anche
 
