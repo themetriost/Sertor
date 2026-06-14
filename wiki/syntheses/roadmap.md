@@ -40,22 +40,8 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- **Osservabilità e pannello di controllo (epica)** — *cosa:* rendere Sertor trasparente su sé stesso
-  (log/costo/cache/salute corpus) con un pannello TUI e i numeri persistiti. *Dove:*
-  `requirements/osservabilita/` (epica nuova). *Stato:* epica + MVP **interamente a requisiti**
-  (F1→F4 decomposte, 76 REQ EARS); decisioni di prodotto fissate (privacy-by-default a strati, stima €
-  a Should). **F1 ✅ (PR #34)** = strato persistente (store SQLite, 7ª porta `ObservabilityStore`,
-  `SERTOR_OBSERVABILITY` default off). **F2 ✅ mergiata (PR #35, 2026-06-14)** = servizio
-  `ObservabilityReports` (5 report cache/costo/salute/latenze/affidabilità da `query_events`, funzioni
-  pure; Constitution PASS, 415+85 test). **F3 ✅ mergiata (PR #36, 2026-06-14)** = pannello TUI vista live
-  (`sertor-rag observe`, cruscotto auto-aggiornante; modello puro `LiveSnapshot` + guscio Textual extra
-  `[tui]`; 424+85 test). **F4 «TUI report» IMPLEMENTATA sul branch**
-  `023-osservabilita-tui-report` (le viste storiche **sfogliabili** nel pannello a schede:
-  Live/Cache/Cost/Corpus, tasto `t` per l'intervallo all/7g/24h, freschezza = tempo dall'ultimo index;
-  funzioni di resa pure + schede Textual; Constitution PASS, 433+85 test; **non ancora mergiata**).
-  **Al merge l'MVP dell'osservabilità (F1→F4) è completo.** *Restano (Should/Could):* export OTel (F5),
-  metriche aggregate (F6), stima € (F7), web mode (F8), ecc. *In parallelo (quando si vuole):*
-  decomporre l'epica **memoria conversazioni** (nodo: cattura host-specifica).
+- *(Nessuna feature attivamente in corso.)* L'**MVP osservabilità (F1→F4) è ✅ su master** (vedi DONE).
+  Prossimi candidati in PLANNED (Should/Could dell'osservabilità · decomporre **memoria conversazioni**).
 
 ### 📋 PLANNED (per priorità)
 - **Agenzia RAG incorporata — dote differita (Could)**: la capacità agentic RAG è ✅ **soddisfatta
@@ -73,6 +59,17 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### ✅ DONE (su `master`, le rilevanti)
 
+- **🚢 MVP Osservabilità e pannello di controllo (epica `osservabilita`, F1→F4, PR #34/#35/#36/#38,
+  2026-06-14)** — Sertor è ora **trasparente su sé stesso** ([[il-pannello-di-controllo]]): **F1** strato
+  persistente (store SQLite `observability.sqlite` + 7ª porta `ObservabilityStore`, cattura via
+  `logging.Handler`, `SERTOR_OBSERVABILITY` default off) → **F2** servizio `ObservabilityReports` (5
+  report cache/costo/salute/latenze/affidabilità da `query_events`, funzioni pure) → **F3** pannello TUI
+  vista live (`sertor-rag observe`, auto-aggiornante, extra `[tui]` Textual isolato) → **F4** report
+  sfogliabili a schede (Live/Cache/Cost/Corpus, tasto `t` intervallo all/7g/24h, freschezza). Privacy-by-
+  default (solo metriche, mai testo). Architettura: modello/aggregazione **puri** nel core + guscio
+  Textual sottile; sola lettura; degradazione onesta. Constitution PASS 10/10 ×4; ~470+85 test verdi.
+  *Restano Should/Could:* export OTel · metriche aggregate · stima € · web mode. Più: **fix `wiki/wiki/`**
+  (PR #37) — resolver wiki reso cwd-indipendente.
 - **🚢 Cache embeddings + token nei log (hardening gruppo C, feature 019, PR #33, 2026-06-14)** — chiude
   i due Should del costo d'indicizzazione ([[indexing-and-retrieval]]): `CachingEmbedder` (decoratore
   della porta `EmbeddingProvider`, servizi invariati) + `EmbeddingCache` (store SQLite

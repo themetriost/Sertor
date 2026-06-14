@@ -1,16 +1,17 @@
 ---
 title: Il pannello di controllo (in parole semplici)
 type: explainer
-tags: [non-tecnici, osservabilita, pannello, costo, cache, in-sviluppo, spiegazione]
+tags: [non-tecnici, osservabilita, pannello, costo, cache, spiegazione]
 created: 2026-06-14
-updated: 2026-06-14
+updated: 2026-06-14 (MVP F1→F4 ✅ su master — `sertor-rag observe`)
 sources: ["requirements/osservabilita/epic.md"]
 ---
 
 # Il pannello di controllo
 
-> **Stato: in sviluppo.** Questa capacità è appena stata messa a *requisiti* (decisa, non ancora
-> costruita). La pagina racconta in parole semplici **cosa stiamo per fare**.
+> **Stato: fatto (MVP).** Il pannello c'è ed è usabile: `sertor-rag observe`. Restano migliorie
+> opzionali (il costo in **euro**, l'invio dei dati a strumenti esterni). La pagina lo racconta in
+> parole semplici.
 
 ## Il problema
 
@@ -19,10 +20,11 @@ ti dice *quanto sta spendendo*, *quanto gli sta facendo risparmiare la memoria*,
 suo archivio*. Tutti questi numeri li produce già, ma **scorrono via e si perdono**: come un'auto senza
 cruscotto, vai avanti ma non sai a che velocità né quanta benzina resta.
 
-## Cosa stiamo per costruire
+## Cosa abbiamo costruito
 
-Un **pannello di controllo dentro il terminale**: ti ci affacci e vedi, a colpo d'occhio, come sta
-andando Sertor — e i numeri ora **restano**, così puoi anche guardare indietro e fare confronti.
+Un **pannello di controllo dentro il terminale** (`sertor-rag observe`): ti ci affacci e vedi, a colpo
+d'occhio, come sta andando Sertor — e i numeri ora **restano**, così puoi anche guardare indietro e
+fare confronti.
 
 L'immagine: il **cruscotto dell'auto** (velocità, benzina, spie) **più il libretto di bordo** che puoi
 sfogliare per vedere com'è andata nei giorni scorsi.
