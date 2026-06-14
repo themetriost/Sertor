@@ -59,6 +59,15 @@ def _build_parser() -> argparse.ArgumentParser:
     _add_logging_flags(p_search)
     p_search.set_defaults(handler=_cmd_search)
 
+    p_observe = sub.add_parser(
+        "observe", help="open the live observability panel (TUI)",
+        description="Live panel (last index, cache, cost, recent events), auto-refreshing. "
+                    "Needs the `tui` extra and SERTOR_OBSERVABILITY=true.",
+    )
+    p_observe.add_argument("--corpus", default=None,
+                           help="corpus namespace; overrides SERTOR_CORPUS")
+    p_observe.set_defaults(handler=_cmd_observe)
+
     return parser
 
 
@@ -125,6 +134,13 @@ def _cmd_search(args) -> None:
             else facade.search_docs(args.query, k=args.k)
         )
     print(output.format_search_results(results, settings, json=args.json, full=args.full))
+
+
+def _cmd_observe(args) -> None:
+    """Handler for `observe`: launches the live TUI panel (thin — delegates to composition)."""
+    from sertor_core.composition import run_observability_panel
+
+    run_observability_panel(_resolve_settings(args))
 
 
 def main(argv: list[str] | None = None) -> int:

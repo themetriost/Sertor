@@ -176,6 +176,30 @@ def build_observability_reports(settings: Settings | None = None):
     )
 
 
+def _load_observability_app():
+    """Import the Textual panel (extra `[tui]`). Isolated so the missing-extra path is testable."""
+    from sertor_core.observability.tui import ObservabilityApp
+
+    return ObservabilityApp
+
+
+def run_observability_panel(settings: Settings | None = None) -> None:
+    """Launch the live observability TUI panel (feature 022).
+
+    Lazy import of the `[tui]` extra: missing → actionable `ConfigError` (like `rerank`/`graph`).
+    The panel is read-only; with persistence off it shows an honest empty state (no crash).
+    """
+    settings = settings or Settings.load()
+    try:
+        app_cls = _load_observability_app()
+    except ImportError as exc:
+        raise ConfigError(
+            'the live panel requires the extra: uv add "sertor-core[tui]" (textual)',
+            key="tui",
+        ) from exc
+    app_cls(build_observability_reports(settings), refresh_s=settings.observability_refresh_s).run()
+
+
 def enable_observability(settings: Settings | None = None) -> bool:
     """Attach the event-persistence handler to the `sertor_core` logger if enabled (020).
 

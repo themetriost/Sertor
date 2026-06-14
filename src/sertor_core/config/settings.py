@@ -103,6 +103,8 @@ class Settings:
     observability_enabled: bool = False
     # observability reports (021): default time-bucket granularity for the aggregation reports.
     observability_bucket: str = "day"     # day | hour
+    # observability live panel (022): refresh interval of the TUI panel, in seconds.
+    observability_refresh_s: float = 2.0
 
     # vector store
     index_dir: Path = field(default_factory=lambda: Path(".index"))
@@ -219,6 +221,7 @@ class Settings:
             embed_cache_enabled=_bool_env("SERTOR_EMBED_CACHE", False),
             observability_enabled=_bool_env("SERTOR_OBSERVABILITY", False),
             observability_bucket=os.getenv("SERTOR_OBSERVABILITY_BUCKET", "day"),
+            observability_refresh_s=float(os.getenv("SERTOR_OBSERVABILITY_REFRESH", "2.0")),
             index_dir=resolved_index_dir,
             azure_search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT", ""),
             azure_search_api_key=os.getenv("AZURE_SEARCH_API_KEY", ""),

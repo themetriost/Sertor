@@ -124,8 +124,21 @@ SERTOR_OBSERVABILITY=true     # default: false (ephemeral logging only)
 The store is `<index_dir>/observability.sqlite` (git-ignored), queryable by operation and time. It is
 **privacy-by-default**: only metrics/metadata are kept (secrets redacted, never query text). It is
 **non-intrusive**: a store failure never fails an operation (only a warning), and it is safe to
-delete. The browsable reports and the control-panel TUI that read this store land in later features
-of the observability epic.
+delete.
+
+**Live panel (feature 022, TUI):** open a terminal dashboard with the current state (last index,
+cache hit/miss + estimated savings, token cost, recent events), auto-refreshing. It requires the
+optional `tui` extra and reads the persisted data:
+
+```bash
+uv add "sertor-core[tui] @ git+https://github.com/themetriost/Sertor"   # textual (one-off)
+sertor-rag observe                                                       # open the live panel
+```
+
+Refresh interval via `SERTOR_OBSERVABILITY_REFRESH` (default 2s). Without the extra, the command
+prints an actionable install hint; with persistence off, the panel shows an honest "no data — enable
+SERTOR_OBSERVABILITY" state. The panel is read-only. Browsable historical reports land in a later
+feature.
 
 ## 3. First commands
 
