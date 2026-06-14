@@ -3,7 +3,7 @@ title: Indice del Wiki — Produzione Sertor
 type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
-updated: 2026-06-13 (+ [[second-brain-cross-progetto]] — idea-visione Meta-Sertor, da espandere) · 2026-06-12 (sera: + [[code-graph]] — i 4 tool MCP tornati, feature 014/PR #25, porte a sei; pomeriggio: + [[hybrid-retrieval]] PR #24; mattina: troubleshooting [[mcp-server]] PR #23)
+updated: 2026-06-14 (+ area explainers/ — descrizioni per non tecnici: panoramica [[sertor-in-parole-semplici]] + 6 pagine per capacità) · 2026-06-13 (+ [[second-brain-cross-progetto]] — idea-visione Meta-Sertor, da espandere) · 2026-06-12 (sera: + [[code-graph]] — i 4 tool MCP tornati, feature 014/PR #25, porte a sei; pomeriggio: + [[hybrid-retrieval]] PR #24; mattina: troubleshooting [[mcp-server]] PR #23)
 sources: ["requirements/sertor-core/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "src/sertor_core/**", "CLAUDE.md"]
 ---
 
@@ -26,6 +26,7 @@ Quattro porte d'ingresso, per intento — ogni percorso parte da una pagina-over
 
 | Vuoi… | Percorso |
 |---|---|
+| **Capire il prodotto senza gergo (non tecnici)** | [[sertor-in-parole-semplici]] (panoramica in parole semplici → una pagina per capacità) |
 | **Sapere dove siamo e cosa fare adesso** | [[roadmap]] (executive summary in testa, poi mappa feature × stato reale) |
 | **Capire il prodotto (il nucleo di retrieval)** | [[retrieval-core]] → le 4 entità: [[domain-model]] · [[ports-adapters]] · [[chunking-dispatch]] · [[indexing-and-retrieval]] → le modalità RAG: [[vector-retrieval]] · [[hybrid-retrieval]] (default) → la navigazione ortogonale: [[code-graph]] → le superfici: [[thin-consumer]] · [[mcp-server]] |
 | **Capire il sistema-wiki (questo wiki)** | [[architettura-wiki-llm]] → la metà deterministica [[wiki-tools]] → il principio che li separa [[deterministic-vs-judgment]] → la disciplina d'uso [[step-ritual]] |
@@ -43,6 +44,7 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 |----------|-----------|
 | `concepts/` | Astrazioni, fondamenta, principi (evergreen) |
 | `tech/` | Tecnologie, strumenti, infrastruttura (evergreen) |
+| `explainers/` | Descrizioni in **linguaggio comune** (per non tecnici): una lente sulle capacità |
 | `experiments/` | Record datati di un'attività/step/feature svolta |
 | `sources/` | Riassunti di fonti esterne ingerite |
 | `syntheses/` | Viste d'insieme e confronti trasversali (la categoria più rara) |
@@ -53,6 +55,18 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 > 🗺️ **[[roadmap]] — Roadmap & stato di prodotto (pagina viva).** Punto d'ingresso per "dove siamo":
 > mappa delle feature (epica `sertor-core`/`sertor-cli`), cosa è su `master` vs su branch, lavori
 > abilitanti mergiati, fasi e backlog. Tienila aperta come quadro d'insieme.
+
+### Explainers (per non tecnici — linguaggio comune)
+
+- **[[sertor-in-parole-semplici]]** — 🧭 **Panoramica per non tecnici.** Cos'è Sertor e perché, con
+  immagini quotidiane e zero gergo; ingresso che rimanda a una pagina per capacità. Ogni explainer
+  ha un rimando «dettaglio tecnico» alla pagina di concetto corrispondente.
+- **[[ricerca-codice-e-documenti]]** — Il bibliotecario che trova le pagine giuste *per significato*, non per parola esatta.
+- **[[i-modi-di-cercare]]** — Quattro tecniche dalla più semplice alla più furba (significato · mista · mappa delle connessioni · ragionata).
+- **[[wiki-che-cresce]]** — La memoria scritta del progetto che cresce a ogni sessione invece di ripartire da zero.
+- **[[collegamento-con-l-assistente]]** — La "presa universale" a cui l'assistente AI si attacca per usare Sertor.
+- **[[installare-su-un-progetto]]** — Installazione con un comando, ordinata e non distruttiva, su qualunque progetto.
+- **[[robusto-ed-economico]]** — Le migliorie di robustezza e costo: riprova sugli intoppi, sa dire «non lo so», memoria del già-fatto, mostra il costo.
 
 ### Concepts (fondamenta e astrazioni)
 
