@@ -285,14 +285,17 @@ the capture adapter nor the archive store (lazy — no dependency imported, no f
   dipendenza esterna non già presente.
 
 ### Assunzioni documentate
-- **DA-F1 — Granularità (sessione):** l'unità di memoria archiviata è la **sessione intera**
-  (non il singolo turno né il thread). Questa è l'assunzione di default (risolve DA-M-b dell'epica);
-  una granularità più fine (turno/thread) è rivalutabile in una iterazione successiva se la ricerca
-  (FEAT-002) lo richiede. [Documenta come assunzione; conferma utente benvenuta.]
-- **DA-F2 — Cattura tutto-con-opt-in:** con la cattura attiva si archiviano tutte le sessioni
-  (non solo quelle marcate). La selezione esplicita «remember this» è rinviata a FEAT-005/Could.
-  Questa scelta aumenta il rumore ma massimizza la copertura episodica (R-5 dell'epica).
-  [Assunzione di default; conferma utente benvenuta.]
+- **DA-F1 — Granularità ibrida (DA-M-b RISOLTA, decisione utente 2026-06-14):** l'unità
+  **archiviata** è la **sessione intera** (record idempotente, fedele al grezzo). La granularità
+  **fine a grana di turno** vive a valle nella **ricerca** (FEAT-002 indicizza/restituisce il turno
+  con riferimento alla sessione): l'archivio di FEAT-001 resta a grana di sessione e deve conservare
+  i confini dei turni (struttura interna leggibile) così che FEAT-002 possa derivarne l'indice per
+  turno. Una granularità ancora più fine (thread/scambio) è rivalutabile in iterazioni successive.
+- **DA-F2 — Cattura tutto-con-opt-in (CONFERMATA, decisione utente 2026-06-14):** con la cattura
+  attiva si archiviano **tutte** le sessioni (non solo quelle marcate). La selezione esplicita
+  «remember this» è rinviata a FEAT-005/Could. Scelta motivata: il valore episodico sta nel non
+  decidere a priori cosa sarà importante; il rischio rumore/privacy è mitigato da off-default +
+  scrub + retention + full-text solo-locale (R-5 dell'epica).
 - **DA-F3 — Posizione archivio:** l'archivio risiede sotto `<index_dir>/memory/` (o analogo
   percorso coerente con il pattern `<index_dir>/observability.sqlite` e `<index_dir>/embed_cache.sqlite`
   già in uso). La posizione esatta è materia del design a valle.
@@ -366,15 +369,13 @@ Domande:
 - Il nome file `<session-id>.jsonl` è garantito stabile o potrebbe cambiare?
 Senza risposta, l'adapter deve operare in modalità difensiva (parsing best-effort con fallback).
 
-**DA-F7 — Granularità confermata (sessione vs turno) [MEDIA]:**
-L'assunzione DA-F1 fissa la granularità alla sessione intera. Se la ricerca full-text (FEAT-002)
-o la distillazione (FEAT-003) beneficerebbero di granularità più fine (turno o scambio),
-l'archivio andrebbe esteso. Confermare o rivalutare prima del design.
+**DA-F7 — Granularità (sessione vs turno) — RISOLTA (2026-06-14):** ibrida — archivio per
+**sessione**, ricerca per **turno** (FEAT-002). Vincolo che ne deriva per FEAT-001: l'archivio deve
+conservare i **confini dei turni** dentro la sessione, così FEAT-002 può indicizzare a grana di turno
+senza ri-parsare il JSONL grezzo (vedi DA-F1).
 
-**DA-F8 — Cattura-tutto vs selettiva: conferma del default [MEDIA]:**
-L'assunzione DA-F2 archivia ogni sessione (tutto-con-opt-in). L'alternativa — catturare solo
-le sessioni esplicitamente marcate (FEAT-005) — riduce il rumore e il rischio privacy, ma
-richiederebbe FEAT-005 come prerequisito anche per FEAT-001. Confermare il default prima del design.
+**DA-F8 — Cattura-tutto vs selettiva — RISOLTA (2026-06-14):** **tutto-con-opt-in**. FEAT-001 non
+dipende da FEAT-005; la marcatura selettiva «remember this» resta un raffinamento Could (FEAT-005).
 
 **DA-F9 — Posizione e nome dell'archivio locale [BASSA]:**
 L'assunzione DA-F3 suggerisce `<index_dir>/memory/` per coerenza con gli artefatti esistenti.

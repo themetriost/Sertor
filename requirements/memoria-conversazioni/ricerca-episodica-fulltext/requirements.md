@@ -230,11 +230,14 @@ aggiuntiva di logging.
   archivio locale di sessioni con almeno: id sessione, timestamp, contenuto testuale (già scrubbed),
   path del transcript (facoltativo). Se FEAT-001 non è operativa, la ricerca restituisce risultati
   vuoti (NFR-004).
-- **A-002 — Granularità di unità: sessione (assunzione provvisoria):** in assenza di una risposta
-  a DA-M-b, si assume che l'unità di archivio e di ricerca sia la **sessione** (non il singolo
-  turno/messaggio). Lo snippet di contesto viene estratto da un punto del testo della sessione, non
-  da un turno isolato. [DA CHIARIRE: se la granularità fosse il turno, la ricerca dovrebbe
-  restituire il turno con riferimento alla sessione padre — impatto sui REQ-003/011/012/013.]
+- **A-002 — Granularità ibrida: archivio per sessione, ricerca per turno (DA-M-b RISOLTA,
+  decisione utente 2026-06-14):** l'unità **archiviata** (FEAT-001) è la **sessione intera** (record
+  idempotente, fedele al grezzo); l'unità **indicizzata e restituita** dalla ricerca è il **turno**,
+  con riferimento alla **sessione padre**. Conseguenze da encodare nella spec di FEAT-002: REQ-003
+  restituisce il turno pertinente oltre alla sessione contenitrice; REQ-011 (snippet) è il testo del
+  turno (finestra più corta); REQ-012 include sia id sessione sia id/indice del turno; l'indice di
+  ricerca ha cardinalità a grana di turno (un turno per riga). La granularità deve restare un
+  **parametro di design**, non un hardcode (vedi R-FT-004).
 - **A-003 — Pattern SQLite locale:** coerentemente con i precedenti del core (cache embeddings in
   `src/sertor_core/adapters/embeddings/cache.py` — pattern `(model, content_hash) -> vector`
   su SQLite stdlib; store osservabilità in
@@ -257,9 +260,9 @@ aggiuntiva di logging.
 ### Dipendenze
 - **FEAT-001 (Must, a monte):** cattura e archiviazione locale dei transcript — è la sorgente di
   dati; FEAT-002 senza FEAT-001 non ha nulla da cercare.
-- **DA-M-b (irrisolta):** la granularità dell'unità di memoria (sessione / turno / thread) impatta
-  struttura dei risultati, snippet e aggiornamento dell'indice. Documentata in A-002 con assunzione
-  provvisoria «sessione».
+- **DA-M-b (RISOLTA, 2026-06-14):** granularità **ibrida** — archivio per **sessione**, ricerca per
+  **turno** (vedi A-002). Resta una dipendenza di coerenza con FEAT-001: l'indice a grana di turno è
+  derivato dal record di sessione archiviato.
 - **Porta `ObservabilityStore` (già in `domain/ports.py`):** usata per l'osservabilità (REQ-018/019)
   se abilitata; non è una dipendenza hard (NFR-004 — non-fatale).
 
@@ -283,10 +286,10 @@ aggiuntiva di logging.
 - **R-FT-003 — Dimensione archivio e prestazioni:** su archivi molto grandi (es. anni di sessioni
   dense) la ricerca full-text potrebbe superare la soglia NFR-001. Mitigazione: NFR-002 impone
   documentazione del limite; FEAT-006 (retention) riduce la dimensione operativa.
-- **R-FT-004 — DA-M-b irrisolta impatta l'implementazione:** se la granularità dell'unità cambia
-  da sessione a turno dopo che FEAT-002 è implementata, la struttura dei risultati e degli snippet
-  deve essere rivista. Mitigazione: A-002 documenta l'assunzione come provvisoria; il design deve
-  rendere la granularità un parametro, non un hardcode.
+- **R-FT-004 — Granularità ibrida (DA-M-b RISOLTA):** la ricerca/indice è a grana di **turno** su un
+  archivio a grana di **sessione** (A-002). Rischio residuo: derivare i turni dal record di sessione
+  in modo coerente con FEAT-001. Mitigazione: il design deve tenere la granularità un **parametro**
+  (non un hardcode), così un'eventuale evoluzione a thread/scambio non richieda riscrittura.
 
 ## 9. Prioritizzazione (MoSCoW) interna
 
@@ -331,17 +334,15 @@ Le opzioni di design (da valutare in fase di design, non qui):
 [DA CHIARIRE: quale opzione è preferita? La decisione impatta NFR-006 (dipendenze minimali) e la
 struttura dell'archivio prodotto da FEAT-001. Segnalare al design.]
 
-**DA-FT-002 — Granularità ereditata da DA-M-b [priorità: ALTA]**
+**DA-FT-002 — Granularità (DA-M-b) — RISOLTA (decisione utente 2026-06-14)**
 
-DA-M-b dell'epica chiede: l'unità archiviata è la sessione intera, il turno o un thread?
-FEAT-002 assume provvisoriamente «sessione» (A-002). Se la risposta fosse «turno»:
-- REQ-003 deve restituire anche il turno specifico, non solo la sessione contenitrice.
-- REQ-011 (snippet) diventa il testo del turno (più corto, meno bisogno di finestra).
-- REQ-012 deve includere sia id sessione sia id/indice del turno.
-- L'indice di ricerca ha cardinalità molto più alta (un turno per riga vs una sessione per riga).
-
-[DA CHIARIRE: risolvere DA-M-b prima del design di FEAT-002. Segnalare che la scelta impatta
-struttura dei risultati e dimensionamento dell'indice.]
+Decisione: granularità **ibrida** — archivio per **sessione**, ricerca/indice per **turno** (A-002).
+Impatti già recepiti, da encodare nella spec di FEAT-002:
+- REQ-003 restituisce il turno specifico oltre alla sessione contenitrice.
+- REQ-011 (snippet) è il testo del turno (finestra più corta).
+- REQ-012 include sia id sessione sia id/indice del turno.
+- L'indice di ricerca ha cardinalità a grana di turno (un turno per riga).
+Residuo per il design: tenere la granularità un **parametro**, non un hardcode (R-FT-004).
 
 **DA-FT-003 — Soglia quantitativa di scalabilità (NFR-001/002) [priorità: MEDIA]**
 
