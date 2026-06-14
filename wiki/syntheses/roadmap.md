@@ -45,12 +45,11 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   `requirements/osservabilita/` (epica nuova). *Stato:* epica + MVP **interamente a requisiti**
   (F1→F4 decomposte, 76 REQ EARS); decisioni di prodotto fissate (privacy-by-default a strati, stima €
   a Should). *In corso:* **SpecKit su F1 «strato di osservabilità persistente»** — branch
-  `020-osservabilita-persistente`, **F1 IMPLEMENTATA sul branch** (SpecKit completo specify→implement,
-  Constitution PASS 10/10, 406 root + 85 packages test verdi, ruff pulito; **non ancora mergiata**):
-  cattura via `logging.Handler` (`EventPersistenceHandler`, additivo/non-fatale/redazione gratis), store
-  SQLite `observability.sqlite`, 7ª porta `ObservabilityStore`, manopola `SERTOR_OBSERVABILITY` (default
-  off), guardia di re-entrancy. *Prossimo passo:* PR di F1 **oppure** decomporre/implementare F2 (consuma
-  lo store). *A seguire:* F3→F4. *In parallelo (quando si vuole):*
+  `020-osservabilita-persistente`. **F1 ✅ mergiata su master (PR #34, 2026-06-14)** = lo strato
+  persistente (cattura via `logging.Handler`, store SQLite `observability.sqlite`, 7ª porta
+  `ObservabilityStore`, `SERTOR_OBSERVABILITY` default off; Constitution PASS, 406+85 test). *In corso:*
+  **F2 «aggregazione/report»** (consuma `query_events`: hit/miss, costo, conteggi, latenze) — SpecKit in
+  autonomia. *A seguire:* F3 TUI live → F4 TUI report. *In parallelo (quando si vuole):*
   decomporre l'epica **memoria conversazioni** (nodo: cattura host-specifica).
 
 ### 📋 PLANNED (per priorità)
