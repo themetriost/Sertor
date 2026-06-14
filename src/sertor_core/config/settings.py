@@ -101,6 +101,8 @@ class Settings:
     # local queryable store (enables historical reports). Default off = today's behaviour (ephemeral
     # stderr logging only). The store lives at `<index_dir>/observability.sqlite` (git-ignored).
     observability_enabled: bool = False
+    # observability reports (021): default time-bucket granularity for the aggregation reports.
+    observability_bucket: str = "day"     # day | hour
 
     # vector store
     index_dir: Path = field(default_factory=lambda: Path(".index"))
@@ -216,6 +218,7 @@ class Settings:
             embed_retry_base_s=float(os.getenv("SERTOR_EMBED_RETRY_BASE", "0.5")),
             embed_cache_enabled=_bool_env("SERTOR_EMBED_CACHE", False),
             observability_enabled=_bool_env("SERTOR_OBSERVABILITY", False),
+            observability_bucket=os.getenv("SERTOR_OBSERVABILITY_BUCKET", "day"),
             index_dir=resolved_index_dir,
             azure_search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT", ""),
             azure_search_api_key=os.getenv("AZURE_SEARCH_API_KEY", ""),

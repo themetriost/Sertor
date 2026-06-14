@@ -409,6 +409,15 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/021-osservabilita-report/plan.md` (osservabilità F2 — servizio di aggregazione/report: servizio
+`ObservabilityReports` in `services/observability_report.py` che legge gli eventi via la porta
+`ObservabilityStore` di F1 (già su master) e produce 5 report con funzioni PURE/deterministiche —
+cache (hit/miss+risparmio stimato), costo (token per provider/bucket), salute corpus (ultimo index),
+latenze (p50/p95 nearest-rank per operation), affidabilità (errori/retry/low_confidence + abstention
+rate). Bucket temporali per giorno UTC (default, `SERTOR_OBSERVABILITY_BUCKET`). Dati assenti → report
+VUOTO esplicito (zeri), mai eccezione. Solo stdlib, no UI (F3/F4 renderanno), no persistenza (F1), no €
+(FEAT-007 si appoggia a CostReport). `build_observability_reports` in composition riusa
+`build_observability_store`. Constitution PASS 10/10. Branch `021-osservabilita-report`. Storico:
 `specs/020-osservabilita-persistente/plan.md` (osservabilità F1 — strato di osservabilità persistente:
 archivio locale interrogabile degli eventi che il core GIÀ emette via `log_event`. Meccanismo (DA-O-f
 risolta): un `logging.Handler` (`EventPersistenceHandler` in `observability/capture.py`) attaccato dal

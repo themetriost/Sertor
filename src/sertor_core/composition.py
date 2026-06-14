@@ -162,6 +162,20 @@ def build_observability_store(settings: Settings | None = None):
     return SqliteObservabilityStore(settings.index_dir)
 
 
+def build_observability_reports(settings: Settings | None = None):
+    """Build the observability reports service (feature 021) — the seam for the panel (F3/F4)/CLI.
+
+    Reuses the F1 store (via `build_observability_store`) and produces the five report families with
+    pure, deterministic aggregations. Lazy import (stdlib only).
+    """
+    from sertor_core.services.observability_report import ObservabilityReports
+
+    settings = settings or Settings.load()
+    return ObservabilityReports(
+        build_observability_store(settings), default_bucket=settings.observability_bucket
+    )
+
+
 def enable_observability(settings: Settings | None = None) -> bool:
     """Attach the event-persistence handler to the `sertor_core` logger if enabled (020).
 

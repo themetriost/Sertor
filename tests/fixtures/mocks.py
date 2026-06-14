@@ -14,6 +14,7 @@ from sertor_core.domain.entities import (
     EmbeddedChunk,
     GraphData,
     LexicalEntry,
+    ObservedEvent,
     RetrievalResult,
     SymbolHit,
 )
@@ -75,6 +76,27 @@ class CountingEmbedder:
         self.calls += 1
         self.embedded.extend(texts)
         return [self._vector(t) for t in texts]
+
+
+class InMemoryObservabilityStore:
+    """`ObservabilityStore` in memory for the report tests (021): no SQLite, no file system."""
+
+    def __init__(self) -> None:
+        self._events: list[ObservedEvent] = []
+
+    def record_event(self, ts: float, operation: str, fields: dict) -> None:
+        self._events.append(ObservedEvent(ts, operation, dict(fields)))
+
+    def query_events(
+        self, operation: str | None, since: float | None, until: float | None
+    ) -> list[ObservedEvent]:
+        out = [
+            e for e in self._events
+            if (operation is None or e.operation == operation)
+            and (since is None or e.ts >= since)
+            and (until is None or e.ts <= until)
+        ]
+        return sorted(out, key=lambda e: e.ts)
 
 
 def _cosine(a: list[float], b: list[float]) -> float:
