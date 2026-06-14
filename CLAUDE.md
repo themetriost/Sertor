@@ -417,6 +417,26 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/031-cattura-archiviazione/plan.md` (memoria conversazioni FEAT-001 — cattura & archiviazione del
+tier grezzo episodico, prima metà MVP. Cattura le conversazioni dell'agente e le conserva in un archivio
+SQLite locale `<index_dir>/memory.sqlite` (gitignored via `**/.index/`, namespaced per progetto,
+conservato/non-ruotato). GRANULARITÀ IBRIDA (DA-M-b): unità archiviata = sessione, ma schema a 2 tabelle
+`sessions`+`turns` preserva i CONFINI DEI TURNI così FEAT-002 indicizza per-turno senza ri-parsare il
+JSONL grezzo. UNA porta nuova `TranscriptCaptureAdapter` (8ª Protocol, cattura host-specifica dietro
+boundary); lo STORE è concreto SENZA porta (come EmbeddingCache/SqliteObservabilityStore — nessun 2°
+consumatore oggi). Adapter Claude-Code: legge `~/.claude/projects/<encoded>/<session-id>.jsonl`
+(encoding sep→`-`, es. `C--Workspace-Git-Sertor`), parser BEST-EFFORT difensivo (righe non-JSON → skip +
+warning, mai fatale; turni user/assistant block text/thinking; tool_use/result scartati). Idempotenza =
+stem-filename + `INSERT OR IGNORE` (skip OSSERVABILE, non no-op silenzioso). PRIVACY-by-default: 4 manopole
+default solo in Settings — `SERTOR_MEMORY` (false), `SERTOR_MEMORY_ADAPTER` (claude-code),
+`SERTOR_MEMORY_RETENTION_DAYS` (None=nessuna scadenza, solo gancio→FEAT-006),
+`SERTOR_MEMORY_SCRUB_PATTERNS`. SCRUB testuale libero = funzione PURA `scrub_text` in
+`observability/scrub.py` (estende la redazione per-CHIAVE `redact()` al CONTENUTO: sk-…/AKIA…/bearer/
+KEY=VALUE con hint/Authorization; ripiego conservativo redige il segmento; mai bypassabile, mai segreti
+negli eventi). 3 `build_*` lazy in composition gated su `memory_enabled` (off = zero import/file).
+stdlib-only nel corpo, additivo (porte/servizi esistenti invariati). FUORI AMBITO: ricerca FEAT-002,
+distillazione FEAT-003, remember-this FEAT-005, enforcement retention FEAT-006, multi-assistente FEAT-008.
+Constitution PASS 10/10 senza deroghe. Branch `031-cattura-archiviazione`. Storico:
 `specs/023-osservabilita-tui-report/plan.md` (osservabilità F4 — pannello TUI report sfogliabili, ULTIMO
 Must dell'epica: ESTENDE F3 (stessa app `sertor-rag observe`, stesso extra `[tui]`) trasformandola a
 SCHEDE `TabbedContent` (Live/Cache/Cost/Corpus). Funzioni di resa PURE in `observability/live.py`
