@@ -17,6 +17,7 @@ from sertor_core.domain.entities import (
     RetrievalResult,
     SymbolHit,
 )
+from sertor_core.domain.memory import SessionRef, TranscriptContent
 
 DocTypeFilter = Literal["code", "doc", "both"]
 
@@ -212,4 +213,33 @@ class RetrieverStrategy(Protocol):
 
     def retrieve(self, query: str, k: int, doc_type: DocTypeFilter) -> list[RetrievalResult]:
         """Retrieval on the primary collection, already verified to exist."""
+        ...
+
+
+@runtime_checkable
+class TranscriptCaptureAdapter(Protocol):
+    """Host-agnostic abstraction of transcript capture (feature 031, FR-004).
+
+    Separates the *what* (list sessions, read their content as turns) from the host-specific
+    *how*. Claude Code is the first implementation, selected ONLY via configuration (FR-005). The
+    source is read-only: list/read never modify nor delete the files (FR-007). Structural typing →
+    a fake with the same methods is compliant without inheritance (SC-005).
+    """
+
+    kind: str  # adapter kind (e.g. "claude-code") → sessions.adapter_kind (FR-012)
+
+    def list_sessions(self) -> list[SessionRef]:
+        """References to the current project's sessions at the source.
+
+        Source absent/empty → `[]` (the adapter emits the warning; the service leaves the archive
+        unchanged, FR-006). Does not raise an unhandled error.
+        """
+        ...
+
+    def read_session(self, ref: SessionRef) -> TranscriptContent:
+        """Read the session and structure its turns (best-effort, defensive — D3).
+
+        Unparsable lines → skip + warning, never fatal. A session with no extractable turns
+        returns `turns=()` (the service skips it).
+        """
         ...

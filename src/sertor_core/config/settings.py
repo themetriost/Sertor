@@ -73,6 +73,18 @@ def _float_or_none_env(name: str) -> float | None:
     return float(raw)
 
 
+def _int_or_none_env(name: str) -> int | None:
+    """Int from env, or `None` when the variable is absent/blank (031, FR-021).
+
+    Twin of `_float_or_none_env`: distinguishes "unset" (no retention hint, default) from an
+    explicit integer. Used by `memory_retention_days` (a hook recorded but never enforced here).
+    """
+    raw = os.getenv(name)
+    if raw is None or not raw.strip():
+        return None
+    return int(raw)
+
+
 @dataclass(frozen=True)
 class Settings:
     """Core settings. Instantiate via `Settings.load()` to read env/`.env`."""
@@ -105,6 +117,18 @@ class Settings:
     observability_bucket: str = "day"     # day | hour
     # observability live panel (022): refresh interval of the TUI panel, in seconds.
     observability_refresh_s: float = 2.0
+
+    # conversation memory — capture & archive (031, FEAT-001). Privacy-by-default: OFF unless the
+    # host opts in. With it off no adapter/store is built and no file is opened (SC-003).
+    memory_enabled: bool = False                       # SERTOR_MEMORY — opt-in (default: off)
+    memory_adapter: str = "claude-code"                # SERTOR_MEMORY_ADAPTER — capture source
+    memory_retention_days: int | None = None           # SERTOR_MEMORY_RETENTION_DAYS — hook only
+    memory_scrub_patterns: tuple[str, ...] = ()        # SERTOR_MEMORY_SCRUB_PATTERNS — extra regex
+    # Source directory of the Claude Code projects (host-agnostic, testable): default
+    # `~/.claude/projects`. The adapter resolves the per-project encoded subfolder from here.
+    claude_projects_dir: Path = field(
+        default_factory=lambda: Path.home() / ".claude" / "projects"
+    )
 
     # vector store
     index_dir: Path = field(default_factory=lambda: Path(".index"))
@@ -222,6 +246,15 @@ class Settings:
             observability_enabled=_bool_env("SERTOR_OBSERVABILITY", False),
             observability_bucket=os.getenv("SERTOR_OBSERVABILITY_BUCKET", "day"),
             observability_refresh_s=float(os.getenv("SERTOR_OBSERVABILITY_REFRESH", "2.0")),
+            memory_enabled=_bool_env("SERTOR_MEMORY", False),
+            memory_adapter=os.getenv("SERTOR_MEMORY_ADAPTER", "claude-code"),
+            memory_retention_days=_int_or_none_env("SERTOR_MEMORY_RETENTION_DAYS"),
+            memory_scrub_patterns=tuple(_split_env("SERTOR_MEMORY_SCRUB_PATTERNS") or ()),
+            claude_projects_dir=(
+                Path(os.environ["SERTOR_MEMORY_CLAUDE_PROJECTS_DIR"])
+                if os.getenv("SERTOR_MEMORY_CLAUDE_PROJECTS_DIR")
+                else Path.home() / ".claude" / "projects"
+            ),
             index_dir=resolved_index_dir,
             azure_search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT", ""),
             azure_search_api_key=os.getenv("AZURE_SEARCH_API_KEY", ""),

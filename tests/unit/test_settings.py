@@ -130,3 +130,35 @@ def test_secrets_are_read_from_env_only(monkeypatch):
     monkeypatch.setenv("AZURE_OPENAI_API_KEY", "super-secret")
     s = Settings.load(env_file=None)
     assert s.azure_openai_api_key == "super-secret"
+
+
+def test_memory_knobs_defaults(monkeypatch):
+    # Conversation-memory knobs (031): privacy-by-default — OFF unless opted in (FR-001/002).
+    for var in ("SERTOR_MEMORY", "SERTOR_MEMORY_ADAPTER", "SERTOR_MEMORY_RETENTION_DAYS",
+                "SERTOR_MEMORY_SCRUB_PATTERNS", "SERTOR_MEMORY_CLAUDE_PROJECTS_DIR"):
+        monkeypatch.delenv(var, raising=False)
+    s = Settings.load(env_file=None)
+    assert s.memory_enabled is False              # opt-in only (default off)
+    assert s.memory_adapter == "claude-code"
+    assert s.memory_retention_days is None        # _int_or_none_env: unset → None (FR-021)
+    assert s.memory_scrub_patterns == ()
+    assert s.claude_projects_dir.name == "projects"  # default ~/.claude/projects
+
+
+def test_memory_knobs_from_env(monkeypatch, tmp_path):
+    monkeypatch.setenv("SERTOR_MEMORY", "true")
+    monkeypatch.setenv("SERTOR_MEMORY_ADAPTER", "claude-code")
+    monkeypatch.setenv("SERTOR_MEMORY_RETENTION_DAYS", "30")
+    monkeypatch.setenv("SERTOR_MEMORY_SCRUB_PATTERNS", "GH_PAT_[A-Za-z0-9]+, glpat-[A-Za-z0-9]+")
+    monkeypatch.setenv("SERTOR_MEMORY_CLAUDE_PROJECTS_DIR", str(tmp_path / "projects"))
+    s = Settings.load(env_file=None)
+    assert s.memory_enabled is True
+    assert s.memory_retention_days == 30          # explicit integer (vs unset → None)
+    assert s.memory_scrub_patterns == ("GH_PAT_[A-Za-z0-9]+", "glpat-[A-Za-z0-9]+")
+    assert s.claude_projects_dir == tmp_path / "projects"
+
+
+def test_memory_retention_blank_is_none(monkeypatch):
+    # Blank env var = unset = no retention hint (twin of _float_or_none_env semantics, FR-021).
+    monkeypatch.setenv("SERTOR_MEMORY_RETENTION_DAYS", "   ")
+    assert Settings.load(env_file=None).memory_retention_days is None

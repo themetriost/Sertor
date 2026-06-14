@@ -23,6 +23,7 @@ build/
 *.chroma
 **/.index/
 **/.index-*/
+# Artefatti SQLite sotto <index_dir>: observability.sqlite, embed_cache.sqlite, memory.sqlite (031)
 
 # Log rigenerabili (re-index, ecc.)
 **/*.log
