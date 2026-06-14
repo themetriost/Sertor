@@ -116,10 +116,24 @@ def test_main_warms_facade_before_stdio_loop(monkeypatch):
     """
     calls: list[str] = []
     _use(monkeypatch, lambda _s=None: calls.append("facade"))
+    monkeypatch.setattr(srv, "enable_observability", lambda *a, **k: False)
     monkeypatch.setattr(srv.mcp, "run", lambda *a, **k: calls.append("run"))
     try:
         srv.main()
         assert calls == ["facade", "run"]
+    finally:
+        srv._facade.cache_clear()
+
+
+def test_main_wires_observability(monkeypatch):
+    """`main()` calls enable_observability (else SERTOR_OBSERVABILITY is a no-op for the server)."""
+    enabled: list[object] = []
+    _use(monkeypatch, lambda _s=None: None)
+    monkeypatch.setattr(srv, "enable_observability", lambda s: enabled.append(s) or False)
+    monkeypatch.setattr(srv.mcp, "run", lambda *a, **k: None)
+    try:
+        srv.main()
+        assert len(enabled) == 1
     finally:
         srv._facade.cache_clear()
 

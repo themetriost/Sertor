@@ -43,6 +43,14 @@ def patched_indexer(monkeypatch):
     return embedder, store
 
 
+def test_index_wires_observability(tmp_path, patched_indexer, monkeypatch):
+    """The index command must call enable_observability (else SERTOR_OBSERVABILITY is a no-op)."""
+    calls: list[Settings] = []
+    monkeypatch.setattr(cli, "enable_observability", lambda s: calls.append(s) or False)
+    assert cli.main(["index", str(tmp_path)]) == 0
+    assert len(calls) == 1
+
+
 def _run(argv):
     return cli.main(argv)
 

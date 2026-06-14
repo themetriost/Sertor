@@ -19,6 +19,7 @@ from sertor_core.composition import (
     build_baseline_engine,
     build_facade,
     build_indexer,
+    enable_observability,
 )
 from sertor_core.config.settings import Settings
 from sertor_core.domain.errors import ConfigError, IngestionError, SertorError
@@ -109,6 +110,7 @@ def _cmd_index(args) -> None:
         )
     settings = _resolve_settings(args)
     _check_backend(settings)
+    enable_observability(settings)  # persist events if SERTOR_OBSERVABILITY=true (no-op otherwise)
     report = build_indexer(settings).index(path, rebuild=True)
     print(output.format_index_report(report, json=args.json))
 
@@ -120,6 +122,7 @@ def _cmd_search(args) -> None:
         raise ConfigError("empty or whitespace-only query")
     settings = _resolve_settings(args)
     _check_backend(settings)
+    enable_observability(settings)  # persist events if SERTOR_OBSERVABILITY=true (no-op otherwise)
     # Strict path for ANY --type: missing index → IndexNotFoundError (FR-012, D6).
     engine = build_baseline_engine(settings)
     engine.ensure_index()
