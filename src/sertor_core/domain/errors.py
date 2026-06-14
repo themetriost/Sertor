@@ -111,3 +111,21 @@ class InvalidTimeWindowError(SertorError):
             f"invalid time window: since ({since}) is after until ({until}) — "
             "swap the bounds so that since <= until"
         )
+
+
+class SessionNotFoundError(SertorError):
+    """A `memory show` was given a session key that is not in the archive (036, FR-009).
+
+    An absent session is an explicit, actionable usage error for the CLI consumer (Principio IV),
+    distinct from a session that exists but has no turns (a legitimate empty result, exit 0).
+    Raised by the consumer (not by the read core: `MemoryArchive.get` returns `None` for absence,
+    keeping its non-fatal policy). Carries the offending key so the message can suggest `memory
+    list`. Coherent with `IndexNotFoundError`/`InvalidTimeWindowError`.
+    """
+
+    def __init__(self, session_key: str):
+        self.session_key = session_key
+        super().__init__(
+            f"session not found: {session_key}; "
+            "use `memory list` to see the available sessions"
+        )

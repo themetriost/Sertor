@@ -417,6 +417,33 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/036-aggancio-distillazione/plan.md` (memoria conversazioni FEAT-003 — aggancio della
+distillazione all'archivio episodico. THIN consumer puramente ADDITIVO sull'MVP memoria già su master:
+chiude il loop cattura→distillazione dando alla modalità «from conversation» di `distill` una FONTE
+REALE recuperabile (oggi pretende un brief a mano e VIETA il transcript grezzo = rete di sicurezza
+teorica). Tre strati sottili: (A) LETTURA nel core — recupero sessione intera RIUSA
+`MemoryArchive.get(session_key)→ArchivedSession|None` (già esistente, turni ordinati); UNICA novità di
+codice = `MemoryArchive.list_recent(limit)→tuple[SessionSummary(session_key,captured_at,turn_count)]`
+(metodo ADDITIVO sullo store, ordine recency-first, `turn_count` da `metadata`, sola lettura, niente
+join); esposizione via factory `build_memory_reader(settings)→MemoryArchive|None` gated su
+`memory_enabled` (coerente con `build_memory_archiver`/`build_episodic_search`), ritorna il MemoryArchive
+CONCRETO — NESSUNA nuova porta (single consumer, YAGNI; SC-007 = #Protocol invariato). (B) CLI — sotto-
+comandi `memory show <session_key> [--json]` e `memory list [-k/--limit N] [--json]` sul gruppo `memory`
+(035, sub-subparser argparse), due funzioni PURE in `cli/output.py` (`format_session_transcript`/
+`format_session_list`, umano + json, stile `format_memory_results`, transcript intero NON troncato).
+Gate `None→ConfigError` exit 1 (FR-008); not-found = `SessionNotFoundError`(sottoclasse SertorError) exit
+1 DISTINTO dalla sessione esistente-ma-vuota (exit 0, stato vuoto). (C) WIRING documentale — `distill.md`
+(«from conversation») aggiornata: attinge all'archivio via `memory show`/`list`, condensa (giudizio Opus),
+distilla; l'asset installabile `claude-md-block.md` NON contiene la procedura «from conversation» →
+FR-011 = NO-OP documentato (segnalato: la procedura `distill.md` è Sertor-coupled, backlog host-agnostico).
+VINCOLO CARDINE (FR-013): NESSUN trigger automatico di distillazione, mai sull'intero archivio, mai
+per-turno/per-sessione — solo invocazione esplicita su sessione mirata; cattura (economica) e
+distillazione (costosa LLM) disaccoppiate (archivio = cold storage backup). Local-first, zero rete/
+embedding/LLM nel percorso lettura (FR-014); sola lettura → non scrive `sessions`/`turns`, niente schema
+(a differenza di FEAT-002/FTS); host-agnostico (chiavi opache). Nuova manopola `memory_list_limit`
+(`SERTOR_MEMORY_LIST_LIMIT`, default 20). Test: `list_recent` su SQLite temporaneo (ordine/limite/vuoto/
+store-ko), output puro umano+json, handler CLI con core mockato (gate/not-found/vuoto). Constitution PASS
+10/10 (pre e post), nessuna deroga. Branch `036-aggancio-distillazione`. Storico:
 `specs/035-memoria-cli-hook/plan.md` (superficie CLI memoria + hook SessionEnd — THIN consumer
 sull'MVP memoria già su master. Tre capacità sottili: (1) `sertor-rag memory archive` e (2)
 `sertor-rag memory search <query>` = gruppo di comando `memory` con SUB-SUBPARSER argparse

@@ -383,6 +383,20 @@ def build_episodic_search(settings: Settings | None = None):
     return EpisodicSearch(settings.index_dir)
 
 
+def build_memory_reader(settings: Settings | None = None):
+    """Build the read surface of the archive, or `None` when memory is off (036, FEAT-003, D2).
+
+    Same privacy-by-default gate as `build_memory_archiver`/`build_episodic_search`: with
+    `SERTOR_MEMORY=false` (default) this returns `None` — no file is opened. Abilitata, returns the
+    concrete `MemoryArchive` (reuses `build_memory_archive`): no new port, no wrapper (single
+    consumer — YAGNI, Principio III). The CLI consumes the `None` as an actionable `ConfigError`.
+    """
+    settings = settings or Settings.load()
+    if not settings.memory_enabled:
+        return None
+    return build_memory_archive(settings)
+
+
 def build_engine(settings: Settings | None = None):
     """Build the RAG engine selected by `Settings.engine` (FEAT-004, REQ-030/031).
 

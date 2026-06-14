@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import calendar
 import dataclasses
+import logging
 import sys
 import time
 from pathlib import Path
@@ -23,10 +24,17 @@ from sertor_core.composition import (
     build_facade,
     build_indexer,
     build_memory_archiver,
+    build_memory_reader,
     enable_observability,
 )
 from sertor_core.config.settings import Settings
-from sertor_core.domain.errors import ConfigError, IngestionError, SertorError
+from sertor_core.domain.errors import (
+    ConfigError,
+    IngestionError,
+    SertorError,
+    SessionNotFoundError,
+)
+from sertor_core.observability.logging import log_event
 from sertor_core.services.episodic_search import SearchQuery
 
 
@@ -123,6 +131,31 @@ def _add_memory_parser(sub) -> None:
     _add_logging_flags(p_msearch)
     p_msearch.set_defaults(handler=_cmd_memory_search)
 
+    p_show = msub.add_parser(
+        "show", help="show the full transcript of an archived session",
+        description="Delegates to MemoryArchive.get(); prints every turn (role/ts/text), no "
+                    "truncation. not-found → exit 1; existing-but-empty → exit 0. Read-only.",
+    )
+    p_show.add_argument("session_key", help="opaque session key (filename stem)")
+    p_show.add_argument("--json", action="store_true", help="transcript as a JSON object")
+    p_show.add_argument("--corpus", default=None,
+                        help="corpus namespace; overrides SERTOR_CORPUS")
+    _add_logging_flags(p_show)
+    p_show.set_defaults(handler=_cmd_memory_show)
+
+    p_list = msub.add_parser(
+        "list", help="list the most recent archived sessions (recency-first)",
+        description="Delegates to MemoryArchive.list_recent(); lists session/captured_at/turns. "
+                    "Empty archive → honest empty state, exit 0. Read-only.",
+    )
+    p_list.add_argument("-k", "--limit", type=int, default=None, dest="k",
+                        help="max number of sessions (default: Settings.memory_list_limit)")
+    p_list.add_argument("--json", action="store_true", help="results as a JSON array")
+    p_list.add_argument("--corpus", default=None,
+                        help="corpus namespace; overrides SERTOR_CORPUS")
+    _add_logging_flags(p_list)
+    p_list.set_defaults(handler=_cmd_memory_list)
+
 
 def _add_logging_flags(p: argparse.ArgumentParser) -> None:
     """Observability levers shared by both subcommands (US3, FR-017..019)."""
@@ -176,6 +209,17 @@ def _require_episodic_search(settings: Settings):
             key="SERTOR_MEMORY",
         )
     return search
+
+
+def _require_memory_reader(settings: Settings):
+    """Same gate as `_require_archiver`, for `build_memory_reader` (036, D2)."""
+    reader = build_memory_reader(settings)
+    if reader is None:
+        raise ConfigError(
+            "memory is disabled; set SERTOR_MEMORY=true to enable archiving",
+            key="SERTOR_MEMORY",
+        )
+    return reader
 
 
 def _parse_time(value: str) -> float:
@@ -277,6 +321,48 @@ def _cmd_memory_search(args) -> None:
     )
     results = search.search(query)
     print(output.format_memory_results(results, settings, json=args.json))
+
+
+def _cmd_memory_show(args) -> None:
+    """Handler for `memory show`: gate → get() → full transcript (036, US1, FR-001/008/009).
+
+    Three distinct outcomes (research D4): `get` → `None` = session absent → `SessionNotFoundError`
+    (exit 1); `ArchivedSession` with no turns = existing-but-empty → explicit empty state (exit 0);
+    `ArchivedSession` with N turns = full transcript (exit 0). Trade-off F3: a `None` can also mean
+    "store unreadable" (same return value as "absent"); in that case the message «session not
+    found … use `memory list`» is technically imprecise, but the cause is distinguished for
+    diagnostics by the `memory_archive_unavailable` warning that `get` logs on a store failure
+    (Principio IX) — and `memory list` is exactly what the user should try next to verify. Keeping
+    the two collapsed avoids changing `get`'s contract (additive constraint, FR-012).
+    """
+    setup_logging(args)
+    settings = _resolve_settings(args)
+    enable_observability(settings)  # persist events if SERTOR_OBSERVABILITY=true (no-op otherwise)
+    reader = _require_memory_reader(settings)
+    session = reader.get(args.session_key)
+    # Observability: counts + opaque key only, never conversational content (RNF-2, D8).
+    log_event(
+        logging.INFO, "memory_show",
+        session_key=args.session_key,
+        turn_count=len(session.turns) if session is not None else 0,
+        found=session is not None,
+    )
+    if session is None:
+        raise SessionNotFoundError(args.session_key)
+    print(output.format_session_transcript(session, json=args.json))
+
+
+def _cmd_memory_list(args) -> None:
+    """Handler for `memory list`: gate → list_recent() → recent sessions (036, US2, FR-002/008)."""
+    setup_logging(args)
+    settings = _resolve_settings(args)
+    enable_observability(settings)  # persist events if SERTOR_OBSERVABILITY=true (no-op otherwise)
+    reader = _require_memory_reader(settings)
+    limit = args.k if args.k is not None else settings.memory_list_limit
+    summaries = reader.list_recent(limit)
+    # Observability: counts only, never content (RNF-2, D8).
+    log_event(logging.INFO, "memory_list", count=len(summaries), limit=limit)
+    print(output.format_session_list(summaries, json=args.json))
 
 
 def main(argv: list[str] | None = None) -> int:
