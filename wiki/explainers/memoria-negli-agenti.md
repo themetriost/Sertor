@@ -3,7 +3,7 @@ title: La memoria della conversazione (in parole semplici)
 type: explainer
 tags: [non-tecnici, memoria, conversazioni, archivio, privacy, spiegazione]
 created: 2026-06-14
-updated: 2026-06-14 (+ FEAT-002: ricerca episodica FTS5)
+updated: 2026-06-14 (+ FEAT-035: superficie CLI + hook SessionEnd, MVP completo)
 sources: ["wiki/concepts/memoria-conversazioni.md", "wiki/tech/transcript-capture-adapter-e-storage.md", "requirements/memoria-conversazioni/epic.md"]
 ---
 
@@ -35,7 +35,9 @@ L'archivio conserva:
 ## Come funziona
 
 1. **Disattivato di default** — finché non lo dici, non viene salvato nulla.
-2. **Quando lo attivi**, il sistema guarda all'interno della cartella dove Claude Code già mette i file di sessione (`~/.claude/projects/`), li legge, li ripulisce dai segreti, e li mette in un **database locale** (`<cartella-del-progetto>/.sertor/memory.sqlite`, escluso da git).
+2. **Quando lo attivi** (linea nel `.env`: `SERTOR_MEMORY=true`), il sistema fa due cose:
+   - **Cattura automatica a fine sessione:** ogni volta che chiudi una conversazione con l'assistente, il nostro hook salva silenziosamente il transcript nel database.
+   - **Database locale:** `<cartella-del-progetto>/.sertor/memory.sqlite`, escluso da git.
 3. **Idempotente** — se il sistema legge la stessa sessione due volte, non crea duplicati. Una sessione = un record.
 4. **Conservato** — non si cancella da solo, se non glielo dici.
 
@@ -49,10 +51,14 @@ L'archivio conserva:
 
 ## Quello che succede dietro le quinte
 
-1. **Cattura** — ogni volta che parli con Claude Code, il sistema sa che sta salvando la sessione. Il nostro sistema legge quelle sessioni.
+1. **Cattura automatica (FEAT-035)** — quando chiudi una conversazione con Claude Code, un **hook automatico** cattura il transcript SENZA che tu debba far nulla. È silenzioso e non blocca il flusso (se qualcosa fallisce, continua comunque).
 2. **Ripulitura** — prima di mettere la conversazione nell'archivio, il sistema scandisce il testo e sostituisce i segreti con marcatori (`sk-abc → [SEGRETO: openai_key]`). Non resta nulla in chiaro.
 3. **Archiviazione** — la conversazione ripulita finisce in una tabella SQL locale. Non va su cloud, resta sul tuo computer, esclusa da git.
-4. **Ricerca locale** — quando fai una domanda come "trovami una conversazione su X", il sistema esegue una ricerca **testuale locale** (senza rete, senza IA) nell'archivio e restituisce i turni che corrispondono, citati con la sessione e il momento.
+4. **Ricerca da terminale (FEAT-035)** — quando fai una domanda come "trovami una conversazione su X", usi il comando da terminale:
+   ```bash
+   sertor-rag memory search "X"
+   ```
+   Il sistema esegue una ricerca **testuale locale** (senza rete, senza IA) nell'archivio e restituisce i turni che corrispondono, con la sessione e il momento.
 
 ## Privacy
 
@@ -68,12 +74,18 @@ L'archivio conserva:
 
 ## Come attivarlo
 
-Aggiungi al tuo `.env`:
-```
-SERTOR_MEMORY=true
-```
+1. Aggiungi al tuo `.env`:
+   ```
+   SERTOR_MEMORY=true
+   ```
 
-Al prossimo uso, il sistema inizia a leggere e archiviare le conversazioni.
+2. Al prossimo uso, il sistema inizia a **catturare automaticamente** le conversazioni a fine sessione (senza che tu faccia nulla).
+
+3. Per cercare nelle conversazioni passate, dal terminale:
+   ```bash
+   sertor-rag memory search "argomento che cerchi"
+   sertor-rag memory search "GraphRAG" --since 2026-06-01  # con filtro temporale opzionale
+   ```
 
 ## Il futuro
 
