@@ -215,6 +215,45 @@ repo) e la raccomandazione motivata. Mai una domanda "secca" con sole etichette:
 decidere senza dover chiedere "spiegami meglio". Vale anche per le domande poste dentro i flussi
 SpecKit (`clarify`, `specify`, ecc.).
 
+## Feature completa & tracciamento dello scope (regola SEMPRE attiva)
+
+Due regole gemelle che impediscono di **perdere pezzi di una feature** — il valore consegnato e lo
+scope rinviato.
+
+### 1. Una feature è completa SOLO se è installabile su un ospite
+
+**Vale SEMPRE.** Una feature **non è "done"** finché un **ospite** (un progetto terzo, non solo il
+dogfood di Sertor) può **ottenerla e usarla attraverso il percorso di installazione** (`sertor
+install`). È il corollario operativo del **Principio X** (host-agnostico) e della mission (framework
+*installabile ovunque*): se vive solo nel `.claude/`/`.env` di Sertor, è un prototipo, non una feature.
+
+Concretamente, prima di dichiarare completa una feature:
+- **Ogni artefatto host-facing** che introduce — hook, voci di `settings.json`, manopole nel template
+  `.env`, skill/agenti/comandi, asset, voci del `claude-md-block` — **DEVE essere cablato in `sertor
+  install`** (e nei suoi template/asset), **non** lasciato "solo per il dogfood".
+- Le capacità di **sola libreria/CLI** (un motore, un comando `sertor-rag`) sono installabili **per
+  costruzione** (viaggiano col pacchetto `sertor-core`): il criterio è soddisfatto **ma va
+  verificato** — es. una nuova manopola env DEVE comparire nel template `.env` dell'installer.
+- **«Distribuzione su ospiti FUORI AMBITO» NON è uno stato finale accettabile.** Al più è un **debito
+  di completamento tracciato** (vedi regola 2), da chiudere prima che la feature conti come *done*. Una
+  spec può rinviarlo a una feature successiva, ma la **capacità resta incompleta** finché quella non
+  arriva.
+
+### 2. Gli «Out of Scope» si PROMUOVONO, non restano appesi nella feature
+
+L'*Out of Scope* di una `spec.md` (e le *Estensioni* di `research.md`) è un **confine di scope di
+quella feature**, **non** un meccanismo di tracciamento: ciò che vi resta è **sepolto** e si perde. Al
+`plan`/decomposizione, ogni voce rinviata che sia una **capacità futura reale** va **promossa subito**
+a una casa **durevole**:
+- mappa su una capacità d'epica → riga **`FEAT-NNN` nel backlog** (`requirements/<epica>/epic.md`, con
+  MoSCoW + stato);
+- idea ancora informe → riga in **roadmap → *Nuove funzionalità da discutere*** (`wiki/syntheses/roadmap.md`);
+- "non qui, ma già `FEAT-X`" → **cita** la FEAT esistente (nessuna voce nuova).
+
+Mai lasciare un rinvio reale a vivere **solo** dentro `specs/<feat>/`. I due livelli durevoli (backlog
+epica + roadmap) sono le **uniche** fonti di verità per "cosa manca"; l'Out-of-Scope di spec è solo il
+confine locale.
+
 ## Rituale di step / Definition of Done (regola SEMPRE attiva)
 
 Uno **step** è un'unità di lavoro significativa (una feature, un fix, una decisione, una ricerca,
