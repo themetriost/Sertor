@@ -40,21 +40,15 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- **Hardening produzione del retrieval** — *cosa:* chiudere i gap del RAG audit (2026-06-13) che
-  ricadono sul livello di Sertor. *Dove:* `requirements/sertor-core/hardening-produzione/` (epica
-  `sertor-core`). *Fatto:* **Must** ✅ su master (feature 018, PR #32) = retry/backoff embedder +
-  soglia/`low_confidence` per l'abstention. *In corso:* gli **Should** del gruppo C (costo
-  indicizzazione) — **feature 019 IMPLEMENTATA sul branch `019-hardening-cache-token`** (SpecKit completo
-  specify→implement, Constitution PASS 10/10, 395 root + 85 packages test verdi, ruff pulito; **non ancora
-  mergiata**): **REQ-H4** cache embeddings per content-hash (`CachingEmbedder` decoratore + store SQLite
-  `embed_cache.sqlite`, chiave `(model, sha256)`, manopola `SERTOR_EMBED_CACHE` default off, wiring solo
-  sul percorso d'indicizzazione, degrado non-fatale) + **REQ-H5** token nei log (evento `embeddings` con
-  `usage.total_tokens`/`prompt_eval_count`; corretto en-passant un difetto di redazione che mascherava
-  `tokens`). ✅ **Mergiata su master (PR #33, 2026-06-14)**; cache **attivata sul dogfood** (`SERTOR_EMBED_CACHE=true`).
-  *Restano i Could:* REQ-H7 query transformation, REQ-H8 filtro
-  metadata esteso, REQ-H9 tracing distribuito, REQ-H10 metriche aggregate, REQ-H11 contextual retrieval.
-  *Collegato:* refresh incrementale = FEAT-009 d'epica. *Blocco/decisione aperta:* nessuno. *Azione
-  operativa fuori-codice pendente:* ruotare la key Azure esposta nel transcript.
+- **Osservabilità e pannello di controllo (epica)** — *cosa:* rendere Sertor trasparente su sé stesso
+  (log/costo/cache/salute corpus) con un pannello TUI e i numeri persistiti. *Dove:*
+  `requirements/osservabilita/` (epica nuova). *Stato:* epica + MVP **interamente a requisiti**
+  (F1→F4 decomposte, 76 REQ EARS); decisioni di prodotto fissate (privacy-by-default a strati, stima €
+  a Should). *In corso:* **SpecKit su F1 «strato di osservabilità persistente»** — branch
+  `020-osservabilita-persistente`, **spec creata** (checklist verde, zero NEEDS CLARIFICATION). *Prossimo
+  passo:* `/speckit-plan` (progettando lo store con i requisiti di F2 davanti — scioglie schema +
+  DA-O-f meccanismo di intercettazione). *A seguire:* F2→F4 a cascata. *In parallelo (quando si vuole):*
+  decomporre l'epica **memoria conversazioni** (nodo: cattura host-specifica).
 
 ### 📋 PLANNED (per priorità)
 - **Agenzia RAG incorporata — dote differita (Could)**: la capacità agentic RAG è ✅ **soddisfatta
