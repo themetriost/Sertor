@@ -1,10 +1,22 @@
 <!--
 SYNC IMPACT REPORT — Costituzione di Sertor
 ============================================
+Versione: 1.1.0 → 1.1.1
+Tipo di bump: PATCH (chiarimento di un principio esistente, nessun nuovo vincolo)
+
+Modifiche di questo emendamento (2026-06-14):
+  ~ Principio VII — chiarito lo stile delle funzioni: piccole e a bassa profondità di annidamento,
+    guard clause / early return preferiti alla nidificazione profonda; il single-exit dogmatico
+    (SESE) NON è richiesto (il problema è il nesting, non i return multipli — Dijkstra bandiva il
+    GOTO, non i return). Allinea la regola alla pratica già in uso nel codebase (Clean Code).
+  Template dipendenti: plan-template.md — rif. versione v1.1.0 → v1.1.1 (gate invariati).
+  Origine: refactor di `_resolve_config` (wiki_tools) + discussione utente su SESE/nesting (2026-06-14).
+
+----- Storico -----
 Versione: 1.0.0 → 1.1.0
 Tipo di bump: MINOR (nuovo principio aggiunto)
 
-Modifiche di questo emendamento (2026-06-05):
+Modifiche dell'emendamento precedente (2026-06-05):
   + Principio X — Capacità host-agnostiche (la portabilità è un vincolo, non un'aspirazione)
   ~ Intro: scope allargato dal "core + CLI" a "tutte le capacità + veicoli (CLI, MCP)"
   Motivazione: codifica la mission (Sertor installabile su QUALSIASI progetto: code+doc,
@@ -131,8 +143,18 @@ verbi generici (process, execute, handle). I commenti sono riservati all'intenzi
 può esprimere; codice commentato e commenti ridondanti vengono rimossi. Ogni modifica lascia il
 codice toccato **almeno pulito quanto l'ha trovato** (Boy Scout Rule).
 
-*Razionale:* Clean Code Ch.1/2/4. I domini RAG si offuscano facilmente con naming vago: la chiarezza
-è la leva di qualità più economica.
+Le funzioni MUST essere **piccole e a bassa profondità di annidamento**: si **preferiscono i guard
+clause / early return** alla nidificazione profonda di condizioni, e si estrae un helper nominato
+quando un blocco cresce o si annida. Il **single-exit dogmatico (SESE) NON è richiesto**: il problema
+da evitare è la **profondità del nesting**, **non** il numero di `return`. *(Chiarimento v1.1.1: la
+*structured programming* di Dijkstra bandiva il **GOTO**, non i `return` multipli; `return` multipli
+che *riducono* l'annidamento sono idiomatici e preferiti. Un'uscita unica è legittima quando rende il
+flusso più chiaro, ma non va imposta a scapito della leggibilità o della coerenza col resto del
+codice, che usa guard clause.)*
+
+*Razionale:* Clean Code Ch.1/2/4 (small functions, low nesting, intention-revealing names). I domini
+RAG si offuscano facilmente con naming vago e con condizioni annidate: chiarezza e poca profondità
+sono la leva di qualità più economica.
 
 ### VIII. Configurabilità centralizzata del core
 
@@ -202,4 +224,4 @@ principio, vince il principio (o il principio viene prima emendato).
 - **Conformità:** il RAG di dogfooding sul prototipo è il riferimento di "cosa è buono"; le nuove
   capacità sono riviste rispetto a questi principi.
 
-**Version**: 1.1.0 | **Ratified**: 2026-05-31 | **Last Amended**: 2026-06-05
+**Version**: 1.1.1 | **Ratified**: 2026-05-31 | **Last Amended**: 2026-06-14

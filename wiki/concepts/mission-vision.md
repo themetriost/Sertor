@@ -158,8 +158,8 @@ tra sessioni**. Non è una fase a parte: è una sorgente di **prima classe dentr
 
 ## Riferimenti
 
-- **Costituzione:** [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md) v1.1.0,
-  Principio X, ratificato 2026-06-05.
+- **Costituzione:** [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md) v1.1.1,
+  Principio X (host-agnostico, 2026-06-05); Principio VII chiarito su nesting/SESE (2026-06-14).
 - **README.md:** [`README.md`](../../README.md) (Vision/Mission, sezione "Disaccoppiamento").
 - **Ispirazioni esterne:** skill di Transcriptio (pattern di parametrizzazione), Clean Code + Clean
   Architecture.

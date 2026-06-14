@@ -3,7 +3,7 @@ title: Costituzione di Sertor
 type: concept
 tags: [costituzione, governance, clean-code, clean-architecture, produzione, principio-x, host-agnostico]
 created: 2026-05-31
-updated: 2026-06-09
+updated: 2026-06-14 (v1.1.1 — chiarimento Principio VII: nesting/guard-clause, SESE non obbligatorio)
 sources: [".specify/memory/constitution.md", ".specify/templates/plan-template.md"]
 ---
 
@@ -134,11 +134,15 @@ In produzione la costituzione impone:
 
 - **v1.0.0** — 2026-05-31, ratificata (9 principi).
 - **v1.1.0** — 2026-06-05, emendamento MINOR (aggiunto Principio X — host-agnosticità).
+- **v1.1.1** — 2026-06-14, emendamento PATCH (chiarimento Principio VII): funzioni piccole e a bassa
+  profondità di annidamento, **guard clause / early return preferiti** alla nidificazione profonda; il
+  **single-exit dogmatico (SESE) non è richiesto** — il problema è il *nesting*, non i `return` multipli.
+  Allinea la regola alla pratica del codebase (Clean Code). Origine: refactor di `_resolve_config`.
   Documento: [`../.specify/memory/constitution.md`](../../.specify/memory/constitution.md).
 
 ## Riferimenti
 
-- **Fonte unica:** [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md) (v1.1.0)
+- **Fonte unica:** [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md) (v1.1.1)
 - **Template planning:** [`.specify/templates/plan-template.md`](../../.specify/templates/plan-template.md)
   (Constitution Check integrato, gate "X — Host-agnostico" aggiunto)
 - **Requisiti allineati:**
