@@ -55,6 +55,30 @@ def test_discovery_config_in_wiki_subdir(tmp_path, monkeypatch, capsys):
     assert _scan_schema(capsys) == "wiki.scan/1"
 
 
+def test_discovery_from_inside_wiki_dir(tmp_path, monkeypatch, capsys):
+    """Regression (wiki/wiki/ drift): launched from INSIDE wiki/ → root anchored to the PARENT.
+
+    Since feature 016 the config lives in `wiki/`; if a process runs from cwd=`<host>/wiki`, naive
+    discovery would resolve the root to `wiki/wiki/` (double-nesting → e.g. a misfiled log).
+    """
+    (tmp_path / "wiki").mkdir()
+    _init(tmp_path / "wiki" / "wiki.config.toml", tmp_path)
+    monkeypatch.chdir(tmp_path / "wiki")   # cwd INSIDE the wiki dir (the misfire trigger)
+    assert main(["scan", "--json"]) == 0
+    assert _scan_schema(capsys) == "wiki.scan/1"
+    # No double-nesting: the operation did not create `wiki/wiki/`.
+    assert not (tmp_path / "wiki" / "wiki").exists()
+
+
+def test_resolve_config_inside_wiki_dir(tmp_path, monkeypatch):
+    (tmp_path / "wiki").mkdir()
+    (tmp_path / "wiki" / "wiki.config.toml").write_text("x", encoding="utf-8")
+    monkeypatch.chdir(tmp_path / "wiki")
+    cfg, root = _resolve_config(None, None)
+    assert cfg == "wiki.config.toml"           # config path still relative (Principio X)
+    assert Path(root).resolve() == tmp_path.resolve()   # root anchored to the host root (parent)
+
+
 def test_discovery_none_found_errors(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     assert main(["scan", "--json"]) == 1

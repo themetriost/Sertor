@@ -97,6 +97,16 @@ def _resolve_config(config_arg: str | None, root_arg: str | None) -> tuple[str, 
         return config_arg, root_arg
     cwd = Path.cwd()
     if (cwd / "wiki.config.toml").is_file():
+        # Guard against being launched from INSIDE the wiki dir. Since feature 016 the config lives
+        # in `wiki/`, so from cwd=`<host>/wiki` the file `./wiki.config.toml` IS the wiki config and
+        # the host root is the PARENT. Resolving the relative paths (root="wiki", source_dirs) from
+        # CWD would double-nest (`wiki/wiki/...`, e.g. a misfiled log). Detect it — the parent's
+        # `wiki/wiki.config.toml` is the SAME file — and anchor the root to the parent (host root).
+        if root_arg is None:
+            parent_cfg = cwd.parent / "wiki" / "wiki.config.toml"
+            local_cfg = cwd / "wiki.config.toml"
+            if parent_cfg.is_file() and parent_cfg.samefile(local_cfg):
+                return "wiki.config.toml", str(cwd.parent)
         return "wiki.config.toml", root_arg
     if (cwd / "wiki" / "wiki.config.toml").is_file():
         return "wiki/wiki.config.toml", (root_arg if root_arg is not None else ".")
