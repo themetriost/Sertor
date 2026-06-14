@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-14 (MVP osservabilità ✅ master F1→F4 PR #34/35/36/38; memory conversazioni epica decomposte FEAT-001/002) · 2026-06-14 (hardening Should gruppo C — feature 019 cache embeddings + token nei log — implementata su branch, in attesa di PR) · 2026-06-13 (notte: FEAT-018 hardening retrieval Must ✅ su master, PR #32 — retry embedder + soglia/low_confidence; hardening resta IN PROGRESS perché Should/Could aperti) · 2026-06-13 (sera: + idea «Second brain cross-progetto»/Meta-Sertor → [[second-brain-cross-progetto]], da espandere · giornata: FEAT-006 ✅ composita · igiene radice host PR #26 · tema lingua completo PR #27/#28/#29) · 2026-06-12 (TRIPLA: PR #23/#24/#25)
+updated: 2026-06-14 (FEAT-003 aggancio distillazione all'archivio ✅ master PR #51 — MVP memoria completo+acceso, loop cattura→distill chiuso; SERTOR_MEMORY=true sul dogfood) · 2026-06-14 (MVP osservabilità ✅ master F1→F4 PR #34/35/36/38; memory conversazioni epica decomposte FEAT-001/002) · 2026-06-14 (hardening Should gruppo C — feature 019 cache embeddings + token nei log — implementata su branch, in attesa di PR) · 2026-06-13 (notte: FEAT-018 hardening retrieval Must ✅ su master, PR #32 — retry embedder + soglia/low_confidence; hardening resta IN PROGRESS perché Should/Could aperti) · 2026-06-13 (sera: + idea «Second brain cross-progetto»/Meta-Sertor → [[second-brain-cross-progetto]], da espandere · giornata: FEAT-006 ✅ composita · igiene radice host PR #26 · tema lingua completo PR #27/#28/#29) · 2026-06-12 (TRIPLA: PR #23/#24/#25)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md", "requirements/memoria-conversazioni/epic.md"]
 ---
 
@@ -31,7 +31,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
 | CLI — installer (`sertor install`) | — | ✅ `wiki` (PR #22) + **`rag` su master (2026-06-12)** — validato live su Kaelen; `governance` = stub |
 | **Hardening produzione (retrieval)** | — | 🔄 **IN PROGRESS** — Must ✅ su master (PR #32); Should gruppo C (cache embeddings + token log, feature 019) ✅ **su master (PR #33)**; restano i Could in `requirements/sertor-core/hardening-produzione/` |
-| **Memoria conversazioni** (epica, MVP) | — | 🔄 **IN PROGRESS** — **MVP ✅ completo e USABILE**: FEAT-001 cattura (PR #45) + FEAT-002 ricerca (PR #47) + superficie CLI/hook (035, PR #49), tutti su master 2026-06-14. Comandi `sertor-rag memory archive`/`search` + hook `SessionEnd`, gated `SERTOR_MEMORY` (off di default). *Provato live*. Resta: **accendere `SERTOR_MEMORY`** (scelta utente) + Should/Could (003/004/005/006/008) |
+| **Memoria conversazioni** (epica, MVP) | — | 🔄 **IN PROGRESS** — **MVP ✅ completo e USABILE + acceso**: FEAT-001 cattura (PR #45) + FEAT-002 ricerca (PR #47) + superficie CLI/hook (035, PR #49) + **FEAT-003 aggancio distillazione (036, PR #51)**, tutti su master 2026-06-14. Comandi `sertor-rag memory archive`/`search`/`show`/`list` + hook `SessionEnd`. `SERTOR_MEMORY=true` **acceso sul dogfood** (2026-06-14). *Provato live*. Resta: Should/Could (004 ricerca semantica / 005 / 006 / 008) |
 | **Osservabilità accesa sul dogfood** + errori MCP segnalati | — | ✅ **master (2026-06-14, PR #40/#43)** — `SERTOR_OBSERVABILITY=true` cablato e attivo; ogni errore del server MCP = evento + self-test allo startup |
 | Distribuzione multi-assistente: GitHub Copilot (+ Codex Could) | — | 👍 **da decomporre** (decisione utente 2026-06-12) |
 | Tema lingua (tutto il prodotto in inglese) | — | ✅ **completato totale (2026-06-13, PR #27/#28/#29/#31)**: codice (72 .py: docstring/commenti/**errori**), test (75 .py: commenti/docstring), documentazione di prodotto (README + `docs/`), asset installer, CLI, seed it/en. Restano IT **per scelta**: `wiki/`, `specs/`, `requirements/`, `CLAUDE.md`, `prototype/` (congelato) |
@@ -42,20 +42,23 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- **Memoria conversazioni — MVP ✅ COMPLETO E USABILE (epica `memoria-conversazioni`)** — *cosa:* il
-  tier grezzo episodico, archivio interrogabile di tutte le conversazioni. *Dove:*
-  `specs/031-cattura-archiviazione/` + `specs/033-ricerca-episodica/` + `specs/035-memoria-cli-hook/`;
-  codice su master. *Fatto:* cattura (PR #45) + ricerca FTS5 (PR #47) + **superficie CLI & hook
-  (PR #49)** — `sertor-rag memory archive`/`search` + hook `SessionEnd` (cattura automatica a fine
-  sessione, non-fatale), tutto *gated* su `SERTOR_MEMORY` (off di default = privacy). Ciclo
-  cattura→archivia(scrub)→cerca *provato live* (query «Langfuse»/«GraphRAG» → turni reali). *Unico
-  passo rimasto per renderla operativa:* **accendere `SERTOR_MEMORY=true` nel `.env`** — scelta di
-  privacy dell'utente (in attesa). *Poi:* Should/Could (003/004/005/006/008).
+- **Memoria conversazioni — MVP ✅ COMPLETO, USABILE e ACCESO (epica `memoria-conversazioni`)** —
+  *cosa:* il tier grezzo episodico, archivio interrogabile di tutte le conversazioni, ora **fonte
+  della distillazione**. *Dove:* `specs/031-cattura-archiviazione/` + `specs/033-ricerca-episodica/`
+  + `specs/035-memoria-cli-hook/` + `specs/036-aggancio-distillazione/`; codice su master. *Fatto:*
+  cattura (PR #45) + ricerca FTS5 (PR #47) + superficie CLI & hook (PR #49) + **aggancio distillazione
+  (PR #51)** — `sertor-rag memory archive`/`search`/`show`/`list` + hook `SessionEnd`, tutto *gated*
+  su `SERTOR_MEMORY`. Con FEAT-003 la modalità «from conversation» di `distill` **attinge
+  all'archivio** (`memory show`/`list`) invece di pretendere un brief a mano — loop
+  cattura→distillazione **chiuso**; vincolo cardine FR-013 (sempre sessione mirata, mai automatica).
+  `SERTOR_MEMORY=true` **acceso sul dogfood** (2026-06-14). Ciclo completo *provato live*. *Resta:*
+  Should/Could (004 ricerca semantica opt-in / 005 remember-this / 006 retention / 008
+  multi-assistente).
 
 ### 📋 PLANNED (per priorità)
-- **Memoria — Should/Could** — FEAT-003 (la distillazione del wiki attinge all'archivio), FEAT-004
-  (ricerca semantica opt-in), FEAT-005 (remember-this selettivo), FEAT-006 (governance/retention),
-  FEAT-007 (ponte second-brain), FEAT-008 (cattura multi-assistente). Dopo la superficie CLI.
+- **Memoria — Should/Could** — FEAT-004 (ricerca semantica opt-in), FEAT-005 (remember-this
+  selettivo), FEAT-006 (governance/retention), FEAT-007 (ponte second-brain), FEAT-008 (cattura
+  multi-assistente). *(FEAT-003 aggancio distillazione ✅ DONE 2026-06-14, PR #51.)*
 - **Agenzia RAG incorporata — dote differita (Could)**: la capacità agentic RAG è ✅ **soddisfatta
   in forma composita** (MCP + agente, vedi DONE). Resta opzionale l'**agenzia incorporata nel core**
   (`sertor-rag ask` per umani/script senza assistente, digest MCP per economia di contesto, porta
@@ -71,6 +74,17 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### ✅ DONE (su `master`, le rilevanti)
 
+- **🚢 Memoria conversazioni — FEAT-003 aggancio distillazione all'archivio (feature 036, PR #51,
+  2026-06-14)** — chiude il loop **cattura→distillazione** dell'epica: l'archivio episodico diventa
+  una **fonte recuperabile** per la modalità «from conversation» di `distill` (finora solo teorica,
+  pretendeva un brief a mano). Comandi *thin consumer* `sertor-rag memory show <key>` (transcript
+  intero, umano/`--json`, non troncato) e `memory list` (sessioni recenti). Core additivo: riuso di
+  `MemoryArchive.get` + nuovo `list_recent`, **nessuna nuova porta** (factory `build_memory_reader`
+  gated). `distill.md` aggiornato. **Vincolo cardine FR-013:** distillazione dall'archivio sempre su
+  sessione mirata, su invocazione esplicita — mai sull'intero archivio, mai automatica (cattura
+  economica e distillazione costosa restano disaccoppiate; l'archivio è BACKUP, non RAM). Constitution
+  PASS 10/10, 558 test non-cloud verdi (31 nuovi), additivo puro. *Provato live* sul dogfood. Nuova
+  pagina [[feat-036-aggancio-distillazione]].
 - **🚢 Memoria conversazioni — superficie CLI + hook SessionEnd (feature 035, PR #49, 2026-06-14)** —
   rende l'MVP memoria **usabile dal terminale e automatico**: comandi *thin consumer*
   `sertor-rag memory archive` (idempotente) e `memory search "..."` (filtri temporali, umano/`--json`)

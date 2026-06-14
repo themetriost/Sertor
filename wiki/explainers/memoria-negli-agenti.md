@@ -3,7 +3,7 @@ title: La memoria della conversazione (in parole semplici)
 type: explainer
 tags: [non-tecnici, memoria, conversazioni, archivio, privacy, spiegazione]
 created: 2026-06-14
-updated: 2026-06-14 (+ FEAT-035: superficie CLI + hook SessionEnd, MVP completo)
+updated: 2026-06-14 (+ FEAT-003: la distillazione attinge all'archivio — `memory show`/`list`, loop cattura→distill chiuso) · 2026-06-14 (+ FEAT-035: superficie CLI + hook SessionEnd, MVP completo)
 sources: ["wiki/concepts/memoria-conversazioni.md", "wiki/tech/transcript-capture-adapter-e-storage.md", "requirements/memoria-conversazioni/epic.md"]
 ---
 
@@ -46,7 +46,7 @@ L'archivio conserva:
 - **Ritornare al contesto** — se dimandi "dove avevamo detto di mettere quella logica", il sistema sa cercare tra le vecchie conversazioni e trovare il turno giusto.
 - **Ricerca nel passato** — FATTO (FEAT-002): puoi dire "trovami una conversazione dove abbiamo discusso di autenticazione" e il sistema esegue una ricerca testuale locale nelle conversazioni passate.
 - **Ricerca temporale** — se ricordi vago ("tre settimane fa"), puoi limitare la ricerca a quel periodo.
-- **Fonte grezza** — il wiki distilla la conoscenza, ma l'archivio tiene il grezzo. Se una pagina del wiki è incomplete, l'archivio sa dove cercare.
+- **Fonte grezza per il wiki** — FATTO (FEAT-003): il wiki distilla la conoscenza, ma l'archivio tiene il grezzo. Ora, se una decisione importante non è mai finita nel wiki, puoi **recuperare quella conversazione intera** (`sertor-rag memory show`) e distillarla a posteriori — invece di ricostruirla a memoria. Con una regola precisa: si recupera **una conversazione mirata, quando lo chiedi tu** — mai si rimastica l'intero archivio da solo (sarebbe uno spreco). La scatola è un *backup*, non qualcosa che gira di continuo.
 - **Prova** — se qualcuno chiede "su cosa vi siete decisi?", hai una traccia immutabile.
 
 ## Quello che succede dietro le quinte
@@ -90,7 +90,6 @@ L'archivio conserva:
 ## Il futuro
 
 - **Ricerca semantica** (FEAT-004) — estensione: "trovami conversazioni di significato correlato a X" (con embedding, opt-in separato).
-- **Distillazione** (FEAT-003) — il sistema attingerà dall'archivio ricercabile per migliorare il wiki distillando il grezzo.
 - **Marcare i turni importanti** (FEAT-005) — dire "ricorda questo turno" per segnalarlo come importante.
 - **Retention** (FEAT-006) — governance dell'archivio: decidere quando i turni vanno in scadenza.
 - **Multi-assistente** (FEAT-008) — il registratore funzionerà anche con altri assistenti, non solo Claude Code.
