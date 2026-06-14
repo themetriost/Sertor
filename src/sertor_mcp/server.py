@@ -21,7 +21,7 @@ from functools import lru_cache
 
 from mcp.server.fastmcp import FastMCP
 
-from sertor_core.composition import build_facade, build_graph_service
+from sertor_core.composition import build_facade, build_graph_service, enable_observability
 from sertor_core.config.settings import Settings
 from sertor_core.domain.entities import RetrievalResult, SymbolHit
 from sertor_core.observability.logging import log_event
@@ -156,6 +156,8 @@ def main() -> None:
     a missing graph or absent extra do not prevent startup (the explicit error arrives at the
     tool call, DA-5).
     """
+    # persist events if SERTOR_OBSERVABILITY=true (no-op otherwise)
+    enable_observability(Settings.load())
     _facade()
     try:
         _graph().find_symbol("__warmup__")  # load artifact + networkx, if available

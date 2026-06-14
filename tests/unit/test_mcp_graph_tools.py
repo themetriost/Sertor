@@ -121,6 +121,7 @@ def test_main_warms_facade_and_graph_before_stdio_loop(monkeypatch):
     monkeypatch.setattr(srv, "build_graph_service",
                         lambda _s=None: calls.append("graph") or _populated_graph())
     monkeypatch.setattr(srv.Settings, "load", lambda *a, **k: None)
+    monkeypatch.setattr(srv, "enable_observability", lambda *a, **k: False)
     srv._facade.cache_clear()
     srv._graph.cache_clear()
     monkeypatch.setattr(srv.mcp, "run", lambda *a, **k: calls.append("run"))
@@ -143,6 +144,7 @@ def test_main_warmup_tolerates_missing_graph(monkeypatch):
     monkeypatch.setattr(srv, "build_facade", lambda _s=None: None)
     monkeypatch.setattr(srv, "build_graph_service", lambda _s=None: _Boom())
     monkeypatch.setattr(srv.Settings, "load", lambda *a, **k: None)
+    monkeypatch.setattr(srv, "enable_observability", lambda *a, **k: False)
     srv._facade.cache_clear()
     srv._graph.cache_clear()
     ran: list[bool] = []
