@@ -69,5 +69,6 @@ sertor): qualità densa conservata + robustezza lessicale, ~666ms a query (NFR-0
 ## Vedi anche
 - La prima modalità: [[vector-retrieval]] · le porte: [[ports-adapters]] · le pipeline:
   [[indexing-and-retrieval]] · il prodotto: [[retrieval-core]].
+- Guida di scelta ibrida vs grafo: [[retrieval-vs-graph]] — pattern scopri (significato) → naviga (grafo).
 - Superfici che lo ereditano gratis: [[mcp-server]] · [[sertor-rag-cli]] ([[thin-consumer]]).
 - Naming di collezioni e sidecar: [[corpus-index-naming]]. Stato: [[roadmap]].

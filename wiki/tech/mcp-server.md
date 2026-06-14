@@ -114,4 +114,5 @@ Quando una chiamata MCP sembra appesa o il server pare morto:
 
 ## Vedi anche
 - Il pattern che incarna: [[thin-consumer]]. Cosa consuma: [[indexing-and-retrieval]] · [[retrieval-core]].
+- Guida ai 7 tool: [[retrieval-vs-graph]] — quando usare ricerca (scopri) vs grafo (naviga).
 - A cosa serve: [[dogfooding]]. Naming del corpus: [[corpus-index-naming]].
