@@ -13,8 +13,10 @@ from sertor_core.composition import (
     build_facade,
     build_graph_service,
     build_indexer,
+    build_observability_store,
     build_store,
     collection_name,
+    enable_observability,
 )
 from sertor_core.config.settings import Settings
 from sertor_core.domain.entities import (
@@ -45,6 +47,8 @@ __all__ = [
     "build_graph_service",
     "build_embedder",
     "build_store",
+    "build_observability_store",
+    "enable_observability",
     "collection_name",
     "Settings",
     "Document",

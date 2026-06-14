@@ -113,6 +113,20 @@ so a provider/model change never serves stale vectors. It is safe to delete at a
 most a re-embed). The embedding log event reports the provider token count (`tokens`) as a cost
 signal when the provider exposes it (REQ-H5), independent of the cache.
 
+**Observability persistence (feature 020):** Sertor already emits rich structured events (index,
+embeddings, cache hits/misses, retrieve, …) but they are ephemeral (stderr). Enable persistence to
+keep them in a local store so historical reports become possible:
+
+```bash
+SERTOR_OBSERVABILITY=true     # default: false (ephemeral logging only)
+```
+
+The store is `<index_dir>/observability.sqlite` (git-ignored), queryable by operation and time. It is
+**privacy-by-default**: only metrics/metadata are kept (secrets redacted, never query text). It is
+**non-intrusive**: a store failure never fails an operation (only a warning), and it is safe to
+delete. The browsable reports and the control-panel TUI that read this store land in later features
+of the observability epic.
+
 ## 3. First commands
 
 ```bash

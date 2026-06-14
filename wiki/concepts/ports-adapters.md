@@ -3,7 +3,7 @@ title: Porte e adapter (boundary del retrieval-core)
 type: concept
 tags: [ports, adapters, protocol, hexagonal, clean-architecture, sertor-core, composition]
 created: 2026-06-08
-updated: 2026-06-14 (+ CachingEmbedder decoratore di EmbeddingProvider + token nei log, 019) · 2026-06-12 (sera: +CodeGraph, FEAT-005 — sei porte; pomeriggio: +LexicalIndex/Reranker/RetrieverStrategy, FEAT-004)
+updated: 2026-06-14 (+ 7ª porta ObservabilityStore + cattura via logging.Handler, feature 020) · 2026-06-14 (+ CachingEmbedder decoratore di EmbeddingProvider + token nei log, 019) · 2026-06-12 (sera: +CodeGraph, FEAT-005 — sei porte; pomeriggio: +LexicalIndex/Reranker/RetrieverStrategy, FEAT-004)
 sources: ["src/sertor_core/domain/ports.py", "src/sertor_core/composition.py", "src/sertor_core/adapters/**"]
 ---
 
@@ -13,9 +13,9 @@ Le **porte** del [[retrieval-core]] sono i **boundary astratti** dietro cui vivo
 nucleo dipende **solo** da esse (Principio I/II della [[constitution|Costituzione]]), gli **adapter** in
 `adapters/` le implementano importando gli SDK esterni. Vivono in `domain/ports.py`, definite come
 **`Protocol`** (structural typing): un adapter è conforme se ha i metodi giusti, **senza ereditare nulla** —
-così è banale da mockare nei test (tutte `@runtime_checkable`). Le porte sono **sei**: le due
-fondative qui sotto, le tre della FEAT-004 ([[hybrid-retrieval]]) e la `CodeGraph` della
-FEAT-005 ([[code-graph]]).
+così è banale da mockare nei test (tutte `@runtime_checkable`). Le porte sono **sette**: le due
+fondative qui sotto, le tre della FEAT-004 ([[hybrid-retrieval]]), la `CodeGraph` della
+FEAT-005 ([[code-graph]]) e la `ObservabilityStore` della feature 020 (osservabilità).
 
 ## Le due porte fondative
 
@@ -52,6 +52,23 @@ FEAT-005 ([[code-graph]]).
   di grafi), `find_symbol`/`who_calls`/`related_docs`/`get_context`, `exists`/`reset`.
   Namespace per **solo corpus** (il grafo non dipende dagli embeddings). Due semantiche di
   assenza: grafo non costruito → `GraphNotFoundError`; simbolo assente → vuoto esplicito.
+
+## La porta dell'osservabilità (feature 020, F1 epica osservabilità)
+
+- **`ObservabilityStore`** — l'archivio persistente degli eventi: `record_event(ts, operation, fields)`
+  + `query_events(operation, since, until) -> list[ObservedEvent]`. È il **seam** tra *dove vivono gli
+  eventi* (ci scrive l'handler di cattura) e *chi li interroga* (la futura aggregazione/report FEAT-002).
+  Adapter `SqliteObservabilityStore` (SQLite stdlib, `<index_dir>/observability.sqlite`, gitignored).
+  Degrado **non-fatale** (guasto → no-op/`[]` + warning, mai un errore dell'operazione osservata).
+
+  **Meccanismo di cattura (osservatore puro).** A differenza delle altre porte (cablate nelle `build_*`
+  come dipendenze dei servizi), questa è alimentata da un `logging.Handler` (`EventPersistenceHandler`)
+  che il composition root **attacca al logger `sertor_core`** solo se `SERTOR_OBSERVABILITY=true`. Il
+  logger *è* il bus pub/sub: `log_event` emette e non sa chi ascolta → **zero modifiche all'emitter**
+  (additività massima), **non-fatalità gratis** (il framework logging non propaga le eccezioni di un
+  handler), **redazione gratis** (i campi su `LogRecord.extra` sono già `redact`-ati). Guardia di
+  re-entrancy perché l'avviso di guasto dello store è a sua volta un evento. Default off = nessun handler,
+  nessuno store, comportamento odierno. Vedi l'explainer [[il-pannello-di-controllo]].
 
 Le porte parlano in termini di [[domain-model|entità di dominio]] (`EmbeddedChunk`,
 `RetrievalResult`, `LexicalEntry`): è ciò che impedisce a uno schema di backend di risalire nel

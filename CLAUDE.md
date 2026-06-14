@@ -409,6 +409,19 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/020-osservabilita-persistente/plan.md` (osservabilità F1 — strato di osservabilità persistente:
+archivio locale interrogabile degli eventi che il core GIÀ emette via `log_event`. Meccanismo (DA-O-f
+risolta): un `logging.Handler` (`EventPersistenceHandler` in `observability/capture.py`) attaccato dal
+composition root al logger `sertor_core` SOLO se abilitato, che legge i campi già strutturati+redatti dal
+`LogRecord` (`operation`+`extra`, ts da `record.created`) → store. Vantaggi: zero modifiche a `log_event`/
+call-site (additivo), non-fatale GRATIS (logging `handleError` non propaga), default-off = nessun handler/
+store, redazione già applicata in `extra`. Store: SQLite `<index_dir>/observability.sqlite` (stdlib,
+gitignored), tabella `events(id,ts,operation,fields json)` con indici `(operation,ts)`/`(ts)`,
+dimensionato per le aggregazioni di FEAT-002 (bucket via funzioni data, `json_extract` dei campi).
+7ª porta `ObservabilityStore` (record_event/query_events) in `domain/ports.py` = seam con FEAT-002.
+Manopola `Settings.observability_enabled` (`SERTOR_OBSERVABILITY`, default False); gancio retention
+(DA-O-b rinviata). Insert sincrono (bassa cardinalità eventi per-operazione), `QueueHandler` via di fuga.
+Constitution PASS 10/10 senza deroghe. Branch `020-osservabilita-persistente`. Storico recente:
 `specs/019-hardening-cache-token/plan.md` (hardening produzione — i due Should del gruppo C dal RAG
 audit, costo indicizzazione: (US1) cache embeddings per content-hash = decoratore `CachingEmbedder` +
 store SQLite `EmbeddingCache` in `adapters/embeddings/cache.py`, chiave `(embedder.name, sha256(text))`,

@@ -192,3 +192,17 @@ class IndexReport:
     embedding_dim: int | None = None
     elapsed_ms: float | None = None
     skipped_paths: list[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class ObservedEvent:
+    """A persisted observability event (feature 020): a structured `log_event`, kept.
+
+    `ts` is the emission instant (epoch seconds); `operation` the event kind (`index`,
+    `embeddings`, `retrieve`, …); `fields` the already-redacted applicative fields. The value
+    type returned by `ObservabilityStore.query_events` (no backend type leaks into the domain).
+    """
+
+    ts: float
+    operation: str
+    fields: dict

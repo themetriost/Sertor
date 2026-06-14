@@ -150,6 +150,47 @@ def build_graph_service(settings: Settings | None = None):
     )
 
 
+def build_observability_store(settings: Settings | None = None):
+    """Build the persistent observability store (feature 020) — the seam for FEAT-002.
+
+    Returns the SQLite-backed `ObservabilityStore` at `<index_dir>/observability.sqlite`. Lazy
+    import (stdlib only, no new mandatory dependency). The aggregation feature will read from here.
+    """
+    from sertor_core.observability.store import SqliteObservabilityStore
+
+    settings = settings or Settings.load()
+    return SqliteObservabilityStore(settings.index_dir)
+
+
+def enable_observability(settings: Settings | None = None) -> bool:
+    """Attach the event-persistence handler to the `sertor_core` logger if enabled (020).
+
+    Idempotent: if a persistence handler is already attached, do nothing. A no-op (returns False)
+    when `observability_enabled` is off — no handler attached, no store created (FR-004). Consumers
+    (CLI/MCP) call this once at startup; the observed operations stay untouched (additive, FR-005).
+    """
+    settings = settings or Settings.load()
+    if not settings.observability_enabled:
+        return False
+
+    import logging
+
+    from sertor_core.observability.capture import EventPersistenceHandler
+    from sertor_core.observability.logging import get_logger
+
+    logger = get_logger()
+    # The logger gates record CREATION: by default it inherits WARNING, so INFO events (index,
+    # embeddings, cache, retrieve) would never reach a handler. Lower the threshold to INFO so the
+    # persistence handler can CAPTURE them. This does not add stderr noise on its own: whether INFO
+    # is DISPLAYED still depends on the consumer's own (stderr) handler level.
+    if logger.level == logging.NOTSET or logger.level > logging.INFO:
+        logger.setLevel(logging.INFO)
+    if any(isinstance(h, EventPersistenceHandler) for h in logger.handlers):
+        return True  # already enabled (idempotent)
+    logger.addHandler(EventPersistenceHandler(build_observability_store(settings)))
+    return True
+
+
 def build_indexer(settings: Settings | None = None):
     """Build the indexing orchestrator wired from the configuration (REQ-029).
 
