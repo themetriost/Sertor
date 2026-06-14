@@ -49,10 +49,13 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   `ObservabilityReports` (5 report cache/costo/salute/latenze/affidabilità da `query_events`, funzioni
   pure; Constitution PASS, 415+85 test). **F3 ✅ mergiata (PR #36, 2026-06-14)** = pannello TUI vista live
   (`sertor-rag observe`, cruscotto auto-aggiornante; modello puro `LiveSnapshot` + guscio Textual extra
-  `[tui]`; 424+85 test). *In corso:* **F4 «TUI report»** — le viste storiche **sfogliabili** (hit/miss
-  nel tempo, costo per giorno, salute+freschezza) nello stesso pannello; chiude l'MVP dell'osservabilità
-  (F1→F4). SpecKit in autonomia. *In parallelo (quando si vuole):* decomporre l'epica **memoria
-  conversazioni** (nodo: cattura host-specifica).
+  `[tui]`; 424+85 test). **F4 «TUI report» IMPLEMENTATA sul branch**
+  `023-osservabilita-tui-report` (le viste storiche **sfogliabili** nel pannello a schede:
+  Live/Cache/Cost/Corpus, tasto `t` per l'intervallo all/7g/24h, freschezza = tempo dall'ultimo index;
+  funzioni di resa pure + schede Textual; Constitution PASS, 433+85 test; **non ancora mergiata**).
+  **Al merge l'MVP dell'osservabilità (F1→F4) è completo.** *Restano (Should/Could):* export OTel (F5),
+  metriche aggregate (F6), stima € (F7), web mode (F8), ecc. *In parallelo (quando si vuole):*
+  decomporre l'epica **memoria conversazioni** (nodo: cattura host-specifica).
 
 ### 📋 PLANNED (per priorità)
 - **Agenzia RAG incorporata — dote differita (Could)**: la capacità agentic RAG è ✅ **soddisfatta

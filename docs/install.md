@@ -135,10 +135,11 @@ uv add "sertor-core[tui] @ git+https://github.com/themetriost/Sertor"   # textua
 sertor-rag observe                                                       # open the live panel
 ```
 
-Refresh interval via `SERTOR_OBSERVABILITY_REFRESH` (default 2s). Without the extra, the command
-prints an actionable install hint; with persistence off, the panel shows an honest "no data — enable
-SERTOR_OBSERVABILITY" state. The panel is read-only. Browsable historical reports land in a later
-feature.
+The panel is **tabbed**: **Live** (current state) plus **Cache / Cost / Corpus** browsable reports
+(hit/miss over time, tokens per provider/day, corpus health + freshness). Press **`t`** to cycle the
+time range (all → 7 days → 24 hours). Refresh interval via `SERTOR_OBSERVABILITY_REFRESH` (default 2s).
+Without the extra, the command prints an actionable install hint; with persistence off, the panel
+shows an honest "no data — enable SERTOR_OBSERVABILITY" state. The panel is read-only.
 
 ## 3. First commands
 

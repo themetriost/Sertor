@@ -409,6 +409,15 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/023-osservabilita-tui-report/plan.md` (osservabilità F4 — pannello TUI report sfogliabili, ULTIMO
+Must dell'epica: ESTENDE F3 (stessa app `sertor-rag observe`, stesso extra `[tui]`) trasformandola a
+SCHEDE `TabbedContent` (Live/Cache/Cost/Corpus). Funzioni di resa PURE in `observability/live.py`
+(`render_cache_report`/`render_cost_report`/`render_corpus_report(now)` — testabili senza terminale) +
+finestra temporale pura `time_window(preset, now)`/`next_window` (preset all/7d/24h, ciclo con binding
+`t`, mostrato in sub-title). Freschezza = `now - last_index_ts` (no confronto repo). Rende i report di F2
+(thin consumer), sola lettura, degradazione onesta (store vuoto → stato vuoto; € assente → ripiego
+token). Nessuna nuova dipendenza/manopola (riusa F2/F3). Constitution PASS 10/10. Branch
+`023-osservabilita-tui-report`. Storico:
 `specs/022-osservabilita-tui-live/plan.md` (osservabilità F3 — pannello TUI vista live: prima superficie
 VISIBILE. Due strati: (1) modello di stato PURO `LiveSnapshot` + `live_snapshot(reports)` in
 `observability/live.py` (compone i report di F2, testabile SENZA terminale); (2) guscio Textual
