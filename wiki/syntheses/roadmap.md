@@ -31,7 +31,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
 | CLI — installer (`sertor install`) | — | ✅ `wiki` (PR #22) + **`rag` su master (2026-06-12)** — validato live su Kaelen; `governance` = stub |
 | **Hardening produzione (retrieval)** | — | 🔄 **IN PROGRESS** — Must ✅ su master (PR #32); Should gruppo C (cache embeddings + token log, feature 019) ✅ **su master (PR #33)**; restano i Could in `requirements/sertor-core/hardening-produzione/` |
-| **Memoria conversazioni** (epica, MVP) | — | 🔄 **IN PROGRESS** — **MVP ✅ completo**: FEAT-001 cattura & archivio (PR #45) + FEAT-002 ricerca episodica (PR #47), entrambi su master 2026-06-14. *Provato live* su 36 sessioni/5062 turni. Manca solo la **superficie CLI** (`sertor-rag memory archive`/`search`); poi Should/Could (003/004/005/006/008) |
+| **Memoria conversazioni** (epica, MVP) | — | 🔄 **IN PROGRESS** — **MVP ✅ completo e USABILE**: FEAT-001 cattura (PR #45) + FEAT-002 ricerca (PR #47) + superficie CLI/hook (035, PR #49), tutti su master 2026-06-14. Comandi `sertor-rag memory archive`/`search` + hook `SessionEnd`, gated `SERTOR_MEMORY` (off di default). *Provato live*. Resta: **accendere `SERTOR_MEMORY`** (scelta utente) + Should/Could (003/004/005/006/008) |
 | **Osservabilità accesa sul dogfood** + errori MCP segnalati | — | ✅ **master (2026-06-14, PR #40/#43)** — `SERTOR_OBSERVABILITY=true` cablato e attivo; ogni errore del server MCP = evento + self-test allo startup |
 | Distribuzione multi-assistente: GitHub Copilot (+ Codex Could) | — | 👍 **da decomporre** (decisione utente 2026-06-12) |
 | Tema lingua (tutto il prodotto in inglese) | — | ✅ **completato totale (2026-06-13, PR #27/#28/#29/#31)**: codice (72 .py: docstring/commenti/**errori**), test (75 .py: commenti/docstring), documentazione di prodotto (README + `docs/`), asset installer, CLI, seed it/en. Restano IT **per scelta**: `wiki/`, `specs/`, `requirements/`, `CLAUDE.md`, `prototype/` (congelato) |
@@ -42,20 +42,17 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- **Memoria conversazioni — MVP ✅ COMPLETO (epica `memoria-conversazioni`)** — *cosa:* il tier grezzo
-  episodico, archivio interrogabile di tutte le conversazioni. *Dove:* `specs/031-cattura-archiviazione/`
-  + `specs/033-ricerca-episodica/`; codice su master. *Fatto:* **FEAT-001 cattura & archivio (PR #45)**
-  + **FEAT-002 ricerca episodica FTS5 (PR #47)** — il ciclo cattura→archivia(scrub)→cerca gira
-  end-to-end, *provato live* (36 sessioni/5062 turni; query «Langfuse» → turno reale, ~78 ms).
-  *Prossimo passo concreto:* **(B) superficie CLI** (`sertor-rag memory archive` / `memory search`) —
-  oggi cattura e ricerca si invocano solo via libreria, manca il comando da terminale. *Decisione
-  aperta (utente):* avviare B o fermarsi all'MVP-libreria. *Poi:* Should/Could (003/004/005/006/008).
+- **Memoria conversazioni — MVP ✅ COMPLETO E USABILE (epica `memoria-conversazioni`)** — *cosa:* il
+  tier grezzo episodico, archivio interrogabile di tutte le conversazioni. *Dove:*
+  `specs/031-cattura-archiviazione/` + `specs/033-ricerca-episodica/` + `specs/035-memoria-cli-hook/`;
+  codice su master. *Fatto:* cattura (PR #45) + ricerca FTS5 (PR #47) + **superficie CLI & hook
+  (PR #49)** — `sertor-rag memory archive`/`search` + hook `SessionEnd` (cattura automatica a fine
+  sessione, non-fatale), tutto *gated* su `SERTOR_MEMORY` (off di default = privacy). Ciclo
+  cattura→archivia(scrub)→cerca *provato live* (query «Langfuse»/«GraphRAG» → turni reali). *Unico
+  passo rimasto per renderla operativa:* **accendere `SERTOR_MEMORY=true` nel `.env`** — scelta di
+  privacy dell'utente (in attesa). *Poi:* Should/Could (003/004/005/006/008).
 
 ### 📋 PLANNED (per priorità)
-- **Superficie CLI della memoria (gap MVP, prossimo naturale)** — cattura e ricerca esistono su master
-  ma **si invocano solo via libreria**: servono comandi sottili `sertor-rag memory archive` e
-  `sertor-rag memory search "..."` (eventualmente un trigger di cattura). Piccola feature CLI; rende
-  l'MVP *usabile dal terminale*, non solo da Python.
 - **Memoria — Should/Could** — FEAT-003 (la distillazione del wiki attinge all'archivio), FEAT-004
   (ricerca semantica opt-in), FEAT-005 (remember-this selettivo), FEAT-006 (governance/retention),
   FEAT-007 (ponte second-brain), FEAT-008 (cattura multi-assistente). Dopo la superficie CLI.
@@ -74,6 +71,14 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### ✅ DONE (su `master`, le rilevanti)
 
+- **🚢 Memoria conversazioni — superficie CLI + hook SessionEnd (feature 035, PR #49, 2026-06-14)** —
+  rende l'MVP memoria **usabile dal terminale e automatico**: comandi *thin consumer*
+  `sertor-rag memory archive` (idempotente) e `memory search "..."` (filtri temporali, umano/`--json`)
+  + **hook Claude Code `SessionEnd`** (`.claude/hooks/memory-capture.ps1`) che cattura a fine sessione,
+  **non-bloccante/non-fatale**, **gated** su `SERTOR_MEMORY` (off → comando con errore azionabile, hook
+  no-op). Comandi host-agnostici, hook host-specifico (Principio X). Core FEAT-001/002 invariato.
+  Constitution PASS 10/10, 12 test, 527 non-cloud verdi. *Provato live* (`memory search "GraphRAG"` →
+  turni reali). *Resta:* accendere `SERTOR_MEMORY` per attivarla.
 - **🚢 Memoria conversazioni — FEAT-002 ricerca episodica full-text (feature 033, PR #47, 2026-06-14)** —
   chiude l'**MVP memoria** ([[ricerca-episodica-fts5]]): l'archivio di FEAT-001 è ora **interrogabile**
   («ne avevamo già parlato?»). Componente concreto `EpisodicSearch` (no porta) su **SQLite FTS5 nativo**

@@ -3,7 +3,7 @@ title: Memoria episodica — Cattura delle conversazioni (il tier grezzo)
 type: concept
 tags: [memoria, episodico, conversazioni, hermes, tier-grezzo, archive, host-agnostico, feat-001]
 created: 2026-06-14
-updated: 2026-06-14
+updated: 2026-06-14 (+ FEAT-035 superficie CLI + hook SessionEnd, MVP completo)
 sources: ["requirements/memoria-conversazioni/epic.md", "src/sertor_core/domain/memory.py", "https://github.com/nous-research/hermesresearch"]
 ---
 
@@ -89,6 +89,7 @@ Verificato in test: logica di archivio e contratto di cattura passano con ≥2 a
 
 - ✅ **FEAT-001 (Cattura & archiviazione)**: implementata (PR #45, 2026-06-14). Store SQLite, adapter Claude-Code, scrub, privacy-by-default, host-agnostico.
 - ✅ **FEAT-002 (Ricerca episodica)**: implementata (PR [oggi], 2026-06-14). Ricerca FTS5 nativa SQLite, turni interrogabili, full-text lessicale, privacy (offline), robustezza.
+- ✅ **FEAT-035 (Superficie CLI + hook SessionEnd)**: implementata (2026-06-14). MVP COMPLETO: comandi `sertor-rag memory search` / `archive` (thin-consumer) + hook SessionEnd (cattura automatica a fine sessione). Privacy-by-default (disattivato se `SERTOR_MEMORY` non è configurato); hook non-bloccante.
 - 📋 **FEAT-003** (Distillazione): schema non definito.
 - 📋 **FEAT-004/005/006/008**: estensioni (ricerca semantica, remember-this, retention, multi-assistente).
 
@@ -96,8 +97,11 @@ Verificato in test: logica di archivio e contratto di cattura passano con ≥2 a
 
 ## Pagine collegate
 
-- [[feat-001-memoria-cattura-archiviazione]] — record della feature implementata.
+- [[feat-001-memoria-cattura-archiviazione]] — record della feature (cattura & archivio).
+- [[feat-002-ricerca-episodica-fulltext]] — record della feature (ricerca episodica).
+- [[feat-035-superficie-cli-memoria-hook-sessionend]] — record del completamento MVP (superficie CLI + hook).
 - [[transcript-capture-adapter-e-storage]] — le componenti tecniche (porta + adapter + store).
+- [[ricerca-episodica-fts5]] — il motore FTS5 SQLite.
 - [[diary-vs-graph]] — come la memoria episodica si relaziona al grafo wiki.
 - [[second-brain-cross-progetto]] — visione meta: memoria su più progetti e assistenti.
 - [[constitution]] — Principio X (host-agnosticità) alla base della porta.
