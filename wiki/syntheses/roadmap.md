@@ -30,7 +30,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | Manutenzione wiki (FEAT-007) | Should | ✅ **master (2026-06-13, PR #30)** — `move`/`reconcile`/`collect`+status; gruppi A(Won't)/E/F/B/C/D tutti chiusi |
 | CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
 | CLI — installer (`sertor install`) | — | ✅ `wiki` (PR #22) + **`rag` su master (2026-06-12)** — validato live su Kaelen; `governance` = stub |
-| **Hardening produzione (retrieval)** | — | 🔄 **IN PROGRESS** — Must ✅ su master (PR #32); Should gruppo C (cache embeddings + token log, feature 019) **PR #33 aperta verso master**; restano i Could in `requirements/sertor-core/hardening-produzione/` |
+| **Hardening produzione (retrieval)** | — | 🔄 **IN PROGRESS** — Must ✅ su master (PR #32); Should gruppo C (cache embeddings + token log, feature 019) ✅ **su master (PR #33)**; restano i Could in `requirements/sertor-core/hardening-produzione/` |
 | Distribuzione multi-assistente: GitHub Copilot (+ Codex Could) | — | 👍 **da decomporre** (decisione utente 2026-06-12) |
 | Tema lingua (tutto il prodotto in inglese) | — | ✅ **completato totale (2026-06-13, PR #27/#28/#29/#31)**: codice (72 .py: docstring/commenti/**errori**), test (75 .py: commenti/docstring), documentazione di prodotto (README + `docs/`), asset installer, CLI, seed it/en. Restano IT **per scelta**: `wiki/`, `specs/`, `requirements/`, `CLAUDE.md`, `prototype/` (congelato) |
 | Igiene radice ospite (installer, asse DOVE) | — | ✅ **master (2026-06-13, PR #26)** — config in `wiki/` + auto-discovery, `--mcp-scope` |
@@ -50,8 +50,8 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   `embed_cache.sqlite`, chiave `(model, sha256)`, manopola `SERTOR_EMBED_CACHE` default off, wiring solo
   sul percorso d'indicizzazione, degrado non-fatale) + **REQ-H5** token nei log (evento `embeddings` con
   `usage.total_tokens`/`prompt_eval_count`; corretto en-passant un difetto di redazione che mascherava
-  `tokens`). *Prossimo passo:* **PR #33 aperta verso master** — attende review/merge; al merge: re-index
-  dogfood + opzionale `SERTOR_EMBED_CACHE=true` sul `.env` del corpus `sertor`. *Could (dopo):* REQ-H7 query transformation, REQ-H8 filtro
+  `tokens`). ✅ **Mergiata su master (PR #33, 2026-06-14)**; cache **attivata sul dogfood** (`SERTOR_EMBED_CACHE=true`).
+  *Restano i Could:* REQ-H7 query transformation, REQ-H8 filtro
   metadata esteso, REQ-H9 tracing distribuito, REQ-H10 metriche aggregate, REQ-H11 contextual retrieval.
   *Collegato:* refresh incrementale = FEAT-009 d'epica. *Blocco/decisione aperta:* nessuno. *Azione
   operativa fuori-codice pendente:* ruotare la key Azure esposta nel transcript.
@@ -72,6 +72,15 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### ✅ DONE (su `master`, le rilevanti)
 
+- **🚢 Cache embeddings + token nei log (hardening gruppo C, feature 019, PR #33, 2026-06-14)** — chiude
+  i due Should del costo d'indicizzazione ([[indexing-and-retrieval]]): `CachingEmbedder` (decoratore
+  della porta `EmbeddingProvider`, servizi invariati) + `EmbeddingCache` (store SQLite
+  `<index_dir>/embed_cache.sqlite`, chiave `(model, sha256)`, vettori float64 esatti → indice
+  byte-equivalente, degrado non-fatale); wiring solo sul percorso d'indicizzazione, manopola
+  `SERTOR_EMBED_CACHE` (default off). + token nei log (`embeddings` con `usage.total_tokens`/
+  `prompt_eval_count`, omesso se assente) e fix redazione segreti per-parola. SpecKit completo, 395+85
+  test verdi, Constitution 10/10. Cache **attivata sul dogfood**. NB: nuova **area wiki `explainers/`**
+  (descrizioni per non tecnici) consegnata nella stessa PR.
 - **🚢 Manutenzione wiki deterministica (FEAT-007, feature 017, PR #30, 2026-06-13)** — chiude
   l'ultimo Should del core ([[wiki-tools]]): `sertor-wiki-tools move` (sposta/rinomina una pagina e
   riscrive i link entranti — wikilink form-preserving + relativi, `--dry-run`, recovery,
