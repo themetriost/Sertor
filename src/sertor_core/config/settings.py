@@ -97,6 +97,10 @@ class Settings:
     # embedding cache (019, REQ-H4): content-hash cache so re-indexing an unchanged corpus does
     # not re-embed identical chunks. Default off = today's behaviour (full re-embed on rebuild).
     embed_cache_enabled: bool = False
+    # observability persistence (020): keep the structured events that the core already emits in a
+    # local queryable store (enables historical reports). Default off = today's behaviour (ephemeral
+    # stderr logging only). The store lives at `<index_dir>/observability.sqlite` (git-ignored).
+    observability_enabled: bool = False
 
     # vector store
     index_dir: Path = field(default_factory=lambda: Path(".index"))
@@ -211,6 +215,7 @@ class Settings:
             embed_retry_attempts=int(os.getenv("SERTOR_EMBED_RETRY_ATTEMPTS", "3")),
             embed_retry_base_s=float(os.getenv("SERTOR_EMBED_RETRY_BASE", "0.5")),
             embed_cache_enabled=_bool_env("SERTOR_EMBED_CACHE", False),
+            observability_enabled=_bool_env("SERTOR_OBSERVABILITY", False),
             index_dir=resolved_index_dir,
             azure_search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT", ""),
             azure_search_api_key=os.getenv("AZURE_SEARCH_API_KEY", ""),

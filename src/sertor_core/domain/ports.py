@@ -13,6 +13,7 @@ from sertor_core.domain.entities import (
     EmbeddedChunk,
     GraphData,
     LexicalEntry,
+    ObservedEvent,
     RetrievalResult,
     SymbolHit,
 )
@@ -176,6 +177,28 @@ class CodeGraph(Protocol):
 
     def reset(self, corpus: str) -> None:
         """Delete the corpus artifact (absent = no-op)."""
+        ...
+
+
+@runtime_checkable
+class ObservabilityStore(Protocol):
+    """Abstraction for the persistent observability archive (feature 020,
+    contracts/observability-store.md).
+
+    The seam between where events live (the persistence handler writes here) and who queries them
+    (FEAT-002 aggregation/report reads here). A store failure is non-fatal: `record_event` is a
+    no-op and `query_events` returns `[]`, both with a warning — the observed operation is never
+    affected (the observability layer is a service add-on, not a source of truth).
+    """
+
+    def record_event(self, ts: float, operation: str, fields: dict) -> None:
+        """Append an observed event (instant, operation kind, already-redacted fields)."""
+        ...
+
+    def query_events(
+        self, operation: str | None, since: float | None, until: float | None
+    ) -> list[ObservedEvent]:
+        """Events matching the filters (None = unconstrained), ordered by `ts` ascending."""
         ...
 
 
