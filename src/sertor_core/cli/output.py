@@ -17,6 +17,7 @@ from collections.abc import Sequence
 
 from sertor_core.config.settings import Settings
 from sertor_core.domain.entities import IndexReport, RetrievalResult
+from sertor_core.domain.memory import ArchivedSession, SessionSummary
 from sertor_core.services.episodic_search import EpisodicResults
 from sertor_core.services.memory_archive import ArchiveRunReport
 
@@ -149,5 +150,70 @@ def format_memory_results(
             f"[{i}] score={h.score:.3f}  role={h.role}  session={h.session_key}  "
             f"turn={h.turn_index}  @={_iso_utc(h.captured_at)}\n"
             f"    {h.snippet}"
+        )
+    return "\n".join(blocks)
+
+
+def format_session_transcript(session: ArchivedSession, *, json: bool) -> str:
+    """Formats the full transcript of a session for `memory show` (036, FR-001/SC-001).
+
+    The text is rendered in FULL — no truncation, no preview: the session is already targeted, the
+    point is the entire content for distillation (research D5). `captured_at`/`ts` are ISO-8601 UTC
+    in the human view and raw epoch floats in JSON; a turn with no timestamp renders `@=?` (human)
+    / `null` (JSON). An existing session with no turns prints an explicit empty state and an empty
+    `turns` (distinct from "not found", handled in the CLI handler, not here). Human/JSON
+    informational equivalence is the invariant (SC-002).
+    """
+    if json:
+        return _json.dumps(
+            {
+                "session_key": session.session_key,
+                "project_id": session.project_id,
+                "captured_at": session.captured_at,
+                "adapter_kind": session.adapter_kind,
+                "turns": [
+                    {"index": t.index, "role": t.role, "ts": t.ts, "text": t.text}
+                    for t in session.turns
+                ],
+            }
+        )
+    header = (
+        f"session={session.session_key}  @={_iso_utc(session.captured_at)}  "
+        f"turns={len(session.turns)}  adapter={session.adapter_kind}"
+    )
+    if not session.turns:
+        return f"{header}\n(empty session)"
+    blocks: list[str] = [header]
+    for t in session.turns:
+        ts = _iso_utc(t.ts) if t.ts is not None else "?"
+        blocks.append(f"[{t.index}] {t.role}  @={ts}\n    {t.text}")
+    return "\n".join(blocks)
+
+
+def format_session_list(summaries: Sequence[SessionSummary], *, json: bool) -> str:
+    """Formats the recent-sessions list for `memory list` (036, FR-002/SC-002).
+
+    Recency-first order is the core's responsibility (`list_recent`); this view only renders. Each
+    entry exposes `session_key`/`captured_at`/`turn_count` (counts only, never content). Empty list
+    → honest empty state (`(no sessions)` / `[]`), never an error. Human/JSON informational
+    equivalence is the invariant (SC-002).
+    """
+    if json:
+        return _json.dumps(
+            [
+                {
+                    "session_key": s.session_key,
+                    "captured_at": s.captured_at,
+                    "turn_count": s.turn_count,
+                }
+                for s in summaries
+            ]
+        )
+    if not summaries:
+        return "(no sessions)"
+    blocks: list[str] = []
+    for i, s in enumerate(summaries, start=1):
+        blocks.append(
+            f"[{i}] session={s.session_key}  @={_iso_utc(s.captured_at)}  turns={s.turn_count}"
         )
     return "\n".join(blocks)

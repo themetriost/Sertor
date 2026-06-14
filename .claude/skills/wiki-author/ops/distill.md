@@ -14,16 +14,25 @@ Distillation is the **dual** of `record`: where `record` captures the **dated ev
   e.g. in `CLAUDE.md`) — a **newly implemented feature**: the record is born *lean by design*
   (event + outcome + pointers), entities go into pages;
 - **from backlog**, on request: an old fat record to be slimmed down;
-- **from conversation**: the **condensed brief** of an entire conversation/session
-  — even an old one, never recorded in real time, or that happened elsewhere — to be poured into the graph.
-  **Never the raw transcript**: the caller condenses first (input arrives already pre-processed).
-  This is the *safety net* for when the ritual was absent. If the brief also contains **events** not in the diary
-  (completed work never recorded), a contextual `record` captures them: `distill` writes the durable into the
-  graph, it does not write chronicles.
+- **from conversation**: a **targeted past session** retrieved from the episodic archive, condensed, then
+  poured into the graph. Instead of demanding a brief written from scratch, **recover the session from the
+  archive** (feature 036): `sertor-rag memory list` (or `memory search <query>`) to find the right
+  `session_key`, then `sertor-rag memory show <session_key>` to bring its full transcript into context. The
+  **raw transcript still never enters the graph**: the main flow condenses it first (judgment), then distils
+  the durable knowledge. This is the *safety net* for when the ritual was absent. If the session also contains
+  **events** not in the diary (completed work never recorded), a contextual `record` captures them: `distill`
+  writes the durable into the graph, it does not write chronicles.
+
+  > **Constraint FR-013 (binding).** Distillation from the archive is **always on a single targeted session,
+  > on explicit invocation**: **never** over the whole archive, **never** automatic (no end-of-session
+  > trigger, no per-turn/per-session sweep). Capture (cheap, automatic) and distillation (costly, deliberate)
+  > stay decoupled. `memory show`/`memory list` only *recover* material; the condensing + distilling is the
+  > main flow's judgment.
 
 1. **Source material.** The work just completed (touched code + the `experiment` record just written), or — in
-   backlog mode — an existing fat page to distill, or — in conversation mode — the condensed brief of a session
-   (decisions, concepts, outcomes). `collect --json` to find out which entities already have a page (anti-duplication).
+   backlog mode — an existing fat page to distill, or — in conversation mode — a targeted session recovered
+   from the archive via `sertor-rag memory show <session_key>` (decisions, concepts, outcomes), then condensed.
+   `collect --json` to find out which entities already have a page (anti-duplication).
 2. **Enumerate entity candidates.** From the material, list constructs with **their own identity**: domain
    entities, ports/contracts, adapters, services, architectural decisions, technologies (the *product lens*
    in [`../wiki-craft.md`](../wiki-craft.md) §2).

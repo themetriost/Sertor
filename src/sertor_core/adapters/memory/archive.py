@@ -17,7 +17,7 @@ import logging
 import sqlite3
 from pathlib import Path
 
-from sertor_core.domain.memory import ArchivedSession, TranscriptTurn
+from sertor_core.domain.memory import ArchivedSession, SessionSummary, TranscriptTurn
 from sertor_core.observability.logging import log_event
 
 
@@ -137,6 +137,53 @@ class MemoryArchive:
         except sqlite3.Error as exc:
             log_event(logging.WARNING, "memory_archive_unavailable", reason=type(exc).__name__)
             return None
+
+    def list_recent(self, limit: int) -> tuple[SessionSummary, ...]:
+        """List the most recent archived sessions (recency-first), at most `limit` (036, FR-002).
+
+        Read-only: no `INSERT`/`UPDATE`/`DELETE`, no schema/index creation. `turn_count` comes from
+        `metadata.turn_count` (already persisted, no join on `turns`), with a defensive fallback to
+        a `COUNT(*)` on `turns` if the field is missing. Non-fatal: archive absent/empty/unreadable
+        / `sqlite3.Error` → `()` + warning (FR-004), same policy as `get`. `limit <= 0` → `()`
+        (Python guard, not `LIMIT 0`).
+        """
+        if limit <= 0:
+            return ()
+        try:
+            conn = self._connect()
+            rows = conn.execute(
+                "SELECT session_key, captured_at, metadata FROM sessions "
+                "ORDER BY captured_at DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+            summaries: list[SessionSummary] = []
+            for session_key, captured_at, metadata in rows:
+                turn_count = _turn_count(conn, session_key, metadata)
+                summaries.append(
+                    SessionSummary(
+                        session_key=session_key,
+                        captured_at=captured_at,
+                        turn_count=turn_count,
+                    )
+                )
+            return tuple(summaries)
+        except sqlite3.Error as exc:
+            log_event(logging.WARNING, "memory_archive_unavailable", reason=type(exc).__name__)
+            return ()
+
+
+def _turn_count(conn: sqlite3.Connection, session_key: str, metadata: str) -> int:
+    """`turn_count` from session metadata; defensive fallback to `COUNT(*)` on turns if absent."""
+    try:
+        count = json.loads(metadata).get("turn_count")
+    except (ValueError, TypeError):
+        count = None
+    if isinstance(count, int):
+        return count
+    row = conn.execute(
+        "SELECT COUNT(*) FROM turns WHERE session_key = ?", (session_key,)
+    ).fetchone()
+    return int(row[0]) if row else 0
 
 
 def _metadata_json(session: ArchivedSession) -> str:

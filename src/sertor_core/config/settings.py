@@ -128,6 +128,9 @@ class Settings:
     # (Principio VIII); components hardcode nothing. Gated by `memory_enabled` (same opt-in).
     episodic_limit: int = 20                  # SERTOR_EPISODIC_LIMIT — max results (FR-010)
     episodic_snippet_tokens: int = 12         # SERTOR_EPISODIC_SNIPPET_TOKENS — snippet length
+    # session listing for distillation (036, FEAT-003). Max sessions returned by `memory list`,
+    # overridable per-invocation by `-k/--limit`. Default only here (Principio VIII).
+    memory_list_limit: int = 20               # SERTOR_MEMORY_LIST_LIMIT — max sessions (FR-002)
     # Source directory of the Claude Code projects (host-agnostic, testable): default
     # `~/.claude/projects`. The adapter resolves the per-project encoded subfolder from here.
     claude_projects_dir: Path = field(
@@ -256,6 +259,7 @@ class Settings:
             memory_scrub_patterns=tuple(_split_env("SERTOR_MEMORY_SCRUB_PATTERNS") or ()),
             episodic_limit=int(os.getenv("SERTOR_EPISODIC_LIMIT", "20")),
             episodic_snippet_tokens=int(os.getenv("SERTOR_EPISODIC_SNIPPET_TOKENS", "12")),
+            memory_list_limit=int(os.getenv("SERTOR_MEMORY_LIST_LIMIT", "20")),
             claude_projects_dir=(
                 Path(os.environ["SERTOR_MEMORY_CLAUDE_PROJECTS_DIR"])
                 if os.getenv("SERTOR_MEMORY_CLAUDE_PROJECTS_DIR")

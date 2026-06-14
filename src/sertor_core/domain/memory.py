@@ -60,3 +60,18 @@ class ArchivedSession:
     adapter_kind: str
     turns: tuple[TranscriptTurn, ...]   # scrubbed
     retention_days: int | None = None   # retention hook (FR-021): recorded in metadata, not applied
+
+
+@dataclass(frozen=True)
+class SessionSummary:
+    """Synthetic view of an archived session for discovery (036, FEAT-003, FR-002).
+
+    Identifies a session WITHOUT loading its turns: produced by `MemoryArchive.list_recent` and
+    rendered by `memory list`. `captured_at` is the recency ordering key; `turn_count` comes from
+    the session metadata (no join on `turns`). Pure dataclass, no external SDK (Principio I),
+    coherent with `SessionRef`.
+    """
+
+    session_key: str    # opaque key (filename stem), feeds the subsequent `memory show`
+    captured_at: float  # epoch UTC of the capture instant; recency ordering key
+    turn_count: int     # number of turns (>= 0 by construction)
