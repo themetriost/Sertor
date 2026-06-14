@@ -49,6 +49,34 @@ class FakeEmbedder:
         return [self._vector(t) for t in texts]
 
 
+class CountingEmbedder:
+    """Deterministic embedder that records every text it embeds (019 cache tests).
+
+    `calls` counts `embed` invocations; `embedded` lists the texts actually passed to the
+    provider — so a test can assert that cache hits never reach it (SC-001/002/004). The token
+    count is intentionally absent: tokens surface from the real Azure/Ollama adapters via the
+    `embeddings` log event, not from a fake embedder.
+    """
+
+    def __init__(self, dim: int = 8, name: str = "counting", batch_size: int = 64):
+        self.name = name
+        self.dim: int | None = dim
+        self.batch_size = batch_size
+        self.calls = 0
+        self.embedded: list[str] = []
+
+    def _vector(self, text: str) -> list[float]:
+        h = hashlib.sha256(text.encode()).digest()
+        return [h[i % len(h)] / 255.0 for i in range(self.dim or 0)]
+
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        if not texts:
+            return []
+        self.calls += 1
+        self.embedded.extend(texts)
+        return [self._vector(t) for t in texts]
+
+
 def _cosine(a: list[float], b: list[float]) -> float:
     dot = sum(x * y for x, y in zip(a, b, strict=False))
     na = math.sqrt(sum(x * x for x in a))

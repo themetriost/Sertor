@@ -14,7 +14,6 @@ import time
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 import chromadb  # noqa: E402
-
 import chunking  # noqa: E402  (modulo locale)
 from shared.config import settings  # noqa: E402
 from shared.embeddings import PROVIDERS, get_embedder  # noqa: E402

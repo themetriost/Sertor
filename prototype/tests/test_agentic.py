@@ -101,6 +101,7 @@ def test_langgraph_adapter_costruibile():
 def test_mcp_server_espone_i_tool():
     """Il server MCP registra i 6 tool di retrieval con schema (verifica in-process, no stdio)."""
     import asyncio
+
     import pytest
     pytest.importorskip("mcp")
     spec = importlib.util.spec_from_file_location("agentic_mcp", ROOT / "04-agentic-rag" / "mcp_server.py")

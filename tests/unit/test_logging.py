@@ -19,6 +19,16 @@ def test_redact_keeps_empty_secret_as_is():
     assert out["api_key"] == ""             # empty not masked (no secret to hide)
 
 
+def test_redact_word_aware_not_substring():
+    # Whole-word matching: `tokens` (a cost metric, REQ-H5) and `monkey` are NOT secrets,
+    # while `token`/`access_token` (auth) still are.
+    out = redact({"tokens": 42, "monkey": "x", "token": "abc", "access_token": "Bearer y"})
+    assert out["tokens"] == 42
+    assert out["monkey"] == "x"
+    assert out["token"] == "***"
+    assert out["access_token"] == "***"
+
+
 def test_log_event_emits_structured_fields(caplog):
     with caplog.at_level(logging.INFO, logger="sertor_core"):
         log_event(logging.INFO, "index", backend="local", documents=3, chunks=12, api_key="s3cr3t")

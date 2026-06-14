@@ -15,7 +15,6 @@ import sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 import networkx as nx  # noqa: E402
-
 from build_graph import GRAPH_PATH  # noqa: E402
 
 SYMBOL_KINDS = ("class", "function", "method")

@@ -24,13 +24,12 @@ for _p in (HERE, HERE.parent):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
+import tools  # noqa: E402  (modulo locale: TOOLS schema-agnostici, dispatch, system prompt)
 from autogen_agentchat.agents import AssistantAgent  # noqa: E402
 from autogen_ext.models.openai import (  # noqa: E402
     AzureOpenAIChatCompletionClient,
     OpenAIChatCompletionClient,
 )
-
-import tools  # noqa: E402  (modulo locale: TOOLS schema-agnostici, dispatch, system prompt)
 from shared import retrieval  # noqa: E402
 from shared.config import settings  # noqa: E402
 

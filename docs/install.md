@@ -100,6 +100,19 @@ Missing symbol → empty lists; graph not built → error telling you to index; 
 error with the installation instruction. Edge coverage per language is **declared**: nodes and
 hierarchy for all 10 syntactic languages, calls for all, imports/inheritance for Python.
 
+**Embedding cache (hardening, REQ-H4):** with a paid provider (Azure) every `sertor-rag index .`
+re-embeds the whole corpus. Enable the content-hash cache so re-indexing an **unchanged** corpus
+does not re-embed identical chunks — only changed/new chunks are sent to the provider:
+
+```bash
+SERTOR_EMBED_CACHE=true     # default: false (full re-embed on every rebuild)
+```
+
+The cache lives at `<index_dir>/embed_cache.sqlite` (git-ignored), keyed by `(model, content-hash)`
+so a provider/model change never serves stale vectors. It is safe to delete at any time (causes at
+most a re-embed). The embedding log event reports the provider token count (`tokens`) as a cost
+signal when the provider exposes it (REQ-H5), independent of the cache.
+
 ## 3. First commands
 
 ```bash

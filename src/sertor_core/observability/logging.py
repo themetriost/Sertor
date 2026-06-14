@@ -7,12 +7,16 @@ timings, errors). Secrets are **redacted** before emission (REQ-032).
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 
 _LOGGER_NAME = "sertor_core"
 
-# Keys whose values must never appear in logs (REQ-032).
-_SECRET_HINTS = ("key", "api_key", "apikey", "token", "secret", "password", "authorization")
+# Keys whose values must never appear in logs (REQ-032). Matched as WHOLE WORDS, not bare
+# substrings: an auth `token` is a secret, but a usage metric `tokens` (cost signal, REQ-H5) is
+# not — and `monkey` must not match `key`. `key` covers `api_key`; `apikey` covers the joined form.
+_SECRET_HINTS = ("key", "apikey", "token", "secret", "password", "authorization")
+_WORD = re.compile(r"[a-z0-9]+")
 
 
 def get_logger() -> logging.Logger:
@@ -21,8 +25,9 @@ def get_logger() -> logging.Logger:
 
 
 def _is_secret(field_name: str) -> bool:
-    low = field_name.lower()
-    return any(hint in low for hint in _SECRET_HINTS)
+    # Split snake_case and camelCase into words, then match whole hints (see _SECRET_HINTS note).
+    spaced = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", field_name).lower()
+    return bool(set(_WORD.findall(spaced)) & set(_SECRET_HINTS))
 
 
 def redact(fields: dict[str, Any]) -> dict[str, Any]:

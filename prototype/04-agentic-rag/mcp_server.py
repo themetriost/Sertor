@@ -21,7 +21,6 @@ if str(HERE.parent) not in sys.path:  # root -> shared
     sys.path.insert(0, str(HERE.parent))
 
 from mcp.server.fastmcp import FastMCP  # noqa: E402
-
 from shared import retrieval  # noqa: E402
 
 mcp = FastMCP(

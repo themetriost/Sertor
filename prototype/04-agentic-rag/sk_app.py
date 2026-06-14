@@ -26,6 +26,7 @@ for _p in (HERE, HERE.parent):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
+import tools  # noqa: E402
 from semantic_kernel import Kernel  # noqa: E402
 from semantic_kernel.agents import ChatCompletionAgent  # noqa: E402
 from semantic_kernel.connectors.ai import FunctionChoiceBehavior  # noqa: E402
@@ -35,8 +36,6 @@ from semantic_kernel.connectors.ai.open_ai import (  # noqa: E402
 )
 from semantic_kernel.filters import FilterTypes  # noqa: E402
 from semantic_kernel.functions import kernel_function  # noqa: E402
-
-import tools  # noqa: E402
 from shared import retrieval  # noqa: E402
 from shared.config import settings  # noqa: E402
 

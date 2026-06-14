@@ -18,7 +18,6 @@ from collections import Counter, defaultdict
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 import networkx as nx  # noqa: E402
-
 from shared.config import settings  # noqa: E402
 from shared.loaders import load_code, load_docs  # noqa: E402
 

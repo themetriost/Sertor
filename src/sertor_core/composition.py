@@ -46,11 +46,17 @@ def _build_reranker(settings: Settings) -> Reranker | None:
         ) from exc
 
 
-def build_embedder(settings: Settings | None = None) -> EmbeddingProvider:
+def build_embedder(
+    settings: Settings | None = None, *, cache: bool = False
+) -> EmbeddingProvider:
     """Build the embedding provider selected by the configuration (REQ-013/030).
 
     Wires the retry policy (018, REQ-H3) from `Settings`: transient provider failures are retried
     with exponential backoff + jitter. `embed_retry_attempts=1` disables retries (as before).
+
+    With `cache=True` (019, REQ-H4) the provider is wrapped in a `CachingEmbedder` so re-indexing
+    an unchanged corpus does not re-embed identical chunks. Only the indexing path opts in (the
+    query path has low reuse): see `build_indexer`. Lazy import keeps the cache off the hot path.
     """
     from sertor_core.adapters.embeddings._retry import RetryPolicy
 
@@ -62,21 +68,27 @@ def build_embedder(settings: Settings | None = None) -> EmbeddingProvider:
     if settings.embed_provider == "azure":
         from sertor_core.adapters.embeddings.azure import AzureEmbedder
 
-        return AzureEmbedder(
+        embedder: EmbeddingProvider = AzureEmbedder(
             endpoint=settings.azure_openai_endpoint,
             api_key=settings.azure_openai_api_key,
             deployment=settings.azure_openai_embed_deployment,
             batch_size=settings.embed_batch_size,
             retry=retry,
         )
-    from sertor_core.adapters.embeddings.ollama import OllamaEmbedder
+    else:
+        from sertor_core.adapters.embeddings.ollama import OllamaEmbedder
 
-    return OllamaEmbedder(
-        host=settings.ollama_host,
-        model=settings.ollama_embed_model,
-        batch_size=settings.embed_batch_size,
-        retry=retry,
-    )
+        embedder = OllamaEmbedder(
+            host=settings.ollama_host,
+            model=settings.ollama_embed_model,
+            batch_size=settings.embed_batch_size,
+            retry=retry,
+        )
+    if cache:
+        from sertor_core.adapters.embeddings.cache import CachingEmbedder, EmbeddingCache
+
+        return CachingEmbedder(embedder, EmbeddingCache(settings.index_dir))
+    return embedder
 
 
 def build_store(settings: Settings | None = None) -> VectorStore:
@@ -151,7 +163,9 @@ def build_indexer(settings: Settings | None = None):
 
     settings = settings or Settings.load()
     engine = _validated_engine(settings)
-    embedder = build_embedder(settings)
+    # Cache opt-in on the indexing path only (019, REQ-H4): re-index skips re-embedding unchanged
+    # chunks. Default off → today's full re-embed (FR-007/013).
+    embedder = build_embedder(settings, cache=settings.embed_cache_enabled)
     store = build_store(settings)
     lexical = _build_lexical(settings) if engine == "hybrid" else None
     graph = build_graph_service(settings) if settings.graph_enabled else None

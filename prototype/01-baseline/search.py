@@ -12,11 +12,9 @@ import sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 import chromadb  # noqa: E402
-
+from index import collection_name  # noqa: E402  (modulo locale)
 from shared.config import settings  # noqa: E402
 from shared.embeddings import get_embedder  # noqa: E402
-
-from index import collection_name  # noqa: E402  (modulo locale)
 
 
 def search(query: str, provider: str = "ollama", k: int = 5) -> list[dict]:

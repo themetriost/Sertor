@@ -45,6 +45,11 @@ name = "syntheses"
 dir = "syntheses"
 type = "synthesis"
 
+[[taxonomy]]
+name = "explainers"
+dir = "explainers"
+type = "explainer"  # descrizioni in linguaggio comune (per non tecnici), lente sulle capacità
+
 # Audit del lint: COSA controllare e di che `kind`. `paths` = glob specifici dell'ospite;
 # `kind` = profilo universale definito nel playbook (wiki|requirements|spec|tracker) — è il "come".
 # Regola: il PRIMO [[audit]] che matcha un file vince (metti i paths più specifici prima), così
