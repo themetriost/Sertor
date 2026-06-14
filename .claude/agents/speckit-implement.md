@@ -25,8 +25,10 @@ prima). Non procedere oltre il gate di tua iniziativa.
 
 ## Dogfooding — usa sertor-rag
 Per orientarti nel codice esistente prima di modificarlo usa i tool `mcp__sertor-rag__*`
-(`get_context`/`find_symbol`/`who_calls`/`search_*`); cita i file (`path:lineno`). Fallback su
-Grep/Read se il server non risponde.
+(`get_context`/`find_symbol`/`who_calls`/`search_*`); cita i file (`path:lineno`). **Se un tool
+`mcp__sertor-rag__*` ritorna un errore (es. 401, modulo mancante, indice assente), NON degradare in
+silenzio:** ripiega su Grep/Read per non bloccarti, ma **riporta l'errore esplicitamente nel report
+finale** (tool, messaggio) — un MCP rotto è esso stesso un segnale, non va sepolto dal fallback.
 
 ## Regole del workspace (sempre attive)
 - **Output e report in italiano.** Script = PowerShell (Windows). Scrivi codice nello stile del
