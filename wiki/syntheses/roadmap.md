@@ -43,14 +43,15 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 - **Hardening produzione del retrieval** — *cosa:* chiudere i gap del RAG audit (2026-06-13) che
   ricadono sul livello di Sertor. *Dove:* `requirements/sertor-core/hardening-produzione/` (epica
   `sertor-core`). *Fatto:* **Must** ✅ su master (feature 018, PR #32) = retry/backoff embedder +
-  soglia/`low_confidence` per l'abstention. *Prossimo passo:* `/speckit-specify` sugli **Should** quando
-  prioritari — **REQ-H4** cache embeddings per content-hash (re-index non ri-embedda i chunk invariati →
-  taglia il costo Azure dei rebuild) + **REQ-H5** token nei log (`usage.total_tokens` come segnale di
-  costo). *Could (dopo):* REQ-H7 query transformation, REQ-H8 filtro metadata esteso, REQ-H9 tracing
-  distribuito, REQ-H10 metriche aggregate, REQ-H11 contextual retrieval. *Collegato:* refresh
-  incrementale = FEAT-009 d'epica. *Blocco/decisione aperta:* nessuno — gli Should sono cantierabili;
-  decidere se prima questo o la distribuzione multi-assistente. *Azione operativa fuori-codice pendente:*
-  ruotare la key Azure esposta nel transcript.
+  soglia/`low_confidence` per l'abstention. *In corso:* gli **Should** del gruppo C (costo
+  indicizzazione) — **spec 019 creata** (`specs/019-hardening-cache-token/`, branch
+  `019-hardening-cache-token`, checklist verde): **REQ-H4** cache embeddings per content-hash (re-index
+  non ri-embedda i chunk invariati → taglia il costo Azure dei rebuild, US1/P1) + **REQ-H5** token nei
+  log (`usage.total_tokens` come segnale di costo, US2/P2). *Prossimo passo:* `/speckit-plan` (clarify
+  saltabile — zero NEEDS CLARIFICATION). *Could (dopo):* REQ-H7 query transformation, REQ-H8 filtro
+  metadata esteso, REQ-H9 tracing distribuito, REQ-H10 metriche aggregate, REQ-H11 contextual retrieval.
+  *Collegato:* refresh incrementale = FEAT-009 d'epica. *Blocco/decisione aperta:* nessuno. *Azione
+  operativa fuori-codice pendente:* ruotare la key Azure esposta nel transcript.
 
 ### 📋 PLANNED (per priorità)
 - **Agenzia RAG incorporata — dote differita (Could)**: la capacità agentic RAG è ✅ **soddisfatta
