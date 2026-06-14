@@ -130,8 +130,8 @@ La «memoria di terzo livello» è dunque il **session archive**: il tier grezzo
 
 | ID | Feature | Valore / obiettivo | Priorità (MoSCoW) | Stato |
 |----|---------|--------------------|-------------------|-------|
-| FEAT-001 | **Cattura & archiviazione locale dei transcript** — adapter di cattura host-specifico (Claude Code per primo) → archivio locale conservato, idempotente | Il **tier grezzo** che oggi manca: senza archivio non c'è memoria episodica | **Must** | da decomporre |
-| FEAT-002 | **Ricerca episodica full-text locale** — interroga l'archivio nei "casi speciali" («ne avevamo già parlato?»), senza cloud | Rende l'archivio **utile**: la memoria che risponde | **Must** | da decomporre |
+| FEAT-001 | **Cattura & archiviazione locale dei transcript** — adapter di cattura host-specifico (Claude Code per primo) → archivio locale conservato, idempotente | Il **tier grezzo** che oggi manca: senza archivio non c'è memoria episodica | **Must** | decomposta → [`cattura-archiviazione/requirements.md`](cattura-archiviazione/requirements.md) |
+| FEAT-002 | **Ricerca episodica full-text locale** — interroga l'archivio nei "casi speciali" («ne avevamo già parlato?»), senza cloud | Rende l'archivio **utile**: la memoria che risponde | **Must** | decomposta → `ricerca-episodica-fulltext/requirements.md` |
 | FEAT-003 | **Aggancio alla distillazione del wiki** — `distill`/`record` possono attingere a una conversazione archiviata come fonte grezza | Chiude il loop lossy: la distillazione ha finalmente una **fonte** | **Should** | da decomporre |
 | FEAT-004 | **Ricerca semantica opzionale sull'archivio** — embedding dei transcript come corpus/tier del RAG, opt-in (privacy §7) | Memoria episodica *per significato*, non solo per parola | **Should** | da decomporre |
 | FEAT-005 | **Cattura selettiva "remember this"** — marcatura esplicita di cosa archiviare, invece di tutto | Controllo dell'utente su cosa entra in memoria (riduce rumore e rischio privacy) | **Could** | da decomporre |
