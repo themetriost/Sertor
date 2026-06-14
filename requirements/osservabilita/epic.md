@@ -133,6 +133,13 @@ Il valore dell'epica è duplice e ricalca due strati:
   without changes to their body — only configuration (Principio X).*
 - **REQ-E7 (State-driven):** *While an operation (index/search) is running, persisting its events shall
   not block or measurably slow the operation (non-blocking observability).*
+- **REQ-E8 (Unwanted, privacy-by-default):** *If raw-text persistence is not explicitly enabled, then
+  the system shall persist only metrics (no query text, no transcripts) — content is never stored by
+  default.* (Decisione DA-O-d, 2026-06-14.)
+- **REQ-E9 (Optional, layered opt-in):** *Where raw-text persistence is enabled, the system shall
+  persist the content with secret-pattern scrubbing applied and a configurable retention; and where
+  semantic (embedding-based) search over that content is enabled, embedding that content shall be a
+  further, separate opt-in (the local full-text path keeps content on-machine).*
 
 ## 8. Backlog di feature
 
@@ -146,14 +153,15 @@ Il valore dell'epica è duplice e ricalca due strati:
 | FEAT-004 | **Pannello TUI — report sfogliabili** — viste di report dentro la TUI: hit/miss nel tempo, costo/consumo, salute del corpus, freschezza | I **report** richiesti (missing vs hit & co.) senza strumenti esterni | **Must** | da decomporre |
 | FEAT-005 | **Export OpenTelemetry** (GenAI semantic conventions) — emette gli eventi anche verso un backend OTel esterno; extra opzionale `[otel]`. **Assorbe REQ-H9** dell'hardening | Ponte verso lo stack enterprise (Langfuse/Phoenix/Grafana) senza vincoli di licenza | **Should** | da decomporre |
 | FEAT-006 | **Metriche aggregate esposte** (es. latenza p95/p99, cache-hit rate, throughput). **Assorbe REQ-H10** dell'hardening | Numeri di salute pronti per dashboard/monitoraggio | **Should** | da decomporre |
-| FEAT-007 | **Stima costi in €** — converte i token in una stima di spesa per provider (tabella prezzi) | Rende il costo **leggibile** in valuta, non solo in token | **Could** | da decomporre |
+| FEAT-007 | **Stima costi in €** — converte i token in una stima di spesa per provider (tabella prezzi in config aggiornabile) | Rende il costo **leggibile** in valuta, non solo in token | **Should** *(alzata da Could, DA-O-g, 2026-06-14)* | da decomporre |
 | FEAT-008 | **Web mode** — dashboard servita in locale nel browser, sopra lo stesso strato di osservabilità | Grafici ricchi per chi li preferisce al terminale | **Could** | da decomporre |
 | FEAT-009 | **Trend di qualità del retrieval** — andamento di `low_confidence` (astensioni), query a vuoto, distribuzione degli score | Primo passo verso la qualità (non solo costo), senza un eval completo | **Could** | da decomporre |
 | FEAT-010 | **Metriche del code-graph e del wiki** — #nodi/#archi e copertura per linguaggio; #pagine, orfani/link rotti, stato *pending vs clean* (dal lint) | Estende l'osservabilità alle due capacità ortogonali | **Could** | da decomporre |
 
 > **Nota sull'MVP (Must):** la prima release utile è **FEAT-001 → FEAT-004**: persistere gli eventi,
-> aggregarli, e una TUI che mostra live **e** fa il report hit/miss + costo. Export OTel e metriche
-> aggregate (Should) seguono come incrementi; €, web, qualità e graph/wiki (Could) dopo.
+> aggregarli, e una TUI che mostra live **e** fa il report hit/miss + costo. La **stima € (FEAT-007,
+> Should)** è attesa **accanto al report costo** (DA-O-g): i token grezzi da soli sono poco leggibili.
+> Export OTel e metriche aggregate (Should) seguono; web, qualità e graph/wiki (Could) dopo.
 
 > **Confine con l'hardening:** REQ-H9 (tracing distribuito) e REQ-H10 (metriche aggregate), oggi Could
 > in `../sertor-core/hardening-produzione/`, sono **ricollocati** qui come FEAT-005 e FEAT-006 — non si
@@ -169,17 +177,20 @@ Il valore dell'epica è duplice e ricalca due strati:
   conservativa.]
 - **DA-O-c — Cosa rende il TUI "live":** [DA CHIARIRE: la vista live legge **tailando** il flusso di
   log, fa **polling** dello store, o entrambi? Impatta latenza percepita e accoppiamento.]
-- **DA-O-d — Privacy del testo delle query:** [DA CHIARIRE: gli eventi persistiti includono il **testo**
-  delle query (utile per "top query / query a vuoto") o solo metriche aggregate? Le query possono essere
-  sensibili. Default proposto: **opt-in** esplicito per persistere il testo; di default solo conteggi.]
+- **DA-O-d — Privacy del testo delle query:** ✅ **RISOLTA (2026-06-14, utente):** **privacy-by-default a
+  strati** (vedi REQ-E8/E9). Default = **solo metriche**; persistere il testo (query e, nell'epica
+  gemella, trascrizioni) = **opt-in** esplicito; la ricerca **semantica** (che embedda → manda al
+  provider) = **opt-in ulteriore** (di default full-text locale). + scrub dei segreti nel testo +
+  retention configurabile. Principio condiviso con l'epica **memoria conversazioni**.
 - **DA-O-e — Confine col fleet/second-brain:** confermato **fuori scope** il roll-up cross-progetto
   (→ [[second-brain-cross-progetto]]); lo store resta **per-progetto**. [DA CHIARIRE solo se in futuro
   si vorrà un formato compatibile con un'aggregazione di flotta.]
 - **DA-O-f — Innesto sul `log_event` esistente:** [DA CHIARIRE in design: come la porta di osservabilità
   intercetta gli eventi (handler sul logging stdlib? emissione esplicita verso la porta?) restando
   additiva e non-breaking. È materia di design, ma la scelta vincola FEAT-001.]
-- **DA-O-g — Priorità €/OTel:** l'utente ha indicato €-stima e web come **Could** e OTel/metriche come
-  **Should**; confermare se la **stima €** debba salire a Should (è il "costo leggibile" più richiesto).
+- **DA-O-g — Priorità della stima €:** ✅ **RISOLTA (2026-06-14, utente):** la **stima € sale a Should**
+  ed è attesa **accanto al report costo** dell'MVP (FEAT-007, vedi §8). I prezzi vivono in **config
+  aggiornabile** (DA-O-a, default proposto confermato).
 
 ## 10. Riferimenti (prior art, non requisiti)
 - **Osservabilità LLM/RAG:** Langfuse (core MIT, cost/token tracking incl. embeddings), Arize Phoenix
