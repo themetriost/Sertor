@@ -3,7 +3,7 @@ title: Indice del Wiki — Produzione Sertor
 type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
-updated: 2026-06-14 (MVP osservabilità ✅ master; memoria conversazioni decomposte FEAT-001/002) · 2026-06-14 (+ area explainers/ — descrizioni per non tecnici: panoramica [[sertor-in-parole-semplici]] + 6 pagine per capacità) · 2026-06-13 (+ [[second-brain-cross-progetto]] — idea-visione Meta-Sertor, da espandere) · 2026-06-12 (sera: + [[code-graph]] — i 4 tool MCP tornati, feature 014/PR #25, porte a sei; pomeriggio: + [[hybrid-retrieval]] PR #24; mattina: troubleshooting [[mcp-server]] PR #23)
+updated: 2026-06-14 (FEAT-001 memoria consegnato PR #45; MVP osservabilità ✅ master) · 2026-06-14 (+ area explainers/ — descrizioni per non tecnici: panoramica [[sertor-in-parole-semplici]] + 6 pagine per capacità) · 2026-06-13 (+ [[second-brain-cross-progetto]] — idea-visione Meta-Sertor, da espandere) · 2026-06-12 (sera: + [[code-graph]] — i 4 tool MCP tornati, feature 014/PR #25, porte a sei; pomeriggio: + [[hybrid-retrieval]] PR #24; mattina: troubleshooting [[mcp-server]] PR #23)
 sources: ["requirements/sertor-core/epic.md", "requirements/memoria-conversazioni/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "src/sertor_core/**", "CLAUDE.md"]
 ---
 
@@ -68,6 +68,7 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 - **[[installare-su-un-progetto]]** — Installazione con un comando, ordinata e non distruttiva, su qualunque progetto.
 - **[[robusto-ed-economico]]** — Le migliorie di robustezza e costo: riprova sugli intoppi, sa dire «non lo so», memoria del già-fatto, mostra il costo.
 - **[[il-pannello-di-controllo]]** — 🚧 *In sviluppo.* Il cruscotto da terminale che mostra costo, risparmio della cache e salute dell'archivio, con i numeri che restano per i report.
+- **[[memoria-negli-agenti]]** — ✅ *Fatto (MVP).* La memoria della conversazione che cresce a ogni sessione: il registratore intelligente che conserva i transcript ripuliti dai segreti, base della ricerca episodica (domande-nel-passato) e della distillazione futura.
 
 ### Concepts (fondamenta e astrazioni)
 
@@ -88,6 +89,7 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 - **[[mission-vision]]** — Mission/Vision canonizzate in README.md; Principio X come vincolo operativo; backlog: refactor host-agnostico di skill wiki/playbook/rituale.
 - **[[wiki-role-da-w1]]** — DA-W1 risolta: il wiki è CORPUS + SUPERFICIE; identità, autorità, confine MVP, ruoli 1–3.
 - **[[step-ritual]]** — Rituale di step (Definition of Done): a ogni step → record + lint di allineamento + azioni standing estendibili. Standing behavior vs automazione unattended; fonte unica = `CLAUDE.md`. *(Retrospettiva estratta in [[retrospettiva-interazione-2026-06-04]].)*
+- **[[memoria-conversazioni]]** — Il **tier episodico** della memoria: archivio conservato di sessioni (grezzo, prima della distillazione), fonte grezza per la ricerca episodica (FEAT-002) e la distillazione (FEAT-003). Hermes pattern. Privacy-by-default (default off), scrub segreti nel contenuto (no segreti mai), host-agnostico (porta + adapter).
 
 ### Experiments (record di attività/step/feature)
 
@@ -106,6 +108,7 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 - **[[pulizia-pycache-e-diagnosi-mcp]]** — Record del 2026-06-05: rimossi 16 dir `__pycache__` fantasma + diagnosi architetturale di `.mcp.json`. ⚠️ **Diagnosi superata il 2026-06-06** (banner nella pagina): `sertor_mcp` (PR #15) e `wiki_tools`/FEAT-003-D (PR #13) sono su master, `.mcp.json` ri-puntato alla produzione. *(Spostata da `tech/` a `experiments/`: è un record datato, non una tecnologia.)*
 - **[[retrospettiva-interazione-2026-06-04]]** — Retrospettiva onesta sull'interazione del 2026-06-04 (pattern di ostruzione percepito, radici plausibili, correttivo adottato); separata dal design del rituale per atomicità.
 - **[[feat-007-elicitazione-gap-analysis]]** — Elicitazione FEAT-007 (manutenzione wiki): gap analysis su dote dichiarata vs stato attuale (2026-06-12). Quattro decisioni risolte: D1 probe di freschezza eliminato (Won't), D4 tema lingua risolto (asset EN canonico + contenuto governato da config), D3 seed localizzati via tabella modulo, D2 trigger periodico Could. Perimetro finale: 23 REQ (move/reconcile/collect+status/seed it+en/asset coordination verso FEAT-012).
+- **[[feat-001-memoria-cattura-archiviazione]]** — ✅ **Implementazione FEAT-001 memoria** (PR #45, 2026-06-14): il primo tier dell'epica «Memoria conversazioni» — cattura locale e archiviazione dei transcript in SQLite (`memory.sqlite`, gitignored, per-progetto, conservato). 8ª porta `TranscriptCaptureAdapter` host-agnostica, adapter Claude-Code, store idempotente. Privacy-by-default, scrub segreti nel contenuto. 29/29 task, 488 test, Constitution 10/10 ✅.
 
 ### Sources (riassunti di fonti esterne ingerite)
 
@@ -130,3 +133,5 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 - **[[sertor-rag-cli]]** — La CLI di esecuzione RAG `sertor-rag` (feature 011, PR #21): `index`/`search` dal terminale, exit code per scripting, anteprime troncate (`preview_chars`), osservabilità `-v`/`--log-json`/`--log-config`, validazione statica del backend (`validate_backend`). Secondo esempio realizzato di [[thin-consumer]]; comandi spartiti per DA-8 (`sertor`=installer, core=esecuzione).
 - **[[sertor-installer]]** — Il pacchetto/comando installer `sertor` (feature 012, PR #22): `sertor install wiki` porta il sistema-wiki su un ospite (skill+agente+hook+rituale a marker+config inferita+struttura), non distruttivo per artefatto, idempotente, install≠run; assets **package-data** come fonte canonica (`.claude/` del repo = derivato + test di guardia). Aperto: tema lingua degli asset.
 - **[[corpus-index-naming]]** — Schema naming chiarificato (dal 2026-06-04): corpus `sertor` (prodotto, radice) vs `prototype` (prototipo, congelato); indici `.index-sertor` (radice) vs `.index-prototype` (prototipo).
+- **[[transcript-capture-adapter-e-storage]]** — 9ª porta `TranscriptCaptureAdapter` (host-agnostico, Principio X) + adapter Claude-Code + store SQLite `MemoryArchive`. Entità di dominio pure (`SessionRef`, `TranscriptTurn`, `TranscriptContent`, `ArchivedSession`). Granularità ibrida (sessione archiviata, turni interrogabili). Servizio orchestrante `MemoryArchiveService`.
+- **[[scrub-segreti-in-contenuto]]** — Tecnica di ripulitura dei segreti nel testo libero prima di archiviar (pattern-based, configurabile, ripiego conservativo). Estende la redazione per-campo al contenuto. Mai bypassabile, nessun segreto mai in chiaro.

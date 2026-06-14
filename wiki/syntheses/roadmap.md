@@ -14,7 +14,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > `requirements → spec → plan → tasks → implement`.
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-06-13)
+## ⚡ Executive summary (stato al 2026-06-14)
 
 ### 📊 Roadmap a colpo d'occhio
 
@@ -31,6 +31,8 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
 | CLI — installer (`sertor install`) | — | ✅ `wiki` (PR #22) + **`rag` su master (2026-06-12)** — validato live su Kaelen; `governance` = stub |
 | **Hardening produzione (retrieval)** | — | 🔄 **IN PROGRESS** — Must ✅ su master (PR #32); Should gruppo C (cache embeddings + token log, feature 019) ✅ **su master (PR #33)**; restano i Could in `requirements/sertor-core/hardening-produzione/` |
+| **Memoria conversazioni** (epica, 2 Must) | — | 🔄 **IN PROGRESS** — FEAT-001 cattura & archivio ✅ **master (2026-06-14, PR #45)**; manca la *superficie d'avvio* (comando/trigger) e **FEAT-002** ricerca episodica (prossimo Must) |
+| **Osservabilità accesa sul dogfood** + errori MCP segnalati | — | ✅ **master (2026-06-14, PR #40/#43)** — `SERTOR_OBSERVABILITY=true` cablato e attivo; ogni errore del server MCP = evento + self-test allo startup |
 | Distribuzione multi-assistente: GitHub Copilot (+ Codex Could) | — | 👍 **da decomporre** (decisione utente 2026-06-12) |
 | Tema lingua (tutto il prodotto in inglese) | — | ✅ **completato totale (2026-06-13, PR #27/#28/#29/#31)**: codice (72 .py: docstring/commenti/**errori**), test (75 .py: commenti/docstring), documentazione di prodotto (README + `docs/`), asset installer, CLI, seed it/en. Restano IT **per scelta**: `wiki/`, `specs/`, `requirements/`, `CLAUDE.md`, `prototype/` (congelato) |
 | Igiene radice ospite (installer, asse DOVE) | — | ✅ **master (2026-06-13, PR #26)** — config in `wiki/` + auto-discovery, `--mcp-scope` |
@@ -40,11 +42,28 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- *(Nessuna feature attivamente in corso.)* L'**MVP osservabilità (F1→F4) è ✅ su master** (vedi DONE).
-  Prossimi candidati in PLANNED (Should/Could dell'osservabilità · decomporre **memoria conversazioni**).
+- **Memoria conversazioni (MVP, epica `memoria-conversazioni`)** — *cosa:* il tier grezzo episodico
+  (archivio interrogabile di tutte le conversazioni). *Dove:* `requirements/memoria-conversazioni/`,
+  `specs/031-cattura-archiviazione/`; codice su master. *Fatto:* **FEAT-001 cattura & archivio ✅
+  master (PR #45)** — porta `TranscriptCaptureAdapter` + adapter Claude-Code (legge i JSONL di
+  sessione), store `MemoryArchive` SQLite conservato/idempotente (granularità ibrida sessione+turni),
+  `scrub_text` segreti, privacy-by-default off. *Prossimo passo concreto:* **(B)** una **superficie
+  d'avvio** (comando `sertor-rag memory archive` o trigger) — oggi il motore non ha un pulsante che lo
+  invochi — **e/o (C) decomporre+costruire FEAT-002** (ricerca episodica full-text locale). *Decisioni
+  chiuse:* granularità ibrida, cattura tutto-con-opt-in. *Aperto:* quale tra B e C per primo.
 
 ### 📋 PLANNED (per priorità)
-- **Memoria episodica / conversazioni (epica distinta, 2026-06-14)** — terzo livello di memoria (sotto diario/wiki): archivio grezzo interrogabile di **tutte** le conversazioni (source grezza per distillazione, pattern Hermes). **FEAT-001** = cattura & archiviazione locale (27 REQ EARS: adapter host-specifico per JSONL Claude Code dietro config, privacy-by-default off, scrub segreti, idempotenza); **FEAT-002** = ricerca episodica full-text locale (21 REQ: FTS no embedding → contenuto on-machine, privacy by design). 6 DA aperte su granularità/cattura/confine-corpora. MVP = 001→002. Sequenza: memoria parallela a Should/Could osservabilità; la ricerca semantica = FEAT-004 (Could, opt-in).
+- **FEAT-002 — ricerca episodica full-text locale (prossimo Must memoria)** — rende l'archivio di
+  FEAT-001 interrogabile («ne avevamo già parlato?»), full-text locale, niente embedding → contenuto
+  on-machine (privacy by design). Requisiti decomposti (21 REQ EARS) in
+  `requirements/memoria-conversazioni/ricerca-episodica-fulltext/`, decisione granularità ibrida già
+  recepita (ricerca per turno). Pronta per SpecKit. *(FEAT-001 ✅ master, vedi DONE.)*
+- **Superficie d'avvio della cattura (gap FEAT-001)** — il motore di cattura/archivio è su master ma
+  **nessuna superficie lo invoca**: serve un comando `sertor-rag memory archive` (consumer sottile) o
+  un trigger. Piccola feature CLI dell'epica; prerequisito perché la memoria sia *usabile* davvero.
+- **Memoria — Should/Could** — FEAT-003 (la distillazione del wiki attinge all'archivio), FEAT-004
+  (ricerca semantica opt-in), FEAT-005 (remember-this selettivo), FEAT-006 (governance/retention),
+  FEAT-007 (ponte second-brain), FEAT-008 (cattura multi-assistente). Dopo l'MVP 001→002.
 - **Agenzia RAG incorporata — dote differita (Could)**: la capacità agentic RAG è ✅ **soddisfatta
   in forma composita** (MCP + agente, vedi DONE). Resta opzionale l'**agenzia incorporata nel core**
   (`sertor-rag ask` per umani/script senza assistente, digest MCP per economia di contesto, porta
@@ -60,6 +79,20 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### ✅ DONE (su `master`, le rilevanti)
 
+- **🚢 Memoria conversazioni — FEAT-001 cattura & archiviazione (feature 031, PR #45, 2026-06-14)** —
+  il **tier grezzo episodico** che mancava ([[memoria-conversazioni]]): 8ª porta
+  `TranscriptCaptureAdapter` + adapter Claude-Code (legge i JSONL di sessione `~/.claude/projects/…`),
+  store concreto `MemoryArchive` (SQLite `<index_dir>/memory.sqlite`, conservato, idempotente,
+  granularità **ibrida** sessione+turni per FEAT-002), `scrub_text` (segreti rimossi dal contenuto),
+  servizio orchestrante, 5 manopole, wiring lazy/gated. **Privacy-by-default** (`SERTOR_MEMORY` off).
+  SpecKit completo, Constitution PASS 10/10, 29/29 task, 488 test non-cloud verdi. *Manca:* superficie
+  d'avvio (PLANNED) + ricerca FEAT-002 (PLANNED). NB: nuove pagine [[transcript-capture-adapter-e-storage]],
+  [[scrub-segreti-in-contenuto]], explainer [[memoria-negli-agenti]].
+- **🚢 Osservabilità accesa + errori MCP segnalati (PR #40/#43, 2026-06-14)** — `enable_observability`
+  cablato nei consumatori CLI/MCP e **acceso sul dogfood** (`SERTOR_OBSERVABILITY=true`, 11 eventi
+  catturati); ogni errore del server MCP ora persiste come evento `mcp.<tool>.error` + self-test
+  end-to-end allo startup (sarebbe emerso subito il 401/`rank_bm25` di oggi). Governance anti-fallback
+  silenzioso negli agenti che usano `sertor-rag`.
 - **🚢 MVP Osservabilità e pannello di controllo (epica `osservabilita`, F1→F4, PR #34/#35/#36/#38,
   2026-06-14)** — Sertor è ora **trasparente su sé stesso** ([[il-pannello-di-controllo]]): **F1** strato
   persistente (store SQLite `observability.sqlite` + 7ª porta `ObservabilityStore`, cattura via
