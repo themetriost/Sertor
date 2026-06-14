@@ -77,6 +77,9 @@ incremental index refresh, PyPI distribution.
 See **[`docs/install.md`](docs/install.md)** — interim installation via `git+url`, `.env`
 configuration, first `sertor-rag` commands, MCP server, and wiki tooling.
 
+For how to query a project once indexed — when to use **hybrid retrieval** vs the **code graph**
+(the *discover → navigate* pattern) — see **[`docs/retrieval.md`](docs/retrieval.md)**.
+
 ## Development
 
 Uses [`uv`](https://github.com/astral-sh/uv):

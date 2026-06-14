@@ -63,5 +63,6 @@ che la citano; query **<0.1 ms** (primo load ~195 ms).
 
 ## Vedi anche
 - Le modalità di retrieval che affianca: [[vector-retrieval]] · [[hybrid-retrieval]].
+- Guida di scelta ibrida vs grafo: [[retrieval-vs-graph]] — pattern scopri (pertinenza) → naviga (struttura).
 - Le porte: [[ports-adapters]] · le superfici: [[mcp-server]] · [[thin-consumer]].
 - Naming di corpus e artefatti: [[corpus-index-naming]]. Stato: [[roadmap]].
