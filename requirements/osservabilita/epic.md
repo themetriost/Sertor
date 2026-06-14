@@ -147,7 +147,7 @@ Il valore dell'epica è duplice e ricalca due strati:
 
 | ID | Feature | Valore / obiettivo | Priorità (MoSCoW) | Stato |
 |----|---------|--------------------|-------------------|-------|
-| FEAT-001 | **Strato di osservabilità persistente nel core** — porta di osservabilità + adapter di persistenza (archivio locale) che cattura gli eventi già emessi da `log_event`; additivo e non-breaking. Matura il backlog «logging come strategia runtime» | La **memoria** senza cui non esistono report storici | **Must** | da decomporre |
+| FEAT-001 | **Strato di osservabilità persistente nel core** — porta di osservabilità + adapter di persistenza (archivio locale) che cattura gli eventi già emessi da `log_event`; additivo e non-breaking. Matura il backlog «logging come strategia runtime» | La **memoria** senza cui non esistono report storici | **Must** | [decomposta](strato-osservabilita-persistente/requirements.md) **(2026-06-14)** |
 | FEAT-002 | **Servizio di aggregazione/report** — interroga lo store per produrre report: hit/miss della cache nel tempo, costo (token), conteggi del corpus, latenze, tassi di errore/astensione | Trasforma gli eventi grezzi in **risposte** alle domande chiave | **Must** | da decomporre |
 | FEAT-003 | **Pannello TUI — vista live** — superficie a terminale che mostra lo stato corrente (ultimo index, #doc/#chunk, consumo, stato cache, ultimi eventi/log tracciati) e si aggiorna durante le operazioni | La superficie richiesta: *vedere* cosa fa Sertor, ora | **Must** | da decomporre |
 | FEAT-004 | **Pannello TUI — report sfogliabili** — viste di report dentro la TUI: hit/miss nel tempo, costo/consumo, salute del corpus, freschezza | I **report** richiesti (missing vs hit & co.) senza strumenti esterni | **Must** | da decomporre |
