@@ -3,11 +3,12 @@ title: Indicizzazione e retrieval (le due pipeline)
 type: concept
 tags: [indexing, retrieval, facade, pipeline, idempotenza, sertor-core, thin-consumer]
 created: 2026-06-08
-updated: 2026-06-08
+updated: 2026-06-14 (+ cache embeddings per content-hash, costo del rebuild, 019)
 sources: [
   "src/sertor_core/services/indexing.py",
   "src/sertor_core/services/retrieval.py",
-  "src/sertor_core/services/ingestion.py"
+  "src/sertor_core/services/ingestion.py",
+  "src/sertor_core/adapters/embeddings/cache.py"
 ]
 ---
 
@@ -34,6 +35,21 @@ l'embedding e **prima** dell'upsert: così se il provider fallisce durante l'emb
 preesistente **resta intatto**. Il rebuild è idempotente (gli id stabili del [[domain-model]] fanno coincidere
 i chunk a corpus invariato). `installazione ≠ esecuzione`: l'indice si costruisce **solo** quando `index()` è
 chiamato (Principio VI).
+
+**Costo dell'embedding: la cache per content-hash (019, REQ-H4).** Il rebuild è *full* by-design (rilegge e
+ri-chunka tutto), e con un provider a pagamento (Azure) ri-paga l'embedding di ogni chunk a ogni
+ricostruzione — un attrito reale, dato che il [[step-ritual|rituale di step]] rende i re-index frequenti.
+La cache lo neutralizza **a valle, sul passo di embedding**: un decoratore della porta
+[[ports-adapters|`EmbeddingProvider`]] (`CachingEmbedder`) consulta uno store persistente
+`(model, sha256(testo)) → vettore` (SQLite `<index_dir>/embed_cache.sqlite`) **prima** di chiamare il
+provider, e gli passa **solo i chunk il cui contenuto è cambiato o nuovo**. `IndexingService` resta
+**invariato** (il decoratore è trasparente): il wiring vive nel composition root e **solo sul percorso
+d'indicizzazione** (le query hanno riuso basso). È **additivo e opt-in** (`SERTOR_EMBED_CACHE`, default off =
+rebuild full odierno) e **non-fatale**: un guasto dello store è un cache-miss loggato, mai un errore
+d'indicizzazione. La chiave include il modello → cambiare provider non serve mai vettori di uno spazio
+diverso. È il **mitigante immediato** del refresh incrementale (FEAT-009 d'epica, ancora da decomporre):
+non evita di rileggere/ri-chunkare, ma evita di ri-embeddare. Vettori serializzati float64 esatti → indice
+byte-equivalente con/senza cache.
 
 ## La facade di retrieval
 

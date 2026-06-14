@@ -3,7 +3,7 @@ title: Porte e adapter (boundary del retrieval-core)
 type: concept
 tags: [ports, adapters, protocol, hexagonal, clean-architecture, sertor-core, composition]
 created: 2026-06-08
-updated: 2026-06-12 (sera: +CodeGraph, FEAT-005 — sei porte; pomeriggio: +LexicalIndex/Reranker/RetrieverStrategy, FEAT-004)
+updated: 2026-06-14 (+ CachingEmbedder decoratore di EmbeddingProvider + token nei log, 019) · 2026-06-12 (sera: +CodeGraph, FEAT-005 — sei porte; pomeriggio: +LexicalIndex/Reranker/RetrieverStrategy, FEAT-004)
 sources: ["src/sertor_core/domain/ports.py", "src/sertor_core/composition.py", "src/sertor_core/adapters/**"]
 ---
 
@@ -21,7 +21,12 @@ FEAT-005 ([[code-graph]]).
 
 - **`EmbeddingProvider`** — trasforma testo in vettori. Metodo `embed(texts) -> list[list[float]]` (a batch,
   ordine preservato, `[]` per input vuoto) + attributi `name`, `dim` (dimensione del vettore, scoperta al
-  primo batch se inizialmente `None`), `batch_size`.
+  primo batch se inizialmente `None`), `batch_size`. Gli adapter ritentano gli errori transitori (retry+backoff,
+  018) ed emettono un evento di log `embeddings` col **conteggio token** del provider quando disponibile
+  (`usage.total_tokens` Azure, `prompt_eval_count` Ollama; omesso se assente) — segnale di costo, 019/REQ-H5.
+  Un **decoratore della stessa porta**, `CachingEmbedder` (`adapters/embeddings/cache.py`), aggiunge la
+  [[indexing-and-retrieval|cache per content-hash]] senza che servizi o porta cambino — è l'esempio canonico
+  di come si estende un comportamento di provider (adapter + composition, mai i servizi).
 - **`VectorStore`** — persiste e cerca. `upsert(collection, records)` (idempotente sugli stessi id),
   `query(collection, vector, k, doc_type) -> list[RetrievalResult]` (top-k per similarità, filtro su
   `DocTypeFilter` = `code|doc|both` **senza** indici separati), più `delete`, `reset` (per il rebuild),

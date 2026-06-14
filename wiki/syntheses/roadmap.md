@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-13 (notte: FEAT-018 hardening retrieval Must ✅ su master, PR #32 — retry embedder + soglia/low_confidence; hardening resta IN PROGRESS perché Should/Could aperti) · 2026-06-13 (sera: + idea «Second brain cross-progetto»/Meta-Sertor → [[second-brain-cross-progetto]], da espandere · giornata: FEAT-006 ✅ composita · igiene radice host PR #26 · tema lingua completo PR #27/#28/#29) · 2026-06-12 (TRIPLA: PR #23/#24/#25)
+updated: 2026-06-14 (hardening Should gruppo C — feature 019 cache embeddings + token nei log — implementata su branch, in attesa di PR) · 2026-06-13 (notte: FEAT-018 hardening retrieval Must ✅ su master, PR #32 — retry embedder + soglia/low_confidence; hardening resta IN PROGRESS perché Should/Could aperti) · 2026-06-13 (sera: + idea «Second brain cross-progetto»/Meta-Sertor → [[second-brain-cross-progetto]], da espandere · giornata: FEAT-006 ✅ composita · igiene radice host PR #26 · tema lingua completo PR #27/#28/#29) · 2026-06-12 (TRIPLA: PR #23/#24/#25)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md"]
 ---
 
@@ -30,7 +30,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | Manutenzione wiki (FEAT-007) | Should | ✅ **master (2026-06-13, PR #30)** — `move`/`reconcile`/`collect`+status; gruppi A(Won't)/E/F/B/C/D tutti chiusi |
 | CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
 | CLI — installer (`sertor install`) | — | ✅ `wiki` (PR #22) + **`rag` su master (2026-06-12)** — validato live su Kaelen; `governance` = stub |
-| **Hardening produzione (retrieval)** | — | 🔄 **IN PROGRESS** — Must ✅ su master (2026-06-13, PR #32: retry/backoff embedder + soglia score/`low_confidence`); restano Should/Could (vedi IN PROGRESS) in `requirements/sertor-core/hardening-produzione/` |
+| **Hardening produzione (retrieval)** | — | 🔄 **IN PROGRESS** — Must ✅ su master (PR #32); Should gruppo C (cache embeddings + token log, feature 019) **implementati su branch `019-hardening-cache-token`, in attesa di PR**; restano i Could in `requirements/sertor-core/hardening-produzione/` |
 | Distribuzione multi-assistente: GitHub Copilot (+ Codex Could) | — | 👍 **da decomporre** (decisione utente 2026-06-12) |
 | Tema lingua (tutto il prodotto in inglese) | — | ✅ **completato totale (2026-06-13, PR #27/#28/#29/#31)**: codice (72 .py: docstring/commenti/**errori**), test (75 .py: commenti/docstring), documentazione di prodotto (README + `docs/`), asset installer, CLI, seed it/en. Restano IT **per scelta**: `wiki/`, `specs/`, `requirements/`, `CLAUDE.md`, `prototype/` (congelato) |
 | Igiene radice ospite (installer, asse DOVE) | — | ✅ **master (2026-06-13, PR #26)** — config in `wiki/` + auto-discovery, `--mcp-scope` |
@@ -44,11 +44,14 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   ricadono sul livello di Sertor. *Dove:* `requirements/sertor-core/hardening-produzione/` (epica
   `sertor-core`). *Fatto:* **Must** ✅ su master (feature 018, PR #32) = retry/backoff embedder +
   soglia/`low_confidence` per l'abstention. *In corso:* gli **Should** del gruppo C (costo
-  indicizzazione) — **spec 019 creata** (`specs/019-hardening-cache-token/`, branch
-  `019-hardening-cache-token`, checklist verde): **REQ-H4** cache embeddings per content-hash (re-index
-  non ri-embedda i chunk invariati → taglia il costo Azure dei rebuild, US1/P1) + **REQ-H5** token nei
-  log (`usage.total_tokens` come segnale di costo, US2/P2). *Prossimo passo:* `/speckit-plan` (clarify
-  saltabile — zero NEEDS CLARIFICATION). *Could (dopo):* REQ-H7 query transformation, REQ-H8 filtro
+  indicizzazione) — **feature 019 IMPLEMENTATA sul branch `019-hardening-cache-token`** (SpecKit completo
+  specify→implement, Constitution PASS 10/10, 395 root + 85 packages test verdi, ruff pulito; **non ancora
+  mergiata**): **REQ-H4** cache embeddings per content-hash (`CachingEmbedder` decoratore + store SQLite
+  `embed_cache.sqlite`, chiave `(model, sha256)`, manopola `SERTOR_EMBED_CACHE` default off, wiring solo
+  sul percorso d'indicizzazione, degrado non-fatale) + **REQ-H5** token nei log (evento `embeddings` con
+  `usage.total_tokens`/`prompt_eval_count`; corretto en-passant un difetto di redazione che mascherava
+  `tokens`). *Prossimo passo:* **PR verso master su conferma utente**; al merge: re-index dogfood +
+  opzionale `SERTOR_EMBED_CACHE=true` sul `.env` del corpus `sertor`. *Could (dopo):* REQ-H7 query transformation, REQ-H8 filtro
   metadata esteso, REQ-H9 tracing distribuito, REQ-H10 metriche aggregate, REQ-H11 contextual retrieval.
   *Collegato:* refresh incrementale = FEAT-009 d'epica. *Blocco/decisione aperta:* nessuno. *Azione
   operativa fuori-codice pendente:* ruotare la key Azure esposta nel transcript.
