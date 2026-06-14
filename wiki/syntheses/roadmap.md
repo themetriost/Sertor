@@ -44,13 +44,13 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   (log/costo/cache/salute corpus) con un pannello TUI e i numeri persistiti. *Dove:*
   `requirements/osservabilita/` (epica nuova). *Stato:* epica + MVP **interamente a requisiti**
   (F1→F4 decomposte, 76 REQ EARS); decisioni di prodotto fissate (privacy-by-default a strati, stima €
-  a Should). *In corso:* **SpecKit su F1 «strato di osservabilità persistente»** — branch
-  `020-osservabilita-persistente`. **F1 ✅ mergiata su master (PR #34, 2026-06-14)** = lo strato
-  persistente (cattura via `logging.Handler`, store SQLite `observability.sqlite`, 7ª porta
-  `ObservabilityStore`, `SERTOR_OBSERVABILITY` default off; Constitution PASS, 406+85 test). *In corso:*
-  **F2 «aggregazione/report»** (consuma `query_events`: hit/miss, costo, conteggi, latenze) — SpecKit in
-  autonomia. *A seguire:* F3 TUI live → F4 TUI report. *In parallelo (quando si vuole):*
-  decomporre l'epica **memoria conversazioni** (nodo: cattura host-specifica).
+  a Should). **F1 ✅ (PR #34)** = strato persistente (store SQLite, 7ª porta `ObservabilityStore`,
+  `SERTOR_OBSERVABILITY` default off). **F2 ✅ mergiata (PR #35, 2026-06-14)** = servizio
+  `ObservabilityReports` (5 report cache/costo/salute/latenze/affidabilità da `query_events`, funzioni
+  pure; Constitution PASS, 415+85 test). *In corso:* **F3 «pannello TUI — vista live»** — la prima
+  superficie *visibile*; introduce l'extra `[tui]` (Textual, isolato). SpecKit in autonomia. *A seguire:*
+  F4 TUI report. *In parallelo (quando si vuole):* decomporre l'epica **memoria conversazioni** (nodo:
+  cattura host-specifica).
 
 ### 📋 PLANNED (per priorità)
 - **Agenzia RAG incorporata — dote differita (Could)**: la capacità agentic RAG è ✅ **soddisfatta
