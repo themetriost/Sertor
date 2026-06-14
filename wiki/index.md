@@ -67,6 +67,7 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 - **[[collegamento-con-l-assistente]]** — La "presa universale" a cui l'assistente AI si attacca per usare Sertor.
 - **[[installare-su-un-progetto]]** — Installazione con un comando, ordinata e non distruttiva, su qualunque progetto.
 - **[[robusto-ed-economico]]** — Le migliorie di robustezza e costo: riprova sugli intoppi, sa dire «non lo so», memoria del già-fatto, mostra il costo.
+- **[[il-pannello-di-controllo]]** — 🚧 *In sviluppo.* Il cruscotto da terminale che mostra costo, risparmio della cache e salute dell'archivio, con i numeri che restano per i report.
 
 ### Concepts (fondamenta e astrazioni)
 

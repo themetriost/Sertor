@@ -288,7 +288,18 @@ automazione *unattended*: la distinzione è netta —
    e, su conferma, **creala** (struttura: blocco EXEC con tabella a colpo d'occhio + IN PROGRESS /
    PLANNED / DONE, poi mappa feature × stato). Si innesca **solo** al merge, non a ogni step.
 
-7. **\<altre azioni\>** — questa lista è **estendibile**: ogni azione che l'utente chiede di rendere
+7. **Riassunto non tecnico (explainer)** — quando uno step **sviluppa o pianifica una capacità
+   significativa** (un requisito/epica, una feature, una capacità di prodotto), produci o aggiorna una
+   **descrizione in linguaggio comune** nell'area `wiki/explainers/` (per non tecnici): cosa fa e
+   perché, con un'immagine quotidiana e zero gergo, e un rimando «dettaglio tecnico» alla pagina di
+   concetto/feature corrispondente. **È giudizio** (scrivere per chi non è tecnico, lente di prodotto)
+   → resta nel **flusso principale** come distill/lint, non a Haiku. **Calibra al valore (opzionale):**
+   solo per capacità che vale spiegare a uno stakeholder non tecnico — non per lo step meccanico o di
+   solo tooling. Vale sia per ciò che è *fatto* sia per ciò che si *sta per sviluppare* (la pagina
+   marca lo stato). Fa parte dell'**asset installabile** (`claude-md-block.md`): gli ospiti ricevono
+   questa pratica con il sistema-wiki. Vedi [[step-ritual]] e la panoramica [[sertor-in-parole-semplici]].
+
+8. **\<altre azioni\>** — questa lista è **estendibile**: ogni azione che l'utente chiede di rendere
    *standing* va aggiunta qui, e da quel momento fa parte del rituale a ogni step.
 
 **Responsabilità & delega.** Che queste azioni **avvengano** a ogni step è responsabilità del flusso

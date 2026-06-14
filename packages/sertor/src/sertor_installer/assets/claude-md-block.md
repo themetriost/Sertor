@@ -23,6 +23,13 @@ checklist:
 3. **Semantic lint** (`lint` level B) — verify that the wiki has not drifted away from the
    reality of the project (code, requirements, VCS state): flag every claim the repo contradicts,
    fix on confirmation. This is **judgment** → stays in the main flow.
+4. **Plain-language summary (explainer)** — when a step develops or plans a **significant capability**
+   (a requirement, a feature, a product capability), produce or update a **plain-language description**
+   under `wiki/explainers/` (for non-technical readers): what it does and why, with an everyday analogy
+   and no jargon, each pointing to the corresponding technical page. This is **judgment** → stays in the
+   main flow. **Calibrate to value (optional):** only for capabilities worth explaining to a
+   non-technical stakeholder — not for mechanical or tooling-only steps. It applies both to what is
+   *done* and to what is *about to be built* (the page marks the status).
 
 **Delegation.** That these actions happen is the main flow's responsibility; executing or delegating them
 is merely a choice to avoid blocking. The `record` (structured transcription) is delegatable to the
