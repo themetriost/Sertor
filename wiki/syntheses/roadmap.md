@@ -251,6 +251,7 @@ già su master).
 
 | Idea | Valore / perché | Note / vincoli | Stato |
 |------|-----------------|----------------|-------|
+| **Pannello di controllo (TUI/GUI) di osservabilità** | Vedere log, consumo (token/€), #chunk, **hit/miss della cache** e fare report. Sertor già emette log strutturati ricchi ma effimeri | Epica a **due strati**: (1) osservabilità nel core = persistenza eventi (porta+adapter, SQLite) + aggregazione — assorbe l'idea «logging come strategia runtime» e i Could **H9/H10** dell'hardening; (2) pannello = 4ª superficie sottile (TUI Textual raccomandata). Riferimenti: Langfuse/Phoenix/TruLens (cosa misurare), Toolong/dolphie/harlequin (UX TUI), OpenTelemetry (export). Decisioni aperte: superficie (TUI/web/OTel) · dati (store locale/OTel/entrambi) | 🗣️ **in discussione** (utente, 2026-06-14) |
 | **Second brain cross-progetto** (il «Sertor dei Sertor» / Meta-Sertor) | Conoscenza condivisa e di più alto livello su TUTTI i propri contesti: condividere esperienze/metodologie, scambiarsi skill/agenti, **sintetizzare asset nuovi** da più progetti. Sertor da autore a **giardiniere della flotta** | Sertor ricorsivo (L0/L1/L2); riusa feature 010 (fan-out) + installer + Principio X; nuovo = confine di **promozione** (giudizio) + **verifica/parametrizzazione** asset + trust/decay. Pagina-visione con diagrammi: [[second-brain-cross-progetto]] | 💡 **idea, DA ESPANDERE** (2026-06-13) |
 | **Misurare la pertinenza** (chiudere gli `xfail`) con ground-truth reale | Trasforma "funziona" in "misurato" (Principio V); confronto provider | Serve set query→file atteso; baseline = prototipo | 🗣️ in discussione |
 | Migliorare la **qualità `search_code`** (oggi debole su query architetturali) | Il retrieval di codice è il caso d'uso primario | Naturale candidato per FEAT-004 (ibrido) / FEAT-005 (grafo) | 🗣️ in discussione |
@@ -267,6 +268,14 @@ già su master).
 
 ## Questioni aperte (tenute così, per ora)
 
+- **Licenza di Sertor (DA APRIRE):** Sertor **non è ancora licenziato**. Scelta da prendere — incide su
+  riusabilità (la mission è "framework installabile ovunque"), su cosa possiamo bundlare e su come gli
+  ospiti possono usarlo. Candidati tipici: **MIT/Apache-2.0** (permissive, massima adozione — coerenti
+  con local-first e con l'idea di strumento riusabile), vs copyleft (GPL/AGPL, più protettive ma
+  attritive per l'adozione). Nota emersa il 2026-06-14 valutando l'integrazione con Langfuse (MIT
+  core)/Phoenix (Elastic License 2.0, non-OSI)/Grafana (AGPLv3): integrarli **via OpenTelemetry** non
+  contagia Sertor; il vincolo morderebbe solo se li *incorporassimo*. La scelta della licenza propria
+  resta indipendente e da fare prima di una distribuzione pubblica (PyPI).
 - **Soglie di pertinenza**: non fissate a priori; da misurare su ground-truth reale (DA-003 / DA-1·3).
 - **Numerazione**: epica FEAT-NNN ≠ `specs/NNN` (vedi banner sopra) — non riconciliarle a forza, documentare.
 - **Server MCP & nuovo indice**: dopo ogni feature che cambia il codice del server serve un **riavvio** del subprocess MCP per servirlo.
