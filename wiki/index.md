@@ -3,8 +3,8 @@ title: Indice del Wiki — Produzione Sertor
 type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
-updated: 2026-06-14 (+ area explainers/ — descrizioni per non tecnici: panoramica [[sertor-in-parole-semplici]] + 6 pagine per capacità) · 2026-06-13 (+ [[second-brain-cross-progetto]] — idea-visione Meta-Sertor, da espandere) · 2026-06-12 (sera: + [[code-graph]] — i 4 tool MCP tornati, feature 014/PR #25, porte a sei; pomeriggio: + [[hybrid-retrieval]] PR #24; mattina: troubleshooting [[mcp-server]] PR #23)
-sources: ["requirements/sertor-core/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "src/sertor_core/**", "CLAUDE.md"]
+updated: 2026-06-14 (MVP osservabilità ✅ master; memoria conversazioni decomposte FEAT-001/002) · 2026-06-14 (+ area explainers/ — descrizioni per non tecnici: panoramica [[sertor-in-parole-semplici]] + 6 pagine per capacità) · 2026-06-13 (+ [[second-brain-cross-progetto]] — idea-visione Meta-Sertor, da espandere) · 2026-06-12 (sera: + [[code-graph]] — i 4 tool MCP tornati, feature 014/PR #25, porte a sei; pomeriggio: + [[hybrid-retrieval]] PR #24; mattina: troubleshooting [[mcp-server]] PR #23)
+sources: ["requirements/sertor-core/epic.md", "requirements/memoria-conversazioni/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "src/sertor_core/**", "CLAUDE.md"]
 ---
 
 # Wiki di Produzione — Sertor

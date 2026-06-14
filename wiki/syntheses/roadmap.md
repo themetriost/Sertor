@@ -3,8 +3,8 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-14 (hardening Should gruppo C — feature 019 cache embeddings + token nei log — implementata su branch, in attesa di PR) · 2026-06-13 (notte: FEAT-018 hardening retrieval Must ✅ su master, PR #32 — retry embedder + soglia/low_confidence; hardening resta IN PROGRESS perché Should/Could aperti) · 2026-06-13 (sera: + idea «Second brain cross-progetto»/Meta-Sertor → [[second-brain-cross-progetto]], da espandere · giornata: FEAT-006 ✅ composita · igiene radice host PR #26 · tema lingua completo PR #27/#28/#29) · 2026-06-12 (TRIPLA: PR #23/#24/#25)
-sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md"]
+updated: 2026-06-14 (MVP osservabilità ✅ master F1→F4 PR #34/35/36/38; memory conversazioni epica decomposte FEAT-001/002) · 2026-06-14 (hardening Should gruppo C — feature 019 cache embeddings + token nei log — implementata su branch, in attesa di PR) · 2026-06-13 (notte: FEAT-018 hardening retrieval Must ✅ su master, PR #32 — retry embedder + soglia/low_confidence; hardening resta IN PROGRESS perché Should/Could aperti) · 2026-06-13 (sera: + idea «Second brain cross-progetto»/Meta-Sertor → [[second-brain-cross-progetto]], da espandere · giornata: FEAT-006 ✅ composita · igiene radice host PR #26 · tema lingua completo PR #27/#28/#29) · 2026-06-12 (TRIPLA: PR #23/#24/#25)
+sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md", "requirements/memoria-conversazioni/epic.md"]
 ---
 
 # Roadmap & stato — Sertor
@@ -44,6 +44,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   Prossimi candidati in PLANNED (Should/Could dell'osservabilità · decomporre **memoria conversazioni**).
 
 ### 📋 PLANNED (per priorità)
+- **Memoria episodica / conversazioni (epica distinta, 2026-06-14)** — terzo livello di memoria (sotto diario/wiki): archivio grezzo interrogabile di **tutte** le conversazioni (source grezza per distillazione, pattern Hermes). **FEAT-001** = cattura & archiviazione locale (27 REQ EARS: adapter host-specifico per JSONL Claude Code dietro config, privacy-by-default off, scrub segreti, idempotenza); **FEAT-002** = ricerca episodica full-text locale (21 REQ: FTS no embedding → contenuto on-machine, privacy by design). 6 DA aperte su granularità/cattura/confine-corpora. MVP = 001→002. Sequenza: memoria parallela a Should/Could osservabilità; la ricerca semantica = FEAT-004 (Could, opt-in).
 - **Agenzia RAG incorporata — dote differita (Could)**: la capacità agentic RAG è ✅ **soddisfatta
   in forma composita** (MCP + agente, vedi DONE). Resta opzionale l'**agenzia incorporata nel core**
   (`sertor-rag ask` per umani/script senza assistente, digest MCP per economia di contesto, porta
