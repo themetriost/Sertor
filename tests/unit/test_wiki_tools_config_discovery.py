@@ -79,6 +79,38 @@ def test_resolve_config_inside_wiki_dir(tmp_path, monkeypatch):
     assert Path(root).resolve() == tmp_path.resolve()   # root anchored to the host root (parent)
 
 
+def test_resolve_explicit_config_inside_wiki_no_root(tmp_path):
+    """Regression (wiki/wiki/ drift, recurred 2026-06-14): explicit `--config wiki/wiki.config.toml`
+    WITHOUT `--root` must anchor the root to the host (parent of `wiki/`), not the config's own dir.
+
+    The curator's `append-log --config wiki/wiki.config.toml` (no `--root`) used to leave
+    root_override=None → `load_profile` defaulted config_dir to the config's parent (`wiki/`) → the
+    config's `root="wiki"` re-nested to `wiki/wiki/` (a misfiled log). The fix mirrors the
+    auto-discovery guard on the explicit-config branch.
+    """
+    # relative explicit config inside wiki/ → host root is CWD (".")
+    assert _resolve_config("wiki/wiki.config.toml", None) == ("wiki/wiki.config.toml", ".")
+    # absolute explicit config inside wiki/ → host root is the dir CONTAINING wiki/
+    abs_cfg = tmp_path / "wiki" / "wiki.config.toml"
+    cfg, root = _resolve_config(str(abs_cfg), None)
+    assert cfg == str(abs_cfg)
+    assert Path(root).resolve() == tmp_path.resolve()
+    # explicit --root still wins; a config NOT inside wiki/ keeps the back-compatible default (None)
+    assert _resolve_config("wiki/wiki.config.toml", "/r") == ("wiki/wiki.config.toml", "/r")
+    assert _resolve_config("altrove/x.toml", None) == ("altrove/x.toml", None)
+
+
+def test_explicit_config_inside_wiki_no_double_nest(tmp_path, monkeypatch, capsys):
+    """End-to-end (the real misfire): explicit `--config wiki/wiki.config.toml` without `--root`,
+    launched from the host root, must NOT create `wiki/wiki/`."""
+    (tmp_path / "wiki").mkdir()
+    _init(tmp_path / "wiki" / "wiki.config.toml", tmp_path)
+    monkeypatch.chdir(tmp_path)
+    assert main(["scan", "--config", "wiki/wiki.config.toml", "--json"]) == 0
+    assert _scan_schema(capsys) == "wiki.scan/1"
+    assert not (tmp_path / "wiki" / "wiki").exists()
+
+
 def test_discovery_none_found_errors(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     assert main(["scan", "--json"]) == 1

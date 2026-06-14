@@ -115,14 +115,32 @@ def _discover_config(cwd: Path, root_arg: str | None) -> tuple[str, str | None]:
     return result
 
 
+def _explicit_root(config_arg: str, root_arg: str | None) -> str | None:
+    """Host root for an explicit `--config` (mirrors the auto-discovery anti-double-nest guard).
+
+    `--root` always wins. Otherwise, if the config sits inside a `wiki/` dir (the feature-016
+    layout `<host>/wiki/wiki.config.toml`), the host root is the dir CONTAINING `wiki/`, not the
+    config's own parent. Defaulting it (to `config.parent` in `load_profile`) would make the
+    config's `root="wiki"` re-nest to `wiki/wiki/` (the misfiled-log regression, recurred
+    2026-06-14 via `append-log` with no `--root`). Config elsewhere keeps the `None` default.
+    """
+    if root_arg is not None:
+        return root_arg
+    parent = Path(config_arg).parent
+    if parent.name == "wiki":
+        return str(parent.parent)
+    return None
+
+
 def _resolve_config(config_arg: str | None, root_arg: str | None) -> tuple[str, str | None]:
     """Resolve `--config` (explicit or auto-discovered) and the effective `root_override` (016).
 
-    Explicit `--config` is used as-is (root = `--root` if given); otherwise auto-discovery
-    (`_discover_config`). Generic search order, no Sertor-specific path (Principio X).
+    Explicit `--config` uses `--root` if given, else derives the host root (`_explicit_root`, the
+    same anti-double-nest guard as auto-discovery); otherwise auto-discovery (`_discover_config`).
+    Generic search order, no Sertor-specific path (Principio X).
     """
     if config_arg is not None:
-        result = (config_arg, root_arg)
+        result = (config_arg, _explicit_root(config_arg, root_arg))
     else:
         result = _discover_config(Path.cwd(), root_arg)
     return result
