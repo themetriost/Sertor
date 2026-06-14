@@ -417,6 +417,23 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/033-ricerca-episodica/plan.md` (memoria conversazioni FEAT-002 — ricerca episodica full-text
+LOCALE: rende interrogabile l'archivio transcript di FEAT-001 («ne avevamo già parlato?»). Motore =
+SQLite **FTS5 nativo** (DA-FT-001, verificato live nel venv: Python 3.12/sqlite 3.50 → AVAILABLE): tabella
+virtuale external-content `turns_fts` su `turns.content` nello STESSO `memory.sqlite`, ranking `bm25()` +
+`snippet()` nativi, ZERO dipendenze (stdlib `sqlite3`). Aggiornamento indice (DA-FT-005) = **trigger sync**
+su `turns` (freschezza by construction, FR-020/SC-008) + `'rebuild'` una-tantum/recovery; indice DERIVATO
+e ricostruibile → non viola non-distruttività; FEAT-001 INVARIATA (schema FTS creato lazy dal componente di
+ricerca, NON da `MemoryArchive`). Seam = **componente concreto + servizio**, NESSUNA porta (come
+`MemoryArchive`, single consumer — YAGNI; riuso BM25 RAG scartato = dominio diverso). Risultato per-TURNO +
+ref sessione: `session_key`/`captured_at`/`role`/`turn_index`/`source_path?`/`snippet`/`score`; ordine
+pertinenza (tie-break recency) o recency-first; finestra temporale su `captured_at` (`since>until` →
+`InvalidTimeWindowError`, FR-007); limite/snippet via `SERTOR_EPISODIC_LIMIT`(20)/`_SNIPPET_TOKENS`(12).
+PRIVACY by design: zero rete nel percorso query (SC-004), query nel log evento `episodic_search` HASHATA.
+Degradazione non-fatale ovunque (archivio/indice assente/FTS5 mancante/voce malformata → stato vuoto +
+warning, mai errore). Latenza budget <200ms p95 (misurato <0.1ms su 5062 turni dogfood). `services/
+episodic_search.py` nuovo + `build_episodic_search` in composition (gate `memory_enabled`). Constitution
+PASS 10/10 (pre e post), nessuna deroga. Branch `033-ricerca-episodica`. Storico:
 `specs/031-cattura-archiviazione/plan.md` (memoria conversazioni FEAT-001 — cattura & archiviazione del
 tier grezzo episodico, prima metà MVP. Cattura le conversazioni dell'agente e le conserva in un archivio
 SQLite locale `<index_dir>/memory.sqlite` (gitignored via `**/.index/`, namespaced per progetto,
