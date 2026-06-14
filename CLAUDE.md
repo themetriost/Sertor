@@ -417,6 +417,25 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/035-memoria-cli-hook/plan.md` (superficie CLI memoria + hook SessionEnd — THIN consumer
+sull'MVP memoria già su master. Tre capacità sottili: (1) `sertor-rag memory archive` e (2)
+`sertor-rag memory search <query>` = gruppo di comando `memory` con SUB-SUBPARSER argparse
+(`add_subparsers` annidato, `set_defaults(handler=_cmd_memory_*)`, dispatch invariato in `main()`),
+che delegano a `build_memory_archiver().archive_all()→ArchiveRunReport(archived/skipped/errors)` e
+`build_episodic_search().search(SearchQuery)→EpisodicResults(EpisodicHit…)`; due funzioni PURE in
+`cli/output.py` (`format_archive_report`/`format_memory_results`, umano + `--json`, stile di
+`format_search_results`). (3) Hook `SessionEnd` Claude Code = script PowerShell VERSIONATO
+`.claude/hooks/memory-capture.ps1` + voce in `.claude/settings.json` (accanto al wiki hook) che invoca
+`sertor-rag memory archive`. GATE privacy `SERTOR_MEMORY` (default off): le factory ritornano già `None`
+a memoria spenta → il comando INTERCETTA il `None` e solleva `ConfigError` azionabile (exit 1, nomina
+`SERTOR_MEMORY=true`); l'hook fa PRE-CHECK dell'env → no-op silenzioso exit 0 (non avvia neppure Python).
+L'hook archivia TUTTO via `archive_all()` (idempotente, costo ~nullo sui già archiviati). Non-bloccante/
+non-fatale: `try/catch`, esce SEMPRE 0, ignora l'exit del comando, timeout host come cap (pattern di
+`wiki-pending-check.ps1`). ADDITIVO PURO: core/CLI esistenti INVARIATI; nessuna nuova dipendenza/porta/
+entità. Comandi host-agnostici (Principio X), hook host-specifico = adattatore del trigger; distribuzione
+su ospiti via `sertor install` FUORI AMBITO. Test: comandi con core mockato (stile `test_cli_search`),
+gate `None→ConfigError`, idempotenza, `since>until→exit 1`; hook = verifica manuale gate/no-op.
+Constitution PASS 10/10 (pre e post), nessuna deroga. Branch `035-memoria-cli-hook`. Storico:
 `specs/033-ricerca-episodica/plan.md` (memoria conversazioni FEAT-002 — ricerca episodica full-text
 LOCALE: rende interrogabile l'archivio transcript di FEAT-001 («ne avevamo già parlato?»). Motore =
 SQLite **FTS5 nativo** (DA-FT-001, verificato live nel venv: Python 3.12/sqlite 3.50 → AVAILABLE): tabella
