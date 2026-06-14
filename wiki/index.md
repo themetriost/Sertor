@@ -3,7 +3,7 @@ title: Indice del Wiki — Produzione Sertor
 type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
-updated: 2026-06-14 (FEAT-001 memoria consegnato PR #45; MVP osservabilità ✅ master) · 2026-06-14 (+ area explainers/ — descrizioni per non tecnici: panoramica [[sertor-in-parole-semplici]] + 6 pagine per capacità) · 2026-06-13 (+ [[second-brain-cross-progetto]] — idea-visione Meta-Sertor, da espandere) · 2026-06-12 (sera: + [[code-graph]] — i 4 tool MCP tornati, feature 014/PR #25, porte a sei; pomeriggio: + [[hybrid-retrieval]] PR #24; mattina: troubleshooting [[mcp-server]] PR #23)
+updated: 2026-06-14 (FEAT-002 ricerca episodica FTS5 consegnato; MVP memoria completo FEAT-001+002) · 2026-06-14 (FEAT-001 memoria consegnato PR #45; MVP osservabilità ✅ master) · 2026-06-14 (+ area explainers/ — descrizioni per non tecnici: panoramica [[sertor-in-parole-semplici]] + 6 pagine per capacità) · 2026-06-13 (+ [[second-brain-cross-progetto]] — idea-visione Meta-Sertor, da espandere) · 2026-06-12 (sera: + [[code-graph]] — i 4 tool MCP tornati, feature 014/PR #25, porte a sei; pomeriggio: + [[hybrid-retrieval]] PR #24; mattina: troubleshooting [[mcp-server]] PR #23)
 sources: ["requirements/sertor-core/epic.md", "requirements/memoria-conversazioni/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "src/sertor_core/**", "CLAUDE.md"]
 ---
 
@@ -109,6 +109,7 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 - **[[retrospettiva-interazione-2026-06-04]]** — Retrospettiva onesta sull'interazione del 2026-06-04 (pattern di ostruzione percepito, radici plausibili, correttivo adottato); separata dal design del rituale per atomicità.
 - **[[feat-007-elicitazione-gap-analysis]]** — Elicitazione FEAT-007 (manutenzione wiki): gap analysis su dote dichiarata vs stato attuale (2026-06-12). Quattro decisioni risolte: D1 probe di freschezza eliminato (Won't), D4 tema lingua risolto (asset EN canonico + contenuto governato da config), D3 seed localizzati via tabella modulo, D2 trigger periodico Could. Perimetro finale: 23 REQ (move/reconcile/collect+status/seed it+en/asset coordination verso FEAT-012).
 - **[[feat-001-memoria-cattura-archiviazione]]** — ✅ **Implementazione FEAT-001 memoria** (PR #45, 2026-06-14): il primo tier dell'epica «Memoria conversazioni» — cattura locale e archiviazione dei transcript in SQLite (`memory.sqlite`, gitignored, per-progetto, conservato). 8ª porta `TranscriptCaptureAdapter` host-agnostica, adapter Claude-Code, store idempotente. Privacy-by-default, scrub segreti nel contenuto. 29/29 task, 488 test, Constitution 10/10 ✅.
+- **[[feat-002-ricerca-episodica-fulltext]]** — ✅ **Implementazione FEAT-002 ricerca episodica** (PR [oggi], 2026-06-14): il secondo tier — ricerca **full-text locale** sull'archivio di FEAT-001 a granularità di turno. Motore FTS5 nativo SQLite, BM25 ranking, vincoli temporali opzionali, privacy offline. 27 test, Constitution 10/10 ✅. Prova live: query «Langfuse» su 5062 turni → trovato in 78ms.
 
 ### Sources (riassunti di fonti esterne ingerite)
 
@@ -135,3 +136,4 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 - **[[corpus-index-naming]]** — Schema naming chiarificato (dal 2026-06-04): corpus `sertor` (prodotto, radice) vs `prototype` (prototipo, congelato); indici `.index-sertor` (radice) vs `.index-prototype` (prototipo).
 - **[[transcript-capture-adapter-e-storage]]** — 9ª porta `TranscriptCaptureAdapter` (host-agnostico, Principio X) + adapter Claude-Code + store SQLite `MemoryArchive`. Entità di dominio pure (`SessionRef`, `TranscriptTurn`, `TranscriptContent`, `ArchivedSession`). Granularità ibrida (sessione archiviata, turni interrogabili). Servizio orchestrante `MemoryArchiveService`.
 - **[[scrub-segreti-in-contenuto]]** — Tecnica di ripulitura dei segreti nel testo libero prima di archiviar (pattern-based, configurabile, ripiego conservativo). Estende la redazione per-campo al contenuto. Mai bypassabile, nessun segreto mai in chiaro.
+- **[[ricerca-episodica-fts5]]** — Il motore **FTS5 nativo di SQLite** per la ricerca full-text locale (FEAT-002): indice virtuale `turns_fts` sincronizzato via trigger, BM25 ranking, snippet context extraction, offline + robusto. Schema, logica SQL, osservabilità, limiti (no regex, no stemming, no semantica).

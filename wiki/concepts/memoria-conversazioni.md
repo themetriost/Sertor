@@ -88,7 +88,7 @@ Verificato in test: logica di archivio e contratto di cattura passano con ≥2 a
 ## Stato
 
 - ✅ **FEAT-001 (Cattura & archiviazione)**: implementata (PR #45, 2026-06-14). Store SQLite, adapter Claude-Code, scrub, privacy-by-default, host-agnostico.
-- 🔄 **FEAT-002 (Ricerca episodica)**: progettazione, ricerca FTS locale, no embedding.
+- ✅ **FEAT-002 (Ricerca episodica)**: implementata (PR [oggi], 2026-06-14). Ricerca FTS5 nativa SQLite, turni interrogabili, full-text lessicale, privacy (offline), robustezza.
 - 📋 **FEAT-003** (Distillazione): schema non definito.
 - 📋 **FEAT-004/005/006/008**: estensioni (ricerca semantica, remember-this, retention, multi-assistente).
 
