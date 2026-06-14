@@ -41,9 +41,15 @@ rerank = [
 graph = [
     "networkx>=3",
 ]
+# Pannello TUI di osservabilità (feature 022): Textual è importato lazy nel guscio di rendering
+# (`observability/tui.py`); il core resta installabile senza (il modello di stato è puro stdlib).
+tui = [
+    "textual>=8,<9",
+]
 dev = [
     "pytest>=8.0",
     "ruff>=0.6",
+    "textual>=8,<9",   # per i test headless del pannello (Pilot)
 ]
 
 [tool.uv.workspace]

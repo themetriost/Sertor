@@ -409,6 +409,15 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/022-osservabilita-tui-live/plan.md` (osservabilità F3 — pannello TUI vista live: prima superficie
+VISIBILE. Due strati: (1) modello di stato PURO `LiveSnapshot` + `live_snapshot(reports)` in
+`observability/live.py` (compone i report di F2, testabile SENZA terminale); (2) guscio Textual
+`ObservabilityApp` + `run_live_panel(settings)` in `observability/tui.py`, refresh su timer rileggendo i
+report (DA-O-c = pull periodico, `SERTOR_OBSERVABILITY_REFRESH` default 2s). Textual = extra OPZIONALE
+`[tui]` (import lazy; assente → ConfigError azionabile come rerank/graph; + textual nel dev per i test
+headless via Pilot). Avvio: sottocomando `sertor-rag observe`. Sola lettura; persistenza spenta → stato
+vuoto onesto (no crash). +`ObservabilityReports.recent_events` (additivo su F2). Constitution PASS 10/10.
+Branch `022-osservabilita-tui-live`. Storico:
 `specs/021-osservabilita-report/plan.md` (osservabilità F2 — servizio di aggregazione/report: servizio
 `ObservabilityReports` in `services/observability_report.py` che legge gli eventi via la porta
 `ObservabilityStore` di F1 (già su master) e produce 5 report con funzioni PURE/deterministiche —

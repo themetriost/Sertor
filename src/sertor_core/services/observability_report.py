@@ -200,6 +200,13 @@ class ObservabilityReports:
             by_op[op] = LatencyStat(p50_ms=pct[50], p95_ms=pct[95], count=len(values))
         return LatencyReport(by_op)
 
+    def recent_events(
+        self, limit: int = 20, since: float | None = None, until: float | None = None
+    ) -> list:
+        """The last `limit` events of any kind, ordered by ts (tail). For the live panel (022)."""
+        events = self._store.query_events(None, since, until)
+        return events[-limit:] if limit > 0 else []
+
     def reliability_report(
         self, since: float | None = None, until: float | None = None
     ) -> ReliabilityReport:
