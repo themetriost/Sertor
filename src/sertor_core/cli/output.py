@@ -12,10 +12,13 @@ formats: in JSON the field is present with value `null`; in human format rendere
 from __future__ import annotations
 
 import json as _json
+import time
 from collections.abc import Sequence
 
 from sertor_core.config.settings import Settings
 from sertor_core.domain.entities import IndexReport, RetrievalResult
+from sertor_core.services.episodic_search import EpisodicResults
+from sertor_core.services.memory_archive import ArchiveRunReport
 
 
 def _human_optional(value) -> str:
@@ -82,5 +85,69 @@ def format_search_results(
         blocks.append(
             f"[{i}] score={r.score:.3f}  doc={r.doc_type}  path={r.path}  chunk={r.chunk_id}\n"
             f"    {body}"
+        )
+    return "\n".join(blocks)
+
+
+def format_archive_report(report: ArchiveRunReport, *, json: bool) -> str:
+    """Formats the outcome of `memory archive` (035, FR-002/003, SC-001).
+
+    Counts only, never secrets. Human/JSON informational equivalence is the invariant (FR-003):
+    both report `archived`/`skipped`/`errors`.
+    """
+    if json:
+        return _json.dumps(
+            {
+                "archived": report.archived,
+                "skipped": report.skipped,
+                "errors": report.errors,
+            }
+        )
+    return (
+        f"archived={report.archived} "
+        f"skipped={report.skipped} "
+        f"errors={report.errors}"
+    )
+
+
+def _iso_utc(epoch: float) -> str:
+    """Render an epoch-UTC timestamp as ISO-8601 UTC (`2026-06-14T10:21:03Z`) for the human view."""
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(epoch))
+
+
+def format_memory_results(
+    results: EpisodicResults, settings: Settings, *, json: bool
+) -> str:
+    """Formats the results of `memory search` (035, FR-006/009, SC-002).
+
+    Same citation style as `format_search_results`. Each hit exposes `session_key`, `captured_at`,
+    `role`, `turn_index`, `snippet`, `score`. `captured_at` is rendered ISO-8601 UTC in the human
+    view and as the raw epoch float in JSON (machine-consumable). Empty `hits` → honest empty state
+    (`(no results)`), never an error. No `--full`: the core already returns a `snippet` (the
+    synthetic form), so there is nothing to expand (research D5).
+    """
+    hits = results.hits
+    if json:
+        return _json.dumps(
+            [
+                {
+                    "session_key": h.session_key,
+                    "captured_at": h.captured_at,
+                    "role": h.role,
+                    "turn_index": h.turn_index,
+                    "snippet": h.snippet,
+                    "score": round(h.score, 6),
+                }
+                for h in hits
+            ]
+        )
+    if not hits:
+        return "(no results)"
+    blocks: list[str] = []
+    for i, h in enumerate(hits, start=1):
+        blocks.append(
+            f"[{i}] score={h.score:.3f}  role={h.role}  session={h.session_key}  "
+            f"turn={h.turn_index}  @={_iso_utc(h.captured_at)}\n"
+            f"    {h.snippet}"
         )
     return "\n".join(blocks)
