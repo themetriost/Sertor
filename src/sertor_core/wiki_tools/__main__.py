@@ -83,37 +83,49 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _resolve_config(config_arg: str | None, root_arg: str | None) -> tuple[str, str | None]:
-    """Resolves `--config` (explicit or auto-discovery) and the effective `root_override`
-    (feature 016).
+def _launched_inside_wiki(cwd: Path) -> bool:
+    """True when CWD is itself the wiki dir whose `./wiki.config.toml` is the one feature 016 placed
+    in `wiki/` (i.e. `../wiki/wiki.config.toml` is the SAME file).
 
-    If `--config` is explicit, it is used as-is (root = `--root` if given). Otherwise searches,
-    in order, `./wiki.config.toml` (root config, back-compat) and `./wiki/wiki.config.toml` (new
-    placement): in the second case, if `--root` is not given, the effective root is the CWD so
-    relative paths (`root="wiki"`, `source_dirs`) resolve from the host root. None found →
-    explicit `ConfigError` (Principio IV). Generic search order, no Sertor-specific path (P. X).
+    In that case the host root is the PARENT: resolving the config's relative paths (`root="wiki"`,
+    `source_dirs`) from CWD would double-nest to `wiki/wiki/...` (e.g. a misfiled log).
+    """
+    local = cwd / "wiki.config.toml"
+    parent = cwd.parent / "wiki" / "wiki.config.toml"
+    return local.is_file() and parent.is_file() and parent.samefile(local)
+
+
+def _discover_config(cwd: Path, root_arg: str | None) -> tuple[str, str | None]:
+    """Auto-discover the config path + effective root (feature 016); `ConfigError` if none found.
+
+    Search order: `./wiki.config.toml` (config at the host root, back-compat) then
+    `./wiki/wiki.config.toml` (config inside `wiki/`, root = CWD). Special case: launched from
+    INSIDE the wiki dir → anchor the root to the parent (see `_launched_inside_wiki`).
+    """
+    if (cwd / "wiki.config.toml").is_file():
+        inside = root_arg is None and _launched_inside_wiki(cwd)
+        result = ("wiki.config.toml", str(cwd.parent) if inside else root_arg)
+    elif (cwd / "wiki" / "wiki.config.toml").is_file():
+        result = ("wiki/wiki.config.toml", root_arg if root_arg is not None else ".")
+    else:
+        raise ConfigError(
+            "wiki configuration not found: expected ./wiki.config.toml or "
+            "./wiki/wiki.config.toml (or specify it with --config)"
+        )
+    return result
+
+
+def _resolve_config(config_arg: str | None, root_arg: str | None) -> tuple[str, str | None]:
+    """Resolve `--config` (explicit or auto-discovered) and the effective `root_override` (016).
+
+    Explicit `--config` is used as-is (root = `--root` if given); otherwise auto-discovery
+    (`_discover_config`). Generic search order, no Sertor-specific path (Principio X).
     """
     if config_arg is not None:
-        return config_arg, root_arg
-    cwd = Path.cwd()
-    if (cwd / "wiki.config.toml").is_file():
-        # Guard against being launched from INSIDE the wiki dir. Since feature 016 the config lives
-        # in `wiki/`, so from cwd=`<host>/wiki` the file `./wiki.config.toml` IS the wiki config and
-        # the host root is the PARENT. Resolving the relative paths (root="wiki", source_dirs) from
-        # CWD would double-nest (`wiki/wiki/...`, e.g. a misfiled log). Detect it — the parent's
-        # `wiki/wiki.config.toml` is the SAME file — and anchor the root to the parent (host root).
-        if root_arg is None:
-            parent_cfg = cwd.parent / "wiki" / "wiki.config.toml"
-            local_cfg = cwd / "wiki.config.toml"
-            if parent_cfg.is_file() and parent_cfg.samefile(local_cfg):
-                return "wiki.config.toml", str(cwd.parent)
-        return "wiki.config.toml", root_arg
-    if (cwd / "wiki" / "wiki.config.toml").is_file():
-        return "wiki/wiki.config.toml", (root_arg if root_arg is not None else ".")
-    raise ConfigError(
-        "wiki configuration not found: expected ./wiki.config.toml or "
-        "./wiki/wiki.config.toml (or specify it with --config)"
-    )
+        result = (config_arg, root_arg)
+    else:
+        result = _discover_config(Path.cwd(), root_arg)
+    return result
 
 
 def _parse_date(value: str | None) -> date | None:
