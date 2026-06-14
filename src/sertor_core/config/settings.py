@@ -124,6 +124,10 @@ class Settings:
     memory_adapter: str = "claude-code"                # SERTOR_MEMORY_ADAPTER — capture source
     memory_retention_days: int | None = None           # SERTOR_MEMORY_RETENTION_DAYS — hook only
     memory_scrub_patterns: tuple[str, ...] = ()        # SERTOR_MEMORY_SCRUB_PATTERNS — extra regex
+    # episodic full-text search over the memory archive (033, FEAT-002). Defaults only here
+    # (Principio VIII); components hardcode nothing. Gated by `memory_enabled` (same opt-in).
+    episodic_limit: int = 20                  # SERTOR_EPISODIC_LIMIT — max results (FR-010)
+    episodic_snippet_tokens: int = 12         # SERTOR_EPISODIC_SNIPPET_TOKENS — snippet length
     # Source directory of the Claude Code projects (host-agnostic, testable): default
     # `~/.claude/projects`. The adapter resolves the per-project encoded subfolder from here.
     claude_projects_dir: Path = field(
@@ -250,6 +254,8 @@ class Settings:
             memory_adapter=os.getenv("SERTOR_MEMORY_ADAPTER", "claude-code"),
             memory_retention_days=_int_or_none_env("SERTOR_MEMORY_RETENTION_DAYS"),
             memory_scrub_patterns=tuple(_split_env("SERTOR_MEMORY_SCRUB_PATTERNS") or ()),
+            episodic_limit=int(os.getenv("SERTOR_EPISODIC_LIMIT", "20")),
+            episodic_snippet_tokens=int(os.getenv("SERTOR_EPISODIC_SNIPPET_TOKENS", "12")),
             claude_projects_dir=(
                 Path(os.environ["SERTOR_MEMORY_CLAUDE_PROJECTS_DIR"])
                 if os.getenv("SERTOR_MEMORY_CLAUDE_PROJECTS_DIR")

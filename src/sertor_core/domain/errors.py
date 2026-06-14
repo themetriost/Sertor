@@ -94,3 +94,20 @@ class IndexNotFoundError(SertorError):
     def __init__(self, message: str, *, collection: str):
         self.collection = collection
         super().__init__(f"{message} [collection={collection}]")
+
+
+class InvalidTimeWindowError(SertorError):
+    """An episodic search was given a window with `since > until` (033, FR-007).
+
+    An impossible window is an explicit, actionable usage error (Principio IV), distinct from a
+    window that simply matches no session (a legitimate empty result). Carries the offending
+    bounds so the caller can correct them.
+    """
+
+    def __init__(self, since: float, until: float):
+        self.since = since
+        self.until = until
+        super().__init__(
+            f"invalid time window: since ({since}) is after until ({until}) — "
+            "swap the bounds so that since <= until"
+        )

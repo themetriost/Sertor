@@ -367,6 +367,22 @@ def build_memory_archiver(settings: Settings | None = None):
     )
 
 
+def build_episodic_search(settings: Settings | None = None):
+    """Build the episodic full-text search, or `None` when memory is off (033, FEAT-002).
+
+    Same privacy-by-default gate as `build_memory_archiver`: with `SERTOR_MEMORY=false` (default)
+    this returns `None` — no FTS index is created and no file is opened. Host-agnostic: the search
+    receives only `settings.index_dir` (the archive location), never any host knowledge. The import
+    of the service is LAZY (inside this function), consistent with the other `build_*`.
+    """
+    from sertor_core.services.episodic_search import EpisodicSearch
+
+    settings = settings or Settings.load()
+    if not settings.memory_enabled:
+        return None
+    return EpisodicSearch(settings.index_dir)
+
+
 def build_engine(settings: Settings | None = None):
     """Build the RAG engine selected by `Settings.engine` (FEAT-004, REQ-030/031).
 
