@@ -3,7 +3,7 @@ title: Server MCP sertor-rag
 type: tech
 tags: [mcp, server, sertor-mcp, thin-consumer, retrieval, dogfooding, sertor-core]
 created: 2026-06-08
-updated: 2026-06-12 (sera: superficie a 7 tool — tornati i 4 di grafo, FEAT-005/PR #25; mattina: warm-up eager PR #23 + troubleshooting)
+updated: 2026-06-14 (+ affidabilità e segnalazione errori: _guard su tool + self-test + governance, FEAT-001 affidabilità-dogfood) · 2026-06-12 (sera: superficie a 7 tool — tornati i 4 di grafo, FEAT-005/PR #25; mattina: warm-up eager PR #23 + troubleshooting)
 sources: ["src/sertor_mcp/server.py", ".mcp.json"]
 ---
 
@@ -73,6 +73,26 @@ sono state mantenute entrambe il 2026-06-12: il retrieval **ibrido** arriva grat
 ([[hybrid-retrieval]], PR #24) e i tool di **grafo** sono registrati (FEAT-005, PR #25). Il warm-up
 di `main()` copre facade E grafo (tollerante ad assenze).
 
+## Affidabilità e segnalazione dei guasti (dal 2026-06-14)
+
+A partire da 2026-06-14, il server implementa una strategia di **segnalazione esplicita degli errori su tre
+strati** (vedi record nel log del 2026-06-14):
+
+1. **Helper `_guard` sui tool:** ogni tool è avvolto in un wrapper che cattura gli errori, emette un evento
+   `mcp.<tool>.error` nello store di osservabilità ([[ports-adapters|FEAT-020]]) e **ri-solleva l'errore
+   invariato** (non lo inghiotte). Così gli errori compaiono nei report e nei pannelli TUI.
+2. **Self-test allo startup:** `_self_test()` esercita una ricerca end-to-end (embedding + BM25). Un guasto
+   (key invalida, extra mancante, store rotto) emerge immediatamente su stderr al reconnect; indice assente
+   NON è un errore (degrada a lista vuota per coerenza con la policy della facade).
+3. **Governance anti-silenzio:** i tool agenti (`requirements-analyst`, `speckit-plan`, ecc.) e il rituale
+   in `CLAUDE.md` impongono di **segnalare esplicitamente gli errori MCP** invece di degradare silenziosamente
+   a fallback (Read/Grep manuale).
+
+**Nota operativa:** il venv `.venv-core` (usato dal server secondo `.mcp.json`) deve restare sincronizzato
+con le dipendenze di progetto; divergenza facile su `uv sync` → risolvibile con `uv pip install --python
+.venv-core/Scripts/python.exe -e ".[mcp,graph]"`. Opzioni aperte: (1) ripuntare `.mcp.json` su `.venv`
+(un solo env); (2) scriptare il sync (fuori scope presente).
+
 ## Troubleshooting (metodo collaudato, 2026-06-12)
 
 Quando una chiamata MCP sembra appesa o il server pare morto:
@@ -82,7 +102,8 @@ Quando una chiamata MCP sembra appesa o il server pare morto:
    handshake, ogni `Calling MCP tool`, i `still running (Ns elapsed)`, gli errori e le risposte
    scartate (`unknown message ID`). In sessione: comando `/mcp` per lo stato del server.
 2. **Log lato server:** i `log_event` del core (`op=retrieve`, `op=mcp.<tool>`) escono su **stderr**
-   del subprocess — visibili solo lanciando il server a mano.
+   del subprocess — visibili solo lanciando il server a mano. I guasti sono ora anche tracciati nel
+   report di affidabilità se `SERTOR_OBSERVABILITY=true`.
 3. **Probe fuori sessione:** pilotare il server con un driver JSON-RPC su stdio (initialize →
    initialized → tools/call) misurando i tempi, tenendo stdin aperto; se la risposta arriva solo
    chiudendo stdin, l'esecuzione era parcheggiata nell'event loop (la firma dell'episodio
