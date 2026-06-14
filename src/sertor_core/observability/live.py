@@ -10,7 +10,12 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from sertor_core.domain.entities import ObservedEvent
-from sertor_core.services.observability_report import HealthReport, ObservabilityReports
+from sertor_core.services.observability_report import (
+    CacheReport,
+    CostReport,
+    HealthReport,
+    ObservabilityReports,
+)
 
 
 @dataclass(frozen=True)
@@ -89,3 +94,67 @@ def render_snapshot(s: LiveSnapshot) -> str:
     for e in reversed(s.recent_events[-10:]):
         lines.append(f"  {e.operation}: {e.fields}")
     return "\n".join(lines)
+
+
+# --- browsable report views (feature 022 F4): pure renderers + time window --------------------
+
+_WINDOW_ORDER = ("all", "7d", "24h")
+
+
+def time_window(preset: str, now: float) -> tuple[float | None, float | None]:
+    """Resolve a preset into a `(since, until)` window. `all` → unbounded. Pure (`now` injected)."""
+    if preset == "7d":
+        return (now - 7 * 86400, None)
+    if preset == "24h":
+        return (now - 86400, None)
+    return (None, None)
+
+
+def next_window(preset: str) -> str:
+    """Cycle the time-range preset: all → 7d → 24h → all."""
+    i = _WINDOW_ORDER.index(preset) if preset in _WINDOW_ORDER else 0
+    return _WINDOW_ORDER[(i + 1) % len(_WINDOW_ORDER)]
+
+
+def _humanize_age(seconds: float) -> str:
+    if seconds < 60:
+        return "<1m"
+    if seconds < 3600:
+        return f"{int(seconds // 60)}m"
+    if seconds < 86400:
+        return f"{int(seconds // 3600)}h"
+    return f"{int(seconds // 86400)}d"
+
+
+def render_cache_report(r: CacheReport) -> str:
+    """Render the cache report (hit/miss over time + savings) to text. Pure."""
+    if not r.series and r.total_hits == 0 and r.total_misses == 0:
+        return "Cache: no data in range."
+    lines = [
+        f"Cache: {r.total_hits} hits / {r.total_misses} misses "
+        f"· ~{r.estimated_tokens_saved} tokens saved",
+        "",
+        "By bucket:",
+    ]
+    lines += [f"  {b.bucket}: {b.hits} hits / {b.misses} misses" for b in r.series]
+    return "\n".join(lines)
+
+
+def render_cost_report(r: CostReport) -> str:
+    """Render the cost report (tokens per provider/bucket) to text. Pure (currency is FEAT-007)."""
+    if not r.series and r.total_tokens == 0:
+        return "Cost: no data in range."
+    providers = ", ".join(f"{p}={n}" for p, n in sorted(r.by_provider.items())) or "-"
+    lines = [f"Cost: {r.total_tokens} tokens · {providers}", "", "By bucket:"]
+    lines += [f"  {b.bucket}: {b.tokens} tokens" for b in r.series]
+    return "\n".join(lines)
+
+
+def render_corpus_report(r: HealthReport, now: float) -> str:
+    """Render corpus health + freshness (time since last index). Pure (`now` injected)."""
+    if r.last_index_ts is None:
+        return "Corpus: no index recorded in range."
+    return (
+        f"Corpus: {r.documents} docs · {r.chunks} chunks · dim {r.embedding_dim}\n"
+        f"Freshness: last index {_humanize_age(now - r.last_index_ts)} ago"
+    )

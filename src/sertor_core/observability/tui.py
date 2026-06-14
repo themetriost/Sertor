@@ -1,34 +1,57 @@
-"""Textual shell for the observability live panel (feature 022): the thin rendering layer.
+"""Textual shell for the observability panel (features 022/023): the thin rendering layer.
 
 Imports Textual at module top — so this module is imported ONLY behind the `[tui]` extra (the
 launcher `composition.run_observability_panel` does it lazily and raises an actionable `ConfigError`
 when the extra is missing). All the *what to show* logic lives in `live.py` (pure, testable without
-a terminal); here we only draw the snapshot and refresh it on a timer. Read-only.
+a terminal); here we only draw the snapshot/reports and refresh on a timer. Read-only.
+
+The panel is tabbed: **Live** (current state, 022) + **Cache/Cost/Corpus** (browsable reports, 023),
+with a `t` key to cycle the time range (all → 7d → 24h).
 """
 from __future__ import annotations
 
-from textual.app import App, ComposeResult
-from textual.widgets import Footer, Header, Static
+import time
 
-from sertor_core.observability.live import live_snapshot, render_snapshot
+from textual.app import App, ComposeResult
+from textual.widgets import Footer, Header, Static, TabbedContent, TabPane
+
+from sertor_core.observability.live import (
+    live_snapshot,
+    next_window,
+    render_cache_report,
+    render_corpus_report,
+    render_cost_report,
+    render_snapshot,
+    time_window,
+)
 from sertor_core.services.observability_report import ObservabilityReports
 
 
 class ObservabilityApp(App):
-    """Live observability panel: draws the current snapshot and refreshes on a timer (read-only)."""
+    """Observability panel: live state + browsable reports, refreshed on a timer (read-only)."""
 
     TITLE = "Sertor — observability"
-    BINDINGS = [("q", "quit", "Quit")]
+    BINDINGS = [("t", "cycle_window", "Time range"), ("q", "quit", "Quit")]
 
     def __init__(self, reports: ObservabilityReports, refresh_s: float = 2.0):
         super().__init__()
         self._reports = reports
         self._refresh_s = refresh_s
-        self.last_text = ""  # last rendered text (testable seam, independent of Textual internals)
+        self._window = "all"
+        # Last rendered texts per tab (testable seam, independent of Textual internals).
+        self.rendered: dict[str, str] = {}
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield Static(id="body")
+        with TabbedContent():
+            with TabPane("Live", id="tab-live"):
+                yield Static(id="live")
+            with TabPane("Cache", id="tab-cache"):
+                yield Static(id="cache")
+            with TabPane("Cost", id="tab-cost"):
+                yield Static(id="cost")
+            with TabPane("Corpus", id="tab-corpus"):
+                yield Static(id="corpus")
         yield Footer()
 
     def on_mount(self) -> None:
@@ -36,5 +59,18 @@ class ObservabilityApp(App):
         self.set_interval(self._refresh_s, self._update)
 
     def _update(self) -> None:
-        self.last_text = render_snapshot(live_snapshot(self._reports))
-        self.query_one("#body", Static).update(self.last_text)
+        now = time.time()
+        since, until = time_window(self._window, now)
+        self.sub_title = f"range: {self._window}"
+        self.rendered = {
+            "live": render_snapshot(live_snapshot(self._reports)),
+            "cache": render_cache_report(self._reports.cache_report(since, until)),
+            "cost": render_cost_report(self._reports.cost_report(since, until)),
+            "corpus": render_corpus_report(self._reports.health_report(since, until), now),
+        }
+        for key, text in self.rendered.items():
+            self.query_one(f"#{key}", Static).update(text)
+
+    def action_cycle_window(self) -> None:
+        self._window = next_window(self._window)
+        self._update()
