@@ -45,9 +45,9 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   `requirements/osservabilita/` (epica nuova). *Stato:* epica + MVP **interamente a requisiti**
   (F1→F4 decomposte, 76 REQ EARS); decisioni di prodotto fissate (privacy-by-default a strati, stima €
   a Should). *In corso:* **SpecKit su F1 «strato di osservabilità persistente»** — branch
-  `020-osservabilita-persistente`, **spec creata** (checklist verde, zero NEEDS CLARIFICATION). *Prossimo
-  passo:* `/speckit-plan` (progettando lo store con i requisiti di F2 davanti — scioglie schema +
-  DA-O-f meccanismo di intercettazione). *A seguire:* F2→F4 a cascata. *In parallelo (quando si vuole):*
+  `020-osservabilita-persistente`, **plan completo** (Constitution PASS 10/10): DA-O-f risolta = un
+  `logging.Handler` stdlib (additivo, non-fatale gratis), store SQLite `observability.sqlite`, 7ª porta
+  `ObservabilityStore` come seam con F2. *Prossimo passo:* `/speckit-tasks`. *A seguire:* F2→F4 a cascata. *In parallelo (quando si vuole):*
   decomporre l'epica **memoria conversazioni** (nodo: cattura host-specifica).
 
 ### 📋 PLANNED (per priorità)
