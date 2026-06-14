@@ -398,6 +398,20 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/019-hardening-cache-token/plan.md` (hardening produzione — i due Should del gruppo C dal RAG
+audit, costo indicizzazione: (US1) cache embeddings per content-hash = decoratore `CachingEmbedder` +
+store SQLite `EmbeddingCache` in `adapters/embeddings/cache.py`, chiave `(embedder.name, sha256(text))`,
+vettore float64 (`array('d')`, round-trip esatto), file `<index_dir>/embed_cache.sqlite`, degrado
+non-fatale su guasto store, dedup in-call; wiring SOLO sul percorso d'indicizzazione via
+`build_embedder(..., cache=True)` da `build_indexer`, manopola `Settings.embed_cache_enabled`
+(`SERTOR_EMBED_CACHE`, default False → rebuild full odierno); `services/indexing.py` INVARIATO
+(decoratore trasparente); (US2) token nei log = `_embed_batch` Azure/Ollama → `(vettori, token|None)`,
+`embed()` emette evento `embeddings` (provider, texts, tokens? — omesso se assente, indipendente dalla
+cache). Osservabilità: evento `embeddings_cache` (hits/misses/total) misura il risparmio (SC-006).
+Additivo: porta `EmbeddingProvider`/contratti invariati; stdlib-only (sqlite3/hashlib/array), zero
+extra. Constitution PASS 10/10 senza deroghe. Branch `019-hardening-cache-token`. Fonte:
+`requirements/sertor-core/hardening-produzione/` (Could H7-H11 + refresh incrementale FEAT-009 fuori
+ambito). Storico recente:
 `specs/018-hardening-retrieval/plan.md` (hardening produzione — i due Must dal RAG audit 2026-06-13:
 (US1) resilienza embedder = retry+backoff esponenziale+jitter su errori transitori (429/5xx/rete) via
 helper condiviso `with_retry`+`RetryPolicy` in `adapters/embeddings/_retry.py`, manopole `Settings`

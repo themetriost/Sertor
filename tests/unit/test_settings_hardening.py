@@ -29,3 +29,15 @@ def test_hardening_defaults_when_env_absent(monkeypatch):
 def test_min_score_blank_env_is_none(monkeypatch):
     monkeypatch.setenv("SERTOR_MIN_SCORE", "   ")
     assert Settings.load(env_file=None).retrieval_min_score is None
+
+
+def test_embed_cache_knob_from_env(monkeypatch):
+    # 019, REQ-H4: the cache is an explicit opt-in.
+    monkeypatch.setenv("SERTOR_EMBED_CACHE", "true")
+    assert Settings.load(env_file=None).embed_cache_enabled is True
+
+
+def test_embed_cache_default_off(monkeypatch):
+    # FR-007: default disabled = today's full re-embed behaviour.
+    monkeypatch.delenv("SERTOR_EMBED_CACHE", raising=False)
+    assert Settings.load(env_file=None).embed_cache_enabled is False

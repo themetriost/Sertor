@@ -57,7 +57,7 @@ class AzureEmbedder:
         self._sleep = sleep
         self._rng = rng
 
-    def _embed_batch(self, texts: list[str]) -> list[list[float]]:
+    def _embed_batch(self, texts: list[str]) -> tuple[list[list[float]], int | None]:
         try:
             r = self._client.post(
                 self._url,
@@ -66,8 +66,10 @@ class AzureEmbedder:
                 json={"model": self._deployment, "input": texts},
             )
             r.raise_for_status()
-            data = sorted(r.json()["data"], key=lambda d: d["index"])
-            return [d["embedding"] for d in data]
+            payload = r.json()
+            data = sorted(payload["data"], key=lambda d: d["index"])
+            tokens = (payload.get("usage") or {}).get("total_tokens")  # cost signal (REQ-H5)
+            return [d["embedding"] for d in data], tokens
         except httpx.HTTPStatusError as exc:
             status = exc.response.status_code
             retriable = status >= 500 or status == 429
@@ -91,7 +93,7 @@ class AzureEmbedder:
                 retriable=True,
             ) from exc
 
-    def _embed_batch_resilient(self, batch: list[str]) -> list[list[float]]:
+    def _embed_batch_resilient(self, batch: list[str]) -> tuple[list[list[float]], int | None]:
         """`_embed_batch` with retry on transient failures (018, REQ-H3), if a policy is set.
 
         Wrapping the BATCH (not the whole `embed`) avoids re-embedding batches that already
@@ -111,9 +113,19 @@ class AzureEmbedder:
         if not texts:
             return []
         out: list[list[float]] = []
+        total_tokens = 0
+        have_tokens = False  # distinguish "0 tokens" from "provider did not report" (FR-009)
         for i in range(0, len(texts), self.batch_size):
-            embs = self._embed_batch_resilient(texts[i : i + self.batch_size])
+            embs, tokens = self._embed_batch_resilient(texts[i : i + self.batch_size])
+            if tokens is not None:
+                total_tokens += tokens
+                have_tokens = True
             if self.dim is None and embs:
                 self.dim = len(embs[0])
             out.extend(embs)
+        # Success event with the token cost signal (REQ-H5); field omitted when unavailable.
+        fields = {"provider": self.name, "texts": len(texts)}
+        if have_tokens:
+            fields["tokens"] = total_tokens
+        log_event(logging.INFO, "embeddings", **fields)
         return out
