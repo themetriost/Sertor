@@ -47,13 +47,12 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   a Should). **F1 ✅ (PR #34)** = strato persistente (store SQLite, 7ª porta `ObservabilityStore`,
   `SERTOR_OBSERVABILITY` default off). **F2 ✅ mergiata (PR #35, 2026-06-14)** = servizio
   `ObservabilityReports` (5 report cache/costo/salute/latenze/affidabilità da `query_events`, funzioni
-  pure; Constitution PASS, 415+85 test). **F3 «pannello TUI — vista live» IMPLEMENTATA sul branch**
-  `022-osservabilita-tui-live` (la prima superficie *visibile*: `sertor-rag observe` → cruscotto da
-  terminale che si auto-aggiorna; modello di stato puro `LiveSnapshot` + guscio Textual dietro l'extra
-  `[tui]`; sola lettura; persistenza spenta → stato vuoto onesto; Constitution PASS, 424+85 test, smoke
-  headless via Pilot; **non ancora mergiata**). *In corso/Prossimo:* **F4 «TUI report»** (le viste
-  storiche sfogliabili). *In parallelo (quando si vuole):* decomporre l'epica **memoria conversazioni**
-  (nodo: cattura host-specifica).
+  pure; Constitution PASS, 415+85 test). **F3 ✅ mergiata (PR #36, 2026-06-14)** = pannello TUI vista live
+  (`sertor-rag observe`, cruscotto auto-aggiornante; modello puro `LiveSnapshot` + guscio Textual extra
+  `[tui]`; 424+85 test). *In corso:* **F4 «TUI report»** — le viste storiche **sfogliabili** (hit/miss
+  nel tempo, costo per giorno, salute+freschezza) nello stesso pannello; chiude l'MVP dell'osservabilità
+  (F1→F4). SpecKit in autonomia. *In parallelo (quando si vuole):* decomporre l'epica **memoria
+  conversazioni** (nodo: cattura host-specifica).
 
 ### 📋 PLANNED (per priorità)
 - **Agenzia RAG incorporata — dote differita (Could)**: la capacità agentic RAG è ✅ **soddisfatta
