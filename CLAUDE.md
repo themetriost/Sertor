@@ -471,6 +471,17 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/041-consumo-sicuro-vehicles/plan.md` (gruppo A dell'enforcement Principio XI — auto-wire dei
+concern trasversali (osservabilità/config/errori) nel composition root / factory `build_*`, così OGNI
+percorso d'ingresso (CLI/MCP/libreria) li applica in modo uniforme; chiude il gap del re-index via
+`build_indexer().index()` diretto NON tracciato in telemetria. Helper `_wire_runtime(settings)` (chiama
+`enable_observability`, idempotente, no-op se off) chiamato nelle 5 factory consumer-entry
+(`build_indexer`/`build_facade`/`build_engine`/`build_baseline_engine`/`build_graph_service`); Principio I
+preservato (libreria importabile, eccezione test); `__init__` NON ristretto (FR-007 rinviato). Constitution
+PASS 11/11, 564 test root verdi, ruff pulito. È il 1° dei 4 gruppi (A core + B istruzione installer + C
+hook + D plan-template neutro) per realizzare il Principio XI; req
+`requirements/sertor-core/enforcement-principio-xi/requirements.md`. Branch `041-consumo-sicuro-vehicles`.
+Storico:
 `specs/037-governance-sertor-flow/plan.md` (epica sertor-cli FEAT-005 — installer di governance/SDLC
 come PACCHETTO SEPARATO `sertor-flow`, ortogonale al RAG e SENZA dipendenza da `sertor-core`. Porta su un
 ospite l'apparato di metodo di sviluppo: skill+agenti SpecKit (VENDORED da spec-kit MIT, pinned 0.8.18,

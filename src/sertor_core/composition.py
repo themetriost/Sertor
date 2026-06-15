@@ -148,6 +148,7 @@ def build_graph_service(settings: Settings | None = None):
     from sertor_core.adapters.graph.networkx_graph import NetworkxCodeGraph
 
     settings = settings or Settings.load()
+    _wire_runtime(settings)
     return NetworkxCodeGraph(
         settings.index_dir,
         settings.corpus,
@@ -238,6 +239,17 @@ def enable_observability(settings: Settings | None = None) -> bool:
     return True
 
 
+def _wire_runtime(settings: Settings) -> None:
+    """Apply the cross-cutting concerns for any consumer entry path (Principio XI, feature 041).
+
+    Today this activates observability (idempotent, no-op when disabled): a consumer entering via a
+    `build_*` factory gets the same wiring as the CLI/MCP, closing the gap where a re-index via the
+    library bypassed `enable_observability`. Single home for future cross-cutting wiring; keeps the
+    dependencies pointing inward (the wiring lives in the composition root, not the services).
+    """
+    enable_observability(settings)
+
+
 def build_indexer(settings: Settings | None = None):
     """Build the indexing orchestrator wired from the configuration (REQ-029).
 
@@ -250,6 +262,7 @@ def build_indexer(settings: Settings | None = None):
     from sertor_core.services.indexing import IndexingService
 
     settings = settings or Settings.load()
+    _wire_runtime(settings)
     engine = _validated_engine(settings)
     # Cache opt-in on the indexing path only (019, REQ-H4): re-index skips re-embedding unchanged
     # chunks. Default off → today's full re-embed (FR-007/013).
@@ -276,6 +289,7 @@ def build_facade(settings: Settings | None = None):
     from sertor_core.services.retrieval import RetrievalFacade
 
     settings = settings or Settings.load()
+    _wire_runtime(settings)
     engine = _validated_engine(settings)
     embedder = build_embedder(settings)
     store = build_store(settings)
@@ -313,6 +327,7 @@ def build_baseline_engine(settings: Settings | None = None):
     from sertor_core.engines.baseline import BaselineEngine
 
     settings = settings or Settings.load()
+    _wire_runtime(settings)
     embedder = build_embedder(settings)
     store = build_store(settings)
     return BaselineEngine(embedder, store, collection_name(settings, embedder), settings)
@@ -404,6 +419,7 @@ def build_engine(settings: Settings | None = None):
     `hybrid` (default) → `HybridEngine`; unknown value → `ConfigError`.
     """
     settings = settings or Settings.load()
+    _wire_runtime(settings)
     if _validated_engine(settings) == "baseline":
         return build_baseline_engine(settings)
     from sertor_core.engines.hybrid import HybridEngine

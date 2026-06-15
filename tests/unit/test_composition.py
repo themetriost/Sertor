@@ -71,6 +71,42 @@ def test_collection_name_keys_on_store_backend():
     assert azure == "sertor__fake_8"
 
 
+def test_consumer_factories_wire_runtime(monkeypatch, tmp_path):
+    """Feature 041 (Principio XI): each consumer-entry factory wires the cross-cutting concerns.
+
+    A direct `build_*` use must activate observability like the CLI/MCP do — closing the gap where a
+    re-index via the library bypassed `enable_observability`.
+    """
+    from sertor_core import composition
+    from tests.fixtures.mocks import InMemoryStore
+
+    settings = Settings.load(env_file=None)
+    object.__setattr__(settings, "engine", "baseline")     # avoid lexical/hybrid construction
+    object.__setattr__(settings, "graph_enabled", False)   # avoid the graph sink in build_indexer
+    object.__setattr__(settings, "index_dir", tmp_path)
+
+    calls: list[str] = []
+
+    def _record(_s):
+        calls.append("wired")
+        return False
+
+    monkeypatch.setattr(composition, "enable_observability", _record)
+    monkeypatch.setattr(composition, "build_embedder", lambda *a, **k: FakeEmbedder())
+    monkeypatch.setattr(composition, "build_store", lambda *a, **k: InMemoryStore())
+
+    for factory in (
+        composition.build_indexer,
+        composition.build_facade,
+        composition.build_baseline_engine,
+        composition.build_graph_service,
+        composition.build_engine,
+    ):
+        calls.clear()
+        factory(settings)
+        assert calls, f"{factory.__name__} did not wire the runtime (Principio XI)"
+
+
 def test_memory_archiver_none_when_disabled(monkeypatch, tmp_path):
     # 031 (FR-002, D8): memory off → build_memory_archiver returns None.
     monkeypatch.delenv("SERTOR_MEMORY", raising=False)
