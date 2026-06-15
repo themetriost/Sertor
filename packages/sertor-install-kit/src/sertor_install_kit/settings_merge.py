@@ -1,9 +1,10 @@
 """Additive merge of `.claude/settings.json` (D5, FR-015).
 
-**Additive merge with deduplication by `command`**: absent → create with the 3 hook entries;
-valid → add only entries whose `command` is not already present in the same event; malformed →
-`ConfigError` (fail-fast, file not touched). Preservation is **semantic** (no user entry lost),
-not byte-for-byte: `settings.json` is structured config, not user prose (D5).
+**Additive merge with deduplication by `command`**: absent → create with the fragment's hook
+entries; valid → add only entries whose `command` is not already present in the same event;
+malformed → `ConfigError` (fail-fast, file not touched). The events are derived from the fragment
+itself (any Claude Code event, e.g. `PreToolUse`), not a fixed list. Preservation is **semantic**
+(no user entry lost), not byte-for-byte: `settings.json` is structured config, not user prose (D5).
 """
 from __future__ import annotations
 
@@ -12,8 +13,6 @@ from pathlib import Path
 
 from sertor_install_kit.artifacts import Outcome
 from sertor_install_kit.errors import ConfigError
-
-_HOOK_EVENTS = ("SessionStart", "Stop", "SessionEnd")
 
 
 def _inner_commands(entry: dict) -> set[str]:
@@ -36,7 +35,11 @@ def _dedup_hooks(existing: dict, fragment: dict) -> tuple[dict, int]:
     hooks = merged.setdefault("hooks", {})
     added = 0
 
-    for event in _HOOK_EVENTS:
+    # Events are derived from the union of existing + fragment hook keys (not a fixed list): a
+    # consumer may bring any Claude Code event (e.g. `PreToolUse`), and the merge stays additive +
+    # dedup-by-command on whatever events appear. Sorted for deterministic output.
+    events = sorted(set(fragment.get("hooks", {}).keys()) | set(hooks.keys()))
+    for event in events:
         frag_entries = fragment.get("hooks", {}).get(event, [])
         if not frag_entries:
             continue

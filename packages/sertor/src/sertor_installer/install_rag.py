@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import logging
 
+from sertor_install_kit.claude_md import write_marker_block
 from sertor_install_kit.command_runner import CommandRunner
 from sertor_install_kit.env_merge import merge_env
 from sertor_install_kit.errors import ConfigError, InstallerError
@@ -22,6 +23,7 @@ from sertor_install_kit.executor import execute_plan as _kit_execute_plan
 from sertor_install_kit.gitignore_append import append_gitignore
 from sertor_install_kit.mcp_merge import merge_mcp
 from sertor_install_kit.observability import log_event
+from sertor_install_kit.settings_merge import merge_settings
 from sertor_installer.artifacts import (
     Artifact,
     ArtifactKind,
@@ -43,6 +45,21 @@ _SERVER_NAME = "sertor-rag"
 # Human-readable sentinel (NOT a repo path): in local scope nothing is written to the repository
 # (feature 016, F1 analyze). Passes `Artifact` validation (relative, no `..`).
 _MCP_REGISTER_LABEL = "(mcp: client registry)"
+
+# Group B (Principio XI, feature 042): host-facing RAG usage instruction in `CLAUDE.md`.
+# Own marker pair, DISTINCT from the wiki (`SERTOR:WIKI-RITUAL`) and SDLC (`SERTOR:SDLC-RITUAL`)
+# blocks so the three coexist, each idempotent on its own markers.
+_RAG_USAGE_BLOCK = "rag/claude-md-block-rag-usage.md"
+_CLAUDE_MD_TARGET = "CLAUDE.md"
+MARKER_START_RAG = "<!-- SERTOR:RAG-USAGE START -->"
+MARKER_END_RAG = "<!-- SERTOR:RAG-USAGE END -->"
+
+# Group C (Principio XI, feature 042): host-specific PreToolUse hook (adapter of the trigger).
+# Its absence MUST NOT break the RAG capability (Principio X).
+_RAG_HOOK_ASSET = "rag/hooks/sertor-rag-usage-check.ps1"
+_RAG_HOOK_TARGET = ".claude/hooks/sertor-rag-usage-check.ps1"
+_RAG_USAGE_SETTINGS = "rag/settings.rag-usage.json"
+_SETTINGS_TARGET = ".claude/settings.json"
 
 
 class DependencyError(InstallerError):
@@ -96,6 +113,32 @@ def build_rag_plan(
     plan.append(
         Artifact(ArtifactKind.GITIGNORE_APPEND, None, ".gitignore", WriteStrategy.APPEND_LINES)
     )
+    # Group B (042): host-facing RAG usage instruction in `CLAUDE.md` (own marker pair).
+    plan.append(
+        Artifact(
+            ArtifactKind.MARKER_BLOCK,
+            _RAG_USAGE_BLOCK,
+            _CLAUDE_MD_TARGET,
+            WriteStrategy.APPEND_BLOCK,
+        )
+    )
+    # Group C (042): host-specific PreToolUse hook (file + settings entry). Additive, fail-open.
+    plan.append(
+        Artifact(
+            ArtifactKind.FILE,
+            _RAG_HOOK_ASSET,
+            _RAG_HOOK_TARGET,
+            WriteStrategy.CREATE_IF_ABSENT,
+        )
+    )
+    plan.append(
+        Artifact(
+            ArtifactKind.SETTINGS_MERGE,
+            _RAG_USAGE_SETTINGS,
+            _SETTINGS_TARGET,
+            WriteStrategy.MERGE_DEDUP,
+        )
+    )
     return plan
 
 
@@ -141,6 +184,42 @@ def _apply_gitignore(profile: RagHostProfile) -> ArtifactOutcome:
     """`APPEND_LINES`: runtime entries in `.gitignore` (host root), dedup."""
     outcome, detail = append_gitignore(profile.target_root / ".gitignore")
     return ArtifactOutcome(".gitignore", outcome, detail)
+
+
+def _apply_rag_usage_block(profile: RagHostProfile) -> ArtifactOutcome:
+    """`APPEND_BLOCK` (042, group B): RAG usage instruction block in `CLAUDE.md`.
+
+    Reuses the kit's `write_marker_block` with the OWN markers (`SERTOR:RAG-USAGE`), distinct from
+    the wiki/SDLC blocks → the three coexist, each idempotent on its own markers. The file is
+    created if absent; existing content outside the markers is preserved byte-for-byte.
+    """
+    dest = profile.target_root / _CLAUDE_MD_TARGET
+    content = read_asset_text(_RAG_USAGE_BLOCK)
+    outcome = write_marker_block(dest, content, MARKER_START_RAG, MARKER_END_RAG)
+    detail = "RAG-usage block inserted" if outcome is Outcome.BLOCK else "block already present"
+    return ArtifactOutcome(_CLAUDE_MD_TARGET, outcome, detail)
+
+
+def _apply_rag_hook_file(profile: RagHostProfile, art: Artifact) -> ArtifactOutcome:
+    """`CREATE_IF_ABSENT` (042, group C): byte-for-byte copy of the hook script; exists → skip."""
+    dest = profile.target_root / art.target_rel
+    if dest.exists():
+        return ArtifactOutcome(art.target_rel, Outcome.SKIPPED, "already present")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    assert art.source is not None
+    dest.write_text(read_asset_text(art.source), encoding="utf-8")
+    return ArtifactOutcome(art.target_rel, Outcome.CREATED)
+
+
+def _apply_rag_settings(profile: RagHostProfile, art: Artifact) -> ArtifactOutcome:
+    """`MERGE_DEDUP` (042, group C): additive merge of the PreToolUse hook entry into
+    `.claude/settings.json` (dedup by command → preserves the user's existing hooks)."""
+    dest = profile.target_root / art.target_rel
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    assert art.source is not None
+    fragment = json.loads(read_asset_text(art.source))
+    outcome, detail = merge_settings(dest, fragment)
+    return ArtifactOutcome(art.target_rel, outcome, detail)
 
 
 def _server_entry_json(profile: RagHostProfile) -> str:
@@ -200,6 +279,12 @@ def execute_rag_plan(
             return _apply_mcp_register(profile, runner)
         if art.kind is ArtifactKind.GITIGNORE_APPEND:
             return _apply_gitignore(profile)
+        if art.kind is ArtifactKind.MARKER_BLOCK:
+            return _apply_rag_usage_block(profile)
+        if art.kind is ArtifactKind.FILE:
+            return _apply_rag_hook_file(profile, art)
+        if art.kind is ArtifactKind.SETTINGS_MERGE:
+            return _apply_rag_settings(profile, art)
         raise ConfigError(f"unhandled artifact kind: {art.kind}")  # pragma: no cover
 
     return _kit_execute_plan(plan, apply, target=str(profile.target_root), capability="rag")

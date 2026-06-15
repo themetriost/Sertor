@@ -63,8 +63,12 @@ def test_env_excludes_dot_sertor(tmp_path: Path, make_runner):  # L1 / FR-020
 def test_no_wiki_artifacts_created(tmp_path: Path, make_runner):  # L1 / FR-021
     runner = make_runner()
     _run(tmp_path, runner, backend="azure")
-    assert not (tmp_path / ".claude").exists()
+    # `install rag` deposits the RAG-usage hook under `.claude/` (feature 042) but NEVER the wiki
+    # scaffold (skills/commands/agents, wiki structure, wiki config).
     assert not (tmp_path / "wiki").exists()
+    assert not (tmp_path / ".claude" / "skills").exists()
+    assert not (tmp_path / ".claude" / "commands").exists()
+    assert not (tmp_path / ".claude" / "agents").exists()
 
 
 def test_corpus_in_env_and_mcp(tmp_path: Path, make_runner):
@@ -147,11 +151,14 @@ def test_rag_plan_no_runtime_file_in_root(tmp_path: Path):
     root instead of under `.sertor/`) will fail this test.
     """
     profile = RagHostProfile.from_options(RagInstallOptions(target_root=tmp_path, backend="azure"))
-    allowed_root = {".mcp.json", ".gitignore"}
+    # Runtime stays under `.sertor/`; host-facing governance artifacts (feature 042: CLAUDE.md
+    # block + `.claude/` hook + settings) are allowed in root, like `install wiki`.
+    allowed_root = {".mcp.json", ".gitignore", "CLAUDE.md"}
+    allowed_top = {".sertor", ".claude"}
     for art in build_rag_plan(profile, with_deps=True):
         rel = art.target_rel.replace("\\", "/")
         top = rel.split("/", 1)[0]
-        assert top == ".sertor" or rel in allowed_root, (
+        assert top in allowed_top or rel in allowed_root, (
             f"artifact in root not allowed: {rel}"
         )
 

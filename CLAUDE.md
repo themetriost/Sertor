@@ -471,6 +471,15 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/042-enforcement-vehicles-ospite/plan.md` (gruppi B+C dell'enforcement Principio XI, lato OSPITE —
+estende `sertor install rag`: (B) blocco `CLAUDE.md` a marker `SERTOR:RAG-USAGE` che istruisce l'agente
+ospite a usare `sertor-rag`/MCP e a NON importare `sertor_core`; (C) hook PreToolUse host-specifico
+(`sertor-rag-usage-check.ps1`) che rileva l'uso diretto della libreria fuori da vehicles/test → warning
+non bloccante, exit 0 sempre, fail-open. Additivo/non-distruttivo/idempotente, thin sul toolkit kit
+(generalizzato `settings_merge` per eventi hook arbitrari, retrocompatibile). Marker distinti da
+wiki/SDLC; nessun nuovo ArtifactKind. Constitution PASS 11/11; sertor 104 · kit 37 · sertor-flow 106
+verdi. 2° dei 4 gruppi del Principio XI (A ✅ master PR #61). Branch `042-enforcement-vehicles-ospite`.
+Storico:
 `specs/041-consumo-sicuro-vehicles/plan.md` (gruppo A dell'enforcement Principio XI — auto-wire dei
 concern trasversali (osservabilità/config/errori) nel composition root / factory `build_*`, così OGNI
 percorso d'ingresso (CLI/MCP/libreria) li applica in modo uniforme; chiude il gap del re-index via
