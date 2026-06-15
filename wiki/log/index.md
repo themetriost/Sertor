@@ -1,6 +1,6 @@
-# Indice del log
+# Log Index
 
-Partizioni giornaliere (cronologico):
+Daily partitions (chronological):
 
 - [2026-05-30](2026-05-30.md)
 - [2026-05-31](2026-05-31.md)
@@ -15,3 +15,5 @@ Partizioni giornaliere (cronologico):
 - [2026-06-11](2026-06-11.md)
 - [2026-06-12](2026-06-12.md)
 - [2026-06-13](2026-06-13.md)
+- [2026-06-14](2026-06-14.md)
+- [2026-06-15](2026-06-15.md)
