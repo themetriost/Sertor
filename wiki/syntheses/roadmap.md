@@ -29,14 +29,14 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | RAG agentico (FEAT-006) | Should | ✅ **soddisfatta in forma composita (2026-06-13)** — il sistema MCP+agente È agentic RAG; agenzia incorporata = dote differita (Could) |
 | Manutenzione wiki (FEAT-007) | Should | ✅ **master (2026-06-13, PR #30)** — `move`/`reconcile`/`collect`+status; gruppi A(Won't)/E/F/B/C/D tutti chiusi |
 | CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
-| CLI — installer (`sertor install`) | — | ✅ `wiki` (PR #22) + **`rag` su master (2026-06-12)** — validato live su Kaelen; `governance` = stub |
+| CLI — installer (`sertor install`) | — | ✅ `wiki` (PR #22) + **`rag` su master (2026-06-12)** — validato live su Kaelen; `governance` ora è il pacchetto separato **`sertor-flow`** (PR #56) |
 | **Hardening produzione (retrieval)** | — | 🔄 **IN PROGRESS** — Must ✅ su master (PR #32); Should gruppo C (cache embeddings + token log, feature 019) ✅ **su master (PR #33)**; restano i Could in `requirements/sertor-core/hardening-produzione/` |
 | **Memoria conversazioni** (epica, MVP) | — | 🔄 **IN PROGRESS** — **MVP ✅ completo e USABILE + acceso**: FEAT-001 cattura (PR #45) + FEAT-002 ricerca (PR #47) + superficie CLI/hook (035, PR #49) + **FEAT-003 aggancio distillazione (036, PR #51)**, tutti su master 2026-06-14. Comandi `sertor-rag memory archive`/`search`/`show`/`list` + hook `SessionEnd`. `SERTOR_MEMORY=true` **acceso sul dogfood** (2026-06-14). *Provato live*. Resta: Should/Could (004 ricerca semantica / 005 / 006 / 008) |
 | **Osservabilità accesa sul dogfood** + errori MCP segnalati | — | ✅ **master (2026-06-14, PR #40/#43)** — `SERTOR_OBSERVABILITY=true` cablato e attivo; ogni errore del server MCP = evento + self-test allo startup |
 | Distribuzione multi-assistente: GitHub Copilot (+ Codex Could) | — | 👍 **da decomporre** (decisione utente 2026-06-12) |
 | Tema lingua (tutto il prodotto in inglese) | — | ✅ **completato totale (2026-06-13, PR #27/#28/#29/#31)**: codice (72 .py: docstring/commenti/**errori**), test (75 .py: commenti/docstring), documentazione di prodotto (README + `docs/`), asset installer, CLI, seed it/en. Restano IT **per scelta**: `wiki/`, `specs/`, `requirements/`, `CLAUDE.md`, `prototype/` (congelato) |
 | Igiene radice ospite (installer, asse DOVE) | — | ✅ **master (2026-06-13, PR #26)** — config in `wiki/` + auto-discovery, `--mcp-scope` |
-| **Governance SDLC — pacchetto `sertor-flow`** (epica CLI) | — | 📋 **PLANNED** — **decomposta a requisiti (2026-06-15)** come pacchetto installabile separato (non su master); ortogonale al RAG, no dipendenza da sertor-core. Bundle: skill/agenti SpecKit + `.specify/` template + costituzione + blocco rituale CLAUDE.md. 7 domande aperte (DA-a..g) prima del plan. |
+| **Governance SDLC — pacchetto `sertor-flow`** (epica CLI, FEAT-005) | — | ✅ **master (2026-06-15, PR #56)** — pacchetto installabile separato, ortogonale al RAG, **no dipendenza da sertor-core**. Motore estratto nel toolkit condiviso `sertor-install-kit`; bundle = skill/agenti SpecKit vendored (MIT) + requirements + configuration-manager + costituzione-starter neutra + blocco rituale SDLC. `sertor install governance` = puntatore a `sertor-flow` |
 | **Collaborazione multiutente/enterprise** (asse CHI, workflow) | — | 📋 **EPICA aperta, differita (2026-06-12)** — `requirements/multiutente/epic.md`; da affrontare quando il caso d'uso team è concreto |
 
 *Legenda:* ✅ su master · 🧪 operativo, consolidamento aperto · 📋 pianificato · 💀 ramo morto (non su master).
@@ -69,11 +69,23 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   anche da **GitHub Copilot** (Must: MCP nei client Copilot + traduzione delle superfici
   agentiche dell'installer con target assistant) e da **Codex** (Could: AGENTS.md + MCP); CLI già
   assistant-agnostic. Nuova FEAT-007 dell'epica CLI; estende il Principio X all'assistente ospite.
-- **Governance SDLC come pacchetto `sertor-flow`** (era `sertor install governance`, ultimo taglio stub) — **decomposta a requisiti EARS (2026-06-15)**: riconcepita come **pacchetto installabile separato**, ortogonale al RAG, senza dipendenza da `sertor-core`; bundle = skill/agenti SpecKit + skill `requirements` + `configuration-manager` + costituzione/template `.specify/` + blocco rituale CLAUDE.md. Requisiti: `requirements/sertor-cli/governance-sertor-flow/requirements.md`. **7 domande aperte (DA-a..g)** da risolvere prima del plan: forma costituzione, coordinamento blocco CLAUDE.md col wiki, provenienza/licenza asset SpecKit, granularità install, sottoinsieme `.specify/` distribuibile, relazione pacchetti, hook. *(`install rag` ✅ DONE, 2026-06-12.)*
 - **Eval comparativa live su provider reale** (REQ-051 con Azure, marker `cloud`) — il confronto
   strict è in CI; la misura col provider forte resta esercizio opzionale.
 
 ### ✅ DONE (su `master`, le rilevanti)
+
+- **🚢 Governance/SDLC come pacchetto `sertor-flow` (FEAT-005, feature 037, PR #56, 2026-06-15)** —
+  l'apparato di metodo di sviluppo (SpecKit + requisiti + delega git + costituzione + rituale) è ora
+  **installabile su qualunque ospite** come pacchetto separato, ortogonale al RAG e **senza dipendenza
+  da `sertor-core`**. Tre pezzi: (1) **`sertor-install-kit`** — motore di installazione **estratto** in
+  un toolkit condiviso stdlib-only (artifacts/resources/report/claude_md/merge/executor/sync +
+  errors/observability), riusato anche da `sertor`; (2) **`sertor`** repointato sul kit (re-export shim,
+  non-regressione mantenuta); (3) **`sertor-flow`** — CLI `sertor-flow install`, thin consumer, bundle 68
+  asset (SpecKit vendored MIT 0.8.18 + requirements/configuration-manager + costituzione-starter neutra +
+  blocco SDLC a marker distinti + NOTICE). `sertor install governance` → puntatore. install≠run,
+  idempotente, non-distruttivo, offline. SpecKit completo; Constitution PASS 10/10; full-suite verde
+  (root 560 · kit 37 · sertor 86 · sertor-flow 106). 7 DA risolte in sessione. *Distill entità +
+  re-index in corso.*
 
 - **🚢 Memoria conversazioni — FEAT-003 aggancio distillazione all'archivio (feature 036, PR #51,
   2026-06-14)** — chiude il loop **cattura→distillazione** dell'epica: l'archivio episodico diventa
