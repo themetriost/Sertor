@@ -124,8 +124,10 @@ Criteri di successo (misurabili, tech-agnostici):
 - **REQ-010 (Ubiquitous):** *The system shall deploy the configuration-manager agent.*
 - **REQ-011 (Ubiquitous):** *The system shall deploy the SpecKit templates into the host's `.specify/`
   area.*
-- **REQ-012 (Ubiquitous):** *The system shall provide a project-constitution artifact under the host's
-  `.specify/memory/` area.* (Forma dell'artefatto: DA-a.)
+- **REQ-012 (Ubiquitous):** *The system shall provide a neutral, host-agnostic starter-constitution
+  artifact under the host's `.specify/memory/` area, containing only the general engineering principles
+  (not Sertor's RAG-specific ones), which the host then personalises via the `speckit-constitution`
+  skill.* (DA-a risolta — composizione dello starter sotto.)
 - **REQ-013 (Event-driven):** *When the install runs, the system shall add a marker-delimited
   step-ritual / Definition-of-Done block to the host `CLAUDE.md`.*
 
@@ -154,9 +156,15 @@ Criteri di successo (misurabili, tech-agnostici):
   consistent with the existing installer assets.*
 
 ### Alias dall'ombrello (opzionale)
-- **REQ-023 (Optional):** *Where the `sertor` umbrella package is also installed, `sertor install
-  governance` shall either delegate to `sertor-flow` or report that governance is provided by
-  `sertor-flow` (no duplicate, divergent implementation).*
+- **REQ-023 (Event-driven):** *When the user runs `sertor install governance` on the umbrella package,
+  the system shall report that governance is now provided by the separate `sertor-flow` package and how
+  to install it, without the `sertor` package depending on `sertor-flow` (pointer, not delegation —
+  DA-f).*
+
+### Attribuzione di terze parti (vendoring)
+- **REQ-025 (Ubiquitous):** *The system shall bundle the third-party SpecKit assets at a pinned version
+  and shall include their MIT license text and copyright notice in the distributed package and on the
+  host.*
 
 ### Selettività del bundle (opzionale, Could)
 - **REQ-024 (Optional):** *Where the user requests a subset of the governance bundle (e.g. SpecKit
@@ -251,25 +259,65 @@ Criteri di successo (misurabili, tech-agnostici):
 
 ## 10. Domande aperte
 
-- **DA-a — Forma della costituzione installata:** l'ospite riceve (1) la costituzione di Sertor
-  verbatim, (2) uno **starter neutro** da personalizzare, o (3) nessun file ma l'install **innesca**
-  il flusso `speckit-constitution` per autorarla? *(Raccomandazione: starter neutro + skill
-  constitution; la costituzione di Sertor è Sertor-specifica — R-2.)*
-- **DA-b — Coordinamento del blocco `CLAUDE.md` con il wiki:** un blocco unico componibile, due blocchi
-  a marker distinti (SDLC vs wiki), o scomposizione del rituale in parte-SDLC e parte-wiki? Oggi il
-  `claude-md-block` è interamente un asset wiki e contiene rituale accoppiato (R-1).
-- **DA-c — Provenienza/licenza degli asset SpecKit:** quali `speckit-*` (skill/agenti) e contenuti
-  `.specify/` sono Sertor-authored e quali derivano da spec-kit (terze parti)? Cosa è lecito
-  redistribuire (R-3)?
-- **DA-d — Granularità dell'install:** bundle completo unico (default) o selezione di sotto-bundle
-  (SpecKit / requisiti / git-agent / costituzione / rituale)? (REQ-024.)
-- **DA-e — Sottoinsieme canonico di `.specify/`:** quali parti sono asset distribuibili (template,
-  costituzione/starter) e quali restano scaffolding locale non versionato (scripts/workflows/
-  extensions/integrations)? (R-4.)
-- **DA-f — Nome e relazione coi pacchetti:** confermare `sertor-flow` come nome del pacchetto; il
-  pacchetto `sertor` (ombrello) **dipende** da `sertor-flow`, lo **delega** via alias (REQ-023), o
-  restano del tutto indipendenti?
-- **DA-g — Hook di governance:** servono hook host-specifici per il flusso SDLC (es. un
-  `SessionStart`/`PostToolUse` che ricorda il Constitution Check), o la governance è interamente
-  skill/agenti + blocco rituale senza hook? (Il wiki porta hook propri; la governance potrebbe non
-  averne.)
+> **Tutte risolte (2026-06-15).** Le 7 domande DA-a..g sono state chiuse in sessione con l'utente; le
+> decisioni sono riflesse nei requisiti funzionali e nei vincoli. La feature è pronta per `/speckit-specify`.
+
+- **DA-a — Forma della costituzione installata: ✅ RISOLTA (2026-06-15).** Si deploya uno **starter
+  neutro host-agnostico** + l'ospite lo personalizza con `speckit-constitution`. **Composizione dello
+  starter** (classificazione della costituzione di Sertor v1.1.1 per generalità):
+  - **Inclusi pienamente** (generali, de-Sertorizzati togliendo gli esempi RAG): **III** (YAGNI/SRP/DRY/
+    unità piccole), **IV** (errori espliciti, no null silenzioso), **VI** (idempotenza/determinismo/
+    non-distruttività/install≠run), **VII** (leggibilità Clean Code), sezione **Sicurezza/segreti**,
+    sezione **Governance** (branch+PR, **Constitution Check gate**, emendamenti semver — cruciale: si
+    aggancia al flusso SpecKit distribuito).
+  - **Inclusi come kernel** (tenuto il principio generale, tolta la coda RAG-specifica): **I**
+    (dipendi-verso-le-astrazioni; rimosso «la libreria è il prodotto»), **V** (test F.I.R.S.T./
+    mockabilità; rimosso hit@k/MRR/baseline-prototipo), **VIII** (config centralizzata, no default
+    hardcoded; rimossa la lista parametri RAG), **IX** (log strutturati, mai segreti; rimossi i campi
+    embedding/chunk).
+  - **Esclusi** (puramente Sertor): **II** (provider/backend RAG, local-first, vector store) e **X**
+    (host-agnosticità = mission di Sertor).
+- **DA-b — Coordinamento del blocco `CLAUDE.md` con il wiki: ✅ RISOLTA (2026-06-15).** **Due blocchi
+  a marker distinti** (uno SDLC di proprietà di `sertor-flow`, uno Definition-of-Done di proprietà del
+  wiki), con idempotenza indipendente e installabili separatamente. Grounding: l'attuale
+  `claude-md-block.md` è **interamente wiki** (non contiene flusso SDLC) → i due blocchi sono quasi
+  disgiunti. Le poche righe condivise (delega git al `configuration-manager`, commit-per-step): il
+  **blocco SDLC è l'owner** della disciplina git/commit, il blocco wiki vi **rimanda**. I marker DEVONO
+  essere distinti tra i due installer (no collisione idempotenza).
+- **DA-c — Provenienza/licenza degli asset SpecKit: ✅ RISOLTA (2026-06-15).** Accertato: gli
+  `speckit-*` (skill/agenti) e i template `.specify/` sono **di GitHub spec-kit** (frontmatter
+  `author: github-spec-kit`, installati via spec-kit **v0.8.18**), licenza **MIT** → ridistribuibili
+  con inclusione della nota di copyright + testo MIT. Sono **Sertor-authored**: skill `requirements` +
+  agente `requirements-analyst`, agente `configuration-manager`, costituzione (starter), blocco
+  rituale. **Decisione: VENDOR CON ATTRIBUZIONE** — `sertor-flow` impacchetta gli asset spec-kit a
+  **versione pinnata (0.8.18)** come asset propri, includendo `LICENSE`/`NOTICE` MIT; la versione
+  pinnata è un pregio (riproducibilità del metodo). Onere accettato: aggiornamento manuale di spec-kit.
+  Vedi REQ-025.
+- **DA-d — Granularità dell'install: ✅ RISOLTA (2026-06-15).** **Bundle completo (all-or-nothing) per
+  l'MVP**: il metodo SDLC è un tutto coerente e i pezzi sono accoppiati (plan↔costituzione,
+  requirements↔specify, configuration-manager↔fasi git) → i sotto-install parziali producono un metodo
+  monco. La **selettività interna resta Could** (REQ-024), da aprire solo su domanda reale. La
+  selettività *tra capacità* (wiki/rag/governance) è già soddisfatta dall'essere `sertor-flow` un
+  pacchetto a sé.
+- **DA-e — Sottoinsieme canonico di `.specify/`: ✅ RISOLTA (2026-06-15).** Tre categorie:
+  - **Vendor (pinned, distribuiti verbatim)** — macchinario del metodo: `templates/`
+    (spec/plan/tasks/checklist/constitution-template), `scripts/`, `extensions/git/`, `workflows/`.
+  - **Generati per-host** (come `wiki.config.toml`, non copiati da Sertor): `init-options.json`,
+    `integration.json`, `integrations/*.manifest.json` (riflettono le scelte dell'ospite: assistente,
+    tipo di script).
+  - **Esclusi** (stato runtime, gitignored): `.specify/feature.json` (puntatore alla feature corrente).
+  - **Cross-platform (NFR-4):** si spediscono **entrambe** le varianti di script (`bash` + `powershell`,
+    già fornite da spec-kit) e l'init generato dichiara quale usare (`script: ps|bash`); nessuna logica
+    di detection OS. Coerente con la policy del workspace («versionare costituzione + artefatti,
+    scaffolding resta locale») e con la generazione di config già fatta da `install wiki`.
+- **DA-f — Nome e relazione coi pacchetti: ✅ RISOLTA (2026-06-15).** Nome confermato: **`sertor-flow`**.
+  Relazione: **indipendenti + puntatore** — `sertor-flow` è autonomo; `sertor install governance`
+  **rimanda** a `sertor-flow` (messaggio + come installarlo) **senza** che `sertor` dipenda da
+  `sertor-flow` (no accoppiamento; chi installa solo wiki/rag non riceve gli asset SDLC). Vedi REQ-023.
+- **DA-g — Hook di governance: ✅ RISOLTA (2026-06-15).** **Nessun hook di harness per l'MVP**:
+  `sertor-flow` **non tocca `.claude/settings.json`**. Grounding: su Sertor stesso il metodo SDLC gira
+  con **zero hook di harness** (gli unici in `settings.json` sono wiki+memoria, fuori scope); il flusso
+  SpecKit usa skill on-demand + hook interni di SpecKit (`extensions.yml`, parte del macchinario
+  `.specify/` vendored, **non** hook di harness) + Constitution Check dentro `plan`/`implement`. Il
+  blocco rituale `CLAUDE.md` copre il promemoria del metodo; `speckit-git-validate` copre il
+  branch-naming on-demand. Hook di harness = **Could** futuro se emerge un bisogno in background.
