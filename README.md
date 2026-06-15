@@ -38,8 +38,9 @@ Sertor makes no assumptions about the shape of the host. It installs and adapts 
 
 - **Indexing** — repo-agnostic ingestion, *code-aware* (multi-language) and *markdown-aware*
   chunking, multi-provider embeddings, abstract vector store.
-- **RAG** — retrieval over that content; multiple engines (vector baseline today; hybrid+reranking,
-  graph-based, and agentic as increments).
+- **RAG** — retrieval over that content; multiple engines: **hybrid** (lexical BM25 + vector, RRF —
+  the default) with optional reranking, **vector baseline**, a structural **code graph**, and
+  **agentic** retrieval (composite: MCP server + frontier agent).
 - **LLM Wiki** — a project knowledge base that is written and maintained during the work
   ("LLM Wiki" pattern), itself queryable via RAG.
 
@@ -63,19 +64,32 @@ embed project-specific assumptions. This principle is binding: see the
 **Actively under construction.** Available today on `master`:
 
 - ✅ **`sertor-core`** — prod-ready retrieval library (ingestion, chunking, embeddings, facade).
-- ✅ **Baseline RAG engine** (vector) with evaluation (hit\@k, MRR) and joint multi-collection query.
-- ✅ **MCP server** (`sertor_mcp`) — `search_code`/`search_docs`/`search_combined` for Claude Code and MCP clients.
+- ✅ **RAG engines** — **hybrid** (BM25 + vector, RRF) as the default, **vector baseline** (with
+  hit\@k / MRR evaluation), a structural **code graph**, and **agentic** retrieval (MCP + agent).
+  Production hardening: embeddings content-hash cache, retry/backoff, optional confidence threshold.
+- ✅ **MCP server** (`sertor_mcp`) — `search_code`/`search_docs`/`search_combined` + the 4 graph
+  tools (`find_symbol`/`who_calls`/`related_docs`/`get_context`) for Claude Code and MCP clients.
 - ✅ **`sertor-rag` execution CLI** — `index`/`search` from the terminal, runtime observability.
-- ✅ **LLM Wiki** — deterministic core `sertor-wiki-tools` (scan/lint/structure/index/log) +
-  judgment operations as agentic skills.
+- ✅ **LLM Wiki** — deterministic core `sertor-wiki-tools` (scan/lint/structure/index/log/move/
+  reconcile) + judgment operations as agentic skills.
+- ✅ **Installers** — `sertor install wiki` (the wiki system) and `sertor install rag` (the RAG
+  capability in an isolated `.sertor/` runtime), non-destructive and idempotent (`install ≠ run`).
+- ✅ **`sertor-flow`** — the development method (SDLC) — SpecKit flow, requirements management, git
+  delegation, a neutral constitution starter — as a **separate, standalone installer**, orthogonal to
+  the RAG (no dependency on `sertor-core`). Built on the shared `sertor-install-kit` toolkit.
+- ✅ **Conversation memory** (MVP) — local capture + episodic full-text search, privacy-by-default,
+  feeding wiki distillation.
+- ✅ **Observability** — persistent local event store, reports, and a TUI panel (`sertor-rag observe`).
 
-In development: `sertor install <capability>` installer, advanced engines (hybrid/graph/agentic),
-incremental index refresh, PyPI distribution.
+In development / next: incremental index refresh (only changed files), multi-assistant distribution
+(GitHub Copilot / Codex), semantic memory search, PyPI distribution.
 
 ## Installation on another repository
 
 See **[`docs/install.md`](docs/install.md)** — interim installation via `git+url`, `.env`
-configuration, first `sertor-rag` commands, MCP server, and wiki tooling.
+configuration, first `sertor-rag` commands, MCP server, and wiki tooling. It covers the three
+installable capabilities: **`sertor install rag`** (RAG), **`sertor install wiki`** (LLM Wiki), and
+**`sertor-flow install`** (the development method / SDLC — a separate package, orthogonal to the RAG).
 
 For how to query a project once indexed — when to use **hybrid retrieval** vs the **code graph**
 (the *discover → navigate* pattern) — see **[`docs/retrieval.md`](docs/retrieval.md)**.

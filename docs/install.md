@@ -1,10 +1,11 @@
 # Installing Sertor on another repository
 
 > **Status.** Sertor is not yet on PyPI: the interim distribution is **`git+url`** (decision DA-4
-> of the CLI epic). This guide covers: **full RAG capability** (indexing + search + MCP server),
-> **deterministic wiki tooling**, and — from feature 012 — the **guided installer `sertor install
-> wiki`** that brings the entire wiki system (agentic skills, ritual, config, structure) to the host
-> with a single command.
+> of the CLI epic). This guide covers all the installable capabilities: the **full RAG capability**
+> (indexing + search + MCP server) and the guided **`sertor install rag`** (§6); the **deterministic
+> wiki tooling** and the guided **`sertor install wiki`** that brings the entire wiki system to the
+> host with one command (§5); and the **development method (SDLC)** via the separate, RAG-independent
+> package **`sertor-flow`** (§8). Each is non-destructive and idempotent — **install ≠ run**.
 
 ## Prerequisites
 
