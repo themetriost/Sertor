@@ -55,6 +55,27 @@ class ChromaStore:
             except Exception as exc:  # backend cannot be initialised
                 _raise_store_error("unable to initialise vector store", exc)
 
+    def _max_batch_size(self) -> int:
+        """Records-per-upsert cap imposed by the Chroma backend.
+
+        Chroma rejects a single upsert larger than its max batch size; the limit is read from the
+        client when available and falls back conservatively. Keeps the rebuild correct as the corpus
+        grows past the cap (a real defect surfaced by dogfooding once the corpus crossed ~5.5k chunks).
+        """
+        getter = getattr(self._client, "get_max_batch_size", None)
+        if callable(getter):
+            try:
+                size = int(getter())
+                if size > 0:
+                    return size
+            except Exception:
+                pass
+        size = getattr(self._client, "max_batch_size", None)
+        try:
+            return int(size) if size and int(size) > 0 else 5000
+        except Exception:
+            return 5000
+
     def upsert(self, collection: str, records: list[EmbeddedChunk]) -> None:
         if not records:
             return
@@ -62,12 +83,16 @@ class ChromaStore:
             coll = self._client.get_or_create_collection(
                 name=collection, metadata={"hnsw:space": "cosine"}
             )
-            coll.upsert(
-                ids=[r.chunk_id for r in records],
-                embeddings=[r.vector for r in records],
-                documents=[r.payload.get("text", "") for r in records],
-                metadatas=[_clean_metadata(r.payload) for r in records],
-            )
+            # Upsert in batches under the backend cap (Chroma rejects oversized single upserts).
+            batch_size = self._max_batch_size()
+            for start in range(0, len(records), batch_size):
+                window = records[start:start + batch_size]
+                coll.upsert(
+                    ids=[r.chunk_id for r in window],
+                    embeddings=[r.vector for r in window],
+                    documents=[r.payload.get("text", "") for r in window],
+                    metadatas=[_clean_metadata(r.payload) for r in window],
+                )
         except Exception as exc:
             _raise_store_error("error during vector store upsert", exc)
 
