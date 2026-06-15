@@ -471,6 +471,21 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/044-distribuzione-copilot/plan.md` (FEAT-007 epica sertor-cli — distribuzione delle superfici del
+pacchetto `sertor` (server MCP `sertor-rag` + sistema-wiki) su **GitHub Copilot** con **parità funzionale
+piena**, via un **assistente target** nell'installer. Estende il Principio X all'assistente ospite.
+Decisione di design DA-2 = **IBRIDO: riuso del CONTENUTO + traduzione del CONTENITORE**, da fonte unica:
+un `AssistantProfile` nel `sertor-install-kit` mappa ogni Surface logica (INSTRUCTION_BLOCK/MCP_SERVER/
+COMMAND/AGENT/HOOK) → contenitore per-assistente (Claude `.claude/**`,`.mcp.json`,`CLAUDE.md` · Copilot
+`.github/**`,`.vscode/mcp.json`,`.github/copilot-instructions.md`); i plan-builder diventano parametrici.
+Riuso massimo delle `ArtifactKind` esistenti (MARKER_BLOCK su copilot-instructions; SETTINGS_MERGE su
+`.github/hooks/*.json`; MCP_MERGE root-key parametrico `mcpServers`↔`servers`); gli script hook
+(`.ps1`/`.sh`) sono riusati identici. Targeting nel kit per riuso da `sertor-flow`/FEAT-009. CLI
+`--assistant claude|copilot` (default `claude`). Grounding: Copilot ha hook (stessi 8 eventi),
+custom-agent, prompt-file, MCP `.vscode/mcp.json`. Invarianti: install≠run, non distruttivo, idempotente,
+CLI assistant-agnostic, segreti non versionati, gap dichiarati. Ambito SOLO pacchetto `sertor`; governance
+SpecKit (`sertor-flow`) = feature gemella FEAT-009 (con pivot vendoring→launch-installer). Constitution
+PASS 11/11 (pre-design). Branch `044-distribuzione-copilot`. Storico:
 `specs/043-plan-template-neutro/plan.md` (gruppo D dell'enforcement Principio XI — neutralizza il
 plan-template spedito agli ospiti: il bundle `sertor-flow` ora vendora il plan-template GENERICO upstream
 (gate derivati dalla costituzione DELL'OSPITE, placeholder `[Gates determined based on constitution

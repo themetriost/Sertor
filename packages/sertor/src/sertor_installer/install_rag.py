@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import logging
 
+from sertor_install_kit.assistant import AssistantId, AssistantProfile, Surface
 from sertor_install_kit.claude_md import write_marker_block
 from sertor_install_kit.command_runner import CommandRunner
 from sertor_install_kit.env_merge import merge_env
@@ -46,11 +47,11 @@ _SERVER_NAME = "sertor-rag"
 # (feature 016, F1 analyze). Passes `Artifact` validation (relative, no `..`).
 _MCP_REGISTER_LABEL = "(mcp: client registry)"
 
-# Group B (Principio XI, feature 042): host-facing RAG usage instruction in `CLAUDE.md`.
-# Own marker pair, DISTINCT from the wiki (`SERTOR:WIKI-RITUAL`) and SDLC (`SERTOR:SDLC-RITUAL`)
-# blocks so the three coexist, each idempotent on its own markers.
+# Group B (Principio XI, feature 042): host-facing RAG usage instruction block, routed per-assistant
+# (feature 044: `CLAUDE.md` for Claude, `.github/copilot-instructions.md` for Copilot — the target
+# comes from the `AssistantProfile`). Own marker pair, DISTINCT from the wiki (`SERTOR:WIKI-RITUAL`)
+# and SDLC (`SERTOR:SDLC-RITUAL`) blocks so the three coexist, each idempotent on its own markers.
 _RAG_USAGE_BLOCK = "rag/claude-md-block-rag-usage.md"
-_CLAUDE_MD_TARGET = "CLAUDE.md"
 MARKER_START_RAG = "<!-- SERTOR:RAG-USAGE START -->"
 MARKER_END_RAG = "<!-- SERTOR:RAG-USAGE END -->"
 
@@ -70,20 +71,36 @@ class McpRegistrationError(InstallerError):
     """MCP registration in `local` scope failed: `claude` not found or command failed."""
 
 
+# Copilot rag surfaces (feature 044): host-facing artifacts under `.github/**` (script reused).
+_RAG_HOOK_TARGET_COPILOT = ".github/hooks/sertor-rag-usage-check.ps1"
+_RAG_USAGE_SETTINGS_COPILOT = "copilot/hooks/rag-usage.hooks.json"
+_COPILOT_HOOK_WIRING = ".github/hooks/sertor-hooks.json"
+
+
 def build_rag_plan(
-    profile: RagHostProfile, with_deps: bool = True, mcp_scope: str = "project"
+    profile: RagHostProfile,
+    with_deps: bool = True,
+    mcp_scope: str = "project",
+    assistant: AssistantId = AssistantProfile.DEFAULT,
 ) -> list[Artifact]:
-    """Ordered list of `Artifact`.
+    """Ordered list of `Artifact`, parametric on the target `assistant`.
 
     `with_deps=False` skips DEPENDENCIES. `mcp_scope` (feature 016) selects how the MCP server is
-    registered: `project` → merge into `.mcp.json` in the root; `local` → register in the client
-    via the `claude` CLI (NO file in the repo, `MCP_REGISTER` instead of `MCP_MERGE`).
+    registered: `project` → merge into the assistant's MCP config; `local` → register in the client
+    via the `claude` CLI (Claude only; NO file in the repo, `MCP_REGISTER` instead of `MCP_MERGE`).
+    The host-facing surfaces (MCP config, instruction block, hook) route via the `AssistantProfile`
+    (Principio X): `claude` reproduces the historical plan (non-regression); `copilot` targets
+    `.vscode/mcp.json`/`.github/**`.
     """
+    aprofile = AssistantProfile.for_assistant(assistant)
+    is_copilot = assistant is AssistantId.COPILOT
+
     plan: list[Artifact] = []
     if with_deps:
         plan.append(
             Artifact(ArtifactKind.DEPENDENCIES, None, ".sertor", WriteStrategy.BOOTSTRAP_DEPS)
         )
+    # ENV / DEPENDENCIES / GITIGNORE are assistant-agnostic (runtime confined to `.sertor/`).
     plan.append(
         Artifact(
             ArtifactKind.ENV_MERGE,
@@ -92,7 +109,9 @@ def build_rag_plan(
             WriteStrategy.MERGE_ENV,
         )
     )
-    if mcp_scope == "local":
+    # MCP_SERVER: local scope (claude only) registers in the client; otherwise merge into the
+    # assistant's MCP config (`.mcp.json` / `.vscode/mcp.json`).
+    if mcp_scope == "local" and not is_copilot:
         plan.append(
             Artifact(
                 ArtifactKind.MCP_REGISTER,
@@ -102,40 +121,44 @@ def build_rag_plan(
             )
         )
     else:
+        mcp_target = aprofile.target_for(Surface.MCP_SERVER)
         plan.append(
             Artifact(
                 ArtifactKind.MCP_MERGE,
                 "rag/mcp.server.json.tmpl",
-                ".mcp.json",
+                mcp_target.target_rel,
                 WriteStrategy.MERGE_JSON,
             )
         )
     plan.append(
         Artifact(ArtifactKind.GITIGNORE_APPEND, None, ".gitignore", WriteStrategy.APPEND_LINES)
     )
-    # Group B (042): host-facing RAG usage instruction in `CLAUDE.md` (own marker pair).
+    # Group B (042): host-facing RAG usage instruction block (own markers), routed per-assistant.
     plan.append(
         Artifact(
             ArtifactKind.MARKER_BLOCK,
             _RAG_USAGE_BLOCK,
-            _CLAUDE_MD_TARGET,
+            aprofile.target_for(Surface.INSTRUCTION_BLOCK).target_rel,
             WriteStrategy.APPEND_BLOCK,
         )
     )
-    # Group C (042): host-specific PreToolUse hook (file + settings entry). Additive, fail-open.
+    # Group C (042): anti-bypass hook — script REUSED identically (FR-014), wiring per-assistant.
+    hook_target = _RAG_HOOK_TARGET_COPILOT if is_copilot else _RAG_HOOK_TARGET
+    settings_source = _RAG_USAGE_SETTINGS_COPILOT if is_copilot else _RAG_USAGE_SETTINGS
+    settings_target = _COPILOT_HOOK_WIRING if is_copilot else _SETTINGS_TARGET
     plan.append(
         Artifact(
             ArtifactKind.FILE,
             _RAG_HOOK_ASSET,
-            _RAG_HOOK_TARGET,
+            hook_target,
             WriteStrategy.CREATE_IF_ABSENT,
         )
     )
     plan.append(
         Artifact(
             ArtifactKind.SETTINGS_MERGE,
-            _RAG_USAGE_SETTINGS,
-            _SETTINGS_TARGET,
+            settings_source,
+            settings_target,
             WriteStrategy.MERGE_DEDUP,
         )
     )
@@ -173,11 +196,17 @@ def _apply_env(profile: RagHostProfile) -> ArtifactOutcome:
     return ArtifactOutcome(".sertor/.env", outcome, detail)
 
 
-def _apply_mcp(profile: RagHostProfile) -> ArtifactOutcome:
-    """`MERGE_JSON`: `sertor-rag` server in `.mcp.json` (host root), additive merge."""
+def _apply_mcp(profile: RagHostProfile, art: Artifact) -> ArtifactOutcome:
+    """`MERGE_JSON`: `sertor-rag` server in the MCP config, additive merge.
+
+    Target + root-key come from the artifact/assistant profile: Claude → `.mcp.json` (`mcpServers`);
+    Copilot → `.vscode/mcp.json` (`servers`).
+    """
     entry = json.loads(read_asset_text("rag/mcp.server.json.tmpl").format(corpus=profile.corpus))
-    outcome, detail = merge_mcp(profile.target_root / ".mcp.json", entry)
-    return ArtifactOutcome(".mcp.json", outcome, detail)
+    is_vscode = art.target_rel.replace("\\", "/") == ".vscode/mcp.json"
+    root_key = "servers" if is_vscode else "mcpServers"
+    outcome, detail = merge_mcp(profile.target_root / art.target_rel, entry, root_key=root_key)
+    return ArtifactOutcome(art.target_rel, outcome, detail)
 
 
 def _apply_gitignore(profile: RagHostProfile) -> ArtifactOutcome:
@@ -186,18 +215,20 @@ def _apply_gitignore(profile: RagHostProfile) -> ArtifactOutcome:
     return ArtifactOutcome(".gitignore", outcome, detail)
 
 
-def _apply_rag_usage_block(profile: RagHostProfile) -> ArtifactOutcome:
-    """`APPEND_BLOCK` (042, group B): RAG usage instruction block in `CLAUDE.md`.
+def _apply_rag_usage_block(profile: RagHostProfile, art: Artifact) -> ArtifactOutcome:
+    """`APPEND_BLOCK` (042, group B): RAG usage instruction block, routed per-assistant.
 
     Reuses the kit's `write_marker_block` with the OWN markers (`SERTOR:RAG-USAGE`), distinct from
-    the wiki/SDLC blocks → the three coexist, each idempotent on its own markers. The file is
-    created if absent; existing content outside the markers is preserved byte-for-byte.
+    the wiki/SDLC blocks → the three coexist, each idempotent on its own markers. Target is the
+    artifact's `target_rel` (`CLAUDE.md` for Claude, `.github/copilot-instructions.md` for Copilot).
+    Existing content outside the markers is preserved byte-for-byte.
     """
-    dest = profile.target_root / _CLAUDE_MD_TARGET
+    dest = profile.target_root / art.target_rel
+    dest.parent.mkdir(parents=True, exist_ok=True)  # e.g. `.github/` for copilot-instructions.md
     content = read_asset_text(_RAG_USAGE_BLOCK)
     outcome = write_marker_block(dest, content, MARKER_START_RAG, MARKER_END_RAG)
     detail = "RAG-usage block inserted" if outcome is Outcome.BLOCK else "block already present"
-    return ArtifactOutcome(_CLAUDE_MD_TARGET, outcome, detail)
+    return ArtifactOutcome(art.target_rel, outcome, detail)
 
 
 def _apply_rag_hook_file(profile: RagHostProfile, art: Artifact) -> ArtifactOutcome:
@@ -264,9 +295,14 @@ def _apply_mcp_register(profile: RagHostProfile, runner: CommandRunner) -> Artif
 
 
 def execute_rag_plan(
-    plan: list[Artifact], profile: RagHostProfile, runner: CommandRunner
+    plan: list[Artifact], profile: RagHostProfile, runner: CommandRunner,
+    assistant: AssistantId = AssistantProfile.DEFAULT,
 ) -> InstallReport:
-    """Executes the plan with fail-fast no-rollback via the kit's executor (capability=rag)."""
+    """Executes the plan with fail-fast no-rollback via the kit's executor (capability=rag).
+
+    The `assistant` is recorded in the report (informative, Principio IX); the apply handlers are
+    assistant-agnostic (targets come from `art.target_rel`, resolved by the plan-builder).
+    """
 
     def apply(art: Artifact) -> ArtifactOutcome:
         if art.kind is ArtifactKind.DEPENDENCIES:
@@ -274,17 +310,19 @@ def execute_rag_plan(
         if art.kind is ArtifactKind.ENV_MERGE:
             return _apply_env(profile)
         if art.kind is ArtifactKind.MCP_MERGE:
-            return _apply_mcp(profile)
+            return _apply_mcp(profile, art)
         if art.kind is ArtifactKind.MCP_REGISTER:
             return _apply_mcp_register(profile, runner)
         if art.kind is ArtifactKind.GITIGNORE_APPEND:
             return _apply_gitignore(profile)
         if art.kind is ArtifactKind.MARKER_BLOCK:
-            return _apply_rag_usage_block(profile)
+            return _apply_rag_usage_block(profile, art)
         if art.kind is ArtifactKind.FILE:
             return _apply_rag_hook_file(profile, art)
         if art.kind is ArtifactKind.SETTINGS_MERGE:
             return _apply_rag_settings(profile, art)
         raise ConfigError(f"unhandled artifact kind: {art.kind}")  # pragma: no cover
 
-    return _kit_execute_plan(plan, apply, target=str(profile.target_root), capability="rag")
+    return _kit_execute_plan(
+        plan, apply, target=str(profile.target_root), capability="rag", assistant=assistant.value
+    )

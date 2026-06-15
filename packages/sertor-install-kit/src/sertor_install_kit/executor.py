@@ -25,13 +25,15 @@ def execute_plan(
     *,
     target: str,
     capability: str,
+    assistant: str | None = None,
 ) -> InstallReport:
     """Executes `plan` in order via `apply`, with fail-fast no-rollback.
 
     `apply(artifact)` deposits the artifact and returns its `ArtifactOutcome`, raising
-    `InstallerError` on a domain error. `target`/`capability` populate the resulting report.
+    `InstallerError` on a domain error. `target`/`capability`/`assistant` populate the report
+    (`assistant` is optional/informative, Principio IX, feature 044).
     """
-    report = InstallReport(target=target, capability=capability)
+    report = InstallReport(target=target, capability=capability, assistant=assistant)
     for art in plan:
         try:
             outcome = apply(art)

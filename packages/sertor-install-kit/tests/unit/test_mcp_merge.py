@@ -46,3 +46,48 @@ def test_malformed_raises(tmp_path: Path):
     mcp.write_text("{not json", encoding="utf-8")
     with pytest.raises(ConfigError):
         merge_mcp(mcp, ENTRY)
+
+
+# ---------------------------------------------------------------- feature 044: parametric root_key
+
+def test_default_root_key_is_mcpservers(tmp_path: Path):
+    """Retro-compat: absent `root_key` keeps the historical `mcpServers` root."""
+    mcp = tmp_path / ".mcp.json"
+    merge_mcp(mcp, ENTRY)
+    data = json.loads(mcp.read_text(encoding="utf-8"))
+    assert "mcpServers" in data and "sertor-rag" in data["mcpServers"]
+
+
+def test_copilot_servers_root_key_create(tmp_path: Path):
+    """Copilot uses `servers` on `.vscode/mcp.json`."""
+    mcp = tmp_path / ".vscode" / "mcp.json"
+    outcome, _ = merge_mcp(mcp, ENTRY, root_key="servers")
+    assert outcome is Outcome.CREATED
+    data = json.loads(mcp.read_text(encoding="utf-8"))
+    assert "servers" in data and data["servers"]["sertor-rag"]["command"] == "uv"
+    assert "mcpServers" not in data
+
+
+def test_servers_root_key_preserves_others(tmp_path: Path):
+    mcp = tmp_path / ".vscode" / "mcp.json"
+    mcp.parent.mkdir(parents=True)
+    mcp.write_text(json.dumps({"servers": {"altro": {"command": "x"}}}), encoding="utf-8")
+    outcome, _ = merge_mcp(mcp, ENTRY, root_key="servers")
+    assert outcome is Outcome.MERGED
+    data = json.loads(mcp.read_text(encoding="utf-8"))
+    assert "altro" in data["servers"] and "sertor-rag" in data["servers"]
+
+
+def test_servers_root_key_idempotent(tmp_path: Path):
+    mcp = tmp_path / ".vscode" / "mcp.json"
+    merge_mcp(mcp, ENTRY, root_key="servers")
+    outcome, _ = merge_mcp(mcp, ENTRY, root_key="servers")
+    assert outcome is Outcome.SKIPPED
+
+
+def test_servers_root_key_malformed_raises(tmp_path: Path):
+    mcp = tmp_path / ".vscode" / "mcp.json"
+    mcp.parent.mkdir(parents=True)
+    mcp.write_text("{nope", encoding="utf-8")
+    with pytest.raises(ConfigError):
+        merge_mcp(mcp, ENTRY, root_key="servers")

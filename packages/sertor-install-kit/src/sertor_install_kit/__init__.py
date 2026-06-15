@@ -14,6 +14,12 @@ from sertor_install_kit.artifacts import (
     Outcome,
     WriteStrategy,
 )
+from sertor_install_kit.assistant import (
+    AssistantId,
+    AssistantProfile,
+    Surface,
+    SurfaceTarget,
+)
 from sertor_install_kit.claude_md import write_marker_block
 from sertor_install_kit.command_runner import CommandResult, CommandRunner, SubprocessRunner
 from sertor_install_kit.env_merge import merge_env
@@ -34,6 +40,11 @@ __all__ = [
     "ArtifactOutcome",
     "Outcome",
     "WriteStrategy",
+    # assistant targeting (feature 044)
+    "AssistantId",
+    "AssistantProfile",
+    "Surface",
+    "SurfaceTarget",
     # errors
     "InstallerError",
     "ConfigError",
