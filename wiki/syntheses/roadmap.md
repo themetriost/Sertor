@@ -58,6 +58,11 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   multi-assistente).
 
 ### 📋 PLANNED (per priorità)
+- **Distribuzione su Codex — Could (to-do, deciso 2026-06-15)**: estendere il seam `--assistant` a
+  un **terzo assistente** (`codex`) per *entrambi* gli installer (`sertor` e `sertor-flow`): `AGENTS.md`
+  + MCP per `sertor`; variante SpecKit Codex (spec-kit supporta `--ai codex`) + superfici Sertor-authored
+  per `sertor-flow`. Residuo Could di FEAT-007/FEAT-009 ora che Copilot è ✅ DONE. Costo marginale basso
+  (il meccanismo c'è già nel [[assistant-targeting|kit]]). **Non avviato per scelta utente.**
 - **Memoria — Should/Could** — FEAT-004 (ricerca semantica opt-in), FEAT-005 (remember-this
   selettivo), FEAT-006 (governance/retention), FEAT-007 (ponte second-brain), FEAT-008 (cattura
   multi-assistente). *(FEAT-003 aggancio distillazione ✅ DONE 2026-06-14, PR #51.)*
