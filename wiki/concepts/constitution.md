@@ -1,19 +1,20 @@
 ---
 title: Costituzione di Sertor
 type: concept
-tags: [costituzione, governance, clean-code, clean-architecture, produzione, principio-x, host-agnostico]
+tags: [costituzione, governance, clean-code, clean-architecture, produzione, principio-x, host-agnostico, principio-xi]
 created: 2026-05-31
-updated: 2026-06-14 (v1.1.1 — chiarimento Principio VII: nesting/guard-clause, SESE non obbligatorio)
+updated: 2026-06-15 (v1.2.0 — Principio XI: consumo via vehicles CLI/MCP, no libreria a runtime)
 sources: [".specify/memory/constitution.md", ".specify/templates/plan-template.md"]
 ---
 
 # Costituzione di Sertor
 
-La **Costituzione di Sertor** è il documento di governance che codifica i **10 principi vincolanti** del
-progetto (Clean Architecture, qualità del codice e l'host-agnosticità del **Principio X**) sotto cui
-operano SpecKit e gli agenti; un **Constitution Check** ne fa da gate al design. Fonte unica:
-`.specify/memory/constitution.md`. Ratificata v1.0.0 il 2026-05-31, emendata a v1.1.0 il 2026-06-05
-(aggiunta del Principio X).
+La **Costituzione di Sertor** è il documento di governance che codifica i **11 principi vincolanti** del
+progetto (Clean Architecture, qualità del codice, host-agnosticità del **Principio X** e consumo via
+vehicles del **Principio XI**) sotto cui operano SpecKit e gli agenti; un **Constitution Check** ne fa
+da gate al design. Fonte unica: `.specify/memory/constitution.md`. Ratificata v1.0.0 il 2026-05-31,
+emendata a v1.1.0 il 2026-06-05 (aggiunta del Principio X), emendata a v1.1.1 il 2026-06-14 
+(chiarimento Principio VII), emendata a v1.2.0 il 2026-06-15 (aggiunta del Principio XI).
 
 ## Cosa
 
@@ -21,6 +22,13 @@ Ratificata il **2026-05-31** la **Costituzione di Sertor v1.0.0** in
 [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md). È la **fonte unica dei
 principi vincolanti** che governano il design, l'architettura e la governance di produzione di Sertor
 (core + CLI).
+
+**Emendamento v1.2.0 (2026-06-15):** aggiunto il **Principio XI — Consumo attraverso i vehicles
+(CLI/MCP), non la libreria a runtime** per chiudere un gap di osservabilità: le operazioni invocate
+direttamente via `build_indexer().index()` bypassano il wiring uniforme dei vehicles (config centralizzata,
+osservabilità, error handling) e restano non tracciate (caso reale: re-index del corpus non comparve in
+telemetria). Il Principio XI codifica che i consumatori a runtime (agenti, script, ospiti) devono
+accedere alle capacità solo via CLI o MCP, con unica eccezione gli unit/integration test.
 
 **Emendamento v1.1.0 (2026-06-05):** aggiunto il **Principio X — Capacità host-agnostiche** per
 codificare operativamente la Mission (Sertor installabile su qualsiasi progetto ospite) e generalizzare
@@ -45,7 +53,7 @@ Derivata da zero (ignorando le bozze del prototipo, fase di exploration). Fonti:
   intercambiabili via config" → **Dependency Rule** + **Plugin Architecture**; "production-grade" →
   **disciplina Clean Code**.
 
-## I 10 principi (vincolanti)
+## I 11 principi (vincolanti)
 
 ### I. Core a dipendenze verso l'interno
 **NON-NEGOZIABILE.** La libreria core è il prodotto. Non importa SDK provider (Azure/OpenAI) né CLI.
@@ -102,6 +110,20 @@ per violare il confine**. **Test non-negoziabile:** una capacità opera su ospit
 solo-doc, solo-code) senza modifiche al corpo — solo cambiando config.
 → **Mission (README), REQ-E1, CS-5, Principio I generalizzato**
 
+### XI. Consumo attraverso i vehicles (CLI/MCP), non la libreria a runtime (NUOVO 2026-06-15)
+I consumatori a runtime — agenti LLM, script, ospiti, automazioni — **MUST accedere alle capacità di
+Sertor solo attraverso i suoi vehicles**: la **CLI** (`sertor-rag`, `sertor-wiki-tools`) oppure il
+**server MCP**. MUST NOT importare e invocare `sertor_core` direttamente a runtime (es. via
+`build_indexer().index(...)`). **Unica eccezione: gli unit/integration test**, che verificano la
+libreria isolata (è come il Principio I/V garantiscono testabilità in isolamento).
+Razionale: i vehicles cablano in modo **uniforme** i comportamenti trasversali — osservabilità
+(`enable_observability`), configurazione centralizzata (Principio VIII), avvolgimento errori
+(Principio IV), redazione segreti. L'accesso diretto bypassa tutto: caso reale, un re-index via
+`build_indexer().index()` non viene tracciato in telemetria perché salta `enable_observability`
+(cablato solo nei vehicles). Confinare il consumo ai vehicles rende ogni operazione osservabile e
+configurata coerentemente.
+→ **Principio VIII/IX (osservabilità e configurazione coerenti), FEAT-019/020/021/022/023 (hardening)**
+
 ## Sezioni aggiuntive nella Costituzione
 
 - **Sicurezza, segreti e provenienza** (REQ-E5): no hardcoded secret, `.env` only,
@@ -138,11 +160,14 @@ In produzione la costituzione impone:
   profondità di annidamento, **guard clause / early return preferiti** alla nidificazione profonda; il
   **single-exit dogmatico (SESE) non è richiesto** — il problema è il *nesting*, non i `return` multipli.
   Allinea la regola alla pratica del codebase (Clean Code). Origine: refactor di `_resolve_config`.
-  Documento: [`../.specify/memory/constitution.md`](../../.specify/memory/constitution.md).
+- **v1.2.0** — 2026-06-15, emendamento MINOR (aggiunto Principio XI — consumo via vehicles CLI/MCP,
+  no libreria a runtime): chiude gap di osservabilità; le operazioni via `build_indexer().index()` 
+  bypassano il wiring dei vehicles e non vengono tracciate. Documento: 
+  [`../.specify/memory/constitution.md`](../../.specify/memory/constitution.md).
 
 ## Riferimenti
 
-- **Fonte unica:** [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md) (v1.1.1)
+- **Fonte unica:** [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md) (v1.2.0)
 - **Template planning:** [`.specify/templates/plan-template.md`](../../.specify/templates/plan-template.md)
   (Constitution Check integrato, gate "X — Host-agnostico" aggiunto)
 - **Requisiti allineati:**

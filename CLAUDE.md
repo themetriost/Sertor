@@ -41,6 +41,19 @@ dogfood: `SERTOR_CORPUS=prototype python prototype/01-baseline/index.py --provid
 > all'avvio (vedi `src/sertor_mcp/server.py`): i guasti compaiono nel report affidabilità e a
 > reconnect. La stessa regola è nelle definizioni degli agenti che usano `sertor-rag`.
 
+## Accesso a Sertor: solo via vehicles (regola SEMPRE attiva — Principio XI)
+
+A **runtime**, l'agente / gli script / qualunque consumatore accedono alle capacità di Sertor **solo**
+via i **vehicles**: la **CLI** (`sertor-rag`, `sertor-wiki-tools`) o il **server MCP**. **Mai**
+importare e invocare `sertor_core` direttamente (es. `build_indexer().index(...)`, `build_facade()`).
+**Unica eccezione: gli unit/integration test**, che esercitano libreria e funzioni direttamente.
+
+*Perché:* i vehicles cablano in modo uniforme osservabilità (`enable_observability`), config centralizzata
+ed errori; l'accesso diretto li **bypassa silenziosamente** (caso reale: un re-index via
+`build_indexer().index()` non finisce in telemetria). Codificato nella costituzione (Principio XI,
+v1.2.0) e nel gate del `plan-template`. Operativamente: per re-index usa `sertor-rag index .`, per query
+usa `sertor-rag search`/MCP, per il wiki `sertor-wiki-tools`.
+
 ## Stack tecnologico
 
 Lo stack ha due "tracce" intercambiabili via config (vedi `RAG_BACKEND` sotto):
@@ -314,8 +327,10 @@ automazione *unattended*: la distinzione è netta —
    **dentro** il progetto ospite *by design* (lo crea così l'install della futura CLI) → è parte del
    corpus primario come documentazione (`doc_type=doc`); niente corpus separato per il retrieval, niente
    `SERTOR_EXTRA_CORPORA` sul dogfood. Quindi: **qualsiasi** modifica indicizzata (`src/`, `specs/`,
-   `requirements/`, `wiki/`, doc di radice) → rebuild del corpus **`sertor`**
-   (`build_indexer().index(root, rebuild=True)`). Il rebuild è **full ma sicuro**: `reset` della
+   `requirements/`, `wiki/`, doc di radice) → rebuild del corpus **`sertor`** **via la CLI**:
+   `uv run sertor-rag index .` (Principio XI — il re-index si fa via vehicle, NON con
+   `build_indexer().index()` diretto: la CLI chiama `enable_observability` e l'evento `index` finisce in
+   telemetria; il percorso libreria lo bypassa). Il rebuild è **full ma sicuro**: `reset` della
    collezione *dopo* l'embedding (atomico) e namespaced. È **meccanico** → delegabile/in background;
    richiede l'ambiente di embeddings attivo (oggi Azure: centesimi a rebuild). **Calibra al valore:**
    step ravvicinati → basta un re-index a fine giornata/sessione; momento *obbligato*: dopo un **merge
