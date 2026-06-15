@@ -31,6 +31,11 @@ from sertor_install_kit.observability import log_event
 from sertor_install_kit.report import InstallReport
 from sertor_install_kit.resources import asset_path, iter_asset_dir, read_asset_text
 from sertor_install_kit.settings_merge import merge_settings
+from sertor_install_kit.surfaces import (
+    render_custom_agent,
+    render_prompt_file,
+    split_frontmatter,
+)
 from sertor_install_kit.sync import sync_assets, sync_subtree
 
 __all__ = [
@@ -70,6 +75,10 @@ __all__ = [
     "SubprocessRunner",
     # observability
     "log_event",
+    # surfaces renderer (feature 045: shared sertor/sertor-flow)
+    "render_prompt_file",
+    "render_custom_agent",
+    "split_frontmatter",
     # sync
     "sync_assets",
     "sync_subtree",

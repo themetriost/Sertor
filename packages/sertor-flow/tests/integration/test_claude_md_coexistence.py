@@ -10,6 +10,7 @@ from pathlib import Path
 
 from sertor_flow.__main__ import main
 from sertor_flow.install_governance import MARKER_END_SDLC, MARKER_START_SDLC
+from tests.conftest import FakeSpecifyRunner
 
 # Wiki markers as written by `sertor` (kept verbatim here to test coexistence).
 _WIKI_START = "<!-- SERTOR:WIKI-RITUAL START -->"
@@ -30,7 +31,7 @@ def test_sdlc_block_added_without_touching_wiki(tmp_path: Path):
     claude_md = _claude_md_with_wiki_block(tmp_path)
     original = claude_md.read_text(encoding="utf-8")
 
-    rc = main(["install", "--target", str(tmp_path)])
+    rc = main(["install", "--target", str(tmp_path)], runner=FakeSpecifyRunner())
     assert rc == 0
 
     text = claude_md.read_text(encoding="utf-8")
@@ -47,8 +48,8 @@ def test_sdlc_block_added_without_touching_wiki(tmp_path: Path):
 
 def test_sdlc_block_not_duplicated_on_rerun(tmp_path: Path):
     _claude_md_with_wiki_block(tmp_path)
-    assert main(["install", "--target", str(tmp_path)]) == 0
-    assert main(["install", "--target", str(tmp_path)]) == 0
+    assert main(["install", "--target", str(tmp_path)], runner=FakeSpecifyRunner()) == 0
+    assert main(["install", "--target", str(tmp_path)], runner=FakeSpecifyRunner()) == 0
 
     text = (tmp_path / "CLAUDE.md").read_text(encoding="utf-8")
     assert text.count(MARKER_START_SDLC) == 1

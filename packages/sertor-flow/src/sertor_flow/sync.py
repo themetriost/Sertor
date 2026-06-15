@@ -1,23 +1,18 @@
-"""Sync of the governance bundle to the dev repo (`.claude/`+`.specify/`) — over the kit's sync.
+"""Sync of the governance bundle to the dev repo (`.claude/`) — over the kit's sync.
 
-Canonical source = the assets vendored in this package; the dev repo trees are the **derived
-copy**, so that dogfooding runs on the installable governance bundle. Canonical direction:
-**assets → repo** (never the reverse). A guard test (`test_assets_sync.py`) prevents the two
-copies from diverging (drift = CI error).
+Canonical source = the Sertor-authored assets vendored in this package; the dev repo trees are the
+**derived copy**, so dogfooding runs on the installable governance bundle. Canonical direction:
+**assets → repo** (never the reverse). A guard test (`test_assets_sync.py`) prevents the two copies
+from diverging (drift = CI error).
 
-What is propagated (F6, the **governance subset only**):
-- `assets/claude/**` → `.claude/**`: speckit-* skills/agents + `requirements` skill +
-  `requirements-analyst`/`configuration-manager` agents. The bundle does NOT contain the wiki
-  assets (`wiki-author`/`wiki-curator`), so this is structurally the governance subset.
-- `assets/specify/{templates,extensions,workflows}` → `.specify/**`.
+Scope after the launch-installer pivot (feature 045): the bundle NO LONGER vendors SpecKit
+(`assets/claude/skills/speckit-*`, `assets/claude/agents/speckit-*`, `assets/specify/**`) — those
+come from `specify init`. So the only Sertor-authored `claude/**` surfaces left to sync are:
+- `assets/claude/skills/requirements/**` → `.claude/skills/requirements/**`
+- `assets/claude/agents/{requirements-analyst,configuration-manager}.md` → `.claude/agents/**`
 
-What is **excluded** from sync (and from the drift comparison):
-- `assets/specify/scripts/**`: scaffolding scripts vendored from upstream spec-kit (F3); the
-  dogfood `.specify/scripts/` ships powershell only — no paritetic mirror, so not comparable.
-- `constitution-starter.md`: it is NOT the RAG-flavored `.specify/memory/constitution.md` of
-  Sertor (must never be overwritten in the dogfood).
-- the `*.tmpl` init/integration templates, `NOTICE`, `LICENSES/**`, `claude-md-block-sdlc.md`:
-  generated/attribution assets with no dogfood mirror.
+Excluded from sync (no dogfood mirror / generated / agnostic): the `*.tmpl` init/integration
+templates, `constitution-starter.md`, `claude-md-block-sdlc.md`.
 """
 from __future__ import annotations
 
@@ -28,43 +23,21 @@ from sertor_install_kit.sync import sync_subtree
 
 _ANCHOR = "sertor_flow"
 
-# Subtrees synced from assets/specify → .specify (scripts/** intentionally excluded, F3).
-_SPECIFY_SUBTREES: tuple[str, ...] = ("templates", "extensions", "workflows")
-
-# Files excluded from the sync/drift comparison because intentionally divergent (gruppo D, Principio
-# XI): the bundle ships the GENERIC upstream `plan-template.md` (gates derived from the host's own
-# constitution); Sertor's dogfood keeps its gated one. Same provenance logic as the scripts (F3).
-_SUBTREE_EXCLUDE: dict[str, tuple[str, ...]] = {"templates": ("plan-template.md",)}
-
 
 def sync_governance_assets(repo_root: Path, dry_run: bool = False) -> dict[str, str]:
-    """Propagates the governance subset of the bundle to `repo_root`. Returns `{rel: status}`.
+    """Propagates the Sertor-authored governance subset of the bundle to `repo_root`.
 
-    Status ∈ `created` · `updated` · `identical`. Keys are prefixed with their subtree
-    (`claude/…`, `specify/templates/…`) so a caller can disambiguate across subtrees.
+    Returns `{rel: status}` with status ∈ `created` · `updated` · `identical`. Keys are prefixed
+    with their subtree (`claude/…`). SpecKit is not vendored anymore (feature 045) so only the
+    Sertor-authored `claude/**` surfaces are synced.
     """
-    result: dict[str, str] = {}
-    # assets/claude/** → .claude/** (the bundle already holds only the governance subset).
-    result.update(sync_subtree(_ANCHOR, "claude", repo_root / ".claude", dry_run=dry_run))
-    # assets/specify/{templates,extensions,workflows} → .specify/** (NOT scripts/**, F3;
-    # plan-template.md excluded — bundle generic vs dogfood gated, gruppo D).
-    for subtree in _SPECIFY_SUBTREES:
-        result.update(
-            sync_subtree(
-                _ANCHOR,
-                f"specify/{subtree}",
-                repo_root / ".specify" / subtree,
-                dry_run=dry_run,
-                exclude=_SUBTREE_EXCLUDE.get(subtree, ()),
-            )
-        )
-    return result
+    return sync_subtree(_ANCHOR, "claude", repo_root / ".claude", dry_run=dry_run)
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="sertor_flow.sync",
-        description="Propagates the governance bundle to .claude/+.specify/ in the dev repo (D2).",
+        description="Propagates the Sertor-authored governance assets to .claude/ in the dev repo.",
     )
     parser.add_argument("--repo-root", default=".", help="root of the dev repo (default: cwd)")
     parser.add_argument("--dry-run", action="store_true", help="do not write, only report")
