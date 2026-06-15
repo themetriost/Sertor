@@ -112,37 +112,37 @@
 
 ### Profilo, generazione, plan, apply
 
-- [ ] T022 [US1] `packages/sertor-flow/src/sertor_flow/profile.py`: `GovernanceProfile`
+- [x] T022 [US1] `packages/sertor-flow/src/sertor_flow/profile.py`: `GovernanceProfile`
   (`target_root`, `assistant="claude"`, `script` inferito da OS `ps|bash`, `speckit_version="0.8.18"`) +
   `build_governance_profile(target_root, ...)` (inferenza, stile `config_gen.build_host_profile`).
-- [ ] T023 [US1] `packages/sertor-flow/src/sertor_flow/generate.py`: generazione dei file init/integration
+- [x] T023 [US1] `packages/sertor-flow/src/sertor_flow/generate.py`: generazione dei file init/integration
   per-host da template (`init-options.json`, `integration.json`, `integrations/*.manifest.json`)
   iniettando i valori del `GovernanceProfile` (D7).
-- [ ] T024 [US1] `packages/sertor-flow/src/sertor_flow/install_governance.py`:
+- [x] T024 [US1] `packages/sertor-flow/src/sertor_flow/install_governance.py`:
   `build_governance_plan(profile) -> list[Artifact]` nell'ordine canonico (data-model §piano): FILE×N da
   `assets/claude/**`, FILE×N da `assets/specify/**`, CONFIG starter costituzione, **CONFIG init×M**, FILE
   NOTICE/licenza, MARKER_BLOCK SDLC. Piano **derivato** dalla composizione (FR-005), `feature.json`
   escluso. **(F10/F12)** I file init/integration per-host usano il `kind` esistente **`CONFIG` con
   strategia `GENERATE_CONFIG`** (genera-da-template, skip-se-presente) — **NESSUN nuovo `ArtifactKind`
   `GENERATE_INIT`**: l'executor non va esteso con un kind nuovo.
-- [ ] T025 [US1] In `install_governance.py`: le `apply`-functions per ogni `kind`
+- [x] T025 [US1] In `install_governance.py`: le `apply`-functions per ogni `kind`
   (`_apply_file` CREATE_IF_ABSENT, `_apply_config` starter skip-se-esiste, `_apply_generate_init`,
   `_apply_marker` con marker SDLC, `_apply_notice`) + `execute_governance_plan(profile)` che chiama
   `kit.execute_plan(plan, apply)`; ritorna `InstallReport(capability="governance")`.
-- [ ] T026 [US1] `packages/sertor-flow/src/sertor_flow/__main__.py`: CLI `sertor-flow install
+- [x] T026 [US1] `packages/sertor-flow/src/sertor_flow/__main__.py`: CLI `sertor-flow install
   [--target PATH] [--json]` (argparse), wiring a `build_governance_profile` + `execute_governance_plan`,
   resa umana + `--json` (FR-018/020), exit code (0 ok, ≠0 su passo fallito). **install≠run** (nessuna
   fase avviata).
 
 ### Bundle assets (US1) — vendoring + Sertor-authored
 
-- [ ] T027 [P] [US1] Copia gli asset **Sertor-authored** in `packages/sertor-flow/src/sertor_flow/assets/`:
+- [x] T027 [P] [US1] Copia gli asset **Sertor-authored** in `packages/sertor-flow/src/sertor_flow/assets/`:
   `claude/skills/requirements/**` (da `.claude/skills/requirements/`),
   `claude/agents/requirements-analyst.md`, `claude/agents/configuration-manager.md` (da `.claude/agents/`).
-- [ ] T028 [P] [US1] Vendora gli asset **spec-kit** (pinned 0.8.18) in `assets/claude/`:
+- [x] T028 [P] [US1] Vendora gli asset **spec-kit** (pinned 0.8.18) in `assets/claude/`:
   `skills/speckit-*` + `skills/speckit-git-*` (da `.claude/skills/`), `agents/speckit-*.md` (da
   `.claude/agents/`).
-- [ ] T029 [P] [US1] Vendora il macchinario **`.specify/`** in `assets/specify/` — **attenzione alle
+- [x] T029 [P] [US1] Vendora il macchinario **`.specify/`** in `assets/specify/` — **attenzione alle
   due fonti (F3)**:
   - `templates/**`, `extensions/git/**` (che già contiene `scripts/{bash,powershell}/`), `workflows/**`
     → dal **dogfood** `.specify/` del repo.
@@ -150,21 +150,21 @@
     setup-plan/setup-tasks) → **dall'upstream spec-kit pinnato** `C:\Workspace\Git\ExternalRepos\spec-kit\
     scripts\{bash,powershell}\` (il dogfood `.specify/scripts/` ha SOLO powershell; l'upstream 0.8.18 ha
     **entrambe** le shell → è la fonte corretta per soddisfare DA-e "ship both ps+bash").
-- [ ] T030 [P] [US1] Crea i template generati per-host in `assets/`: `init-options.json.tmpl`,
+- [x] T030 [P] [US1] Crea i template generati per-host in `assets/`: `init-options.json.tmpl`,
   `integration.json.tmpl`, `integrations/*.manifest.json.tmpl` (placeholder per assistant/script/
   speckit_version).
-- [ ] T031 [P] [US1] Crea `assets/constitution-starter.md` (Sertor-authored, NEUTRA): principi generali
+- [x] T031 [P] [US1] Crea `assets/constitution-starter.md` (Sertor-authored, NEUTRA): principi generali
   III/IV/VI/VII + kernel de-RAGizzati di I/V/VIII/IX + sezioni Sicurezza e Governance; **esclusi II e X**
   (base testuale: `assets/specify/templates/constitution-template.md`).
-- [ ] T032 [P] [US1] Crea `assets/claude-md-block-sdlc.md` (EN): blocco rituale SDLC (flusso SpecKit,
+- [x] T032 [P] [US1] Crea `assets/claude-md-block-sdlc.md` (EN): blocco rituale SDLC (flusso SpecKit,
   Constitution Check, delega git al configuration-manager, branch+PR), **owner** della disciplina
   git/commit; sarà racchiuso nei marker `SERTOR:SDLC-RITUAL`.
-- [ ] T033 [P] [US1] Crea l'attribuzione: `assets/NOTICE` + `assets/LICENSES/spec-kit-MIT.txt` (testo MIT
+- [x] T033 [P] [US1] Crea l'attribuzione: `assets/NOTICE` + `assets/LICENSES/spec-kit-MIT.txt` (testo MIT
   di GitHub spec-kit) — REQ-022/SC-007.
 
 ### Test US1
 
-- [ ] T034 [US1] Integration test `packages/sertor-flow/tests/integration/test_install_governance.py`:
+- [x] T034 [US1] Integration test `packages/sertor-flow/tests/integration/test_install_governance.py`:
   `sertor-flow install --target <tmp>` su repo pulito → report con artefatti `created`; verifica presenza
   di `.claude/skills/speckit-specify/`, `.claude/agents/requirements-analyst.md`,
   `.specify/templates/plan-template.md`, `.specify/scripts/{bash,powershell}/`,
@@ -172,10 +172,10 @@
   **assenza** di `.specify/feature.json`; **nessuna** fase SDLC/git/index avviata (install≠run).
   **(F11 — NFR-3 offline)** aggiungi un'asserzione che l'install completa senza rete (es. nessun import
   di `httpx`/`requests`/`urllib` di rete nel percorso, o blocco `socket` nel test).
-- [ ] T035 [P] [US1] Unit test `tests/unit/test_governance_plan.py`: il piano è derivato dalla
+- [x] T035 [P] [US1] Unit test `tests/unit/test_governance_plan.py`: il piano è derivato dalla
   composizione (aggiungere un asset cambia il piano, FR-005); ordine canonico; `feature.json` mai nel
   piano.
-- [ ] T036 [P] [US1] Unit test `tests/unit/test_generate.py`: i file init/integration generati hanno lo
+- [x] T036 [P] [US1] Unit test `tests/unit/test_generate.py`: i file init/integration generati hanno lo
   schema atteso (consumabili dalle skill SpecKit) e riflettono il `GovernanceProfile` (assistant/script/
   versione).
 
