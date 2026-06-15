@@ -1,4 +1,4 @@
-"""Tests for `.mcp.json` merge (T015/T019): creation, preservation, idempotence, malformed."""
+"""Tests for `.mcp.json` merge: creation, preservation, idempotence, malformed (kit ConfigError)."""
 from __future__ import annotations
 
 import json
@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
+from sertor_install_kit.artifacts import Outcome
 from sertor_install_kit.errors import ConfigError
-from sertor_installer.artifacts import Outcome
-from sertor_installer.mcp_merge import merge_mcp
+from sertor_install_kit.mcp_merge import merge_mcp
 
 ENTRY = {
     "command": "uv",

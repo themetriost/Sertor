@@ -7,6 +7,7 @@ license = { text = "MIT" }
 authors = [{ name = "Sertor" }]
 dependencies = [
     "sertor-core",
+    "sertor-install-kit",
 ]
 
 [project.scripts]
@@ -30,8 +31,9 @@ packages = ["src/sertor_installer"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 # `src` per `sertor_installer`; i path relativi risalgono alla root del monorepo per trovare
-# `sertor_core` (../../src) e i moduli di test della root (../..).
-pythonpath = ["src", "../../src", "../.."]
+# `sertor_core` (../../src), il kit condiviso `sertor_install_kit`
+# (../sertor-install-kit/src) e i moduli di test della root (../..).
+pythonpath = ["src", "../../src", "../sertor-install-kit/src", "../.."]
 addopts = "-ra"
 markers = [
     "cloud: test che richiedono credenziali/servizi cloud (esclusi dalla CI locale)",
