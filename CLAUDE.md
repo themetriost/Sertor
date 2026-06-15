@@ -471,6 +471,17 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/045-distribuzione-copilot-flow/plan.md` (FEAT-009 epica sertor-cli — distribuzione della
+**governance/SDLC** del pacchetto `sertor-flow` su **GitHub Copilot** con parità funzionale, gemella di
+FEAT-007. Due leve: (1) **pivot vendoring→launch-installer** (decisione utente): `sertor-flow` smette di
+vendorare SpecKit e **lancia `specify init --ai <assistant>`** via il `CommandRunner` del kit, a versione
+pinnata, fail-fast se assente — refactor del path **anche per Claude** (non-regressione FR-012),
+deroga giustificata al Principio II (fetch install-time, governance≠RAG); (2) **superfici
+Sertor-authored** (`requirements-analyst`/`configuration-manager`/skill `requirements`/blocco SDLC)
+**tradotte** per Copilot riusando il **renderer SPOSTATO nel `sertor-install-kit`** (condiviso
+`sertor`↔`sertor-flow`, anti-drift). Riusa il seam `AssistantProfile` di FEAT-007. Invariante dura:
+**nessuna dipendenza di `sertor-flow` da `sertor-core`** (FR-016). Constitution PASS 11/11 (1 deroga
+tracciata II). Branch `045-distribuzione-copilot-flow`. Storico:
 `specs/044-distribuzione-copilot/plan.md` (FEAT-007 epica sertor-cli — distribuzione delle superfici del
 pacchetto `sertor` (server MCP `sertor-rag` + sistema-wiki) su **GitHub Copilot** con **parità funzionale
 piena**, via un **assistente target** nell'installer. Estende il Principio X all'assistente ospite.
