@@ -286,3 +286,53 @@ only these residents remain in the root, each for a reason:
 > **Migration of already-installed hosts**: out of scope. On a host with an old
 > `wiki.config.toml` in the root, the installer does not move or remove it; to adopt the new layout
 > move the file to `wiki/` manually (the internal paths — `root = "wiki"` — remain valid with `--root .`).
+
+## 8. Development method (SDLC) with one command: `sertor-flow`
+
+The Sertor **development method** — the SpecKit flow, requirements management, git delegation, a
+constitution starter, and the `CLAUDE.md` SDLC ritual block — ships as a **separate, standalone
+package `sertor-flow`**. It is **orthogonal to the RAG**: it has **no dependency on `sertor-core`**,
+so a host can adopt the method without ever pulling in the retrieval stack (and vice versa). For
+this reason `sertor install governance` is only a **pointer**: it tells you that governance lives in
+`sertor-flow` and how to run it — `sertor` does not bundle it.
+
+```bash
+# from a machine with `uv`, in the root of the target repo:
+uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor-flow" sertor-flow install
+# variants:
+sertor-flow install --target C:\path\repo   # explicit target (default: cwd)
+sertor-flow install --json                  # machine-readable report
+```
+
+What it deposits (all **without** starting any phase — **install ≠ run**):
+
+| Artifact | Where | Behaviour if already present |
+|---|---|---|
+| SpecKit skills + agents (`speckit-*`), `requirements` skill | `<target>/.claude/**` | per-file skip if present (non-destructive) |
+| `requirements-analyst` + `configuration-manager` agents | `<target>/.claude/agents/**` | per-file skip if present |
+| SpecKit templates, git extension, workflows | `<target>/.specify/**` | per-file skip if present |
+| Scaffolding scripts (**both** `bash` + `powershell`) | `<target>/.specify/scripts/**` | per-file skip if present |
+| Constitution **starter** (neutral, host-agnostic) | `<target>/.specify/memory/constitution.md` | skip if present (never overwrites your constitution) |
+| Per-host `init-options.json` / `integration.json` / manifests (generated from the profile) | `<target>/.specify/**` | skip if present |
+| Attribution: `NOTICE` + `LICENSES/spec-kit-MIT.txt` (spec-kit is MIT, pinned 0.8.18) | `<target>/.specify/**` | skip if present |
+| `SERTOR:SDLC-RITUAL` block | `<target>/CLAUDE.md` | idempotent marker block; coexists with the wiki block |
+
+**install ≠ run.** The command only deposits the method bundle — it never creates a feature, runs a
+git command, or indexes anything. Re-running is safe: every artifact is reported `skipped` and
+nothing changes on disk.
+
+**Coexistence with the wiki.** The SDLC ritual block uses its own markers
+(`SERTOR:SDLC-RITUAL`), distinct from the wiki's `SERTOR:WIKI-RITUAL`: both blocks live in the same
+`CLAUDE.md`, each idempotent on its own markers.
+
+**Cross-platform.** The installer relies only on `pathlib`/stdlib path handling and ships **both**
+shell variants of the scaffolding scripts (`bash` + `powershell`); the chosen flavor is recorded in
+the generated `init-options.json` based on the host OS. It runs identically on Windows and POSIX
+(integration tests use platform-agnostic temp dirs).
+
+**Independence from the core.** `sertor-flow` depends only on the shared installer toolkit
+(`sertor-install-kit`), never on `sertor-core`. You can install the method on a repo that has no RAG,
+and install the RAG on a repo that has no method — the two capabilities do not constrain each other.
+
+Exit `0` success (even if everything was skipped) · `1` domain error (fail-fast: the failed step is
+named, already-written artifacts remain) · `2` wrong usage.

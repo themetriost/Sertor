@@ -456,33 +456,33 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/036-aggancio-distillazione/plan.md` (memoria conversazioni FEAT-003 — aggancio della
-distillazione all'archivio episodico. THIN consumer puramente ADDITIVO sull'MVP memoria già su master:
-chiude il loop cattura→distillazione dando alla modalità «from conversation» di `distill` una FONTE
-REALE recuperabile (oggi pretende un brief a mano e VIETA il transcript grezzo = rete di sicurezza
-teorica). Tre strati sottili: (A) LETTURA nel core — recupero sessione intera RIUSA
-`MemoryArchive.get(session_key)→ArchivedSession|None` (già esistente, turni ordinati); UNICA novità di
-codice = `MemoryArchive.list_recent(limit)→tuple[SessionSummary(session_key,captured_at,turn_count)]`
-(metodo ADDITIVO sullo store, ordine recency-first, `turn_count` da `metadata`, sola lettura, niente
-join); esposizione via factory `build_memory_reader(settings)→MemoryArchive|None` gated su
-`memory_enabled` (coerente con `build_memory_archiver`/`build_episodic_search`), ritorna il MemoryArchive
-CONCRETO — NESSUNA nuova porta (single consumer, YAGNI; SC-007 = #Protocol invariato). (B) CLI — sotto-
-comandi `memory show <session_key> [--json]` e `memory list [-k/--limit N] [--json]` sul gruppo `memory`
-(035, sub-subparser argparse), due funzioni PURE in `cli/output.py` (`format_session_transcript`/
-`format_session_list`, umano + json, stile `format_memory_results`, transcript intero NON troncato).
-Gate `None→ConfigError` exit 1 (FR-008); not-found = `SessionNotFoundError`(sottoclasse SertorError) exit
-1 DISTINTO dalla sessione esistente-ma-vuota (exit 0, stato vuoto). (C) WIRING documentale — `distill.md`
-(«from conversation») aggiornata: attinge all'archivio via `memory show`/`list`, condensa (giudizio Opus),
-distilla; l'asset installabile `claude-md-block.md` NON contiene la procedura «from conversation» →
-FR-011 = NO-OP documentato (segnalato: la procedura `distill.md` è Sertor-coupled, backlog host-agnostico).
-VINCOLO CARDINE (FR-013): NESSUN trigger automatico di distillazione, mai sull'intero archivio, mai
-per-turno/per-sessione — solo invocazione esplicita su sessione mirata; cattura (economica) e
-distillazione (costosa LLM) disaccoppiate (archivio = cold storage backup). Local-first, zero rete/
-embedding/LLM nel percorso lettura (FR-014); sola lettura → non scrive `sessions`/`turns`, niente schema
-(a differenza di FEAT-002/FTS); host-agnostico (chiavi opache). Nuova manopola `memory_list_limit`
-(`SERTOR_MEMORY_LIST_LIMIT`, default 20). Test: `list_recent` su SQLite temporaneo (ordine/limite/vuoto/
-store-ko), output puro umano+json, handler CLI con core mockato (gate/not-found/vuoto). Constitution PASS
-10/10 (pre e post), nessuna deroga. Branch `036-aggancio-distillazione`. Storico:
+`specs/037-governance-sertor-flow/plan.md` (epica sertor-cli FEAT-005 — installer di governance/SDLC
+come PACCHETTO SEPARATO `sertor-flow`, ortogonale al RAG e SENZA dipendenza da `sertor-core`. Porta su un
+ospite l'apparato di metodo di sviluppo: skill+agenti SpecKit (VENDORED da spec-kit MIT, pinned 0.8.18,
+con NOTICE/LICENSE) + skill `requirements` e agente `requirements-analyst` (Sertor-authored) + agente
+`configuration-manager` + macchinario `.specify/` (templates, scripts ps+bash, extensions/git, workflows)
++ COSTITUZIONE-STARTER NEUTRA (principi generali III/IV/VI/VII + kernel de-RAGizzati di I/V/VIII/IX +
+Sicurezza/Governance; ESCLUSI II e X) + blocco rituale SDLC nel CLAUDE.md. Approccio cardine: ESTRARRE il
+motore di installazione esistente (`packages/sertor/src/sertor_installer`: Artifact/ArtifactKind/
+WriteStrategy/Outcome, execute_plan fail-fast, merge additivi, claude_md a marker, resources via
+importlib, InstallReport, sync con guard anti-drift) in un TOOLKIT CONDIVISO `sertor-install-kit` (3°
+membro workspace, stdlib-only, NO sertor-core), usato sia da `sertor` (wiki/rag) sia da `sertor-flow`.
+Dipendenza da spezzare: oggi `sertor_installer` importa da `sertor-core` solo `ConfigError`/`SertorError`
++ `log_event` → il kit ridefinisce `InstallerError`/`ConfigError` + `log_event` stdlib; `sertor` avvolge
+gli errori di `sertor_core.wiki_tools` al boundary (gate di NON-REGRESSIONE = suite packages/sertor
+verde). Generalizzazioni: `write_marker_block(path,content,marker_start,marker_end)` (wiki usa
+SERTOR:WIKI-RITUAL, sertor-flow usa SERTOR:SDLC-RITUAL, DUE blocchi distinti idempotenti); `execute_plan(
+plan, apply)` a callback. Bundle = vendoring asset + plan-builder `build_governance_plan`; subset
+`.specify/` distribuibile: VENDOR templates/scripts/extensions/workflows, GENERA per-host init-options/
+integration/manifests (come config_gen del wiki), ESCLUDI feature.json (runtime); spedisci entrambi gli
+script ps+bash. CLI `sertor-flow install [--target] [--json]`, bundle COMPLETO all-or-nothing (MVP),
+install≠run/non-distruttivo/idempotente/fail-fast. `sertor install governance` = solo PUNTATORE a
+sertor-flow (no dipendenza tra pacchetti). 7 DA risolte. Constitution PASS 10/10 senza deroghe. Branch
+`037-governance-sertor-flow`. Storico:
+`specs/036-aggancio-distillazione/plan.md` (memoria conversazioni FEAT-003 — aggancio distillazione
+all'archivio: thin consumer additivo, `MemoryArchive.list_recent`→`SessionSummary`, comandi `memory
+list`/`show`, factory `build_memory_reader` gated, vincolo FR-013 distillazione sempre su sessione
+mirata mai automatica; PR #51, Constitution 10/10). Storico:
 `specs/035-memoria-cli-hook/plan.md` (superficie CLI memoria + hook SessionEnd — THIN consumer
 sull'MVP memoria già su master. Tre capacità sottili: (1) `sertor-rag memory archive` e (2)
 `sertor-rag memory search <query>` = gruppo di comando `memory` con SUB-SUBPARSER argparse

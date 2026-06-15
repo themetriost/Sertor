@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from sertor_core.domain.errors import ConfigError
+from sertor_install_kit.errors import ConfigError
 from sertor_installer.artifacts import Outcome
 from sertor_installer.mcp_merge import merge_mcp
 

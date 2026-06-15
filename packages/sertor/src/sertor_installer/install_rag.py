@@ -1,22 +1,27 @@
-"""Orchestration of `sertor install rag` (data-model §4, plan 015).
+"""Orchestration of `sertor install rag` (data-model §4, plan 015) over the shared kit (037).
 
 `build_rag_plan` enumerates artifacts in canonical order (DEPENDENCIES → ENV_MERGE → MCP_MERGE →
-GITIGNORE_APPEND); `execute_rag_plan` executes sequentially with **fail-fast no-rollback** (same as
-`install_wiki.execute_plan`): on the first domain error it records the error outcome, sets
-`failed_step`, and stops; already-written artifacts remain (a re-run will find them →
-skipped/merged).
+GITIGNORE_APPEND); execution delegates to the kit's generic `execute_plan` with **fail-fast
+no-rollback**: on the first domain error it records the error outcome, sets `failed_step`, and
+stops; already-written artifacts remain (a re-run will find them → skipped/merged).
 
 **install ≠ run**: the DEPENDENCIES step only runs `uv init`/`uv add` (never indexing). The runtime
 lives isolated in `<target>/.sertor/`; `.mcp.json` and `.gitignore` live in the host root. Thin
-layer (Principio I): `uv` is behind the injectable `CommandRunner`.
+layer (Principio I): `uv` is behind the injectable `CommandRunner`. Errors are the kit's
+`InstallerError` (037, D3): the executor catches them for fail-fast.
 """
 from __future__ import annotations
 
 import json
 import logging
 
-from sertor_core.domain.errors import ConfigError, SertorError
-from sertor_core.observability.logging import log_event
+from sertor_install_kit.command_runner import CommandRunner
+from sertor_install_kit.env_merge import merge_env
+from sertor_install_kit.errors import ConfigError, InstallerError
+from sertor_install_kit.executor import execute_plan as _kit_execute_plan
+from sertor_install_kit.gitignore_append import append_gitignore
+from sertor_install_kit.mcp_merge import merge_mcp
+from sertor_install_kit.observability import log_event
 from sertor_installer.artifacts import (
     Artifact,
     ArtifactKind,
@@ -24,10 +29,6 @@ from sertor_installer.artifacts import (
     Outcome,
     WriteStrategy,
 )
-from sertor_installer.command_runner import CommandRunner
-from sertor_installer.env_merge import merge_env
-from sertor_installer.gitignore_append import append_gitignore
-from sertor_installer.mcp_merge import merge_mcp
 from sertor_installer.rag_profile import RagHostProfile
 from sertor_installer.report import InstallReport
 from sertor_installer.resources import read_asset_text
@@ -44,11 +45,11 @@ _SERVER_NAME = "sertor-rag"
 _MCP_REGISTER_LABEL = "(mcp: client registry)"
 
 
-class DependencyError(SertorError):
+class DependencyError(InstallerError):
     """Dependency bootstrap failed: `uv` not found or `uv init`/`uv add` did not succeed."""
 
 
-class McpRegistrationError(SertorError):
+class McpRegistrationError(InstallerError):
     """MCP registration in `local` scope failed: `claude` not found or command failed."""
 
 
@@ -186,25 +187,19 @@ def _apply_mcp_register(profile: RagHostProfile, runner: CommandRunner) -> Artif
 def execute_rag_plan(
     plan: list[Artifact], profile: RagHostProfile, runner: CommandRunner
 ) -> InstallReport:
-    """Executes the plan with fail-fast no-rollback. Returns the `InstallReport`
-    (capability=rag)."""
-    report = InstallReport(target=str(profile.target_root), capability="rag")
-    for art in plan:
-        try:
-            if art.kind is ArtifactKind.DEPENDENCIES:
-                outcome = _apply_deps(profile, runner)
-            elif art.kind is ArtifactKind.ENV_MERGE:
-                outcome = _apply_env(profile)
-            elif art.kind is ArtifactKind.MCP_MERGE:
-                outcome = _apply_mcp(profile)
-            elif art.kind is ArtifactKind.MCP_REGISTER:
-                outcome = _apply_mcp_register(profile, runner)
-            elif art.kind is ArtifactKind.GITIGNORE_APPEND:
-                outcome = _apply_gitignore(profile)
-            else:  # pragma: no cover — unknown kind is a bug, not user input
-                raise ConfigError(f"unhandled artifact kind: {art.kind}")
-        except SertorError as exc:
-            report.add(ArtifactOutcome(art.target_rel, Outcome.ERROR, str(exc)))
-            break  # fail-fast: stop on the first domain error (no rollback)
-        report.add(outcome)
-    return report
+    """Executes the plan with fail-fast no-rollback via the kit's executor (capability=rag)."""
+
+    def apply(art: Artifact) -> ArtifactOutcome:
+        if art.kind is ArtifactKind.DEPENDENCIES:
+            return _apply_deps(profile, runner)
+        if art.kind is ArtifactKind.ENV_MERGE:
+            return _apply_env(profile)
+        if art.kind is ArtifactKind.MCP_MERGE:
+            return _apply_mcp(profile)
+        if art.kind is ArtifactKind.MCP_REGISTER:
+            return _apply_mcp_register(profile, runner)
+        if art.kind is ArtifactKind.GITIGNORE_APPEND:
+            return _apply_gitignore(profile)
+        raise ConfigError(f"unhandled artifact kind: {art.kind}")  # pragma: no cover
+
+    return _kit_execute_plan(plan, apply, target=str(profile.target_root), capability="rag")

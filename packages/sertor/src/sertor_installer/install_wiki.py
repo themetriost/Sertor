@@ -1,19 +1,25 @@
-"""Orchestration of `sertor install wiki`: `InstallPlan` + execution (data-model §3, D8).
+"""Orchestration of `sertor install wiki`: plan + execution over the shared kit (037, D8).
 
 `build_install_plan` enumerates bundled assets (NEVER fixed counts: the plan derives from the
-bundle composition, F1/F8) producing the ordered list of `Artifact`. `execute_plan` executes
-sequentially with fail-fast (REQ-125, D8): on the first `ERROR` it stops, `failed_step` is set,
-already-written artifacts remain (no rollback). Thin **layer** (Principio I): delegates to
-`claude_md`, `settings_merge`, `config_gen` and `sertor_core.wiki_tools` for structure.
+bundle composition, F1/F8) producing the ordered list of `Artifact`. Execution delegates to the
+kit's generic `execute_plan` (fail-fast no-rollback), with a per-`kind` `apply` callback.
+
+**Boundary wrapping (037, D3):** the only step that crosses into `sertor-core` is `_apply_structure`
+(`load_profile`/`init_structure`). For the kit, `sertor-core` is a third party, and the kit's
+`execute_plan` catches `InstallerError` (not `SertorError`). So this layer wraps any `SertorError`
+raised by `sertor_core.wiki_tools` into `InstallerError` at the boundary — otherwise a core error
+would escape the kit's fail-fast. Thin **layer** (Principio I).
 """
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
-from sertor_core.domain.errors import ConfigError, SertorError
+from sertor_core.domain.errors import SertorError
 from sertor_core.wiki_tools.profile import load_profile
 from sertor_core.wiki_tools.structure import init_structure
+from sertor_install_kit.errors import ConfigError, InstallerError
+from sertor_install_kit.executor import execute_plan as _kit_execute_plan
 from sertor_installer import claude_md, config_gen, settings_merge
 from sertor_installer.artifacts import (
     Artifact,
@@ -155,41 +161,41 @@ def _apply_structure(target_root: Path, art: Artifact) -> ArtifactOutcome:
 
     With the config in `wiki/` (feature 016) the relative paths (`root="wiki"`, `source_dirs`) must
     be resolved from the host root, not from the config directory → `root_override=target_root`.
+
+    **Boundary wrapping (037, D3):** `load_profile`/`init_structure` belong to `sertor-core` (a
+    third party for the kit) and may raise `SertorError`; we wrap it in `InstallerError` so the
+    kit's `execute_plan` keeps its fail-fast.
     """
     config_path = _resolve(target_root, _CONFIG_TARGET)
-    wiki_profile = load_profile(config_path, root_override=target_root)
-    result = init_structure(wiki_profile)
+    try:
+        wiki_profile = load_profile(config_path, root_override=target_root)
+        result = init_structure(wiki_profile)
+    except SertorError as exc:
+        raise InstallerError(f"wiki structure init failed: {exc}") from exc
     detail = f"{len(result.created)} created, {len(result.skipped_existing)} existing"
     outcome = Outcome.CREATED if result.created else Outcome.SKIPPED
     return ArtifactOutcome(art.target_rel, outcome, detail)
 
 
 def execute_plan(plan: list[Artifact], profile: HostProfile) -> InstallReport:
-    """Executes the plan sequentially with fail-fast (REQ-125, D8).
+    """Executes the plan with fail-fast no-rollback via the kit's generic executor (037).
 
-    On the first `ERROR` (domain exception raised by a step) it records the error outcome, sets
-    `failed_step`, and stops: already-written artifacts remain (no rollback).
+    The per-`kind` dispatch is the `apply` callback; the kit catches `InstallerError` and stops on
+    the first one. Errors crossing the `sertor-core` boundary are wrapped in `_apply_structure`.
     """
-    report = InstallReport(target=str(profile.target_root))
     root = profile.target_root
 
-    for art in plan:
-        try:
-            if art.kind is ArtifactKind.FILE:
-                outcome = _apply_file(root, art)
-            elif art.kind is ArtifactKind.SETTINGS_MERGE:
-                outcome = _apply_settings(root, art)
-            elif art.kind is ArtifactKind.MARKER_BLOCK:
-                outcome = _apply_marker(root, art)
-            elif art.kind is ArtifactKind.CONFIG:
-                outcome = _apply_config(root, art, profile)
-            elif art.kind is ArtifactKind.STRUCTURE:
-                outcome = _apply_structure(root, art)
-            else:  # pragma: no cover — unknown kind is a bug, not user input
-                raise ConfigError(f"unhandled artifact kind: {art.kind}")
-        except SertorError as exc:
-            report.add(ArtifactOutcome(art.target_rel, Outcome.ERROR, str(exc)))
-            break  # fail-fast: stop on the first domain error
-        report.add(outcome)
+    def apply(art: Artifact) -> ArtifactOutcome:
+        if art.kind is ArtifactKind.FILE:
+            return _apply_file(root, art)
+        if art.kind is ArtifactKind.SETTINGS_MERGE:
+            return _apply_settings(root, art)
+        if art.kind is ArtifactKind.MARKER_BLOCK:
+            return _apply_marker(root, art)
+        if art.kind is ArtifactKind.CONFIG:
+            return _apply_config(root, art, profile)
+        if art.kind is ArtifactKind.STRUCTURE:
+            return _apply_structure(root, art)
+        raise ConfigError(f"unhandled artifact kind: {art.kind}")  # pragma: no cover
 
-    return report
+    return _kit_execute_plan(plan, apply, target=str(root), capability="wiki")

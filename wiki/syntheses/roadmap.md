@@ -14,7 +14,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > `requirements → spec → plan → tasks → implement`.
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-06-14)
+## ⚡ Executive summary (stato al 2026-06-15)
 
 ### 📊 Roadmap a colpo d'occhio
 
@@ -36,6 +36,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | Distribuzione multi-assistente: GitHub Copilot (+ Codex Could) | — | 👍 **da decomporre** (decisione utente 2026-06-12) |
 | Tema lingua (tutto il prodotto in inglese) | — | ✅ **completato totale (2026-06-13, PR #27/#28/#29/#31)**: codice (72 .py: docstring/commenti/**errori**), test (75 .py: commenti/docstring), documentazione di prodotto (README + `docs/`), asset installer, CLI, seed it/en. Restano IT **per scelta**: `wiki/`, `specs/`, `requirements/`, `CLAUDE.md`, `prototype/` (congelato) |
 | Igiene radice ospite (installer, asse DOVE) | — | ✅ **master (2026-06-13, PR #26)** — config in `wiki/` + auto-discovery, `--mcp-scope` |
+| **Governance SDLC — pacchetto `sertor-flow`** (epica CLI) | — | 📋 **PLANNED** — **decomposta a requisiti (2026-06-15)** come pacchetto installabile separato (non su master); ortogonale al RAG, no dipendenza da sertor-core. Bundle: skill/agenti SpecKit + `.specify/` template + costituzione + blocco rituale CLAUDE.md. 7 domande aperte (DA-a..g) prima del plan. |
 | **Collaborazione multiutente/enterprise** (asse CHI, workflow) | — | 📋 **EPICA aperta, differita (2026-06-12)** — `requirements/multiutente/epic.md`; da affrontare quando il caso d'uso team è concreto |
 
 *Legenda:* ✅ su master · 🧪 operativo, consolidamento aperto · 📋 pianificato · 💀 ramo morto (non su master).
@@ -68,7 +69,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   anche da **GitHub Copilot** (Must: MCP nei client Copilot + traduzione delle superfici
   agentiche dell'installer con target assistant) e da **Codex** (Could: AGENTS.md + MCP); CLI già
   assistant-agnostic. Nuova FEAT-007 dell'epica CLI; estende il Principio X all'assistente ospite.
-- **`sertor install governance`** — l'ultimo taglio dell'installer ancora stub. *(`install rag` ✅ DONE, 2026-06-12.)*
+- **Governance SDLC come pacchetto `sertor-flow`** (era `sertor install governance`, ultimo taglio stub) — **decomposta a requisiti EARS (2026-06-15)**: riconcepita come **pacchetto installabile separato**, ortogonale al RAG, senza dipendenza da `sertor-core`; bundle = skill/agenti SpecKit + skill `requirements` + `configuration-manager` + costituzione/template `.specify/` + blocco rituale CLAUDE.md. Requisiti: `requirements/sertor-cli/governance-sertor-flow/requirements.md`. **7 domande aperte (DA-a..g)** da risolvere prima del plan: forma costituzione, coordinamento blocco CLAUDE.md col wiki, provenienza/licenza asset SpecKit, granularità install, sottoinsieme `.specify/` distribuibile, relazione pacchetti, hook. *(`install rag` ✅ DONE, 2026-06-12.)*
 - **Eval comparativa live su provider reale** (REQ-051 con Azure, marker `cloud`) — il confronto
   strict è in CI; la misura col provider forte resta esercizio opzionale.
 
@@ -315,6 +316,7 @@ già su master).
 | **Tema lingua** (asset installer in inglese, contenuto in lingua host) | Coerenza dell'esperienza su ospiti non-italiani | **Implementato 2026-06-13** (pass mirato): asset+CLI host-facing in inglese + guardia. Residuo: seed localization it/en (D3) + traduzione graduale delle error-string profonde/docstring | ✅ **fatto (asset); seed = follow-up)** |
 | **Distribuzione multi-assistente: GitHub Copilot (+ Codex Could)** | Le capacità non devono dipendere da un solo assistente: MCP nei client Copilot + superfici agentiche tradotte (copilot-instructions/prompt files; Codex: AGENTS.md) | Nuova FEAT-007 epica CLI; distinto da DA-6 (Copilot lì è provider LLM); CLI già assistant-agnostic | 👍 **da decomporre** (utente, 2026-06-12) |
 | **Adapter VectorStore per PGVector / MongoDB su Azure** | Ibrido e retrieval su store cloud alternativi ad AI Search (il motore ibrido è già store-agnostico via porte) | Nuovi adapter della porta `VectorStore` (+ eventuale delega ibrida nativa per Atlas Search); feature separata da FEAT-004 | 💡 idea (da DA-2 FEAT-004, 2026-06-11) |
+| **Conoscenza-schema SQL come corpus interrogabile** | Interrogare «dov'è un dato, quale tabella/vista/stored-procedure/query usare per accedervi», **fuso col corpus di codice+doc**. Prior art mostra un buco: nessuno unisce schema+SP+query-buone+codice applicativo in un endpoint unico — ed è lo spazio di Sertor | Mappa sull'architettura: nuovo sorgente d'ingestione (DDL/viste/SP) nel corpus unico + **schema-graph parallelo al [[code-graph]]** (lineage via `who_calls`). **Prerequisito:** parsing sintattico T-SQL/PL-SQL (oggi esclusi R-N2). Ricognizione completa in [[conoscenza-schema-sql-rag]] (DataHub/WrenAI/Vanna/RASL/SchemaGraphSQL). Domande aperte: introspezione live vs parsing statico file-based, confine col Text-to-SQL, cattura pattern d'accesso | 💡 **idea, ricerca fatta — da decidere scope** (utente, 2026-06-15) |
 | **Distribuzione della memoria via installer** (FEAT-009 epica memoria) | Per la regola «feature completa = installabile» (CLAUDE.md), l'MVP memoria **non è completo** finché un ospite non lo riceve via `sertor install`: manopole `.env` (`SERTOR_MEMORY`/`_LIST_LIMIT`/`SERTOR_EPISODIC_*`), hook `memory-capture.ps1` + voce `SessionEnd` negli asset, cenno nel `claude-md-block` | **Recupera il rinvio A-009 di FEAT-035** (era appeso solo in `specs/035-…`, mai promosso — primo frutto della regola di promozione out-of-scope). Owner installer = epica `sertor-cli`; si combina con la distribuzione multi-assistente (FEAT-008) | 👍 **debito di completamento, da decomporre** (utente, 2026-06-14) |
 | **Timeout espliciti su embed/query (server MCP e adapter)** | L'hang della prima query MCP è stato diagnosticato e **risolto** (causa vera: init pigro di Chroma nella prima tool call parcheggiava il task su Windows → warm-up eager in `main()`, **hotfix PR #23**, vedi [[mcp-server]]); i timeout generici restano una rifinitura di robustezza | Timeout configurabile in `Settings` + eccezione di dominio | 💡 idea ridimensionata (hang risolto 2026-06-12) |
 | **Igiene radice ospite** (feature `sertor-cli`, asse **DOVE**) | Radice ospite ordinata: `wiki.config.toml`→`wiki/`, `.sertor/` unica sede del runtime, meccanismo `--mcp-scope project\|local`, residenti inevitabili a root documentati | Consegnata: `specs/016`, PR #26 (auto-discovery CLI + `MCP_REGISTER` + fix Sertor one-shot). | ✅ **su master (2026-06-13)** |
