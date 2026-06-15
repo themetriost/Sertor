@@ -21,9 +21,17 @@ traduzione" (vedi §7, DA-1).
 > **Leva chiave (grounding §7):** SpecKit è *agent-agnostic by design* e supporta **Copilot come
 > target di prima classe** (`specify init --ai copilot` genera `.github/prompts/*.prompt.md` +
 > `.github/agents/*.agent.md`). Il **motore** SpecKit (`.specify/`) è condiviso tra assistenti.
-> Quindi la parte SpecKit del bundle si ottiene **ri-vendorando** l'output Copilot di spec-kit — lo
-> *stesso* meccanismo di vendoring già usato per la variante Claude. Resta da tradurre solo la parte
-> **Sertor-authored** (agenti, skill `requirements`, blocco rituale).
+>
+> ⚠️ **DIREZIONE DI DESIGN — decisione utente 2026-06-15 (supera l'approccio vendoring):** la parte
+> SpecKit del bundle **NON si vendora più** (niente copie congelate negli `assets/`). `sertor-flow`
+> **lancia l'installer di spec-kit** (`specify init --ai <assistant>`), che deposita lui stesso la
+> variante corretta per l'assistente target. Questo vale per la variante Copilot **e comporta il
+> refactor del `sertor-flow` esistente** (oggi vendorato — FEAT-005). **Implicazione esplicita:**
+> reintroduce una dipendenza da spec-kit (CLI/rete recuperabile a install-time), invertendo
+> l'invariante *offline / dipendenza-zero* su cui `sertor-flow` era stato costruito; in cambio elimina
+> il doppio (triplo) vendoring e segue automaticamente gli assistenti supportati da upstream. Resta da
+> gestire a mano solo la parte **Sertor-authored** (agenti, skill `requirements`, blocco rituale), che
+> non viene da spec-kit.
 
 ## 2. Obiettivi e criteri di successo
 
@@ -90,9 +98,13 @@ traduzione" (vedi §7, DA-1).
   equivalent to the Claude-targeted ones.*
 - **REQ-005 (Ubiquitous):** *The system shall install the shared SpecKit machinery (the `.specify/`
   scripts and templates) once, independently of the selected target assistant.*
-- **REQ-006 (Ubiquitous):** *The system shall preserve license attribution for vendored SpecKit
-  assets of every assistant variant it ships (pinned upstream version + NOTICE), inheriting
-  `sertor-flow` REQ-025.*
+- **REQ-006 (Event-driven):** *When providing the SpecKit surfaces for any target assistant, the
+  system shall obtain them by invoking spec-kit's own installer (`specify init --ai <assistant>`) at a
+  pinned spec-kit version, rather than shipping frozen vendored copies; license attribution travels
+  with spec-kit's own installed output.* (Direzione di design 2026-06-15 — **supera** l'approccio
+  vendoring di `sertor-flow` REQ-025 e implica il refactor del bundle esistente.)
+- **REQ-006b (Unwanted):** *If spec-kit's installer is not available or cannot be fetched, then the
+  system shall fail fast with an actionable message rather than silently skip the SpecKit surfaces.*
 
 ### Superfici Sertor-authored (traduzione, come la feature gemella)
 - **REQ-007 (Event-driven):** *When installing governance with the `copilot` target, the system shall
@@ -139,8 +151,10 @@ traduzione" (vedi §7, DA-1).
 
 - **NFR-1 (Assistant-agnostic / Principio X):** estende il Principio X all'assistente ospite; il
   metodo SDLC non cambia, cambia solo la sua veste per-assistente.
-- **NFR-2 (Thin consumer + vendoring):** riusa il motore `sertor-install-kit` e il **vendoring**
-  upstream di spec-kit; nessuna logica di installazione né di SpecKit reinventata.
+- **NFR-2 (Thin consumer — delega all'installer upstream):** riusa il motore `sertor-install-kit` e
+  **delega a spec-kit la sua propria installazione** (`specify init --ai`), invece di vendorarne gli
+  asset; nessuna logica di SpecKit reimplementata né copie congelate da mantenere. (Direzione
+  2026-06-15.)
 - **NFR-3 (No dipendenza dal core):** invariante dura di `sertor-flow` (vedi REQ-015).
 - **NFR-4 (Idempotenza & non distruttività):** per artefatto.
 - **NFR-5 (Offline / install ≠ run):** nessuna rete a pagamento, nessuna esecuzione.
@@ -172,8 +186,11 @@ traduzione" (vedi §7, DA-1).
 
 ## 8. Rischi
 
-- **R-1 — Doppio vendoring:** mantenere due varianti SpecKit pinnate/attribuite aumenta il carico di
-  manutenzione e il rischio di disallineamento di versione (mitiga REQ-006/NFR-6).
+- **R-1 — Dipendenza dall'installer upstream (era: doppio vendoring):** lanciare `specify init`
+  reintroduce una dipendenza da spec-kit recuperabile a install-time (rete/CLI) e dal suo
+  comportamento d'installazione (che non controlliamo) — invertendo l'invariante offline/dipendenza-
+  zero di `sertor-flow`. Mitiga: pin di versione, fail-fast (REQ-006b), verifica del layout prodotto.
+  *(In cambio sparisce il rischio di doppio/triplo vendoring da mantenere.)*
 - **R-2 — Superfici Copilot in Preview:** cambi upstream (mitiga NFR-7).
 - **R-3 — Parità illusoria:** un comando Copilot che esiste ma non si comporta come l'originale
   (mitiga CS-1/REQ-011: verifica comportamentale).
