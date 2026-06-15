@@ -10,12 +10,12 @@ Unità che l'installer deposita. Campi: `kind: ArtifactKind`, `source: str | Non
 (sempre relativa al target; validazione anti path-traversal in `__post_init__`), `strategy:
 WriteStrategy`.
 
-### `ArtifactKind` (migrato, **esteso**)
+### `ArtifactKind` (migrato, invariato)
 Natura dell'artefatto. Valori già esistenti riusati: `FILE`, `MARKER_BLOCK`, `CONFIG`,
 `SETTINGS_MERGE`, `ENV_MERGE`, `MCP_MERGE`, `GITIGNORE_APPEND`, `DEPENDENCIES`, `MCP_REGISTER`,
-`STRUCTURE`. **Nuovo per sertor-flow:** `GENERATE_INIT` (genera i file init/integration per-host, D7) —
-oppure riuso di `CONFIG` con sorgente diversa (decisione di dettaglio in implementazione; preferito
-`CONFIG` se la semantica «genera-da-template-se-assente» basta).
+`STRUCTURE`. **Decisione (F10/F12): i file init/integration per-host usano `CONFIG` +
+`GENERATE_CONFIG`** (genera-da-template, skip-se-presente) — **nessun nuovo `ArtifactKind`**: l'executor
+non va esteso.
 
 ### `WriteStrategy` (migrato, invariato)
 Regola di scrittura non distruttiva associata al `kind`: `CREATE_IF_ABSENT`, `MERGE_DEDUP`,
@@ -29,8 +29,10 @@ Esito di un singolo artefatto: `CREATED`, `SKIPPED`, `MERGED`, `BLOCK`, `ERROR`.
 `target_rel: str`, `outcome: Outcome`, `detail: str | None`.
 
 ### `InstallReport` (migrato, **generalizzato**)
-Resoconto dell'installazione: `target: str`, `capability: str` (es. `"governance"`), lista di
-`ArtifactOutcome`, eventuale `failed_step`. Forma leggibile + serializzazione JSON (FR-018/FR-020).
+Resoconto dell'installazione: `target: str`, `capability: str` (es. `"governance"`; **default `"wiki"`
+rimosso** → argomento obbligatorio, F4), lista di `ArtifactOutcome`, eventuale `failed_step`. Forma
+leggibile + serializzazione JSON via il metodo **esistente `render_json()`** (NON rinominato, F1) —
+FR-018/FR-020.
 
 ### `InstallerError` / `ConfigError` (**nuovo**, D3)
 Base d'eccezione del kit (sostituisce la dipendenza da `sertor_core.domain.errors`). `ConfigError`
@@ -63,8 +65,8 @@ un conteggio fisso.
    scripts (ps+bash), extensions/git, workflows.
 3. `CONFIG` (starter costituzione) → `.specify/memory/constitution.md` (CREATE_IF_ABSENT, skip se
    esiste — FR-014).
-4. `GENERATE_INIT` × M → `.specify/init-options.json`, `.specify/integration.json`,
-   `.specify/integrations/*.manifest.json` (generati da `GovernanceProfile`, D7).
+4. `CONFIG`/`GENERATE_CONFIG` × M → `.specify/init-options.json`, `.specify/integration.json`,
+   `.specify/integrations/*.manifest.json` (generati da `GovernanceProfile`, D7; skip-se-presente).
 5. `FILE` (attribuzione) → `.specify/NOTICE` (+ `LICENSES/spec-kit-MIT.txt`) — REQ-022.
 6. `MARKER_BLOCK` (blocco rituale SDLC) → `CLAUDE.md` (marker SDLC distinti — D4).
 

@@ -14,7 +14,9 @@ all'odierno `sertor_installer.artifacts`.
 - `ConfigError(InstallerError)` — input/configurazione non valida.
 
 ### Report (da `sertor_install_kit.report`)
-`InstallReport(target, capability)` con `add(outcome)`, `failed_step`, resa umana + `to_json()`.
+`InstallReport(target, capability)` con `add(outcome)`, `failed_step`, resa umana + `render_json()`
+(metodo esistente, **non** rinominato — F1). `capability` è argomento obbligatorio (default `"wiki"`
+rimosso — F4).
 
 ### Asset (da `sertor_install_kit.resources`)
 `asset_path(rel)`, `read_asset_text(rel)`, `iter_asset_dir(rel)` — **parametrizzati sull'anchor del

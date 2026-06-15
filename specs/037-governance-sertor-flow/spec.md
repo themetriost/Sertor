@@ -181,6 +181,9 @@ l'ombrello dipenda da `sertor-flow`.
 - **FR-024** *(Could)*: Dove l'utente richiede un sottoinsieme del bundle, il sistema potrà installare
   solo il sottoinsieme selezionato (selettività interna; fuori MVP).
 
+> **Tracciabilità (F8):** FR-021 = asset in inglese (≡ REQ-022); **FR-022 = attribuzione MIT degli asset
+> SpecKit vendored** (≡ REQ-025, SC-007). I task T033/T046 coprono FR-022.
+
 ### Key Entities *(include if feature involves data)*
 
 - **Bundle di governance**: l'insieme degli asset di metodo distribuiti (skill/agenti SpecKit, skill
