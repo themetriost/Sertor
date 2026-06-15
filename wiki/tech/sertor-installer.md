@@ -3,7 +3,7 @@ title: sertor — l'installer (pacchetto e comando)
 type: tech
 tags: [installer, cli, wiki, package-data, host-agnostico, produzione]
 created: 2026-06-11
-updated: 2026-06-13 (+ igiene radice host, feature 016: config in `wiki/`, auto-discovery, `--mcp-scope`)
+updated: 2026-06-15 (+ motore estratto in [[sertor-install-kit]], governace in [[sertor-flow]])
 sources: ["packages/sertor/", "specs/012-sertor-install-wiki/", "specs/015-sertor-install-rag/", "specs/016-igiene-radice-host/", "requirements/sertor-cli/installer/requirements.md", "requirements/sertor-cli/install-rag/requirements.md", "requirements/sertor-cli/igiene-radice-host/requirements.md"]
 ---
 
@@ -108,6 +108,24 @@ verificata dal vivo: `sertor-wiki-tools scan`/`append-log` senza flag dalla radi
 con SpecKit completo (`specs/016`, PR #26): 410 test verdi (84 pacchetto + 326 root), Constitution
 10/10 senza deroghe.
 
+## Architettura: motore estratto e topologia (feature 037)
+
+Dal 2026-06-15, il motore di installazione è stato estratto nel nuovo pacchetto
+[[sertor-install-kit]] (packages/sertor-install-kit) — toolkit stdlib-only, zero dipendenza da
+`sertor-core`, riusato da **entrambi** `sertor` (wiki+rag) e [[sertor-flow]] (governance). La
+topologia è:
+
+```
+sertor-core (RAG) ──────────────┐
+                                ▼
+packages/sertor-install-kit (motore, stdlib) ◄──┬──── packages/sertor (wiki+rag)
+                                                 └──── packages/sertor-flow (governance)
+```
+
+Questa scissione consente a `sertor-flow` di portare il metodo SDLC su ospiti senza il RAG
+(REQ-002), mantenendo DRY (NFR-2) e osservando il Principio X (host-agnostico). Dettagli in
+[[sertor-install-kit]] e [[sertor-flow]].
+
 ## L'architettura che conta: assets come fonte
 
 Gli artefatti non-Python viaggiano come **package-data nel wheel** (DI-5, dopo ripensamento
@@ -132,3 +150,9 @@ Gli **asset testuali sono in italiano fisso** (blocco rituale, skill) anche con 
 config generata; lo stesso vale per il seed di `structure init` ([[wiki-tools]]). Decisione utente
 (2026-06-11): **da gestire** — tracciato in roadmap e nelle epiche (dote FEAT-007 / evoluzione
 installer).
+
+## Backlink
+
+- [[sertor-install-kit]] — il motore generico su cui `sertor` si appoggia (estrarre qui).
+- [[sertor-flow]] — il terzo consumatore del kit: governance senza RAG.
+- [[thin-consumer]] — il pattern che `sertor` e `sertor-flow` seguono del kit.
