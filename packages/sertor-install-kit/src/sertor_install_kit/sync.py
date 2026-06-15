@@ -19,16 +19,24 @@ from sertor_install_kit.resources import iter_asset_dir
 
 
 def sync_subtree(
-    anchor: str, subtree: str, dest_root: Path, dry_run: bool = False
+    anchor: str,
+    subtree: str,
+    dest_root: Path,
+    dry_run: bool = False,
+    exclude: tuple[str, ...] = (),
 ) -> dict[str, str]:
     """Copies `assets/<subtree>/**` (read via `anchor`) to `dest_root`. Returns `{rel: status}`.
 
     Status ∈ `created` (new file) · `updated` (different content) · `identical` (no change).
     In `dry_run` mode nothing is written; only reports what would be done. The returned keys are
     prefixed with `<subtree>/` so callers can merge several subtrees in one report unambiguously.
+    `exclude` lists `rel_path`s within the subtree to skip entirely (neither compared nor written) —
+    used for assets that diverge from the dogfood on purpose (e.g. a host-neutral template).
     """
     result: dict[str, str] = {}
     for rel_path, content in iter_asset_dir(anchor, subtree):
+        if rel_path in exclude:
+            continue
         dest = dest_root / rel_path
         if not dest.exists():
             status = "created"
