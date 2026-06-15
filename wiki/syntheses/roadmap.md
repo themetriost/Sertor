@@ -68,7 +68,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   anche da **GitHub Copilot** (Must: MCP nei client Copilot + traduzione delle superfici
   agentiche dell'installer con target assistant) e da **Codex** (Could: AGENTS.md + MCP); CLI già
   assistant-agnostic. Nuova FEAT-007 dell'epica CLI; estende il Principio X all'assistente ospite.
-- **`sertor install governance`** — l'ultimo taglio dell'installer ancora stub. *(`install rag` ✅ DONE, 2026-06-12.)*
+- **Governance SDLC come pacchetto `sertor-flow`** (era `sertor install governance`, ultimo taglio stub) — **decomposta a requisiti EARS (2026-06-15)**: riconcepita come **pacchetto installabile separato**, ortogonale al RAG, senza dipendenza da `sertor-core`; bundle = skill/agenti SpecKit + skill `requirements` + `configuration-manager` + costituzione/template `.specify/` + blocco rituale CLAUDE.md. Requisiti: `requirements/sertor-cli/governance-sertor-flow/requirements.md`. **7 domande aperte (DA-a..g)** da risolvere prima del plan: forma costituzione, coordinamento blocco CLAUDE.md col wiki, provenienza/licenza asset SpecKit, granularità install, sottoinsieme `.specify/` distribuibile, relazione pacchetti, hook. *(`install rag` ✅ DONE, 2026-06-12.)*
 - **Eval comparativa live su provider reale** (REQ-051 con Azure, marker `cloud`) — il confronto
   strict è in CI; la misura col provider forte resta esercizio opzionale.
 
