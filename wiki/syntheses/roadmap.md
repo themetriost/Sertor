@@ -34,7 +34,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **Memoria conversazioni** (epica, MVP) | — | 🔄 **IN PROGRESS** — **MVP ✅ completo e USABILE + acceso**: FEAT-001 cattura (PR #45) + FEAT-002 ricerca (PR #47) + superficie CLI/hook (035, PR #49) + **FEAT-003 aggancio distillazione (036, PR #51)**, tutti su master 2026-06-14. Comandi `sertor-rag memory archive`/`search`/`show`/`list` + hook `SessionEnd`. `SERTOR_MEMORY=true` **acceso sul dogfood** (2026-06-14). *Provato live*. Resta: Should/Could (004 ricerca semantica / 005 / 006 / 008) |
 | **Osservabilità accesa sul dogfood** + errori MCP segnalati | — | ✅ **master (2026-06-14, PR #40/#43)** — `SERTOR_OBSERVABILITY=true` cablato e attivo; ogni errore del server MCP = evento + self-test allo startup |
 | Distribuzione multi-assistente Copilot — pacchetto `sertor` (FEAT-007) | — | ✅ **master (2026-06-15, PR #64)** — parità Copilot per il pacchetto `sertor`: CLI `--assistant claude\|copilot`; MCP `.vscode/mcp.json`, istruzioni `.github/copilot-instructions.md`, prompt-file/custom-agent resi, hook `.github/hooks/`. Seam `AssistantProfile`/`Surface` nel kit (riuso da FEAT-009). kit 49 · sertor 132 verdi |
-| Distribuzione multi-assistente Copilot — governance `sertor-flow` (FEAT-009) | — | 📋 **decomposta (2026-06-15)** — feature gemella ([`distribuzione-copilot-flow/requirements.md`](../../requirements/sertor-cli/distribuzione-copilot-flow/requirements.md), 19 REQ): SpecKit ottenuto **lanciando l'installer di spec-kit** (`specify init --ai`), **NON più vendorato** (decisione 2026-06-15 → implica **refactor del `sertor-flow` esistente FEAT-005**, reintroduce dipendenza install-time) + traduzione superfici Sertor-authored; `--assistant` condiviso nel kit; dopo FEAT-007 |
+| Distribuzione multi-assistente Copilot — governance `sertor-flow` (FEAT-009) | — | ✅ **master (2026-06-15, PR #65)** — `sertor-flow install --assistant claude\|copilot`. **Pivot vendoring→launch-installer**: SpecKit ottenuto lanciando `specify init --ai` (versione pinnata, fail-fast), asset speckit vendorati rimossi; superfici Sertor-authored tradotte per Copilot; renderer spostato nel kit (condiviso). No dip. da sertor-core. kit 49 · sertor 132 · sertor-flow 87 verdi. **⇒ distribuzione Copilot COMPLETA (FEAT-007+009)** |
 | Tema lingua (tutto il prodotto in inglese) | — | ✅ **completato totale (2026-06-13, PR #27/#28/#29/#31)**: codice (72 .py: docstring/commenti/**errori**), test (75 .py: commenti/docstring), documentazione di prodotto (README + `docs/`), asset installer, CLI, seed it/en. Restano IT **per scelta**: `wiki/`, `specs/`, `requirements/`, `CLAUDE.md`, `prototype/` (congelato) |
 | Igiene radice ospite (installer, asse DOVE) | — | ✅ **master (2026-06-13, PR #26)** — config in `wiki/` + auto-discovery, `--mcp-scope` |
 | **Governance SDLC — pacchetto `sertor-flow`** (epica CLI, FEAT-005) | — | ✅ **master (2026-06-15, PR #56)** — pacchetto installabile separato, ortogonale al RAG, **no dipendenza da sertor-core**. Motore estratto nel toolkit condiviso `sertor-install-kit`; bundle = skill/agenti SpecKit vendored (MIT) + requirements + configuration-manager + costituzione-starter neutra + blocco rituale SDLC. `sertor install governance` = puntatore a `sertor-flow` |
@@ -66,18 +66,23 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   (`sertor-rag ask` per umani/script senza assistente, digest MCP per economia di contesto, porta
   `LLMProvider`) — 36 REQ elicitati in `requirements/sertor-core/motore-agentico/` (banner di
   rinvio): si riapre se uno di quei casi d'uso diventa prioritario.
-- **Distribuzione multi-assistente Copilot — FEAT-007 ✅ DONE, FEAT-009 planned** — *FEAT-007*
-  (pacchetto `sertor`) **consegnata su master** (PR #64, vedi DONE): parità Copilot via
-  `--assistant`. *FEAT-009* (governance `sertor-flow`) **decomposta, da implementare**:
-  [`distribuzione-copilot-flow/requirements.md`](../../requirements/sertor-cli/distribuzione-copilot-flow/requirements.md)
-  (19 REQ). *Prossimo passo concreto:* `/speckit-specify` su FEAT-009, riusando il seam
-  `AssistantProfile` del kit. *Decisione fissata:* SpecKit ottenuto **lanciando l'installer di
-  spec-kit** (non più vendorato) → implica refactor del `sertor-flow` esistente (FEAT-005).
 - **Eval comparativa live su provider reale** (REQ-051 con Azure, marker `cloud`) — il confronto
   strict è in CI; la misura col provider forte resta esercizio opzionale.
 
 ### ✅ DONE (su `master`, le rilevanti)
 
+- **🚢 Distribuzione Copilot della governance/SDLC — `sertor-flow` (FEAT-009, feature 045, PR #65, 2026-06-15)** —
+  **chiude la distribuzione multi-assistente Copilot end-to-end** (con FEAT-007). `sertor-flow install
+  --assistant claude|copilot` porta il metodo SDLC anche su Copilot. **Pivot vendoring→launch-installer**
+  ([[sertor-flow]]): SpecKit non più vendorato — `sertor-flow` lancia `specify init --ai <assistant>`
+  (versione pinnata, via `CommandRunner`, fail-fast se assente), asset `speckit-*`/`specify/**` rimossi
+  dal bundle; refactor del path **anche per Claude** (non-regressione verificata, `specify` mockato).
+  Superfici Sertor-authored (`requirements-analyst`/`configuration-manager`/skill `requirements`/blocco
+  SDLC) tradotte per Copilot via [[assistant-targeting]]; **renderer spostato nel `sertor-install-kit`**
+  (condiviso `sertor`↔`sertor-flow`, anti-drift; `sertor` reimporta via shim). Costituzione
+  assistant-agnostica. Invariante dura preservata: **nessuna dipendenza `sertor-flow`→`sertor-core`**.
+  Constitution **11/11** con **1 deroga tracciata** (II: fetch install-time spec-kit, governance≠RAG);
+  kit 49 · sertor 132 · sertor-flow 87 verdi, ruff pulito.
 - **🚢 Distribuzione su GitHub Copilot — pacchetto `sertor` (FEAT-007, feature 044, PR #64, 2026-06-15)** —
   prima realizzazione della **parità di assistente** ([[assistant-targeting]]): l'installer `sertor`
   porta le superfici del pacchetto `sertor` (server MCP + sistema-wiki) anche su **GitHub Copilot** con

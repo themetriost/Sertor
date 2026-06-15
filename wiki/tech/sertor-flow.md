@@ -1,9 +1,9 @@
 ---
 title: sertor-flow — l'installer di governance/SDLC
 type: tech
-tags: [installer, governance, sdlc, methodology, speckit-vendor, host-agnostico, produzione]
+tags: [installer, governance, sdlc, methodology, speckit-launch, multi-assistente, host-agnostico, produzione]
 created: 2026-06-15
-updated: 2026-06-15
+updated: 2026-06-15 (FEAT-009: multi-assistente Copilot + pivot vendoring→launch-installer)
 sources: ["packages/sertor-flow/", "specs/037-governance-sertor-flow/spec.md", "specs/037-governance-sertor-flow/research.md", "specs/037-governance-sertor-flow/plan.md", ".specify/"]
 ---
 
@@ -13,6 +13,18 @@ Il **veicolo d'installazione dell'apparato SDLC** su un repository ospite (featu
 **separato e indipendente** (`packages/sertor-flow`, modulo `sertor_flow`), con un proprio comando
 d'ingresso, che **non dipende da `sertor-core`** (Principio X, REQ-002). Consegnato con feature
 037 su master (2026-06-15).
+
+> ⚠️ **Aggiornamento FEAT-009 (PR #65, 2026-06-15) — multi-assistente + pivot launch-installer.**
+> Due cambi importanti rispetto alla descrizione "feature 037" qui sotto: **(1)** `sertor-flow install`
+> accetta ora **`--assistant claude|copilot`** (default `claude`) e porta la governance anche su
+> **GitHub Copilot** (superfici Sertor-authored tradotte via [[assistant-targeting]]; renderer
+> condiviso spostato nel [[sertor-install-kit]]). **(2)** SpecKit **non è più vendorato**: `sertor-flow`
+> **lancia l'installer di spec-kit** (`specify init --ai <assistant>`, versione pinnata, via
+> `CommandRunner`, **fail-fast** se assente) — gli asset `speckit-*`/`specify/**` + NOTICE/LICENSE sono
+> stati **rimossi dal bundle** (l'attribuzione viaggia con l'output di `specify`). Vale per **entrambi**
+> gli assistenti (non-regressione Claude verificata). **Implicazione:** reintroduce un **fetch a
+> install-time** (deroga Principio II tracciata: governance≠RAG, pinnata, fail-fast). Le sezioni
+> *«Asset e vendor»* e *«Flag e opzioni»* sotto vanno lette con questa correzione.
 
 ## Che cos'è
 

@@ -42,10 +42,13 @@ scegliere il proprio strumento riceva lo stesso valore. È la stessa idea per cu
 Dove un attrezzo non avesse un equivalente perfetto nell'altro assistente, Sertor **lo dice
 apertamente** invece di far finta di niente: niente promesse vuote.
 
-## Una cosa alla volta
+## Tutti gli attrezzi, anche su Copilot
 
-Questa prima consegna copre gli attrezzi di **ricerca e wiki**. Gli attrezzi di **metodo di sviluppo**
-(la parte "governance/SpecKit") arriveranno con un passo successivo, già pianificato.
+Ora la cassetta è **completa** su Copilot: sia gli attrezzi di **ricerca e wiki**, sia quelli di
+**metodo di sviluppo** (la parte "governance/SpecKit"). Per quest'ultima, Sertor non si porta dietro una
+propria copia del metodo SpecKit: **chiede allo strumento ufficiale di installarsi** nella forma giusta
+per il tuo assistente — come un mobile in kit che arriva con le istruzioni di montaggio del produttore
+invece di una copia fotocopiata. (Serve quindi una connessione la prima volta che lo installi.)
 
 ---
 

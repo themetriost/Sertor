@@ -70,6 +70,7 @@ obsoleta «Copilot niente hook»).
 
 ## Relazioni
 
-Vive nel [[sertor-install-kit]], consumato da [[sertor-installer]] (FEAT-007) e — prossimamente — dalla
-governance `sertor-flow` (FEAT-009, dove SpecKit sarà ottenuto **lanciando l'installer di spec-kit**,
-non vendorato). Embodiment del Principio X ([[constitution]]). Explainer: [[sertor-con-copilot]].
+Vive nel [[sertor-install-kit]], consumato da [[sertor-installer]] (FEAT-007) **e da** [[sertor-flow]]
+(FEAT-009, PR #65: il renderer è stato spostato qui nel kit per condividerlo; lì SpecKit è ottenuto
+**lanciando l'installer di spec-kit**, non vendorato). Embodiment del Principio X ([[constitution]]).
+Explainer: [[sertor-con-copilot]].
