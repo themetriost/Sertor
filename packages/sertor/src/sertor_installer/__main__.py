@@ -11,6 +11,8 @@ import sys
 from pathlib import Path
 
 from sertor_core.domain.errors import ConfigError, IngestionError, SertorError
+from sertor_install_kit.assistant import AssistantId
+from sertor_install_kit.errors import InstallerError
 from sertor_installer.command_runner import SubprocessRunner
 from sertor_installer.config_gen import build_host_profile
 from sertor_installer.install_rag import build_rag_plan, execute_rag_plan
@@ -59,6 +61,10 @@ def _build_parser() -> argparse.ArgumentParser:
     wiki = install_sub.add_parser("wiki", help="install the wiki system (available)")
     wiki.add_argument("--target", default=".", help="host repo root (default: cwd)")
     wiki.add_argument(
+        "--assistant", default="claude",
+        help="target assistant: claude (default) | copilot",
+    )
+    wiki.add_argument(
         "--language", default="en", help="language of the generated wiki.config.toml (default: en)"
     )
     wiki.add_argument(
@@ -69,6 +75,10 @@ def _build_parser() -> argparse.ArgumentParser:
 
     rag = install_sub.add_parser("rag", help="install the RAG capability (.sertor/ + .mcp.json)")
     rag.add_argument("--target", default=".", help="host repo root (default: cwd)")
+    rag.add_argument(
+        "--assistant", default="claude",
+        help="target assistant: claude (default) | copilot",
+    )
     rag.add_argument(
         "--backend", choices=["azure", "local"], default="azure",
         help="embeddings provider (default: azure)",
@@ -106,14 +116,15 @@ def _cmd_install_wiki(args) -> int:
     if not target_root.is_dir():
         raise IngestionError("target is not a directory", path=str(target_root))
 
+    assistant = AssistantId.from_str(args.assistant)
     source_dirs = (
         [d for d in args.source_dirs.split(",")] if args.source_dirs else None
     )
     profile = build_host_profile(
         target_root, source_dirs_override=source_dirs, language=args.language
     )
-    plan = build_install_plan()
-    report = execute_plan(plan, profile)
+    plan = build_install_plan(assistant)
+    report = execute_plan(plan, profile, assistant)
 
     print(report.render_json() if args.json else report.render_human())
     return report.exit_code()
@@ -127,6 +138,7 @@ def _cmd_install_rag(args) -> int:
     if not target_root.is_dir():
         raise IngestionError("target is not a directory", path=str(target_root))
 
+    assistant = AssistantId.from_str(args.assistant)
     opts = RagInstallOptions(
         target_root=target_root,
         backend=args.backend,
@@ -138,8 +150,10 @@ def _cmd_install_rag(args) -> int:
         mcp_scope=args.mcp_scope,
     )
     profile = RagHostProfile.from_options(opts)
-    plan = build_rag_plan(profile, with_deps=opts.with_deps, mcp_scope=opts.mcp_scope)
-    report = execute_rag_plan(plan, profile, SubprocessRunner())
+    plan = build_rag_plan(
+        profile, with_deps=opts.with_deps, mcp_scope=opts.mcp_scope, assistant=assistant
+    )
+    report = execute_rag_plan(plan, profile, SubprocessRunner(), assistant)
 
     print(report.render_json() if args.json else report.render_human())
     return report.exit_code()
@@ -167,7 +181,9 @@ def main(argv: list[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     try:
         return _dispatch(args)
-    except SertorError as exc:
+    except (SertorError, InstallerError) as exc:
+        # `InstallerError` covers the kit's errors (e.g. an invalid `--assistant`), so an actionable
+        # message is printed (exit 1) instead of a traceback (feature 044, Principio IV).
         print(f"error: {exc}", file=sys.stderr)
         return 1
 

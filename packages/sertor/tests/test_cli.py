@@ -65,6 +65,27 @@ def test_install_rag_json_report(tmp_path: Path, capsys):
     assert payload["summary"]["errors"] == 0
 
 
+def test_install_rag_assistant_copilot_exit_0(tmp_path: Path):  # feature 044, FR-001/002
+    rc = main(["install", "rag", "--target", str(tmp_path), "--no-deps", "--assistant", "copilot"])
+    assert rc == 0
+    assert (tmp_path / ".vscode" / "mcp.json").is_file()
+    assert not (tmp_path / ".mcp.json").exists()  # not the Claude file
+
+
+def test_install_wiki_assistant_default_is_claude(tmp_path: Path):  # feature 044, FR-002
+    rc = main(["install", "wiki", "--target", str(tmp_path)])
+    assert rc == 0
+    assert (tmp_path / "CLAUDE.md").is_file()  # default = claude (non-regression)
+    assert not (tmp_path / ".github" / "copilot-instructions.md").exists()
+
+
+def test_install_assistant_unknown_exit_1_actionable(tmp_path: Path, capsys):  # feature 044, FR-002
+    rc = main(["install", "wiki", "--target", str(tmp_path), "--assistant", "codex"])
+    assert rc == 1
+    err = capsys.readouterr().err
+    assert "codex" in err and "claude" in err and "copilot" in err  # lists valid values
+
+
 def test_install_governance_points_to_sertor_flow(capsys):
     """`install governance` is a pointer to the separate `sertor-flow` package (T043/T044)."""
     rc = main(["install", "governance"])

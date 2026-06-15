@@ -25,6 +25,9 @@ class InstallReport:
 
     target: str
     capability: str  # e.g. "wiki" | "rag" | "governance" — required, used in the human title (F4)
+    # Informative target assistant (feature 044, Principio IX): "claude" | "copilot". Optional so
+    # existing call sites and `sertor-flow` keep working unchanged.
+    assistant: str | None = None
     outcomes: list[ArtifactOutcome] = field(default_factory=list)
     created: int = 0
     skipped: int = 0
@@ -55,7 +58,8 @@ class InstallReport:
 
     def render_human(self) -> str:
         """Human rendering to stdout."""
-        lines = [f"sertor install {self.capability} — target: {self.target}"]
+        assistant = f" — assistant: {self.assistant}" if self.assistant else ""
+        lines = [f"sertor install {self.capability} — target: {self.target}{assistant}"]
         for o in self.outcomes:
             suffix = f" ({o.detail})" if o.detail else ""
             lines.append(f"  {o.outcome.value:<8}{o.target_rel}{suffix}")
@@ -75,6 +79,7 @@ class InstallReport:
         payload = {
             "schema": _SCHEMA,
             "target": self.target,
+            "assistant": self.assistant,
             "outcomes": [
                 {"target_rel": o.target_rel, "outcome": o.outcome.value, "detail": o.detail}
                 for o in self.outcomes
