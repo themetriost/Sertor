@@ -188,13 +188,13 @@
 > Goal: `sertor-flow` si installa senza `sertor-core`. **Independent test**: in un ambiente senza
 > `sertor-core`, l'install completa.
 
-- [ ] T037 [US2] Unit test `packages/sertor-flow/tests/unit/test_no_core_dependency.py`: nessun import di
+- [x] T037 [US2] Unit test `packages/sertor-flow/tests/unit/test_no_core_dependency.py`: nessun import di
   `sertor_core` in `sertor_flow` né in `sertor_install_kit` (scan statico degli import / import isolato);
   asserzione che `sertor-flow`/`sertor-install-kit` non dichiarano `sertor-core` tra le dipendenze.
   **(F5 — NFR-2 guardia positiva)** aggiungi anche l'asserzione che `sertor_flow` **non ridefinisce** i
   moduli del kit (no `sertor_flow/claude_md.py`, `artifacts.py`, `report.py`, `executor.py`, merge, …):
   i primitivi vengono dal kit, non duplicati.
-- [ ] T038 [US2] Integration test: `execute_governance_plan` completa con successo quando `sertor_core`
+- [x] T038 [US2] Integration test: `execute_governance_plan` completa con successo quando `sertor_core`
   non è importabile (simula assenza del core, es. monkeypatch/blocco import) — SC-004.
 
 **Checkpoint**: la governance è davvero ortogonale al RAG.
@@ -206,15 +206,15 @@
 > Goal: re-install sicuro su repo esistente. **Independent test**: doppia esecuzione + file preesistenti
 > → nessuna sovrascrittura, nessun blocco duplicato, seconda run a zero modifiche.
 
-- [ ] T039 [US3] Integration test `tests/integration/test_idempotency.py`: seconda esecuzione di
+- [x] T039 [US3] Integration test `tests/integration/test_idempotency.py`: seconda esecuzione di
   `sertor-flow install` → tutti gli artefatti `skipped`, zero modifiche (FR-017/SC-005).
-- [ ] T040 [US3] Integration test non-distruttività: file utente preesistenti (es. un
+- [x] T040 [US3] Integration test non-distruttività: file utente preesistenti (es. un
   `.claude/agents/requirements-analyst.md` modificato) → `skipped`, contenuto invariato; costituzione
   preesistente → `skipped` (FR-014).
-- [ ] T041 [US3] Integration test coesistenza `CLAUDE.md`: un `CLAUDE.md` che contiene già il blocco
+- [x] T041 [US3] Integration test coesistenza `CLAUDE.md`: un `CLAUDE.md` che contiene già il blocco
   `SERTOR:WIKI-RITUAL` → l'install aggiunge un blocco `SERTOR:SDLC-RITUAL` **distinto** senza toccare il
   blocco wiki; re-run → blocco SDLC non duplicato (FR-015, DA-b).
-- [ ] T042 [US3] Integration test fail-fast: un passo che fallisce (es. destinazione non scrivibile) →
+- [x] T042 [US3] Integration test fail-fast: un passo che fallisce (es. destinazione non scrivibile) →
   stop, `failed_step` nominato, artefatti precedenti in posto (FR-019).
 
 **Checkpoint**: install ripetibile e sicuro su repo reali.
@@ -226,14 +226,14 @@
 > Goal: `sertor install governance` rimanda a `sertor-flow`. **Independent test**: invocare il
 > sotto-comando → messaggio-puntatore, nessuna dipendenza tra pacchetti.
 
-- [ ] T043 [US4] Modifica `packages/sertor/src/sertor_installer/__main__.py`: il dispatch del
+- [x] T043 [US4] Modifica `packages/sertor/src/sertor_installer/__main__.py`: il dispatch del
   sotto-comando `governance` emette un **messaggio-puntatore** (la governance è fornita da `sertor-flow`,
   con l'istruzione d'installazione) con exit code dedicato. **(F9)** Realizzalo con un **print esplicito +
   exit code** (NON declassare `CapabilityNotAvailableError` fuori da `SertorError`, che romperebbe il
   catch `except SertorError` in `main()`): o stampi e ritorni il codice direttamente, oppure mantieni una
   sottoclasse di `SertorError` col nuovo messaggio-puntatore. **Nessuna** dipendenza di `sertor` da
   `sertor-flow` (FR-023/SC-008). Aggiorna il test esistente `test_install_governance_*` di conseguenza.
-- [ ] T044 [US4] Unit test in `packages/sertor/tests/`: `sertor install governance` produce il messaggio
+- [x] T044 [US4] Unit test in `packages/sertor/tests/`: `sertor install governance` produce il messaggio
   che nomina `sertor-flow` e come installarlo; verifica statica che `packages/sertor/pyproject.toml` NON
   dichiara `sertor-flow` tra le dipendenze.
 
@@ -241,7 +241,7 @@
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] T045 [P] Guard test anti-drift `packages/sertor-flow/tests/unit/test_assets_sync.py`: gli asset del
+- [x] T045 [P] Guard test anti-drift `packages/sertor-flow/tests/unit/test_assets_sync.py`: gli asset del
   bundle governance corrispondono al sottoinsieme governance del `.claude/`+`.specify/` del repo (NON gli
   asset wiki di `sertor`, NON la costituzione RAG). **(F6)** Lo `sync.py` di `sertor-flow` (usa il `sync`
   del kit) propaga SOLO: da `assets/claude/` → `.claude/` il **sottoinsieme governance** (skill/agenti
@@ -250,17 +250,17 @@
   propagazione:** `assets/scripts/**` di scaffolding (provengono dall'upstream spec-kit, F3, non hanno
   mirror dogfood paritetico), `constitution-starter.md` (≠ la `.specify/memory/constitution.md` RAG di
   Sertor, da NON sovrascrivere) e i `.tmpl` init.
-- [ ] T046 [P] Verifica attribuzione MIT (SC-007): test che `assets/NOTICE` e `LICENSES/spec-kit-MIT.txt`
+- [x] T046 [P] Verifica attribuzione MIT (SC-007): test che `assets/NOTICE` e `LICENSES/spec-kit-MIT.txt`
   esistono nel pacchetto e che `sertor-flow install` li deposita su `.specify/NOTICE` sull'ospite.
-- [ ] T047 Aggiorna `docs/install.md` (radice) con una sezione `sertor-flow` (uso, install≠run,
+- [x] T047 Aggiorna `docs/install.md` (radice) con una sezione `sertor-flow` (uso, install≠run,
   cross-platform, indipendenza dal core) — coerente con la sezione `install wiki`/`rag`.
-- [ ] T048 Quickstart smoke manuale (vedi `quickstart.md`): `sertor-flow install --target <tmp>` reale,
+- [x] T048 Quickstart smoke manuale (vedi `quickstart.md`): `sertor-flow install --target <tmp>` reale,
   verifica i 5 punti dello smoke; documenta l'esito. **(F7 — SC-006 cross-platform)** gli integration
   test usano `pathlib`/`tmp_path` (platform-agnostic) e l'argparse è cross-platform → SC-006 è coperto
   dai test che girano sia su Windows sia su POSIX; se disponibile una CI matrix Linux/macOS, aggiungere
   l'entry; altrimenti documentare esplicitamente che la portabilità è garantita da stdlib path-handling
   e l'assenza di assunzioni OS nel corpo (gli script ps+bash sono entrambi spediti).
-- [ ] T049 **Gate finale**: `uv run pytest` (intera suite: root + tutti i membri) verde; `uv run ruff
+- [x] T049 **Gate finale**: `uv run pytest` (intera suite: root + tutti i membri) verde; `uv run ruff
   check .` pulito.
 - [ ] T050 Aggiorna lo stato in `requirements/sertor-cli/epic.md` (FEAT-005 → consegnata) — al merge.
 
