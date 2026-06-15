@@ -12,6 +12,7 @@ import pytest
 from sertor_flow.__main__ import main
 from sertor_flow.install_governance import execute_governance_plan
 from sertor_flow.profile import build_governance_profile
+from tests.conftest import FakeSpecifyRunner
 
 
 def _snapshot(root: Path) -> dict[str, bytes]:
@@ -24,16 +25,20 @@ def _snapshot(root: Path) -> dict[str, bytes]:
 
 
 @pytest.fixture()
-def installed(tmp_path: Path) -> Path:
-    rc = main(["install", "--target", str(tmp_path)])
+def installed(tmp_path: Path, fake_runner) -> Path:
+    rc = main(["install", "--target", str(tmp_path)], runner=fake_runner)
     assert rc == 0
     return tmp_path
 
 
 def test_second_run_all_skipped(installed: Path):
-    """Re-install → no CREATED/MERGED/BLOCK, only SKIPPED (SC-005)."""
+    """Re-install → no CREATED/MERGED/BLOCK, only SKIPPED (SC-005).
+
+    The SpecKit launch is idempotent (layout present → skipped, no relaunch), so the second run is
+    all-skipped including step 0.
+    """
     profile = build_governance_profile(installed)
-    report = execute_governance_plan(profile)
+    report = execute_governance_plan(profile, runner=FakeSpecifyRunner())
 
     assert report.exit_code() == 0
     assert report.created == 0
@@ -47,7 +52,7 @@ def test_second_run_all_skipped(installed: Path):
 def test_second_run_changes_nothing_on_disk(installed: Path):
     """Re-install is byte-for-byte a no-op on the filesystem (FR-017)."""
     before = _snapshot(installed)
-    rc = main(["install", "--target", str(installed)])
+    rc = main(["install", "--target", str(installed)], runner=FakeSpecifyRunner())
     assert rc == 0
     after = _snapshot(installed)
     assert before == after

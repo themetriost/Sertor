@@ -42,22 +42,25 @@ def test_governance_install_completes_without_core(core_absent, tmp_path: Path):
     """SC-004: the full governance install succeeds when `sertor_core` is unavailable."""
     from sertor_flow.install_governance import execute_governance_plan
     from sertor_flow.profile import build_governance_profile
+    from tests.conftest import FakeSpecifyRunner
 
     profile = build_governance_profile(tmp_path)
-    report = execute_governance_plan(profile)
+    report = execute_governance_plan(profile, runner=FakeSpecifyRunner())
 
     assert report.exit_code() == 0
     assert report.errors == 0
     assert report.created > 0
-    # Spot-check a few host-facing artifacts landed.
-    assert (tmp_path / ".claude/skills/speckit-specify/SKILL.md").exists()
+    # Spot-check a few host-facing artifacts landed (SpecKit via launch + Sertor-authored).
+    assert (tmp_path / ".claude/commands/speckit.specify.md").exists()
     assert (tmp_path / ".specify/templates/plan-template.md").exists()
+    assert (tmp_path / ".claude/agents/requirements-analyst.md").exists()
     assert (tmp_path / "CLAUDE.md").exists()
 
 
 def test_flow_cli_main_completes_without_core(core_absent, tmp_path: Path):
     """The CLI entry point too runs end-to-end without `sertor_core`."""
     from sertor_flow.__main__ import main
+    from tests.conftest import FakeSpecifyRunner
 
-    rc = main(["install", "--target", str(tmp_path)])
+    rc = main(["install", "--target", str(tmp_path)], runner=FakeSpecifyRunner())
     assert rc == 0

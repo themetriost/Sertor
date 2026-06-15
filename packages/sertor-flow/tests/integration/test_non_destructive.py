@@ -8,6 +8,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from sertor_flow.__main__ import main
+from sertor_flow.install_governance import execute_governance_plan
+from sertor_flow.profile import build_governance_profile
+from tests.conftest import FakeSpecifyRunner
 
 
 def _outcome_for(report, target_rel: str):
@@ -24,10 +27,9 @@ def test_preexisting_agent_preserved(tmp_path: Path):
     user_content = "# MY OWN requirements-analyst\nuser customization\n"
     agent.write_text(user_content, encoding="utf-8")
 
-    from sertor_flow.install_governance import execute_governance_plan
-    from sertor_flow.profile import build_governance_profile
-
-    report = execute_governance_plan(build_governance_profile(tmp_path))
+    report = execute_governance_plan(
+        build_governance_profile(tmp_path), runner=FakeSpecifyRunner()
+    )
 
     assert report.errors == 0
     assert agent.read_text(encoding="utf-8") == user_content
@@ -41,23 +43,22 @@ def test_preexisting_constitution_preserved(tmp_path: Path):
     user_content = "# Host's own constitution\nproject-specific principles\n"
     constitution.write_text(user_content, encoding="utf-8")
 
-    from sertor_flow.install_governance import execute_governance_plan
-    from sertor_flow.profile import build_governance_profile
-
-    report = execute_governance_plan(build_governance_profile(tmp_path))
+    report = execute_governance_plan(
+        build_governance_profile(tmp_path), runner=FakeSpecifyRunner()
+    )
 
     assert report.errors == 0
     assert constitution.read_text(encoding="utf-8") == user_content
     assert _outcome_for(report, ".specify/memory/constitution.md").outcome.value == "skipped"
 
 
-def test_preexisting_init_options_preserved(tmp_path: Path):
+def test_preexisting_init_options_preserved(tmp_path: Path, fake_runner):
     """A pre-existing generated file (`init-options.json`) is left as-is (skip-if-present)."""
     init = tmp_path / ".specify/init-options.json"
     init.parent.mkdir(parents=True, exist_ok=True)
     user_content = '{"integration": "custom", "mine": true}\n'
     init.write_text(user_content, encoding="utf-8")
 
-    rc = main(["install", "--target", str(tmp_path)])
+    rc = main(["install", "--target", str(tmp_path)], runner=fake_runner)
     assert rc == 0
     assert init.read_text(encoding="utf-8") == user_content

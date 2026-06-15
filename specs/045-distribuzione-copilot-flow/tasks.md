@@ -30,8 +30,8 @@ NON toccare `sertor-core`.
 
 ## Phase 1: Setup
 
-- [ ] T001 [P] Verifica baseline verde: `uv run pytest packages/sertor-install-kit packages/sertor packages/sertor-flow -q` (per-package) e `uv run ruff check packages/`
-- [ ] T002 [P] Inventaria gli asset SpecKit vendorati da rimuovere: elenca `packages/sertor-flow/src/sertor_flow/assets/claude/skills/speckit-*`, `…/claude/agents/speckit-*`, `…/specify/**`, `NOTICE`, `LICENSES/spec-kit-MIT.txt` (input per US1) e distingui i Sertor-authored da MANTENERE (`requirements-analyst`, `configuration-manager`, skill `requirements`, `constitution-starter.md`, `claude-md-block-sdlc.md`)
+- [X] T001 [P] Verifica baseline verde: `uv run pytest packages/sertor-install-kit packages/sertor packages/sertor-flow -q` (per-package) e `uv run ruff check packages/`
+- [X] T002 [P] Inventaria gli asset SpecKit vendorati da rimuovere: elenca `packages/sertor-flow/src/sertor_flow/assets/claude/skills/speckit-*`, `…/claude/agents/speckit-*`, `…/specify/**`, `NOTICE`, `LICENSES/spec-kit-MIT.txt` (input per US1) e distingui i Sertor-authored da MANTENERE (`requirements-analyst`, `configuration-manager`, skill `requirements`, `constitution-starter.md`, `claude-md-block-sdlc.md`)
 
 ---
 
@@ -39,11 +39,11 @@ NON toccare `sertor-core`.
 
 **⚠️ CRITICAL**: prerequisiti condivisi; nessuna storia inizia prima.
 
-- [ ] T003 Sposta il renderer `surfaces.py` da `packages/sertor/src/sertor_installer/surfaces.py` a `packages/sertor-install-kit/src/sertor_install_kit/surfaces.py` (reso prompt-file/custom-agent da fonte unica); esportalo da `sertor_install_kit/__init__.py`
-- [ ] T004 Aggiorna `packages/sertor/src/sertor_installer/` per reimportare il renderer dal kit (shim o import diretto), **senza cambiare comportamento** (non-regressione FEAT-007)
-- [ ] T005 [P] Verifica non-regressione FEAT-007: `uv run pytest packages/sertor -q` resta verde dopo lo spostamento del renderer
-- [ ] T006 Estendi `GovernanceProfile` in `packages/sertor-flow/src/sertor_flow/profile.py`: `assistant` guida targeting+launch; aggiungi la **versione spec-kit pinnata** (config, non hardcoded sparso — Principio VIII)
-- [ ] T007 [P] Test del profilo in `packages/sertor-flow/tests/unit/test_profile.py`: default assistant documentato, versione spec-kit presente, valore assistant ignoto → errore
+- [X] T003 Sposta il renderer `surfaces.py` da `packages/sertor/src/sertor_installer/surfaces.py` a `packages/sertor-install-kit/src/sertor_install_kit/surfaces.py` (reso prompt-file/custom-agent da fonte unica); esportalo da `sertor_install_kit/__init__.py`
+- [X] T004 Aggiorna `packages/sertor/src/sertor_installer/` per reimportare il renderer dal kit (shim o import diretto), **senza cambiare comportamento** (non-regressione FEAT-007)
+- [X] T005 [P] Verifica non-regressione FEAT-007: `uv run pytest packages/sertor -q` resta verde dopo lo spostamento del renderer
+- [X] T006 Estendi `GovernanceProfile` in `packages/sertor-flow/src/sertor_flow/profile.py`: `assistant` guida targeting+launch; aggiungi la **versione spec-kit pinnata** (config, non hardcoded sparso — Principio VIII)
+- [X] T007 [P] Test del profilo in `packages/sertor-flow/tests/unit/test_profile.py`: default assistant documentato, versione spec-kit presente, valore assistant ignoto → errore
 
 **Checkpoint**: renderer condiviso nel kit; profilo pronto; FEAT-007 non regredita.
 
@@ -59,16 +59,16 @@ l'assistente; spec-kit assente → fail-fast; bundle non contiene più asset Spe
 
 ### Tests for User Story 1 ⚠️
 
-- [ ] T008 [P] [US1] Test in `packages/sertor-flow/tests/test_speckit_launch.py` (CommandRunner mockato): `--ai claude`/`--ai copilot` invocati col `--script` giusto; layout verificato → `created`; assente/comando fallito/layout mancante → `InstallerError` fail-fast; già presente → `skipped` (contracts/speckit-launch.md). Deve FALLIRE prima dell'implementazione.
-- [ ] T009 [P] [US1] Test non-regressione Claude in `packages/sertor-flow/tests/integration/test_install_governance.py` (estende): con `specify` mockato che emette il layout Claude, l'install `--assistant claude` produce governance funzionalmente equivalente a oggi (FR-012/SC-003). Deve FALLIRE prima del refactor.
-- [ ] T010 [P] [US1] Test guardia in `packages/sertor-flow/tests/unit/test_no_vendored_speckit.py`: il bundle `assets/` NON contiene più `claude/skills/speckit-*`, `claude/agents/speckit-*`, `specify/**` (SC: no-vendored). Deve FALLIRE prima della rimozione.
+- [X] T008 [P] [US1] Test in `packages/sertor-flow/tests/test_speckit_launch.py` (CommandRunner mockato): `--ai claude`/`--ai copilot` invocati col `--script` giusto; layout verificato → `created`; assente/comando fallito/layout mancante → `InstallerError` fail-fast; già presente → `skipped` (contracts/speckit-launch.md). Deve FALLIRE prima dell'implementazione.
+- [X] T009 [P] [US1] Test non-regressione Claude in `packages/sertor-flow/tests/integration/test_install_governance.py` (estende): con `specify` mockato che emette il layout Claude, l'install `--assistant claude` produce governance funzionalmente equivalente a oggi (FR-012/SC-003). Deve FALLIRE prima del refactor.
+- [X] T010 [P] [US1] Test guardia in `packages/sertor-flow/tests/unit/test_no_vendored_speckit.py`: il bundle `assets/` NON contiene più `claude/skills/speckit-*`, `claude/agents/speckit-*`, `specify/**` (SC: no-vendored). Deve FALLIRE prima della rimozione.
 
 ### Implementation for User Story 1
 
-- [ ] T011 [US1] Crea `packages/sertor-flow/src/sertor_flow/speckit_launch.py`: funzione che lancia `specify init --ai <assistant> --script <ps|sh>` (versione pinnata) via il `CommandRunner` del kit, verifica il layout prodotto, fail-fast su assente/fallito/layout inatteso (contracts/speckit-launch.md, FR-003/004)
-- [ ] T012 [US1] Refactor `build_governance_plan`/`execute_governance_plan` in `packages/sertor-flow/src/sertor_flow/install_governance.py`: sostituisci l'enumerazione vendorata di `assets/claude/skills/speckit-*`+`assets/specify/**` con lo **step di launch** (per entrambi gli assistenti); mantieni l'ordine canonico e gli altri step
-- [ ] T013 [US1] Rimuovi fisicamente dal bundle gli asset SpecKit vendorati: `packages/sertor-flow/src/sertor_flow/assets/claude/skills/speckit-*`, `…/claude/agents/speckit-*`, `…/specify/**`, e `NOTICE`/`LICENSES/spec-kit-MIT.txt` se non più pertinenti (attribuzione ora dall'output di `specify`)
-- [ ] T014 [US1] Emetti `log_event` per il launch (assistant, versione, esito) in `speckit_launch.py` (Principio IX)
+- [X] T011 [US1] Crea `packages/sertor-flow/src/sertor_flow/speckit_launch.py`: funzione che lancia `specify init --ai <assistant> --script <ps|sh>` (versione pinnata) via il `CommandRunner` del kit, verifica il layout prodotto, fail-fast su assente/fallito/layout inatteso (contracts/speckit-launch.md, FR-003/004)
+- [X] T012 [US1] Refactor `build_governance_plan`/`execute_governance_plan` in `packages/sertor-flow/src/sertor_flow/install_governance.py`: sostituisci l'enumerazione vendorata di `assets/claude/skills/speckit-*`+`assets/specify/**` con lo **step di launch** (per entrambi gli assistenti); mantieni l'ordine canonico e gli altri step
+- [X] T013 [US1] Rimuovi fisicamente dal bundle gli asset SpecKit vendorati: `packages/sertor-flow/src/sertor_flow/assets/claude/skills/speckit-*`, `…/claude/agents/speckit-*`, `…/specify/**`, e `NOTICE`/`LICENSES/spec-kit-MIT.txt` se non più pertinenti (attribuzione ora dall'output di `specify`)
+- [X] T014 [US1] Emetti `log_event` per il launch (assistant, versione, esito) in `speckit_launch.py` (Principio IX)
 
 **Checkpoint**: MVP — SpecKit ottenuto via launch per Claude (non-regressione) e Copilot.
 
@@ -84,13 +84,13 @@ SDLC resi per Copilot via `AssistantProfile`; costituzione assistant-agnostic.
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T015 [P] [US2] Test in `packages/sertor-flow/tests/test_install_governance_copilot.py`: agenti Sertor-authored → `.github/agents/*.agent.md`, skill `requirements` → `.github/prompts/`, blocco SDLC → `.github/copilot-instructions.md` (marker, idempotente), costituzione identica (FR-007/008/009). Deve FALLIRE prima dell'implementazione.
+- [X] T015 [P] [US2] Test in `packages/sertor-flow/tests/test_install_governance_copilot.py`: agenti Sertor-authored → `.github/agents/*.agent.md`, skill `requirements` → `.github/prompts/`, blocco SDLC → `.github/copilot-instructions.md` (marker, idempotente), costituzione identica (FR-007/008/009). Deve FALLIRE prima dell'implementazione.
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] In `build_governance_plan(copilot)` instrada le superfici Sertor-authored (AGENT/COMMAND) via `AssistantProfile` + renderer del kit, e il blocco SDLC (INSTRUCTION_BLOCK) su `.github/copilot-instructions.md` in `packages/sertor-flow/src/sertor_flow/install_governance.py` (FR-007/008)
-- [ ] T017 [US2] Mantieni la costituzione-starter assistant-agnostic (target invariato per ogni assistente) in `install_governance.py` (FR-009)
-- [ ] T018 [US2] Verifica che gli asset Sertor-authored resi per Copilot derivino dalla fonte unica (riuso renderer, no seconda copia) — guardia anti-drift
+- [X] T016 [US2] In `build_governance_plan(copilot)` instrada le superfici Sertor-authored (AGENT/COMMAND) via `AssistantProfile` + renderer del kit, e il blocco SDLC (INSTRUCTION_BLOCK) su `.github/copilot-instructions.md` in `packages/sertor-flow/src/sertor_flow/install_governance.py` (FR-007/008)
+- [X] T017 [US2] Mantieni la costituzione-starter assistant-agnostic (target invariato per ogni assistente) in `install_governance.py` (FR-009)
+- [X] T018 [US2] Verifica che gli asset Sertor-authored resi per Copilot derivino dalla fonte unica (riuso renderer, no seconda copia) — guardia anti-drift
 
 **Checkpoint**: parità governance piena su Copilot.
 
@@ -98,13 +98,13 @@ SDLC resi per Copilot via `AssistantProfile`; costituzione assistant-agnostic.
 
 ## Phase 5: Polish & Cross-Cutting
 
-- [ ] T019 [P] Test parità governance in `packages/sertor-flow/tests/test_governance_parity.py`: copertura copilot ⊇ claude o gap dichiarato (SC-002; contracts/governance-parity.md) + coesistenza claude+copilot
-- [ ] T020 [P] Guardia `test_no_core_dependency` resta verde: nessun import di `sertor_core` in `sertor-flow` (FR-016/SC-006)
-- [ ] T021 [US? polish] Aggiungi/propaga l'opzione `--assistant claude|copilot` (default `claude`) nel CLI `packages/sertor-flow/src/sertor_flow/__main__.py` (contracts/cli-assistant.md, FR-001/002)
-- [ ] T022 [P] Aggiorna la doc di `sertor-flow` (README/docs) con `--assistant`, il pivot launch-installer e la dipendenza install-time da spec-kit (deroga II dichiarata)
-- [ ] T023 Verifica gap dichiarati nel report (FR-011): nessuna superficie omessa in silenzio
-- [ ] T024 `uv run ruff check packages/` pulito + suite per-package verde (`pytest packages/sertor-install-kit`, `packages/sertor`, `packages/sertor-flow`)
-- [ ] T025 Esegui la validazione di `specs/045-distribuzione-copilot-flow/quickstart.md` (host `tmp`, `specify` mockato)
+- [X] T019 [P] Test parità governance in `packages/sertor-flow/tests/test_governance_parity.py`: copertura copilot ⊇ claude o gap dichiarato (SC-002; contracts/governance-parity.md) + coesistenza claude+copilot
+- [X] T020 [P] Guardia `test_no_core_dependency` resta verde: nessun import di `sertor_core` in `sertor-flow` (FR-016/SC-006)
+- [X] T021 [US? polish] Aggiungi/propaga l'opzione `--assistant claude|copilot` (default `claude`) nel CLI `packages/sertor-flow/src/sertor_flow/__main__.py` (contracts/cli-assistant.md, FR-001/002)
+- [X] T022 [P] Aggiorna la doc di `sertor-flow` (README/docs) con `--assistant`, il pivot launch-installer e la dipendenza install-time da spec-kit (deroga II dichiarata)
+- [X] T023 Verifica gap dichiarati nel report (FR-011): nessuna superficie omessa in silenzio
+- [X] T024 `uv run ruff check packages/` pulito + suite per-package verde (`pytest packages/sertor-install-kit`, `packages/sertor`, `packages/sertor-flow`)
+- [X] T025 Esegui la validazione di `specs/045-distribuzione-copilot-flow/quickstart.md` (host `tmp`, `specify` mockato)
 
 ---
 
