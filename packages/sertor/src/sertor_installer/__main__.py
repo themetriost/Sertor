@@ -17,13 +17,29 @@ from sertor_installer.install_rag import build_rag_plan, execute_rag_plan
 from sertor_installer.install_wiki import build_install_plan, execute_plan
 from sertor_installer.rag_profile import RagHostProfile, RagInstallOptions
 
+# The governance/SDLC method ships as the SEPARATE package `sertor-flow` (FEAT-005,
+# feature 037): `sertor` has NO dependency on it (FR-023/SC-008). `sertor install
+# governance` is a POINTER — it tells the user that governance lives in `sertor-flow`
+# and how to install it, then exits with a dedicated code.
+_GOVERNANCE_INSTALL_HINT = (
+    'uvx --from "git+https://github.com/themetriost/Sertor'
+    '#subdirectory=packages/sertor-flow" sertor-flow install'
+)
 
-class CapabilityNotAvailableError(SertorError):
-    """An install capability declared but not yet implemented (stub; D8, REQ-104)."""
 
-    def __init__(self, capability: str):
-        self.capability = capability
-        super().__init__(f"install {capability} is not available yet (future slice)")
+class GovernanceElsewhereError(SertorError):
+    """`install governance` points to the standalone `sertor-flow` package (F9, D9).
+
+    Kept a subclass of `SertorError` so the `except SertorError` in `main()` still
+    catches it and exits with code 1 — `sertor` does NOT import `sertor-flow`.
+    """
+
+    def __init__(self):
+        super().__init__(
+            "governance/SDLC is provided by the separate package `sertor-flow` "
+            "(it does not ship with `sertor`). Install and run it with:\n"
+            f"  {_GOVERNANCE_INSTALL_HINT}"
+        )
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -74,7 +90,9 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     rag.add_argument("--json", action="store_true", help="emit the report as JSON")
 
-    install_sub.add_parser("governance", help="install governance (planned)")
+    install_sub.add_parser(
+        "governance", help="governance/SDLC — provided by the separate `sertor-flow` package"
+    )
 
     return parser
 
@@ -133,8 +151,8 @@ def _dispatch(args) -> int:
             return _cmd_install_wiki(args)
         if args.capability == "rag":
             return _cmd_install_rag(args)
-        # human-readable stubs: exit 1 via dedicated domain exception (governance)
-        raise CapabilityNotAvailableError(args.capability)
+        # governance is not a `sertor` capability: it lives in `sertor-flow` (D9). Point there.
+        raise GovernanceElsewhereError()
     raise ConfigError(f"unsupported command: {args.command}")  # pragma: no cover
 
 

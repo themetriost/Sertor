@@ -65,10 +65,27 @@ def test_install_rag_json_report(tmp_path: Path, capsys):
     assert payload["summary"]["errors"] == 0
 
 
-def test_install_governance_stub_exit_1(capsys):
+def test_install_governance_points_to_sertor_flow(capsys):
+    """`install governance` is a pointer to the separate `sertor-flow` package (T043/T044)."""
     rc = main(["install", "governance"])
     assert rc == 1
-    assert "governance" in capsys.readouterr().err
+    err = capsys.readouterr().err
+    assert "sertor-flow" in err  # names the package
+    assert "install" in err  # tells the user how to install/run it
+
+
+def test_sertor_pyproject_does_not_depend_on_sertor_flow():
+    """`sertor` must NOT declare `sertor-flow` among its dependencies (FR-023/SC-008, T044)."""
+    import tomllib
+
+    pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
+    data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+    deps = data.get("project", {}).get("dependencies", [])
+    normalized = [d.split(">=")[0].split("==")[0].split("[")[0].strip().lower() for d in deps]
+    assert "sertor-flow" not in normalized
+    assert "sertor_flow" not in normalized
+    sources = data.get("tool", {}).get("uv", {}).get("sources", {})
+    assert "sertor-flow" not in sources
 
 
 def test_target_nonexistent_exit_1_no_artifacts(tmp_path: Path, capsys):
