@@ -4,7 +4,7 @@
 
 **Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
 
-**Note**: This template is filled in by the `/speckit-plan` command. See `.specify/templates/plan-template.md` for the execution workflow.
+**Note**: This template is filled in by the `__SPECKIT_COMMAND_PLAN__` command. See `.specify/templates/plan-template.md` for the execution workflow.
 
 ## Summary
 
@@ -40,35 +40,7 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-Gate derivati dalla costituzione (`.specify/memory/constitution.md`, v1.2.0). Marcare PASS/FAIL;
-ogni FAIL va risolto o giustificato in "Complexity Tracking".
-
-- [ ] **I — Dipendenze verso l'interno (NON-NEGOZIABILE):** il design del core non importa SDK di
-  provider (LLM/embeddings/vector store) né la CLI; gli adapter dipendono dalle astrazioni del core;
-  il wiring sta in un componente main/config. Il core è esercitabile con provider mock, senza cloud/CLI.
-- [ ] **II — Boundary & local-first:** ogni dipendenza esterna è dietro un'astrazione di Sertor;
-  scelta locale↔cloud guidata da config; vector store solo dove la modalità lo richiede.
-- [ ] **III — YAGNI & unità piccole:** niente astrazioni/dipendenze senza evidenza presente; SRP/DRY;
-  dipendenze pesanti isolabili.
-- [ ] **IV — Errori espliciti (NON-NEGOZIABILE):** error handling a eccezioni di dominio; niente
-  `None` silenzioso né stato parziale/corrotto.
-- [ ] **V — Testabilità & misure:** test F.I.R.S.T. previsti; core testabile con mock; qualità
-  retrieval misurata (hit@k/MRR, baseline=prototipo).
-- [ ] **VI — Idempotenza & non-distruttività:** re-run stabile (ID stabili); install≠run; nessuna
-  sovrascrittura silenziosa.
-- [ ] **VII — Leggibilità:** naming di dominio (retrieve/rank/fuse/…); commenti solo per l'intenzione.
-- [ ] **VIII — Configurabilità centralizzata:** scelte (provider/backend/parametri) via config unica,
-  nessun default hardcoded.
-- [ ] **IX — Osservabilità:** retrieval e creazione embeddings/indicizzazione emettono log strutturati
-  (operazione, provider, conteggi, tempi, errori); nessun segreto nei log.
-- [ ] **X — Host-agnostico (NON-NEGOZIABILE):** la capacità/skill non incorpora assunzioni dell'ospite
-  (percorsi fissi, nomi di dominio, struttura cartelle); ciò che varia per ospite sta in config, non nel
-  corpo. Test: gira su un progetto-ospite diverso (code+doc / solo-doc / solo-code) senza modifiche al
-  corpo. Il dogfooding non giustifica deroghe.
-- [ ] **XI — Consumo via vehicles:** i consumatori a runtime (agente, script, ospite) accedono alle
-  capacità SOLO via CLI (`sertor-rag`/`sertor-wiki-tools`) o MCP, mai importando `sertor_core`
-  direttamente (es. `build_indexer().index()`); unica eccezione gli unit/integration test. I vehicles
-  cablano osservabilità/config/errori in modo uniforme; l'accesso diretto li bypassa.
+[Gates determined based on constitution file]
 
 ## Project Structure
 
@@ -76,12 +48,12 @@ ogni FAIL va risolto o giustificato in "Complexity Tracking".
 
 ```text
 specs/[###-feature]/
-├── plan.md              # This file (/speckit-plan command output)
-├── research.md          # Phase 0 output (/speckit-plan command)
-├── data-model.md        # Phase 1 output (/speckit-plan command)
-├── quickstart.md        # Phase 1 output (/speckit-plan command)
-├── contracts/           # Phase 1 output (/speckit-plan command)
-└── tasks.md             # Phase 2 output (/speckit-tasks command - NOT created by /speckit-plan)
+├── plan.md              # This file (__SPECKIT_COMMAND_PLAN__ command output)
+├── research.md          # Phase 0 output (__SPECKIT_COMMAND_PLAN__ command)
+├── data-model.md        # Phase 1 output (__SPECKIT_COMMAND_PLAN__ command)
+├── quickstart.md        # Phase 1 output (__SPECKIT_COMMAND_PLAN__ command)
+├── contracts/           # Phase 1 output (__SPECKIT_COMMAND_PLAN__ command)
+└── tasks.md             # Phase 2 output (__SPECKIT_COMMAND_TASKS__ command - NOT created by __SPECKIT_COMMAND_PLAN__)
 ```
 
 ### Source Code (repository root)

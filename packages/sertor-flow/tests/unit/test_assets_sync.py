@@ -37,11 +37,20 @@ _COMPARISONS: tuple[tuple[str, Path], ...] = (
 )
 
 
+# Excluded from the comparison: intentionally divergent (gruppo D). The bundle ships the GENERIC
+# upstream plan-template; the dogfood keeps its gated one (same rationale as the scripts, F3).
+_EXCLUDE_FROM_COMPARISON: frozenset[tuple[str, str]] = frozenset(
+    {("specify/templates", "plan-template.md")}
+)
+
+
 def _bundle_files() -> list[tuple[str, str, Path]]:
     """Yields `(asset_subtree, rel_path, dogfood_path)` for every compared bundle asset."""
     out: list[tuple[str, str, Path]] = []
     for subtree, dest_root in _COMPARISONS:
         for rel_path, _content in iter_asset_dir(_ANCHOR, subtree):
+            if (subtree, rel_path) in _EXCLUDE_FROM_COMPARISON:
+                continue
             out.append((subtree, rel_path, dest_root / rel_path))
     return out
 
@@ -86,3 +95,20 @@ def test_constitution_starter_not_in_sync():
     result = sync_governance_assets(_REPO_ROOT, dry_run=True)
     assert "constitution-starter.md" not in result
     assert not any(rel.endswith("memory/constitution.md") for rel in result)
+
+
+def test_plan_template_is_neutral_not_sertor_gated():
+    """Gruppo D: the bundle ships the GENERIC plan-template (gates from the host constitution), not
+    Sertor's gated one — so a host's Constitution Check derives from its own constitution."""
+    content = dict(iter_asset_dir(_ANCHOR, "specify/templates"))["plan-template.md"]
+    assert "Gates determined based on constitution" in content  # generic placeholder
+    # none of Sertor's specific gate vocabulary leaks into the host template
+    sertor_markers = ("sertor_core", "SERTOR_ENGINE", "Consumo via vehicles", "host-agnostiche")
+    for marker in sertor_markers:
+        assert marker not in content, f"Sertor-specific gate leaked: {marker!r}"
+
+
+def test_plan_template_excluded_from_sync():
+    """Gruppo D: plan-template.md is neither propagated nor compared (intentionally divergent)."""
+    result = sync_governance_assets(_REPO_ROOT, dry_run=True)
+    assert "specify/templates/plan-template.md" not in result

@@ -471,6 +471,13 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/043-plan-template-neutro/plan.md` (gruppo D dell'enforcement Principio XI — neutralizza il
+plan-template spedito agli ospiti: il bundle `sertor-flow` ora vendora il plan-template GENERICO upstream
+(gate derivati dalla costituzione DELL'OSPITE, placeholder `[Gates determined based on constitution
+file]`) invece di quello gated di Sertor; escluso dal sync/anti-drift col dogfood (intenzionalmente
+divergente, come gli script F3). Il dogfood di Sertor mantiene il suo template gated. Kit `sync_subtree`
++= param `exclude`. Constitution PASS 11/11; kit 37 · sertor-flow 107 verdi, ruff pulito. ULTIMO dei 4
+gruppi del Principio XI (A ✅ PR #61, B+C ✅ PR #62). Branch `043-plan-template-neutro`. Storico:
 `specs/042-enforcement-vehicles-ospite/plan.md` (gruppi B+C dell'enforcement Principio XI, lato OSPITE —
 estende `sertor install rag`: (B) blocco `CLAUDE.md` a marker `SERTOR:RAG-USAGE` che istruisce l'agente
 ospite a usare `sertor-rag`/MCP e a NON importare `sertor_core`; (C) hook PreToolUse host-specifico

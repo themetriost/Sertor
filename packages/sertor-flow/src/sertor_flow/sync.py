@@ -31,6 +31,11 @@ _ANCHOR = "sertor_flow"
 # Subtrees synced from assets/specify → .specify (scripts/** intentionally excluded, F3).
 _SPECIFY_SUBTREES: tuple[str, ...] = ("templates", "extensions", "workflows")
 
+# Files excluded from the sync/drift comparison because intentionally divergent (gruppo D, Principio
+# XI): the bundle ships the GENERIC upstream `plan-template.md` (gates derived from the host's own
+# constitution); Sertor's dogfood keeps its gated one. Same provenance logic as the scripts (F3).
+_SUBTREE_EXCLUDE: dict[str, tuple[str, ...]] = {"templates": ("plan-template.md",)}
+
 
 def sync_governance_assets(repo_root: Path, dry_run: bool = False) -> dict[str, str]:
     """Propagates the governance subset of the bundle to `repo_root`. Returns `{rel: status}`.
@@ -41,11 +46,16 @@ def sync_governance_assets(repo_root: Path, dry_run: bool = False) -> dict[str, 
     result: dict[str, str] = {}
     # assets/claude/** → .claude/** (the bundle already holds only the governance subset).
     result.update(sync_subtree(_ANCHOR, "claude", repo_root / ".claude", dry_run=dry_run))
-    # assets/specify/{templates,extensions,workflows} → .specify/** (NOT scripts/**, F3).
+    # assets/specify/{templates,extensions,workflows} → .specify/** (NOT scripts/**, F3;
+    # plan-template.md excluded — bundle generic vs dogfood gated, gruppo D).
     for subtree in _SPECIFY_SUBTREES:
         result.update(
             sync_subtree(
-                _ANCHOR, f"specify/{subtree}", repo_root / ".specify" / subtree, dry_run=dry_run
+                _ANCHOR,
+                f"specify/{subtree}",
+                repo_root / ".specify" / subtree,
+                dry_run=dry_run,
+                exclude=_SUBTREE_EXCLUDE.get(subtree, ()),
             )
         )
     return result
