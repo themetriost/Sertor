@@ -1,15 +1,22 @@
 <!--
 SYNC IMPACT REPORT — Costituzione di Sertor
 ============================================
-Versione: 1.1.0 → 1.1.1
-Tipo di bump: PATCH (chiarimento di un principio esistente, nessun nuovo vincolo)
+Versione: 1.1.1 → 1.2.0
+Tipo di bump: MINOR (nuovo principio XI)
 
-Modifiche di questo emendamento (2026-06-14):
+Modifiche di questo emendamento (2026-06-15):
+  + Principio XI — Consumo attraverso i vehicles (CLI/MCP), non la libreria a runtime; unica eccezione
+    gli unit/integration test. Motivazione: l'accesso diretto alla libreria (es. `build_indexer().index()`)
+    bypassa il wiring trasversale dei consumatori (osservabilità, config, errori) → operazioni non
+    tracciate (gap rilevato: re-index via libreria non comparso in telemetria).
+  Template dipendenti: plan-template.md — aggiunto gate "XI — Consumo via vehicles".
+  Origine: gap osservabilità (re-index via `build_indexer().index()` non tracciato) + decisione utente (2026-06-15).
+
+Modifiche dell'emendamento precedente (2026-06-14, v1.1.0 → v1.1.1, PATCH):
   ~ Principio VII — chiarito lo stile delle funzioni: piccole e a bassa profondità di annidamento,
     guard clause / early return preferiti alla nidificazione profonda; il single-exit dogmatico
     (SESE) NON è richiesto (il problema è il nesting, non i return multipli — Dijkstra bandiva il
     GOTO, non i return). Allinea la regola alla pratica già in uso nel codebase (Clean Code).
-  Template dipendenti: plan-template.md — rif. versione v1.1.0 → v1.1.1 (gate invariati).
   Origine: refactor di `_resolve_config` (wiki_tools) + discussione utente su SESE/nesting (2026-06-14).
 
 ----- Storico -----
@@ -22,7 +29,7 @@ Modifiche dell'emendamento precedente (2026-06-05):
   Motivazione: codifica la mission (Sertor installabile su QUALSIASI progetto: code+doc,
   solo-doc, solo-code) e generalizza il Principio I a tutte le capacità (skill e LLM Wiki incluse).
 
-Principi (10):
+Principi (11):
   I.    Il core a dipendenze verso l'interno (la libreria è il prodotto)
   II.   Provider e backend intercambiabili dietro boundary; local-first
   III.  Semplicità giustificata (YAGNI) e unità piccole
@@ -32,7 +39,8 @@ Principi (10):
   VII.  Leggibilità come comunicazione; lascia il codice più pulito
   VIII. Configurabilità centralizzata del core
   IX.   Osservabilità: ogni operazione a runtime è loggata
-  X.    Capacità host-agnostiche (NUOVO)
+  X.    Capacità host-agnostiche
+  XI.   Consumo attraverso i vehicles (CLI/MCP), non la libreria a runtime (NUOVO)
 
 Template dipendenti:
   ✅ .specify/templates/plan-template.md  — aggiunto gate "X — Host-agnostico" + rif. versione → v1.1.0
@@ -199,6 +207,25 @@ repo-agnostico") — a **tutte** le capacità, incluse skill e LLM Wiki. Senza q
 dogfooding tenderebbe a far sedimentare assunzioni Sertor-specifiche dentro capacità che devono
 restare portabili. Fonti: README (Vision/Mission), REQ-E1/CS-5.
 
+### XI. Consumo attraverso i vehicles (CLI/MCP), non la libreria a runtime
+
+I consumatori **a runtime** — l'agente LLM, gli script, qualunque ospite o automazione — MUST accedere
+alle capacità di Sertor **solo** attraverso i suoi **vehicles**: la **CLI** (`sertor-rag`,
+`sertor-wiki-tools`) o il **server MCP**. MUST NOT importare e invocare la libreria `sertor_core`
+direttamente a runtime (es. `build_indexer().index(...)`). **Unica eccezione: gli unit/integration
+test**, che esercitano libreria e funzioni direttamente — è il modo in cui i Principi I e V garantiscono
+la testabilità in isolamento.
+
+*Razionale:* i vehicles cablano in modo **uniforme** i comportamenti trasversali — osservabilità
+(`enable_observability`), configurazione centralizzata (Principio VIII), avvolgimento errori al boundary
+(Principio IV), redazione segreti. L'accesso diretto alla libreria li **bypassa silenziosamente**: caso
+reale, un re-index via `build_indexer().index()` non viene tracciato in telemetria perché salta
+`enable_observability` (cablato solo nei vehicles). Confinare il consumo ai vehicles rende ogni
+operazione osservabile e configurata in modo coerente; i test sono l'eccezione perché verificano
+proprio l'unità isolata. *Nota:* non contraddice il Principio I (la libreria resta il prodotto,
+architetturalmente autonoma e importabile) — questo principio governa **chi consuma a runtime**, non la
+struttura delle dipendenze.
+
 ## Sicurezza, segreti e provenienza
 
 I segreti (chiavi API, credenziali) MUST NOT essere scritti in file versionati; transitano solo via
@@ -224,4 +251,4 @@ principio, vince il principio (o il principio viene prima emendato).
 - **Conformità:** il RAG di dogfooding sul prototipo è il riferimento di "cosa è buono"; le nuove
   capacità sono riviste rispetto a questi principi.
 
-**Version**: 1.1.1 | **Ratified**: 2026-05-31 | **Last Amended**: 2026-06-14
+**Version**: 1.2.0 | **Ratified**: 2026-05-31 | **Last Amended**: 2026-06-15

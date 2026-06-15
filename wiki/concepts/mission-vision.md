@@ -1,9 +1,9 @@
 ---
 title: Mission, vision & Principle X (host-agnosticity)
 type: concept
-tags: [missione, visione, host-agnostico, principio-x, disaccoppiamento, costituzione]
+tags: [missione, visione, host-agnostico, principio-x, principio-xi, disaccoppiamento, costituzione]
 created: 2026-06-05
-updated: 2026-06-13 (+ sezione "Posizionamento: retrieval tool per agenti" — generate=agente, serve=MCP delegati per design; fronte competitivo = precisione/confidenza/freschezza; wiki = generazione precalcolata)
+updated: 2026-06-15 (allineato Costituzione v1.2.0 — Principio XI consumo via vehicles) · 2026-06-13 (+ sezione "Posizionamento: retrieval tool per agenti" — generate=agente, serve=MCP delegati per design; fronte competitivo = precisione/confidenza/freschezza; wiki = generazione precalcolata)
 sources: ["README.md", ".specify/memory/constitution.md"]
 ---
 
@@ -158,8 +158,9 @@ tra sessioni**. Non è una fase a parte: è una sorgente di **prima classe dentr
 
 ## Riferimenti
 
-- **Costituzione:** [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md) v1.1.1,
-  Principio X (host-agnostico, 2026-06-05); Principio VII chiarito su nesting/SESE (2026-06-14).
+- **Costituzione:** [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md) v1.2.0,
+  Principio X (host-agnostico, 2026-06-05), Principio VII chiarito su nesting/SESE (2026-06-14),
+  Principio XI (consumo via vehicles, 2026-06-15).
 - **README.md:** [`README.md`](../../README.md) (Vision/Mission, sezione "Disaccoppiamento").
 - **Ispirazioni esterne:** skill di Transcriptio (pattern di parametrizzazione), Clean Code + Clean
   Architecture.
