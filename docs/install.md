@@ -6,6 +6,11 @@
 > wiki tooling** and the guided **`sertor install wiki`** that brings the entire wiki system to the
 > host with one command (§5); and the **development method (SDLC)** via the separate, RAG-independent
 > package **`sertor-flow`** (§8). Each is non-destructive and idempotent — **install ≠ run**.
+>
+> **Target assistant.** All three installers accept **`--assistant claude|copilot`** (default
+> `claude`) to choose which host AI assistant receives the surfaces. Pick `copilot` to target
+> **GitHub Copilot in VS Code** (`.github/**` + `.vscode/mcp.json`) instead of Claude
+> (`.claude/**` + `.mcp.json` + `CLAUDE.md`) — see **§9**.
 
 ## Prerequisites
 
@@ -182,6 +187,7 @@ a single command brings the entire wiki system to the host:
 uv run sertor install wiki                          # in the root of the target repo
 uv run sertor install wiki --target C:\path\repo    # or on an explicit path
 uv run sertor install wiki --language it --source-dirs src,docs   # override defaults
+uv run sertor install wiki --assistant copilot      # target GitHub Copilot instead of Claude (§9)
 ```
 
 What it installs (all **without** starting any indexing, LLM, or network — install ≠ run):
@@ -230,6 +236,7 @@ uv run sertor install rag --backend azure
 uv run sertor install rag --backend local --no-rerank   # Ollama, without reranker
 uv run sertor install rag --no-deps                      # config scaffold only (no uv add)
 uv run sertor install rag --mcp-scope local              # no .mcp.json in the repo (registers in the client)
+uv run sertor install rag --assistant copilot            # target GitHub Copilot: .vscode/mcp.json (§9)
 uv run sertor install rag --target C:\path\repo --corpus myproject --json
 ```
 
@@ -301,39 +308,97 @@ this reason `sertor install governance` is only a **pointer**: it tells you that
 # from a machine with `uv`, in the root of the target repo:
 uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor-flow" sertor-flow install
 # variants:
-sertor-flow install --target C:\path\repo   # explicit target (default: cwd)
-sertor-flow install --json                  # machine-readable report
+sertor-flow install --target C:\path\repo     # explicit target (default: cwd)
+sertor-flow install --assistant copilot       # target GitHub Copilot instead of Claude (§9)
+sertor-flow install --json                    # machine-readable report
 ```
 
-What it deposits (all **without** starting any phase — **install ≠ run**):
+**SpecKit is launched, not vendored (feature 045).** `sertor-flow` no longer ships frozen copies of
+the SpecKit commands/agents and `.specify/**`. Instead it **launches the official spec-kit
+installer** for the target assistant, at a **pinned** upstream version:
 
-| Artifact | Where | Behaviour if already present |
+```text
+uvx --from git+https://github.com/github/spec-kit.git@v0.8.18 \
+    specify init . --here --ai <claude|copilot> --script <ps|sh> --no-git --force
+```
+
+This deposits the per-assistant SpecKit layout (Claude `.claude/commands/speckit.*` · Copilot
+`.github/prompts/speckit.*.prompt.md`) plus the shared `.specify/**` machinery. **Prerequisite
+(fail-fast):** `uvx` must be on `PATH` **and the spec-kit release must be reachable at install
+time** (network) — if the launcher is absent or `specify init` fails, the command stops with an
+actionable error and applies nothing. This is a deliberate trade-off (a tracked deviation from the
+otherwise offline/zero-network installer): the method tracks the assistants spec-kit supports
+upstream, with no triple-vendoring to maintain.
+
+On top of the launched SpecKit, `sertor-flow` deposits its **own** Sertor-authored surfaces (all
+**without** starting any phase — **install ≠ run**), routed to the target assistant's containers:
+
+| Artifact | Where (Claude · Copilot) | Behaviour if already present |
 |---|---|---|
-| SpecKit skills + agents (`speckit-*`), `requirements` skill | `<target>/.claude/**` | per-file skip if present (non-destructive) |
-| `requirements-analyst` + `configuration-manager` agents | `<target>/.claude/agents/**` | per-file skip if present |
-| SpecKit templates, git extension, workflows | `<target>/.specify/**` | per-file skip if present |
-| Scaffolding scripts (**both** `bash` + `powershell`) | `<target>/.specify/scripts/**` | per-file skip if present |
-| Constitution **starter** (neutral, host-agnostic) | `<target>/.specify/memory/constitution.md` | skip if present (never overwrites your constitution) |
-| Per-host `init-options.json` / `integration.json` / manifests (generated from the profile) | `<target>/.specify/**` | skip if present |
-| Attribution: `NOTICE` + `LICENSES/spec-kit-MIT.txt` (spec-kit is MIT, pinned 0.8.18) | `<target>/.specify/**` | skip if present |
-| `SERTOR:SDLC-RITUAL` block | `<target>/CLAUDE.md` | idempotent marker block; coexists with the wiki block |
+| SpecKit commands/agents + `.specify/**` | launched via `specify init` (see above) | layout present → launch **skipped** (not relaunched) |
+| `requirements-analyst` + `configuration-manager` agents | `.claude/agents/*.md` · `.github/agents/*.agent.md` | per-file skip if present (non-destructive) |
+| `requirements` skill | `.claude/skills/requirements/SKILL.md` · `.github/prompts/requirements.prompt.md` | per-file skip if present |
+| Constitution **starter** (neutral, host-agnostic, assistant-agnostic) | `.specify/memory/constitution.md` | skip if present (never overwrites your constitution) |
+| Per-host `init-options.json` / `integration.json` / manifests (generated from the profile) | `.specify/**` | skip if present |
+| `SERTOR:SDLC-RITUAL` block | `CLAUDE.md` · `.github/copilot-instructions.md` | idempotent marker block; coexists with the wiki block |
 
-**install ≠ run.** The command only deposits the method bundle — it never creates a feature, runs a
-git command, or indexes anything. Re-running is safe: every artifact is reported `skipped` and
-nothing changes on disk.
+The Sertor-authored agents/skill are rendered for Copilot from the **same canonical source** as
+Claude (the body is reused verbatim, only the frontmatter/container is translated — anti-drift).
+
+**install ≠ run.** The command only deposits the method bundle (and launches `specify init` to
+obtain SpecKit) — it never creates a feature, runs a git command, or indexes anything. Re-running is
+safe: the SpecKit launch is skipped when its layout is already on disk and every other artifact is
+reported `skipped`.
 
 **Coexistence with the wiki.** The SDLC ritual block uses its own markers
 (`SERTOR:SDLC-RITUAL`), distinct from the wiki's `SERTOR:WIKI-RITUAL`: both blocks live in the same
-`CLAUDE.md`, each idempotent on its own markers.
+instruction file (`CLAUDE.md` for Claude, `.github/copilot-instructions.md` for Copilot), each
+idempotent on its own markers.
 
-**Cross-platform.** The installer relies only on `pathlib`/stdlib path handling and ships **both**
-shell variants of the scaffolding scripts (`bash` + `powershell`); the chosen flavor is recorded in
-the generated `init-options.json` based on the host OS. It runs identically on Windows and POSIX
-(integration tests use platform-agnostic temp dirs).
+**Cross-platform.** The chosen script flavor is inferred from the host OS (`ps` on Windows, `sh`
+elsewhere) and passed to `specify init --script`; the generated `init-options.json` records it. It
+runs identically on Windows and POSIX (integration tests use platform-agnostic temp dirs).
 
 **Independence from the core.** `sertor-flow` depends only on the shared installer toolkit
 (`sertor-install-kit`), never on `sertor-core`. You can install the method on a repo that has no RAG,
 and install the RAG on a repo that has no method — the two capabilities do not constrain each other.
 
 Exit `0` success (even if everything was skipped) · `1` domain error (fail-fast: the failed step is
-named, already-written artifacts remain) · `2` wrong usage.
+named — including an unreachable spec-kit launch — and already-written artifacts remain) · `2` wrong
+usage.
+
+## 9. Targeting another assistant: GitHub Copilot (`--assistant`)
+
+By default the installers write the **Claude Code** layout. Pass **`--assistant copilot`** to any of
+them — `sertor install wiki`, `sertor install rag`, `sertor-flow install` — to target **GitHub
+Copilot in VS Code** instead. The *content* of every surface is reused; only the *container* (file
+path, format, JSON root key) is translated for the assistant. Default is `claude`; an unknown value
+stops with an explicit error listing the valid ones.
+
+| Logical surface | Claude container | Copilot container |
+|---|---|---|
+| Instruction / ritual block | `CLAUDE.md` (marker block) | `.github/copilot-instructions.md` (marker block) |
+| MCP server (`sertor-rag`) | `.mcp.json` (root key `mcpServers`) | `.vscode/mcp.json` (root key `servers`) |
+| Hook wiring | `.claude/settings.json` | `.github/hooks/sertor-hooks.json` |
+| Command / skill | `.claude/commands/<name>.md`, `.claude/skills/...` | `.github/prompts/<name>.prompt.md` |
+| Agent persona | `.claude/agents/<name>.md` | `.github/agents/<name>.agent.md` |
+
+```bash
+# RAG capability targeting Copilot (MCP lands in .vscode/mcp.json):
+uv run sertor install rag --assistant copilot --backend azure
+# Wiki system targeting Copilot (instructions in .github/copilot-instructions.md):
+uv run sertor install wiki --assistant copilot
+# Development method (SDLC) targeting Copilot (launches `specify init --ai copilot`):
+uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor-flow" \
+  sertor-flow install --assistant copilot
+```
+
+The same invariants hold for both assistants: **install ≠ run**, non-destructive (existing files are
+never overwritten — merges are additive and per-file writes skip), idempotent, and secrets are never
+written (the `.env` template ships with empty values).
+
+> **"Copilot" here means GitHub Copilot in VS Code, not the standalone GitHub Copilot CLI.** The
+> `copilot` target deposits the `.github/**` / `.vscode/mcp.json` containers that the VS Code Copilot
+> agent reads. The standalone *Copilot CLI* is **not** a separate install target. A third assistant
+> (`codex` → `AGENTS.md`) is planned but not yet implemented; only `claude` and `copilot` are
+> available today.
