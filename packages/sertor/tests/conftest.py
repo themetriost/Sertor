@@ -36,7 +36,9 @@ class FakeCommandRunner:
     def is_available(self, tool: str) -> bool:
         return self.claude_available if tool == "claude" else self.available
 
-    def run(self, cmd: list[str], cwd: Path) -> CommandResult:
+    def run(
+        self, cmd: list[str], cwd: Path, env: dict[str, str] | None = None
+    ) -> CommandResult:
         self.calls.append((list(cmd), Path(cwd)))
         # `claude mcp get <name>`: ok only if the server is "registered" (idempotent)
         if "claude" in cmd and "get" in cmd:

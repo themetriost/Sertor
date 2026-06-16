@@ -25,12 +25,16 @@ class FakeRunner:
         self.returncode = returncode
         self.layout = layout or []  # list of relative paths to create on `run`
         self.calls: list[tuple[list[str], Path]] = []
+        self.envs: list[dict[str, str] | None] = []  # env overlay seen on each run
 
     def is_available(self, tool: str) -> bool:
         return self.available
 
-    def run(self, cmd: list[str], cwd: Path) -> CommandResult:
+    def run(
+        self, cmd: list[str], cwd: Path, env: dict[str, str] | None = None
+    ) -> CommandResult:
         self.calls.append((cmd, cwd))
+        self.envs.append(env)
         if self.returncode == 0:
             for rel in self.layout:
                 dest = cwd / rel
@@ -71,6 +75,18 @@ def test_launch_copilot_runs_specify_with_ai_copilot(tmp_path: Path):
     assert outcome is Outcome.CREATED
     cmd, _ = runner.calls[0]
     assert "--ai" in cmd and "copilot" in cmd
+
+
+def test_launch_forces_utf8_env(tmp_path: Path):
+    """The launch overlays PYTHONUTF8/PYTHONIOENCODING so spec-kit's rich banner does not crash on a
+    legacy Windows console (cp1252) → UnicodeEncodeError. Regression for the live exit-1 failure."""
+    profile = build_governance_profile(tmp_path, assistant="copilot", script="ps")
+    runner = FakeRunner(layout=_COPILOT_LAYOUT)
+    launch_speckit(profile, runner)
+    env = runner.envs[0]
+    assert env is not None
+    assert env.get("PYTHONUTF8") == "1"
+    assert env.get("PYTHONIOENCODING", "").lower() == "utf-8"
 
 
 def test_launch_tool_absent_fails_fast(tmp_path: Path):
