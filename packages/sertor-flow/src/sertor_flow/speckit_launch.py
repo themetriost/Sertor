@@ -43,6 +43,13 @@ SPECKIT_REPO = "git+https://github.com/github/spec-kit.git"
 # `profile.script` flavor → spec-kit `--script` value (cross-platform: ps on Windows, sh on POSIX).
 _SCRIPT_VALUE = {"ps": "ps", "bash": "sh", "sh": "sh"}
 
+# Force UTF-8 in the launched `specify init`. spec-kit prints its banner via `rich` (box-drawing
+# glyphs, etc.); on a legacy Windows console (code page cp1252) Python's stdout cannot encode them
+# and `specify` aborts with a UnicodeEncodeError (exit 1) — independent of `--ai`. PYTHONUTF8=1 puts
+# the interpreter in UTF-8 mode; PYTHONIOENCODING is a belt-and-suspenders fallback. Passed as an
+# env OVERLAY so the child still inherits PATH and everything else.
+_UTF8_ENV = {"PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
+
 # Per-assistant "marker" files that MUST exist after a successful launch (layout verification).
 # Kept minimal: a SpecKit command for the assistant + the shared `.specify/` machinery.
 _EXPECTED_LAYOUT = {
@@ -118,7 +125,8 @@ def launch_speckit(profile: GovernanceProfile, runner: CommandRunner | None = No
         )
 
     cmd = build_specify_command(profile)
-    result = runner.run(cmd, root)
+    # Overlay UTF-8 env so spec-kit's rich banner does not crash on legacy Windows consoles.
+    result = runner.run(cmd, root, env=_UTF8_ENV)
     if not result.ok:
         log_event(logging.WARNING, "speckit_launch", assistant=assistant,
                    version=profile.speckit_version, outcome="error", reason="command_failed",

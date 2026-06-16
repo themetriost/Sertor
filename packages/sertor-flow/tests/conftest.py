@@ -46,7 +46,9 @@ class FakeSpecifyRunner:
     def is_available(self, tool: str) -> bool:
         return self.available
 
-    def run(self, cmd: list[str], cwd: Path) -> CommandResult:
+    def run(
+        self, cmd: list[str], cwd: Path, env: dict[str, str] | None = None
+    ) -> CommandResult:
         self.calls.append((cmd, cwd))
         if self.returncode != 0:
             return CommandResult(self.returncode, "", "boom")
