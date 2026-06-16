@@ -96,6 +96,23 @@ class IndexNotFoundError(SertorError):
         super().__init__(f"{message} [collection={collection}]")
 
 
+class IndexLockedError(SertorError):
+    """A second indexing run tried to acquire the single-writer lock already held (046, FR-020).
+
+    Concurrent indexing of the same `(corpus, provider)` index would corrupt the manifest and the
+    derived artifacts: rather than racing, the second run fails explicitly (Principio IV). Carries
+    the index directory so the message can name the index the other process is building.
+    """
+
+    def __init__(self, index_dir: str):
+        self.index_dir = index_dir
+        super().__init__(
+            f"index is locked: another process is indexing {index_dir} — "
+            "wait for it to finish, or remove the stale lock file (.index.lock) if no process is "
+            "running"
+        )
+
+
 class InvalidTimeWindowError(SertorError):
     """An episodic search was given a window with `since > until` (033, FR-007).
 

@@ -46,10 +46,15 @@ def _build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True, metavar="command")
 
     p_index = sub.add_parser(
-        "index", help="index a repository into a vector collection (full rebuild)",
-        description="Builds the repository's vector index and reports the counts.",
+        "index", help="index a repository into a vector collection (incremental by default)",
+        description=(
+            "Builds/refreshes the repository's vector index and reports the counts. "
+            "Incremental by default (only changed files are re-processed); --full forces a rebuild."
+        ),
     )
     p_index.add_argument("path", help="root of the repository to index")
+    p_index.add_argument("--full", action="store_true",
+                         help="force a full rebuild from scratch (otherwise incremental)")
     p_index.add_argument("--corpus", default=None,
                          help="corpus namespace; overrides SERTOR_CORPUS")
     p_index.add_argument("--json", action="store_true", help="report as a JSON object")
@@ -256,7 +261,8 @@ def _cmd_index(args) -> None:
     settings = _resolve_settings(args)
     _check_backend(settings)
     enable_observability(settings)  # persist events if SERTOR_OBSERVABILITY=true (no-op otherwise)
-    report = build_indexer(settings).index(path, rebuild=True)
+    # Incremental by default (046, FR-002); --full forces a full rebuild (rebuild=True, FR-010).
+    report = build_indexer(settings).index(path, rebuild=args.full)
     print(output.format_index_report(report, json=args.json))
 
 

@@ -60,7 +60,8 @@ class ChromaStore:
 
         Chroma rejects a single upsert larger than its max batch size; the limit is read from the
         client when available and falls back conservatively. Keeps the rebuild correct as the corpus
-        grows past the cap (a real defect surfaced by dogfooding once the corpus crossed ~5.5k chunks).
+        grows past the cap (a real defect surfaced by dogfooding once the corpus crossed ~5.5k
+        chunks).
         """
         getter = getattr(self._client, "get_max_batch_size", None)
         if callable(getter):

@@ -181,9 +181,27 @@ class RetrievalResult:
     metadata: dict | None = None
 
 
+class FileClassification(StrEnum):
+    """Outcome of comparing a source file against the index manifest (046, FR-002/003).
+
+    Drives the incremental branch: only NEW/MODIFIED files are re-chunked/embedded, MODIFIED/DELETED
+    files have their old chunks pruned, UNCHANGED files are reused from the manifest.
+    """
+
+    UNCHANGED = "unchanged"
+    NEW = "new"
+    MODIFIED = "modified"
+    DELETED = "deleted"
+
+
 @dataclass
 class IndexReport:
-    """Outcome of an indexing operation (observability, REQ-031)."""
+    """Outcome of an indexing operation (observability, REQ-031).
+
+    The delta fields (046, FR-015) describe an incremental run; a full run reports everything as
+    `added` (every file is freshly indexed) with `mode="full"`. Defaults keep older call sites
+    (which only set documents/chunks) backward-compatible.
+    """
 
     collection: str
     documents: int = 0
@@ -192,6 +210,13 @@ class IndexReport:
     embedding_dim: int | None = None
     elapsed_ms: float | None = None
     skipped_paths: list[str] = field(default_factory=list)
+    # incremental delta (046, FR-015): default 0 / "full" → retro-compatible with the full path.
+    added: int = 0
+    updated: int = 0
+    removed: int = 0
+    unchanged: int = 0
+    cache_hits: int = 0
+    mode: str = "full"
 
 
 @dataclass(frozen=True)

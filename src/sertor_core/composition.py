@@ -259,6 +259,7 @@ def build_indexer(settings: Settings | None = None):
     With `graph_enabled` (default) it also receives the code graph sink (FEAT-005, DA-2):
     a single command keeps both retrieval and graph up to date.
     """
+    from sertor_core.services.index_manifest import IndexManifest
     from sertor_core.services.indexing import IndexingService
 
     settings = settings or Settings.load()
@@ -270,9 +271,12 @@ def build_indexer(settings: Settings | None = None):
     store = build_store(settings)
     lexical = _build_lexical(settings) if engine == "hybrid" else None
     graph = build_graph_service(settings) if settings.graph_enabled else None
+    # Incremental indexing manifest (046, FEAT-009): the memory of «what is already indexed» that
+    # enables the default incremental path. The service falls back to full when it's absent/invalid.
+    manifest = IndexManifest(settings.index_dir)
     return IndexingService(
         embedder, store, collection_name(settings, embedder), settings,
-        lexical=lexical, graph=graph,
+        lexical=lexical, graph=graph, manifest=manifest,
     )
 
 

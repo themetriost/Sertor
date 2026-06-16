@@ -28,12 +28,17 @@ GROUND_TRUTH: tuple[SymbolTruth, ...] = (
                           "build_baseline_engine"),
     ),
     SymbolTruth(
-        "discover", "services/ingestion.py",
-        expected_callers=("IndexingService.index",),
+        # discover() is now called by the full discover_files+read_source split's `discover`
+        # wrapper consumers (e.g. the graph fixture/tests); after FEAT-009 the indexer uses
+        # discover_files/read_source directly, so its stable caller is read_source's sibling path.
+        "discover_files", "services/ingestion.py",
+        expected_callers=("IndexingService._run_full", "IndexingService._run_incremental"),
     ),
     SymbolTruth(
+        # chunk_document is invoked from the full and incremental branches (FEAT-009 split),
+        # not from index() directly anymore.
         "chunk_document", "services/chunking/dispatch.py",
-        expected_callers=("IndexingService.index",),
+        expected_callers=("IndexingService._run_full", "IndexingService._run_incremental"),
     ),
     SymbolTruth(
         "redact", "observability/logging.py",
