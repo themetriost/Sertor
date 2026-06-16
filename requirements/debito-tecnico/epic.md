@@ -21,6 +21,11 @@ Sertor è cresciuto in fretta e ha accumulato debiti che **non sono capacità ma
   `[strings]`; il `reconcile` periodico è solo documentato (nessun trigger).
 - **Bundle governance rigido:** `sertor-flow` è all-or-nothing (selettività = Could) e senza hook harness (DA-g).
 - **CI non Linux:** i test girano su Windows; manca il **test Linux nativo** (debito noto, rag-baseline DA-2).
+- **Naming `--assistant` incoerente:** la distribuzione Copilot espone **due** valori (`copilot` = VS Code ·
+  `copilot-cli` = Copilot CLI) per quello che l'utente percepisce come «un solo Copilot». Va **allineato a un
+  solo `copilot`** (user-flagged 2026-06-16). Apre una decisione di design: come riconciliare i due
+  contenitori MCP sotto un nome unico — `.vscode/mcp.json`/`servers` (VS Code) vs `.mcp.json`/`mcpServers`
+  (CLI) — es. scriverli **entrambi**, oppure eleggere `.mcp.json` come canonico (GitHub sta convergendo lì).
 
 Il valore: ridurre la frizione e **onorare il Principio X** anche sugli asset interni, così il prodotto
 resta davvero portabile e lo sviluppo resta veloce.
@@ -36,6 +41,7 @@ resta davvero portabile e lo sviluppo resta veloce.
 - **Igiene del wiki** (hub per-area, tassonomia, distill mancanti, pagine gonfie, seed override, trigger `reconcile`).
 - **Robustezza del bundle governance** (selettività, hook harness).
 - **CI multipiattaforma** (Linux nativo).
+- **Coerenza del naming dell'installer** (`--assistant`): un solo `copilot`, non `copilot`/`copilot-cli`.
 
 ### Fuori ambito
 - Qualunque **nuova capacità di prodotto** (retrieval, ingestione, memoria, osservabilità): le rispettive epiche.
@@ -89,6 +95,7 @@ resta davvero portabile e lo sviluppo resta veloce.
 | FEAT-004 | **Rituale/governance come plugin portabile** repo-agnostico (oltre ciò che `sertor-flow` copre) | Riuso del metodo su repo terzi senza Sertor | **Could** | da decomporre |
 | FEAT-005 | **Igiene del wiki** — hub/overview per-area, tassonomia più fine, distill pagina osservabilità, ripasso [[tree-sitter-language-pack]], override seed `[strings]`, trigger periodico `reconcile` | Wiki navigabile e senza deriva organizzativa | **Could** | da decomporre — guidata dal lint C |
 | FEAT-006 | **Robustezza del bundle `sertor-flow`** — selettività (vs all-or-nothing) + hook harness governance (DA-g) | Install governance più flessibile | **Could** | da decomporre |
+| FEAT-007 | **Allineamento naming `--assistant`** — unificare i due valori Copilot (`copilot` VS Code + `copilot-cli`) in **un solo `copilot`** | Coerenza dell'API installer, meno confusione utente | **Could** | da decomporre — *user-flagged 2026-06-16*; decisione di design aperta: due contenitori MCP (`.vscode/mcp.json`/`servers` vs `.mcp.json`/`mcpServers`) sotto un nome unico (scrivere entrambi? `.mcp.json` canonico?) |
 
 > **Nota:** non c'è un «MVP» nel senso di prodotto: è debito. La priorità reale è **FEAT-001/002/003**
 > (Should): host-agnosticità, un solo env, CI Linux — le tre frizioni che incidono di più su qualità e
