@@ -471,6 +471,23 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/046-refresh-incrementale/plan.md` (FEAT-009 epica **sertor-core** — refresh **incrementale**
+dell'indice RAG. Oggi `index(rebuild)` ricostruisce FULL i 5 stadi (discover/chunk/embed/reset+upsert/
+BM25+code-graph); solo l'embed è incrementale via cache FEAT-019 → su ospiti grandi = minuti. Introduce un
+**manifest SQLite** namespaced `(corpus,provider)` (`<index_dir>/index_manifest.sqlite`, gitignored) che
+persiste per file `mtime+content_hash+logic_version` **e le unità derivate (Document+Chunk)**. Run
+**incrementale di DEFAULT** (decisione utente F2): classifica UNCHANGED/NEW/MODIFIED/DELETED (mtime
+pre-filtro + hash conferma), riprocessa solo i cambiati, **upsert/delete MIRATI** sul `VectorStore`
+(`delete(collection,ids)` **già esistente**, nessuna porta estesa), **ricostruisce BM25+code-graph DAL
+MANIFEST** (decisione utente F1: mirror `build()`, niente re-chunk/re-read degli invariati). Safeguard
+Must: equivalenza col full (FR-012), **fallback automatico al full** su manifest assente/incompatibile
+(FR-011), invalidazione su cambio-logica `logic_version` (FR-013), conteggi delta osservabili added/
+updated/removed/unchanged/cache_hits (FR-015). `--full` resta il reset sicuro. Da clarify: full di
+**riconciliazione** OFF-default (`SERTOR_INDEX_RECONCILE_EVERY=0`, FR-019; il segnale di drift →
+osservabilità **FEAT-012**) + **guardia single-writer** (`IndexLockedError`, FR-020; concorrenza avanzata →
+epica multiutente). Manifest = store **concreto senza nuova porta** (come EmbeddingCache/MemoryArchive).
+Granularità a file (embed-cache copre il chunk-level). Constitution **PASS 11/11** senza deroghe. Branch
+`046-refresh-incrementale`. Storico:
 `specs/045-distribuzione-copilot-flow/plan.md` (FEAT-009 epica sertor-cli — distribuzione della
 **governance/SDLC** del pacchetto `sertor-flow` su **GitHub Copilot** con parità funzionale, gemella di
 FEAT-007. Due leve: (1) **pivot vendoring→launch-installer** (decisione utente): `sertor-flow` smette di
