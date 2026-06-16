@@ -1,9 +1,9 @@
 ---
 title: Targeting per-assistente (AssistantProfile / Surface)
 type: tech
-tags: [installer, sertor-install-kit, copilot, claude, host-agnostico, principio-x, feat-007]
+tags: [installer, sertor-install-kit, copilot, copilot-cli, claude, host-agnostico, principio-x, feat-007]
 created: 2026-06-15
-updated: 2026-06-15
+updated: 2026-06-16 (+ target `copilot-cli`, PR #66: la Copilot CLI legge `.mcp.json`/`mcpServers`, non `.vscode/mcp.json`)
 sources: ["packages/sertor-install-kit/src/sertor_install_kit/assistant.py", "packages/sertor/src/sertor_installer/install_wiki.py", "packages/sertor/src/sertor_installer/install_rag.py", "specs/044-distribuzione-copilot/plan.md", "requirements/sertor-cli/distribuzione-copilot/requirements.md"]
 ---
 
@@ -17,8 +17,9 @@ all'**assistente ospite**: l'assistente si **configura**, non si presume nel cor
 
 ## Le tre entità
 
-- **`AssistantId`** (enum): l'assistente target — `claude` (default documentato), `copilot`. Valore
-  ignoto → `ConfigError` esplicito (Principio IV). `codex` = futuro (Could).
+- **`AssistantId`** (enum): l'assistente target — `claude` (default documentato), `copilot` (Copilot
+  in VS Code), `copilot-cli` (Copilot CLI). Valore ignoto → `ConfigError` esplicito (Principio IV).
+  `codex` = futuro (Could).
 - **`Surface`** (enum): la **categoria logica** di artefatto distribuibile, indipendente
   dall'assistente — `INSTRUCTION_BLOCK`, `MCP_SERVER`, `COMMAND`, `AGENT`, `HOOK`. È il **perno della
   parità**: ogni Surface ha una resa per ciascun assistente.
@@ -28,13 +29,22 @@ all'**assistente ospite**: l'assistente si **configura**, non si presume nel cor
 
 ## La mappa (data-model §3)
 
-| Surface | `claude` | `copilot` |
-|---|---|---|
-| `INSTRUCTION_BLOCK` | `CLAUDE.md` (marker) | `.github/copilot-instructions.md` (marker) |
-| `MCP_SERVER` | `.mcp.json` (`mcpServers`) | `.vscode/mcp.json` (`servers`) |
-| `COMMAND` | `.claude/commands/*.md`, `.claude/skills/*` | `.github/prompts/*.prompt.md` |
-| `AGENT` | `.claude/agents/*.md` | `.github/agents/*.agent.md` |
-| `HOOK` | `.claude/settings.json` | `.github/hooks/sertor-hooks.json` |
+| Surface | `claude` | `copilot` (VS Code) | `copilot-cli` |
+|---|---|---|---|
+| `INSTRUCTION_BLOCK` | `CLAUDE.md` (marker) | `.github/copilot-instructions.md` | `.github/copilot-instructions.md` |
+| `MCP_SERVER` | `.mcp.json` (`mcpServers`) | `.vscode/mcp.json` (`servers`) | `.mcp.json` (`mcpServers`) |
+| `COMMAND` | `.claude/commands/*.md`, `.claude/skills/*` | `.github/prompts/*.prompt.md` | `.github/prompts/*.prompt.md` |
+| `AGENT` | `.claude/agents/*.md` | `.github/agents/*.agent.md` | `.github/agents/*.agent.md` |
+| `HOOK` | `.claude/settings.json` | `.github/hooks/sertor-hooks.json` | `.github/hooks/sertor-hooks.json` |
+
+> **Perché due target Copilot (feature 046, PR #66).** La **Copilot CLI** ha **rimosso** il supporto a
+> `.vscode/mcp.json` (root `servers`) e legge l'MCP da `.mcp.json` (cwd→git root) con root `mcpServers`
+> — il **formato Claude**. Da qui un terzo `AssistantId` `copilot-cli`: **unica differenza** dal target
+> `copilot` è il contenitore `MCP_SERVER` (`.mcp.json`/`mcpServers` invece di `.vscode/mcp.json`/
+> `servers`); tutte le altre Surface riusano i contenitori `.github/**` (che la CLI legge). Nel codice
+> `install_rag`/`install_wiki` instradano la **famiglia Copilot** (VS Code + CLI) sulle superfici
+> `.github/**`; `_apply_mcp` deriva il `root_key` dal target. **Ambito:** solo pacchetto `sertor`;
+> `sertor-flow` resta `claude|copilot` (supporto SpecKit alla CLI = follow-up).
 
 I plan-builder `build_install_plan`/`build_rag_plan` ([[sertor-installer]]) sono **parametrici**:
 chiedono i target al profilo invece di cablare `.claude/...`. `--assistant claude` resta byte-identico

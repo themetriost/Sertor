@@ -3,7 +3,7 @@ title: Sertor anche con GitHub Copilot
 type: explainer
 tags: [explainer, copilot, assistente, installazione, non-tecnico, feat-007]
 created: 2026-06-15
-updated: 2026-06-15
+updated: 2026-06-16 (Copilot esiste in due forme — editor e riga di comando — e Sertor le distingue)
 sources: ["specs/044-distribuzione-copilot/spec.md", "requirements/sertor-cli/distribuzione-copilot/requirements.md"]
 ---
 
@@ -30,6 +30,15 @@ Quando installi Sertor su un progetto dici **per quale assistente** lo vuoi:
 
 Se non dici niente, resta il comportamento di prima (Claude). Nessuna installazione fa partire da sola
 lavori costosi, niente viene sovrascritto a sorpresa, e rifare l'installazione non crea doppioni.
+
+## Copilot esiste in due forme
+
+GitHub Copilot non è una cosa sola: c'è quello **dentro l'editor** (VS Code) e quello da **riga di
+comando** (la "Copilot CLI", che si usa nel terminale). I due cercano le proprie istruzioni in
+**posti diversi**, e per un periodo quello da terminale ha smesso di leggere il file che usava
+l'editor. Sertor ora **distingue le due forme**: scegli *«per Copilot editor»* o *«per Copilot da
+terminale»* e l'aggancio viene messo nel posto giusto per ciascuno — così la presa combacia davvero,
+non solo in apparenza.
 
 ## Perché è importante
 
