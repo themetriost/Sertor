@@ -61,7 +61,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 | Epica | ✅ Consegnato (su master) | 🔜 Da fare (residui) |
 |---|---|---|
-| [`sertor-core`](../../requirements/sertor-core/epic.md) | nucleo · baseline · wiki · MCP · ibrido · grafo · agentico-composito · **Wiki↔RAG composito** · **refresh incrementale (FEAT-009)** | **Could:** agenzia incorporata (differita) |
+| [`sertor-core`](../../requirements/sertor-core/epic.md) | nucleo · baseline · wiki · MCP · ibrido · grafo · agentico-composito · **Wiki↔RAG composito** · **refresh incrementale (FEAT-009)** | ✅ **nessun residuo aperto** (agenzia incorporata ❌ abbandonata by design) |
 | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | `sertor-rag` · install wiki/rag · governance · Copilot | **FEAT-001 packaging (Must)** · wizard · lifecycle · ergonomia · Codex · PyPI |
 | [`osservabilita`](../../requirements/osservabilita/epic.md) | MVP F1–F4 (persisti→aggrega→TUI live→report) | OTel · metriche aggregate · **stima € (Should)** · web · trend · export CSV/MD |
 | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | MVP cattura+ricerca+CLI/hook+distillazione (**acceso**) | semantica · remember-this · retention · **FEAT-009 installer (Must)** · multi-assist · parità MCP |
@@ -116,9 +116,9 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   CI Linux (Should); plugin rituale portabile, igiene wiki, selettività bundle `sertor-flow` (Could).
 
 **Epiche esistenti, in attesa:**
-- **Sertor-core (residui Could)** — resta solo l'**agenzia incorporata** (`motore-agentico`, differita;
-  agentic RAG è già ✅ composito). *(FEAT-009 refresh incrementale ✅ **DONE 2026-06-16**, merge `3ec47f1` —
-  vedi DONE; FEAT-008 Wiki↔RAG ✅ composita.)*
+- **Sertor-core — ✅ nessun residuo aperto** — l'**agenzia incorporata** è **❌ abbandonata by design**
+  (2026-06-16, «non ci serve»; l'agentic RAG è già ✅ composito via MCP+agente). *(FEAT-009 ✅ DONE merge
+  `3ec47f1`; FEAT-008 Wiki↔RAG ✅ composita.)* L'epica primaria del prodotto è sostanzialmente **completa**.
 - **Memoria — Should/Could** — FEAT-004 (ricerca semantica opt-in), FEAT-005 (remember-this), FEAT-006
   (retention), FEAT-007 (ponte second-brain), **FEAT-009 distribuzione via installer (Must/debito)**,
   FEAT-008 (cattura multi-assistente), FEAT-010 (parità MCP `show`/`list`). *(FEAT-003 ✅ DONE.)*
@@ -128,8 +128,9 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   (FEAT-003), lifecycle upgrade/uninstall (FEAT-008), ergonomia installer (FEAT-010), **Codex** (FEAT-007/009
   Could, non avviato per scelta utente), PyPI (Won't) — gating sulla **licenza** (da aprire).
 - **Multiutente** — epica differita finché il caso d'uso team non è concreto.
-- **Agenzia RAG incorporata** — dote Could differita (`sertor-core/motore-agentico/`, 36 REQ): agentic RAG
-  è ✅ composito (MCP+agente); l'agenzia nel core (`sertor-rag ask`, porta `LLMProvider`) si riapre se serve.
+- **Agenzia RAG incorporata** — ❌ **abbandonata by design (2026-06-16, decisione utente)**: l'agentic RAG
+  è già ✅ composito (MCP+agente) e un agente nel core con modello minore non lo migliorerebbe; i 36 REQ in
+  `sertor-core/motore-agentico/` restano **elicitazione storica**, non pianificata.
 
 ### ✅ DONE (su `master`, le rilevanti)
 

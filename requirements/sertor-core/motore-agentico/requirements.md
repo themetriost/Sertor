@@ -1,8 +1,10 @@
 # Requisiti — Motore RAG agentico
 <!-- Deriva da: FEAT-006 (backlog epica sertor-core) -->
-<!-- Stato: elicitato — 2026-06-12; FEATURE RINVIATA lo stesso giorno (decisione utente, vedi banner) -->
+<!-- Stato: elicitato 2026-06-12; ABBANDONATA BY DESIGN 2026-06-16 (decisione utente: «non ci serve») -->
 
-> **⏸ FEATURE RINVIATA (decisione utente, 2026-06-12).** Durante la risoluzione di DA-1 è
+> **❌ FEATURE ABBANDONATA BY DESIGN (decisione utente, 2026-06-16; supera il rinvio del 2026-06-12 —
+> «non ci serve»).** L'elicitazione qui sotto resta come **memoria storica**, non è pianificata.
+> Durante la risoluzione di DA-1 era già
 > emersa la presa d'atto che **l'agentic RAG composito esiste già**: l'agente è il *client*
 > MCP (Claude Code, domani Copilot) che pianifica le query, sceglie tra i 7 tool, itera e
 > sintetizza con citazioni — ed è un modello frontier, migliore nel tool use di un loop
