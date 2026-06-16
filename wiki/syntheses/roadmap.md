@@ -61,7 +61,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 | Epica | ✅ Consegnato (su master) | 🔜 Da fare (residui) |
 |---|---|---|
-| [`sertor-core`](../../requirements/sertor-core/epic.md) | nucleo · baseline · wiki · MCP · ibrido · grafo · agentico-composito | **Could:** FEAT-008 Wiki↔RAG · **FEAT-009 refresh incrementale indice** · agenzia incorporata |
+| [`sertor-core`](../../requirements/sertor-core/epic.md) | nucleo · baseline · wiki · MCP · ibrido · grafo · agentico-composito · **Wiki↔RAG composito** | **Could:** **FEAT-009 refresh incrementale indice** · agenzia incorporata |
 | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | `sertor-rag` · install wiki/rag · governance · Copilot | **FEAT-001 packaging (Must)** · wizard · lifecycle · ergonomia · Codex · PyPI |
 | [`osservabilita`](../../requirements/osservabilita/epic.md) | MVP F1–F4 (persisti→aggrega→TUI live→report) | OTel · metriche aggregate · **stima € (Should)** · web · trend · export CSV/MD |
 | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | MVP cattura+ricerca+CLI/hook+distillazione (**acceso**) | semantica · remember-this · retention · **FEAT-009 installer (Must)** · multi-assist · parità MCP |
@@ -116,10 +116,11 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   CI Linux (Should); plugin rituale portabile, igiene wiki, selettività bundle `sertor-flow` (Could).
 
 **Epiche esistenti, in attesa:**
-- **Sertor-core (residui Could)** — FEAT-008 arricchimento bidirezionale **Wiki↔RAG** · **FEAT-009 refresh
-  incrementale dell'indice** (solo file cambiati): oggi *mitigato* dalla regola standing di full re-index
-  per step (`CLAUDE.md` punto 5), corollario di costo in `requirements/sertor-core/refresh-incrementale/` —
-  alza la rilevanza su ospiti grandi (rebuild = minuti).
+- **Sertor-core (residui Could)** — **FEAT-009 refresh incrementale dell'indice** (solo file cambiati):
+  oggi *mitigato* dalla regola standing di full re-index per step (`CLAUDE.md` punto 5), corollario di
+  costo in `requirements/sertor-core/refresh-incrementale/` — alza la rilevanza su ospiti grandi (rebuild
+  = minuti). + agenzia incorporata (`motore-agentico`, differita). *(FEAT-008 Wiki↔RAG ✅ chiusa in forma
+  composita il 2026-06-16, verificata live — vedi DONE.)*
 - **Memoria — Should/Could** — FEAT-004 (ricerca semantica opt-in), FEAT-005 (remember-this), FEAT-006
   (retention), FEAT-007 (ponte second-brain), **FEAT-009 distribuzione via installer (Must/debito)**,
   FEAT-008 (cattura multi-assistente), FEAT-010 (parità MCP `show`/`list`). *(FEAT-003 ✅ DONE.)*
@@ -412,6 +413,7 @@ già su master).
 
 | Idea | Valore / perché | Note / vincoli | Stato |
 |------|-----------------|----------------|-------|
+| **Rilevamento attivo dei gap di documentazione** (codice→wiki generativo) | Il residuo *genuino* di FEAT-008: oggi il legame codice↔doc è **passivo** (lo interroghi con `get_context`/`related_docs`), manca il **generativo** — il RAG/code-graph che rileva **entità di codice senza pagina wiki** e le **propone** al `wiki-author` | Scorporato dalla chiusura di FEAT-008 (✅ composita, verificata live 2026-06-16). Casa candidata: feature wiki dedicata o `debito-tecnico` FEAT-005 (igiene-wiki). Riusa il [[code-graph]] (`find_symbol`/`related_docs`) + lint C | 💡 **idea, scorporata da FEAT-008** (2026-06-16) |
 | **Pannello di controllo (TUI) di osservabilità** | Vedere log, consumo (token/€), #chunk, **hit/miss della cache** e fare report. Sertor già emette log strutturati ricchi ma effimeri | **Epica aperta** `requirements/osservabilita/epic.md` (10 feature MoSCoW, 2 strati: osservabilità persistente nel core + pannello TUI). Fork decisi: **superficie = TUI** (web=Could fase 2), **dati = store SQLite locale + export OTel opzionale**. Assorbe «logging come strategia runtime» e i Could **H9/H10** dell'hardening. MVP = FEAT-001→004 (persisti→aggrega→TUI live→report) **+ stima € (Should, DA-O-g risolta)**. Privacy fissata (DA-O-d): **privacy-by-default a strati** (metriche di default · testo opt-in · semantico opt-in ulteriore). Restano domande di design (cattura "live", retention, innesto su `log_event`) | 👍 **epica aperta, da decomporre** (utente, 2026-06-14) |
 | **Memoria conversazioni (terzo livello / episodica, pattern Hermes)** | Archiviare TUTTE le conversazioni come tier grezzo episodico, interrogabile nei casi speciali («ne avevamo già parlato?»); è il tassello mancante sotto il diario del wiki, fonte grezza per la distillazione | **Epica aperta** `requirements/memoria-conversazioni/epic.md` (8 feature MoSCoW). Distinta dall'osservabilità (conoscenza ≠ telemetria), **privacy condivisa** (privacy-by-default, FTS locale, semantico opt-in). MVP = cattura + ricerca episodica locale. **Nodo:** la cattura è host-specifica (Claude Code → harness) → si lega alla distribuzione multi-assistente. Mappa Hermes↔Sertor in epic.md | 👍 **epica aperta, da decomporre, in parallelo** (utente, 2026-06-14) |
 | **Second brain cross-progetto** (il «Sertor dei Sertor» / Meta-Sertor) | Conoscenza condivisa e di più alto livello su TUTTI i propri contesti: condividere esperienze/metodologie, scambiarsi skill/agenti, **sintetizzare asset nuovi** da più progetti. Sertor da autore a **giardiniere della flotta** | Sertor ricorsivo (L0/L1/L2); riusa feature 010 (fan-out) + installer + Principio X; nuovo = confine di **promozione** (giudizio) + **verifica/parametrizzazione** asset + trust/decay. Pagina-visione con diagrammi: [[second-brain-cross-progetto]] | 👍 **promossa a epica `second-brain` (2026-06-16)** — resta DA ESPANDERE (bivi §9) |
