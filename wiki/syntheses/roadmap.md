@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-16 (FEAT-009 requirements decomposti → `/speckit-plan` — 18 REQ EARS, MoSCoW, decisioni F1/F2, 5 DA aperte; prior-art CocoIndex/LlamaIndex/LangChain consultate) · 2026-06-16 (backlog audit → roadmap: 6 nuove epiche dal censimento del non-fatto — retrieval-qualita · backend-store-scala · ingestione-estesa · conoscenza-schema-sql · second-brain · debito-tecnico; leak minori promossi nelle epiche esistenti; EXEC table + PLANNED riorganizzati) · 2026-06-15 (Principio XI realizzato end-to-end A-D: auto-wire composition + ospite istruzioni/hook + bundle coerenza, PRs #61/#62/#63) · 2026-06-14 (FEAT-003 aggancio distillazione all'archivio ✅ master PR #51 — MVP memoria completo+acceso, loop cattura→distill chiuso; SERTOR_MEMORY=true sul dogfood) · 2026-06-14 (MVP osservabilità ✅ master F1→F4 PR #34/35/36/38; memory conversazioni epica decomposte FEAT-001/002) · 2026-06-14 (hardening Should gruppo C — feature 019 cache embeddings + token nei log — implementata su branch, in attesa di PR) · 2026-06-13 (notte: FEAT-018 hardening retrieval Must ✅ su master, PR #32 — retry embedder + soglia/low_confidence; hardening resta IN PROGRESS perché Should/Could aperti) · 2026-06-13 (sera: + idea «Second brain cross-progetto»/Meta-Sertor → [[second-brain-cross-progetto]], da espandere · giornata: FEAT-006 ✅ composita · igiene radice host PR #26 · tema lingua completo PR #27/#28/#29) · 2026-06-12 (TRIPLA: PR #23/#24/#25)
+updated: 2026-06-16 (FEAT-009 refresh incrementale dell'indice ✅ DONE — merge `3ec47f1` su master: manifest SQLite, incrementale di default, upsert/delete mirati + BM25/grafo dal manifest, lock single-writer, gate di equivalenza verde, 596 test, Constitution 11/11; ultimo residuo reale di sertor-core chiuso) · 2026-06-16 (FEAT-009 requirements decomposti → `/speckit-plan` — 18 REQ EARS, MoSCoW, decisioni F1/F2, 5 DA aperte; prior-art CocoIndex/LlamaIndex/LangChain consultate) · 2026-06-16 (backlog audit → roadmap: 6 nuove epiche dal censimento del non-fatto — retrieval-qualita · backend-store-scala · ingestione-estesa · conoscenza-schema-sql · second-brain · debito-tecnico; leak minori promossi nelle epiche esistenti; EXEC table + PLANNED riorganizzati) · 2026-06-15 (Principio XI realizzato end-to-end A-D: auto-wire composition + ospite istruzioni/hook + bundle coerenza, PRs #61/#62/#63) · 2026-06-14 (FEAT-003 aggancio distillazione all'archivio ✅ master PR #51 — MVP memoria completo+acceso, loop cattura→distill chiuso; SERTOR_MEMORY=true sul dogfood) · 2026-06-14 (MVP osservabilità ✅ master F1→F4 PR #34/35/36/38; memory conversazioni epica decomposte FEAT-001/002) · 2026-06-14 (hardening Should gruppo C — feature 019 cache embeddings + token nei log — implementata su branch, in attesa di PR) · 2026-06-13 (notte: FEAT-018 hardening retrieval Must ✅ su master, PR #32 — retry embedder + soglia/low_confidence; hardening resta IN PROGRESS perché Should/Could aperti) · 2026-06-13 (sera: + idea «Second brain cross-progetto»/Meta-Sertor → [[second-brain-cross-progetto]], da espandere · giornata: FEAT-006 ✅ composita · igiene radice host PR #26 · tema lingua completo PR #27/#28/#29) · 2026-06-12 (TRIPLA: PR #23/#24/#25)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md", "requirements/memoria-conversazioni/epic.md"]
 ---
 
@@ -61,7 +61,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 | Epica | ✅ Consegnato (su master) | 🔜 Da fare (residui) |
 |---|---|---|
-| [`sertor-core`](../../requirements/sertor-core/epic.md) | nucleo · baseline · wiki · MCP · ibrido · grafo · agentico-composito · **Wiki↔RAG composito** | **Could:** **FEAT-009 refresh incrementale indice** (✍️ requirements decomposti 2026-06-16 → `/speckit-plan`) · agenzia incorporata |
+| [`sertor-core`](../../requirements/sertor-core/epic.md) | nucleo · baseline · wiki · MCP · ibrido · grafo · agentico-composito · **Wiki↔RAG composito** · **refresh incrementale (FEAT-009)** | **Could:** agenzia incorporata (differita) |
 | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | `sertor-rag` · install wiki/rag · governance · Copilot | **FEAT-001 packaging (Must)** · wizard · lifecycle · ergonomia · Codex · PyPI |
 | [`osservabilita`](../../requirements/osservabilita/epic.md) | MVP F1–F4 (persisti→aggrega→TUI live→report) | OTel · metriche aggregate · **stima € (Should)** · web · trend · export CSV/MD |
 | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | MVP cattura+ricerca+CLI/hook+distillazione (**acceso**) | semantica · remember-this · retention · **FEAT-009 installer (Must)** · multi-assist · parità MCP |
@@ -116,9 +116,9 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   CI Linux (Should); plugin rituale portabile, igiene wiki, selettività bundle `sertor-flow` (Could).
 
 **Epiche esistenti, in attesa:**
-- **Sertor-core (residui Could)** — **FEAT-009 refresh incrementale dell'indice** (solo file cambiati):
-  ✍️ **requirements decomposti (2026-06-16)** → `requirements/sertor-core/refresh-incrementale/requirements.md` (18 REQ EARS, MoSCoW, decisioni F1/F2 + 5 DA aperte); prossimo step = `/speckit-plan`. Oggi *mitigato* dalla regola standing di full re-index per step (`CLAUDE.md` punto 5); corollario di costo in `refresh-incrementale/corollario-costo.md` (discover+chunk+store+BM25+grafo full ogni volta, ~2,7 MB/s su corpus grande = minuti). + agenzia incorporata (`motore-agentico`, differita). *(FEAT-008 Wiki↔RAG ✅ chiusa in forma
-  composita il 2026-06-16, verificata live — vedi DONE.)*
+- **Sertor-core (residui Could)** — resta solo l'**agenzia incorporata** (`motore-agentico`, differita;
+  agentic RAG è già ✅ composito). *(FEAT-009 refresh incrementale ✅ **DONE 2026-06-16**, merge `3ec47f1` —
+  vedi DONE; FEAT-008 Wiki↔RAG ✅ composita.)*
 - **Memoria — Should/Could** — FEAT-004 (ricerca semantica opt-in), FEAT-005 (remember-this), FEAT-006
   (retention), FEAT-007 (ponte second-brain), **FEAT-009 distribuzione via installer (Must/debito)**,
   FEAT-008 (cattura multi-assistente), FEAT-010 (parità MCP `show`/`list`). *(FEAT-003 ✅ DONE.)*
@@ -132,6 +132,20 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   è ✅ composito (MCP+agente); l'agenzia nel core (`sertor-rag ask`, porta `LLMProvider`) si riapre se serve.
 
 ### ✅ DONE (su `master`, le rilevanti)
+
+- **🚢 Refresh incrementale dell'indice (FEAT-009, feature 046, merge `3ec47f1`, 2026-06-16)** — chiude
+  l'**ultimo residuo reale di `sertor-core`** (resta solo l'agenzia incorporata, Could differita).
+  `index()` è ora **incrementale di default**: un **manifest SQLite** namespaced `(corpus, provider)`
+  ricorda `mtime+content_hash+logic_version` e conserva le unità derivate (Document/Chunk); i file cambiati
+  sono riprocessati con **upsert/delete mirati** sul vector store (`VectorStore.delete` già esistente) e
+  **BM25+code-graph ricostruiti dal manifest** (decisione utente F1 — niente re-chunk/re-read degli
+  invariati). Safeguard: **fallback automatico al full** su manifest assente/incompatibile, `--full` reset
+  sicuro, invalidazione su cambio-logica, **lock single-writer** (`IndexLockedError`), riconciliazione
+  off-default (`SERTOR_INDEX_RECONCILE_EVERY`, decisione F2/clarify), conteggi delta osservabili. Manifest =
+  store concreto **senza nuova porta** (come EmbeddingCache). Pipeline SpecKit completa specify→implement,
+  guidata da **ricerca prior-art** (CocoIndex/LlamaIndex/LangChain); **gate di equivalenza** incrementale≡full
+  (byte-identico) verde; **596 test** non-cloud verdi, ruff pulito, **Constitution PASS 11/11 senza deroghe**.
+  Genera la feature osservabilità **FEAT-012 drift-detection** (il segnale per il trigger della riconciliazione).
 
 - **🚢 Distribuzione Copilot della governance/SDLC — `sertor-flow` (FEAT-009, feature 045, PR #65, 2026-06-15)** —
   **chiude la distribuzione multi-assistente Copilot end-to-end** (con FEAT-007). `sertor-flow install

@@ -1,14 +1,16 @@
 ---
 title: Indicizzazione e retrieval (le due pipeline)
 type: concept
-tags: [indexing, retrieval, facade, pipeline, idempotenza, sertor-core, thin-consumer]
+tags: [indexing, retrieval, facade, pipeline, idempotenza, sertor-core, thin-consumer, incremental-indexing, feat-009]
 created: 2026-06-08
-updated: 2026-06-14 (+ cache embeddings per content-hash, costo del rebuild, 019)
+updated: 2026-06-16 (+ refresh incrementale, manifest persistito, FEAT-009)
 sources: [
   "src/sertor_core/services/indexing.py",
   "src/sertor_core/services/retrieval.py",
   "src/sertor_core/services/ingestion.py",
-  "src/sertor_core/adapters/embeddings/cache.py"
+  "src/sertor_core/adapters/embeddings/cache.py",
+  "src/sertor_core/services/index_manifest.py",
+  "requirements/sertor-core/refresh-incrementale/requirements.md"
 ]
 ---
 
@@ -51,6 +53,33 @@ diverso. È il **mitigante immediato** del refresh incrementale (FEAT-009 d'epic
 non evita di rileggere/ri-chunkare, ma evita di ri-embeddare. Vettori serializzati float64 esatti → indice
 byte-equivalente con/senza cache.
 
+## Refresh incrementale dell'indice (FEAT-009)
+
+L'**indice incrementale** rende l'indicizzazione proporzionale al **delta reale** delle sorgenti, non all'intera
+codebase — cruciale per il [[step-ritual|rituale di step]] su ospiti grandi (il full rebuild avrebbe costo in minuti/euro).
+
+**Il meccanismo: manifest persistito.** L'indice porta con sé un **ledger SQLite** namespaced per `(corpus, provider)`
+(`<index_dir>/index_manifest.sqlite`, gitignored), che ricorda per ogni file: `mtime`, `content_hash`, `chunk_id`,
+`versione-logica`. All'invocazione di `index()` (FEAT-009 di DEFAULT):
+
+1. **Rilevamento delta** — scoperta ordinata (come oggi); per ogni file, controllo `mtime` (pre-filtro veloce) + hash
+   (conferma); classificazione in 4 classi: `UNCHANGED` (skip), `NEW` (embed+store), `MODIFIED` (delete vecchi chunk,
+   embed+store i nuovi), `DELETED` (delete dallo store).
+2. **Upsert mirati** — il vettore store riceve solo i chunk NEW/MODIFIED; BM25 e code-graph si **ricostruiscono dal
+   manifest** (i chunk-id sono persistiti) invece di rileggere i file invariati. Così il lavoro è **O(delta)**, non
+   O(corpus).
+3. **Safeguard** — fallback automatico al full se il manifest è assente/incompatibile; invalidazione su cambio-logica
+   (versionamento dei chunker); conteggi delta osservabili (added/updated/removed/unchanged/cache-hits) nel log.
+
+**Decisioni utente incorporati (F1+F2 del clarify).** L'incrementale è **il default** (`SERTOR_INDEX_INCREMENTAL=true`,
+default). Override: `--full` in CLI o `SERTOR_INDEX_INCREMENTAL=false` forzano il reset+rebuild completo. Un altro
+switch `SERTOR_INDEX_RECONCILE_EVERY=N` (default off) **riconcilia** ogni N invocazioni (riabilita il full per
+rilevare i drift del ledger — non necessario in normale operazione, ma asimmetria voluta: il costo della riconciliazione
+non è pagato da chiunque).
+
+**Nessuna nuova porta.** Il manifest è uno **store concreto** (come `EmbeddingCache`), non una astrazione dietro un
+`Protocol` — ha un unico consumatore e YAGNI preclude di farne una porta.
+
 ## La facade di retrieval
 
 `RetrievalFacade` è il **punto d'accesso unico e stabile** al corpus indicizzato, ed è ciò che i
@@ -89,3 +118,4 @@ vettoriali diversi non si fondono; meglio nessuna risposta che una fusione fuorv
 - Le astrazioni cablate: [[ports-adapters]].
 - Come nascono i chunk: [[chunking-dispatch]].
 - Chi consuma la facade: [[thin-consumer]] · prima modalità RAG: [[vector-retrieval]].
+- Il refresh incrementale: [[indexing-and-retrieval#refresh-incrementale-dellindice-feat-009]] (FEAT-009, requisiti in `requirements/sertor-core/refresh-incrementale/`).
