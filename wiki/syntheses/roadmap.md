@@ -14,7 +14,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > `requirements → spec → plan → tasks → implement`.
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-06-15)
+## ⚡ Executive summary (stato al 2026-06-16)
 
 ### 📊 Roadmap a colpo d'occhio
 
@@ -47,6 +47,26 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **Debito tecnico & igiene** (epica nuova, interna) | — | 📋 **EPICA aperta (2026-06-16)** — `requirements/debito-tecnico/`; host-agnosticità asset/unif. venv/CI Linux (Should), plugin rituale/igiene wiki/bundle (Could) |
 
 *Legenda:* ✅ su master · 🧪 operativo, consolidamento aperto · 📋 pianificato · 💀 ramo morto (non su master).
+
+### 📚 Inventario epiche (tutte — 11)
+
+> Le **epiche** del progetto in un punto solo (5 storiche + 6 nuove dal backlog audit 2026-06-16). Una
+> *feature* (`FEAT-NNN`) vive **dentro** un'epica: es. il *refresh incrementale dell'indice* è
+> `sertor-core` **FEAT-009**, non un'epica a sé.
+
+| # | Epica | Tipo | Stato | Residui chiave / prossimo passo |
+|---|---|---|---|---|
+| 1 | [`sertor-core`](../../requirements/sertor-core/epic.md) | primaria | ✅ MVP consegnato | Could: FEAT-008 Wiki↔RAG · **FEAT-009 refresh incrementale indice** · agenzia incorporata (motore-agentico) |
+| 2 | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | secondaria | ✅ esecuzione+install+Copilot | **FEAT-001 packaging (Must)** · wizard · lifecycle · FEAT-010 ergonomia · Codex · PyPI (Won't) |
+| 3 | [`osservabilita`](../../requirements/osservabilita/epic.md) | estensione | ✅ MVP F1–F4 | OTel · metriche aggregate · **stima € (Should)** · web · trend · CSV-MD |
+| 4 | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | estensione | 🔄 MVP acceso | semantica · remember-this · retention · **FEAT-009 installer (Must/debito)** · parità MCP |
+| 5 | [`multiutente`](../../requirements/multiutente/epic.md) | trasversale | 📋 aperta, differita | M01–M06 — riprendere col caso d'uso team concreto |
+| 6 | 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | estensione core | 📋 aperta | **FEAT-001 ground-truth (Must)** il 1° passo |
+| 7 | 🆕 [`backend-store-scala`](../../requirements/backend-store-scala/epic.md) | estensione core | 📋 aperta | **FEAT-001 PGVector (Should)** il 1° passo |
+| 8 | 🆕 [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | estensione core | 📋 aperta | chunking SQL (FEAT-003) **sblocca** schema-SQL |
+| 9 | 🆕 [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | estensione core | 📋 aperta | bloccata a monte da `ingestione-estesa` FEAT-003 |
+| 10 | 🆕 [`second-brain`](../../requirements/second-brain/epic.md) | trasversale | 📋 aperta, DA ESPANDERE | decidere bivi §9 prima di decomporre |
+| 11 | 🆕 [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | interna | 📋 aperta | host-agnosticità asset · unif. venv · CI Linux (Should) |
 
 ### 🔄 IN PROGRESS (dettaglio)
 
@@ -86,6 +106,10 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   CI Linux (Should); plugin rituale portabile, igiene wiki, selettività bundle `sertor-flow` (Could).
 
 **Epiche esistenti, in attesa:**
+- **Sertor-core (residui Could)** — FEAT-008 arricchimento bidirezionale **Wiki↔RAG** · **FEAT-009 refresh
+  incrementale dell'indice** (solo file cambiati): oggi *mitigato* dalla regola standing di full re-index
+  per step (`CLAUDE.md` punto 5), corollario di costo in `requirements/sertor-core/refresh-incrementale/` —
+  alza la rilevanza su ospiti grandi (rebuild = minuti).
 - **Memoria — Should/Could** — FEAT-004 (ricerca semantica opt-in), FEAT-005 (remember-this), FEAT-006
   (retention), FEAT-007 (ponte second-brain), **FEAT-009 distribuzione via installer (Must/debito)**,
   FEAT-008 (cattura multi-assistente), FEAT-010 (parità MCP `show`/`list`). *(FEAT-003 ✅ DONE.)*
