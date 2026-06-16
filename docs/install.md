@@ -7,10 +7,11 @@
 > host with one command (§5); and the **development method (SDLC)** via the separate, RAG-independent
 > package **`sertor-flow`** (§8). Each is non-destructive and idempotent — **install ≠ run**.
 >
-> **Target assistant.** All three installers accept **`--assistant claude|copilot`** (default
-> `claude`) to choose which host AI assistant receives the surfaces. Pick `copilot` to target
-> **GitHub Copilot in VS Code** (`.github/**` + `.vscode/mcp.json`) instead of Claude
-> (`.claude/**` + `.mcp.json` + `CLAUDE.md`) — see **§9**.
+> **Target assistant.** The installers accept **`--assistant`** (default `claude`) to choose which
+> host AI assistant receives the surfaces: `claude` (`.claude/**` + `.mcp.json` + `CLAUDE.md`),
+> `copilot` (GitHub Copilot **in VS Code**: `.github/**` + `.vscode/mcp.json`), or `copilot-cli`
+> (GitHub **Copilot CLI**: `.github/**` + `.mcp.json` with the `mcpServers` root). The `sertor`
+> installer supports all three; `sertor-flow` supports `claude|copilot`. See **§9**.
 
 ## Prerequisites
 
@@ -369,36 +370,50 @@ usage.
 
 ## 9. Targeting another assistant: GitHub Copilot (`--assistant`)
 
-By default the installers write the **Claude Code** layout. Pass **`--assistant copilot`** to any of
-them — `sertor install wiki`, `sertor install rag`, `sertor-flow install` — to target **GitHub
-Copilot in VS Code** instead. The *content* of every surface is reused; only the *container* (file
-path, format, JSON root key) is translated for the assistant. Default is `claude`; an unknown value
-stops with an explicit error listing the valid ones.
+By default the installers write the **Claude Code** layout. Pass `--assistant` to target GitHub
+Copilot instead. There are **two Copilot targets**, because the VS Code agent and the CLI read the
+MCP server from **different files**:
 
-| Logical surface | Claude container | Copilot container |
-|---|---|---|
-| Instruction / ritual block | `CLAUDE.md` (marker block) | `.github/copilot-instructions.md` (marker block) |
-| MCP server (`sertor-rag`) | `.mcp.json` (root key `mcpServers`) | `.vscode/mcp.json` (root key `servers`) |
-| Hook wiring | `.claude/settings.json` | `.github/hooks/sertor-hooks.json` |
-| Command / skill | `.claude/commands/<name>.md`, `.claude/skills/...` | `.github/prompts/<name>.prompt.md` |
-| Agent persona | `.claude/agents/<name>.md` | `.github/agents/<name>.agent.md` |
+- **`--assistant copilot`** — GitHub Copilot **in VS Code** (MCP in `.vscode/mcp.json`, root key `servers`).
+- **`--assistant copilot-cli`** — GitHub **Copilot CLI** (MCP in `.mcp.json`, root key `mcpServers`).
 
-```bash
-# RAG capability targeting Copilot (MCP lands in .vscode/mcp.json):
+Both reuse the same `.github/**` containers for instructions, prompts, agents and hooks (the CLI
+reads those too). The *content* of every surface is reused; only the *container* (path, format, JSON
+root key) is translated. Default is `claude`; an unknown value stops with an explicit error listing
+the valid ones.
+
+| Logical surface | Claude | Copilot (VS Code) | Copilot CLI |
+|---|---|---|---|
+| Instruction / ritual block | `CLAUDE.md` | `.github/copilot-instructions.md` | `.github/copilot-instructions.md` |
+| MCP server (`sertor-rag`) | `.mcp.json` (`mcpServers`) | `.vscode/mcp.json` (`servers`) | `.mcp.json` (`mcpServers`) |
+| Hook wiring | `.claude/settings.json` | `.github/hooks/sertor-hooks.json` | `.github/hooks/sertor-hooks.json` |
+| Command / skill | `.claude/commands/<name>.md` | `.github/prompts/<name>.prompt.md` | `.github/prompts/<name>.prompt.md` |
+| Agent persona | `.claude/agents/<name>.md` | `.github/agents/<name>.agent.md` | `.github/agents/<name>.agent.md` |
+
+Commands are single-line so they work as-is in **PowerShell** and POSIX shells:
+
+```powershell
+# RAG for the GitHub Copilot CLI (MCP lands in .mcp.json with the mcpServers root):
+uv run sertor install rag --assistant copilot-cli --backend azure
+# RAG for Copilot in VS Code (MCP lands in .vscode/mcp.json):
 uv run sertor install rag --assistant copilot --backend azure
-# Wiki system targeting Copilot (instructions in .github/copilot-instructions.md):
-uv run sertor install wiki --assistant copilot
-# Development method (SDLC) targeting Copilot (launches `specify init --ai copilot`):
-uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor-flow" \
-  sertor-flow install --assistant copilot
+# Wiki system for Copilot (instructions in .github/copilot-instructions.md):
+uv run sertor install wiki --assistant copilot-cli
 ```
 
-The same invariants hold for both assistants: **install ≠ run**, non-destructive (existing files are
+After installing for the **Copilot CLI**, reload its MCP config with `/mcp reload` (or restart the
+CLI) and verify with `/mcp show`. The CLI discovers `.mcp.json` walking from the cwd up to the git
+root (closest wins); `.github/mcp.json` and the user-level `~/.copilot/mcp-config.json` are also
+read.
+
+The same invariants hold for every assistant: **install ≠ run**, non-destructive (existing files are
 never overwritten — merges are additive and per-file writes skip), idempotent, and secrets are never
 written (the `.env` template ships with empty values).
 
-> **"Copilot" here means GitHub Copilot in VS Code, not the standalone GitHub Copilot CLI.** The
-> `copilot` target deposits the `.github/**` / `.vscode/mcp.json` containers that the VS Code Copilot
-> agent reads. The standalone *Copilot CLI* is **not** a separate install target. A third assistant
-> (`codex` → `AGENTS.md`) is planned but not yet implemented; only `claude` and `copilot` are
-> available today.
+> **Two Copilot surfaces, one cause.** The VS Code Copilot agent reads `.vscode/mcp.json` (`servers`
+> root); the Copilot **CLI** removed support for that file and reads `.mcp.json`/`.github/mcp.json`
+> with the `mcpServers` root. Use `--assistant copilot` for the former, `--assistant copilot-cli` for
+> the latter. **Scope:** the `copilot-cli` target currently covers the **`sertor`** package
+> (`install rag`/`install wiki`); the governance installer `sertor-flow` still targets
+> `claude|copilot` only (SpecKit-side support for the CLI is a follow-up). A further assistant
+> (`codex` → `AGENTS.md`) is planned but not yet implemented.

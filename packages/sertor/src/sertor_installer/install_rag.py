@@ -93,7 +93,10 @@ def build_rag_plan(
     `.vscode/mcp.json`/`.github/**`.
     """
     aprofile = AssistantProfile.for_assistant(assistant)
-    is_copilot = assistant is AssistantId.COPILOT
+    # Copilot family (VS Code + CLI) shares the `.github/**` host-facing surfaces; only the MCP
+    # container differs (resolved via the AssistantProfile): `.vscode/mcp.json` for VS Code,
+    # `.mcp.json` for the CLI.
+    is_copilot = assistant in (AssistantId.COPILOT, AssistantId.COPILOT_CLI)
 
     plan: list[Artifact] = []
     if with_deps:
