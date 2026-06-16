@@ -157,6 +157,7 @@ Il valore dell'epica è duplice e ricalca due strati:
 | FEAT-008 | **Web mode** — dashboard servita in locale nel browser, sopra lo stesso strato di osservabilità | Grafici ricchi per chi li preferisce al terminale | **Could** | da decomporre |
 | FEAT-009 | **Trend di qualità del retrieval** — andamento di `low_confidence` (astensioni), query a vuoto, distribuzione degli score | Primo passo verso la qualità (non solo costo), senza un eval completo | **Could** | da decomporre |
 | FEAT-010 | **Metriche del code-graph e del wiki** — #nodi/#archi e copertura per linguaggio; #pagine, orfani/link rotti, stato *pending vs clean* (dal lint) | Estende l'osservabilità alle due capacità ortogonali | **Could** | da decomporre |
+| FEAT-011 | **Export report CSV/MD** + bucket temporale **«hour»** — esportazione dei report (oltre la TUI) e granularità oraria | Report condivisibili fuori dal terminale | **Could** | da decomporre — **leak audit (2026-06-16)**, distinto dall'export OTel (FEAT-005) |
 
 > **Nota sull'MVP (Must):** la prima release utile è **FEAT-001 → FEAT-004**: persistere gli eventi,
 > aggregarli, e una TUI che mostra live **e** fa il report hit/miss + costo. La **stima € (FEAT-007,

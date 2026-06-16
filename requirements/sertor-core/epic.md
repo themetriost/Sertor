@@ -127,13 +127,23 @@ produzione: testato, configurabile, repo-agnostico, osservabile, riusabile come 
 | FEAT-007 | **Skill: mantenere il wiki vivo** (manutenzione deterministica + tema lingua) | Tiene il wiki coerente e aggiornato (idempotente) | **Should** | [decomposta](manutenzione-wiki/requirements.md) **(2026-06-12, con gap analysis e D1..D4 risolte)** — perimetro asciugato: lint B (N5) e lint C/reorg (N9) GIÀ coperti come metodo nel playbook ed esercitati; **probe di freschezza ELIMINATO** (D1, decisione utente: falsi positivi sui `sources` larghi, il lint B del rituale lo batte). Restano 22 REQ: `move`-con-link, `reconcile` detection su `status: superseded` (risoluzione sempre su conferma), `collect`+status, seed `structure init` localizzati (tabella it/en), **tema lingua risolto** (D4: asset installer → INGLESE canonico, la `language` governa la lingua del contenuto — coordinamento FEAT-012) |
 | FEAT-008 | **Arricchimento bidirezionale Wiki↔RAG** (wiki → parte documentale del RAG; sorgenti → parte codice del RAG + fondamenta del wiki) | Loop virtuoso doc/codice che migliora retrieval e documentazione | **Could** | da decomporre |
 | FEAT-009 | **Manutenzione/refresh incrementale dell'indice RAG sui sorgenti** (aggiorna l'indice solo sui file cambiati, senza full re-index) | Tiene il RAG fresco su repo grandi senza ricostruire tutto; pendant per i sorgenti di FEAT-007 (wiki) | **Could** | da decomporre — **mitigata operativamente (2026-06-10):** regola standing nel rituale di step (`CLAUDE.md`, punto 5 *Re-index dei corpora toccati*): full rebuild manuale del corpus toccato a fine step / dopo merge (atomico, namespaced). La feature resta il salto *incrementale* (solo file cambiati) quando i rebuild costeranno. **Corollario di costo (2026-06-15):** analisi misurata del re-index full (solo embeddings incrementali via cache 019; discover+chunk+store+BM25+grafo full ogni volta; rate ~2,7 MB/s → ospiti grandi = minuti) in [`refresh-incrementale/corollario-costo.md`](refresh-incrementale/corollario-costo.md) — alza la rilevanza su ospiti grandi |
-| FEAT-010 | **Fonti di ingestione estese** — repository **remoti** (clone da URL) e formati **non-testo** (PDF/DOCX/notebook) oltre a codice+Markdown locale | Allarga il corpus oltre il filesystem testuale locale dell'MVP (FEAT-001) | **Could** | da decomporre — **recupero audit out-of-scope (2026-06-14)** (era appeso in `specs/001`) |
+| FEAT-010 | **Fonti di ingestione estese** — repository **remoti** (clone da URL) e formati **non-testo** (PDF/DOCX/notebook) oltre a codice+Markdown locale | Allarga il corpus oltre il filesystem testuale locale dell'MVP (FEAT-001) | **Could** | **promossa all'epica dedicata** [`ingestione-estesa`](../ingestione-estesa/epic.md) (FEAT-001/002), 2026-06-16 — vi confluiscono anche chunking PS/SQL/Bash e no-code-first |
 | FEAT-MCP | **Server MCP di produzione** (`sertor_mcp`): espone il retrieval del core come tool MCP a un client (es. Claude Code); superficie sottile su `build_facade`, host-agnostica; sostituisce il server del prototipo | Superficie finale del core: rende il RAG usabile nativamente da un agente LLM; enabler del probe-RAG del lint wiki, del dogfood di produzione e dell'agente Azure | **Should** | [decomposta](mcp/requirements.md) |
 
 > **Nota sull'MVP (Must):** la prima release del core deve dimostrare **(1)** la creazione di un RAG
 > **vettoriale** funzionante poggiato sul **nucleo condiviso**, e **(2)** la **creazione di un LLM Wiki**.
 > Ibrido/grafo/agentico e la manutenzione/arricchimento del wiki seguono come incrementi (Should/Could),
 > riusando il nucleo. Le quattro modalità RAG restano tutte parte del **core** della visione.
+
+> **Epiche-estensione del core (2026-06-16, dal [backlog audit](../../wiki/syntheses/backlog-audit-2026-06-15.md)):**
+> il materiale di retrieval avanzato finora orfano è stato promosso a **epiche dedicate** che estendono
+> questo core (riusando porte/motori): [`retrieval-qualita`](../retrieval-qualita/epic.md) (misura+leve di
+> qualità; vi confluiscono i Could H7/H8/H11 di [`hardening-produzione`](hardening-produzione/)),
+> [`backend-store-scala`](../backend-store-scala/epic.md) (nuovi store + scala multi-corpus/grafo),
+> [`ingestione-estesa`](../ingestione-estesa/epic.md) (FEAT-010 + chunking PS/SQL + no-code),
+> [`conoscenza-schema-sql`](../conoscenza-schema-sql/epic.md). **Leak ancora dentro questo core:** i
+> **trasporti MCP non-stdio** (HTTP/SSE + auth) e un **tool `health`/`status`** (corpus+indice) sono
+> un'estensione di **FEAT-MCP** (da promuovere a riga propria quando si decompone).
 
 > **Decomposizione di FEAT-003 (2026-06-05) — refactor host-agnostico lungo il confine meccanico↔giudizio:**
 > - **FEAT-003-D — Nucleo wiki deterministico host-agnostico** (config `wiki.config.toml` + `wiki_tools`:
