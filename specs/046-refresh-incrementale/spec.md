@@ -8,6 +8,13 @@
 
 **Input**: Deriva da `requirements/sertor-core/refresh-incrementale/requirements.md` (FEAT-009, epica `sertor-core`) + `corollario-costo.md`. Decisioni di scope F1/F2 prese con l'utente; prior art CocoIndex/LlamaIndex/LangChain.
 
+## Clarifications
+
+### Session 2026-06-16
+
+- Q: Va aggiunto al MVP un full rebuild periodico di riconciliazione (anti-drift), dato l'incrementale di default? → A: **Sì, nel MVP ma disattivato di default** (l'operatore può accenderlo/triggerarlo). Il *segnale* che informa quando l'indice è in deriva (drift-detection) è demandato all'epica `osservabilita` (FEAT-012).
+- Q: Cosa prevede il MVP per l'accesso concorrente multi-processo allo stesso indice? → A: **Lock single-writer nel MVP** (una guardia impedisce due indicizzazioni simultanee dello stesso indice); strategie di concorrenza avanzate (store condiviso, multi-processo coordinato) → epica `multiutente`.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Ri-indicizzare solo ciò che è cambiato (Priority: P1)
@@ -138,6 +145,8 @@ corrispondono ai cambiamenti effettuati.
   coinvolto; il fallimento è esplicito.
 - **Corpus piccolo** → l'incrementale non deve essere più lento di un full (per pochi file il full è già
   rapido).
+- **Indicizzazioni concorrenti sullo stesso indice** → la guardia single-writer ne ammette una sola; la
+  seconda è rifiutata o messa in attesa, mai eseguita in parallelo (niente corruzione del manifest/indice).
 
 ## Requirements *(mandatory)*
 
@@ -183,6 +192,14 @@ corrispondono ai cambiamenti effettuati.
   ulteriori modifiche (idempotenza).
 - **FR-018**: La capacità incrementale MUST essere raggiungibile attraverso i vehicles (CLI/MCP), senza un
   percorso d'accesso separato di sola libreria.
+- **FR-019**: Il sistema MUST offrire un **full rebuild di riconciliazione** attivabile dall'operatore
+  (periodico o su trigger), **disattivato di default**; quando attivo, esegue una ricostruzione completa
+  per riallineare l'indice alla sorgente. *(Il segnale che informa quando attivarlo — rilevamento del
+  drift — è demandato all'epica `osservabilita`, FEAT-012.)*
+- **FR-020**: Il sistema MUST impedire due indicizzazioni **simultanee** dello stesso indice tramite una
+  **guardia single-writer**: un secondo run concorrente sullo stesso indice è rifiutato o messo in attesa,
+  mai eseguito in parallelo (evita la corruzione di stato/indice). *(Strategie di concorrenza avanzate —
+  store condiviso, multi-processo coordinato — sono demandate all'epica `multiutente`.)*
 
 ### Key Entities
 
@@ -212,6 +229,8 @@ corrispondono ai cambiamenti effettuati.
   (full automatico) e **0** indici parziali.
 - **SC-006**: Un secondo run incrementale su sorgente invariata produce **0** modifiche all'indice.
 - **SC-007**: **100%** dei run incrementali riportano i conteggi del delta (file e unità).
+- **SC-008**: Due run di indicizzazione avviati insieme sullo stesso indice non corrompono mai stato o
+  indice (**0** corruzioni): uno solo procede, l'altro è rifiutato o messo in attesa.
 
 ## Assumptions
 
@@ -226,8 +245,11 @@ corrispondono ai cambiamenti effettuati.
 - **Fuori ambito (capacità future)**: modalità live/watch del filesystem; notifiche di cambiamento push da
   sorgenti remote; indici per parole chiave e mappa strutturale **veramente** incrementali (qui sono
   rigenerati dallo stato, non aggiornati in modo mirato); parallelizzazione dell'elaborazione;
-  riconoscimento dei rinomini come tali (nel primo taglio = cancellazione + nuovo); accesso concorrente
-  multi-processo allo stesso indice.
-- **Domande di design rinviate a `/speckit-clarify` e `/speckit-plan`** (non bloccano la spec): sede/forma
-  del manifest; eventuale full periodico di riconciliazione anti-drift; riconoscimento dei rinomini;
-  locking per più processi concorrenti; soglia oltre la quale l'incrementale conviene rispetto al full.
+  riconoscimento dei rinomini come tali (nel primo taglio = cancellazione + nuovo); **strategie di
+  concorrenza avanzate** oltre la guardia single-writer del MVP (store condiviso, multi-processo
+  coordinato) → epica `multiutente`.
+- **Risolte in clarify (Session 2026-06-16):** full di riconciliazione → **nel MVP, off di default**
+  (FR-019; drift-detection che ne informa il trigger → epica `osservabilita`, FEAT-012); concorrenza →
+  **guardia single-writer nel MVP** (FR-020; strategie avanzate → `multiutente`).
+- **Domande di design ancora aperte (→ `/speckit-plan`)**: sede/forma del manifest; riconoscimento dei
+  rinomini (oggi delete+new); soglia oltre la quale l'incrementale conviene rispetto al full.

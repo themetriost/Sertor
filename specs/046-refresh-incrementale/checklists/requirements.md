@@ -34,9 +34,10 @@
 - Decisioni di scope F1 (vettore incrementale + indici secondari rigenerati dallo stato) e F2
   (incrementale di default + full su richiesta/fallback) **già risolte** a monte (requirements) e
   codificate nella spec → nessun marker di chiarimento.
-- Le 5 domande **di design** (sede del manifest, full periodico anti-drift, rename-detection, locking,
-  soglia incrementale-vs-full) sono rinviate a `/speckit-clarify` e `/speckit-plan`: non sono ambiguità
-  di *cosa/perché*, quindi non bloccano la spec.
+- Delle 5 domande **di design**, due **risolte in `/speckit-clarify` (Session 2026-06-16)**: full periodico
+  di riconciliazione → nel MVP ma off di default (FR-019); concorrenza → guardia single-writer nel MVP
+  (FR-020). Restano **3 aperte → `/speckit-plan`**: sede del manifest, rename-detection, soglia
+  incrementale-vs-full. Non sono ambiguità di *cosa/perché*, quindi non bloccano la spec.
 - Terminologia tech-agnostica deliberata: «stato persistito/manifest», «indice per parole chiave»,
   «mappa strutturale del codice», «unità derivata» — i nomi concreti (BM25, code-graph, SQLite) restano
   alla fase di design.
