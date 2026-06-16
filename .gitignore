@@ -24,6 +24,9 @@ build/
 **/.index/
 **/.index-*/
 # Artefatti SQLite sotto <index_dir>: observability.sqlite, embed_cache.sqlite, memory.sqlite (031)
+# Manifest + lockfile dell'indicizzazione incrementale (046, FEAT-009): rigenerabili.
+**/index_manifest.sqlite
+**/.index.lock
 
 # Log rigenerabili (re-index, ecc.)
 **/*.log
