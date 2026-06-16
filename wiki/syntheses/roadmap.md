@@ -14,7 +14,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > `requirements → spec → plan → tasks → implement`.
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-06-15)
+## ⚡ Executive summary (stato al 2026-06-16)
 
 ### 📊 Roadmap a colpo d'occhio
 
@@ -47,6 +47,36 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **Debito tecnico & igiene** (epica nuova, interna) | — | 📋 **EPICA aperta (2026-06-16)** — `requirements/debito-tecnico/`; host-agnosticità asset/unif. venv/CI Linux (Should), plugin rituale/igiene wiki/bundle (Could) |
 
 *Legenda:* ✅ su master · 🧪 operativo, consolidamento aperto · 📋 pianificato · 💀 ramo morto (non su master).
+
+### 📚 Inventario epiche (tutte — 11)
+
+> **⚠️ Nessuna epica è "finita".** Un'epica è chiusa solo se TUTTE le sue feature sono consegnate: le 4
+> storiche hanno il **nucleo su master** ma **residui aperti**, le altre 7 sono **interamente da fare**.
+> Per questo qui **non c'è ✅ a livello di epica** — il consegnato e il da-fare sono in **colonne
+> separate**. Le singole capacità finite stanno nella sezione **✅ DONE** in fondo. Una *feature*
+> (`FEAT-NNN`) vive **dentro** un'epica (es. il refresh incrementale è `sertor-core` **FEAT-009**, non
+> un'epica a sé).
+
+**A) Epiche con un nucleo CONSEGNATO ma ancora APERTE** (parte fatta · parte da fare)
+
+| Epica | ✅ Consegnato (su master) | 🔜 Da fare (residui) |
+|---|---|---|
+| [`sertor-core`](../../requirements/sertor-core/epic.md) | nucleo · baseline · wiki · MCP · ibrido · grafo · agentico-composito | **Could:** FEAT-008 Wiki↔RAG · **FEAT-009 refresh incrementale indice** · agenzia incorporata |
+| [`sertor-cli`](../../requirements/sertor-cli/epic.md) | `sertor-rag` · install wiki/rag · governance · Copilot | **FEAT-001 packaging (Must)** · wizard · lifecycle · ergonomia · Codex · PyPI |
+| [`osservabilita`](../../requirements/osservabilita/epic.md) | MVP F1–F4 (persisti→aggrega→TUI live→report) | OTel · metriche aggregate · **stima € (Should)** · web · trend · export CSV/MD |
+| [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | MVP cattura+ricerca+CLI/hook+distillazione (**acceso**) | semantica · remember-this · retention · **FEAT-009 installer (Must)** · multi-assist · parità MCP |
+
+**B) Epiche DA FARE** (aperte, nulla consegnato)
+
+| Epica | Tipo | 1° passo / nota |
+|---|---|---|
+| [`multiutente`](../../requirements/multiutente/epic.md) | trasversale | differita finché il caso d'uso team non è concreto |
+| 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | est. core | **FEAT-001 ground-truth (Must)** |
+| 🆕 [`backend-store-scala`](../../requirements/backend-store-scala/epic.md) | est. core | **FEAT-001 PGVector (Should)** |
+| 🆕 [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | est. core | chunking SQL (FEAT-003) **sblocca** schema-SQL |
+| 🆕 [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | est. core | bloccata a monte da `ingestione-estesa` FEAT-003 |
+| 🆕 [`second-brain`](../../requirements/second-brain/epic.md) | trasversale | **DA ESPANDERE** — decidere bivi §9 |
+| 🆕 [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | interna | host-agnosticità · unif. venv · CI Linux (Should) |
 
 ### 🔄 IN PROGRESS (dettaglio)
 
@@ -86,6 +116,10 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   CI Linux (Should); plugin rituale portabile, igiene wiki, selettività bundle `sertor-flow` (Could).
 
 **Epiche esistenti, in attesa:**
+- **Sertor-core (residui Could)** — FEAT-008 arricchimento bidirezionale **Wiki↔RAG** · **FEAT-009 refresh
+  incrementale dell'indice** (solo file cambiati): oggi *mitigato* dalla regola standing di full re-index
+  per step (`CLAUDE.md` punto 5), corollario di costo in `requirements/sertor-core/refresh-incrementale/` —
+  alza la rilevanza su ospiti grandi (rebuild = minuti).
 - **Memoria — Should/Could** — FEAT-004 (ricerca semantica opt-in), FEAT-005 (remember-this), FEAT-006
   (retention), FEAT-007 (ponte second-brain), **FEAT-009 distribuzione via installer (Must/debito)**,
   FEAT-008 (cattura multi-assistente), FEAT-010 (parità MCP `show`/`list`). *(FEAT-003 ✅ DONE.)*

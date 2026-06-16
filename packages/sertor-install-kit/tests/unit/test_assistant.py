@@ -20,6 +20,7 @@ from sertor_install_kit.errors import ConfigError
 def test_assistant_id_known_values():
     assert AssistantId.from_str("claude") is AssistantId.CLAUDE
     assert AssistantId.from_str("copilot") is AssistantId.COPILOT
+    assert AssistantId.from_str("copilot-cli") is AssistantId.COPILOT_CLI
 
 
 def test_assistant_id_default_is_claude():
@@ -72,10 +73,29 @@ def test_copilot_render_paths_are_github():
     assert p.render_path(Surface.AGENT, "wiki-curator").endswith(".agent.md")
 
 
+# ---------------------------------------------------------------- copilot-cli mapping
+
+def test_copilot_cli_mcp_uses_dot_mcp_json_mcpservers():
+    # The Copilot CLI does NOT read `.vscode/mcp.json` (`servers`); it reads `.mcp.json` with the
+    # `mcpServers` root (the Claude-standard format). This is the whole point of the CLI target.
+    p = AssistantProfile.for_assistant(AssistantId.COPILOT_CLI)
+    mcp = p.target_for(Surface.MCP_SERVER)
+    assert mcp.target_rel == ".mcp.json"
+    assert mcp.root_key == "mcpServers"
+
+
+def test_copilot_cli_reuses_github_surfaces():
+    p = AssistantProfile.for_assistant(AssistantId.COPILOT_CLI)
+    assert p.target_for(Surface.INSTRUCTION_BLOCK).target_rel == ".github/copilot-instructions.md"
+    assert p.target_for(Surface.HOOK).target_rel.startswith(".github/hooks/")
+    assert p.render_path(Surface.COMMAND, "wiki").startswith(".github/prompts/")
+    assert p.render_path(Surface.AGENT, "wiki-curator").startswith(".github/agents/")
+
+
 # ------------------------------------------------------------ validity (Principio I / artifacts)
 
 def test_targets_are_relative_no_traversal():
-    for aid in (AssistantId.CLAUDE, AssistantId.COPILOT):
+    for aid in (AssistantId.CLAUDE, AssistantId.COPILOT, AssistantId.COPILOT_CLI):
         p = AssistantProfile.for_assistant(aid)
         for surface in Surface:
             t = p.target_for(surface)

@@ -78,7 +78,9 @@ def build_install_plan(assistant: AssistantId = AssistantProfile.DEFAULT) -> lis
     STRUCTURE. FILE entries are not hard-coded: they are discovered by walking `assets/claude/`
     (F1/F8).
     """
-    if assistant is AssistantId.COPILOT:
+    # Copilot family (VS Code + CLI): both read the `.github/**` surfaces (prompts, agents,
+    # copilot-instructions). The wiki plan has no MCP surface, so the two share the same plan.
+    if assistant in (AssistantId.COPILOT, AssistantId.COPILOT_CLI):
         return _build_copilot_wiki_plan()
     return _build_claude_wiki_plan()
 
