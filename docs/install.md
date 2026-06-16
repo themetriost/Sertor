@@ -417,3 +417,110 @@ written (the `.env` template ships with empty values).
 > (`install rag`/`install wiki`); the governance installer `sertor-flow` still targets
 > `claude|copilot` only (SpecKit-side support for the CLI is a follow-up). A further assistant
 > (`codex` → `AGENTS.md`) is planned but not yet implemented.
+
+## 10. Refresh and clean uninstall
+
+### 10.1 Refresh (pull the latest Sertor onto a host)
+
+The interim distribution is an **unpinned `git+url`**, and `uvx` **caches** the built tool per
+resolved revision. After Sertor's `master` moves, a plain `uvx … sertor install …` may reuse a
+**stale build** (e.g. an installer without a new `--assistant` value, or with an old MCP layout). Force
+a rebuild from the latest `master` with `--refresh`:
+
+```powershell
+# Rebuild the installer from the latest master, then re-run the install (idempotent):
+uvx --refresh --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install rag --assistant copilot-cli --backend azure
+# Sanity check you are on the fresh build (the error lists the valid assistants, incl. copilot-cli):
+uvx --refresh --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install rag --assistant bogus
+```
+
+Then refresh the **index** (the runtime package itself is updated inside `.sertor/` by re-running
+the install, which does `uv add` again):
+
+```powershell
+uv run --directory .sertor sertor-rag index ..   # rebuild the corpus with the new code
+```
+
+> The installer is **idempotent and non-destructive**: re-running never overwrites your edits and
+> never *removes* a previously written artifact. So switching assistant (e.g. from `copilot` to
+> `copilot-cli`) **adds** the new MCP file (`.mcp.json`) but **leaves** the old one
+> (`.vscode/mcp.json`) in place — remove it by hand if you no longer want it (see §10.2).
+
+### 10.2 Clean uninstall (remove every trace of Sertor)
+
+There is **no `sertor uninstall` command yet** (tracked as a lifecycle follow-up); this is the manual
+procedure. Sertor writes in four kinds of places — handle each accordingly:
+
+| Kind | What | How to remove |
+|---|---|---|
+| **A. Isolated runtime** | `.sertor/` — the venv, `.env`, the **Chroma** vector store, the **SQLite** files (`embed_cache.sqlite`, `observability.sqlite`, `memory.sqlite`), the code graph, `pyproject.toml`/`uv.lock` | **delete the whole folder** |
+| **B. Standalone assets** | `wiki/` (incl. `wiki/wiki.config.toml`), `.specify/` (incl. `memory/constitution.md`), the Sertor files under `.claude/**` or `.github/**` | delete folders/files |
+| **C. Shared files Sertor merged into** | marker blocks in `CLAUDE.md`/`.github/copilot-instructions.md`; hook entries in `.claude/settings.json`/`.github/hooks/sertor-hooks.json`; the appended lines in `.gitignore` | **edit out only Sertor's parts** (do not delete the whole file) |
+| **D. Client-side registration** | local-scope MCP (`claude mcp add-json … --scope local`); Copilot CLI user config `~/.copilot/mcp-config.json` | unregister in the client |
+
+**Inventory of what to remove** (per assistant):
+
+- **Runtime (A):** `.sertor/`
+- **MCP config (B/C):** `.mcp.json` (Claude / Copilot CLI — remove the `sertor-rag` entry, or delete
+  the file if it held only that server) · `.vscode/mcp.json` (Copilot in VS Code) · `.github/mcp.json`
+  (Copilot CLI alternative location, if used)
+- **Wiki (B):** `wiki/`
+- **Governance (B):** `.specify/`
+- **Claude assets (B):** `.claude/skills/wiki-author/`, `.claude/skills/requirements/`,
+  `.claude/commands/wiki.md`, `.claude/commands/speckit.*.md`, `.claude/agents/wiki-curator.md`,
+  `.claude/agents/requirements-analyst.md`, `.claude/agents/configuration-manager.md`,
+  `.claude/hooks/wiki-pending-check.ps1`, `.claude/hooks/sertor-rag-usage-check.ps1`
+- **Copilot assets (B):** `.github/prompts/wiki.prompt.md`, `.github/prompts/wiki-author.prompt.md`,
+  `.github/prompts/speckit.*.prompt.md`, `.github/agents/wiki-curator.agent.md`,
+  `.github/hooks/wiki-pending-check.ps1`, `.github/hooks/sertor-rag-usage-check.ps1`,
+  `.github/hooks/sertor-hooks.json`
+- **Shared (C):** in `CLAUDE.md`/`.github/copilot-instructions.md` delete the three marker blocks
+  `SERTOR:WIKI-RITUAL`, `SERTOR:RAG-USAGE`, `SERTOR:SDLC-RITUAL` (markers included); in
+  `.claude/settings.json` remove the Sertor hook entries (or delete `.github/hooks/sertor-hooks.json`
+  if Sertor-only); in `.gitignore` remove the lines `.sertor/.venv/`, `.sertor/.index*`, `.sertor/.env`
+- **Client (D):** `claude mcp remove sertor-rag` (only if you installed with `--mcp-scope local`); for
+  the Copilot CLI, drop `sertor-rag` from `~/.copilot/mcp-config.json` if you registered it there
+
+**Helper script (PowerShell).** Run from the **host repo root**. It deletes A/B, strips the marker
+blocks and `.gitignore` lines (C), unregisters the local MCP (D), and finally greps for any leftover
+reference. Review before running — it is **destructive**.
+
+```powershell
+# 0. Close VS Code / the Copilot CLI / Claude first (so files are not locked).
+# 1. A — isolated runtime (Chroma + all SQLite + venv + .env + graph):
+Remove-Item -Recurse -Force .sertor -ErrorAction SilentlyContinue
+# 2. B — standalone assets:
+Remove-Item -Recurse -Force wiki, .specify -ErrorAction SilentlyContinue
+Remove-Item -Force .claude\commands\wiki.md, .claude\agents\wiki-curator.md, .claude\agents\requirements-analyst.md, .claude\agents\configuration-manager.md, .claude\hooks\wiki-pending-check.ps1, .claude\hooks\sertor-rag-usage-check.ps1 -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force .claude\skills\wiki-author, .claude\skills\requirements -ErrorAction SilentlyContinue
+Get-ChildItem .claude\commands\speckit.*.md -ErrorAction SilentlyContinue | Remove-Item -Force
+# Copilot layout (if you installed for copilot / copilot-cli) — delete ONLY Sertor's files, not the
+# whole .github/{prompts,agents,hooks} dirs (they may hold your own content):
+Remove-Item -Force .github\prompts\wiki.prompt.md, .github\prompts\wiki-author.prompt.md, .github\agents\wiki-curator.agent.md, .github\agents\requirements-analyst.agent.md, .github\agents\configuration-manager.agent.md, .github\hooks\wiki-pending-check.ps1, .github\hooks\sertor-rag-usage-check.ps1, .github\hooks\sertor-hooks.json -ErrorAction SilentlyContinue
+Get-ChildItem .github\prompts\speckit.*.prompt.md -ErrorAction SilentlyContinue | Remove-Item -Force
+# 3. MCP config files (delete if Sertor was the only server; otherwise edit out the sertor-rag entry):
+Remove-Item -Force .mcp.json, .vscode\mcp.json, .github\mcp.json -ErrorAction SilentlyContinue
+# 4. C — strip Sertor marker blocks + .gitignore lines from SHARED files (kept, only edited):
+foreach ($f in @("CLAUDE.md", ".github\copilot-instructions.md")) {
+  if (Test-Path $f) {
+    $t = Get-Content $f -Raw
+    foreach ($m in @("WIKI-RITUAL","RAG-USAGE","SDLC-RITUAL")) {
+      $t = [regex]::Replace($t, "(?s)<!-- SERTOR:$m START -->.*?<!-- SERTOR:$m END -->\r?\n?", "")
+    }
+    Set-Content $f $t -NoNewline
+  }
+}
+if (Test-Path .gitignore) {
+  (Get-Content .gitignore) | Where-Object { $_ -notin @(".sertor/.venv/", ".sertor/.index*", ".sertor/.env") } | Set-Content .gitignore
+}
+# Review .claude\settings.json by hand: remove the entries whose command mentions sertor/wiki-pending/rag-usage.
+# 5. D — client-side MCP registration (local scope), ignore error if not present:
+claude mcp remove sertor-rag 2>$null
+# 6. Verify nothing is left:
+Get-ChildItem -Recurse -File | Select-String -Pattern "sertor" -List | Select-Object Path
+```
+
+> **What survives on purpose.** This removes Sertor from the *host*. It does **not** touch the global
+> `uvx` tool cache — clear that separately with `uv cache clean` if you want to drop the cached
+> Sertor builds too. And it does not delete your own content that happened to live under `wiki/`
+> (back it up first if the wiki accumulated real documentation you want to keep).
