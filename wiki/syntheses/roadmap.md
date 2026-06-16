@@ -50,23 +50,33 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 📚 Inventario epiche (tutte — 11)
 
-> Le **epiche** del progetto in un punto solo (5 storiche + 6 nuove dal backlog audit 2026-06-16). Una
-> *feature* (`FEAT-NNN`) vive **dentro** un'epica: es. il *refresh incrementale dell'indice* è
-> `sertor-core` **FEAT-009**, non un'epica a sé.
+> **⚠️ Nessuna epica è "finita".** Un'epica è chiusa solo se TUTTE le sue feature sono consegnate: le 4
+> storiche hanno il **nucleo su master** ma **residui aperti**, le altre 7 sono **interamente da fare**.
+> Per questo qui **non c'è ✅ a livello di epica** — il consegnato e il da-fare sono in **colonne
+> separate**. Le singole capacità finite stanno nella sezione **✅ DONE** in fondo. Una *feature*
+> (`FEAT-NNN`) vive **dentro** un'epica (es. il refresh incrementale è `sertor-core` **FEAT-009**, non
+> un'epica a sé).
 
-| # | Epica | Tipo | Stato | Residui chiave / prossimo passo |
-|---|---|---|---|---|
-| 1 | [`sertor-core`](../../requirements/sertor-core/epic.md) | primaria | ✅ MVP consegnato | Could: FEAT-008 Wiki↔RAG · **FEAT-009 refresh incrementale indice** · agenzia incorporata (motore-agentico) |
-| 2 | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | secondaria | ✅ esecuzione+install+Copilot | **FEAT-001 packaging (Must)** · wizard · lifecycle · FEAT-010 ergonomia · Codex · PyPI (Won't) |
-| 3 | [`osservabilita`](../../requirements/osservabilita/epic.md) | estensione | ✅ MVP F1–F4 | OTel · metriche aggregate · **stima € (Should)** · web · trend · CSV-MD |
-| 4 | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | estensione | 🔄 MVP acceso | semantica · remember-this · retention · **FEAT-009 installer (Must/debito)** · parità MCP |
-| 5 | [`multiutente`](../../requirements/multiutente/epic.md) | trasversale | 📋 aperta, differita | M01–M06 — riprendere col caso d'uso team concreto |
-| 6 | 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | estensione core | 📋 aperta | **FEAT-001 ground-truth (Must)** il 1° passo |
-| 7 | 🆕 [`backend-store-scala`](../../requirements/backend-store-scala/epic.md) | estensione core | 📋 aperta | **FEAT-001 PGVector (Should)** il 1° passo |
-| 8 | 🆕 [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | estensione core | 📋 aperta | chunking SQL (FEAT-003) **sblocca** schema-SQL |
-| 9 | 🆕 [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | estensione core | 📋 aperta | bloccata a monte da `ingestione-estesa` FEAT-003 |
-| 10 | 🆕 [`second-brain`](../../requirements/second-brain/epic.md) | trasversale | 📋 aperta, DA ESPANDERE | decidere bivi §9 prima di decomporre |
-| 11 | 🆕 [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | interna | 📋 aperta | host-agnosticità asset · unif. venv · CI Linux (Should) |
+**A) Epiche con un nucleo CONSEGNATO ma ancora APERTE** (parte fatta · parte da fare)
+
+| Epica | ✅ Consegnato (su master) | 🔜 Da fare (residui) |
+|---|---|---|
+| [`sertor-core`](../../requirements/sertor-core/epic.md) | nucleo · baseline · wiki · MCP · ibrido · grafo · agentico-composito | **Could:** FEAT-008 Wiki↔RAG · **FEAT-009 refresh incrementale indice** · agenzia incorporata |
+| [`sertor-cli`](../../requirements/sertor-cli/epic.md) | `sertor-rag` · install wiki/rag · governance · Copilot | **FEAT-001 packaging (Must)** · wizard · lifecycle · ergonomia · Codex · PyPI |
+| [`osservabilita`](../../requirements/osservabilita/epic.md) | MVP F1–F4 (persisti→aggrega→TUI live→report) | OTel · metriche aggregate · **stima € (Should)** · web · trend · export CSV/MD |
+| [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | MVP cattura+ricerca+CLI/hook+distillazione (**acceso**) | semantica · remember-this · retention · **FEAT-009 installer (Must)** · multi-assist · parità MCP |
+
+**B) Epiche DA FARE** (aperte, nulla consegnato)
+
+| Epica | Tipo | 1° passo / nota |
+|---|---|---|
+| [`multiutente`](../../requirements/multiutente/epic.md) | trasversale | differita finché il caso d'uso team non è concreto |
+| 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | est. core | **FEAT-001 ground-truth (Must)** |
+| 🆕 [`backend-store-scala`](../../requirements/backend-store-scala/epic.md) | est. core | **FEAT-001 PGVector (Should)** |
+| 🆕 [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | est. core | chunking SQL (FEAT-003) **sblocca** schema-SQL |
+| 🆕 [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | est. core | bloccata a monte da `ingestione-estesa` FEAT-003 |
+| 🆕 [`second-brain`](../../requirements/second-brain/epic.md) | trasversale | **DA ESPANDERE** — decidere bivi §9 |
+| 🆕 [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | interna | host-agnosticità · unif. venv · CI Linux (Should) |
 
 ### 🔄 IN PROGRESS (dettaglio)
 
