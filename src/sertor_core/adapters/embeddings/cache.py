@@ -109,6 +109,9 @@ class CachingEmbedder:
         self.name = inner.name
         self.batch_size = inner.batch_size
         self.dim = inner.dim
+        # Cumulative cache hits across this instance's calls (046, FR-015): the indexer reads it to
+        # populate IndexReport.cache_hits. Best-effort observability, not a source of truth.
+        self.total_hits = 0
 
     def embed(self, texts: list[str]) -> list[list[float]]:
         if not texts:
@@ -138,6 +141,7 @@ class CachingEmbedder:
             self.dim = len(out[0])  # correct even at 100% cache-hit (inner never called)
 
         hits = sum(1 for content_hash in hashes if content_hash in cached)
+        self.total_hits += hits
         log_event(logging.INFO, "embeddings_cache",
                   provider=self._inner.name, hits=hits, misses=len(texts) - hits, total=len(texts))
         return out

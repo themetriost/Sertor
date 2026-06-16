@@ -33,16 +33,26 @@ def format_index_report(report: IndexReport, *, json: bool) -> str:
         return _json.dumps(
             {
                 "collection": report.collection,
+                "mode": report.mode,
                 "documents": report.documents,
                 "chunks": report.chunks,
+                "added": report.added,
+                "updated": report.updated,
+                "removed": report.removed,
+                "unchanged": report.unchanged,
+                "cache_hits": report.cache_hits,
                 "embedding_dim": report.embedding_dim,  # None → null nel JSON
                 "elapsed_ms": report.elapsed_ms,
             }
         )
     return (
+        f"mode={report.mode} "
         f"collection={report.collection} "
         f"documents={report.documents} "
         f"chunks={report.chunks} "
+        f"added={report.added} updated={report.updated} "
+        f"removed={report.removed} unchanged={report.unchanged} "
+        f"cache_hits={report.cache_hits} "
         f"embedding_dim={_human_optional(report.embedding_dim)} "
         f"elapsed_ms={_human_optional(report.elapsed_ms)}"
     )

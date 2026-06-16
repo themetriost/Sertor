@@ -8,6 +8,7 @@ language detected from extension (REQ-005).
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from fnmatch import fnmatch
 from pathlib import Path
 
@@ -54,19 +55,34 @@ def _language_for(path: Path) -> str | None:
     return _EXT_LANG.get(path.suffix.lower())
 
 
-def discover(root: Path | str, settings: Settings) -> list[Document]:
-    """Discovers and reads indexable documents under `root`.
+@dataclass(frozen=True)
+class SourceFile:
+    """A discovered indexable source file, before reading (046, T007).
 
-    Raises `IngestionError` if the root is not an accessible directory (Principio IV). Unreadable
-    files are **skipped** with a warning (not an error); files with unrecognised extensions
-    (binaries/other) are silently ignored (out of MVP corpus).
+    Separates the **stat** (cheap, all files) from the **read+parse** (only the changed candidates):
+    `path` is the absolute path, `rel` the POSIX relative id, `language` the detected language,
+    `mtime` the modification time. The incremental branch stats every file but reads only the ones
+    that changed.
+    """
+
+    path: Path
+    rel: str
+    language: str
+    mtime: float
+
+
+def discover_files(root: Path | str, settings: Settings) -> list[SourceFile]:
+    """Stat-only discovery of the indexable files under `root` (ordered, deterministic).
+
+    Applies the same exclusion/extension filtering as `discover` but does NOT read any file: the
+    cost of a no-op incremental run is ~just these `stat`s (NFR-4). Raises `IngestionError` if the
+    root is not accessible (same contract as `discover`).
     """
     root = Path(root)
     if not root.exists() or not root.is_dir():
         raise IngestionError("repository root not accessible", path=str(root))
 
-    documents: list[Document] = []
-    skipped = 0
+    files: list[SourceFile] = []
     for path in sorted(p for p in root.rglob("*") if p.is_file()):
         rel = path.relative_to(root).as_posix()
         rel_parts = tuple(rel.split("/"))
@@ -76,15 +92,48 @@ def discover(root: Path | str, settings: Settings) -> list[Document]:
         if language is None:
             continue  # non-indexable extension (binaries, non-text formats): out of MVP (A-2)
         try:
-            text = _read_text(path)
+            mtime = path.stat().st_mtime
         except OSError as exc:
-            skipped += 1
             log_event(logging.WARNING, "ingest_skip", path=rel, reason=type(exc).__name__)
             continue
-        doc_type = DocType.DOC if path.suffix.lower() in _DOC_EXTS else DocType.CODE
-        documents.append(Document(id=rel, text=text, doc_type=doc_type, language=language))
+        files.append(SourceFile(path=path, rel=rel, language=language, mtime=mtime))
+    return files
+
+
+def read_source(source: SourceFile) -> Document | None:
+    """Read+parse a single discovered file into a `Document`, or `None` if unreadable (warning).
+
+    The read half of `discover_files`: used by the incremental branch only for the changed files.
+    Unreadable files are skipped with a warning (not an error), same policy as `discover`.
+    """
+    try:
+        text = _read_text(source.path)
+    except OSError as exc:
+        log_event(logging.WARNING, "ingest_skip", path=source.rel, reason=type(exc).__name__)
+        return None
+    doc_type = DocType.DOC if source.path.suffix.lower() in _DOC_EXTS else DocType.CODE
+    return Document(id=source.rel, text=text, doc_type=doc_type, language=source.language)
+
+
+def discover(root: Path | str, settings: Settings) -> list[Document]:
+    """Discovers and reads indexable documents under `root`.
+
+    Raises `IngestionError` if the root is not an accessible directory (Principio IV). Unreadable
+    files are **skipped** with a warning (not an error); files with unrecognised extensions
+    (binaries/other) are silently ignored (out of MVP corpus). Built on the stat/read split so the
+    full path and the incremental path share the same discovery+filtering logic.
+    """
+    sources = discover_files(root, settings)
+    documents: list[Document] = []
+    skipped = 0
+    for source in sources:
+        doc = read_source(source)
+        if doc is None:
+            skipped += 1
+            continue
+        documents.append(doc)
 
     log_event(
-        logging.INFO, "ingest", root=str(root), documents=len(documents), skipped=skipped
+        logging.INFO, "ingest", root=str(Path(root)), documents=len(documents), skipped=skipped
     )
     return documents

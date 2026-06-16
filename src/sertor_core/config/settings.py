@@ -168,6 +168,13 @@ class Settings:
     graph_limit_relations: int = 8
     graph_limit_docs: int = 8
 
+    # incremental indexing (046, FEAT-009): refresh only the changed files instead of rebuilding
+    # from scratch. Default ON — when a valid manifest exists `index()` runs incrementally; `--full`
+    # (rebuild=True) or `index_incremental=False` forces the full path; a missing/incompatible
+    # manifest falls back to full automatically (FR-011). Reconciliation full is OFF by default.
+    index_incremental: bool = True     # SERTOR_INDEX_INCREMENTAL — incremental default (FR-002)
+    index_reconcile_every: int = 0     # SERTOR_INDEX_RECONCILE_EVERY — full every N runs (FR-019)
+
     # ingestione
     exclude_patterns: tuple[str, ...] = _DEFAULT_EXCLUDES
 
@@ -283,5 +290,7 @@ class Settings:
             graph_limit_definitions=int(os.getenv("SERTOR_GRAPH_LIMIT_DEFS", "10")),
             graph_limit_relations=int(os.getenv("SERTOR_GRAPH_LIMIT_RELS", "8")),
             graph_limit_docs=int(os.getenv("SERTOR_GRAPH_LIMIT_DOCS", "8")),
+            index_incremental=_bool_env("SERTOR_INDEX_INCREMENTAL", True),
+            index_reconcile_every=int(os.getenv("SERTOR_INDEX_RECONCILE_EVERY", "0")),
             exclude_patterns=tuple(excludes) if excludes is not None else _DEFAULT_EXCLUDES,
         )
