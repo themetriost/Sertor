@@ -13,6 +13,7 @@ from pathlib import Path
 from sertor_install_kit.assistant import AssistantId
 from sertor_installer.install_rag import build_rag_plan, execute_rag_plan
 from sertor_installer.rag_profile import RagHostProfile, RagInstallOptions
+from sertor_installer.resources import read_asset_text
 
 
 def _run(target: Path, runner, **opts):
@@ -38,6 +39,14 @@ def test_mcp_in_dot_mcp_json_mcpservers_key(tmp_path: Path, make_runner):
     assert "servers" not in data  # NOT the VS Code root key the CLI rejects
     assert not (tmp_path / ".vscode" / "mcp.json").exists()  # not the VS Code file
     assert "myapp" in mcp.read_text(encoding="utf-8")
+
+
+def test_secrets_empty_in_env(tmp_path: Path, make_runner):  # FR-006 (ported from VS Code suite)
+    runner = make_runner()
+    _run(tmp_path, runner, backend="azure", with_deps=False)
+    env = (tmp_path / ".sertor" / ".env").read_text(encoding="utf-8")
+    # template ships empty secret values (compiled in .env, never versioned)
+    assert "AZURE_OPENAI_API_KEY=\n" in env or "AZURE_OPENAI_API_KEY=" in env
 
 
 def test_install_never_indexes(tmp_path: Path, make_runner):
@@ -82,3 +91,31 @@ def test_instruction_block_in_copilot_instructions(tmp_path: Path, make_runner):
     instr = tmp_path / ".github" / "copilot-instructions.md"
     assert instr.is_file()
     assert "SERTOR:RAG-USAGE" in instr.read_text(encoding="utf-8")
+
+
+def test_hook_script_byte_identical_to_claude(tmp_path: Path, make_runner):
+    """The anti-bypass hook script is reused byte-for-byte from the canonical Claude asset
+    (surface-map property 3, ported from the removed VS Code suite)."""
+    runner = make_runner()
+    _run(tmp_path, runner, backend="azure", with_deps=False)
+    copied = tmp_path / ".github" / "hooks" / "sertor-rag-usage-check.ps1"
+    assert copied.is_file()
+    canonical = read_asset_text("rag/hooks/sertor-rag-usage-check.ps1")
+    assert copied.read_text(encoding="utf-8") == canonical
+
+
+def test_rag_wiring_is_native_copilot_schema(tmp_path: Path, make_runner):  # FR-017 (FEAT-011)
+    """The PreToolUse wiring is native Copilot schema (version:1, flat entry, timeoutSec) —
+    ported from the removed VS Code suite; the CLI target preserves the native schema."""
+    runner = make_runner()
+    _run(tmp_path, runner, backend="azure", with_deps=False)
+    data = json.loads(
+        (tmp_path / ".github/hooks/sertor-hooks.json").read_text(encoding="utf-8")
+    )
+    assert data["version"] == 1                                       # R1
+    entry = data["hooks"]["PreToolUse"][0]
+    assert "hooks" not in entry                                       # R2 flat
+    assert "shell" not in entry and "statusMessage" not in entry      # R3
+    assert "timeout" not in entry and entry["timeoutSec"] == 10       # R4
+    assert entry["matcher"] == "Bash|Write|Edit|MultiEdit"            # PreToolUse matcher
+    assert "-Assistant copilot" in entry["command"]                   # native output selector

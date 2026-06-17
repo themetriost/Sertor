@@ -22,7 +22,6 @@ class AssistantId(Enum):
     """Target assistant of the installation (data-model §1)."""
 
     CLAUDE = "claude"
-    COPILOT = "copilot"          # GitHub Copilot in VS Code (`.vscode/mcp.json`, `.github/**`)
     COPILOT_CLI = "copilot-cli"  # GitHub Copilot CLI (`.mcp.json` mcpServers; `.github/**` reused)
 
     @classmethod
@@ -152,27 +151,6 @@ class AssistantProfile:
                 _agent_dir=".claude/agents",
                 _agent_suffix=".md",
                 _file_prefix=".claude",
-            )
-        if assistant is AssistantId.COPILOT:
-            return cls(
-                assistant=assistant,
-                _targets={
-                    Surface.INSTRUCTION_BLOCK: SurfaceTarget(
-                        ".github/copilot-instructions.md", WriteStrategy.APPEND_BLOCK
-                    ),
-                    Surface.MCP_SERVER: SurfaceTarget(
-                        ".vscode/mcp.json", WriteStrategy.MERGE_JSON, root_key="servers"
-                    ),
-                    Surface.HOOK: SurfaceTarget(
-                        ".github/hooks/sertor-hooks.json", WriteStrategy.MERGE_DEDUP
-                    ),
-                },
-                _command_dir=".github/prompts",
-                _command_suffix=".prompt.md",
-                _agent_dir=".github/agents",
-                _agent_suffix=".agent.md",
-                _file_prefix=None,
-                command_vehicle=CommandVehicle.PROMPT_FILE,
             )
         if assistant is AssistantId.COPILOT_CLI:
             # GitHub Copilot CLI: it does NOT read VS Code's `.vscode/mcp.json` (`servers` root).

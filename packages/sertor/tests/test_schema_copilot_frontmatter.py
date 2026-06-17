@@ -111,7 +111,9 @@ def test_real_cli_agents_have_yaml_safe_frontmatter(tmp_path: Path):
     for name in ("wiki", "wiki-author", "wiki-curator"):
         agent = tmp_path / f".github/agents/{name}.agent.md"
         front = split_frontmatter(agent.read_text(encoding="utf-8"))[0]
-        assert _frontmatter_values_are_yaml_safe(front), f"{name}.agent.md unsafe frontmatter:\n{front}"
+        assert _frontmatter_values_are_yaml_safe(
+            front
+        ), f"{name}.agent.md unsafe frontmatter:\n{front}"
 
 
 # --- COMMAND on CLI is a custom-agent, never only a prompt-file (C1/C3 / SC-004) ---------------

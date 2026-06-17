@@ -58,39 +58,42 @@ def test_default_root_key_is_mcpservers(tmp_path: Path):
     assert "mcpServers" in data and "sertor-rag" in data["mcpServers"]
 
 
-def test_copilot_servers_root_key_create(tmp_path: Path):
-    """Copilot uses `servers` on `.vscode/mcp.json`."""
-    mcp = tmp_path / ".vscode" / "mcp.json"
-    outcome, _ = merge_mcp(mcp, ENTRY, root_key="servers")
+# NB (FEAT-012): the VS Code `servers` root-key is no longer reachable from any profile (the VS
+# Code target was removed). The `root_key` parameter of `merge_mcp` remains a generic kit primitive,
+# so we keep coverage of its parametricity using a neutral, non-VS-Code root key.
+def test_parametric_root_key_create(tmp_path: Path):
+    """`merge_mcp` honors an arbitrary `root_key` (parametricity of the kit primitive)."""
+    mcp = tmp_path / "custom" / "mcp.json"
+    outcome, _ = merge_mcp(mcp, ENTRY, root_key="customRoot")
     assert outcome is Outcome.CREATED
     data = json.loads(mcp.read_text(encoding="utf-8"))
-    assert "servers" in data and data["servers"]["sertor-rag"]["command"] == "uv"
+    assert "customRoot" in data and data["customRoot"]["sertor-rag"]["command"] == "uv"
     assert "mcpServers" not in data
 
 
-def test_servers_root_key_preserves_others(tmp_path: Path):
-    mcp = tmp_path / ".vscode" / "mcp.json"
+def test_parametric_root_key_preserves_others(tmp_path: Path):
+    mcp = tmp_path / "custom" / "mcp.json"
     mcp.parent.mkdir(parents=True)
-    mcp.write_text(json.dumps({"servers": {"altro": {"command": "x"}}}), encoding="utf-8")
-    outcome, _ = merge_mcp(mcp, ENTRY, root_key="servers")
+    mcp.write_text(json.dumps({"customRoot": {"altro": {"command": "x"}}}), encoding="utf-8")
+    outcome, _ = merge_mcp(mcp, ENTRY, root_key="customRoot")
     assert outcome is Outcome.MERGED
     data = json.loads(mcp.read_text(encoding="utf-8"))
-    assert "altro" in data["servers"] and "sertor-rag" in data["servers"]
+    assert "altro" in data["customRoot"] and "sertor-rag" in data["customRoot"]
 
 
-def test_servers_root_key_idempotent(tmp_path: Path):
-    mcp = tmp_path / ".vscode" / "mcp.json"
-    merge_mcp(mcp, ENTRY, root_key="servers")
-    outcome, _ = merge_mcp(mcp, ENTRY, root_key="servers")
+def test_parametric_root_key_idempotent(tmp_path: Path):
+    mcp = tmp_path / "custom" / "mcp.json"
+    merge_mcp(mcp, ENTRY, root_key="customRoot")
+    outcome, _ = merge_mcp(mcp, ENTRY, root_key="customRoot")
     assert outcome is Outcome.SKIPPED
 
 
-def test_servers_root_key_malformed_raises(tmp_path: Path):
-    mcp = tmp_path / ".vscode" / "mcp.json"
+def test_parametric_root_key_malformed_raises(tmp_path: Path):
+    mcp = tmp_path / "custom" / "mcp.json"
     mcp.parent.mkdir(parents=True)
     mcp.write_text("{nope", encoding="utf-8")
     with pytest.raises(ConfigError):
-        merge_mcp(mcp, ENTRY, root_key="servers")
+        merge_mcp(mcp, ENTRY, root_key="customRoot")
 
 
 # --- feature 048: remove_mcp_server (T018) ------------------------------------------------------
@@ -131,14 +134,14 @@ def test_remove_mcp_server_missing_file_skips(tmp_path: Path):
     assert outcome is Outcome.SKIPPED
 
 
-def test_remove_mcp_server_parametric_root_key_copilot(tmp_path: Path):
-    mcp = tmp_path / ".vscode" / "mcp.json"
+def test_remove_mcp_server_parametric_root_key(tmp_path: Path):
+    mcp = tmp_path / "custom" / "mcp.json"
     mcp.parent.mkdir(parents=True)
     mcp.write_text(
-        json.dumps({"servers": {"altro": {"command": "x"}, "sertor-rag": ENTRY}}),
+        json.dumps({"customRoot": {"altro": {"command": "x"}, "sertor-rag": ENTRY}}),
         encoding="utf-8",
     )
-    outcome, _ = remove_mcp_server(mcp, root_key="servers")
+    outcome, _ = remove_mcp_server(mcp, root_key="customRoot")
     assert outcome is Outcome.REMOVED
     data = json.loads(mcp.read_text(encoding="utf-8"))
-    assert "altro" in data["servers"] and "sertor-rag" not in data["servers"]
+    assert "altro" in data["customRoot"] and "sertor-rag" not in data["customRoot"]

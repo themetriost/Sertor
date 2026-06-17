@@ -64,12 +64,12 @@ def _rag_wiring(tmp_path: Path, make_runner, assistant: AssistantId) -> dict:
     )
 
 
-@pytest.mark.parametrize("assistant", [AssistantId.COPILOT, AssistantId.COPILOT_CLI])
+@pytest.mark.parametrize("assistant", [AssistantId.COPILOT_CLI])
 def test_real_wiki_wiring_is_schema_valid(tmp_path: Path, assistant: AssistantId):
     assert_valid_copilot_hook_file(_wiki_wiring(tmp_path, assistant))
 
 
-@pytest.mark.parametrize("assistant", [AssistantId.COPILOT, AssistantId.COPILOT_CLI])
+@pytest.mark.parametrize("assistant", [AssistantId.COPILOT_CLI])
 def test_real_rag_wiring_is_schema_valid(tmp_path: Path, make_runner, assistant: AssistantId):
     assert_valid_copilot_hook_file(_rag_wiring(tmp_path, make_runner, assistant))
 

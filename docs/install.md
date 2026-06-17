@@ -13,10 +13,11 @@
 > package **`sertor-flow`** (§8). Each is non-destructive and idempotent — **install ≠ run**.
 >
 > **Target assistant.** The installers accept **`--assistant`** (default `claude`) to choose which
-> host AI assistant receives the surfaces: `claude` (`.claude/**` + `.mcp.json` + `CLAUDE.md`),
-> `copilot` (GitHub Copilot **in VS Code**: `.github/**` + `.vscode/mcp.json`), or `copilot-cli`
-> (GitHub **Copilot CLI**: `.github/**` + `.mcp.json` with the `mcpServers` root). The `sertor`
-> installer supports all three; `sertor-flow` supports `claude|copilot`. See **§9**.
+> host AI assistant receives the surfaces: `claude` (`.claude/**` + `.mcp.json` + `CLAUDE.md`) or
+> `copilot-cli` (GitHub **Copilot CLI**: `.github/**` + `.mcp.json` with the `mcpServers` root). All
+> three capabilities (`sertor` RAG/Wiki and `sertor-flow` governance) support **`claude|copilot-cli`**.
+> The legacy VS Code value `copilot` was consolidated into `copilot-cli` (see the migration note in
+> **[install-copilot.md](install-copilot.md#migrating-from-the-vs-code-target)**). See **§9**.
 
 ## 0. Interim distribution (`git+url`)
 
@@ -236,7 +237,7 @@ a single command brings the entire wiki system to the host:
 uv run sertor install wiki                          # in the root of the target repo
 uv run sertor install wiki --target C:\path\repo    # or on an explicit path
 uv run sertor install wiki --language it --source-dirs src,docs   # override defaults
-uv run sertor install wiki --assistant copilot      # target GitHub Copilot instead of Claude (§9)
+uv run sertor install wiki --assistant copilot-cli  # target the GitHub Copilot CLI instead of Claude (§9)
 ```
 
 What it installs (all **without** starting any indexing, LLM, or network — install ≠ run):
@@ -285,7 +286,7 @@ uv run sertor install rag --backend azure
 uv run sertor install rag --backend local --no-rerank   # Ollama, without reranker
 uv run sertor install rag --no-deps                      # config scaffold only (no uv add)
 uv run sertor install rag --mcp-scope local              # no .mcp.json in the repo (registers in the client)
-uv run sertor install rag --assistant copilot            # target GitHub Copilot: .vscode/mcp.json (§9)
+uv run sertor install rag --assistant copilot-cli        # target the GitHub Copilot CLI: .mcp.json (§9)
 uv run sertor install rag --target C:\path\repo --corpus myproject --json
 ```
 
@@ -358,7 +359,7 @@ this reason `sertor install governance` is only a **pointer**: it tells you that
 uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor-flow" sertor-flow install
 # variants:
 sertor-flow install --target C:\path\repo     # explicit target (default: cwd)
-sertor-flow install --assistant copilot       # target GitHub Copilot instead of Claude (§9)
+sertor-flow install --assistant copilot-cli   # target the GitHub Copilot CLI instead of Claude (§9)
 sertor-flow install --json                    # machine-readable report
 ```
 
@@ -371,8 +372,9 @@ uvx --from git+https://github.com/github/spec-kit.git@v0.8.18 \
     specify init . --here --ai <claude|copilot> --script <ps|sh> --no-git --force
 ```
 
-This deposits the per-assistant SpecKit layout (Claude `.claude/commands/speckit.*` · Copilot
-`.github/prompts/speckit.*.prompt.md`) plus the shared `.specify/**` machinery. **Prerequisite
+Our `--assistant copilot-cli` maps to spec-kit's `--ai copilot` (spec-kit 0.8.18 has no
+`copilot-cli`). This deposits the per-assistant SpecKit layout (Claude `.claude/commands/speckit.*` ·
+Copilot `.github/prompts/speckit.*.prompt.md`) plus the shared `.specify/**` machinery. **Prerequisite
 (fail-fast):** `uvx` must be on `PATH` **and the spec-kit release must be reachable at install
 time** (network) — if the launcher is absent or `specify init` fails, the command stops with an
 actionable error and applies nothing. This is a deliberate trade-off (a tracked deviation from the
@@ -418,35 +420,40 @@ usage.
 
 ## 9. Targeting another assistant: GitHub Copilot (`--assistant`)
 
-By default the installers write the **Claude Code** layout. Pass `--assistant` to target GitHub
-Copilot instead. There are **two Copilot targets**, because the VS Code agent and the CLI read the
-MCP server from **different files**:
+By default the installers write the **Claude Code** layout. Pass `--assistant copilot-cli` to target
+the **GitHub Copilot CLI** instead. The CLI reads the MCP server from `.mcp.json` (root key
+`mcpServers`) and reuses the `.github/**` containers for instructions, agents and hooks. The
+*content* of every surface is reused; only the *container* (path, format, JSON root key) is
+translated. Default is `claude`; an unknown value stops with an explicit error listing the valid
+ones (`claude`, `copilot-cli`).
 
-- **`--assistant copilot`** — GitHub Copilot **in VS Code** (MCP in `.vscode/mcp.json`, root key `servers`).
-- **`--assistant copilot-cli`** — GitHub **Copilot CLI** (MCP in `.mcp.json`, root key `mcpServers`).
+> **The VS Code target (`copilot`) was removed.** Earlier releases also offered `--assistant copilot`
+> for Copilot **in VS Code** (`.vscode/mcp.json` with a `servers` root, commands as
+> `.github/prompts/*.prompt.md`). It has been **consolidated into `copilot-cli`** — `copilot` is no
+> longer accepted. To update an existing VS Code install, see the **migration note** in
+> **[install-copilot.md](install-copilot.md#migrating-from-the-vs-code-target)** (re-install with
+> `copilot-cli`, then remove the leftover `.vscode/mcp.json` and `.github/prompts/*.prompt.md`
+> manually — there is no automatic cleanup).
 
-Both reuse the same `.github/**` containers for instructions, prompts, agents and hooks (the CLI
-reads those too). The *content* of every surface is reused; only the *container* (path, format, JSON
-root key) is translated. Default is `claude`; an unknown value stops with an explicit error listing
-the valid ones.
+| Logical surface | Claude | Copilot CLI |
+|---|---|---|
+| Instruction / ritual block | `CLAUDE.md` | `.github/copilot-instructions.md` |
+| MCP server (`sertor-rag`) | `.mcp.json` (`mcpServers`) | `.mcp.json` (`mcpServers`) |
+| Hook wiring | `.claude/settings.json` | `.github/hooks/sertor-hooks.json` |
+| Command / skill | `.claude/commands/<name>.md` | `.github/agents/<name>.agent.md` (custom-agent) |
+| Agent persona | `.claude/agents/<name>.md` | `.github/agents/<name>.agent.md` |
 
-| Logical surface | Claude | Copilot (VS Code) | Copilot CLI |
-|---|---|---|---|
-| Instruction / ritual block | `CLAUDE.md` | `.github/copilot-instructions.md` | `.github/copilot-instructions.md` |
-| MCP server (`sertor-rag`) | `.mcp.json` (`mcpServers`) | `.vscode/mcp.json` (`servers`) | `.mcp.json` (`mcpServers`) |
-| Hook wiring | `.claude/settings.json` | `.github/hooks/sertor-hooks.json` | `.github/hooks/sertor-hooks.json` |
-| Command / skill | `.claude/commands/<name>.md` | `.github/prompts/<name>.prompt.md` | `.github/prompts/<name>.prompt.md` |
-| Agent persona | `.claude/agents/<name>.md` | `.github/agents/<name>.agent.md` | `.github/agents/<name>.agent.md` |
-
-Commands are single-line so they work as-is in **PowerShell** and POSIX shells:
+On the CLI, commands/skills are rendered as **custom-agents** (`.github/agents/*.agent.md`) — the
+only CLI-invocable form (a prompt-file is not invocable from the CLI). Commands are single-line so
+they work as-is in **PowerShell** and POSIX shells:
 
 ```powershell
 # RAG for the GitHub Copilot CLI (MCP lands in .mcp.json with the mcpServers root):
 uv run sertor install rag --assistant copilot-cli --backend azure
-# RAG for Copilot in VS Code (MCP lands in .vscode/mcp.json):
-uv run sertor install rag --assistant copilot --backend azure
 # Wiki system for Copilot (instructions in .github/copilot-instructions.md):
 uv run sertor install wiki --assistant copilot-cli
+# Governance (SpecKit + Sertor-authored surfaces) for the Copilot CLI:
+sertor-flow install --assistant copilot-cli
 ```
 
 After installing for the **Copilot CLI**, reload its MCP config with `/mcp reload` (or restart the
@@ -458,13 +465,10 @@ The same invariants hold for every assistant: **install ≠ run**, non-destructi
 never overwritten — merges are additive and per-file writes skip), idempotent, and secrets are never
 written (the `.env` template ships with empty values).
 
-> **Two Copilot surfaces, one cause.** The VS Code Copilot agent reads `.vscode/mcp.json` (`servers`
-> root); the Copilot **CLI** removed support for that file and reads `.mcp.json`/`.github/mcp.json`
-> with the `mcpServers` root. Use `--assistant copilot` for the former, `--assistant copilot-cli` for
-> the latter. **Scope:** the `copilot-cli` target currently covers the **`sertor`** package
-> (`install rag`/`install wiki`); the governance installer `sertor-flow` still targets
-> `claude|copilot` only (SpecKit-side support for the CLI is a follow-up). A further assistant
-> (`codex` → `AGENTS.md`) is planned but not yet implemented.
+> **Scope.** All three capabilities — `sertor` (`install rag`/`install wiki`) and `sertor-flow`
+> governance — support `claude|copilot-cli`. For governance, our `copilot-cli` maps to spec-kit's
+> `--ai copilot` (spec-kit 0.8.18 has no `copilot-cli`). A further assistant (`codex` → `AGENTS.md`)
+> is planned but not yet implemented.
 
 ## 10. Refresh and clean uninstall
 
@@ -508,7 +512,7 @@ own marker blocks / hook entries / `.gitignore` lines are touched, byte-for-byte
 uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor upgrade
 # Or a single capability, projecting first:
 sertor upgrade rag --dry-run
-sertor upgrade rag                       # refresh; switch assistant with --assistant copilot
+sertor upgrade rag                       # refresh; switch assistant with --assistant copilot-cli
 
 # Uninstall (per capability or all-in-one). The wiki/ dir is PRESERVED by default:
 sertor uninstall rag                     # remove the RAG runtime + shared edits + MCP entry
@@ -554,10 +558,14 @@ everything is `skipped`), `1` domain error (fail-fast, the failed step is named)
   `.claude/commands/wiki.md`, `.claude/commands/speckit.*.md`, `.claude/agents/wiki-curator.md`,
   `.claude/agents/requirements-analyst.md`, `.claude/agents/configuration-manager.md`,
   `.claude/hooks/wiki-pending-check.ps1`, `.claude/hooks/sertor-rag-usage-check.ps1`
-- **Copilot assets (B):** `.github/prompts/wiki.prompt.md`, `.github/prompts/wiki-author.prompt.md`,
-  `.github/prompts/speckit.*.prompt.md`, `.github/agents/wiki-curator.agent.md`,
+- **Copilot CLI assets (B):** `.github/agents/wiki.agent.md`, `.github/agents/wiki-author.agent.md`,
+  `.github/agents/wiki-curator.agent.md`, `.github/agents/requirements.agent.md`,
+  `.github/agents/requirements-analyst.agent.md`, `.github/agents/configuration-manager.agent.md`,
+  `.github/prompts/speckit.*.prompt.md` (these SpecKit prompts come from the upstream installer),
   `.github/hooks/wiki-pending-check.ps1`, `.github/hooks/sertor-rag-usage-check.ps1`,
-  `.github/hooks/sertor-hooks.json`
+  `.github/hooks/sertor-hooks.json`. **Legacy VS Code residue** (if you ever installed the removed
+  `copilot` target): `.vscode/mcp.json` and `.github/prompts/{wiki,wiki-author,requirements}.prompt.md`
+  — see the migration note in [install-copilot.md](install-copilot.md#migrating-from-the-vs-code-target).
 - **Shared (C):** in `CLAUDE.md`/`.github/copilot-instructions.md` delete the three marker blocks
   `SERTOR:WIKI-RITUAL`, `SERTOR:RAG-USAGE`, `SERTOR:SDLC-RITUAL` (markers included); in
   `.claude/settings.json` remove the Sertor hook entries (or delete `.github/hooks/sertor-hooks.json`
@@ -578,10 +586,12 @@ Remove-Item -Recurse -Force wiki, .specify -ErrorAction SilentlyContinue
 Remove-Item -Force .claude\commands\wiki.md, .claude\agents\wiki-curator.md, .claude\agents\requirements-analyst.md, .claude\agents\configuration-manager.md, .claude\hooks\wiki-pending-check.ps1, .claude\hooks\sertor-rag-usage-check.ps1 -ErrorAction SilentlyContinue
 Remove-Item -Recurse -Force .claude\skills\wiki-author, .claude\skills\requirements -ErrorAction SilentlyContinue
 Get-ChildItem .claude\commands\speckit.*.md -ErrorAction SilentlyContinue | Remove-Item -Force
-# Copilot layout (if you installed for copilot / copilot-cli) — delete ONLY Sertor's files, not the
-# whole .github/{prompts,agents,hooks} dirs (they may hold your own content):
-Remove-Item -Force .github\prompts\wiki.prompt.md, .github\prompts\wiki-author.prompt.md, .github\agents\wiki-curator.agent.md, .github\agents\requirements-analyst.agent.md, .github\agents\configuration-manager.agent.md, .github\hooks\wiki-pending-check.ps1, .github\hooks\sertor-rag-usage-check.ps1, .github\hooks\sertor-hooks.json -ErrorAction SilentlyContinue
+# Copilot CLI layout (if you installed for copilot-cli) — delete ONLY Sertor's files, not the
+# whole .github/{agents,hooks} dirs (they may hold your own content):
+Remove-Item -Force .github\agents\wiki.agent.md, .github\agents\wiki-author.agent.md, .github\agents\wiki-curator.agent.md, .github\agents\requirements.agent.md, .github\agents\requirements-analyst.agent.md, .github\agents\configuration-manager.agent.md, .github\hooks\wiki-pending-check.ps1, .github\hooks\sertor-rag-usage-check.ps1, .github\hooks\sertor-hooks.json -ErrorAction SilentlyContinue
 Get-ChildItem .github\prompts\speckit.*.prompt.md -ErrorAction SilentlyContinue | Remove-Item -Force
+# Legacy VS Code residue (if you ever used the removed `copilot` target):
+Remove-Item -Force .github\prompts\wiki.prompt.md, .github\prompts\wiki-author.prompt.md, .github\prompts\requirements.prompt.md -ErrorAction SilentlyContinue
 # 3. MCP config files (delete if Sertor was the only server; otherwise edit out the sertor-rag entry):
 Remove-Item -Force .mcp.json, .vscode\mcp.json, .github\mcp.json -ErrorAction SilentlyContinue
 # 4. C — strip Sertor marker blocks + .gitignore lines from SHARED files (kept, only edited):

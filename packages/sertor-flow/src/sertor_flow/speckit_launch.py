@@ -2,9 +2,10 @@
 
 The launch-installer pivot: `sertor-flow` no longer ships copies of the SpecKit commands/agents and
 `.specify/**`. It LAUNCHES `specify init` for the target assistant, which deposits the per-assistant
-variant (Claude `.claude/...` · Copilot `.github/prompts/`+`.github/agents/`; `.specify/` shared) at
-a PINNED upstream version. This is the only place that knows the spec-kit command — it sits behind
-the kit's `CommandRunner` so tests mock it (no network).
+variant (Claude `.claude/...` · Copilot CLI `.github/prompts/`+`.github/agents/`; `.specify/` is
+shared) at a PINNED upstream version. Our `copilot-cli` maps to spec-kit's `--ai copilot` (FEAT-012,
+single point `_SPECKIT_AI_FLAG`). This is the only place that knows the spec-kit command — it sits
+behind the kit's `CommandRunner` so tests mock it (no network).
 
 DA-4 (design assumption, documented): the exact invocation. We launch via `uvx`, pulling the pinned
 spec-kit release from its git tag, then run `specify init` in-place on the host root:
@@ -43,6 +44,12 @@ SPECKIT_REPO = "git+https://github.com/github/spec-kit.git"
 # `profile.script` flavor → spec-kit `--script` value (cross-platform: ps on Windows, sh on POSIX).
 _SCRIPT_VALUE = {"ps": "ps", "bash": "sh", "sh": "sh"}
 
+# Our `--assistant` value → the `--ai` value spec-kit 0.8.18 recognizes (FR-013/FR-015, SC-006).
+# spec-kit has NO `copilot-cli`; our CLI target maps to upstream `copilot`. This is the SINGLE
+# documented translation point — update ONLY this map if a future pinned spec-kit adds an
+# `--ai copilot-cli` (VIN-01/A-2). Default-safe via `.get(assistant, assistant)`.
+_SPECKIT_AI_FLAG = {"claude": "claude", "copilot-cli": "copilot"}
+
 # Force UTF-8 in the launched `specify init`. spec-kit prints its banner via `rich` (box-drawing
 # glyphs, etc.); on a legacy Windows console (code page cp1252) Python's stdout cannot encode them
 # and `specify` aborts with a UnicodeEncodeError (exit 1) — independent of `--ai`. PYTHONUTF8=1 puts
@@ -57,7 +64,10 @@ _EXPECTED_LAYOUT = {
         ".claude/commands/speckit.specify.md",
         ".specify/templates/plan-template.md",
     ),
-    "copilot": (
+    # Keyed by OUR assistant name (`copilot-cli`); the PATHS are the layout spec-kit produces for
+    # `--ai copilot` (FEAT-012, FR-014/SC-007). The launch maps `copilot-cli`→`copilot`, so the
+    # Copilot layout is what lands on disk; `_layout_present` recognizes the re-run (idempotency).
+    "copilot-cli": (
         ".github/prompts/speckit.specify.prompt.md",
         ".specify/templates/plan-template.md",
     ),
@@ -79,6 +89,7 @@ def build_specify_command(profile: GovernanceProfile) -> list[str]:
     Isolated so the precise invocation is testable and adaptable in one place.
     """
     script_value = _SCRIPT_VALUE.get(profile.script, "sh")
+    ai_value = _SPECKIT_AI_FLAG.get(profile.assistant, profile.assistant)
     return [
         SPECKIT_TOOL,
         "--from",
@@ -88,7 +99,7 @@ def build_specify_command(profile: GovernanceProfile) -> list[str]:
         ".",
         "--here",
         "--ai",
-        profile.assistant,
+        ai_value,
         "--script",
         script_value,
         "--no-git",

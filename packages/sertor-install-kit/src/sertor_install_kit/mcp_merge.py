@@ -4,10 +4,10 @@ Same pattern as `settings_merge.py`: absent → create with the `sertor-rag` ser
 add the server while preserving the others; already present → skip (never overwrites); malformed →
 `ConfigError` (fail-fast, file not touched).
 
-For Claude this is `.mcp.json` in the **host root** with the servers under `mcpServers`; for Copilot
-(feature 044) it is `.vscode/mcp.json` with the servers under `servers`. The **root-key** is
-parametric (`root_key`, default `mcpServers` → retro-compat); both point to the runtime in
-`.sertor/` (`uv run --directory .sertor`).
+Both supported targets (Claude and the Copilot CLI) use `.mcp.json` in the **host root** with the
+servers under `mcpServers`. The **root-key** is left parametric (`root_key`, default `mcpServers`)
+so the primitive stays generic for other JSON roots; the server points to the runtime in `.sertor/`
+(`uv run --directory .sertor`).
 """
 from __future__ import annotations
 
@@ -25,8 +25,8 @@ def merge_mcp(
 ) -> tuple[Outcome, str]:
     """Adds the `sertor-rag` server to an MCP config in an additive and idempotent manner.
 
-    `root_key` selects the JSON root that holds the servers map (`mcpServers` for Claude → default
-    for retro-compat; `servers` for Copilot's `.vscode/mcp.json`).
+    `root_key` selects the JSON root that holds the servers map (`mcpServers` for both supported
+    targets → default; left parametric so the primitive stays generic for other JSON roots).
     """
     if not mcp_path.exists():
         payload = {root_key: {_SERVER_NAME: server_entry}}
@@ -67,7 +67,7 @@ def remove_mcp_server(
 
     Other servers are preserved. If `server_name` was the only server AND the file holds nothing but
     that servers map, the whole file is removed (`REMOVED`, FR-025). `root_key` is parametric
-    (`mcpServers` for Claude, `servers` for Copilot's `.vscode/mcp.json`).
+    (`mcpServers` for both supported targets → default; generic for other JSON roots).
 
     - file absent / server not present → `(SKIPPED, "...")` (idempotency);
     - server removed, others remain → `(REMOVED, "-server <name>")`, file rewritten;

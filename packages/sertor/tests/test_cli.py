@@ -65,11 +65,20 @@ def test_install_rag_json_report(tmp_path: Path, capsys):
     assert payload["summary"]["errors"] == 0
 
 
-def test_install_rag_assistant_copilot_exit_0(tmp_path: Path):  # feature 044, FR-001/002
-    rc = main(["install", "rag", "--target", str(tmp_path), "--no-deps", "--assistant", "copilot"])
+def test_install_rag_assistant_copilot_cli_exit_0(tmp_path: Path):  # FEAT-012, FR-001/002/008
+    rc = main([
+        "install", "rag", "--target", str(tmp_path), "--no-deps", "--assistant", "copilot-cli"
+    ])
     assert rc == 0
-    assert (tmp_path / ".vscode" / "mcp.json").is_file()
-    assert not (tmp_path / ".mcp.json").exists()  # not the Claude file
+    assert (tmp_path / ".mcp.json").is_file()  # the CLI-readable MCP file (mcpServers)
+    assert not (tmp_path / ".vscode" / "mcp.json").exists()  # VS Code target removed
+
+
+def test_install_rag_assistant_legacy_copilot_exit_1(tmp_path: Path, capsys):  # FEAT-012, FR-001
+    """The legacy VS Code value `copilot` is rejected with exit 1 naming `copilot-cli`."""
+    rc = main(["install", "rag", "--target", str(tmp_path), "--no-deps", "--assistant", "copilot"])
+    assert rc == 1
+    assert "copilot-cli" in capsys.readouterr().err
 
 
 def test_install_wiki_assistant_default_is_claude(tmp_path: Path):  # feature 044, FR-002
@@ -83,7 +92,24 @@ def test_install_assistant_unknown_exit_1_actionable(tmp_path: Path, capsys):  #
     rc = main(["install", "wiki", "--target", str(tmp_path), "--assistant", "codex"])
     assert rc == 1
     err = capsys.readouterr().err
-    assert "codex" in err and "claude" in err and "copilot" in err  # lists valid values
+    assert "codex" in err and "claude" in err and "copilot-cli" in err  # lists valid values
+
+
+def test_sertor_help_assistant_choices(capsys):  # FEAT-012, FR-005/007, SC-002
+    """Every subcommand that takes `--assistant` shows `copilot-cli` and never `copilot (VS Code)`
+    in its help (uniform naming after the VS Code consolidation)."""
+    for argv in (
+        ["install", "wiki", "--help"],
+        ["install", "rag", "--help"],
+        ["upgrade", "rag", "--help"],
+        ["uninstall", "rag", "--help"],
+    ):
+        with pytest.raises(SystemExit) as exc:
+            main(argv)
+        assert exc.value.code == 0
+        out = capsys.readouterr().out
+        assert "copilot-cli" in out, f"{argv}: missing copilot-cli"
+        assert "copilot (VS Code)" not in out, f"{argv}: stale VS Code naming"
 
 
 def test_install_governance_points_to_sertor_flow(capsys):

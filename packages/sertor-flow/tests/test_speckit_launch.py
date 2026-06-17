@@ -13,7 +13,13 @@ from pathlib import Path
 import pytest
 
 from sertor_flow.profile import build_governance_profile
-from sertor_flow.speckit_launch import SPECKIT_TOOL, launch_speckit
+from sertor_flow.speckit_launch import (
+    _EXPECTED_LAYOUT,
+    _SPECKIT_AI_FLAG,
+    SPECKIT_TOOL,
+    build_specify_command,
+    launch_speckit,
+)
 from sertor_install_kit import CommandResult, InstallerError, Outcome
 
 
@@ -67,20 +73,63 @@ def test_launch_claude_runs_specify_with_ai_claude(tmp_path: Path):
     assert cwd == tmp_path
 
 
-def test_launch_copilot_runs_specify_with_ai_copilot(tmp_path: Path):
-    """assistant=copilot → command carries `--ai copilot`; copilot layout → created."""
-    profile = build_governance_profile(tmp_path, assistant="copilot", script="bash")
+def test_launch_copilot_cli_runs_specify_with_ai_copilot(tmp_path: Path):
+    """FEAT-012: assistant=copilot-cli → command carries `--ai copilot` (mapped); layout created."""
+    profile = build_governance_profile(tmp_path, assistant="copilot-cli", script="bash")
     runner = FakeRunner(layout=_COPILOT_LAYOUT)
     outcome = launch_speckit(profile, runner)
     assert outcome is Outcome.CREATED
     cmd, _ = runner.calls[0]
-    assert "--ai" in cmd and "copilot" in cmd
+    assert "--ai" in cmd
+    assert cmd[cmd.index("--ai") + 1] == "copilot"
+    assert "copilot-cli" not in cmd
+
+
+def test_build_specify_command_copilot_cli_uses_ai_copilot(tmp_path: Path):  # C3.1, FR-013, SC-006
+    """`build_specify_command(copilot-cli)` carries `--ai copilot` (not `copilot-cli`)."""
+    profile = build_governance_profile(tmp_path, assistant="copilot-cli", script="ps")
+    cmd = build_specify_command(profile)
+    assert cmd[cmd.index("--ai") + 1] == "copilot"
+    assert "copilot-cli" not in cmd
+
+
+def test_build_specify_command_claude_uses_ai_claude(tmp_path: Path):  # C3.2, non-regression
+    profile = build_governance_profile(tmp_path, assistant="claude", script="ps")
+    cmd = build_specify_command(profile)
+    assert cmd[cmd.index("--ai") + 1] == "claude"
+
+
+def test_speckit_ai_flag_single_symbol():  # C3.3, FR-015, SC-006
+    """The translation lives in one symbol with exactly the two supported keys."""
+    assert isinstance(_SPECKIT_AI_FLAG, dict)
+    assert set(_SPECKIT_AI_FLAG) == {"claude", "copilot-cli"}
+    assert _SPECKIT_AI_FLAG["copilot-cli"] == "copilot"
+    assert _SPECKIT_AI_FLAG["claude"] == "claude"
+
+
+def test_expected_layout_has_copilot_cli_key():  # data-model §5, FR-014
+    """The layout-check is keyed by OUR assistant name `copilot-cli`, never the legacy `copilot`."""
+    assert "copilot-cli" in _EXPECTED_LAYOUT
+    assert "copilot" not in _EXPECTED_LAYOUT
+
+
+def test_launch_speckit_idempotent_copilot_cli(tmp_path: Path):  # C3.4, FR-014, SC-007
+    """Re-run with copilot-cli on an already-initialized host → SKIPPED, no relaunch."""
+    profile = build_governance_profile(tmp_path, assistant="copilot-cli", script="bash")
+    for rel in _COPILOT_LAYOUT:
+        dest = tmp_path / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text("pre", encoding="utf-8")
+    runner = FakeRunner(layout=_COPILOT_LAYOUT)
+    outcome = launch_speckit(profile, runner)
+    assert outcome is Outcome.SKIPPED
+    assert not runner.calls  # idempotent: no relaunch
 
 
 def test_launch_forces_utf8_env(tmp_path: Path):
     """The launch overlays PYTHONUTF8/PYTHONIOENCODING so spec-kit's rich banner does not crash on a
     legacy Windows console (cp1252) → UnicodeEncodeError. Regression for the live exit-1 failure."""
-    profile = build_governance_profile(tmp_path, assistant="copilot", script="ps")
+    profile = build_governance_profile(tmp_path, assistant="copilot-cli", script="ps")
     runner = FakeRunner(layout=_COPILOT_LAYOUT)
     launch_speckit(profile, runner)
     env = runner.envs[0]

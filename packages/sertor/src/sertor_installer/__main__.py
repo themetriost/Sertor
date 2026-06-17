@@ -82,7 +82,7 @@ def _build_parser() -> argparse.ArgumentParser:
     wiki.add_argument("--target", default=".", help="host repo root (default: cwd)")
     wiki.add_argument(
         "--assistant", default="claude",
-        help="target assistant: claude (default) | copilot (VS Code) | copilot-cli",
+        help="target assistant: claude (default) | copilot-cli",
     )
     wiki.add_argument(
         "--language", default="en", help="language of the generated wiki.config.toml (default: en)"
@@ -97,7 +97,7 @@ def _build_parser() -> argparse.ArgumentParser:
     rag.add_argument("--target", default=".", help="host repo root (default: cwd)")
     rag.add_argument(
         "--assistant", default="claude",
-        help="target assistant: claude (default) | copilot (VS Code) | copilot-cli",
+        help="target assistant: claude (default) | copilot-cli",
     )
     rag.add_argument(
         "--backend", choices=["azure", "local"], default="azure",
@@ -194,7 +194,7 @@ def _add_lifecycle_flags(p: argparse.ArgumentParser) -> None:
     p.add_argument("--target", default=".", help="host repo root (default: cwd)")
     p.add_argument(
         "--assistant", default="claude",
-        help="target assistant: claude (default) | copilot | copilot-cli",
+        help="target assistant: claude (default) | copilot-cli",
     )
     p.add_argument("--backend", choices=["azure", "local"], default="azure",
                    help="embeddings backend for the reconstructed rag plan (default: azure)")

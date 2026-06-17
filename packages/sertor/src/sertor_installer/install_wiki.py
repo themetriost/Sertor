@@ -74,9 +74,6 @@ _COPILOT_HOOK_WIRING = ".github/hooks/sertor-hooks.json"
 # Hook scripts are REUSED byte-for-byte from the Claude asset (FR-014); only the wiring differs.
 _WIKI_HOOK_SCRIPT_SRC = "claude/hooks/wiki-pending-check.ps1"
 _WIKI_HOOK_SCRIPT_DST = ".github/hooks/wiki-pending-check.ps1"
-# FEAT-011: SessionStart directive extracted to a shared script (single source, anti-drift).
-_WIKI_SESSION_SCRIPT_SRC = "claude/hooks/wiki-session-start.ps1"
-_WIKI_SESSION_SCRIPT_DST = ".github/hooks/wiki-session-start.ps1"
 # FEAT-011: the Copilot hook wiring is GENERATED natively (render_copilot_hooks), no longer read
 # from a static Claude-format asset. The sentinel source marks the GENERATED-wiki wiring so the
 # apply callback builds it instead of reading a file (no new ArtifactKind, data-model §4).
@@ -93,25 +90,17 @@ _WIKI_AGENT_DST = ".github/agents/wiki-curator.agent.md"
 _RENDER_PROMPT_SUFFIX = ".prompt.md"
 _RENDER_AGENT_SUFFIX = ".agent.md"
 
-# FEAT-011 (FR-027/028): honest gap for the VS Code SessionStart `additionalContext` mechanism,
-# declared in the install output so Copilot VS Code is never claimed as "full parity".
-VSCODE_SESSION_START_GAP = (
-    "[ASSUNTO-VSC] Copilot VS Code SessionStart: the `additionalContext` mechanism "
-    "(type:\"command\") is NOT verified on a real VS Code client — declared gap, NOT full parity."
-)
-
 # Native Copilot hook commands (the script invocation; `-Assistant copilot` selects the native
 # output). `pwsh -File` is the portable interpreter; the path is relative to the host root.
 _PWSH = "pwsh -File"
 
 
 def _copilot_wiki_hook_specs(assistant: AssistantId) -> list[HookEntrySpec]:
-    """Logical hook entries for the Copilot wiki wiring, per family (FEAT-011, US3).
+    """Logical hook entries for the Copilot CLI wiki wiring (FEAT-011, US3).
 
-    SessionStart diverges per family (Q1=b): VS Code uses a `command` invoking the extracted script
-    (native `additionalContext`, [ASSUNTO-VSC]); the CLI uses a static `prompt` (the directive IS
-    the prompt — no script to run). Stop/SessionEnd reuse the shared `wiki-pending-check.ps1` with
-    `-Assistant copilot` (native agentStop/sessionEnd output).
+    SessionStart is a static `prompt` (Q1=b): the directive IS the prompt — no script to run.
+    Stop/SessionEnd reuse the shared `wiki-pending-check.ps1` with `-Assistant copilot` (native
+    agentStop/sessionEnd output).
     """
     stop = HookEntrySpec(
         "Stop", "command",
@@ -121,22 +110,15 @@ def _copilot_wiki_hook_specs(assistant: AssistantId) -> list[HookEntrySpec]:
         "SessionEnd", "command",
         f"{_PWSH} {_WIKI_HOOK_SCRIPT_DST} -Mode SessionEnd -Assistant copilot", 10,
     )
-    if assistant is AssistantId.COPILOT_CLI:
-        # CLI: SessionStart is a static prompt (the directive). No script invocation.
-        session_start = HookEntrySpec(
-            "SessionStart", "prompt",
-            "SESSION START - load the project context BEFORE replying: read "
-            "wiki/syntheses/roadmap.md, wiki/index.md and the latest file in wiki/log/, then show "
-            "the user the executive summary between the markers <!-- EXEC:START --> and "
-            "<!-- EXEC:END -->.",
-            15,
-        )
-    else:
-        # VS Code: SessionStart invokes the extracted script (native additionalContext; ASSUNTO-VSC)
-        session_start = HookEntrySpec(
-            "SessionStart", "command",
-            f"{_PWSH} {_WIKI_SESSION_SCRIPT_DST} -Assistant copilot", 15,
-        )
+    # CLI: SessionStart is a static prompt (the directive). No script invocation.
+    session_start = HookEntrySpec(
+        "SessionStart", "prompt",
+        "SESSION START - load the project context BEFORE replying: read "
+        "wiki/syntheses/roadmap.md, wiki/index.md and the latest file in wiki/log/, then show "
+        "the user the executive summary between the markers <!-- EXEC:START --> and "
+        "<!-- EXEC:END -->.",
+        15,
+    )
     return [session_start, stop, session_end]
 
 
@@ -145,16 +127,15 @@ def build_install_plan(assistant: AssistantId = AssistantProfile.DEFAULT) -> lis
 
     The plan-builder no longer hard-codes `.claude/...`: it asks the `AssistantProfile` for the
     container of each surface (Principio X). `claude` (default) reproduces the historical plan
-    byte-for-byte (non-regression); `copilot` renders the FILE surfaces into `.github/**`.
+    byte-for-byte (non-regression); `copilot-cli` renders the FILE surfaces into `.github/**`.
 
     Canonical order: FILE×N (skill/command/agent/hook) → SETTINGS_MERGE → MARKER_BLOCK → CONFIG →
     STRUCTURE. FILE entries are not hard-coded: they are discovered by walking `assets/claude/`
     (F1/F8).
     """
-    # Copilot family (VS Code + CLI): both read the `.github/**` surfaces. FEAT-011: the two now
-    # DIVERGE — the COMMAND vehicle (prompt-file vs custom-agent) and the SessionStart wiring differ
-    # per family — so the plan is parametric on the assistant.
-    if assistant in (AssistantId.COPILOT, AssistantId.COPILOT_CLI):
+    # Copilot CLI reads the `.github/**` surfaces; the COMMAND vehicle is a custom-agent and the
+    # SessionStart wiring is a native prompt — so the plan is parametric on the assistant.
+    if assistant is AssistantId.COPILOT_CLI:
         return _build_copilot_wiki_plan(assistant)
     return _build_claude_wiki_plan()
 
@@ -215,22 +196,21 @@ def _build_claude_wiki_plan() -> list[Artifact]:
 
 
 def _build_copilot_wiki_plan(assistant: AssistantId) -> list[Artifact]:
-    """Copilot wiki plan (feature 044 + FEAT-011): `.github/**`, content reused from Claude.
+    """Copilot CLI wiki plan (feature 044 + FEAT-011): `.github/**`, content reused from Claude.
 
-    Surfaces, routed per-target via the `AssistantProfile`:
-      - COMMAND (`/wiki`, `wiki-author` skill): VS Code → `.github/prompts/*.prompt.md`
-        (prompt-file, `agent:`); CLI → `.github/agents/*.agent.md` (custom-agent — the only
+    Surfaces, routed via the `AssistantProfile`:
+      - COMMAND (`/wiki`, `wiki-author` skill): `.github/agents/*.agent.md` (custom-agent — the only
         CLI-invocable form, FEAT-011/FR-013). The renderer is chosen by the target suffix.
       - AGENT (`wiki-curator`): `.github/agents/*.agent.md` (custom-agent, no `model:`).
-      - HOOK: reuse the two scripts byte-for-byte (`wiki-pending-check.ps1`,
-        `wiki-session-start.ps1`) + GENERATED native wiring (`render_copilot_hooks`), per family.
+      - HOOK: reuse `wiki-pending-check.ps1` byte-for-byte + GENERATED native wiring
+        (`render_copilot_hooks`); SessionStart is a native prompt (no script).
       - INSTRUCTION_BLOCK → `.github/copilot-instructions.md`.
       - CONFIG/STRUCTURE: assistant-agnostic (the wiki scaffold lives in `wiki/`).
     """
     aprofile = AssistantProfile.for_assistant(assistant)
     plan: list[Artifact] = []
 
-    # COMMAND: render command + skill into the target's vehicle (prompt-file or custom-agent).
+    # COMMAND: render command + skill into the target's vehicle (custom-agent on the CLI).
     command_dst = aprofile.render_path(Surface.COMMAND, _WIKI_COMMAND_NAME)
     skill_dst = aprofile.render_path(Surface.COMMAND, _WIKI_SKILL_NAME)
     plan.append(
@@ -244,18 +224,12 @@ def _build_copilot_wiki_plan(assistant: AssistantId) -> list[Artifact]:
         Artifact(ArtifactKind.FILE, _WIKI_AGENT_SRC, _WIKI_AGENT_DST,
                  WriteStrategy.CREATE_IF_ABSENT)
     )
-    # HOOK scripts: reuse byte-for-byte (FR-014). VS Code also needs the SessionStart script (the
-    # CLI uses a static prompt, so the session-start script is not invoked there — installing it
-    # only for VS Code keeps the CLI plan minimal).
+    # HOOK scripts: reuse byte-for-byte (FR-014). The CLI SessionStart is a static prompt, so no
+    # session-start script is installed — only the Stop/SessionEnd check script.
     plan.append(
         Artifact(ArtifactKind.FILE, _WIKI_HOOK_SCRIPT_SRC, _WIKI_HOOK_SCRIPT_DST,
                  WriteStrategy.CREATE_IF_ABSENT)
     )
-    if assistant is AssistantId.COPILOT:
-        plan.append(
-            Artifact(ArtifactKind.FILE, _WIKI_SESSION_SCRIPT_SRC, _WIKI_SESSION_SCRIPT_DST,
-                     WriteStrategy.CREATE_IF_ABSENT)
-        )
     # HOOK wiring: GENERATED natively (sentinel source → apply builds it via render_copilot_hooks).
     plan.append(
         Artifact(ArtifactKind.SETTINGS_MERGE, _COPILOT_WIKI_WIRING_SENTINEL, _COPILOT_HOOK_WIRING,
@@ -395,8 +369,6 @@ def execute_plan(
     report = _kit_execute_plan(
         plan, apply, target=str(root), capability="wiki", assistant=assistant.value
     )
-    if assistant is AssistantId.COPILOT:
-        report.note(VSCODE_SESSION_START_GAP)
     return report
 
 

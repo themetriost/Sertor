@@ -118,7 +118,7 @@ def build_governance_plan(profile: GovernanceProfile) -> list[Artifact]:
     5. MARKER_BLOCK — SDLC ritual block → INSTRUCTION_BLOCK target of the assistant
 
     `claude` reproduces the historical Sertor-authored layout (`.claude/**` + `CLAUDE.md`);
-    `copilot` renders the same content into `.github/**` (anti-drift: single canonical source).
+    `copilot-cli` renders the same content into `.github/**` (anti-drift: single canonical source).
     """
     aprofile = AssistantProfile.for_assistant(AssistantId.from_str(profile.assistant))
     plan: list[Artifact] = []
@@ -292,13 +292,6 @@ def execute_governance_plan(
     # Merge the plan outcomes into the report that already carries the launch outcome.
     for outcome in plan_report.outcomes:
         report.add(outcome)
-    if profile.assistant == "copilot":
-        # FEAT-011 (FR-027/028): the Copilot VS Code surfaces are schema-valid (offline) but not
-        # verified on a real client — declare the gap honestly, never claim "full parity".
-        report.note(
-            "[ASSUNTO-VSC] Copilot VS Code governance surfaces are schema-valid (offline) but NOT "
-            "verified on a real VS Code client — declared gap, NOT full parity."
-        )
     return report
 
 
