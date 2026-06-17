@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-16 (FEAT-009 refresh incrementale dell'indice ✅ DONE — merge `3ec47f1` su master: manifest SQLite, incrementale di default, upsert/delete mirati + BM25/grafo dal manifest, lock single-writer, gate di equivalenza verde, 596 test, Constitution 11/11; ultimo residuo reale di sertor-core chiuso) · 2026-06-16 (FEAT-009 requirements decomposti → `/speckit-plan` — 18 REQ EARS, MoSCoW, decisioni F1/F2, 5 DA aperte; prior-art CocoIndex/LlamaIndex/LangChain consultate) · 2026-06-16 (backlog audit → roadmap: 6 nuove epiche dal censimento del non-fatto — retrieval-qualita · backend-store-scala · ingestione-estesa · conoscenza-schema-sql · second-brain · debito-tecnico; leak minori promossi nelle epiche esistenti; EXEC table + PLANNED riorganizzati) · 2026-06-15 (Principio XI realizzato end-to-end A-D: auto-wire composition + ospite istruzioni/hook + bundle coerenza, PRs #61/#62/#63) · 2026-06-14 (FEAT-003 aggancio distillazione all'archivio ✅ master PR #51 — MVP memoria completo+acceso, loop cattura→distill chiuso; SERTOR_MEMORY=true sul dogfood) · 2026-06-14 (MVP osservabilità ✅ master F1→F4 PR #34/35/36/38; memory conversazioni epica decomposte FEAT-001/002) · 2026-06-14 (hardening Should gruppo C — feature 019 cache embeddings + token nei log — implementata su branch, in attesa di PR) · 2026-06-13 (notte: FEAT-018 hardening retrieval Must ✅ su master, PR #32 — retry embedder + soglia/low_confidence; hardening resta IN PROGRESS perché Should/Could aperti) · 2026-06-13 (sera: + idea «Second brain cross-progetto»/Meta-Sertor → [[second-brain-cross-progetto]], da espandere · giornata: FEAT-006 ✅ composita · igiene radice host PR #26 · tema lingua completo PR #27/#28/#29) · 2026-06-12 (TRIPLA: PR #23/#24/#25)
+updated: 2026-06-16 (EXEC ristrutturato per leggibilità: due tabelle disgiunte e adiacenti — ✅ capacità consegnate (feature) + 📋 le 11 epiche per stato; le 6 nuove epiche ora nella tabella epiche, niente più mescolanza feature↔epiche) · 2026-06-16 (FEAT-009 refresh incrementale dell'indice ✅ DONE — merge `3ec47f1` su master: manifest SQLite, incrementale di default, upsert/delete mirati + BM25/grafo dal manifest, lock single-writer, gate di equivalenza verde, 596 test, Constitution 11/11; ultimo residuo reale di sertor-core chiuso) · 2026-06-16 (FEAT-009 requirements decomposti → `/speckit-plan` — 18 REQ EARS, MoSCoW, decisioni F1/F2, 5 DA aperte; prior-art CocoIndex/LlamaIndex/LangChain consultate) · 2026-06-16 (backlog audit → roadmap: 6 nuove epiche dal censimento del non-fatto — retrieval-qualita · backend-store-scala · ingestione-estesa · conoscenza-schema-sql · second-brain · debito-tecnico; leak minori promossi nelle epiche esistenti; EXEC table + PLANNED riorganizzati) · 2026-06-15 (Principio XI realizzato end-to-end A-D: auto-wire composition + ospite istruzioni/hook + bundle coerenza, PRs #61/#62/#63) · 2026-06-14 (FEAT-003 aggancio distillazione all'archivio ✅ master PR #51 — MVP memoria completo+acceso, loop cattura→distill chiuso; SERTOR_MEMORY=true sul dogfood) · 2026-06-14 (MVP osservabilità ✅ master F1→F4 PR #34/35/36/38; memory conversazioni epica decomposte FEAT-001/002) · 2026-06-14 (hardening Should gruppo C — feature 019 cache embeddings + token nei log — implementata su branch, in attesa di PR) · 2026-06-13 (notte: FEAT-018 hardening retrieval Must ✅ su master, PR #32 — retry embedder + soglia/low_confidence; hardening resta IN PROGRESS perché Should/Could aperti) · 2026-06-13 (sera: + idea «Second brain cross-progetto»/Meta-Sertor → [[second-brain-cross-progetto]], da espandere · giornata: FEAT-006 ✅ composita · igiene radice host PR #26 · tema lingua completo PR #27/#28/#29) · 2026-06-12 (TRIPLA: PR #23/#24/#25)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md", "requirements/memoria-conversazioni/epic.md"]
 ---
 
@@ -16,67 +16,45 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 <!-- EXEC:START -->
 ## ⚡ Executive summary (stato al 2026-06-16)
 
-### 📊 Roadmap a colpo d'occhio
+### ✅ Capacità consegnate (feature su `master`)
 
-| Capacità | Pri | Stato |
+| Capacità (feature) | Epica |
+|---|---|
+| Nucleo retrieval · motore baseline · Wiki LLM · server MCP | `sertor-core` |
+| RAG ibrido+reranking (default) · code-graph · agentico & Wiki↔RAG (compositi) | `sertor-core` |
+| **Refresh incrementale dell'indice** (FEAT-009, 2026-06-16) | `sertor-core` |
+| Hardening retrieval (Must + Should gruppo C: retry · soglia · cache embeddings) | `sertor-core` |
+| CLI `sertor-rag` · installer `sertor install wiki`/`rag` | `sertor-cli` |
+| Governance SDLC — pacchetto separato `sertor-flow` | `sertor-cli` |
+| Distribuzione Copilot (VS Code + CLI) — parità FEAT-007+009 | `sertor-cli` |
+| Igiene radice host · tema lingua (tutto il prodotto in EN) | `sertor-cli` |
+| MVP osservabilità F1–F4 (**accesa** sul dogfood) | `osservabilita` |
+| MVP memoria: cattura→ricerca→CLI/hook→distillazione (**acceso**) | `memoria-conversazioni` |
+
+*Dettaglio (PR, date, numeri) nella sezione ✅ DONE in fondo alla pagina.*
+
+### 📋 Le 11 epiche (per stato)
+
+> **⚠️ Nessuna epica è "finita" finché TUTTE le sue feature non sono consegnate.** Le 4 storiche hanno
+> il **nucleo su `master`** ma residui aperti (tranne `sertor-core`, ormai completa); le altre 7 sono
+> **da fare**. Una *feature* (`FEAT-NNN`) vive **dentro** un'epica — le capacità già consegnate stanno
+> nella tabella sopra, qui c'è il quadro a livello di epica.
+
+| Epica | Stato | Residuo / 1° passo |
 |---|---|---|
-| Nucleo retrieval (FEAT-001) | Must | ✅ master |
-| Motore baseline (FEAT-002) | Must | ✅ master |
-| Wiki LLM (FEAT-003) | Must | ✅ **completata 2026-06-10** (D 100% + N chiuse; N5/N9 → FEAT-007) |
-| Server MCP (FEAT-MCP) | Should | ✅ master |
-| RAG ibrido + reranking (FEAT-004) | Should | ✅ **master (2026-06-12, PR #24)** — motore di default |
-| GraphRAG / code-graph (FEAT-005) | Should | ✅ **master (2026-06-12, PR #25)** — i 4 tool MCP tornati |
-| RAG agentico (FEAT-006) | Should | ✅ **soddisfatta in forma composita (2026-06-13)** — il sistema MCP+agente È agentic RAG; agenzia incorporata = dote differita (Could) |
-| Manutenzione wiki (FEAT-007) | Should | ✅ **master (2026-06-13, PR #30)** — `move`/`reconcile`/`collect`+status; gruppi A(Won't)/E/F/B/C/D tutti chiusi |
-| CLI — feature `esecuzione` (`sertor-rag`) | — | ✅ **master (2026-06-11, PR #21)** |
-| CLI — installer (`sertor install`) | — | ✅ `wiki` (PR #22) + **`rag` su master (2026-06-12)** — validato live su Kaelen; `governance` ora è il pacchetto separato **`sertor-flow`** (PR #56) |
-| **Hardening produzione (retrieval)** | — | 🔄 **IN PROGRESS** — Must ✅ su master (PR #32); Should gruppo C (cache embeddings + token log, feature 019) ✅ **su master (PR #33)**; restano i Could in `requirements/sertor-core/hardening-produzione/` |
-| **Memoria conversazioni** (epica, MVP) | — | 🔄 **IN PROGRESS** — **MVP ✅ completo e USABILE + acceso**: FEAT-001 cattura (PR #45) + FEAT-002 ricerca (PR #47) + superficie CLI/hook (035, PR #49) + **FEAT-003 aggancio distillazione (036, PR #51)**, tutti su master 2026-06-14. Comandi `sertor-rag memory archive`/`search`/`show`/`list` + hook `SessionEnd`. `SERTOR_MEMORY=true` **acceso sul dogfood** (2026-06-14). *Provato live*. Resta: Should/Could (004 ricerca semantica / 005 / 006 / 008) |
-| **Osservabilità accesa sul dogfood** + errori MCP segnalati | — | ✅ **master (2026-06-14, PR #40/#43)** — `SERTOR_OBSERVABILITY=true` cablato e attivo; ogni errore del server MCP = evento + self-test allo startup |
-| Distribuzione multi-assistente Copilot — pacchetto `sertor` (FEAT-007) | — | ✅ **master (2026-06-15, PR #64)** — parità Copilot per il pacchetto `sertor`: CLI `--assistant claude\|copilot`; MCP `.vscode/mcp.json`, istruzioni `.github/copilot-instructions.md`, prompt-file/custom-agent resi, hook `.github/hooks/`. Seam `AssistantProfile`/`Surface` nel kit (riuso da FEAT-009). kit 49 · sertor 132 verdi. **+ target `copilot-cli` (2026-06-16, PR #66)**: la Copilot CLI ha rimosso `.vscode/mcp.json`/root `servers` → terzo `AssistantId` che scrive MCP in `.mcp.json`/`mcpServers` (riuso `.github/**`); scopo pacchetto `sertor`. `sertor-flow` su Copilot CLI = follow-up |
-| Distribuzione multi-assistente Copilot — governance `sertor-flow` (FEAT-009) | — | ✅ **master (2026-06-15, PR #65)** — `sertor-flow install --assistant claude\|copilot`. **Pivot vendoring→launch-installer**: SpecKit ottenuto lanciando `specify init --ai` (versione pinnata, fail-fast), asset speckit vendorati rimossi; superfici Sertor-authored tradotte per Copilot; renderer spostato nel kit (condiviso). No dip. da sertor-core. kit 49 · sertor 132 · sertor-flow 87 verdi. **⇒ distribuzione Copilot COMPLETA (FEAT-007+009)** |
-| Tema lingua (tutto il prodotto in inglese) | — | ✅ **completato totale (2026-06-13, PR #27/#28/#29/#31)**: codice (72 .py: docstring/commenti/**errori**), test (75 .py: commenti/docstring), documentazione di prodotto (README + `docs/`), asset installer, CLI, seed it/en. Restano IT **per scelta**: `wiki/`, `specs/`, `requirements/`, `CLAUDE.md`, `prototype/` (congelato) |
-| Igiene radice ospite (installer, asse DOVE) | — | ✅ **master (2026-06-13, PR #26)** — config in `wiki/` + auto-discovery, `--mcp-scope` |
-| **Governance SDLC — pacchetto `sertor-flow`** (epica CLI, FEAT-005) | — | ✅ **master (2026-06-15, PR #56)** — pacchetto installabile separato, ortogonale al RAG, **no dipendenza da sertor-core**. Motore estratto nel toolkit condiviso `sertor-install-kit`; bundle = skill/agenti SpecKit vendored (MIT) + requirements + configuration-manager + costituzione-starter neutra + blocco rituale SDLC. `sertor install governance` = puntatore a `sertor-flow` |
-| **Collaborazione multiutente/enterprise** (asse CHI, workflow) | — | 📋 **EPICA aperta, differita (2026-06-12)** — `requirements/multiutente/epic.md`; da affrontare quando il caso d'uso team è concreto |
-| **Qualità del retrieval** (epica nuova) | — | 📋 **EPICA aperta (2026-06-16)** — `requirements/retrieval-qualita/`; ground-truth+metriche (Must), search_code architetturale/soglie/eval `cloud` (Should), HyDE/filtro/contextual (Could, ex hardening) |
-| **Backend store & scala** (epica nuova) | — | 📋 **EPICA aperta (2026-06-16)** — `requirements/backend-store-scala/`; adapter PGVector (Should), Mongo/multi-provider/fan-out N/graph-scale (Could) |
-| **Ingestione estesa** (epica nuova) | — | 📋 **EPICA aperta (2026-06-16)** — `requirements/ingestione-estesa/`; repo remoti/non-testo/chunking PS-SQL/no-code (Could); **sblocca schema-SQL** |
-| **Conoscenza-schema SQL** (epica nuova) | — | 📋 **EPICA aperta (2026-06-16)** — `requirements/conoscenza-schema-sql/`; schema nel corpus (Should) + schema-graph/fusione-codice (Could); bloccata da `ingestione-estesa` FEAT-003 |
-| **Second-brain / Meta-Sertor** (epica nuova) | — | 📋 **EPICA aperta, DA ESPANDERE (2026-06-16)** — `requirements/second-brain/`; MVP = catalogo flotta + query federata; harvest/promote/trust/asset-registry; bivi §9 da decidere |
-| **Debito tecnico & igiene** (epica nuova, interna) | — | 📋 **EPICA aperta (2026-06-16)** — `requirements/debito-tecnico/`; host-agnosticità asset/unif. venv/CI Linux (Should), plugin rituale/igiene wiki/bundle (Could) |
+| [`sertor-core`](../../requirements/sertor-core/epic.md) | ✅ completa | — (agenzia incorporata ❌ abbandonata by design) |
+| [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | **packaging del pacchetto (FEAT-001, Must)** · wizard · lifecycle · Codex · PyPI |
+| [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | OTel · metriche aggregate · **stima € (Should)** · web · export CSV/MD |
+| [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso | ricerca semantica · remember-this · retention · **distribuzione installer (Must)** · multi-assist |
+| [`multiutente`](../../requirements/multiutente/epic.md) | 📋 differita | finché il caso d'uso team non è concreto |
+| 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | 📋 aperta | **ground-truth + metriche (Must)** |
+| 🆕 [`backend-store-scala`](../../requirements/backend-store-scala/epic.md) | 📋 aperta | adapter PGVector (Should) |
+| 🆕 [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 📋 aperta | chunking SQL → **sblocca** schema-SQL |
+| 🆕 [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | 📋 aperta | bloccata a monte da `ingestione-estesa` |
+| 🆕 [`second-brain`](../../requirements/second-brain/epic.md) | 📋 da espandere | decidere bivi §9 prima di decomporre |
+| 🆕 [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 📋 aperta (interna) | host-agnosticità · unif. venv · CI Linux (Should) |
 
-*Legenda:* ✅ su master · 🧪 operativo, consolidamento aperto · 📋 pianificato · 💀 ramo morto (non su master).
-
-### 📚 Inventario epiche (tutte — 11)
-
-> **⚠️ Nessuna epica è "finita".** Un'epica è chiusa solo se TUTTE le sue feature sono consegnate: le 4
-> storiche hanno il **nucleo su master** ma **residui aperti**, le altre 7 sono **interamente da fare**.
-> Per questo qui **non c'è ✅ a livello di epica** — il consegnato e il da-fare sono in **colonne
-> separate**. Le singole capacità finite stanno nella sezione **✅ DONE** in fondo. Una *feature*
-> (`FEAT-NNN`) vive **dentro** un'epica (es. il refresh incrementale è `sertor-core` **FEAT-009**, non
-> un'epica a sé).
-
-**A) Epiche con un nucleo CONSEGNATO ma ancora APERTE** (parte fatta · parte da fare)
-
-| Epica | ✅ Consegnato (su master) | 🔜 Da fare (residui) |
-|---|---|---|
-| [`sertor-core`](../../requirements/sertor-core/epic.md) | nucleo · baseline · wiki · MCP · ibrido · grafo · agentico-composito · **Wiki↔RAG composito** · **refresh incrementale (FEAT-009)** | ✅ **nessun residuo aperto** (agenzia incorporata ❌ abbandonata by design) |
-| [`sertor-cli`](../../requirements/sertor-cli/epic.md) | `sertor-rag` · install wiki/rag · governance · Copilot | **FEAT-001 packaging (Must)** · wizard · lifecycle · ergonomia · Codex · PyPI |
-| [`osservabilita`](../../requirements/osservabilita/epic.md) | MVP F1–F4 (persisti→aggrega→TUI live→report) | OTel · metriche aggregate · **stima € (Should)** · web · trend · export CSV/MD |
-| [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | MVP cattura+ricerca+CLI/hook+distillazione (**acceso**) | semantica · remember-this · retention · **FEAT-009 installer (Must)** · multi-assist · parità MCP |
-
-**B) Epiche DA FARE** (aperte, nulla consegnato)
-
-| Epica | Tipo | 1° passo / nota |
-|---|---|---|
-| [`multiutente`](../../requirements/multiutente/epic.md) | trasversale | differita finché il caso d'uso team non è concreto |
-| 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | est. core | **FEAT-001 ground-truth (Must)** |
-| 🆕 [`backend-store-scala`](../../requirements/backend-store-scala/epic.md) | est. core | **FEAT-001 PGVector (Should)** |
-| 🆕 [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | est. core | chunking SQL (FEAT-003) **sblocca** schema-SQL |
-| 🆕 [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | est. core | bloccata a monte da `ingestione-estesa` FEAT-003 |
-| 🆕 [`second-brain`](../../requirements/second-brain/epic.md) | trasversale | **DA ESPANDERE** — decidere bivi §9 |
-| 🆕 [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | interna | host-agnosticità · unif. venv · CI Linux (Should) |
+*Legenda:* ✅ completa · 🔄 nucleo consegnato, residui aperti · 📋 da fare · 🆕 nuova (2026-06-16).
 
 ### 🔄 IN PROGRESS (dettaglio)
 
