@@ -18,9 +18,24 @@ from pathlib import Path
 from sertor_core.domain.errors import SertorError
 from sertor_core.wiki_tools.profile import load_profile
 from sertor_core.wiki_tools.structure import init_structure
+from sertor_install_kit.artifacts import LifecycleOp
 from sertor_install_kit.assistant import AssistantId, AssistantProfile, Surface
+from sertor_install_kit.claude_md import remove_marker_block, update_marker_block
 from sertor_install_kit.errors import ConfigError, InstallerError
 from sertor_install_kit.executor import execute_plan as _kit_execute_plan
+from sertor_install_kit.lifecycle import (
+    SertorOwnedPaths,
+    SharedEdit,
+    SharedEditKind,
+    project_removal,
+    project_update,
+    remove_path,
+    update_file_if_changed,
+)
+from sertor_install_kit.lifecycle import (
+    execute_lifecycle as _kit_execute_lifecycle,
+)
+from sertor_install_kit.settings_merge import remove_settings_entries
 from sertor_installer import claude_md, config_gen, settings_merge
 from sertor_installer.artifacts import (
     Artifact,
@@ -289,8 +304,146 @@ def execute_plan(
     assistant-agnostic (paths come from `art.target_rel`, already resolved by the plan-builder).
     """
     root = profile.target_root
+    apply = make_wiki_apply(profile, assistant)
+    return _kit_execute_plan(
+        plan, apply, target=str(root), capability="wiki", assistant=assistant.value
+    )
 
-    def apply(art: Artifact) -> ArtifactOutcome:
+
+# --- feature 048: lifecycle (upgrade/uninstall) -------------------------------------------------
+
+
+def sertor_owned_paths(assistant: AssistantId = AssistantProfile.DEFAULT) -> SertorOwnedPaths:
+    """Static Sertor-owned paths for the `wiki` capability + assistant (D3, FR-017).
+
+    Derived from the SAME plan-builder + profile (no separate hard-coded list): the standalone FILE
+    artifacts (skill/command/agent/hook) and the generated config become `owned_files`; the wiki
+    scaffold dir `wiki/` (removed ONLY with `--purge-wiki`, FR-027) and the `wiki-author` skill dir
+    are `owned_dirs`; the marker block + hook wiring are `shared_edits`. A coverage test asserts the
+    plan's `target_rel`s ⊆ these (the manifest replacement).
+    """
+    plan = build_install_plan(assistant)
+    owned_files = tuple(
+        a.target_rel
+        for a in plan
+        if a.kind in (ArtifactKind.FILE, ArtifactKind.CONFIG)
+        and a.target_rel != "wiki/"
+    )
+    aprofile = AssistantProfile.for_assistant(assistant)
+    instruction_target = aprofile.target_for(Surface.INSTRUCTION_BLOCK).target_rel
+    settings_target = aprofile.target_for(Surface.HOOK).target_rel
+    # The wiki scaffold dir is owned but removed only under --purge-wiki (gate lives in the CLI).
+    # `.claude/skills/wiki-author` (Claude) is an own dir; for Copilot the skill is a rendered file
+    # already covered by owned_files, so no extra dir is declared.
+    owned_dirs: tuple[str, ...] = ("wiki",)
+    if assistant is AssistantId.CLAUDE:
+        owned_dirs = ("wiki", ".claude/skills/wiki-author")
+    return SertorOwnedPaths(
+        owned_dirs=owned_dirs,
+        owned_files=owned_files,
+        shared_edits=(
+            SharedEdit(instruction_target, SharedEditKind.MARKER, "SERTOR:WIKI-RITUAL"),
+            SharedEdit(settings_target, SharedEditKind.SETTINGS, _SETTINGS_FRAGMENT),
+        ),
+    )
+
+
+def _wiki_settings_fragment(art: Artifact) -> dict:
+    """The Sertor wiki hook fragment for the settings merge/remove (same source as install)."""
+    assert art.source is not None
+    return json.loads(read_asset_text(art.source))
+
+
+def _apply_wiki_uninstall(
+    target_root: Path, art: Artifact, dry_run: bool = False
+) -> ArtifactOutcome:
+    """Inverse dispatch for `op=UNINSTALL` (data-model §3). `dry_run` projects without mutating.
+
+    The `wiki/` scaffold (STRUCTURE) is NOT removed here: the dir is preserved by default and only
+    removed by the CLI under `--purge-wiki` (FR-027). All other artifacts (files, marker block,
+    settings) are removed.
+    """
+    if art.kind is ArtifactKind.STRUCTURE:
+        return ArtifactOutcome(art.target_rel, Outcome.SKIPPED, "wiki dir preserved")
+    if art.kind in (ArtifactKind.FILE, ArtifactKind.CONFIG):
+        dest = _resolve(target_root, art.target_rel)
+        outcome = project_removal(dest) if dry_run else remove_path(dest)
+        detail = "wiki config" if art.kind is ArtifactKind.CONFIG else "wiki asset"
+        return ArtifactOutcome(art.target_rel, outcome, detail)
+    if art.kind is ArtifactKind.MARKER_BLOCK:
+        dest = _resolve(target_root, art.target_rel)
+        if dry_run:
+            return ArtifactOutcome(art.target_rel, project_removal(dest), "WIKI-RITUAL block")
+        outcome = remove_marker_block(dest, claude_md.MARKER_START, claude_md.MARKER_END)
+        return ArtifactOutcome(art.target_rel, outcome, "WIKI-RITUAL block stripped")
+    if art.kind is ArtifactKind.SETTINGS_MERGE:
+        dest = _resolve(target_root, art.target_rel)
+        if dry_run:
+            return ArtifactOutcome(art.target_rel, project_removal(dest), "hook entries")
+        fragment = _wiki_settings_fragment(art)
+        outcome, detail = remove_settings_entries(dest, fragment)
+        return ArtifactOutcome(art.target_rel, outcome, detail)
+    raise ConfigError(f"unhandled artifact kind: {art.kind}")  # pragma: no cover
+
+
+def _apply_wiki_upgrade(
+    target_root: Path, art: Artifact, profile: HostProfile, dry_run: bool = False
+) -> ArtifactOutcome:
+    """Inverse-aware dispatch for `op=UPGRADE` (data-model §3); `dry_run` projects, no mutation."""
+    if art.kind is ArtifactKind.FILE:
+        dest = _resolve(target_root, art.target_rel)
+        content = _render_for_target(art)
+        outcome = (
+            project_update(dest, content) if dry_run
+            else update_file_if_changed(dest, content)
+        )
+        return ArtifactOutcome(art.target_rel, outcome, "wiki asset")
+    if art.kind is ArtifactKind.MARKER_BLOCK:
+        assert art.source is not None
+        dest = _resolve(target_root, art.target_rel)
+        content = read_asset_text(art.source)
+        if dry_run:
+            return ArtifactOutcome(art.target_rel, _project_wiki_marker(dest, content), "block")
+        outcome = update_marker_block(
+            dest, content, claude_md.MARKER_START, claude_md.MARKER_END
+        )
+        return ArtifactOutcome(art.target_rel, outcome, "WIKI-RITUAL block")
+    if art.kind is ArtifactKind.STRUCTURE:
+        return ArtifactOutcome(art.target_rel, Outcome.SKIPPED, "wiki scaffold present")
+    if dry_run:
+        return ArtifactOutcome(art.target_rel, Outcome.SKIPPED, "idempotent")
+    if art.kind is ArtifactKind.CONFIG:
+        return _apply_config(target_root, art, profile)  # create-if-absent, preserves user config
+    if art.kind is ArtifactKind.SETTINGS_MERGE:
+        return _apply_settings(target_root, art)  # additive idempotent
+    raise ConfigError(f"unhandled artifact kind: {art.kind}")  # pragma: no cover
+
+
+def _project_wiki_marker(dest: Path, content: str) -> Outcome:
+    """Read-only projection of `update_marker_block` for the wiki markers (`--dry-run`)."""
+    if not dest.exists():
+        return Outcome.BLOCK
+    existing = dest.read_text(encoding="utf-8")
+    start = existing.find(claude_md.MARKER_START)
+    if start == -1:
+        return Outcome.BLOCK
+    end = existing.find(claude_md.MARKER_END, start)
+    if end == -1:
+        return Outcome.BLOCK
+    end += len(claude_md.MARKER_END)
+    new_region = f"{claude_md.MARKER_START}\n{content.rstrip()}\n{claude_md.MARKER_END}"
+    return Outcome.SKIPPED if existing[start:end] == new_region else Outcome.UPDATED
+
+
+def make_wiki_apply(profile: HostProfile, assistant: AssistantId, dry_run: bool = False):
+    """Builds the verb-aware `apply(artifact, op)` for the `wiki` capability (feature 048)."""
+    root = profile.target_root
+
+    def apply(art: Artifact, op: LifecycleOp = LifecycleOp.INSTALL) -> ArtifactOutcome:
+        if op is LifecycleOp.UNINSTALL:
+            return _apply_wiki_uninstall(root, art, dry_run)
+        if op is LifecycleOp.UPGRADE:
+            return _apply_wiki_upgrade(root, art, profile, dry_run)
         if art.kind is ArtifactKind.FILE:
             return _apply_file(root, art)
         if art.kind is ArtifactKind.SETTINGS_MERGE:
@@ -303,6 +456,51 @@ def execute_plan(
             return _apply_structure(root, art)
         raise ConfigError(f"unhandled artifact kind: {art.kind}")  # pragma: no cover
 
-    return _kit_execute_plan(
-        plan, apply, target=str(root), capability="wiki", assistant=assistant.value
+    return apply
+
+
+def _wiki_union_owned(assistants: tuple[AssistantId, ...]) -> SertorOwnedPaths:
+    """Union of the wiki Sertor-owned paths across assistants (cross-assistant obsoletes)."""
+    dirs: set[str] = set()
+    files: set[str] = set()
+    edits: list[SharedEdit] = []
+    seen: set[str] = set()
+    for a in assistants:
+        owned = sertor_owned_paths(a)
+        dirs |= set(owned.owned_dirs)
+        files |= set(owned.owned_files)
+        for e in owned.shared_edits:
+            if e.target_rel not in seen:
+                seen.add(e.target_rel)
+                edits.append(e)
+    # `wiki/` is purge-gated; never an automatic obsolete (handled by the CLI). Drop it from the
+    # obsolete scope so an upgrade never removes the user's wiki content.
+    dirs.discard("wiki")
+    return SertorOwnedPaths(
+        owned_dirs=tuple(sorted(dirs)), owned_files=tuple(sorted(files)), shared_edits=tuple(edits)
+    )
+
+
+def execute_wiki_lifecycle(
+    plan: list[Artifact],
+    profile: HostProfile,
+    op: LifecycleOp,
+    assistant: AssistantId = AssistantProfile.DEFAULT,
+    dry_run: bool = False,
+) -> InstallReport:
+    """Executes the `wiki` plan with the lifecycle verb `op` via the kit orchestrator (feature 048).
+
+    UNINSTALL preserves `wiki/` by default (FR-027 — the `--purge-wiki` gate lives in the CLI).
+    UPGRADE scans cross-assistant owned paths for obsoletes (excluding `wiki/`). `dry_run` projects.
+    """
+    apply = make_wiki_apply(profile, assistant, dry_run=dry_run)
+    owned = sertor_owned_paths(assistant)
+    obsolete = _wiki_union_owned(tuple(AssistantId)) if op is LifecycleOp.UPGRADE else None
+    # Owned dirs other than `wiki/` (purge-gated) are removed in block on uninstall (e.g. the
+    # `.claude/skills/wiki-author` tree); `wiki/` is preserved unless --purge-wiki (handled in CLI).
+    block_dirs = tuple(d for d in owned.owned_dirs if d != "wiki")
+    return _kit_execute_lifecycle(
+        plan, owned, apply, op=op, target=str(profile.target_root),
+        capability="wiki", assistant=assistant.value, dry_run=dry_run,
+        obsolete_owned=obsolete, uninstall_dirs_in_block=block_dirs,
     )

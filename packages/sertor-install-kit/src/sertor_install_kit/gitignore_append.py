@@ -37,3 +37,38 @@ def append_gitignore(
     new_text += "\n".join((_HEADER, *missing)) + "\n"
     gitignore_path.write_text(new_text, encoding="utf-8")
     return Outcome.MERGED, f"+{len(missing)} entries"
+
+
+def remove_gitignore_lines(
+    gitignore_path: Path, lines: tuple[str, ...] = RUNTIME_IGNORES
+) -> tuple[Outcome, str]:
+    """Removes ONLY the Sertor lines (`lines` + the `_HEADER`) — inverse of `append_gitignore`.
+
+    User lines are preserved. Matching is by stripped content (robust to reformatting: extra
+    surrounding whitespace still matches, FR-023). The header is removed only when it is on its own
+    line. Absent file / no Sertor line present → `(SKIPPED, "no Sertor lines")` (idempotency). If,
+    after removal, the file is empty/whitespace-only, it is deleted (`REMOVED`).
+    """
+    if not gitignore_path.exists():
+        return Outcome.SKIPPED, "no Sertor lines"
+
+    existing_text = gitignore_path.read_text(encoding="utf-8")
+    targets = {ln.strip() for ln in (_HEADER, *lines)}
+    kept: list[str] = []
+    removed = 0
+    for raw_line in existing_text.splitlines():
+        if raw_line.strip() in targets:
+            removed += 1
+            continue
+        kept.append(raw_line)
+
+    if removed == 0:
+        return Outcome.SKIPPED, "no Sertor lines"
+
+    remaining = "\n".join(kept)
+    if remaining.strip() == "":
+        gitignore_path.unlink()
+        return Outcome.REMOVED, f"-{removed} lines"
+    # Preserve a trailing newline (the file had one if it was non-empty and well-formed).
+    gitignore_path.write_text(remaining + "\n", encoding="utf-8")
+    return Outcome.REMOVED, f"-{removed} lines"

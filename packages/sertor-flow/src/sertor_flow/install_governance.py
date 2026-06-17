@@ -33,13 +33,26 @@ from sertor_install_kit import (
     ConfigError,
     InstallerError,
     InstallReport,
+    LifecycleOp,
     Outcome,
+    SertorOwnedPaths,
+    SharedEdit,
+    SharedEditKind,
     Surface,
     WriteStrategy,
+    project_removal,
+    project_update,
     read_asset_text,
+    remove_marker_block,
+    remove_path,
     render_custom_agent,
     render_prompt_file,
+    update_file_if_changed,
+    update_marker_block,
     write_marker_block,
+)
+from sertor_install_kit import (
+    execute_lifecycle as _kit_execute_lifecycle,
 )
 from sertor_install_kit import (
     execute_plan as _kit_execute_plan,
@@ -262,7 +275,7 @@ def execute_governance_plan(
 
     plan = build_governance_plan(profile)
 
-    def apply(art: Artifact) -> ArtifactOutcome:
+    def apply(art: Artifact, op: LifecycleOp = LifecycleOp.INSTALL) -> ArtifactOutcome:
         if art.kind is ArtifactKind.FILE:
             return _apply_file(root, art)
         if art.kind is ArtifactKind.MARKER_BLOCK:
@@ -280,3 +293,145 @@ def execute_governance_plan(
     for outcome in plan_report.outcomes:
         report.add(outcome)
     return report
+
+
+# --- feature 048: governance lifecycle (upgrade/uninstall) --------------------------------------
+
+
+def sertor_owned_paths(assistant: str = "claude") -> SertorOwnedPaths:
+    """Static Sertor-owned paths for the `governance` capability + assistant (D3, FR-041).
+
+    Derived from the SAME plan-builder + profile (no separate hard-coded list). `.specify/` comes
+    from `specify init` (FR-041) and is an owned dir. The Sertor-authored surfaces + generated
+    init/integration files are owned_files; the SDLC ritual block is a shared edit. The constitution
+    starter (`CREATE_IF_ABSENT`, the host's) is NOT removed in uninstall nor overwritten in upgrade.
+    """
+    profile = GovernanceProfile(target_root=Path("."), assistant=assistant)
+    plan = build_governance_plan(profile)
+    owned_files = tuple(
+        a.target_rel
+        for a in plan
+        if a.kind in (ArtifactKind.FILE, ArtifactKind.CONFIG)
+        # constitution preserved (host's, create-if-absent) → not Sertor-owned for removal
+        and a.target_rel != _CONSTITUTION_TARGET
+    )
+    aprofile = AssistantProfile.for_assistant(AssistantId.from_str(assistant))
+    instruction_target = aprofile.target_for(Surface.INSTRUCTION_BLOCK).target_rel
+    return SertorOwnedPaths(
+        owned_dirs=(".specify",),
+        owned_files=owned_files,
+        shared_edits=(
+            SharedEdit(instruction_target, SharedEditKind.MARKER, "SERTOR:SDLC-RITUAL"),
+        ),
+    )
+
+
+def _apply_gov_uninstall(
+    target_root: Path, art: Artifact, dry_run: bool = False
+) -> ArtifactOutcome:
+    """Inverse dispatch for `op=UNINSTALL` (data-model §3). `dry_run` projects without mutating.
+
+    The constitution (`CONFIG`/`CREATE_IF_ABSENT`, the host's) is preserved; only Sertor-authored
+    surfaces and the SDLC block are removed. `.specify/` is removed in block by the lifecycle.
+    """
+    if art.kind is ArtifactKind.CONFIG and art.strategy is WriteStrategy.CREATE_IF_ABSENT:
+        return ArtifactOutcome(art.target_rel, Outcome.SKIPPED, "constitution preserved")
+    if art.kind in (ArtifactKind.FILE, ArtifactKind.CONFIG):
+        dest = _resolve(target_root, art.target_rel)
+        outcome = project_removal(dest) if dry_run else remove_path(dest)
+        return ArtifactOutcome(art.target_rel, outcome, "governance asset")
+    if art.kind is ArtifactKind.MARKER_BLOCK:
+        dest = _resolve(target_root, art.target_rel)
+        if dry_run:
+            return ArtifactOutcome(art.target_rel, project_removal(dest), "SDLC block")
+        outcome = remove_marker_block(dest, MARKER_START_SDLC, MARKER_END_SDLC)
+        return ArtifactOutcome(art.target_rel, outcome, "SDLC-RITUAL block stripped")
+    raise ConfigError(f"unhandled artifact kind: {art.kind}")  # pragma: no cover
+
+
+def _apply_gov_upgrade(
+    target_root: Path, art: Artifact, profile: GovernanceProfile, dry_run: bool = False
+) -> ArtifactOutcome:
+    """Inverse-aware dispatch for `op=UPGRADE` (data-model §3). `dry_run` projects without mutating.
+
+    Constitution (`CREATE_IF_ABSENT`) is NOT overwritten (FR-040). FILE → update-if-changed;
+    MARKER_BLOCK → update; generated init files → create-if-absent (preserve user edits).
+    """
+    if art.kind is ArtifactKind.CONFIG and art.strategy is WriteStrategy.CREATE_IF_ABSENT:
+        return ArtifactOutcome(art.target_rel, Outcome.SKIPPED, "constitution preserved")
+    if art.kind is ArtifactKind.FILE:
+        dest = _resolve(target_root, art.target_rel)
+        content = _render_for_target(art)
+        outcome = (
+            project_update(dest, content) if dry_run
+            else update_file_if_changed(dest, content)
+        )
+        return ArtifactOutcome(art.target_rel, outcome, "governance asset")
+    if art.kind is ArtifactKind.MARKER_BLOCK:
+        assert art.source is not None
+        dest = _resolve(target_root, art.target_rel)
+        content = read_asset_text(_ANCHOR, art.source)
+        if dry_run:
+            return ArtifactOutcome(
+                art.target_rel, _project_sdlc_marker(dest, content), "SDLC block"
+            )
+        outcome = update_marker_block(dest, content, MARKER_START_SDLC, MARKER_END_SDLC)
+        return ArtifactOutcome(art.target_rel, outcome, "SDLC-RITUAL block")
+    if art.kind is ArtifactKind.CONFIG:  # GENERATE_CONFIG init files: idempotent create-if-absent
+        if dry_run:
+            dest = _resolve(target_root, art.target_rel)
+            return ArtifactOutcome(
+                art.target_rel,
+                Outcome.SKIPPED if dest.exists() else Outcome.CREATED,
+                "generated init",
+            )
+        return _apply_generate_init(target_root, art, profile)
+    raise ConfigError(f"unhandled artifact kind: {art.kind}")  # pragma: no cover
+
+
+def _project_sdlc_marker(dest: Path, content: str) -> Outcome:
+    """Read-only projection of `update_marker_block` for the SDLC markers (`--dry-run`)."""
+    if not dest.exists():
+        return Outcome.BLOCK
+    existing = dest.read_text(encoding="utf-8")
+    start = existing.find(MARKER_START_SDLC)
+    if start == -1:
+        return Outcome.BLOCK
+    end = existing.find(MARKER_END_SDLC, start)
+    if end == -1:
+        return Outcome.BLOCK
+    end += len(MARKER_END_SDLC)
+    new_region = f"{MARKER_START_SDLC}\n{content.rstrip()}\n{MARKER_END_SDLC}"
+    return Outcome.SKIPPED if existing[start:end] == new_region else Outcome.UPDATED
+
+
+def execute_governance_lifecycle(
+    profile: GovernanceProfile, op: LifecycleOp,
+    runner: CommandRunner | None = None, dry_run: bool = False,
+) -> InstallReport:
+    """Executes the governance plan with the lifecycle verb `op` (feature 048, US9, FR-040..045).
+
+    Symmetric to `sertor upgrade`/`uninstall` (FR-042): same schema report, same inverse/idempotent
+    semantics. SpecKit is NOT relaunched here — `.specify/` is removed in block on uninstall (an
+    owned dir). Uses ONLY kit primitives (FR-053); imports NO `sertor-core`/`sertor` (FR-045/055).
+    `runner` is accepted for signature symmetry with install (governance lifecycle does not call
+    external tools today).
+    """
+    root = profile.target_root
+    plan = build_governance_plan(profile)
+
+    def apply(art: Artifact, lop: LifecycleOp = LifecycleOp.INSTALL) -> ArtifactOutcome:
+        if lop is LifecycleOp.UNINSTALL:
+            return _apply_gov_uninstall(root, art, dry_run)
+        if lop is LifecycleOp.UPGRADE:
+            return _apply_gov_upgrade(root, art, profile, dry_run)
+        raise ConfigError("install uses execute_governance_plan")  # pragma: no cover
+
+    owned = sertor_owned_paths(profile.assistant)
+    # `.specify/` is removed in block on uninstall; obsolete phase (upgrade) scans owned paths.
+    block_dirs = (".specify",) if op is LifecycleOp.UNINSTALL else ()
+    return _kit_execute_lifecycle(
+        plan, owned, apply, op=op, target=str(root),
+        capability="governance", assistant=profile.assistant, dry_run=dry_run,
+        uninstall_dirs_in_block=block_dirs,
+    )

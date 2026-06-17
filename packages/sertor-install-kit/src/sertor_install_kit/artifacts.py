@@ -7,7 +7,7 @@ each artifact (more than one for `INIT_STRUCTURE`, aggregated).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import Enum, StrEnum
 
 from sertor_install_kit.errors import ConfigError
 
@@ -45,14 +45,34 @@ class WriteStrategy(Enum):
     REGISTER_CLI = "register_cli"        # register via the client CLI (idempotent, fail-fast)
 
 
+class LifecycleOp(StrEnum):
+    """Lifecycle verb of an installer operation (feature 048, data-model §1).
+
+    Orthogonal to `ArtifactKind`: the SAME install plan is walked with different verbs (D1-B). No
+    inverse `ArtifactKind`/`WriteStrategy` is introduced — the inverse action is chosen by the
+    consumer's `apply(artifact, op)` based on `kind` + `op`. `INSTALL` is the default in
+    `execute_plan`, so every existing call site keeps the historical behaviour (NFR-3). `StrEnum`:
+    `LifecycleOp.UPGRADE == "upgrade"` and `str(...) == "upgrade"` (usable directly as a verb).
+    """
+
+    INSTALL = "install"
+    UPGRADE = "upgrade"
+    UNINSTALL = "uninstall"
+
+
 class Outcome(Enum):
-    """Outcome of a single artifact (data-model §4)."""
+    """Outcome of a single artifact (data-model §4; feature 048 adds UPDATED/REMOVED)."""
 
     CREATED = "created"
     SKIPPED = "skipped"
     MERGED = "merged"
     BLOCK = "block"
     ERROR = "error"
+    # Feature 048 (lifecycle): an asset/marker block was overwritten (upgrade), or an artifact
+    # was removed/de-registered (uninstall / obsolete in upgrade). Additive: the existing members
+    # keep their value, so install reports stay byte-identical.
+    UPDATED = "updated"
+    REMOVED = "removed"
 
 
 @dataclass(frozen=True)

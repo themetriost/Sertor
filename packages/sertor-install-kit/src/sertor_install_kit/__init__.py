@@ -11,6 +11,7 @@ from sertor_install_kit.artifacts import (
     Artifact,
     ArtifactKind,
     ArtifactOutcome,
+    LifecycleOp,
     Outcome,
     WriteStrategy,
 )
@@ -20,17 +21,37 @@ from sertor_install_kit.assistant import (
     Surface,
     SurfaceTarget,
 )
-from sertor_install_kit.claude_md import write_marker_block
+from sertor_install_kit.claude_md import (
+    remove_marker_block,
+    update_marker_block,
+    write_marker_block,
+)
 from sertor_install_kit.command_runner import CommandResult, CommandRunner, SubprocessRunner
 from sertor_install_kit.env_merge import merge_env
 from sertor_install_kit.errors import ConfigError, InstallerError
 from sertor_install_kit.executor import execute_plan
-from sertor_install_kit.gitignore_append import RUNTIME_IGNORES, append_gitignore
-from sertor_install_kit.mcp_merge import merge_mcp
+from sertor_install_kit.gitignore_append import (
+    RUNTIME_IGNORES,
+    append_gitignore,
+    remove_gitignore_lines,
+)
+from sertor_install_kit.lifecycle import (
+    McpRegistrationError,
+    SertorOwnedPaths,
+    SharedEdit,
+    SharedEditKind,
+    deregister_mcp_client,
+    execute_lifecycle,
+    project_removal,
+    project_update,
+    remove_path,
+    update_file_if_changed,
+)
+from sertor_install_kit.mcp_merge import merge_mcp, remove_mcp_server
 from sertor_install_kit.observability import log_event
 from sertor_install_kit.report import InstallReport
 from sertor_install_kit.resources import asset_path, iter_asset_dir, read_asset_text
-from sertor_install_kit.settings_merge import merge_settings
+from sertor_install_kit.settings_merge import merge_settings, remove_settings_entries
 from sertor_install_kit.surfaces import (
     render_custom_agent,
     render_prompt_file,
@@ -43,6 +64,7 @@ __all__ = [
     "Artifact",
     "ArtifactKind",
     "ArtifactOutcome",
+    "LifecycleOp",
     "Outcome",
     "WriteStrategy",
     # assistant targeting (feature 044)
@@ -53,16 +75,32 @@ __all__ = [
     # errors
     "InstallerError",
     "ConfigError",
+    "McpRegistrationError",
     # report
     "InstallReport",
     # marker block
     "write_marker_block",
+    "remove_marker_block",
+    "update_marker_block",
     # merge primitives
     "merge_settings",
+    "remove_settings_entries",
     "merge_env",
     "merge_mcp",
+    "remove_mcp_server",
     "append_gitignore",
+    "remove_gitignore_lines",
     "RUNTIME_IGNORES",
+    # lifecycle primitives (feature 048)
+    "SertorOwnedPaths",
+    "SharedEdit",
+    "SharedEditKind",
+    "update_file_if_changed",
+    "remove_path",
+    "deregister_mcp_client",
+    "project_removal",
+    "project_update",
+    "execute_lifecycle",
     # executor
     "execute_plan",
     # resources
