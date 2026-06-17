@@ -29,10 +29,18 @@ def test_speckit_version_is_pinned(tmp_path: Path):
     assert profile.speckit_version == SPECKIT_VERSION
 
 
-def test_copilot_assistant_accepted(tmp_path: Path):
-    """`copilot` is a valid assistant (feature 045)."""
-    profile = build_governance_profile(tmp_path, assistant="copilot")
-    assert profile.assistant == "copilot"
+def test_copilot_cli_assistant_accepted(tmp_path: Path):
+    """`copilot-cli` is a valid assistant (FEAT-012)."""
+    profile = build_governance_profile(tmp_path, assistant="copilot-cli")
+    assert profile.assistant == "copilot-cli"
+
+
+def test_legacy_copilot_assistant_rejected(tmp_path: Path):
+    """FEAT-012 (FR-001): the legacy VS Code value `copilot` is no longer accepted; the error
+    names `copilot-cli`."""
+    with pytest.raises(ConfigError) as exc:
+        build_governance_profile(tmp_path, assistant="copilot")
+    assert "copilot-cli" in str(exc.value)
 
 
 def test_unknown_assistant_raises(tmp_path: Path):

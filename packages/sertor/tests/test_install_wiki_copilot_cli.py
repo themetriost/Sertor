@@ -1,8 +1,10 @@
-"""Acceptance tests for `install wiki --assistant copilot` (feature 044, US2 + US3).
+"""Acceptance tests for `install wiki --assistant copilot-cli` (FEAT-012, US2 + US3).
 
 Host simulated in `tmp_path`. US2: instruction block in `.github/copilot-instructions.md`
-(idempotent), prompt-files in `.github/prompts/`. US3: custom-agent in `.github/agents/`, hook
-wiring in `.github/hooks/*.json` with SessionStart/Stop, hook script reused identically.
+(idempotent). US3: COMMANDs (`/wiki`, `wiki-author`) rendered as custom-agents in `.github/agents/`
+(the only CLI-invocable form — NOT prompt-files), custom-agent persona in `.github/agents/`, native
+hook wiring in `.github/hooks/*.json` (SessionStart as a native prompt, Stop/SessionEnd via the
+reused script). The VS Code (`copilot`) target was removed (FEAT-012): no `.github/prompts/**`.
 """
 from __future__ import annotations
 
@@ -15,13 +17,13 @@ from sertor_installer.install_wiki import build_install_plan, execute_plan
 from sertor_installer.resources import read_asset_text
 
 
-def _install(target: Path, assistant: AssistantId = AssistantId.COPILOT, **kwargs):
+def _install(target: Path, assistant: AssistantId = AssistantId.COPILOT_CLI, **kwargs):
     profile = build_host_profile(target, **kwargs)
     plan = build_install_plan(assistant)
     return execute_plan(plan, profile, assistant)
 
 
-# ---------------------------------------------------------------- US2: instruction block + commands
+# ---------------------------------------------------------------- US2: instruction block
 
 def test_instruction_block_in_copilot_instructions(tmp_path: Path):  # FR-008/009
     report = _install(tmp_path)
@@ -30,7 +32,7 @@ def test_instruction_block_in_copilot_instructions(tmp_path: Path):  # FR-008/00
     assert instr.is_file()
     text = instr.read_text(encoding="utf-8")
     assert "SERTOR:WIKI-RITUAL START" in text
-    # no Claude instruction file written for copilot
+    # no Claude instruction file written for copilot-cli
     assert not (tmp_path / "CLAUDE.md").exists()
 
 
@@ -43,21 +45,19 @@ def test_instruction_block_idempotent(tmp_path: Path):  # FR-009
     assert instr.read_bytes() == before  # block already present → untouched
 
 
-def test_prompt_files_present_and_formed(tmp_path: Path):  # FR-010
+# -------------------------------------------------- US3: COMMANDs are custom-agents (C2.4/C2.5)
+
+def test_cli_command_is_custom_agent_not_prompt_file(tmp_path: Path):  # FR-003 / SC-004
+    """CLI: `/wiki` and `wiki-author` COMMANDs are custom-agents (CLI-invocable), never prompt
+    files — the VS Code prompt-file vehicle was removed (FEAT-012)."""
     _install(tmp_path)
-    wiki_prompt = tmp_path / ".github" / "prompts" / "wiki.prompt.md"
-    skill_prompt = tmp_path / ".github" / "prompts" / "wiki-author.prompt.md"
-    assert wiki_prompt.is_file() and skill_prompt.is_file()
-    head = wiki_prompt.read_text(encoding="utf-8")
-    assert head.startswith("---")
-    # FEAT-011/FR-016: the prompt-file mode key is `agent:`, never `mode:`.
-    assert "agent:" in head.splitlines()[1]
-    assert "mode:" not in head.splitlines()[1]
-    # no Claude commands/skills dirs for copilot
+    assert (tmp_path / ".github/agents/wiki.agent.md").is_file()
+    assert (tmp_path / ".github/agents/wiki-author.agent.md").is_file()
+    assert not (tmp_path / ".github/prompts/wiki.prompt.md").exists()
+    assert not (tmp_path / ".github/prompts").exists()
+    # no Claude commands/skills dirs for copilot-cli
     assert not (tmp_path / ".claude").exists()
 
-
-# ---------------------------------------------------------------- US3: agent + hooks
 
 def test_custom_agent_present_and_formed(tmp_path: Path):  # FR-011
     _install(tmp_path)
@@ -68,6 +68,22 @@ def test_custom_agent_present_and_formed(tmp_path: Path):  # FR-011
     assert "name: wiki-curator" in text
 
 
+def test_custom_agent_omits_model(tmp_path: Path):  # FR-017 / SC-005
+    _install(tmp_path)
+    from sertor_installer.surfaces import split_frontmatter
+
+    text = (tmp_path / ".github/agents/wiki-curator.agent.md").read_text(encoding="utf-8")
+    assert "model:" not in split_frontmatter(text)[0]
+
+
+# ---------------------------------------------------------------- US3: hook wiring (native schema)
+
+def _wiring(tmp_path: Path) -> dict:
+    return json.loads(
+        (tmp_path / ".github" / "hooks" / "sertor-hooks.json").read_text(encoding="utf-8")
+    )
+
+
 def test_hook_wiring_session_events(tmp_path: Path):  # FR-012
     _install(tmp_path)
     wiring = tmp_path / ".github" / "hooks" / "sertor-hooks.json"
@@ -75,14 +91,6 @@ def test_hook_wiring_session_events(tmp_path: Path):  # FR-012
     data = json.loads(wiring.read_text(encoding="utf-8"))
     assert "SessionStart" in data["hooks"]
     assert "Stop" in data["hooks"]
-
-
-# ------------------------------------------------- FEAT-011: native Copilot hook schema (US1)
-
-def _wiring(tmp_path: Path) -> dict:
-    return json.loads(
-        (tmp_path / ".github" / "hooks" / "sertor-hooks.json").read_text(encoding="utf-8")
-    )
 
 
 def test_wiki_wiring_is_native_copilot_schema(tmp_path: Path):  # FR-001..004 / R1..R4
@@ -105,42 +113,17 @@ def test_wiki_stop_command_passes_assistant_copilot(tmp_path: Path):
     assert stop["timeoutSec"] == 10
 
 
-def test_vscode_session_start_is_command_invoking_script(tmp_path: Path):  # ASSUNTO-VSC
-    """VS Code: SessionStart is `type:"command"` invoking the extracted script with -Assistant
-    copilot (native additionalContext). [ASSUNTO-VSC]: not verified on a real VS Code client."""
-    _install(tmp_path, assistant=AssistantId.COPILOT)
-    ss = _wiring(tmp_path)["hooks"]["SessionStart"][0]
-    assert ss["type"] == "command"
-    assert "wiki-session-start.ps1" in ss["command"]
-    assert "-Assistant copilot" in ss["command"]
-    # the session-start script is installed for VS Code
-    assert (tmp_path / ".github/hooks/wiki-session-start.ps1").is_file()
-
-
 def test_cli_session_start_is_prompt_not_command(tmp_path: Path):  # FR-006 / SC-003
-    """CLI: SessionStart is `type:"prompt"` (a static directive), never a bare command-string."""
-    _install(tmp_path, assistant=AssistantId.COPILOT_CLI)
+    """CLI: SessionStart is `type:"prompt"` (a static directive), never a bare command-string —
+    the native Copilot CLI hook form (FEAT-011, invariant under FEAT-012)."""
+    _install(tmp_path)
     ss = _wiring(tmp_path)["hooks"]["SessionStart"][0]
     assert ss["type"] == "prompt"
     # a prompt-hook carries its text in `prompt`, NOT `command` (Copilot ignores `command` here)
     assert isinstance(ss["prompt"], str) and ss["prompt"].strip()
     assert "command" not in ss
-
-
-def test_cli_command_is_custom_agent_not_prompt_file(tmp_path: Path):  # FR-013 / SC-004
-    """CLI: `/wiki` and `wiki-author` COMMANDs are custom-agents (CLI-invocable), not prompt."""
-    _install(tmp_path, assistant=AssistantId.COPILOT_CLI)
-    assert (tmp_path / ".github/agents/wiki.agent.md").is_file()
-    assert (tmp_path / ".github/agents/wiki-author.agent.md").is_file()
-    assert not (tmp_path / ".github/prompts/wiki.prompt.md").exists()
-
-
-def test_custom_agent_omits_model(tmp_path: Path):  # FR-017 / SC-005
-    _install(tmp_path)
-    from sertor_installer.surfaces import split_frontmatter
-
-    text = (tmp_path / ".github/agents/wiki-curator.agent.md").read_text(encoding="utf-8")
-    assert "model:" not in split_frontmatter(text)[0]
+    # the VS Code session-start script is NOT installed (FEAT-012: no VS Code target)
+    assert not (tmp_path / ".github/hooks/wiki-session-start.ps1").exists()
 
 
 def test_hook_script_reused_identically(tmp_path: Path):  # FR-014 / surface-mapping prop.3
@@ -151,6 +134,8 @@ def test_hook_script_reused_identically(tmp_path: Path):  # FR-014 / surface-map
     assert copied.read_text(encoding="utf-8") == canonical
 
 
+# ---------------------------------------------------------------- scaffold + idempotence + report
+
 def test_wiki_scaffold_assistant_agnostic(tmp_path: Path):
     """CONFIG + STRUCTURE land in `wiki/` regardless of assistant."""
     _install(tmp_path)
@@ -158,7 +143,8 @@ def test_wiki_scaffold_assistant_agnostic(tmp_path: Path):
     assert (tmp_path / "wiki" / "index.md").is_file()
 
 
-def test_double_run_idempotent(tmp_path: Path):  # FR-020
+def test_cli_double_run_idempotent(tmp_path: Path):  # FR-040 / NFR-1
+    """The CLI plan re-run leaves the filesystem stable (idempotence)."""
     _install(tmp_path)
     snapshot = {p: p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()}
     report2 = _install(tmp_path)
@@ -173,23 +159,14 @@ def test_double_run_idempotent(tmp_path: Path):  # FR-020
 
 def test_report_declares_assistant(tmp_path: Path):  # Principio IX
     report = _install(tmp_path)
-    assert report.assistant == "copilot"
+    assert report.assistant == "copilot-cli"
     payload = json.loads(report.render_json())
-    assert payload["assistant"] == "copilot"
-
-
-def test_vscode_report_declares_session_start_gap(tmp_path: Path):  # FR-027/028 / SC-009
-    """VS Code install declares the [ASSUNTO-VSC] SessionStart gap — never claims full parity."""
-    report = _install(tmp_path, assistant=AssistantId.COPILOT)
-    assert any("[ASSUNTO-VSC]" in n for n in report.notes)
-    payload = json.loads(report.render_json())
-    assert any("[ASSUNTO-VSC]" in n for n in payload.get("notes", []))
-    assert "[ASSUNTO-VSC]" in report.render_human()
+    assert payload["assistant"] == "copilot-cli"
 
 
 def test_cli_report_has_no_vscode_gap(tmp_path: Path):
-    """The CLI does not use the VS Code SessionStart mechanism → no VS Code gap note."""
-    report = _install(tmp_path, assistant=AssistantId.COPILOT_CLI)
+    """The CLI does not use any VS Code mechanism → no [ASSUNTO-VSC] gap note (FEAT-012)."""
+    report = _install(tmp_path)
     assert not any("[ASSUNTO-VSC]" in n for n in report.notes)
 
 
@@ -198,17 +175,3 @@ def test_claude_report_has_no_gap_note(tmp_path: Path):  # non-regression
     plan = build_install_plan(AssistantId.CLAUDE)
     report = execute_plan(plan, profile, AssistantId.CLAUDE)
     assert report.notes == []
-
-
-def test_cli_double_run_idempotent(tmp_path: Path):  # FR-040 / NFR-1
-    """The CLI plan re-run leaves the filesystem stable (idempotence)."""
-    _install(tmp_path, assistant=AssistantId.COPILOT_CLI)
-    snapshot = {p: p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()}
-    report2 = _install(tmp_path, assistant=AssistantId.COPILOT_CLI)
-    assert report2.exit_code() == 0
-    assert report2.created == 0
-    assert report2.block == 0
-    after = {p: p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()}
-    assert snapshot.keys() == after.keys()
-    for p, content in snapshot.items():
-        assert after[p] == content, f"{p} changed on re-run"

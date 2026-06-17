@@ -7,18 +7,13 @@ indexed until you ask).
 > **Using Claude Code?** See **[install-claude.md](install-claude.md)**.
 > **All flags, every config knob, refresh & uninstall?** See the full reference **[install.md](install.md)**.
 
-## Pick your Copilot target
+## The Copilot target
 
-Copilot reads the MCP server from **different files** depending on where it runs — choose the value
-once and use it in every command below:
+Sertor supports **one** Copilot target: the **Copilot CLI**, selected with `--assistant copilot-cli`.
+It writes the MCP server to `.mcp.json` (`mcpServers` root, where the CLI looks) and reuses the
+`.github/**` containers for instructions, agents and hooks. Use `copilot-cli` in every command below.
 
-| `--assistant` | For | MCP server lands in |
-|---|---|---|
-| **`copilot`** | Copilot **in VS Code** | `.vscode/mcp.json` (`servers` root) |
-| **`copilot-cli`** | the **Copilot CLI** | `.mcp.json` (`mcpServers` root) |
-
-Both share the same `.github/**` containers for instructions, prompts and agents. The examples use
-`copilot` (VS Code); swap in `copilot-cli` if you use the CLI.
+> **Coming from the old VS Code target (`copilot`)?** See **[Migrating from the VS Code target](#migrating-from-the-vs-code-target)** at the bottom.
 
 ## Prerequisites
 
@@ -38,7 +33,7 @@ runtime. Your sources are never touched; works even on non-Python repos.
 
 ```powershell
 # 1. install (Azure embeddings; use --backend local for Ollama)
-uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install rag --assistant copilot --backend azure
+uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install rag --assistant copilot-cli --backend azure
 
 # 2. edit .sertor/.env and fill the empty secrets:
 #    AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY (skip for --backend local)
@@ -47,10 +42,9 @@ uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sert
 uv run --directory .sertor sertor-rag index ..
 ```
 
-Then load the MCP server: **VS Code** — reload the window so Copilot picks up `.vscode/mcp.json`;
-**Copilot CLI** — run `/mcp reload` (or restart) and verify with `/mcp show`. The
-`search_code` / `search_docs` / `search_combined` tools now answer over your code and docs. Quick
-check: `uv run --directory .sertor sertor-rag search "how does X work?"`.
+Then load the MCP server: in the **Copilot CLI** run `/mcp reload` (or restart) and verify with
+`/mcp show`. The `search_code` / `search_docs` / `search_combined` tools now answer over your code
+and docs. Quick check: `uv run --directory .sertor sertor-rag search "how does X work?"`.
 
 ## 2. Wiki — the project's living knowledge base
 
@@ -58,12 +52,12 @@ Install the **LLM Wiki** system: a cumulative, local knowledge base the assistan
 work.
 
 ```powershell
-uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install wiki --assistant copilot
+uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install wiki --assistant copilot-cli
 ```
 
-Adds (each skipped if already present): the wiki authoring prompt/agent under `.github/**`, session
-hooks, a `wiki.config.toml`, the `wiki/` structure, and a `SERTOR:WIKI-RITUAL` block in
-`.github/copilot-instructions.md` (the rest of the file is left intact).
+Adds (each skipped if already present): the wiki authoring command/skill rendered as custom-agents
+under `.github/agents/`, session hooks, a `wiki.config.toml`, the `wiki/` structure, and a
+`SERTOR:WIKI-RITUAL` block in `.github/copilot-instructions.md` (the rest of the file is left intact).
 
 ## 3. Governance — the development method (SDLC)
 
@@ -72,17 +66,41 @@ constitution starter, and the SDLC ritual block. It is a **separate package, ort
 (no dependency on `sertor-core`).
 
 ```powershell
-uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor-flow" sertor-flow install --assistant copilot
+uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor-flow" sertor-flow install --assistant copilot-cli
 ```
 
 Adds the SpecKit prompts/agents (launched from the pinned upstream installer — needs network at
-install time), the `requirements` skill + `requirements-analyst`/`configuration-manager` agents, the
-constitution starter, and a `SERTOR:SDLC-RITUAL` block in `.github/copilot-instructions.md`.
+install time), the `requirements` skill rendered as a custom-agent (`.github/agents/requirements.agent.md`)
++ `requirements-analyst`/`configuration-manager` agents, the constitution starter, and a
+`SERTOR:SDLC-RITUAL` block in `.github/copilot-instructions.md`.
 
-> **Note:** `sertor-flow` targets **`claude` or `copilot`** only — there is no `copilot-cli` value
-> for governance yet (SpecKit-side CLI support is a follow-up). RAG and Wiki support all three.
+> **Note:** all three capabilities (RAG, Wiki, Governance) support the same targets:
+> **`claude` and `copilot-cli`**.
 
 ---
+
+## Migrating from the VS Code target
+
+Earlier releases offered a second Copilot target, **`--assistant copilot`**, for Copilot **in
+VS Code** (MCP in `.vscode/mcp.json` with a `servers` root, commands as `.github/prompts/*.prompt.md`).
+That target has been **consolidated into `copilot-cli`** — `copilot` is no longer a valid value
+(passing it now fails with an explicit error naming `copilot-cli`).
+
+**To update an existing VS Code install:**
+
+1. **Re-install with the CLI target** on the same repo — non-destructive and idempotent:
+
+   ```powershell
+   uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install rag --assistant copilot-cli --backend azure
+   uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install wiki --assistant copilot-cli
+   uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor-flow" sertor-flow install --assistant copilot-cli
+   ```
+
+2. **Remove the leftover VS Code artifacts manually** — there is no automatic cleanup:
+   - delete `.vscode/mcp.json` (or just its `servers.sertor-rag` entry, if you keep other servers);
+   - delete the Sertor `.github/prompts/*.prompt.md` files (the CLI uses `.github/agents/*.agent.md`);
+   - the marker blocks (`SERTOR:WIKI-RITUAL`, `SERTOR:SDLC-RITUAL`, `SERTOR:RAG-USAGE`) in
+     `.github/copilot-instructions.md` are reused as-is — no change needed.
 
 *Add `--target <path>` to install onto a different directory. For upgrades and clean removal, see
 [install.md §10](install.md#10-refresh-and-clean-uninstall).*

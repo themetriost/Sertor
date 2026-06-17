@@ -46,7 +46,7 @@ class GovernanceProfile:
     """Inferred host specifics, collected before generating the init/integration files.
 
     Analogous to `HostProfile` of the wiki. `target_root` is the host repo root;
-    `assistant` is the AI integration (`claude`/`copilot`, feature 045) and drives
+    `assistant` is the AI integration (`claude`/`copilot-cli`, FEAT-012) and drives
     targeting + the `specify init --ai <assistant>` launch; `script` is the inferred
     shell flavor (`ps`/`bash`), passed to `specify init --script`; `speckit_version`
     is the pinned upstream release. Pure value object, no secrets.

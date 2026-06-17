@@ -131,14 +131,13 @@ def build_rag_plan(
     registered: `project` → merge into the assistant's MCP config; `local` → register in the client
     via the `claude` CLI (Claude only; NO file in the repo, `MCP_REGISTER` instead of `MCP_MERGE`).
     The host-facing surfaces (MCP config, instruction block, hook) route via the `AssistantProfile`
-    (Principio X): `claude` reproduces the historical plan (non-regression); `copilot` targets
-    `.vscode/mcp.json`/`.github/**`.
+    (Principio X): `claude` reproduces the historical plan (non-regression); `copilot-cli` targets
+    `.mcp.json`/`.github/**`.
     """
     aprofile = AssistantProfile.for_assistant(assistant)
-    # Copilot family (VS Code + CLI) shares the `.github/**` host-facing surfaces; only the MCP
-    # container differs (resolved via the AssistantProfile): `.vscode/mcp.json` for VS Code,
-    # `.mcp.json` for the CLI.
-    is_copilot = assistant in (AssistantId.COPILOT, AssistantId.COPILOT_CLI)
+    # The Copilot CLI shares the `.github/**` host-facing surfaces; its MCP container is `.mcp.json`
+    # (mcpServers), resolved via the AssistantProfile.
+    is_copilot = assistant is AssistantId.COPILOT_CLI
 
     plan: list[Artifact] = []
     if with_deps:
@@ -155,7 +154,7 @@ def build_rag_plan(
         )
     )
     # MCP_SERVER: local scope (claude only) registers in the client; otherwise merge into the
-    # assistant's MCP config (`.mcp.json` / `.vscode/mcp.json`).
+    # assistant's MCP config (`.mcp.json`, `mcpServers`).
     if mcp_scope == "local" and not is_copilot:
         plan.append(
             Artifact(
@@ -245,13 +244,11 @@ def _apply_env(profile: RagHostProfile) -> ArtifactOutcome:
 def _apply_mcp(profile: RagHostProfile, art: Artifact) -> ArtifactOutcome:
     """`MERGE_JSON`: `sertor-rag` server in the MCP config, additive merge.
 
-    Target + root-key come from the artifact/assistant profile: Claude → `.mcp.json` (`mcpServers`);
-    Copilot → `.vscode/mcp.json` (`servers`).
+    Both supported targets use `.mcp.json` with the `mcpServers` root (Claude-standard; the Copilot
+    CLI reads it too) — resolved via the assistant profile.
     """
     entry = json.loads(read_asset_text("rag/mcp.server.json.tmpl").format(corpus=profile.corpus))
-    is_vscode = art.target_rel.replace("\\", "/") == ".vscode/mcp.json"
-    root_key = "servers" if is_vscode else "mcpServers"
-    outcome, detail = merge_mcp(profile.target_root / art.target_rel, entry, root_key=root_key)
+    outcome, detail = merge_mcp(profile.target_root / art.target_rel, entry, root_key="mcpServers")
     return ArtifactOutcome(art.target_rel, outcome, detail)
 
 
@@ -365,13 +362,6 @@ def execute_rag_plan(
     report = _kit_execute_plan(
         plan, apply, target=str(profile.target_root), capability="rag", assistant=assistant.value
     )
-    if assistant is AssistantId.COPILOT:
-        # FEAT-011 (FR-027/028): the Copilot hook surfaces are not validated end-to-end on a real
-        # VS Code client — declare the gap honestly, never claim "full parity".
-        report.note(
-            "[ASSUNTO-VSC] Copilot VS Code hooks (PreToolUse) are schema-valid (offline) but NOT "
-            "verified on a real VS Code client — declared gap, NOT full parity."
-        )
     return report
 
 
@@ -388,7 +378,7 @@ def sertor_owned_paths(assistant: AssistantId = AssistantProfile.DEFAULT) -> Ser
     `target_rel`s are a subset of these (the manifest replacement).
     """
     aprofile = AssistantProfile.for_assistant(assistant)
-    is_copilot = assistant in (AssistantId.COPILOT, AssistantId.COPILOT_CLI)
+    is_copilot = assistant is AssistantId.COPILOT_CLI
 
     hook_target = _RAG_HOOK_TARGET_COPILOT if is_copilot else _RAG_HOOK_TARGET
     settings_target = _COPILOT_HOOK_WIRING if is_copilot else _SETTINGS_TARGET
@@ -456,9 +446,7 @@ def _apply_rag_uninstall(
         dest = root / art.target_rel
         if dry_run:
             return ArtifactOutcome(art.target_rel, project_removal(dest), f"server {_SERVER_NAME}")
-        is_vscode = art.target_rel.replace("\\", "/") == ".vscode/mcp.json"
-        root_key = "servers" if is_vscode else "mcpServers"
-        outcome, detail = remove_mcp_server(dest, _SERVER_NAME, root_key)
+        outcome, detail = remove_mcp_server(dest, _SERVER_NAME, "mcpServers")
         return ArtifactOutcome(art.target_rel, outcome, detail)
     if art.kind is ArtifactKind.MCP_REGISTER:
         if dry_run:
@@ -546,7 +534,7 @@ def make_rag_apply(
     the inverse/idempotent handlers above. `dry_run` makes the inverse handlers project (no write).
     The same callback drives all three verbs through the kit's `execute_plan`/`execute_lifecycle`.
     """
-    is_copilot = assistant in (AssistantId.COPILOT, AssistantId.COPILOT_CLI)
+    is_copilot = assistant is AssistantId.COPILOT_CLI
 
     def apply(art: Artifact, op: LifecycleOp = LifecycleOp.INSTALL) -> ArtifactOutcome:
         if op is LifecycleOp.UNINSTALL:

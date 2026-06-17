@@ -1,9 +1,10 @@
 """Surface parity tests (feature 044, SC-002; surface-mapping.md prop.1 + prop.5).
 
 For each capability in scope (`wiki`, `rag`), the set of host-facing surfaces produced for
-`copilot` must cover those produced for `claude` (or declare a gap; there are none in scope). Plus
-the coexistence edge case: installing both assistants on the same host leaves both configurations
-present without a double instruction block.
+`copilot-cli` must cover those produced for `claude` (or declare a gap; there are none in scope).
+Plus the coexistence edge case: installing both assistants on the same host leaves both
+configurations present without a double instruction block. The VS Code (`copilot`) target was
+removed (FEAT-012) — parity is now verified on the two remaining targets.
 """
 from __future__ import annotations
 
@@ -29,17 +30,17 @@ def _rag_kinds(assistant: AssistantId, tmp_path: Path) -> set[str]:
 
 # ---------------------------------------------------------------- prop.1: coverage
 
-def test_wiki_copilot_covers_claude_surfaces():
+def test_wiki_copilot_cli_covers_claude_surfaces():
     claude = _wiki_kinds(AssistantId.CLAUDE)
-    copilot = _wiki_kinds(AssistantId.COPILOT)
-    # every artifact KIND present for claude has a rendering for copilot (no silent omission)
-    assert claude <= copilot, f"wiki surfaces missing for copilot: {claude - copilot}"
+    copilot = _wiki_kinds(AssistantId.COPILOT_CLI)
+    # every artifact KIND present for claude has a rendering for copilot-cli (no silent omission)
+    assert claude <= copilot, f"wiki surfaces missing for copilot-cli: {claude - copilot}"
 
 
-def test_rag_copilot_covers_claude_surfaces(tmp_path: Path):
+def test_rag_copilot_cli_covers_claude_surfaces(tmp_path: Path):
     claude = _rag_kinds(AssistantId.CLAUDE, tmp_path / "a")
-    copilot = _rag_kinds(AssistantId.COPILOT, tmp_path / "b")
-    assert claude <= copilot, f"rag surfaces missing for copilot: {claude - copilot}"
+    copilot = _rag_kinds(AssistantId.COPILOT_CLI, tmp_path / "b")
+    assert claude <= copilot, f"rag surfaces missing for copilot-cli: {claude - copilot}"
 
 
 # ---------------------------------------------------------------- prop.5: coexistence
@@ -48,7 +49,7 @@ def test_claude_and_copilot_coexist_no_double_block(tmp_path: Path):
     profile_c = build_host_profile(tmp_path)
     execute_plan(build_install_plan(AssistantId.CLAUDE), profile_c, AssistantId.CLAUDE)
     profile_g = build_host_profile(tmp_path)
-    execute_plan(build_install_plan(AssistantId.COPILOT), profile_g, AssistantId.COPILOT)
+    execute_plan(build_install_plan(AssistantId.COPILOT_CLI), profile_g, AssistantId.COPILOT_CLI)
 
     # both instruction containers exist, each with its own single block
     claude_md = (tmp_path / "CLAUDE.md").read_text(encoding="utf-8")

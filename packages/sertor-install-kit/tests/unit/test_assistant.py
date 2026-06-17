@@ -19,9 +19,11 @@ from sertor_install_kit.errors import ConfigError
 # ---------------------------------------------------------------- AssistantId
 
 def test_assistant_id_known_values():
+    # FEAT-012: exactly two targets remain after the VS Code consolidation.
     assert AssistantId.from_str("claude") is AssistantId.CLAUDE
-    assert AssistantId.from_str("copilot") is AssistantId.COPILOT
     assert AssistantId.from_str("copilot-cli") is AssistantId.COPILOT_CLI
+    assert len(list(AssistantId)) == 2
+    assert {a.value for a in AssistantId} == {"claude", "copilot-cli"}
 
 
 def test_assistant_id_default_is_claude():
@@ -34,6 +36,14 @@ def test_assistant_id_unknown_raises_config_error():
         AssistantId.from_str("codex")
     with pytest.raises(ConfigError):
         AssistantId.from_str("bogus")
+
+
+def test_copilot_legacy_value_raises():
+    """FEAT-012 (FR-001, C1.1, SC-001): the legacy VS Code value `copilot` is gone — `from_str`
+    raises and the message names the correct value `copilot-cli`."""
+    with pytest.raises(ConfigError) as exc:
+        AssistantId.from_str("copilot")
+    assert "copilot-cli" in str(exc.value)
 
 
 # ---------------------------------------------------------------- claude mapping (non-regression)
@@ -53,27 +63,6 @@ def test_claude_profile_targets():
     )
 
 
-# ---------------------------------------------------------------- copilot mapping
-
-def test_copilot_profile_targets():
-    p = AssistantProfile.for_assistant(AssistantId.COPILOT)
-    assert p.target_for(Surface.INSTRUCTION_BLOCK).target_rel == ".github/copilot-instructions.md"
-    mcp = p.target_for(Surface.MCP_SERVER)
-    assert mcp.target_rel == ".vscode/mcp.json"
-    assert mcp.root_key == "servers"
-    # hooks wiring file under .github/hooks/
-    assert p.target_for(Surface.HOOK).target_rel.startswith(".github/hooks/")
-    assert p.target_for(Surface.HOOK).target_rel.endswith(".json")
-
-
-def test_copilot_render_paths_are_github():
-    p = AssistantProfile.for_assistant(AssistantId.COPILOT)
-    assert p.render_path(Surface.COMMAND, "wiki").endswith(".prompt.md")
-    assert p.render_path(Surface.COMMAND, "wiki").startswith(".github/prompts/")
-    assert p.render_path(Surface.AGENT, "wiki-curator").startswith(".github/agents/")
-    assert p.render_path(Surface.AGENT, "wiki-curator").endswith(".agent.md")
-
-
 # ---------------------------------------------------------------- copilot-cli mapping
 
 def test_copilot_cli_mcp_uses_dot_mcp_json_mcpservers():
@@ -83,6 +72,26 @@ def test_copilot_cli_mcp_uses_dot_mcp_json_mcpservers():
     mcp = p.target_for(Surface.MCP_SERVER)
     assert mcp.target_rel == ".mcp.json"
     assert mcp.root_key == "mcpServers"
+
+
+def test_copilot_cli_profile_mcp_target():
+    """FEAT-012 (FR-008, C2.1): for `copilot-cli`, MCP resolves to `.mcp.json`/`mcpServers`."""
+    p = AssistantProfile.for_assistant(AssistantId.COPILOT_CLI)
+    mcp = p.target_for(Surface.MCP_SERVER)
+    assert mcp.target_rel == ".mcp.json"
+    assert mcp.root_key == "mcpServers"
+
+
+def test_copilot_cli_no_vscode_mcp():
+    """FEAT-012 (FR-002, SC-004): no `.vscode/**` path exists in the `copilot-cli` profile."""
+    p = AssistantProfile.for_assistant(AssistantId.COPILOT_CLI)
+    for surface in Surface:
+        t = p.target_for(surface)
+        if t is None:
+            continue
+        assert not t.target_rel.replace("\\", "/").startswith(".vscode/")
+    assert not p.render_path(Surface.COMMAND, "wiki").startswith(".vscode/")
+    assert not p.render_path(Surface.AGENT, "wiki-curator").startswith(".vscode/")
 
 
 def test_copilot_cli_reuses_github_surfaces():
@@ -95,13 +104,9 @@ def test_copilot_cli_reuses_github_surfaces():
 # ----------------------------------------------- FEAT-011: COMMAND vehicle per target (Q2=c)
 
 def test_command_vehicle_per_target():
-    """The COMMAND vehicle is explicit: prompt-file for claude/copilot, custom-agent for the CLI."""
+    """The COMMAND vehicle is explicit: prompt-file for claude, custom-agent for the CLI."""
     assert (
         AssistantProfile.for_assistant(AssistantId.CLAUDE).command_vehicle
-        is CommandVehicle.PROMPT_FILE
-    )
-    assert (
-        AssistantProfile.for_assistant(AssistantId.COPILOT).command_vehicle
         is CommandVehicle.PROMPT_FILE
     )
     assert (
@@ -119,22 +124,27 @@ def test_copilot_cli_command_is_custom_agent_path():
     assert not path.endswith(".prompt.md")
 
 
-def test_copilot_vscode_command_stays_prompt_file():
-    """Non-regression: VS Code keeps the prompt-file for COMMANDs."""
-    p = AssistantProfile.for_assistant(AssistantId.COPILOT)
-    assert p.render_path(Surface.COMMAND, "wiki") == ".github/prompts/wiki.prompt.md"
-
-
 def test_claude_command_path_unchanged():
     """Non-regression: Claude COMMAND path is byte-for-byte the historical `.claude/<rel>`."""
     p = AssistantProfile.for_assistant(AssistantId.CLAUDE)
     assert p.render_path(Surface.COMMAND, "commands/wiki.md") == ".claude/commands/wiki.md"
 
 
+def test_claude_profile_invariant_after_refactor():
+    """FEAT-012 (C4.1, FR-016, SC-005): the Claude profile is byte-for-byte unchanged by the
+    VS Code removal — same command dir, vehicle and MCP target."""
+    p = AssistantProfile.for_assistant(AssistantId.CLAUDE)
+    assert p._command_dir == ".claude/commands"
+    assert p.command_vehicle is CommandVehicle.PROMPT_FILE
+    mcp = p.target_for(Surface.MCP_SERVER)
+    assert mcp.target_rel == ".mcp.json"
+    assert mcp.root_key == "mcpServers"
+
+
 # ------------------------------------------------------------ validity (Principio I / artifacts)
 
 def test_targets_are_relative_no_traversal():
-    for aid in (AssistantId.CLAUDE, AssistantId.COPILOT, AssistantId.COPILOT_CLI):
+    for aid in (AssistantId.CLAUDE, AssistantId.COPILOT_CLI):
         p = AssistantProfile.for_assistant(aid)
         for surface in Surface:
             t = p.target_for(surface)

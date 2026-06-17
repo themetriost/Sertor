@@ -38,12 +38,14 @@ def test_plan_claude_routes_sertor_authored_surfaces(tmp_path: Path):
     assert ".claude/skills/requirements/SKILL.md" in targets
 
 
-def test_plan_copilot_routes_sertor_authored_surfaces(tmp_path: Path):
-    """Copilot: agents → `.github/agents/*.agent.md`, skill → `.github/prompts/*.prompt.md`."""
-    targets = {a.target_rel for a in _plan(tmp_path, "copilot")}
+def test_plan_copilot_cli_routes_sertor_authored_surfaces(tmp_path: Path):
+    """Copilot CLI: agents AND the `requirements` skill → `.github/agents/*.agent.md` (custom-agent;
+    the prompt-file vehicle was removed with the VS Code target, FEAT-012)."""
+    targets = {a.target_rel for a in _plan(tmp_path, "copilot-cli")}
     assert ".github/agents/requirements-analyst.agent.md" in targets
     assert ".github/agents/configuration-manager.agent.md" in targets
-    assert ".github/prompts/requirements.prompt.md" in targets
+    assert ".github/agents/requirements.agent.md" in targets
+    assert ".github/prompts/requirements.prompt.md" not in targets
 
 
 def test_plan_canonical_order(tmp_path: Path):
@@ -94,9 +96,9 @@ def test_marker_block_targets_claude_md_for_claude(tmp_path: Path):
     assert markers[0].target_rel == "CLAUDE.md"
 
 
-def test_marker_block_targets_copilot_instructions_for_copilot(tmp_path: Path):
-    """The SDLC ritual block targets `.github/copilot-instructions.md` for Copilot (FR-008)."""
-    plan = _plan(tmp_path, "copilot")
+def test_marker_block_targets_copilot_instructions_for_copilot_cli(tmp_path: Path):
+    """The SDLC ritual block targets `.github/copilot-instructions.md` for Copilot CLI (FR-008)."""
+    plan = _plan(tmp_path, "copilot-cli")
     markers = [a for a in plan if a.kind is ArtifactKind.MARKER_BLOCK]
     assert len(markers) == 1
     assert markers[0].target_rel == ".github/copilot-instructions.md"

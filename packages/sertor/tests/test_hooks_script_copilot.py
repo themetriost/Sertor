@@ -6,7 +6,6 @@ Copilot. I percorsi degli script sono gli asset reali del pacchetto.
 """
 from __future__ import annotations
 
-import json
 import shutil
 import subprocess
 from pathlib import Path
@@ -52,15 +51,9 @@ def test_session_start_claude_emits_plain_directive(tmp_path: Path):
     assert "additionalContext" not in out
 
 
-def test_session_start_copilot_emits_additional_context_json(tmp_path: Path):  # O4 / ASSUNTO-VSC
-    rc, out, _ = _run(_SESSION_SCRIPT, ["-Assistant", "copilot"], cwd=tmp_path)
-    assert rc == 0
-    payload = json.loads(out.strip())        # MUST be valid JSON, never a bare string
-    assert "additionalContext" in payload
-    assert payload["additionalContext"].strip()
-    # no dual-field
-    assert "systemMessage" not in payload
-    assert "decision" not in payload
+# NB (FEAT-012): the VS Code SessionStart `additionalContext` mechanism (`wiki-session-start.ps1`
+# `-Assistant copilot`) is no longer wired by any install plan — the Copilot CLI uses a native
+# `type:"prompt"` hook instead. The script asset is kept only for the Claude branch (above).
 
 
 # --- wiki-pending-check.ps1: exit 0, native per event (O3 / O5 / O6) ---------------------------

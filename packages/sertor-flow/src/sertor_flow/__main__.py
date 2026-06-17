@@ -5,9 +5,10 @@ Reference pattern: `sertor_installer.__main__`. **install ≠ run**: the command
 bundle (and launches `specify init` to obtain SpecKit) — it never starts an SDLC/git/index phase.
 Exit code: `0` success (even if everything skipped) · `1` domain error · `2` usage error (argparse).
 
-`--assistant claude|copilot` (default `claude`, FR-001/002): selects the target assistant for both
-the SpecKit launch (`specify init --ai <assistant>`) and the Sertor-authored surfaces. An unknown
-value is rejected by the profile (`ConfigError`).
+`--assistant claude|copilot-cli` (default `claude`, FR-006): selects the target assistant for both
+the SpecKit launch (`specify init --ai <assistant>`) and the Sertor-authored surfaces. The legacy
+VS Code value `copilot` is no longer accepted (FEAT-012). An unknown value is rejected by argparse
+(`choices`, exit 2) or by the profile (`ConfigError`).
 """
 from __future__ import annotations
 
@@ -44,7 +45,7 @@ def _build_parser() -> argparse.ArgumentParser:
     install.add_argument(
         "--assistant",
         default=DEFAULT_ASSISTANT,
-        choices=["claude", "copilot"],
+        choices=["claude", "copilot-cli"],
         help="target AI assistant (default: claude)",
     )
     install.add_argument("--json", action="store_true", help="emit the report as JSON")
@@ -57,7 +58,7 @@ def _build_parser() -> argparse.ArgumentParser:
         p = sub.add_parser(verb, help=helptext)
         p.add_argument("--target", default=".", help="host repo root (default: cwd)")
         p.add_argument(
-            "--assistant", default=DEFAULT_ASSISTANT, choices=["claude", "copilot"],
+            "--assistant", default=DEFAULT_ASSISTANT, choices=["claude", "copilot-cli"],
             help="target AI assistant (default: claude)",
         )
         p.add_argument("--dry-run", action="store_true",

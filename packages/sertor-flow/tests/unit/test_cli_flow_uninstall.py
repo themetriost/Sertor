@@ -20,7 +20,7 @@ from sertor_flow.profile import build_governance_profile
 # --- T046: plan ⊆ owned -------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("assistant", ["claude", "copilot"])
+@pytest.mark.parametrize("assistant", ["claude", "copilot-cli"])
 def test_governance_plan_subset_of_owned(assistant):
     profile = build_governance_profile(Path("."), assistant=assistant)
     plan = build_governance_plan(profile)

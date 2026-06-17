@@ -129,16 +129,17 @@ def test_upgrade_dry_run_exit_0(tmp_path: Path):
 
 
 def test_upgrade_switch_assistant_removes_old_specific(tmp_path: Path, capsys):
-    # install for claude, then upgrade --assistant copilot
+    # install for claude, then upgrade --assistant copilot-cli
     _install_rag(tmp_path)
     assert (tmp_path / ".claude/hooks/sertor-rag-usage-check.ps1").exists()
     capsys.readouterr()
     rc = main([
-        "upgrade", "rag", "--target", str(tmp_path), "--no-deps", "--assistant", "copilot", "--json"
+        "upgrade", "rag", "--target", str(tmp_path), "--no-deps",
+        "--assistant", "copilot-cli", "--json",
     ])
     assert rc == 0
-    # claude-specific hook (not shared with copilot) becomes obsolete → removed; copilot surfaces
-    # are created/updated.
+    # claude-specific hook (not shared with copilot-cli) becomes obsolete → removed; copilot-cli
+    # surfaces are created/updated.
     assert (tmp_path / ".github/hooks/sertor-rag-usage-check.ps1").exists()
     assert not (tmp_path / ".claude/hooks/sertor-rag-usage-check.ps1").exists()
 

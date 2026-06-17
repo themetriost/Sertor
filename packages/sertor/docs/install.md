@@ -13,31 +13,33 @@ non-destructive, idempotent way (install ≠ run: nothing is indexed automatical
 
 ## `--assistant` (target assistant)
 
-Both `install wiki` and `install rag` accept `--assistant <claude|copilot>`:
+Both `install wiki` and `install rag` accept `--assistant <claude|copilot-cli>`:
 
 ```bash
-sertor install rag  --assistant copilot
-sertor install wiki --assistant copilot
+sertor install rag  --assistant copilot-cli
+sertor install wiki --assistant copilot-cli
 ```
 
 - `--assistant` is optional; absent → default **`claude`** (documented).
 - An unknown value (e.g. `codex`) → explicit error (exit 1) listing the valid values.
+- The legacy VS Code value `copilot` was consolidated into `copilot-cli` and is no longer accepted
+  (see the migration note in [install-copilot.md](../../docs/install-copilot.md#migrating-from-the-vs-code-target)).
 - The execution CLIs (`sertor-rag`, `sertor-wiki-tools`) are **assistant-agnostic**: no per-assistant
   variant.
 
 ### Surface mapping (where artifacts land)
 
-| Surface | `claude` | `copilot` |
+| Surface | `claude` | `copilot-cli` |
 |---|---|---|
 | Instruction block | `CLAUDE.md` | `.github/copilot-instructions.md` |
-| MCP server | `.mcp.json` (`mcpServers`) | `.vscode/mcp.json` (`servers`) |
-| Commands/skill | `.claude/commands/*`, `.claude/skills/*` | `.github/prompts/*.prompt.md` |
+| MCP server | `.mcp.json` (`mcpServers`) | `.mcp.json` (`mcpServers`) |
+| Commands/skill | `.claude/commands/*`, `.claude/skills/*` | `.github/agents/*.agent.md` (custom-agent) |
 | Agent | `.claude/agents/*.md` | `.github/agents/*.agent.md` |
 | Hook wiring | `.claude/settings.json` | `.github/hooks/sertor-*.json` |
 | Hook script | `.claude/hooks/*.ps1` | `.github/hooks/*.ps1` (same script, reused) |
 
 The instruction-block text, the command/skill body, the agent persona and the hook script are a
-**single source** (the canonical Claude asset); the Copilot artifacts are derived by translating
+**single source** (the canonical Claude asset); the Copilot CLI artifacts are derived by translating
 only the container (path/frontmatter). A guard test fails on divergence (anti-drift).
 
 The report declares the **target assistant** and the outcome of every surface in scope; a surface
@@ -45,14 +47,14 @@ without a rendering on the chosen assistant is reported as an explicit **gap**, 
 
 ## Verifying the install
 
-### RAG (MCP) — Copilot
+### RAG (MCP) — Copilot CLI
 
-After `sertor install rag --assistant copilot`:
+After `sertor install rag --assistant copilot-cli`:
 
-1. `.vscode/mcp.json` contains the `sertor-rag` server under the `servers` key.
-2. From the Copilot client (VS Code agent mode), the `sertor-rag` server appears **connected** and
-   its tools are available (`search_code`/`search_docs`/`search_combined`). No manual editing is
-   required.
+1. `.mcp.json` contains the `sertor-rag` server under the `mcpServers` key (where the Copilot CLI
+   looks); no `.vscode/mcp.json` is written.
+2. From the Copilot CLI, reload with `/mcp reload` (or restart) — the `sertor-rag` server appears
+   **connected** and its tools are available (`search_code`/`search_docs`/`search_combined`).
 3. The provider secrets stay empty in the template — compile them in `.sertor/.env` (never
    versioned).
 
@@ -64,8 +66,8 @@ it up automatically.
 ## Idempotence & coexistence
 
 - Re-running the same command → everything `skipped`/`block already present`, no duplication.
-- Installing for both `--assistant claude` and `--assistant copilot` on the same repo → the two
-  configurations coexist (`.github/**` for Copilot, `.claude/**`+`CLAUDE.md` for Claude) without
+- Installing for both `--assistant claude` and `--assistant copilot-cli` on the same repo → the two
+  configurations coexist (`.github/**` for Copilot CLI, `.claude/**`+`CLAUDE.md` for Claude) without
   conflicts or a double instruction block.
 
 ## Execution (separate step)

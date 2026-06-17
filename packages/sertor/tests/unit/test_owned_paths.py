@@ -15,7 +15,7 @@ from sertor_installer.install_wiki import build_install_plan
 from sertor_installer.install_wiki import sertor_owned_paths as wiki_owned
 from sertor_installer.rag_profile import RagHostProfile, RagInstallOptions
 
-_ASSISTANTS = [AssistantId.CLAUDE, AssistantId.COPILOT, AssistantId.COPILOT_CLI]
+_ASSISTANTS = [AssistantId.CLAUDE, AssistantId.COPILOT_CLI]
 
 
 def _covered(target_rel: str, owned) -> bool:
@@ -61,14 +61,18 @@ def test_wiki_plan_subset_of_owned(assistant):
     assert uncovered == [], f"wiki/{assistant.value}: uncovered plan targets {uncovered}"
 
 
-def test_cross_assistant_intersection_keeps_shared(tmp_path):
-    """The intersection of owned paths across assistants is preserved in a cross-assistant upgrade.
-
-    FR-016: artifacts common to A and B (e.g. the standalone hook script for copilot vs copilot-cli)
-    are not removed when switching between them.
-    """
-    copilot = rag_owned(AssistantId.COPILOT)
+def test_claude_and_copilot_cli_host_surfaces_distinct(tmp_path):
+    """FEAT-012: Claude (`.claude/**`, `CLAUDE.md`) and Copilot CLI (`.github/**`) own DISTINCT
+    host-facing surfaces; only the assistant-agnostic runtime targets (`.sertor`, `.mcp.json`,
+    `.gitignore`) coincide. So a cross-assistant upgrade only removes the other's host-facing
+    artifacts, never the shared runtime (FR-016). The VS Code (`copilot`) target was removed."""
+    claude = rag_owned(AssistantId.CLAUDE)
     copilot_cli = rag_owned(AssistantId.COPILOT_CLI)
-    shared = copilot.covered_targets() & copilot_cli.covered_targets()
-    # Copilot and Copilot-CLI share the `.github/**` host surfaces (only the MCP container differs).
-    assert ".github/hooks/sertor-rag-usage-check.ps1" in shared
+    shared = claude.covered_targets() & copilot_cli.covered_targets()
+    # The shared paths are only the assistant-agnostic runtime (both targets use `.mcp.json`).
+    assert shared <= {".gitignore", ".sertor", ".mcp.json"}
+    # The host-facing hook script lives in distinct trees per assistant.
+    assert ".github/hooks/sertor-rag-usage-check.ps1" in copilot_cli.covered_targets()
+    assert ".github/hooks/sertor-rag-usage-check.ps1" not in claude.covered_targets()
+    assert ".claude/hooks/sertor-rag-usage-check.ps1" in claude.covered_targets()
+    assert ".claude/hooks/sertor-rag-usage-check.ps1" not in copilot_cli.covered_targets()
