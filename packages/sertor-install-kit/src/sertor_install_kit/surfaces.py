@@ -68,10 +68,34 @@ def render_custom_agent(canonical_text: str, *, include_model: bool = False) -> 
     lines = [_FRONTMATTER_FENCE]
     for key in keys:
         if key in fields:
-            lines.append(f"{key}: {fields[key]}")
+            lines.append(f"{key}: {_yaml_scalar(fields[key])}")
     lines.append(_FRONTMATTER_FENCE)
     lines.append("")
     return "\n".join(lines) + "\n" + body.lstrip("\n")
+
+
+def _yaml_scalar(value: str) -> str:
+    """Render a single-line frontmatter value as a YAML-safe scalar.
+
+    A canonical Claude `description:` often contains a colon (e.g. "Phase: tasks") which, emitted as
+    a plain scalar, makes the value parse as a nested mapping — Copilot then rejects the whole
+    custom-agent frontmatter ("mapping values are not allowed", verified on Copilot CLI 1.0.63,
+    wiki/log/2026-06-17). Quote (double-quoted, escaped) only when the value would break a plain
+    scalar; leave safe scalars and flow collections (`[...]`/`{...}`, e.g. a `tools` list) untouched
+    so their YAML structure is preserved.
+    """
+    if value == "" or value[0] in "[{":
+        return value
+    needs_quote = (
+        ": " in value
+        or value.endswith(":")
+        or " #" in value
+        or value[0] in "#&*!|>%@`\"'"
+    )
+    if not needs_quote:
+        return value
+    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{escaped}"'
 
 
 def _parse_simple_frontmatter(front: str) -> dict[str, str]:
@@ -129,7 +153,13 @@ def render_copilot_hooks(events: list[HookEntrySpec]) -> dict:
     """
     hooks: dict[str, list[dict]] = {}
     for spec in events:
-        entry: dict = {"type": spec.type, "command": spec.command, "timeoutSec": spec.timeout_sec}
+        # A `prompt`-type entry carries its payload in the `prompt` field; a `command`-type in
+        # `command`. Copilot ignores a `command` field on a `type:"prompt"` hook → emitting the
+        # payload under `command` silently dropped the SessionStart prompt (verified on Copilot CLI
+        # 1.0.63, wiki/log/2026-06-17). The dataclass keeps one `command` field as the payload; the
+        # rendered key follows the type.
+        payload_key = "prompt" if spec.type == "prompt" else "command"
+        entry: dict = {"type": spec.type, payload_key: spec.command, "timeoutSec": spec.timeout_sec}
         if spec.matcher is not None:
             entry["matcher"] = spec.matcher
         hooks.setdefault(spec.event, []).append(entry)

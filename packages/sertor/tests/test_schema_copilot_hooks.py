@@ -37,7 +37,10 @@ def assert_valid_copilot_hook_file(data: dict) -> None:
             for bad in _CLAUDE_ONLY_FIELDS:
                 assert bad not in entry, f"{event}: Claude-only field '{bad}'"      # R3/R4
             assert "timeoutSec" in entry, f"{event}: timeoutSec missing"            # R4
-            assert "type" in entry and "command" in entry
+            # payload key follows the type: `prompt` for a prompt-hook, `command` otherwise
+            assert "type" in entry
+            payload_key = "prompt" if entry.get("type") == "prompt" else "command"
+            assert payload_key in entry, f"{event}: payload field '{payload_key}' missing"
 
 
 # --- the real plans produce valid files -------------------------------------------------------

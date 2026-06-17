@@ -69,6 +69,51 @@ def test_custom_agent_include_model_opt_in_for_completeness():
     assert "model: haiku" in front
 
 
+# --- custom-agent: a description with a colon must be YAML-quoted (regression 2026-06-17) -------
+
+_AGENT_ASSET_COLON = (
+    "---\nname: wiki\n"
+    "description: Consolidates work: record/distill/lint (operations)\n"
+    "tools: a, b\n---\n\npersona\n"
+)
+
+
+def test_custom_agent_description_with_colon_is_quoted():
+    """A `description` containing ': ' must be emitted as a quoted scalar. Unquoted, Copilot rejects
+    the whole frontmatter ("mapping values are not allowed", Copilot CLI 1.0.63) and the agent is
+    silently dropped (wiki/log/2026-06-17)."""
+    front = split_frontmatter(render_custom_agent(_AGENT_ASSET_COLON))[0]
+    assert 'description: "Consolidates work: record/distill/lint (operations)"' in front
+
+
+def _frontmatter_values_are_yaml_safe(front: str) -> bool:
+    """True if no flat `key: value` line carries an UNQUOTED ': ' in its value (which would parse as
+    a nested mapping). Mirrors the Copilot frontmatter constraint without a YAML dependency."""
+    for line in front.splitlines():
+        if not line or line.startswith((" ", "\t")) or ":" not in line:
+            continue
+        _key, _, value = line.partition(":")
+        value = value.strip()
+        if value[:1] in ('"', "'", "[", "{"):
+            continue
+        if ": " in value or value.endswith(":"):
+            return False
+    return True
+
+
+def test_real_cli_agents_have_yaml_safe_frontmatter(tmp_path: Path):
+    """SC-007 (real-asset guard): every custom-agent the CLI install actually writes must have
+    YAML-safe frontmatter. This would have caught the `wiki-author` defect of 2026-06-17 (its
+    canonical description contains a colon)."""
+    profile = build_host_profile(tmp_path)
+    plan = build_install_plan(AssistantId.COPILOT_CLI)
+    execute_plan(plan, profile, AssistantId.COPILOT_CLI)
+    for name in ("wiki", "wiki-author", "wiki-curator"):
+        agent = tmp_path / f".github/agents/{name}.agent.md"
+        front = split_frontmatter(agent.read_text(encoding="utf-8"))[0]
+        assert _frontmatter_values_are_yaml_safe(front), f"{name}.agent.md unsafe frontmatter:\n{front}"
+
+
 # --- COMMAND on CLI is a custom-agent, never only a prompt-file (C1/C3 / SC-004) ---------------
 
 

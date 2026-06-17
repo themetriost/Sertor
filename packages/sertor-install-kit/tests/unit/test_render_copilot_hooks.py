@@ -64,11 +64,22 @@ def test_r5_logical_event_names_kept_verbatim():
     assert set(out["hooks"].keys()) == {"SessionStart", "Stop", "SessionEnd"}
 
 
-def test_prompt_type_supported_for_session_start():
+def test_prompt_type_payload_goes_in_prompt_field_not_command():
+    # A `type:"prompt"` hook carries its text in `prompt`, NOT `command` — Copilot ignores a
+    # `command` field on a prompt hook, which silently dropped the SessionStart prompt on Copilot
+    # CLI 1.0.63 (regression fix, wiki/log/2026-06-17).
     out = render_copilot_hooks([HookEntrySpec("SessionStart", "prompt", "load the roadmap", 15)])
     entry = out["hooks"]["SessionStart"][0]
     assert entry["type"] == "prompt"
-    assert entry["command"] == "load the roadmap"
+    assert entry["prompt"] == "load the roadmap"
+    assert "command" not in entry
+
+
+def test_command_type_payload_stays_in_command_field():
+    out = render_copilot_hooks([HookEntrySpec("Stop", "command", "pwsh stop", 10)])
+    entry = out["hooks"]["Stop"][0]
+    assert entry["command"] == "pwsh stop"
+    assert "prompt" not in entry
 
 
 def test_multiple_entries_same_event():
@@ -94,4 +105,4 @@ def test_anti_pattern_nested_or_timeout_field_detectable():
     out = render_copilot_hooks([HookEntrySpec("Stop", "command", "pwsh stop", 10)])
     # The native renderer never emits these; confirm the produced entry is clean.
     entry = out["hooks"]["Stop"][0]
-    assert set(entry.keys()) <= {"type", "command", "timeoutSec", "matcher"}
+    assert set(entry.keys()) <= {"type", "command", "prompt", "timeoutSec", "matcher"}

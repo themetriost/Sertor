@@ -127,6 +127,30 @@ def test_main_warms_facade_before_stdio_loop(monkeypatch):
         srv._facade.cache_clear()
 
 
+def test_main_starts_server_even_if_warmup_fails(monkeypatch, capsys):
+    """A config fault during warm-up (e.g. AZURE_OPENAI_* missing → EmbeddingError) must NOT
+    prevent `mcp.run()`. Otherwise build_facade() crashes the process before the stdio loop and the
+    client only sees an opaque "-32000 Connection closed" (regression fix, wiki/log/2026-06-17):
+    the actionable error must instead surface at the first tool call.
+    """
+    calls: list[str] = []
+
+    def _boom(*_a, **_k):
+        raise RuntimeError("incomplete Azure configuration")
+
+    monkeypatch.setattr(srv, "build_facade", _boom)
+    monkeypatch.setattr(srv.Settings, "load", lambda *a, **k: None)
+    srv._facade.cache_clear()
+    monkeypatch.setattr(srv, "enable_observability", lambda *a, **k: False)
+    monkeypatch.setattr(srv.mcp, "run", lambda *a, **k: calls.append("run"))
+    try:
+        srv.main()  # must NOT raise despite the warm-up failure
+        assert calls == ["run"]  # the server still started
+        assert "warm-up FAILED" in capsys.readouterr().err  # loud + actionable
+    finally:
+        srv._facade.cache_clear()
+
+
 def test_main_wires_observability(monkeypatch):
     """`main()` calls enable_observability (else SERTOR_OBSERVABILITY is a no-op for the server)."""
     enabled: list[object] = []
