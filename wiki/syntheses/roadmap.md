@@ -14,7 +14,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > `requirements → spec → plan → tasks → implement`.
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-06-16)
+## ⚡ Executive summary (stato al 2026-06-17)
 
 ### ✅ Capacità consegnate (feature su `master`)
 
@@ -26,6 +26,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | Hardening retrieval (Must + Should gruppo C: retry · soglia · cache embeddings) | `sertor-core` |
 | CLI `sertor-rag` · installer `sertor install wiki`/`rag` | `sertor-cli` |
 | **Packaging distribuibile** `git+url` (FEAT-001, LICENSE+metadati+build verificata, 2026-06-17) | `sertor-cli` |
+| **Ciclo di vita installer** — `upgrade`/`uninstall` per `sertor` e `sertor-flow` (FEAT-008, 2026-06-17) | `sertor-cli` |
 | Governance SDLC — pacchetto separato `sertor-flow` | `sertor-cli` |
 | Distribuzione Copilot (VS Code + CLI) — parità FEAT-007+009 | `sertor-cli` |
 | Igiene radice host · tema lingua (tutto il prodotto in EN) | `sertor-cli` |
@@ -44,7 +45,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | Epica | Stato | Residuo / 1° passo |
 |---|---|---|
 | [`sertor-core`](../../requirements/sertor-core/epic.md) | ✅ completa | — (agenzia incorporata ❌ abbandonata by design) |
-| [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | wizard config · lifecycle upgrade/uninstall · ergonomia installer · Codex · PyPI *(packaging ✅ 2026-06-17)* |
+| [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | wizard config · ergonomia installer · Codex · PyPI *(packaging ✅ + lifecycle upgrade/uninstall ✅ 2026-06-17)* |
 | [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | OTel · metriche aggregate · **stima € (Should)** · web · export CSV/MD |
 | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso | ricerca semantica · remember-this · retention · **distribuzione installer (Must)** · multi-assist |
 | [`multiutente`](../../requirements/multiutente/epic.md) | 📋 differita | finché il caso d'uso team non è concreto |
@@ -103,16 +104,34 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   FEAT-008 (cattura multi-assistente), FEAT-010 (parità MCP `show`/`list`). *(FEAT-003 ✅ DONE.)*
 - **Osservabilità 2 — Should/Could** — export OTel (FEAT-005), metriche aggregate (FEAT-006), **stima €
   (FEAT-007, Should, non fatto)**, web mode, trend qualità, metriche graph/wiki, export CSV/MD (FEAT-011).
-- **Distribuzione/CLI — Could (Must chiuso)** — *packaging del pacchetto ✅ FEAT-001 DONE (PR #68, 2026-06-17)*;
-  restano: wizard config (FEAT-003, Should), lifecycle upgrade/uninstall (FEAT-008), ergonomia installer
-  (FEAT-010), **Codex** (FEAT-007/009 Could, non avviato per scelta utente), PyPI (Won't) — gating
-  sulla **licenza MIT scelta** per i pacchetti (PyPI pubblico resta da aprire).
+- **Distribuzione/CLI — Could (Must chiuso)** — *packaging del pacchetto ✅ FEAT-001 DONE (PR #68) e
+  lifecycle upgrade/uninstall ✅ FEAT-008 DONE (PR #71), entrambi 2026-06-17*;
+  restano: wizard config (FEAT-003, Should), ergonomia installer (FEAT-010), **Codex** (FEAT-007/009
+  Could, non avviato per scelta utente), PyPI (Won't) — gating sulla **licenza MIT scelta** per i
+  pacchetti (PyPI pubblico resta da aprire).
 - **Multiutente** — epica differita finché il caso d'uso team non è concreto.
 - **Agenzia RAG incorporata** — ❌ **abbandonata by design (2026-06-16, decisione utente)**: l'agentic RAG
   è già ✅ composito (MCP+agente) e un agente nel core con modello minore non lo migliorerebbe; i 36 REQ in
   `sertor-core/motore-agentico/` restano **elicitazione storica**, non pianificata.
 
 ### ✅ DONE (su `master`, le rilevanti)
+
+- **🚢 Ciclo di vita installer — `upgrade`/`uninstall` (FEAT-008 `sertor-cli`, feature 048, PR #71, 2026-06-17)** —
+  l'installer acquista i verbi di **ciclo di vita** oltre al primo install: `sertor upgrade`/`uninstall`
+  (tutto-in-uno **e** per-capacità, Q3) e i simmetrici `sertor-flow upgrade`/`uninstall` (Q4 — governance
+  in ambito). Le **primitive di ciclo di vita vivono una volta sola nel `sertor-install-kit`**: verbo
+  ortogonale `LifecycleOp{INSTALL/UPGRADE/UNINSTALL}` + outcome `UPDATED`/`REMOVED` + **funzioni inverse
+  pure** duali 1:1 delle additive (D1 — scartato il raddoppio di `WriteStrategy`/`ArtifactKind`), riuso
+  degli **stessi plan-builder** percorsi col verbo (D2 — nessun secondo plan-builder), tracciatura degli
+  obsoleti via **diff a posteriori** `sertor_owned_paths` + **test invariante `plan ⊆ owned`** al posto
+  di un manifest (Q2). `--purge-wiki` opt-in **CI-safe** (D4 — senza TTY né `--yes` il `wiki/` è
+  preservato; `--purge-wiki --dry-run` = usage error). Report `install.report/1` **esteso in modo
+  additivo** (no secondo schema). Invariante duro preservato: **`sertor-flow` senza dipendenza da
+  `sertor-core`/`sertor`** (verificato via AST + guard di simmetria a 0 divergenze). Pipeline SpecKit
+  completa specify→implement; **Constitution 11/11** pre/post senza deroghe; **393 test verdi**
+  (kit 108 · sertor 180 · sertor-flow 105), ruff pulito. `docs/install.md §10` produttivizzato
+  (comandi automatici via primaria, script manuale → fallback). **Chiude l'ultima Could rilevante
+  dell'epica `sertor-cli`** (restano wizard config Should + ergonomia FEAT-010 + Codex + PyPI).
 
 - **🚢 Packaging distribuibile `git+url` (FEAT-001 `sertor-cli`, feature 047, PR #68, 2026-06-17)** —
   chiude l'**unica casella Must rimasta** dell'epica `sertor-cli`: la distribuzione interim `git+url`
