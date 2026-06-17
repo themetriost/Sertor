@@ -471,6 +471,30 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/051-configurazione-wizard/plan.md` (FEAT-003 epica **sertor-cli** — wizard di configurazione
+`sertor configure [rag]` nell'installer `sertor`: porta `.sertor/.env` da «segreti vuoti» a «pronto»
+con un percorso guidato **ibrido CI-safe** (Q1 a: prompt con TTY, flag-driven senza TTY, **mai**
+bloccante), comando **separato ri-eseguibile** (Q2 a). I campi richiesti derivano dalla **fonte unica**
+`Settings.validate_backend()` (NFR-04) per il **solo** insieme che il core onora (Q4 a: embedding
+Azure/Ollama; store Chroma/Azure Search) — un **catalogo `ConfigField`** di sola presentazione
+(descrizione + flag-segreto + default) mappa i nomi che il validatore emette, con **test di copertura**
+catalogo↔`validate_backend` (no drift). Risoluzione per campo: `--set KEY=VAL`/scorciatoie
+`--backend`/`--store` → valore in `.env`/ambiente → prompt **solo** se `isatty()` su stdin+stdout e
+`¬--non-interactive`; campo mancante senza TTY → `ConfigError` che lo **nomina**, **exit 1**, nessuna
+scrittura parziale (FR-005). Prompt segreti via `getpass`; mascheramento centralizzato in `mask_secret`
+(unico punto, anti-leak con test). Scrittura = **riuso** `merge_env` (additivo non distruttivo) +
+`_replace_key_line` (overwrite solo su conferma/`--overwrite`); scaffold dal template `env.{backend}.tmpl`
+se `.sertor/.env` assente (FR-015, no `uv`/indice); idempotente by construction. Validazione **statica**
+di default (`validate_backend`, offline); **probe live opt-in `--check`** (Q3 a) eseguito **via il
+vehicle `sertor-rag` in subprocess (Principio XI)**, MAI importando `build_embedder` — degrado onesto se
+il sottocomando-probe non esiste. **Dipendenza di core promossa a backlog:** `sertor-rag` non ha oggi un
+comando di probe → nuova FEAT `sertor-core` (gemella del self-test MCP) da creare prima che US5/`--check`
+conti come done; il **P1 (US1/2/3) è completo con la sola validazione statica**. Report `ConfigureReport`
+puro (umano + `--json`, zero segreti); exit 0 completa&valida / 1 incompleta o probe fallito / 2 usage.
+Additivo: `install`/`upgrade`/`uninstall` invariati; nessuna modifica al runtime del core. Constitution
+**PASS 11/11** (pre e post-design) senza deroghe. Branch `051-configurazione-wizard`. **Nota di processo:**
+`.specify/scripts/.../setup-plan.ps1` e `.claude/skills/speckit-plan/SKILL.md` ASSENTI nel repo →
+parametri ricavati per convenzione dal branch; nessun hook eseguito. Storico:
 `specs/049-compatibilita-copilot/plan.md` (FEAT-011 epica **sertor-cli** — **hardening compatibilità
 GitHub Copilot** dell'installer: corregge FEAT-007 (PR #64) e FEAT-009 (PR #65) dopo un audit di dogfooding
 (Copilot CLI 1.0.63) che ha dimostrato che la "parità piena" Copilot è **falsa** su più superfici —
