@@ -15,16 +15,38 @@ from __future__ import annotations
 import json
 import logging
 
+from sertor_install_kit.artifacts import LifecycleOp
 from sertor_install_kit.assistant import AssistantId, AssistantProfile, Surface
-from sertor_install_kit.claude_md import write_marker_block
+from sertor_install_kit.claude_md import (
+    remove_marker_block,
+    update_marker_block,
+    write_marker_block,
+)
 from sertor_install_kit.command_runner import CommandRunner
 from sertor_install_kit.env_merge import merge_env
 from sertor_install_kit.errors import ConfigError, InstallerError
 from sertor_install_kit.executor import execute_plan as _kit_execute_plan
-from sertor_install_kit.gitignore_append import append_gitignore
-from sertor_install_kit.mcp_merge import merge_mcp
+from sertor_install_kit.gitignore_append import (
+    RUNTIME_IGNORES,
+    append_gitignore,
+    remove_gitignore_lines,
+)
+from sertor_install_kit.lifecycle import (
+    SertorOwnedPaths,
+    SharedEdit,
+    SharedEditKind,
+    deregister_mcp_client,
+    project_removal,
+    project_update,
+    remove_path,
+    update_file_if_changed,
+)
+from sertor_install_kit.lifecycle import (
+    execute_lifecycle as _kit_execute_lifecycle,
+)
+from sertor_install_kit.mcp_merge import merge_mcp, remove_mcp_server
 from sertor_install_kit.observability import log_event
-from sertor_install_kit.settings_merge import merge_settings
+from sertor_install_kit.settings_merge import merge_settings, remove_settings_entries
 from sertor_installer.artifacts import (
     Artifact,
     ArtifactKind,
@@ -307,7 +329,186 @@ def execute_rag_plan(
     assistant-agnostic (targets come from `art.target_rel`, resolved by the plan-builder).
     """
 
-    def apply(art: Artifact) -> ArtifactOutcome:
+    apply = make_rag_apply(profile, runner, assistant)
+    return _kit_execute_plan(
+        plan, apply, target=str(profile.target_root), capability="rag", assistant=assistant.value
+    )
+
+
+# --- feature 048: lifecycle (upgrade/uninstall) -------------------------------------------------
+
+
+def sertor_owned_paths(assistant: AssistantId = AssistantProfile.DEFAULT) -> SertorOwnedPaths:
+    """Static Sertor-owned paths for the `rag` capability + assistant (D3, FR-017).
+
+    Derived from the SAME constants/profile the plan-builder uses (no separate hard-coded values):
+    the runtime tree `.sertor/` (type A, removed in block, FR-030), the standalone hook script
+    (type B, per-assistant), and the shared edits (CLAUDE.md/copilot-instructions block,
+    settings/hook wiring, `.gitignore`, MCP config entry). A coverage test asserts that the plan's
+    `target_rel`s are a subset of these (the manifest replacement).
+    """
+    aprofile = AssistantProfile.for_assistant(assistant)
+    is_copilot = assistant in (AssistantId.COPILOT, AssistantId.COPILOT_CLI)
+
+    hook_target = _RAG_HOOK_TARGET_COPILOT if is_copilot else _RAG_HOOK_TARGET
+    settings_target = _COPILOT_HOOK_WIRING if is_copilot else _SETTINGS_TARGET
+    instruction_target = aprofile.target_for(Surface.INSTRUCTION_BLOCK).target_rel
+    mcp_target = aprofile.target_for(Surface.MCP_SERVER)
+    mcp_root_key = mcp_target.root_key or "mcpServers"
+
+    return SertorOwnedPaths(
+        owned_dirs=(".sertor",),
+        owned_files=(hook_target,),
+        shared_edits=(
+            SharedEdit(instruction_target, SharedEditKind.MARKER, "SERTOR:RAG-USAGE"),
+            SharedEdit(settings_target, SharedEditKind.SETTINGS, _RAG_USAGE_SETTINGS),
+            SharedEdit(".gitignore", SharedEditKind.GITIGNORE, "RUNTIME_IGNORES"),
+            SharedEdit(mcp_target.target_rel, SharedEditKind.MCP_ENTRY, mcp_root_key),
+        ),
+    )
+
+
+def _rag_settings_fragment(art: Artifact, is_copilot: bool) -> dict:
+    """The Sertor hook fragment for the settings merge/remove (same source as install)."""
+    source = _RAG_USAGE_SETTINGS_COPILOT if is_copilot else _RAG_USAGE_SETTINGS
+    return json.loads(read_asset_text(source))
+
+
+def _apply_rag_uninstall(
+    profile: RagHostProfile, art: Artifact, runner: CommandRunner, is_copilot: bool,
+    dry_run: bool = False,
+) -> ArtifactOutcome:
+    """Inverse dispatch for `op=UNINSTALL` (data-model §3). `dry_run` projects without mutating."""
+    root = profile.target_root
+    if art.kind is ArtifactKind.DEPENDENCIES:
+        # `.sertor/` is removed in block as an owned_dir → here it is a no-op (skip).
+        return ArtifactOutcome(".sertor", Outcome.SKIPPED, "removed as runtime block")
+    if art.kind is ArtifactKind.ENV_MERGE:
+        return ArtifactOutcome(art.target_rel, Outcome.SKIPPED, "removed with .sertor")
+    if art.kind is ArtifactKind.GITIGNORE_APPEND:
+        gi = root / ".gitignore"
+        if dry_run:
+            return ArtifactOutcome(".gitignore", project_removal(gi), "RUNTIME_IGNORES")
+        outcome, detail = remove_gitignore_lines(gi, RUNTIME_IGNORES)
+        return ArtifactOutcome(".gitignore", outcome, detail)
+    if art.kind is ArtifactKind.MARKER_BLOCK:
+        dest = root / art.target_rel
+        if dry_run:
+            return ArtifactOutcome(art.target_rel, project_removal(dest), "RAG-usage block")
+        outcome = remove_marker_block(dest, MARKER_START_RAG, MARKER_END_RAG)
+        return ArtifactOutcome(art.target_rel, outcome, "RAG-usage block stripped")
+    if art.kind is ArtifactKind.FILE:
+        dest = root / art.target_rel
+        outcome = project_removal(dest) if dry_run else remove_path(dest)
+        return ArtifactOutcome(art.target_rel, outcome, "standalone hook")
+    if art.kind is ArtifactKind.SETTINGS_MERGE:
+        dest = root / art.target_rel
+        if dry_run:
+            return ArtifactOutcome(art.target_rel, project_removal(dest), "hook entries")
+        fragment = _rag_settings_fragment(art, is_copilot)
+        outcome, detail = remove_settings_entries(dest, fragment)
+        return ArtifactOutcome(art.target_rel, outcome, detail)
+    if art.kind is ArtifactKind.MCP_MERGE:
+        dest = root / art.target_rel
+        if dry_run:
+            return ArtifactOutcome(art.target_rel, project_removal(dest), f"server {_SERVER_NAME}")
+        is_vscode = art.target_rel.replace("\\", "/") == ".vscode/mcp.json"
+        root_key = "servers" if is_vscode else "mcpServers"
+        outcome, detail = remove_mcp_server(dest, _SERVER_NAME, root_key)
+        return ArtifactOutcome(art.target_rel, outcome, detail)
+    if art.kind is ArtifactKind.MCP_REGISTER:
+        if dry_run:
+            return ArtifactOutcome(
+                _MCP_REGISTER_LABEL, Outcome.REMOVED, f"{_SERVER_NAME} (scope local)"
+            )
+        outcome = deregister_mcp_client(runner, _SERVER_NAME)
+        return ArtifactOutcome(_MCP_REGISTER_LABEL, outcome, f"{_SERVER_NAME} (scope local)")
+    raise ConfigError(f"unhandled artifact kind: {art.kind}")  # pragma: no cover
+
+
+def _apply_rag_upgrade(
+    profile: RagHostProfile, art: Artifact, runner: CommandRunner, is_copilot: bool,
+    dry_run: bool = False,
+) -> ArtifactOutcome:
+    """Inverse-aware dispatch for `op=UPGRADE` (data-model §3).
+
+    FILE → `update_file_if_changed`; MARKER_BLOCK → `update_marker_block`; the additive merges
+    (settings/gitignore/mcp/env) and DEPENDENCIES are idempotent (re-apply, never overwriting env
+    values, NFR-05). `dry_run` projects the FILE/MARKER updates without mutating; the idempotent
+    additive steps are projected as `SKIPPED` (a re-applied install adds nothing on aligned hosts).
+    """
+    root = profile.target_root
+    if art.kind is ArtifactKind.FILE:
+        assert art.source is not None
+        content = read_asset_text(art.source)
+        dest = root / art.target_rel
+        outcome = (
+            project_update(dest, content) if dry_run
+            else update_file_if_changed(dest, content)
+        )
+        return ArtifactOutcome(art.target_rel, outcome, "standalone hook")
+    if art.kind is ArtifactKind.MARKER_BLOCK:
+        content = read_asset_text(_RAG_USAGE_BLOCK)
+        dest = root / art.target_rel
+        if dry_run:
+            # project: present block that differs → UPDATED; equal/absent handled conservatively.
+            return ArtifactOutcome(
+                art.target_rel, _project_marker(dest, content), "RAG-usage block"
+            )
+        outcome = update_marker_block(dest, content, MARKER_START_RAG, MARKER_END_RAG)
+        return ArtifactOutcome(art.target_rel, outcome, "RAG-usage block")
+    if dry_run:
+        # Idempotent additive steps: on an aligned host a re-apply changes nothing.
+        return ArtifactOutcome(art.target_rel, Outcome.SKIPPED, "idempotent")
+    # Everything else: re-run the additive install handler (idempotent).
+    if art.kind is ArtifactKind.DEPENDENCIES:
+        return _apply_deps(profile, runner)
+    if art.kind is ArtifactKind.ENV_MERGE:
+        return _apply_env(profile)
+    if art.kind is ArtifactKind.MCP_MERGE:
+        return _apply_mcp(profile, art)
+    if art.kind is ArtifactKind.MCP_REGISTER:
+        return _apply_mcp_register(profile, runner)
+    if art.kind is ArtifactKind.GITIGNORE_APPEND:
+        return _apply_gitignore(profile)
+    if art.kind is ArtifactKind.SETTINGS_MERGE:
+        return _apply_rag_settings(profile, art)
+    raise ConfigError(f"unhandled artifact kind: {art.kind}")  # pragma: no cover
+
+
+def _project_marker(dest, content: str) -> Outcome:
+    """Read-only projection of `update_marker_block` for `--dry-run`."""
+    if not dest.exists():
+        return Outcome.BLOCK
+    existing = dest.read_text(encoding="utf-8")
+    if MARKER_START_RAG not in existing:
+        return Outcome.BLOCK
+    start = existing.find(MARKER_START_RAG)
+    end = existing.find(MARKER_END_RAG, start)
+    if end == -1:
+        return Outcome.BLOCK
+    end += len(MARKER_END_RAG)
+    new_region = f"{MARKER_START_RAG}\n{content.rstrip()}\n{MARKER_END_RAG}"
+    return Outcome.SKIPPED if existing[start:end] == new_region else Outcome.UPDATED
+
+
+def make_rag_apply(
+    profile: RagHostProfile, runner: CommandRunner, assistant: AssistantId,
+    dry_run: bool = False,
+):
+    """Builds the verb-aware `apply(artifact, op)` for the `rag` capability (feature 048).
+
+    INSTALL keeps the historical behaviour (non-regression, NFR-3); UNINSTALL/UPGRADE dispatch to
+    the inverse/idempotent handlers above. `dry_run` makes the inverse handlers project (no write).
+    The same callback drives all three verbs through the kit's `execute_plan`/`execute_lifecycle`.
+    """
+    is_copilot = assistant in (AssistantId.COPILOT, AssistantId.COPILOT_CLI)
+
+    def apply(art: Artifact, op: LifecycleOp = LifecycleOp.INSTALL) -> ArtifactOutcome:
+        if op is LifecycleOp.UNINSTALL:
+            return _apply_rag_uninstall(profile, art, runner, is_copilot, dry_run)
+        if op is LifecycleOp.UPGRADE:
+            return _apply_rag_upgrade(profile, art, runner, is_copilot, dry_run)
         if art.kind is ArtifactKind.DEPENDENCIES:
             return _apply_deps(profile, runner)
         if art.kind is ArtifactKind.ENV_MERGE:
@@ -326,6 +527,51 @@ def execute_rag_plan(
             return _apply_rag_settings(profile, art)
         raise ConfigError(f"unhandled artifact kind: {art.kind}")  # pragma: no cover
 
-    return _kit_execute_plan(
-        plan, apply, target=str(profile.target_root), capability="rag", assistant=assistant.value
+    return apply
+
+
+def _union_owned(assistants: tuple[AssistantId, ...]) -> SertorOwnedPaths:
+    """Union of the Sertor-owned paths of several assistants (cross-assistant obsoletes, FR-016)."""
+    dirs: set[str] = set()
+    files: set[str] = set()
+    edits: list[SharedEdit] = []
+    seen_edits: set[str] = set()
+    for a in assistants:
+        owned = sertor_owned_paths(a)
+        dirs |= set(owned.owned_dirs)
+        files |= set(owned.owned_files)
+        for e in owned.shared_edits:
+            if e.target_rel not in seen_edits:
+                seen_edits.add(e.target_rel)
+                edits.append(e)
+    return SertorOwnedPaths(
+        owned_dirs=tuple(sorted(dirs)),
+        owned_files=tuple(sorted(files)),
+        shared_edits=tuple(edits),
+    )
+
+
+def execute_rag_lifecycle(
+    plan: list[Artifact],
+    profile: RagHostProfile,
+    runner: CommandRunner,
+    op: LifecycleOp,
+    assistant: AssistantId = AssistantProfile.DEFAULT,
+    dry_run: bool = False,
+) -> InstallReport:
+    """Executes the `rag` plan with the lifecycle verb `op` via the kit orchestrator (feature 048).
+
+    For UPGRADE the obsolete phase scans the owned paths of ALL assistants (so artifacts of a
+    previously-installed OTHER assistant, not produced by the current `--assistant` plan, are
+    removed — FR-016) and removes those absent from the current plan. UNINSTALL applies the inverse
+    of every plan artifact. `dry_run` projects without writing.
+    """
+    apply = make_rag_apply(profile, runner, assistant, dry_run=dry_run)
+    owned = sertor_owned_paths(assistant)
+    obsolete = _union_owned(tuple(AssistantId)) if op is LifecycleOp.UPGRADE else None
+    # `.sertor/` is removed in block on uninstall (FR-030), not per-sub-artifact.
+    return _kit_execute_lifecycle(
+        plan, owned, apply, op=op, target=str(profile.target_root),
+        capability="rag", assistant=assistant.value, dry_run=dry_run,
+        obsolete_owned=obsolete, uninstall_dirs_in_block=(".sertor",),
     )

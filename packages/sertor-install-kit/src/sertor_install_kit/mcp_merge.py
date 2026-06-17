@@ -58,3 +58,46 @@ def merge_mcp(
         json.dumps(existing, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
     return Outcome.MERGED, f"+server {_SERVER_NAME}"
+
+
+def remove_mcp_server(
+    mcp_path: Path, server_name: str = _SERVER_NAME, root_key: str = "mcpServers"
+) -> tuple[Outcome, str]:
+    """Removes ONLY the named server from an MCP config — inverse of `merge_mcp`.
+
+    Other servers are preserved. If `server_name` was the only server AND the file holds nothing but
+    that servers map, the whole file is removed (`REMOVED`, FR-025). `root_key` is parametric
+    (`mcpServers` for Claude, `servers` for Copilot's `.vscode/mcp.json`).
+
+    - file absent / server not present → `(SKIPPED, "...")` (idempotency);
+    - server removed, others remain → `(REMOVED, "-server <name>")`, file rewritten;
+    - server removed, was the only key/server → file deleted → `(REMOVED, "file removed")`;
+    - malformed JSON → `ConfigError` (file not touched), like the merge.
+    """
+    if not mcp_path.exists():
+        return Outcome.SKIPPED, f"no server {server_name}"
+
+    raw = mcp_path.read_text(encoding="utf-8")
+    try:
+        existing = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ConfigError(
+            f"malformed JSON at line {exc.lineno}: {exc.msg}", key=str(mcp_path)
+        ) from exc
+    if not isinstance(existing, dict):
+        raise ConfigError(f"{mcp_path.name} is not a JSON object", key=str(mcp_path))
+
+    servers = existing.get(root_key)
+    if not isinstance(servers, dict) or server_name not in servers:
+        return Outcome.SKIPPED, f"no server {server_name}"
+
+    del servers[server_name]
+    # If the file held only this servers map and it is now empty, the file existed only for the
+    # Sertor server → remove it entirely (non-destructive: nothing else lived here).
+    if not servers and set(existing.keys()) == {root_key}:
+        mcp_path.unlink()
+        return Outcome.REMOVED, "file removed"
+    mcp_path.write_text(
+        json.dumps(existing, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    return Outcome.REMOVED, f"-server {server_name}"

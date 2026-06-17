@@ -7,17 +7,37 @@ Reference pattern: `src/sertor_core/cli/__main__.py`. Exit code: `0` success · 
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 from pathlib import Path
 
 from sertor_core.domain.errors import ConfigError, IngestionError, SertorError
+from sertor_install_kit.artifacts import ArtifactOutcome, LifecycleOp, Outcome
 from sertor_install_kit.assistant import AssistantId
 from sertor_install_kit.errors import InstallerError
+from sertor_install_kit.lifecycle import remove_path
+from sertor_install_kit.observability import log_event
+from sertor_install_kit.report import InstallReport
 from sertor_installer.command_runner import SubprocessRunner
 from sertor_installer.config_gen import build_host_profile
-from sertor_installer.install_rag import build_rag_plan, execute_rag_plan
-from sertor_installer.install_wiki import build_install_plan, execute_plan
+from sertor_installer.install_rag import (
+    build_rag_plan,
+    execute_rag_lifecycle,
+    execute_rag_plan,
+)
+from sertor_installer.install_wiki import (
+    build_install_plan,
+    execute_plan,
+    execute_wiki_lifecycle,
+)
 from sertor_installer.rag_profile import RagHostProfile, RagInstallOptions
+
+# Capabilities `sertor` owns (governance lives in `sertor-flow`, pointer only).
+_SERTOR_CAPABILITIES = ("wiki", "rag")
+
+
+class UsageError(InstallerError):
+    """Invalid flag combination → exit code 2 (argparse-style usage error, feature 048, FR-005)."""
 
 # The governance/SDLC method ships as the SEPARATE package `sertor-flow` (FEAT-005,
 # feature 037): `sertor` has NO dependency on it (FR-023/SC-008). `sertor install
@@ -104,7 +124,52 @@ def _build_parser() -> argparse.ArgumentParser:
         "governance", help="governance/SDLC — provided by the separate `sertor-flow` package"
     )
 
+    # --- feature 048: lifecycle verbs --------------------------------------------------------
+    upgrade = sub.add_parser(
+        "upgrade", help="upgrade installed capabilities (refresh assets, remove obsoletes)"
+    )
+    upgrade.add_argument(
+        "capabilities", nargs="*", metavar="<capability>",
+        help="wiki | rag | governance (0..N; empty → all installed)",
+    )
+    _add_lifecycle_flags(upgrade)
+
+    uninstall = sub.add_parser(
+        "uninstall", help="uninstall capabilities (remove runtime, assets, shared edits)"
+    )
+    uninstall.add_argument(
+        "capabilities", nargs="*", metavar="<capability>",
+        help="wiki | rag | governance (0..N; empty → all installed)",
+    )
+    _add_lifecycle_flags(uninstall)
+    uninstall.add_argument(
+        "--purge-wiki", action="store_true",
+        help="also remove the wiki/ directory (opt-in, needs --yes or a TTY confirmation)",
+    )
+    uninstall.add_argument(
+        "--yes", action="store_true",
+        help="non-interactive consent for --purge-wiki (CI-safe)",
+    )
+
     return parser
+
+
+def _add_lifecycle_flags(p: argparse.ArgumentParser) -> None:
+    """Common flags for `upgrade`/`uninstall` (FR-001/002/003)."""
+    p.add_argument("--target", default=".", help="host repo root (default: cwd)")
+    p.add_argument(
+        "--assistant", default="claude",
+        help="target assistant: claude (default) | copilot | copilot-cli",
+    )
+    p.add_argument("--backend", choices=["azure", "local"], default="azure",
+                   help="embeddings backend for the reconstructed rag plan (default: azure)")
+    p.add_argument("--mcp-scope", choices=["project", "local"], default="project",
+                   help="MCP scope used when reconstructing the rag plan (default: project)")
+    p.add_argument("--no-deps", action="store_true",
+                   help="do not touch the isolated Python deps (skip the uv bootstrap step)")
+    p.add_argument("--dry-run", action="store_true",
+                   help="project the operation without touching the filesystem")
+    p.add_argument("--json", action="store_true", help="emit the report as JSON")
 
 
 def _cmd_install_wiki(args) -> int:
@@ -159,6 +224,147 @@ def _cmd_install_rag(args) -> int:
     return report.exit_code()
 
 
+def _validate_target(args) -> Path:
+    target_root = Path(args.target).resolve()
+    if not target_root.exists():
+        raise ConfigError("target does not exist", key=str(target_root))
+    if not target_root.is_dir():
+        raise IngestionError("target is not a directory", path=str(target_root))
+    return target_root
+
+
+def _lifecycle_rag(target_root: Path, args, op: LifecycleOp) -> InstallReport:
+    """Builds the rag plan and runs the lifecycle verb (feature 048)."""
+    assistant = AssistantId.from_str(args.assistant)
+    opts = RagInstallOptions(
+        target_root=target_root, backend=args.backend, mcp_scope=args.mcp_scope,
+        with_deps=not getattr(args, "no_deps", False),
+    )
+    profile = RagHostProfile.from_options(opts)
+    plan = build_rag_plan(
+        profile, with_deps=opts.with_deps, mcp_scope=args.mcp_scope, assistant=assistant
+    )
+    return execute_rag_lifecycle(
+        plan, profile, SubprocessRunner(), op, assistant, dry_run=args.dry_run
+    )
+
+
+def _lifecycle_wiki(target_root: Path, args, op: LifecycleOp) -> InstallReport:
+    """Builds the wiki plan and runs the lifecycle verb (feature 048)."""
+    assistant = AssistantId.from_str(args.assistant)
+    profile = build_host_profile(target_root)
+    plan = build_install_plan(assistant)
+    report = execute_wiki_lifecycle(plan, profile, op, assistant, dry_run=args.dry_run)
+    # `--purge-wiki` gate (uninstall only, FR-027/028, decision D4) lives in the CLI.
+    if op is LifecycleOp.UNINSTALL and getattr(args, "purge_wiki", False):
+        _maybe_purge_wiki(target_root, args, report)
+    return report
+
+
+def _maybe_purge_wiki(target_root: Path, args, report: InstallReport) -> None:
+    """Applies the deterministic `--purge-wiki` rules (decision D4). Mutates `report` in place."""
+    wiki_dir = target_root / "wiki"
+    n_pages, n_bytes = _wiki_size(wiki_dir)
+    info = f"{n_pages} pages, ~{n_bytes} bytes"
+    if args.dry_run:
+        # `--purge-wiki --dry-run` is a usage error (handled earlier); reaching here is a no-op.
+        return  # pragma: no cover
+    if args.yes:
+        outcome = remove_path(wiki_dir)
+        report.add(ArtifactOutcome("wiki", outcome, f"purged ({info})"))
+        return
+    if sys.stdin.isatty():
+        print(f"About to remove wiki/ ({info}). Continue? [y/N] ", end="", flush=True)
+        answer = sys.stdin.readline().strip().lower()
+        if answer in ("y", "yes"):
+            outcome = remove_path(wiki_dir)
+            report.add(ArtifactOutcome("wiki", outcome, f"purged ({info})"))
+        else:
+            report.add(ArtifactOutcome("wiki", Outcome.SKIPPED, "purge declined"))
+        return
+    # No TTY and no --yes: never destroy (CI-safe default).
+    report.add(
+        ArtifactOutcome(
+            "wiki", Outcome.SKIPPED,
+            f"wiki preserved ({info}); pass --yes to confirm removal non-interactively",
+        )
+    )
+
+
+def _wiki_size(wiki_dir: Path) -> tuple[int, int]:
+    """Counts pages (*.md) and total bytes under `wiki/` via stdlib (no `sertor_core`)."""
+    if not wiki_dir.exists():
+        return 0, 0
+    pages = 0
+    total = 0
+    for path in wiki_dir.rglob("*"):
+        if path.is_file():
+            total += path.stat().st_size
+            if path.suffix == ".md":
+                pages += 1
+    return pages, total
+
+
+def _run_lifecycle(args, op: LifecycleOp) -> int:
+    """Shared `upgrade`/`uninstall` handler (per-capability + aggregate, feature 048)."""
+    target_root = _validate_target(args)
+    capabilities = args.capabilities or list(_SERTOR_CAPABILITIES) + ["governance"]
+
+    purge = getattr(args, "purge_wiki", False)
+    if purge:
+        if args.dry_run:
+            raise UsageError("--purge-wiki cannot be combined with --dry-run")
+        if args.capabilities and "wiki" not in args.capabilities:
+            raise UsageError("--purge-wiki is valid only for the `wiki` capability (or aggregate)")
+
+    reports: list[InstallReport] = []
+    governance_hint = False
+    for cap in capabilities:
+        if cap == "rag":
+            reports.append(_lifecycle_rag(target_root, args, op))
+        elif cap == "wiki":
+            reports.append(_lifecycle_wiki(target_root, args, op))
+        elif cap == "governance":
+            governance_hint = True
+        else:
+            raise UsageError(f"unknown capability: {cap}")
+
+    report = _aggregate(reports, target_root, args, op) if len(reports) != 1 else reports[0]
+    _emit_lifecycle_event(op, report, args)
+    out = report.render_json() if args.json else report.render_human()
+    print(out)
+    if governance_hint and not args.json:
+        print(
+            f"\nnote: governance/SDLC is managed by `sertor-flow {op.value}` "
+            "(separate package, not bundled with `sertor`)."
+        )
+    return report.exit_code()
+
+
+def _aggregate(
+    reports: list[InstallReport], target_root: Path, args, op: LifecycleOp
+) -> InstallReport:
+    """Merges per-capability reports into one aggregate report (US8/FR-032)."""
+    agg = InstallReport(
+        target=str(target_root), capability="all",
+        assistant=getattr(args, "assistant", None), op=op,
+    )
+    for r in reports:
+        for o in r.outcomes:
+            agg.add(o)
+    return agg
+
+
+def _emit_lifecycle_event(op: LifecycleOp, report: InstallReport, args) -> None:
+    """Observability (FR-007): one event per operation, no secrets in the fields."""
+    log_event(
+        logging.INFO, op.value, capability=report.capability,
+        assistant=getattr(args, "assistant", None),
+        updated=report.updated, removed=report.removed,
+        skipped=report.skipped, errors=report.errors,
+    )
+
+
 def _dispatch(args) -> int:
     if args.command == "install":
         if args.capability == "wiki":
@@ -167,6 +373,10 @@ def _dispatch(args) -> int:
             return _cmd_install_rag(args)
         # governance is not a `sertor` capability: it lives in `sertor-flow` (D9). Point there.
         raise GovernanceElsewhereError()
+    if args.command == "upgrade":
+        return _run_lifecycle(args, LifecycleOp.UPGRADE)
+    if args.command == "uninstall":
+        return _run_lifecycle(args, LifecycleOp.UNINSTALL)
     raise ConfigError(f"unsupported command: {args.command}")  # pragma: no cover
 
 
@@ -181,6 +391,10 @@ def main(argv: list[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     try:
         return _dispatch(args)
+    except UsageError as exc:
+        # Invalid flag combination (e.g. --purge-wiki --dry-run) → usage error, exit 2 (FR-005).
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
     except (SertorError, InstallerError) as exc:
         # `InstallerError` covers the kit's errors (e.g. an invalid `--assistant`), so an actionable
         # message is printed (exit 1) instead of a traceback (feature 044, Principio IV).

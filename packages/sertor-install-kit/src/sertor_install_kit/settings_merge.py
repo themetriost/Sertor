@@ -91,3 +91,67 @@ def merge_settings(settings_path: Path, hooks_fragment: dict) -> tuple[Outcome, 
     )
     detail = f"+{added} hook entries" if added else "no new entries"
     return Outcome.MERGED, detail
+
+
+def _fragment_commands(fragment: dict) -> set[str]:
+    """All `command` values declared by the Sertor fragment (across all its hook events)."""
+    commands: set[str] = set()
+    for entries in fragment.get("hooks", {}).values():
+        for entry in entries:
+            if isinstance(entry, dict):
+                commands |= _inner_commands(entry)
+    return commands
+
+
+def remove_settings_entries(
+    settings_path: Path, hooks_fragment: dict
+) -> tuple[Outcome, str]:
+    """Removes ONLY the Sertor-owned hook entries — inverse of `merge_settings`.
+
+    A hook entry is Sertor-owned iff at least one of its inner `command` values appears in the
+    Sertor `fragment`. The user's other hook entries (and any non-hook keys) are preserved. Reuses
+    `_inner_commands` (the same recognition logic the merge uses), so the two cannot drift.
+
+    - file absent / no Sertor-owned entry present → `(SKIPPED, "no Sertor entries")` (idempotency);
+    - one or more removed → `(REMOVED, "-N hook entries")`. An event left with an empty list is
+      pruned; if `hooks` becomes empty it is pruned too.
+    - malformed JSON → `ConfigError` (file not touched), like the merge.
+    """
+    if not settings_path.exists():
+        return Outcome.SKIPPED, "no Sertor entries"
+
+    raw = settings_path.read_text(encoding="utf-8")
+    try:
+        existing = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ConfigError(
+            f"malformed JSON at line {exc.lineno}: {exc.msg}", key=str(settings_path)
+        ) from exc
+    if not isinstance(existing, dict):
+        raise ConfigError("settings.json is not a JSON object", key=str(settings_path))
+
+    sertor_commands = _fragment_commands(hooks_fragment)
+    pruned = json.loads(json.dumps(existing))  # deep copy, never mutate in place
+    hooks = pruned.get("hooks", {})
+    removed = 0
+    for event in list(hooks.keys()):
+        kept = []
+        for entry in hooks[event]:
+            entry_commands = _inner_commands(entry) if isinstance(entry, dict) else set()
+            if entry_commands & sertor_commands:
+                removed += 1
+                continue
+            kept.append(entry)
+        if kept:
+            hooks[event] = kept
+        else:
+            del hooks[event]
+    if not hooks and "hooks" in pruned:
+        del pruned["hooks"]
+
+    if removed == 0:
+        return Outcome.SKIPPED, "no Sertor entries"
+    settings_path.write_text(
+        json.dumps(pruned, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    return Outcome.REMOVED, f"-{removed} hook entries"

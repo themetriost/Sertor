@@ -12,12 +12,22 @@ value is rejected by the profile (`ConfigError`).
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 from pathlib import Path
 
-from sertor_flow.install_governance import execute_governance_plan
+from sertor_flow.install_governance import (
+    execute_governance_lifecycle,
+    execute_governance_plan,
+)
 from sertor_flow.profile import DEFAULT_ASSISTANT, build_governance_profile
-from sertor_install_kit import CommandRunner, ConfigError, InstallerError
+from sertor_install_kit import (
+    CommandRunner,
+    ConfigError,
+    InstallerError,
+    LifecycleOp,
+    log_event,
+)
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -39,6 +49,21 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     install.add_argument("--json", action="store_true", help="emit the report as JSON")
 
+    # --- feature 048: lifecycle verbs (symmetric to `sertor`, US9) ---------------------------
+    for verb, helptext in (
+        ("upgrade", "upgrade the installed governance bundle (refresh, remove obsoletes)"),
+        ("uninstall", "uninstall the governance bundle (remove Sertor-authored surfaces)"),
+    ):
+        p = sub.add_parser(verb, help=helptext)
+        p.add_argument("--target", default=".", help="host repo root (default: cwd)")
+        p.add_argument(
+            "--assistant", default=DEFAULT_ASSISTANT, choices=["claude", "copilot"],
+            help="target AI assistant (default: claude)",
+        )
+        p.add_argument("--dry-run", action="store_true",
+                       help="project the operation without touching the filesystem")
+        p.add_argument("--json", action="store_true", help="emit the report as JSON")
+
     return parser
 
 
@@ -57,9 +82,32 @@ def _cmd_install(args, runner: CommandRunner | None = None) -> int:
     return report.exit_code()
 
 
+def _cmd_lifecycle(args, op: LifecycleOp, runner: CommandRunner | None = None) -> int:
+    """Handler for `upgrade`/`uninstall`: validates the target, runs the lifecycle, prints."""
+    target_root = Path(args.target).resolve()
+    if not target_root.exists():
+        raise ConfigError("target does not exist", key=str(target_root))
+    if not target_root.is_dir():
+        raise ConfigError("target is not a directory", key=str(target_root))
+
+    profile = build_governance_profile(target_root, assistant=args.assistant)
+    report = execute_governance_lifecycle(profile, op, runner=runner, dry_run=args.dry_run)
+    log_event(
+        logging.INFO, op.value, capability="governance", assistant=args.assistant,
+        updated=report.updated, removed=report.removed,
+        skipped=report.skipped, errors=report.errors,
+    )
+    print(report.render_json() if args.json else report.render_human())
+    return report.exit_code()
+
+
 def _dispatch(args, runner: CommandRunner | None = None) -> int:
     if args.command == "install":
         return _cmd_install(args, runner=runner)
+    if args.command == "upgrade":
+        return _cmd_lifecycle(args, LifecycleOp.UPGRADE, runner=runner)
+    if args.command == "uninstall":
+        return _cmd_lifecycle(args, LifecycleOp.UNINSTALL, runner=runner)
     raise ConfigError(f"unsupported command: {args.command}")  # pragma: no cover
 
 

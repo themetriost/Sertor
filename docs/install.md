@@ -489,15 +489,51 @@ the install, which does `uv add` again):
 uv run --directory .sertor sertor-rag index ..   # rebuild the corpus with the new code
 ```
 
-> The installer is **idempotent and non-destructive**: re-running never overwrites your edits and
-> never *removes* a previously written artifact. So switching assistant (e.g. from `copilot` to
-> `copilot-cli`) **adds** the new MCP file (`.mcp.json`) but **leaves** the old one
-> (`.vscode/mcp.json`) in place — remove it by hand if you no longer want it (see §10.2).
+> `sertor install` is **idempotent and non-destructive**: re-running never overwrites your edits and
+> never *removes* a previously written artifact. To refresh asset content that Sertor authored (a
+> renamed hook, an updated instruction block) **and** remove artifacts that a new version dropped
+> from the bundle, use the dedicated **`sertor upgrade`** verb (below) — it updates changed
+> Sertor-owned files/blocks and prunes obsolete ones, while leaving your content alone.
 
-### 10.2 Clean uninstall (remove every trace of Sertor)
+### 10.2 Lifecycle commands: `upgrade` and `uninstall` (recommended)
 
-There is **no `sertor uninstall` command yet** (tracked as a lifecycle follow-up); this is the manual
-procedure. Sertor writes in four kinds of places — handle each accordingly:
+Since FEAT-008 the installer has first-class **`upgrade`** and **`uninstall`** verbs (on both
+`sertor` and `sertor-flow`). They are the **primary** way to maintain a host — use them instead of
+the manual procedure in §10.3. All are **idempotent, non-destructive on shared files** (only Sertor's
+own marker blocks / hook entries / `.gitignore` lines are touched, byte-for-byte elsewhere),
+`--dry-run`-able, and never start an index/run (install ≠ run).
+
+```powershell
+# Upgrade everything installed (refresh changed assets/blocks, remove obsoletes):
+uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor upgrade
+# Or a single capability, projecting first:
+sertor upgrade rag --dry-run
+sertor upgrade rag                       # refresh; switch assistant with --assistant copilot
+
+# Uninstall (per capability or all-in-one). The wiki/ dir is PRESERVED by default:
+sertor uninstall rag                     # remove the RAG runtime + shared edits + MCP entry
+sertor uninstall                         # all capabilities (wiki rag) + a pointer for governance
+sertor uninstall wiki --purge-wiki --yes # also delete wiki/ (opt-in, needs --yes or a TTY)
+
+# Governance (separate package, symmetric verbs):
+sertor-flow upgrade
+sertor-flow uninstall
+```
+
+Notes on `--purge-wiki` (decision D4, CI-safe): without it the `wiki/` directory is kept; with
+`--yes` it is removed (after printing a page/byte count); on a TTY without `--yes` it prompts; with
+**no** TTY and no `--yes` it is **preserved** (a safe default for pipelines, with an actionable
+warning); `--purge-wiki --dry-run` is a **usage error** (exit 2). Exit codes: `0` success (even when
+everything is `skipped`), `1` domain error (fail-fast, the failed step is named), `2` usage error.
+`sertor uninstall rag` with a local-scope MCP de-registers the server via `claude mcp remove`; if
+`claude` is absent the command stops with the manual fallback command.
+
+### 10.3 Manual uninstall (fallback / historical)
+
+> **Prefer §10.2.** The manual procedure below is a **fallback** for environments without the
+> packaged commands and a reference for *what* Sertor writes. It is hand-maintained and **may drift**
+> from the installer — the `sertor uninstall` / `sertor-flow uninstall` commands are the source of
+> truth. Sertor writes in four kinds of places — handle each accordingly:
 
 | Kind | What | How to remove |
 |---|---|---|

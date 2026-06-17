@@ -9,34 +9,46 @@ an `ERROR` outcome, `failed_step` is set, and the loop stops; already-written ar
 rollback). Only `InstallerError` is caught — programming bugs propagate. Consumers that bridge a
 third party (e.g. `sertor-core`) MUST wrap its errors in `InstallerError` at the boundary (D3), so
 this fail-fast still applies.
+
+**Verb-aware (feature 048):** `execute_plan(..., op=LifecycleOp.INSTALL)` passes `op` to the
+callback (`apply(artifact, op)`). The `op` defaults to `INSTALL`, so every existing call site keeps
+working unchanged (NFR-3); the loop, fail-fast and report are identical across verbs — only the
+per-`kind` inverse action chosen by `apply` differs. The verb is recorded on the report (title).
 """
 from __future__ import annotations
 
 from collections.abc import Callable
 
-from sertor_install_kit.artifacts import Artifact, ArtifactOutcome, Outcome
+from sertor_install_kit.artifacts import Artifact, ArtifactOutcome, LifecycleOp, Outcome
 from sertor_install_kit.errors import InstallerError
 from sertor_install_kit.report import InstallReport
+
+# Callback shape: the consumer dispatches by `(kind, op)` to the additive or inverse primitive.
+ApplyFn = Callable[[Artifact, LifecycleOp], ArtifactOutcome]
 
 
 def execute_plan(
     plan: list[Artifact],
-    apply: Callable[[Artifact], ArtifactOutcome],
+    apply: ApplyFn,
     *,
     target: str,
     capability: str,
     assistant: str | None = None,
+    op: LifecycleOp = LifecycleOp.INSTALL,
 ) -> InstallReport:
     """Executes `plan` in order via `apply`, with fail-fast no-rollback.
 
-    `apply(artifact)` deposits the artifact and returns its `ArtifactOutcome`, raising
-    `InstallerError` on a domain error. `target`/`capability`/`assistant` populate the report
-    (`assistant` is optional/informative, Principio IX, feature 044).
+    `apply(artifact, op)` deposits/updates/removes the artifact and returns its `ArtifactOutcome`,
+    raising `InstallerError` on a domain error. `target`/`capability`/`assistant`/`op` populate the
+    report (`assistant` is optional/informative, Principio IX; `op` defaults to `INSTALL` so every
+    existing call site is unchanged — feature 048).
     """
-    report = InstallReport(target=target, capability=capability, assistant=assistant)
+    report = InstallReport(
+        target=target, capability=capability, assistant=assistant, op=op
+    )
     for art in plan:
         try:
-            outcome = apply(art)
+            outcome = apply(art, op)
         except InstallerError as exc:
             report.add(ArtifactOutcome(art.target_rel, Outcome.ERROR, str(exc)))
             break  # fail-fast: stop on the first domain error (no rollback)

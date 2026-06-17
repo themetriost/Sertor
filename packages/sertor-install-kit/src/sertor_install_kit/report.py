@@ -8,13 +8,18 @@ report **is** the install's observability (Principio IX): no side effects, only 
 (`sertor` wiki/rag, `sertor-flow` governance) passes its own capability explicitly and titles never
 silently inherit `"wiki"`. The JSON method keeps its existing name `render_json()` (NOT renamed to
 `to_json()`, F1) to avoid touching the call sites of `sertor`.
+
+Feature 048 (lifecycle): the report gains the `updated`/`removed` counters and an optional `op`
+verb. The schema id stays `install.report/1` (additive, retrocompatible — NOT a second schema,
+NFR-06): an install report simply carries `0` for the two new counts. The human title reflects the
+verb (`sertor upgrade rag — …`).
 """
 from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
 
-from sertor_install_kit.artifacts import ArtifactOutcome, Outcome
+from sertor_install_kit.artifacts import ArtifactOutcome, LifecycleOp, Outcome
 
 _SCHEMA = "install.report/1"
 
@@ -28,11 +33,16 @@ class InstallReport:
     # Informative target assistant (feature 044, Principio IX): "claude" | "copilot". Optional so
     # existing call sites and `sertor-flow` keep working unchanged.
     assistant: str | None = None
+    # Lifecycle verb (feature 048): drives the human title ("install"/"upgrade"/"uninstall").
+    # Defaults to INSTALL → every existing call site renders exactly as before.
+    op: LifecycleOp = LifecycleOp.INSTALL
     outcomes: list[ArtifactOutcome] = field(default_factory=list)
     created: int = 0
     skipped: int = 0
     merged: int = 0
     block: int = 0
+    updated: int = 0  # feature 048
+    removed: int = 0  # feature 048
     errors: int = 0
     failed_step: str | None = None
 
@@ -47,6 +57,10 @@ class InstallReport:
             self.merged += 1
         elif outcome.outcome is Outcome.BLOCK:
             self.block += 1
+        elif outcome.outcome is Outcome.UPDATED:
+            self.updated += 1
+        elif outcome.outcome is Outcome.REMOVED:
+            self.removed += 1
         elif outcome.outcome is Outcome.ERROR:
             self.errors += 1
             if self.failed_step is None:
@@ -59,7 +73,8 @@ class InstallReport:
     def render_human(self) -> str:
         """Human rendering to stdout."""
         assistant = f" — assistant: {self.assistant}" if self.assistant else ""
-        lines = [f"sertor install {self.capability} — target: {self.target}{assistant}"]
+        verb = self.op.value  # "install" | "upgrade" | "uninstall" (feature 048)
+        lines = [f"sertor {verb} {self.capability} — target: {self.target}{assistant}"]
         for o in self.outcomes:
             suffix = f" ({o.detail})" if o.detail else ""
             lines.append(f"  {o.outcome.value:<8}{o.target_rel}{suffix}")
@@ -70,12 +85,13 @@ class InstallReport:
         else:
             lines.append(
                 f"Summary: {self.created} created · {self.skipped} skipped · "
-                f"{self.merged} merged · {self.block} block · {self.errors} errors"
+                f"{self.merged} merged · {self.block} block · {self.updated} updated · "
+                f"{self.removed} removed · {self.errors} errors"
             )
         return "\n".join(lines)
 
     def render_json(self) -> str:
-        """JSON rendering (`--json`, schema `install.report/1`)."""
+        """JSON rendering (`--json`, schema `install.report/1` — additive, feature 048)."""
         payload = {
             "schema": _SCHEMA,
             "target": self.target,
@@ -89,6 +105,8 @@ class InstallReport:
                 "skipped": self.skipped,
                 "merged": self.merged,
                 "block": self.block,
+                "updated": self.updated,
+                "removed": self.removed,
                 "errors": self.errors,
             },
             "failed_step": self.failed_step,

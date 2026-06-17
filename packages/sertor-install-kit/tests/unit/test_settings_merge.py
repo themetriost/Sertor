@@ -8,7 +8,7 @@ import pytest
 
 from sertor_install_kit.artifacts import Outcome
 from sertor_install_kit.errors import ConfigError
-from sertor_install_kit.settings_merge import merge_settings
+from sertor_install_kit.settings_merge import merge_settings, remove_settings_entries
 
 _FRAGMENT = {
     "hooks": {
@@ -61,3 +61,53 @@ def test_malformed_raises_configerror_file_untouched(tmp_path: Path):
         merge_settings(p, _FRAGMENT)
     assert str(p) in str(exc.value)
     assert p.read_bytes() == before
+
+
+# --- feature 048: remove_settings_entries (T014) ------------------------------------------------
+
+
+def test_remove_settings_entries_removes_only_sertor(tmp_path: Path):
+    p = tmp_path / "settings.json"
+    user = {
+        "$schema": "x",
+        "hooks": {
+            "SessionStart": [
+                {"hooks": [{"type": "command", "command": "echo mine"}]},
+                {"hooks": [{"type": "command", "command": "echo start"}]},  # Sertor
+            ],
+            "Stop": [{"hooks": [{"type": "command", "command": "echo stop"}]}],  # Sertor
+        },
+    }
+    p.write_text(json.dumps(user), encoding="utf-8")
+
+    outcome, detail = remove_settings_entries(p, _FRAGMENT)
+    assert outcome is Outcome.REMOVED
+    data = json.loads(p.read_text(encoding="utf-8"))
+    cmds = [h["command"] for e in data["hooks"]["SessionStart"] for h in e["hooks"]]
+    assert cmds == ["echo mine"]  # user entry kept, Sertor entry removed
+    assert "Stop" not in data["hooks"]  # event emptied → pruned
+    assert data["$schema"] == "x"  # non-hook keys preserved
+
+
+def test_remove_settings_entries_no_sertor_skips(tmp_path: Path):
+    p = tmp_path / "settings.json"
+    user = {"hooks": {"SessionStart": [{"hooks": [{"command": "echo mine"}]}]}}
+    p.write_text(json.dumps(user), encoding="utf-8")
+    before = p.read_bytes()
+    outcome, _ = remove_settings_entries(p, _FRAGMENT)
+    assert outcome is Outcome.SKIPPED
+    assert p.read_bytes() == before
+
+
+def test_remove_settings_entries_idempotent(tmp_path: Path):
+    p = tmp_path / "settings.json"
+    merge_settings(p, _FRAGMENT)
+    remove_settings_entries(p, _FRAGMENT)
+    outcome, _ = remove_settings_entries(p, _FRAGMENT)
+    assert outcome is Outcome.SKIPPED
+
+
+def test_remove_settings_entries_missing_file_skips(tmp_path: Path):
+    p = tmp_path / "settings.json"
+    outcome, _ = remove_settings_entries(p, _FRAGMENT)
+    assert outcome is Outcome.SKIPPED
