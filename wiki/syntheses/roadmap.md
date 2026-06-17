@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-06-16 (EXEC ristrutturato per leggibilità: due tabelle disgiunte e adiacenti — ✅ capacità consegnate (feature) + 📋 le 11 epiche per stato; le 6 nuove epiche ora nella tabella epiche, niente più mescolanza feature↔epiche) · 2026-06-16 (FEAT-009 refresh incrementale dell'indice ✅ DONE — merge `3ec47f1` su master: manifest SQLite, incrementale di default, upsert/delete mirati + BM25/grafo dal manifest, lock single-writer, gate di equivalenza verde, 596 test, Constitution 11/11; ultimo residuo reale di sertor-core chiuso) · 2026-06-16 (FEAT-009 requirements decomposti → `/speckit-plan` — 18 REQ EARS, MoSCoW, decisioni F1/F2, 5 DA aperte; prior-art CocoIndex/LlamaIndex/LangChain consultate) · 2026-06-16 (backlog audit → roadmap: 6 nuove epiche dal censimento del non-fatto — retrieval-qualita · backend-store-scala · ingestione-estesa · conoscenza-schema-sql · second-brain · debito-tecnico; leak minori promossi nelle epiche esistenti; EXEC table + PLANNED riorganizzati) · 2026-06-15 (Principio XI realizzato end-to-end A-D: auto-wire composition + ospite istruzioni/hook + bundle coerenza, PRs #61/#62/#63) · 2026-06-14 (FEAT-003 aggancio distillazione all'archivio ✅ master PR #51 — MVP memoria completo+acceso, loop cattura→distill chiuso; SERTOR_MEMORY=true sul dogfood) · 2026-06-14 (MVP osservabilità ✅ master F1→F4 PR #34/35/36/38; memory conversazioni epica decomposte FEAT-001/002) · 2026-06-14 (hardening Should gruppo C — feature 019 cache embeddings + token nei log — implementata su branch, in attesa di PR) · 2026-06-13 (notte: FEAT-018 hardening retrieval Must ✅ su master, PR #32 — retry embedder + soglia/low_confidence; hardening resta IN PROGRESS perché Should/Could aperti) · 2026-06-13 (sera: + idea «Second brain cross-progetto»/Meta-Sertor → [[second-brain-cross-progetto]], da espandere · giornata: FEAT-006 ✅ composita · igiene radice host PR #26 · tema lingua completo PR #27/#28/#29) · 2026-06-12 (TRIPLA: PR #23/#24/#25)
+updated: 2026-06-17 (FEAT-001 packaging distribuibile `git+url` ✅ DONE — PR #68: LICENSE MIT + versione unica + metadati + suite di verifica build/install, Constitution 11/11; **unica casella Must di `sertor-cli` chiusa**. + Robustezza chunking: tetto del chunk al budget token dell'embedder, PR #69/#70 — bug del re-index dogfood, cap in token con tiktoken/fallback; corpus re-indicizzato pulito. Incrementale FEAT-009 confermato corretto end-to-end) · 2026-06-16 (EXEC ristrutturato per leggibilità: due tabelle disgiunte e adiacenti — ✅ capacità consegnate (feature) + 📋 le 11 epiche per stato; le 6 nuove epiche ora nella tabella epiche, niente più mescolanza feature↔epiche) · 2026-06-16 (FEAT-009 refresh incrementale dell'indice ✅ DONE — merge `3ec47f1` su master: manifest SQLite, incrementale di default, upsert/delete mirati + BM25/grafo dal manifest, lock single-writer, gate di equivalenza verde, 596 test, Constitution 11/11; ultimo residuo reale di sertor-core chiuso) · 2026-06-16 (FEAT-009 requirements decomposti → `/speckit-plan` — 18 REQ EARS, MoSCoW, decisioni F1/F2, 5 DA aperte; prior-art CocoIndex/LlamaIndex/LangChain consultate) · 2026-06-16 (backlog audit → roadmap: 6 nuove epiche dal censimento del non-fatto — retrieval-qualita · backend-store-scala · ingestione-estesa · conoscenza-schema-sql · second-brain · debito-tecnico; leak minori promossi nelle epiche esistenti; EXEC table + PLANNED riorganizzati) · 2026-06-15 (Principio XI realizzato end-to-end A-D: auto-wire composition + ospite istruzioni/hook + bundle coerenza, PRs #61/#62/#63) · 2026-06-14 (FEAT-003 aggancio distillazione all'archivio ✅ master PR #51 — MVP memoria completo+acceso, loop cattura→distill chiuso; SERTOR_MEMORY=true sul dogfood) · 2026-06-14 (MVP osservabilità ✅ master F1→F4 PR #34/35/36/38; memory conversazioni epica decomposte FEAT-001/002) · 2026-06-14 (hardening Should gruppo C — feature 019 cache embeddings + token nei log — implementata su branch, in attesa di PR) · 2026-06-13 (notte: FEAT-018 hardening retrieval Must ✅ su master, PR #32 — retry embedder + soglia/low_confidence; hardening resta IN PROGRESS perché Should/Could aperti) · 2026-06-13 (sera: + idea «Second brain cross-progetto»/Meta-Sertor → [[second-brain-cross-progetto]], da espandere · giornata: FEAT-006 ✅ composita · igiene radice host PR #26 · tema lingua completo PR #27/#28/#29) · 2026-06-12 (TRIPLA: PR #23/#24/#25)
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md", "requirements/memoria-conversazioni/epic.md"]
 ---
 
@@ -25,6 +25,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **Refresh incrementale dell'indice** (FEAT-009, 2026-06-16) | `sertor-core` |
 | Hardening retrieval (Must + Should gruppo C: retry · soglia · cache embeddings) | `sertor-core` |
 | CLI `sertor-rag` · installer `sertor install wiki`/`rag` | `sertor-cli` |
+| **Packaging distribuibile** `git+url` (FEAT-001, LICENSE+metadati+build verificata, 2026-06-17) | `sertor-cli` |
 | Governance SDLC — pacchetto separato `sertor-flow` | `sertor-cli` |
 | Distribuzione Copilot (VS Code + CLI) — parità FEAT-007+009 | `sertor-cli` |
 | Igiene radice host · tema lingua (tutto il prodotto in EN) | `sertor-cli` |
@@ -43,7 +44,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | Epica | Stato | Residuo / 1° passo |
 |---|---|---|
 | [`sertor-core`](../../requirements/sertor-core/epic.md) | ✅ completa | — (agenzia incorporata ❌ abbandonata by design) |
-| [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | **packaging del pacchetto (FEAT-001, 2026-06-17 decomposto)** → `/speckit-specify` · wizard · lifecycle · Codex · PyPI |
+| [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | wizard config · lifecycle upgrade/uninstall · ergonomia installer · Codex · PyPI *(packaging ✅ 2026-06-17)* |
 | [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | OTel · metriche aggregate · **stima € (Should)** · web · export CSV/MD |
 | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso | ricerca semantica · remember-this · retention · **distribuzione installer (Must)** · multi-assist |
 | [`multiutente`](../../requirements/multiutente/epic.md) | 📋 differita | finché il caso d'uso team non è concreto |
@@ -102,15 +103,36 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   FEAT-008 (cattura multi-assistente), FEAT-010 (parità MCP `show`/`list`). *(FEAT-003 ✅ DONE.)*
 - **Osservabilità 2 — Should/Could** — export OTel (FEAT-005), metriche aggregate (FEAT-006), **stima €
   (FEAT-007, Should, non fatto)**, web mode, trend qualità, metriche graph/wiki, export CSV/MD (FEAT-011).
-- **Distribuzione/CLI — Must/Could** — **packaging del pacchetto (FEAT-001, decomposto 2026-06-17)** → `/speckit-specify`, wizard config
-  (FEAT-003), lifecycle upgrade/uninstall (FEAT-008), ergonomia installer (FEAT-010), **Codex** (FEAT-007/009
-  Could, non avviato per scelta utente), PyPI (Won't) — gating sulla **licenza** (da aprire).
+- **Distribuzione/CLI — Could (Must chiuso)** — *packaging del pacchetto ✅ FEAT-001 DONE (PR #68, 2026-06-17)*;
+  restano: wizard config (FEAT-003, Should), lifecycle upgrade/uninstall (FEAT-008), ergonomia installer
+  (FEAT-010), **Codex** (FEAT-007/009 Could, non avviato per scelta utente), PyPI (Won't) — gating
+  sulla **licenza MIT scelta** per i pacchetti (PyPI pubblico resta da aprire).
 - **Multiutente** — epica differita finché il caso d'uso team non è concreto.
 - **Agenzia RAG incorporata** — ❌ **abbandonata by design (2026-06-16, decisione utente)**: l'agentic RAG
   è già ✅ composito (MCP+agente) e un agente nel core con modello minore non lo migliorerebbe; i 36 REQ in
   `sertor-core/motore-agentico/` restano **elicitazione storica**, non pianificata.
 
 ### ✅ DONE (su `master`, le rilevanti)
+
+- **🚢 Packaging distribuibile `git+url` (FEAT-001 `sertor-cli`, feature 047, PR #68, 2026-06-17)** —
+  chiude l'**unica casella Must rimasta** dell'epica `sertor-cli`: la distribuzione interim `git+url`
+  diventa un percorso di prima classe, coerente e **verificato**. File **`LICENSE` MIT** in radice + ogni
+  pacchetto (incluso nelle wheel via PEP 639); **versione unica** da `/VERSION` (dynamic hatchling) sui 4
+  pyproject; **metadati di distribuzione** (urls/classifiers/keywords) su `sertor`/`sertor-flow`
+  (install-kit esonerato, DA-P4); suite **`tests/integration/test_packaging.py`** (stdlib+subprocess, no
+  import `sertor_core`, marker `integration`) che prova licenza→metadati→build→**install pulito reale**.
+  Decisioni DA-P1..P4: versione allineata · `uv` primario+gate / `pip` best-effort documentato (→FEAT-010)
+  · `sertor-core`/`install-kit` = dipendenze interne. Pipeline SpecKit completa; install pulito `uv`
+  validato live (2 passed), `pip` xfail documentato; **Constitution 11/11**. PyPI resta FEAT-006 (Won't).
+- **🛠️ Robustezza chunking — tetto del chunk al budget token dell'embedder (PR #69 + #70, 2026-06-17)** —
+  bug emerso dal **dogfooding** del re-index post-merge: i chunker strutturali (markdown per heading,
+  codice per simbolo) potevano emettere un chunk oltre il limite dell'embedder (`CLAUDE.md` 8357 tok >
+  8192 di text-embedding-3-large → `http 400`), bloccando ogni re-index. Fix in due passi: #69 cap
+  iniziale, #70 **cap in TOKEN** (`SERTOR_MAX_CHUNK_TOKENS`, default 8191 — usa la finestra piena del
+  large invece di frammentare le sezioni coerenti), conteggio preciso con **tiktoken** dietro l'extra
+  opzionale `tokenizer` (lazy) + **fallback per carattere** offline-safe; `_logic_version` aggiornato
+  (FR-013). Corpus re-indicizzato pulito (max chunk 8191 tok, 0 oversized). *L'indicizzazione incrementale
+  FEAT-009 si è confermata corretta end-to-end nello stesso giro.*
 
 - **🚢 Refresh incrementale dell'indice (FEAT-009, feature 046, merge `3ec47f1`, 2026-06-16)** — chiude
   l'**ultimo residuo reale di `sertor-core`** (resta solo l'agenzia incorporata, Could differita).
