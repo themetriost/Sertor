@@ -18,6 +18,7 @@ from sertor_install_kit.artifacts import (
 from sertor_install_kit.assistant import (
     AssistantId,
     AssistantProfile,
+    CommandVehicle,
     Surface,
     SurfaceTarget,
 )
@@ -53,6 +54,8 @@ from sertor_install_kit.report import InstallReport
 from sertor_install_kit.resources import asset_path, iter_asset_dir, read_asset_text
 from sertor_install_kit.settings_merge import merge_settings, remove_settings_entries
 from sertor_install_kit.surfaces import (
+    HookEntrySpec,
+    render_copilot_hooks,
     render_custom_agent,
     render_prompt_file,
     split_frontmatter,
@@ -67,9 +70,10 @@ __all__ = [
     "LifecycleOp",
     "Outcome",
     "WriteStrategy",
-    # assistant targeting (feature 044)
+    # assistant targeting (feature 044; FEAT-011 CommandVehicle)
     "AssistantId",
     "AssistantProfile",
+    "CommandVehicle",
     "Surface",
     "SurfaceTarget",
     # errors
@@ -113,10 +117,12 @@ __all__ = [
     "SubprocessRunner",
     # observability
     "log_event",
-    # surfaces renderer (feature 045: shared sertor/sertor-flow)
+    # surfaces renderer (feature 045: shared sertor/sertor-flow; FEAT-011 copilot hooks)
     "render_prompt_file",
     "render_custom_agent",
     "split_frontmatter",
+    "HookEntrySpec",
+    "render_copilot_hooks",
     # sync
     "sync_assets",
     "sync_subtree",

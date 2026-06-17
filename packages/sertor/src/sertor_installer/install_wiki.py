@@ -47,7 +47,12 @@ from sertor_installer.artifacts import (
 from sertor_installer.config_gen import HostProfile
 from sertor_installer.report import InstallReport
 from sertor_installer.resources import iter_asset_dir, read_asset_text
-from sertor_installer.surfaces import render_custom_agent, render_prompt_file
+from sertor_installer.surfaces import (
+    HookEntrySpec,
+    render_copilot_hooks,
+    render_custom_agent,
+    render_prompt_file,
+)
 
 # Special assets (non-FILE): names relative to `assets/`.
 _SETTINGS_FRAGMENT = "settings.hooks.json"
@@ -66,20 +71,73 @@ _CONFIG_TARGET = "wiki/wiki.config.toml"
 # plan reuses the SAME content; only the container (path/frontmatter) is translated.
 _COPILOT_INSTRUCTIONS = ".github/copilot-instructions.md"
 _COPILOT_HOOK_WIRING = ".github/hooks/sertor-hooks.json"
-# Hook script is REUSED byte-for-byte from the Claude asset (FR-014); only the wiring differs.
+# Hook scripts are REUSED byte-for-byte from the Claude asset (FR-014); only the wiring differs.
 _WIKI_HOOK_SCRIPT_SRC = "claude/hooks/wiki-pending-check.ps1"
 _WIKI_HOOK_SCRIPT_DST = ".github/hooks/wiki-pending-check.ps1"
-_COPILOT_HOOK_FRAGMENT = "copilot/hooks/wiki.hooks.json"
-# Canonical command/skill + agent sources rendered into `.github/**` (FILE rendered).
+# FEAT-011: SessionStart directive extracted to a shared script (single source, anti-drift).
+_WIKI_SESSION_SCRIPT_SRC = "claude/hooks/wiki-session-start.ps1"
+_WIKI_SESSION_SCRIPT_DST = ".github/hooks/wiki-session-start.ps1"
+# FEAT-011: the Copilot hook wiring is GENERATED natively (render_copilot_hooks), no longer read
+# from a static Claude-format asset. The sentinel source marks the GENERATED-wiki wiring so the
+# apply callback builds it instead of reading a file (no new ArtifactKind, data-model §4).
+_COPILOT_WIKI_WIRING_SENTINEL = "(generated: copilot wiki hooks)"
+# Canonical command/skill + agent sources. The DST is resolved per-target by the AssistantProfile
+# (VS Code → prompt-file; CLI → custom-agent), so these are bare logical names.
 _WIKI_COMMAND_SRC = "claude/commands/wiki.md"
-_WIKI_COMMAND_DST = ".github/prompts/wiki.prompt.md"
+_WIKI_COMMAND_NAME = "wiki"
 _WIKI_SKILL_SRC = "claude/skills/wiki-author/SKILL.md"
-_WIKI_SKILL_DST = ".github/prompts/wiki-author.prompt.md"
+_WIKI_SKILL_NAME = "wiki-author"
 _WIKI_AGENT_SRC = "claude/agents/wiki-curator.md"
 _WIKI_AGENT_DST = ".github/agents/wiki-curator.agent.md"
 # Rendered-file sources are tagged so the apply callback knows to translate, not byte-copy.
 _RENDER_PROMPT_SUFFIX = ".prompt.md"
 _RENDER_AGENT_SUFFIX = ".agent.md"
+
+# FEAT-011 (FR-027/028): honest gap for the VS Code SessionStart `additionalContext` mechanism,
+# declared in the install output so Copilot VS Code is never claimed as "full parity".
+VSCODE_SESSION_START_GAP = (
+    "[ASSUNTO-VSC] Copilot VS Code SessionStart: the `additionalContext` mechanism "
+    "(type:\"command\") is NOT verified on a real VS Code client — declared gap, NOT full parity."
+)
+
+# Native Copilot hook commands (the script invocation; `-Assistant copilot` selects the native
+# output). `pwsh -File` is the portable interpreter; the path is relative to the host root.
+_PWSH = "pwsh -File"
+
+
+def _copilot_wiki_hook_specs(assistant: AssistantId) -> list[HookEntrySpec]:
+    """Logical hook entries for the Copilot wiki wiring, per family (FEAT-011, US3).
+
+    SessionStart diverges per family (Q1=b): VS Code uses a `command` invoking the extracted script
+    (native `additionalContext`, [ASSUNTO-VSC]); the CLI uses a static `prompt` (the directive IS
+    the prompt — no script to run). Stop/SessionEnd reuse the shared `wiki-pending-check.ps1` with
+    `-Assistant copilot` (native agentStop/sessionEnd output).
+    """
+    stop = HookEntrySpec(
+        "Stop", "command",
+        f"{_PWSH} {_WIKI_HOOK_SCRIPT_DST} -Mode Stop -Assistant copilot", 10,
+    )
+    session_end = HookEntrySpec(
+        "SessionEnd", "command",
+        f"{_PWSH} {_WIKI_HOOK_SCRIPT_DST} -Mode SessionEnd -Assistant copilot", 10,
+    )
+    if assistant is AssistantId.COPILOT_CLI:
+        # CLI: SessionStart is a static prompt (the directive). No script invocation.
+        session_start = HookEntrySpec(
+            "SessionStart", "prompt",
+            "SESSION START - load the project context BEFORE replying: read "
+            "wiki/syntheses/roadmap.md, wiki/index.md and the latest file in wiki/log/, then show "
+            "the user the executive summary between the markers <!-- EXEC:START --> and "
+            "<!-- EXEC:END -->.",
+            15,
+        )
+    else:
+        # VS Code: SessionStart invokes the extracted script (native additionalContext; ASSUNTO-VSC)
+        session_start = HookEntrySpec(
+            "SessionStart", "command",
+            f"{_PWSH} {_WIKI_SESSION_SCRIPT_DST} -Assistant copilot", 15,
+        )
+    return [session_start, stop, session_end]
 
 
 def build_install_plan(assistant: AssistantId = AssistantProfile.DEFAULT) -> list[Artifact]:
@@ -93,10 +151,11 @@ def build_install_plan(assistant: AssistantId = AssistantProfile.DEFAULT) -> lis
     STRUCTURE. FILE entries are not hard-coded: they are discovered by walking `assets/claude/`
     (F1/F8).
     """
-    # Copilot family (VS Code + CLI): both read the `.github/**` surfaces (prompts, agents,
-    # copilot-instructions). The wiki plan has no MCP surface, so the two share the same plan.
+    # Copilot family (VS Code + CLI): both read the `.github/**` surfaces. FEAT-011: the two now
+    # DIVERGE — the COMMAND vehicle (prompt-file vs custom-agent) and the SessionStart wiring differ
+    # per family — so the plan is parametric on the assistant.
     if assistant in (AssistantId.COPILOT, AssistantId.COPILOT_CLI):
-        return _build_copilot_wiki_plan()
+        return _build_copilot_wiki_plan(assistant)
     return _build_claude_wiki_plan()
 
 
@@ -155,36 +214,51 @@ def _build_claude_wiki_plan() -> list[Artifact]:
     return plan
 
 
-def _build_copilot_wiki_plan() -> list[Artifact]:
-    """Copilot wiki plan (feature 044): `.github/**` + `.vscode/**`, content reused from Claude.
+def _build_copilot_wiki_plan(assistant: AssistantId) -> list[Artifact]:
+    """Copilot wiki plan (feature 044 + FEAT-011): `.github/**`, content reused from Claude.
 
-    Surfaces: COMMAND (`/wiki`, `wiki-author` skill) → `.github/prompts/*.prompt.md`; AGENT
-    (`wiki-curator`) → `.github/agents/*.agent.md`; HOOK script reused identically + wiring in
-    `.github/hooks/*.json`; INSTRUCTION_BLOCK → `.github/copilot-instructions.md`; CONFIG/STRUCTURE
-    are assistant-agnostic (the wiki scaffold lives in `wiki/`).
+    Surfaces, routed per-target via the `AssistantProfile`:
+      - COMMAND (`/wiki`, `wiki-author` skill): VS Code → `.github/prompts/*.prompt.md`
+        (prompt-file, `agent:`); CLI → `.github/agents/*.agent.md` (custom-agent — the only
+        CLI-invocable form, FEAT-011/FR-013). The renderer is chosen by the target suffix.
+      - AGENT (`wiki-curator`): `.github/agents/*.agent.md` (custom-agent, no `model:`).
+      - HOOK: reuse the two scripts byte-for-byte (`wiki-pending-check.ps1`,
+        `wiki-session-start.ps1`) + GENERATED native wiring (`render_copilot_hooks`), per family.
+      - INSTRUCTION_BLOCK → `.github/copilot-instructions.md`.
+      - CONFIG/STRUCTURE: assistant-agnostic (the wiki scaffold lives in `wiki/`).
     """
+    aprofile = AssistantProfile.for_assistant(assistant)
     plan: list[Artifact] = []
-    # COMMAND: render the command + skill body into prompt-files (anti-drift, single source).
+
+    # COMMAND: render command + skill into the target's vehicle (prompt-file or custom-agent).
+    command_dst = aprofile.render_path(Surface.COMMAND, _WIKI_COMMAND_NAME)
+    skill_dst = aprofile.render_path(Surface.COMMAND, _WIKI_SKILL_NAME)
     plan.append(
-        Artifact(ArtifactKind.FILE, _WIKI_COMMAND_SRC, _WIKI_COMMAND_DST,
-                 WriteStrategy.CREATE_IF_ABSENT)
+        Artifact(ArtifactKind.FILE, _WIKI_COMMAND_SRC, command_dst, WriteStrategy.CREATE_IF_ABSENT)
     )
     plan.append(
-        Artifact(ArtifactKind.FILE, _WIKI_SKILL_SRC, _WIKI_SKILL_DST,
-                 WriteStrategy.CREATE_IF_ABSENT)
+        Artifact(ArtifactKind.FILE, _WIKI_SKILL_SRC, skill_dst, WriteStrategy.CREATE_IF_ABSENT)
     )
-    # AGENT: render the persona into a custom-agent file.
+    # AGENT: render the persona into a custom-agent file (no model:).
     plan.append(
         Artifact(ArtifactKind.FILE, _WIKI_AGENT_SRC, _WIKI_AGENT_DST,
                  WriteStrategy.CREATE_IF_ABSENT)
     )
-    # HOOK: reuse the script byte-for-byte (FR-014) + wire the events.
+    # HOOK scripts: reuse byte-for-byte (FR-014). VS Code also needs the SessionStart script (the
+    # CLI uses a static prompt, so the session-start script is not invoked there — installing it
+    # only for VS Code keeps the CLI plan minimal).
     plan.append(
         Artifact(ArtifactKind.FILE, _WIKI_HOOK_SCRIPT_SRC, _WIKI_HOOK_SCRIPT_DST,
                  WriteStrategy.CREATE_IF_ABSENT)
     )
+    if assistant is AssistantId.COPILOT:
+        plan.append(
+            Artifact(ArtifactKind.FILE, _WIKI_SESSION_SCRIPT_SRC, _WIKI_SESSION_SCRIPT_DST,
+                     WriteStrategy.CREATE_IF_ABSENT)
+        )
+    # HOOK wiring: GENERATED natively (sentinel source → apply builds it via render_copilot_hooks).
     plan.append(
-        Artifact(ArtifactKind.SETTINGS_MERGE, _COPILOT_HOOK_FRAGMENT, _COPILOT_HOOK_WIRING,
+        Artifact(ArtifactKind.SETTINGS_MERGE, _COPILOT_WIKI_WIRING_SENTINEL, _COPILOT_HOOK_WIRING,
                  WriteStrategy.MERGE_DEDUP)
     )
     # INSTRUCTION_BLOCK: ritual block in copilot-instructions (same content/markers).
@@ -234,12 +308,25 @@ def _apply_file(target_root: Path, art: Artifact) -> ArtifactOutcome:
     return ArtifactOutcome(art.target_rel, Outcome.CREATED)
 
 
-def _apply_settings(target_root: Path, art: Artifact) -> ArtifactOutcome:
-    """`MERGE_DEDUP`: additive merge of the hook fragment (D5)."""
+def _wiki_hook_fragment(art: Artifact, assistant: AssistantId) -> dict:
+    """The hook wiring fragment for the settings merge/remove (single source for install/uninstall).
+
+    FEAT-011: the Copilot wiring is GENERATED natively via `render_copilot_hooks` (sentinel source);
+    the Claude wiring is read from the static `settings.hooks.json` asset (unchanged).
+    """
+    if art.source == _COPILOT_WIKI_WIRING_SENTINEL:
+        return render_copilot_hooks(_copilot_wiki_hook_specs(assistant))
+    assert art.source is not None
+    return json.loads(read_asset_text(art.source))
+
+
+def _apply_settings(
+    target_root: Path, art: Artifact, assistant: AssistantId = AssistantProfile.DEFAULT
+) -> ArtifactOutcome:
+    """`MERGE_DEDUP`: additive merge of the hook fragment (D5). Copilot wiring is generated."""
     dest = _resolve(target_root, art.target_rel)
     dest.parent.mkdir(parents=True, exist_ok=True)
-    assert art.source is not None
-    fragment = json.loads(read_asset_text(art.source))
+    fragment = _wiki_hook_fragment(art, assistant)
     outcome, detail = settings_merge.merge_settings(dest, fragment)
     return ArtifactOutcome(art.target_rel, outcome, detail)
 
@@ -305,9 +392,12 @@ def execute_plan(
     """
     root = profile.target_root
     apply = make_wiki_apply(profile, assistant)
-    return _kit_execute_plan(
+    report = _kit_execute_plan(
         plan, apply, target=str(root), capability="wiki", assistant=assistant.value
     )
+    if assistant is AssistantId.COPILOT:
+        report.note(VSCODE_SESSION_START_GAP)
+    return report
 
 
 # --- feature 048: lifecycle (upgrade/uninstall) -------------------------------------------------
@@ -348,14 +438,9 @@ def sertor_owned_paths(assistant: AssistantId = AssistantProfile.DEFAULT) -> Ser
     )
 
 
-def _wiki_settings_fragment(art: Artifact) -> dict:
-    """The Sertor wiki hook fragment for the settings merge/remove (same source as install)."""
-    assert art.source is not None
-    return json.loads(read_asset_text(art.source))
-
-
 def _apply_wiki_uninstall(
-    target_root: Path, art: Artifact, dry_run: bool = False
+    target_root: Path, art: Artifact, dry_run: bool = False,
+    assistant: AssistantId = AssistantProfile.DEFAULT,
 ) -> ArtifactOutcome:
     """Inverse dispatch for `op=UNINSTALL` (data-model §3). `dry_run` projects without mutating.
 
@@ -380,14 +465,15 @@ def _apply_wiki_uninstall(
         dest = _resolve(target_root, art.target_rel)
         if dry_run:
             return ArtifactOutcome(art.target_rel, project_removal(dest), "hook entries")
-        fragment = _wiki_settings_fragment(art)
+        fragment = _wiki_hook_fragment(art, assistant)
         outcome, detail = remove_settings_entries(dest, fragment)
         return ArtifactOutcome(art.target_rel, outcome, detail)
     raise ConfigError(f"unhandled artifact kind: {art.kind}")  # pragma: no cover
 
 
 def _apply_wiki_upgrade(
-    target_root: Path, art: Artifact, profile: HostProfile, dry_run: bool = False
+    target_root: Path, art: Artifact, profile: HostProfile, dry_run: bool = False,
+    assistant: AssistantId = AssistantProfile.DEFAULT,
 ) -> ArtifactOutcome:
     """Inverse-aware dispatch for `op=UPGRADE` (data-model §3); `dry_run` projects, no mutation."""
     if art.kind is ArtifactKind.FILE:
@@ -415,7 +501,7 @@ def _apply_wiki_upgrade(
     if art.kind is ArtifactKind.CONFIG:
         return _apply_config(target_root, art, profile)  # create-if-absent, preserves user config
     if art.kind is ArtifactKind.SETTINGS_MERGE:
-        return _apply_settings(target_root, art)  # additive idempotent
+        return _apply_settings(target_root, art, assistant)  # additive idempotent
     raise ConfigError(f"unhandled artifact kind: {art.kind}")  # pragma: no cover
 
 
@@ -441,13 +527,13 @@ def make_wiki_apply(profile: HostProfile, assistant: AssistantId, dry_run: bool 
 
     def apply(art: Artifact, op: LifecycleOp = LifecycleOp.INSTALL) -> ArtifactOutcome:
         if op is LifecycleOp.UNINSTALL:
-            return _apply_wiki_uninstall(root, art, dry_run)
+            return _apply_wiki_uninstall(root, art, dry_run, assistant)
         if op is LifecycleOp.UPGRADE:
-            return _apply_wiki_upgrade(root, art, profile, dry_run)
+            return _apply_wiki_upgrade(root, art, profile, dry_run, assistant)
         if art.kind is ArtifactKind.FILE:
             return _apply_file(root, art)
         if art.kind is ArtifactKind.SETTINGS_MERGE:
-            return _apply_settings(root, art)
+            return _apply_settings(root, art, assistant)
         if art.kind is ArtifactKind.MARKER_BLOCK:
             return _apply_marker(root, art)
         if art.kind is ArtifactKind.CONFIG:

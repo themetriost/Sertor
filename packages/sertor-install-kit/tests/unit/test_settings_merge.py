@@ -111,3 +111,64 @@ def test_remove_settings_entries_missing_file_skips(tmp_path: Path):
     p = tmp_path / "settings.json"
     outcome, _ = remove_settings_entries(p, _FRAGMENT)
     assert outcome is Outcome.SKIPPED
+
+
+# --- FEAT-011: schema-aware dedup (Copilot flat form + Claude nested form) ----------------------
+
+# Copilot wiring: top-level `version` + FLAT entries (`entry["command"]`, no nested `hooks`).
+_COPILOT_FRAGMENT = {
+    "version": 1,
+    "hooks": {
+        "SessionStart": [{"type": "command", "command": "pwsh start", "timeoutSec": 15}],
+        "Stop": [{"type": "command", "command": "pwsh stop", "timeoutSec": 10}],
+    },
+}
+
+
+def test_copilot_flat_fragment_creates_and_keeps_version(tmp_path: Path):
+    p = tmp_path / "sertor-hooks.json"
+    outcome, detail = merge_settings(p, _COPILOT_FRAGMENT)
+    assert outcome is Outcome.CREATED
+    assert detail == "+2 hook entries"
+    data = json.loads(p.read_text(encoding="utf-8"))
+    assert data["version"] == 1  # R1 schema requirement preserved
+    cmds = [e["command"] for e in data["hooks"]["SessionStart"]]
+    assert cmds == ["pwsh start"]
+
+
+def test_copilot_flat_fragment_dedup_on_rerun(tmp_path: Path):
+    p = tmp_path / "sertor-hooks.json"
+    merge_settings(p, _COPILOT_FRAGMENT)
+    outcome, detail = merge_settings(p, _COPILOT_FRAGMENT)
+    assert outcome is Outcome.MERGED
+    assert detail == "no new entries"  # flat command recognized → no duplication
+
+
+def test_mixed_claude_nested_and_copilot_flat_in_same_file(tmp_path: Path):
+    """A file holding BOTH shapes: dedup recognizes the command in either form (R-3)."""
+    p = tmp_path / "settings.json"
+    existing = {
+        "version": 1,
+        "hooks": {
+            "Stop": [
+                {"hooks": [{"type": "command", "command": "pwsh stop"}]},  # Claude nested
+            ],
+        },
+    }
+    p.write_text(json.dumps(existing), encoding="utf-8")
+    # Fragment carries the SAME command in the flat Copilot form → must be deduped, not duplicated.
+    outcome, detail = merge_settings(p, _COPILOT_FRAGMENT)
+    assert outcome is Outcome.MERGED
+    data = json.loads(p.read_text(encoding="utf-8"))
+    assert len(data["hooks"]["Stop"]) == 1  # the flat "pwsh stop" was recognized as already present
+    # the new SessionStart entry is added
+    assert any(e.get("command") == "pwsh start" for e in data["hooks"]["SessionStart"])
+
+
+def test_copilot_flat_remove_entries(tmp_path: Path):
+    p = tmp_path / "sertor-hooks.json"
+    merge_settings(p, _COPILOT_FRAGMENT)
+    outcome, _ = remove_settings_entries(p, _COPILOT_FRAGMENT)
+    assert outcome is Outcome.REMOVED
+    data = json.loads(p.read_text(encoding="utf-8"))
+    assert not data.get("hooks")  # all Sertor flat entries removed

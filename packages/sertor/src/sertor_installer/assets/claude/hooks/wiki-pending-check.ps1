@@ -7,13 +7,22 @@
     sertor-wiki-tools scan --config <root>/wiki/wiki.config.toml --root <root> --json
   and maps the `wiki.scan/1` contract (`pending`, `message`) to the hook format. No
   duplicate mtime heuristics here: the single source of truth is the CLI (Principle X, no hard-coded paths).
-    - Mode Stop:       JSON with additionalContext (NON-blocking; respects stop_hook_active).
-    - Mode SessionEnd: JSON with systemMessage summary to the terminal.
+
+  The logical BODY (delegation to the CLI, computing the pending count) is ONE source; only the
+  OUTPUT shape is rendered NATIVELY per assistant (FEAT-011, no dual-field — contract
+  hook-output-contract.md):
+    - claude (default, non-regression): top-level `{ systemMessage }` for both Stop and SessionEnd.
+    - copilot + Stop (→ agentStop event): `{ decision = "allow"; reason }` — NON-blocking (never
+      `block` for a reminder).
+    - copilot + SessionEnd (→ sessionEnd event): NO stdout consumed by Copilot; message → stderr.
   If there is no pending work (or the CLI is unavailable): no output, exit 0.
   The hook input (JSON) arrives on stdin; the script is tolerant if absent (manual tests).
 #>
 [CmdletBinding()]
-param([ValidateSet('Stop', 'SessionEnd')][string]$Mode = 'Stop')
+param(
+    [ValidateSet('Stop', 'SessionEnd')][string]$Mode = 'Stop',
+    [ValidateSet('claude', 'copilot')][string]$Assistant = 'claude'
+)
 
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 
@@ -54,21 +63,35 @@ if (-not $scan -or $scan.schema -ne 'wiki.scan/1' -or [int]$scan.pending -le 0) 
 
 $pending = [int]$scan.pending
 
-# --- output per event (reuses the localized message from the contract) ---
+# --- build the localized message (shared body — same for every assistant) ---
 if ($Mode -eq 'Stop') {
-    # NB: for the Stop event the harness does NOT support hookSpecificOutput.additionalContext (valid only for
-    # UserPromptSubmit/PostToolUse/PostToolBatch). The non-blocking message goes in systemMessage (top-level),
-    # as the SessionEnd branch does. See the Claude Code hook schema.
     $msg = "$($scan.message) Per the golden rule (see CLAUDE.md, Wiki section): consider " +
            "delegating to wiki-curator (record operation) or running /wiki."
-    $out = @{ systemMessage = $msg }
-    $out | ConvertTo-Json -Compress -Depth 5
-    exit 0
 }
 else {
     $msg = "Wiki: $pending modified files are not yet recorded. " +
            "At the next session run /wiki record (or delegate to wiki-curator)."
-    $out = @{ systemMessage = $msg }
-    $out | ConvertTo-Json -Compress -Depth 5
-    exit 0
 }
+
+# --- render the output NATIVELY per assistant (FEAT-011, no dual-field) ---
+if ($Assistant -eq 'copilot') {
+    if ($Mode -eq 'Stop') {
+        # agentStop event: NON-blocking decision (never `block` for a reminder). FR-007 / O3.
+        $out = @{ decision = "allow"; reason = $msg }
+        $out | ConvertTo-Json -Compress -Depth 5
+        exit 0
+    }
+    else {
+        # sessionEnd event: Copilot does NOT consume stdout here; surface the message on stderr. O5.
+        [Console]::Error.WriteLine($msg)
+        exit 0
+    }
+}
+
+# claude (default): top-level systemMessage for both Stop and SessionEnd (non-regression). O6.
+# NB: for the Stop event the Claude harness does NOT support hookSpecificOutput.additionalContext
+# (valid only for UserPromptSubmit/PostToolUse/PostToolBatch); the non-blocking message goes in
+# systemMessage (top-level), as the SessionEnd branch does. See the Claude Code hook schema.
+$out = @{ systemMessage = $msg }
+$out | ConvertTo-Json -Compress -Depth 5
+exit 0

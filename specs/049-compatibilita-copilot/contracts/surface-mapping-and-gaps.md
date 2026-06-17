@@ -33,6 +33,25 @@ non-confermata-runtime"** (o equivalente). Mai "piena" su un assunto.
 `⏳` = verifica runtime = **validazione operativa fuori ambito di prodotto** (Assumptions); la suite di
 prodotto è strutturale/offline (NFR-5).
 
+### Stato di consegna (FEAT-011 implementata)
+
+Tutte le superfici sopra sono ora **generate nativamente** e **validate dallo schema offline** (gruppo G,
+`packages/sertor/tests/test_schema_copilot_hooks.py` + `test_schema_copilot_frontmatter.py` +
+`test_hooks_script_copilot.py`). In dettaglio:
+
+- Hook wiring: generato da `render_copilot_hooks` (`sertor-install-kit`) — `version:1`, voci piatte,
+  `timeoutSec`, nessun campo Claude-only. Gli asset statici in formato Claude
+  (`assets/copilot/hooks/*.json`) sono stati RIMOSSI.
+- Output script per evento: `wiki-pending-check.ps1` + `wiki-session-start.ps1` rendono l'output nativo via
+  `-Assistant copilot` (agentStop `{decision:"allow",reason}`, sessionEnd su stderr, no dual-field);
+  `sertor-rag-usage-check.ps1` resta fail-open (exit 0 sempre).
+- COMMAND su `copilot-cli`: custom-agent (`.github/agents/*.agent.md`) via il `command_vehicle`
+  dell'`AssistantProfile`; su `copilot` (VS Code): prompt-file con `agent:`.
+- SessionStart: VS Code `type:"command"` → `{additionalContext}` **[ASSUNTO-VSC]** (gap dichiarato nel
+  report d'installazione, `InstallReport.notes`); CLI `type:"prompt"` statico.
+- La conferma runtime su client reale resta `⏳` (fuori ambito di prodotto); nessun claim di «parità piena»
+  oltre l'evidenza CLI 1.0.63 dell'audit.
+
 ---
 
 ## 3. Output d'installazione (FR-028)
