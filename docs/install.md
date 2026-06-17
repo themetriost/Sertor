@@ -13,6 +13,49 @@
 > (GitHub **Copilot CLI**: `.github/**` + `.mcp.json` with the `mcpServers` root). The `sertor`
 > installer supports all three; `sertor-flow` supports `claude|copilot`. See **§9**.
 
+## 0. Interim distribution (`git+url`)
+
+Sertor is **not on PyPI** (public publishing is out of scope — see *PyPI boundary* below): the current
+distribution channel is an **unpinned `git+url`** against the GitHub repository. Two packages are meant
+to be **installed directly** (user-facing) — `sertor` (the wiki/RAG installer) and `sertor-flow` (the
+governance/SDLC installer). The other two — `sertor-core` (the retrieval library/CLI) and
+`sertor-install-kit` (the shared install engine) — are **internal dependencies**: they are resolved
+**automatically from the workspace in the git checkout** and are **not** installed directly.
+
+**Prerequisites.** Python ≥ 3.11; `uv` (recommended); network access to GitHub; **no PyPI account**.
+
+### Primary path — `uv`/`uvx` (the supported gate)
+
+```powershell
+# wiki/RAG installer (sertor):
+uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor --help
+# governance/SDLC installer (sertor-flow):
+uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor-flow" sertor-flow --help
+```
+
+`uv` resolves the internal dependencies (`sertor-core`, `sertor-install-kit`) by **discovering the uv
+workspace from the git checkout** — not from PyPI. The entry points (`sertor`/`sertor-flow`, and after
+install the `sertor-rag`/`sertor-wiki-tools` console scripts of `sertor-core`) become invocable with a
+single command.
+
+### Secondary path — `pip` (best-effort, documented limitation)
+
+```powershell
+pip install "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor"
+```
+
+> **Limitation (known).** `pip` does **not** understand the uv *workspace*: when it resolves the
+> internal dependencies (`sertor-core`, `sertor-install-kit`) of `sertor`, it does not discover them
+> from the checkout the way `uv` does, and — since they are not on PyPI — the resolution is **not
+> guaranteed**. Use `uv`/`uvx` for the one-command install. Full `pip` ergonomics (workspace
+> resolution) is deferred to **FEAT-010**.
+
+> **Version.** The product version is a single source of truth in `/VERSION` at the repo root; all four
+> packages read it dynamically, so they are aligned by construction (bump = edit `/VERSION`).
+
+> **PyPI boundary.** Public publishing (PyPI/TestPyPI) and supply-chain hardening (signing/provenance/
+> SBOM) are **out of scope** here — tracked as **FEAT-006**. `git+url` is the current interim channel.
+
 ## Prerequisites
 
 - **Python ≥ 3.11** and [`uv`](https://github.com/astral-sh/uv) (recommended; `pip` as an alternative).

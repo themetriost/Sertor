@@ -11,10 +11,10 @@ di `spec.md`.
 
 ## Fase 1 — Setup (fondante, prereq di tutto)
 
-- [ ] **T001** — `VERSION` (NUOVO, radice repo): crea il file con il contenuto `0.1.0` (stringa, newline
+- [x] **T001** — `VERSION` (NUOVO, radice repo): crea il file con il contenuto `0.1.0` (stringa, newline
   finale). Questo è l'**unico** punto di verità della versione (FR-011, SC-007, NFR-4). [P]
 
-- [ ] **T002** — `pyproject.toml` (radice, `sertor-core`): sostituisci `version = "0.1.0"` con
+- [x] **T002** — `pyproject.toml` (radice, `sertor-core`): sostituisci `version = "0.1.0"` con
   `dynamic = ["version"]` sotto `[project]`; aggiungi la sezione:
   ```toml
   [tool.hatch.version]
@@ -23,14 +23,14 @@ di `spec.md`.
   ```
   Verifica che `uv build` (dalla radice) produca ancora sdist+wheel senza errori. [P]
 
-- [ ] **T003** — `packages/sertor/pyproject.toml`: stessa trasformazione di T002 (rimuovi `version`
+- [x] **T003** — `packages/sertor/pyproject.toml`: stessa trasformazione di T002 (rimuovi `version`
   statico, aggiungi `dynamic = ["version"]` + `[tool.hatch.version] path = "../../VERSION"`). Verifica
   `uv build --package sertor`. [P rispetto a T004/T005 — file diversi]
 
-- [ ] **T004** — `packages/sertor-flow/pyproject.toml`: stessa trasformazione (path `../../VERSION`).
+- [x] **T004** — `packages/sertor-flow/pyproject.toml`: stessa trasformazione (path `../../VERSION`).
   Verifica `uv build --package sertor-flow`. [P rispetto a T003/T005]
 
-- [ ] **T005** — `packages/sertor-install-kit/pyproject.toml`: stessa trasformazione (path `../../VERSION`).
+- [x] **T005** — `packages/sertor-install-kit/pyproject.toml`: stessa trasformazione (path `../../VERSION`).
   Verifica `uv build --package sertor-install-kit`. [P rispetto a T003/T004]
 
 > **Gate Setup**: dopo T001–T005, `uv build` per tutti e 4 i pacchetti deve riuscire e la versione
@@ -46,7 +46,7 @@ di `spec.md`.
 authors/license/urls.Repository` (C1.6); la verifica statica (Stage 1) deve essere tutta verde.
 Copertura: FR-001, FR-002, FR-003, FR-004, FR-010, FR-011, FR-013, SC-001, SC-002, SC-007.
 
-- [ ] **T006** — `LICENSE` (NUOVO, radice repo): crea il file con il testo MIT canonico:
+- [x] **T006** — `LICENSE` (NUOVO, radice repo): crea il file con il testo MIT canonico:
   ```
   MIT License
 
@@ -72,19 +72,19 @@ Copertura: FR-001, FR-002, FR-003, FR-004, FR-010, FR-011, FR-013, SC-001, SC-00
   ```
   Nessun dato personale/segreto. [P rispetto a T007/T008/T009]
 
-- [ ] **T007** — `packages/sertor/LICENSE` (NUOVO): copia identica di T006. [P]
+- [x] **T007** — `packages/sertor/LICENSE` (NUOVO): copia identica di T006. [P]
 
-- [ ] **T008** — `packages/sertor-flow/LICENSE` (NUOVO): copia identica di T006. [P]
+- [x] **T008** — `packages/sertor-flow/LICENSE` (NUOVO): copia identica di T006. [P]
 
-- [ ] **T009** — `packages/sertor-install-kit/LICENSE` (NUOVO): copia identica di T006. [P]
+- [x] **T009** — `packages/sertor-install-kit/LICENSE` (NUOVO): copia identica di T006. [P]
 
-- [ ] **T010** — `pyproject.toml` (radice, `sertor-core`): assicura che hatchling includa `LICENSE` nella
+- [x] **T010** — `pyproject.toml` (radice, `sertor-core`): assicura che hatchling includa `LICENSE` nella
   wheel. Aggiorna il campo `license` in `[project]` da `{ text = "MIT" }` a `"MIT"` (espressione SPDX
   PEP 639), oppure mantieni `{ text = "MIT" }` e aggiungi in `[tool.hatch.build.targets.wheel]` la
   voce `include = ["LICENSE"]` (o `force-include = { "LICENSE" = "LICENSE" }`). Verifica con
   `uv build` e ispezione zip della wheel che `LICENSE` sia presente. [P rispetto a T011/T012/T013]
 
-- [ ] **T011** — `packages/sertor/pyproject.toml`: stesso trattamento di T010 per includere
+- [x] **T011** — `packages/sertor/pyproject.toml`: stesso trattamento di T010 per includere
   `packages/sertor/LICENSE` nella wheel di `sertor`; aggiorna `[project].license`; aggiungi:
   ```toml
   [project]
@@ -99,11 +99,11 @@ Copertura: FR-001, FR-002, FR-003, FR-004, FR-010, FR-011, FR-013, SC-001, SC-00
   ```
   (FR-010, FR-013, SC-002). [P rispetto a T010/T012/T013]
 
-- [ ] **T012** — `packages/sertor-flow/pyproject.toml`: stesso trattamento di T011 per `sertor-flow`; stessa
+- [x] **T012** — `packages/sertor-flow/pyproject.toml`: stesso trattamento di T011 per `sertor-flow`; stessa
   inclusione `LICENSE`; `urls`, `classifiers`, `keywords` (adatta `keywords` al contesto governance/SDLC:
   `["sdlc", "governance", "speckit", "installer", "sertor"]`). (FR-010, FR-013, SC-002). [P]
 
-- [ ] **T013** — `packages/sertor-install-kit/pyproject.toml`: includi `LICENSE` nella wheel (hatchling
+- [x] **T013** — `packages/sertor-install-kit/pyproject.toml`: includi `LICENSE` nella wheel (hatchling
   force-include o `license-files`). Metadati user-facing **ESONERATI** (DA-P4): non aggiungere
   `urls`/`classifiers`/`keywords`. Solo la licenza è obbligatoria anche per i pacchetti interni
   (FR-001, FR-002, FR-003). [P]
@@ -118,7 +118,7 @@ deve essere verde (o con solo `xfail` noti per `pip`); su lacuna introdotta arti
 FR-021, FR-022, FR-023, FR-024, FR-030, FR-031, FR-032, FR-033, FR-034, FR-035, SC-003, SC-004, SC-005,
 SC-008, SC-009.
 
-- [ ] **T014** — `tests/integration/test_packaging.py` (NUOVO): implementa la **suite di verifica** secondo
+- [x] **T014** — `tests/integration/test_packaging.py` (NUOVO): implementa la **suite di verifica** secondo
   il contratto `packaging.verify/1` (`contracts/packaging-verification.md`). Struttura obbligatoria:
 
   **Stage 1 — Coerenza statica** (no build, veloce, offline-totale):
@@ -183,7 +183,7 @@ SC-008, SC-009.
 sertor/sertor-flow; dipendenze interne = sertor-core/sertor-install-kit", (d) dichiarazione confine
 PyPI → FEAT-006. Copertura: FR-040, FR-041, FR-042, SC-006.
 
-- [ ] **T015** — `docs/install.md` (MOD): aggiorna la sezione `§1. Package installation` (o crea una nuova
+- [x] **T015** — `docs/install.md` (MOD): aggiorna la sezione `§1. Package installation` (o crea una nuova
   sezione `§0. Distribuzione interim (git+url)` in cima) con:
 
   **Percorso primario `uv`/`uvx` (gate)**:
@@ -217,31 +217,31 @@ PyPI → FEAT-006. Copertura: FR-040, FR-041, FR-042, SC-006.
 l'entry-point. Questo test di accettazione manuale è coperto automaticamente da T014 (Stage 3a).
 Copertura: FR-030, FR-031, FR-032, FR-034, SC-004, SC-005.
 
-- [ ] **T016** — Verifica manuale (o esecuzione di Stage 3a della suite T014) su ambiente pulito:
+- [x] **T016** — Verifica manuale (o esecuzione di Stage 3a della suite T014) su ambiente pulito:
   `uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor --help`
   e analogo per `sertor-flow`. Atteso: exit 0, entry-point disponibile senza passi aggiuntivi.
   (Copertura accettazione US1 / SC-004/SC-005.)
 
-- [ ] **T017** — **Non-regressione**: `uv run pytest -m "not cloud"` verde (tutta la suite unit root — nessuna
+- [x] **T017** — **Non-regressione**: `uv run pytest -m "not cloud"` verde (tutta la suite unit root — nessuna
   regressione introdotta dalla feature). Nota: la suite di packaging è `integration`, non `cloud`; non
   blocca la CI veloce. (NFR-3, SC-003 transitivo.)
 
-- [ ] **T018** — **Lint**: `uv run ruff check .` verde (nessun errore di lint nella suite `test_packaging.py`
+- [x] **T018** — **Lint**: `uv run ruff check .` verde (nessun errore di lint nella suite `test_packaging.py`
   e nei pyproject toccati). [P con T017]
 
 ---
 
 ## Fase 6 — Polish / cross-cutting
 
-- [ ] **T019** — `.gitignore` (radice): verifica che gli artefatti di build (`dist/`, `*.whl`, `*.tar.gz`
+- [x] **T019** — `.gitignore` (radice): verifica che gli artefatti di build (`dist/`, `*.whl`, `*.tar.gz`
   temporanei) siano già ignorati o aggiungi le voci mancanti. I file `VERSION` e `LICENSE` sono
   **versionati** (non da ignorare). [P]
 
-- [ ] **T020** — Verifica allineamento `docs/install.md` ↔ `quickstart.md` della feature: i comandi
+- [x] **T020** — Verifica allineamento `docs/install.md` ↔ `quickstart.md` della feature: i comandi
   documentati in `quickstart.md` (sezione §4) devono essere coerenti con quelli introdotti in `docs/
   install.md` (T015). Nessun path hardcoded di macchina, nessun segreto. [P]
 
-- [ ] **T021** — Ispezione finale della wheel di `sertor` con `zipfile` (manuale o da Stage 2 della suite):
+- [x] **T021** — Ispezione finale della wheel di `sertor` con `zipfile` (manuale o da Stage 2 della suite):
   conferma che `assets/**` sia presente (FR-021, SC-003). Gate di completamento US2/US3.
 
 ---
