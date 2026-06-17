@@ -116,6 +116,20 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### ✅ DONE (su `master`, le rilevanti)
 
+- **🚢 Wizard di configurazione `sertor configure [rag]` (FEAT-003 `sertor-cli`, feature 051, PR #75, 2026-06-17)** —
+  chiude la **causa-radice UX** del RAG non configurato (il `-32000` su Copilot CLI quando mancano le chiavi):
+  un comando guidato porta `.sertor/.env` da segreti vuoti a pronto **senza editor**. Risoluzione per-campo
+  CI-safe (flag→env/esistente→prompt-se-TTY→default; campo mancante senza TTY → errore che lo nomina, niente
+  scrittura parziale); campi richiesti da **fonte unica** `Settings.validate_backend()` (test di copertura
+  catalogo↔validatore, no drift); scrittura **additiva non-distruttiva** (`merge_env`, overwrite gated);
+  **segreti** via `getpass`, mascherati ovunque da `mask_secret` (anti-leak su entità/umano/JSON/stdout);
+  validazione statica; report umano + `--json`. Default coerente col **decoupling FEAT-009** (backend azure
+  → store `local`/Chroma, embeddings Azure + Chroma locale — confermato dall'utente; "azure ovunque" scartato).
+  install≠run; install/upgrade/uninstall invariati. Pipeline SpecKit completa; **293 test**, Constitution
+  11/11. **Follow-up:** `--check` (probe live, US5) **deferred** → richiede un nuovo `sertor-rag check` in
+  `sertor-core` (Principio XI: il wizard usa il vehicle, non importa `build_embedder`); oggi il flag c'è e
+  degrada onestamente.
+
 - **🔧 Fix runtime Copilot + verifica empirica LIVE (PR #74, branch 050, 2026-06-17)** — la **verifica
   empirica** della distribuzione Copilot su un **ospite reale** (Copilot CLI 1.0.63) ha chiuso il loop
   «installato≠funzionante» e scoperto **3 difetti** che i test offline di FEAT-011 non coprivano (uno li
@@ -448,7 +462,7 @@ Legenda: ✅ consegnata · 🔄 parziale (nucleo fatto, residuo aperto) · 📋 
 |---|---|---|---|
 | FEAT-001 | CLI installabile + **packaging distribuibile** `git+url` | Must | ✅ esecuzione `sertor-rag` (PR #21) + packaging LICENSE/versione/metadati/build (PR #68, 2026-06-17) |
 | FEAT-002 | Installazione selettiva delle capacità (`install wiki`/`rag`/`governance`) | Must | ✅ `install wiki` (PR #22) · `install rag` (live su Kaelen) · `governance` = puntatore a `sertor-flow` |
-| FEAT-003 | **Configurazione** (provider LLM + vector DB; **wizard**) | Should | 🔄 lettura config ✅; **wizard rinviato** |
+| FEAT-003 | **Configurazione** (provider LLM + vector DB; **wizard**) | Should | ✅ **CONSEGNATA (PR #75, 2026-06-17)** — `sertor configure [rag]`: CI-safe, scrittura `.env` non-distruttiva, validazione statica, anti-leak segreti. `--check`/US5 deferred (→ `sertor-rag check` core) |
 | FEAT-004 | Comando esecuzione RAG (`index`/`search`) | Should | ✅ feature `esecuzione` (PR #21) |
 | FEAT-005 | Setup governance (skill/agenti SDLC + requisiti) | Should | ✅ pacchetto separato `sertor-flow` (PR #56) |
 | FEAT-007 | Distribuzione **Copilot** — pacchetto `sertor` (wiki+rag) | Must | ✅ consegnata (PR #64/#66); **conformità schema sanata da FEAT-011** (PR #73). Resta da verificare sul campo il SessionStart VS Code |
@@ -491,6 +505,7 @@ Legenda: ✅ consegnata · 🔄 parziale (nucleo fatto, residuo aperto) · 📋 
 
 | Idea | Valore / perché | Note / vincoli | Stato |
 |------|-----------------|----------------|-------|
+| **`sertor-rag check` — probe di connettività del vehicle** (epica `sertor-core`) | Verifica «le credenziali/il provider funzionano davvero» senza un indice: serve a `sertor configure --check` (FEAT-003 US5) e in generale come health-check. Oggi `sertor-rag` ha solo `index`/`search`/`observe`/`memory`; `search` richiede un indice → inadatto a freddo | Comando di `sertor-core` (vehicle, Principio XI): embed di prova via il provider configurato, esito + errore azionabile, niente scrittura. Sblocca `--check`/US5 del wizard (oggi degradato onestamente) | 👍 **follow-up tracciato (2026-06-17)** — da promuovere a FEAT di `sertor-core` |
 | **Verifica empirica della distribuzione Copilot su ospite reale** | FEAT-011 conforme *offline*; la prova che **funzioni davvero** si ha solo sul client reale (spirito «installato≠funzionante») | **FATTA END-TO-END** su Copilot CLI 1.0.63 (log interattivi): **MCP** connesso (7 tool), **tutti gli agent** caricati (wiki + governance + 10 speckit), **tutti e 4 gli hook** scattano (SessionStart/PreToolUse/Stop/SessionEnd — Stop/SessionEnd silenziosi se nessun pending). Scoperti+risolti 3 bug (PR #74); il log pre-fix conteneva `prompt hook prompt is required` → conferma del fix. Discovery: config di progetto caricata solo in sessione INTERATTIVA, non in `-p`. | ✅ **fatto end-to-end (2026-06-17, PR #74)** |
 | **Refactor distribuzione Copilot CLI-only** (decisioni utente 2026-06-17) | Eliminare il footgun VS Code↔CLI e l'incoerenza di naming; supporto nativo pieno di un solo target | (1) drop del target VS Code (`.vscode/mcp.json`, prompt-file); (2) **naming unico `copilot-cli`** ovunque (oggi `sertor-flow` usa solo `copilot`); (3) governance: **solo la skill `requirements`** va resa custom-agent — spec-kit 0.8.18 spedisce GIÀ i `speckit.*.agent.md` per CLI (decisione #3 ridimensionata); (4) niente bash/cloud-agent | 👍 **da decomporre** (utente, 2026-06-17) |
 | **Rilevamento attivo dei gap di documentazione** (codice→wiki generativo) | Il residuo *genuino* di FEAT-008: oggi il legame codice↔doc è **passivo** (lo interroghi con `get_context`/`related_docs`), manca il **generativo** — il RAG/code-graph che rileva **entità di codice senza pagina wiki** e le **propone** al `wiki-author` | Scorporato dalla chiusura di FEAT-008 (✅ composita, verificata live 2026-06-16). Casa candidata: feature wiki dedicata o `debito-tecnico` FEAT-005 (igiene-wiki). Riusa il [[code-graph]] (`find_symbol`/`related_docs`) + lint C | 💡 **idea, scorporata da FEAT-008** (2026-06-16) |
