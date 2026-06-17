@@ -64,7 +64,10 @@ def _logic_version(settings: Settings) -> str:
     MODIFIED for every file (in `classify`), so the incremental result stays equivalent to a full.
     """
     coverage_sig = ";".join(f"{lang}:{','.join(kinds)}" for lang, kinds in sorted(COVERAGE.items()))
-    return f"chunk={settings.chunk_size}/{settings.chunk_overlap}|cov={coverage_sig}"
+    return (
+        f"chunk={settings.chunk_size}/{settings.chunk_overlap}/max{settings.max_chunk_chars}"
+        f"|cov={coverage_sig}"
+    )
 
 
 class IndexingService:

@@ -145,6 +145,12 @@ class Settings:
     # chunking
     chunk_size: int = 1600
     chunk_overlap: int = 200
+    # Hard cap on a single chunk's size (chars). Structural chunkers (markdown by heading, code by
+    # symbol) can emit a unit far larger than `chunk_size`; embedding providers reject inputs over a
+    # token budget (e.g. text-embedding-3-large: 8192 tokens → http 400). A chunk above this cap is
+    # sub-split on line boundaries. Default 8000 chars stays under 8192 tokens even at ~1 char/token
+    # (worst case), while only triggering for genuinely oversized sections (5× `chunk_size`).
+    max_chunk_chars: int = 8000
 
     # retrieval
     default_k: int = 5
@@ -277,6 +283,7 @@ class Settings:
             azure_search_api_key=os.getenv("AZURE_SEARCH_API_KEY", ""),
             chunk_size=int(os.getenv("CHUNK_SIZE", "1600")),
             chunk_overlap=int(os.getenv("CHUNK_OVERLAP", "200")),
+            max_chunk_chars=int(os.getenv("SERTOR_MAX_CHUNK_CHARS", "8000")),
             default_k=int(os.getenv("DEFAULT_K", "5")),
             preview_chars=int(os.getenv("SERTOR_PREVIEW_CHARS", "240")),
             retrieval_min_score=_float_or_none_env("SERTOR_MIN_SCORE"),
