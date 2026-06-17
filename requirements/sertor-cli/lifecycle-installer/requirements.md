@@ -2,8 +2,12 @@
 
 <!-- Deriva da: FEAT-008 (epica sertor-cli) -->
 
-> **Stato:** prima decomposizione — domande aperte §10 da girare all'utente prima di avanzare al
-> design. Le assunzioni adottate in assenza di risposta sono marcate **[ASSUNTO]**.
+> **Stato:** decomposizione **chiusa** — le 4 domande aperte sono state risolte con l'utente
+> (2026-06-17, vedi §10). Pronta per `/speckit-specify`. Decisioni:
+> **Q1 (a)** wiki mai rimosso di default, flag `--purge-wiki` + `--yes`;
+> **Q2 (a)** diff a posteriori (lista statica di path Sertor-owned, nessun manifest);
+> **Q3 (c)** `sertor uninstall` tutto-in-uno **e** per-capacità;
+> **Q4 (a)** `sertor-flow upgrade`/`uninstall` **in ambito** in questo ticket (simmetria piena).
 
 ---
 
@@ -85,7 +89,13 @@ meccanismo di rimozione inversa nel kit.
   optin per la rimozione del wiki — Q1): rimozione completa e selettiva di tutti gli artefatti
   installati dalla capacità indicata, rispettando la tipologia A/B/C/D.
 - Copertura delle **tre capacità installabili** tramite `sertor`: `wiki`, `rag`, e `governance`
-  (puntatore a `sertor-flow`; per governance il comportamento è [DA CHIARIRE: Q4]).
+  (puntatore a `sertor-flow`).
+- **Comandi simmetrici `sertor-flow upgrade`/`sertor-flow uninstall`** per il pacchetto `sertor-flow`
+  (governance/SDLC): stessa semantica di `sertor`, operati dal CLI `sertor-flow`, riusando le stesse
+  primitive del `sertor-install-kit` (decisione Q4 (a) — stesso ticket).
+- Granularità del comando di rimozione (decisione Q3 (c)): `sertor uninstall` rimuove **tutte** le
+  capacità installate (≡ `sertor uninstall wiki rag governance`), con la forma per-capacità
+  `sertor uninstall <capacità>` per rimozioni parziali.
 - Supporto ai **tre assistenti** (`claude`, `copilot`, `copilot-cli`).
 - Operazioni su **tipo C** (file condivisi): rimozione dei soli blocchi a marker Sertor
   (`SERTOR:WIKI-RITUAL`, `SERTOR:RAG-USAGE`, `SERTOR:SDLC-RITUAL`) e delle sole entry Sertor in
@@ -108,8 +118,6 @@ meccanismo di rimozione inversa nel kit.
   comandi sono parte del pacchetto `sertor`; un ospite che ha già installato Sertor deve aggiornare
   il pacchetto `sertor` stesso per ottenerli (bootstrap del bootstrap) — fuori ambito qui.
 - **Uninstall cross-utente o di sistema**: solo l'istanza nella `--target` corrente.
-- **`sertor-flow upgrade`/`sertor-flow uninstall`**: comportamento simmetrico per il pacchetto
-  `sertor-flow` — [DA CHIARIRE: Q4] se coperto da questo ticket o da uno separato.
 - **GUI o wizard interattivo**: solo CLI non interattivo (flag espliciti).
 - **Notifiche push / CI automatica**: upgrade su eventi è fuori ambito.
 
@@ -174,10 +182,10 @@ flag relative to the previously installed assistant, the installer shall add the
 artifacts and remove the old assistant's artifacts that are not shared, without affecting artifacts
 common to both assistants.*
 
-**REQ-017 (Ubiquitous — dipende da Q2):** *The installer shall maintain a record of which artifacts
-have been installed for each capability and assistant, sufficient to determine which artifacts are
-obsolete on a subsequent upgrade.* **[DA CHIARIRE: Q2 — manifest d'installazione vs re-install + diff
-a posteriori; vedi §10]**
+**REQ-017 (Ubiquitous):** *The installer shall determine obsolete artifacts via after-the-fact diff
+(decisione Q2 (a)): it shall maintain, in code, a static declaration of Sertor-owned paths per
+capability and assistant; an artifact is obsolete when it exists on disk under a Sertor-owned path
+and is absent from the current bundle. No persistent installation manifest is introduced.*
 
 ### 5.3 Requisiti di uninstall
 
@@ -211,13 +219,13 @@ capability is found on the target, then the installer shall complete successfull
 report all artifacts as `skipped` (idempotency).*
 
 **REQ-027 (Event-driven):** *When the user runs `sertor uninstall wiki`, the installer shall not
-remove the `wiki/` directory unless an explicit opt-in flag is supplied
-[DA CHIARIRE: Q1 — nome del flag e comportamento di default].*
+remove the `wiki/` directory unless the explicit `--purge-wiki` flag is supplied (decisione Q1 (a));
+by default the wiki directory is preserved while every other wiki artifact is removed.*
 
-**REQ-028 (Where — opt-in per Q1):** *Where the explicit wiki-removal opt-in flag is supplied to
-`sertor uninstall wiki`, the installer shall display the number of pages and approximate size of
-the `wiki/` directory and require either an interactive confirmation or a `--yes` flag before
-deleting it.*
+**REQ-028 (Where):** *Where the `--purge-wiki` flag is supplied to `sertor uninstall wiki`, the
+installer shall display the number of pages and approximate size of the `wiki/` directory and
+require either an interactive confirmation or a `--yes` flag before deleting it; `--purge-wiki` is
+not combinable with `--dry-run`.*
 
 **REQ-029 (Unwanted):** *If `--dry-run` is active during `uninstall`, then the installer shall
 report what would be removed without performing any deletion or modification.*
@@ -238,6 +246,36 @@ observability contract.*
 **REQ-041 (Event-driven):** *When `--json` is active, the installer shall emit the report to stdout
 as a single JSON object (schema `install.report/1` with added outcome values), suitable for
 programmatic consumption.*
+
+### 5.5 Requisiti di ciclo di vita per `sertor-flow` (decisione Q4 (a) — stesso ticket)
+
+**REQ-050 (Event-driven):** *When the user runs `sertor-flow upgrade`, the CLI shall update the
+governance/SDLC artifacts (vendored SpecKit surfaces, constitution starter, Sertor-authored agents
+and skills, SDLC ritual marker block) with the same semantics defined for `sertor upgrade`
+(update changed standalone assets, refresh marker blocks, remove obsolete artifacts via the Q2 (a)
+after-the-fact diff).*
+
+**REQ-051 (Event-driven):** *When the user runs `sertor-flow uninstall`, the CLI shall remove every
+governance artifact it installed, applying the same type A/B/C/D handling as `sertor uninstall`,
+and shall remove only the Sertor-owned marker block `SERTOR:SDLC-RITUAL` from shared files,
+leaving the remainder intact.*
+
+**REQ-052 (Ubiquitous):** *The `sertor-flow upgrade`/`uninstall` commands shall accept the same
+flags as their `sertor` counterparts (`--assistant`, `--dry-run`, `--json`) and shall emit reports
+conforming to the same `install.report/1` schema with the `updated`/`removed` outcomes.*
+
+**REQ-053 (Ubiquitous):** *The lifecycle (upgrade/uninstall) primitives — content diff, standalone
+removal, marker-block removal, line removal, MCP de-registration — shall be implemented once in the
+`sertor-install-kit` and consumed by both `sertor` and `sertor-flow`, so the two packages stay
+symmetric and cannot drift (mitigates R-05).*
+
+**REQ-054 (Unwanted):** *If `sertor-flow uninstall` is run on a target where no governance artifact
+is present, then the CLI shall complete successfully (exit `0`) and report every artifact as
+`skipped` (idempotency), consistent with REQ-026.*
+
+**REQ-055 (Ubiquitous):** *Neither `sertor-flow upgrade` nor `sertor-flow uninstall` shall introduce
+a dependency of `sertor-flow` on `sertor-core` or on `sertor` (invariant of the governance package);
+the shared code lives only in `sertor-install-kit`.*
 
 ---
 
@@ -285,8 +323,9 @@ standard.
   artefatto, lo stato parziale rimane sul disco; re-eseguire completa l'operazione.
 - **`sertor-install-kit` stdlib-only**: nessuna dipendenza aggiuntiva al kit.
 - **Separazione `sertor` / `sertor-flow`**: `sertor` non ha dipendenza da `sertor-flow`; il
-  comportamento di `sertor uninstall governance` è limitato al puntatore (come `sertor install
-  governance`), a meno che [Q4] non indichi altrimenti.
+  comportamento di `sertor uninstall governance` resta limitato al **puntatore** (come `sertor
+  install governance`) — la rimozione reale degli artefatti di governance avviene via il comando
+  `sertor-flow uninstall` (§5.5). Il codice condiviso vive solo in `sertor-install-kit` (REQ-055).
 
 ### Assunzioni adottate
 
@@ -297,12 +336,13 @@ standard.
   settings) identificano gli artefatti Sertor tramite le marker string note
   (`SERTOR:WIKI-RITUAL`, `SERTOR:RAG-USAGE`, `SERTOR:SDLC-RITUAL`, prefisso linee gitignore
   `.sertor/`); non è necessaria un ulteriore store di tracciatura per questi.
-- **[ASSUNTO Q2]** L'upgrade degli artefatti di tipo `FILE`/`CREATE_IF_ABSENT` può essere
-  implementato come diff-e-overwrite a posteriori (confronto bundle vs disco), senza un manifest
-  di installazione esplicito, **a meno che** la rimozione degli obsoleti non richieda sapere cosa
-  era stato installato nella sessione precedente — questo è il punto critico della Q2.
-- **[ASSUNTO]** `sertor-flow upgrade`/`sertor-flow uninstall` sono fuori ambito di questo ticket
-  ma devono poter riusare le stesse primitive del kit una volta stabilite qui.
+- **(Q2 (a)) deciso:** l'upgrade degli artefatti `FILE`/`CREATE_IF_ABSENT` e la rimozione degli
+  obsoleti si implementano come **diff a posteriori** (confronto bundle vs disco contro una lista
+  statica di path Sertor-owned dichiarata in codice nei plan-builder), **senza manifest persistente**
+  (REQ-017).
+- **(Q4 (a)) `sertor-flow upgrade`/`sertor-flow uninstall` sono IN ambito** in questo ticket (§5.5):
+  riusano le stesse primitive del `sertor-install-kit` definite per `sertor`, mantenendo i due
+  pacchetti simmetrici (REQ-053/055).
 
 ### Dipendenze
 
@@ -343,17 +383,18 @@ standard.
 | **Idempotenza uninstall** | REQ-026 | **Must** | Invariante dell'epica |
 | **Upgrade artefatti standalone** | REQ-010, REQ-011, REQ-014, REQ-015 | **Should** | Priorità alta ma subordinata alla chiarifica Q2 sul meccanismo di tracciatura |
 | **Upgrade artefatti obsoleti** | REQ-012, REQ-013, REQ-016 | **Should** | Dipende da Q2; può essere rinviato se il diff a posteriori non è sufficiente |
-| **Manifest d'installazione (se necessario per Q2)** | REQ-017 | **Could** | Se il diff a posteriori non copre tutti i casi, introduce complessità; alternativa: limitare l'upgrade al bundle corrente |
+| **Diff a posteriori (tracciatura obsoleti)** | REQ-017 | **Should** | Q2 (a): lista statica di path Sertor-owned nei plan-builder, nessun manifest persistente |
 | **Flag --assistant su uninstall** | REQ-003 (per uninstall) | **Should** | Necessario per ospiti multi-assistente |
 | **Osservabilità log_event** | REQ-040, REQ-041 | **Should** | Coerenza con il contratto di osservabilità esistente |
-| **`sertor-flow upgrade`/`uninstall`** | (fuori ambito) | **Won't (questo ticket)** | Fuori ambito; le primitive del kit devono però essere progettate per il riuso |
+| **Primitive di ciclo di vita condivise nel kit** | REQ-053, REQ-055 | **Must** | Fondamento riusabile da `sertor` e `sertor-flow`; previene la divergenza (R-05) |
+| **`sertor-flow upgrade`/`uninstall`** | REQ-050, REQ-051, REQ-052, REQ-054 | **Should** | Q4 (a): in ambito, simmetrico a `sertor`, riusa le primitive del kit |
 
 ---
 
-## 10. Domande aperte
+## 10. Domande aperte — RISOLTE (2026-06-17)
 
-Le domande sono prioritizzate: le prime due bloccano il design; le successive influenzano l'ambito
-ma non bloccano.
+Tutte e 4 chiuse con l'utente. Sintesi: **Q1 (a)** · **Q2 (a)** · **Q3 (c)** · **Q4 (a)**.
+Di seguito il contesto originale e la decisione presa per ciascuna.
 
 ---
 
@@ -374,6 +415,8 @@ opzioni:
 **Raccomandazione: opzione (a)** — `wiki/` non viene rimosso a meno di `--purge-wiki` (o
 `--purge-data`); il flag richiede `--yes` o conferma interattiva, non combinabile con `--dry-run`.
 Il nome `--purge-wiki` è più esplicito di `--purge-data` (circoscritto alla capacità).
+
+> ✅ **DECISIONE (2026-06-17): opzione (a)**, flag `--purge-wiki`. → REQ-027/028.
 
 ---
 
@@ -396,6 +439,8 @@ implicita nei plan-builder ed è piccola; un dizionario `{capability: {assistant
 codice è sufficiente. Il manifest (opzione b) è adeguato solo se la lista di path diventa
 instabile o se si vuole supportare più versioni concorrenti installate sullo stesso host.
 
+> ✅ **DECISIONE (2026-06-17): opzione (a)**, diff a posteriori senza manifest. → REQ-017.
+
 ---
 
 **Q3 — Granularità: uninstall per-capacità o tutto-in-uno? (media — influenza UX)**
@@ -411,6 +456,8 @@ Due possibilità:
 **Raccomandazione: opzione (c)** — default all-in-one per il caso comune; la sintassi
 per-capacità per gli ospiti che vogliono rimuovere solo una parte. Coerente con `sertor install
 <capacità>`.
+
+> ✅ **DECISIONE (2026-06-17): opzione (c)** — tutto-in-uno + per-capacità. → §4 In ambito.
 
 ---
 
@@ -428,3 +475,9 @@ per-capacità per gli ospiti che vogliono rimuovere solo una parte. Coerente con
 **Raccomandazione: opzione (b)** — il pacchetto è separato, il team che lo mantiene può avere
 tempistiche diverse; le primitive del kit vengono progettate per essere riusabili da `sertor-flow`
 senza che questo ticket le blocchi. Annotare come dipendenza nella roadmap.
+
+> ✅ **DECISIONE (2026-06-17): opzione (a)** — **stesso ticket** (l'utente ha scelto contro la
+> raccomandazione (b)). Razionale: chiudere governance e RAG in un'unica passata e garantire che le
+> primitive del kit nascano subito simmetriche per entrambi i pacchetti (previene R-05). →
+> §5.5 (REQ-050…055). **Implicazione messa in conto:** ambito più ampio (due CLI da cablare e
+> validare nei `tasks`).
