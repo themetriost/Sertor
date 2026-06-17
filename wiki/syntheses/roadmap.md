@@ -407,17 +407,30 @@ Legenda: ✅ su master · 🧪 operativo, consolidamento formale aperto · 💀 
 | FEAT-008 | Arricchimento bidirezionale **Wiki↔RAG** | Could | 💤 da decomporre | — |
 | FEAT-009 | **Refresh incrementale** dell'indice (solo file cambiati) | Could | 💤 da decomporre | — |
 
-### Epica `sertor-cli` (il veicolo) — **non consegnata**, ripresa il 2026-06-11
+### Epica `sertor-cli` (il veicolo) — **nucleo consegnato**, aggiornata il 2026-06-17
 
 **DA-8 (2026-06-11) — split installer/esecuzione:** `sertor` = solo **install** (`sertor install
-<capacità>`); l'**esecuzione** vive nei console-script del core (`sertor-rag` nuovo, `sertor-wiki-tools`
-già su master).
+<capacità>`) + **ciclo di vita** (`upgrade`/`uninstall`, FEAT-008); l'**esecuzione** vive nei
+console-script del core (`sertor-rag`, `sertor-wiki-tools`).
 
-| Feature | Stato | Dove |
-|---|---|---|
-| CLI "esecuzione" (**`sertor-rag`** + `index`/`search`) | ✅ **su master (2026-06-11, PR #21)** — `src/sertor_core/cli/`, SpecKit `specs/011`; il vecchio `specs/004` resta ramo morto superato | requirements ✅ · codice ✅ |
-| Installer **`sertor install wiki`** (pacchetto `sertor` distinto, uv workspace) | ✅ **su master (2026-06-11, PR #22)** — `packages/sertor/`, SpecKit `specs/012`; validato live su ospite reale; `install rag`/`governance` stub | requirements ✅ · codice ✅ |
-| Localizzazione asset (tema lingua) · wizard config · `install rag`/`governance` · PyPI | 💤 da gestire/decomporre | tema lingua 👍 (2026-06-11) |
+Legenda: ✅ consegnata · 🔄 parziale (nucleo fatto, residuo aperto) · 📋 da decomporre · 💤 Won't.
+
+| ID | Feature | Pri | Stato |
+|---|---|---|---|
+| FEAT-001 | CLI installabile + **packaging distribuibile** `git+url` | Must | ✅ esecuzione `sertor-rag` (PR #21) + packaging LICENSE/versione/metadati/build (PR #68, 2026-06-17) |
+| FEAT-002 | Installazione selettiva delle capacità (`install wiki`/`rag`/`governance`) | Must | ✅ `install wiki` (PR #22) · `install rag` (live su Kaelen) · `governance` = puntatore a `sertor-flow` |
+| FEAT-003 | **Configurazione** (provider LLM + vector DB; **wizard**) | Should | 🔄 lettura config ✅; **wizard rinviato** |
+| FEAT-004 | Comando esecuzione RAG (`index`/`search`) | Should | ✅ feature `esecuzione` (PR #21) |
+| FEAT-005 | Setup governance (skill/agenti SDLC + requisiti) | Should | ✅ pacchetto separato `sertor-flow` (PR #56) |
+| FEAT-007 | Distribuzione **Copilot** — pacchetto `sertor` (wiki+rag) | Must | ✅ `--assistant claude\|copilot\|copilot-cli` (PR #64/#66). Codex = Could (non avviato) |
+| FEAT-009 | Distribuzione **Copilot** — governance `sertor-flow` | Must | ✅ launch-installer SpecKit per Copilot (PR #65). Codex = Could |
+| **FEAT-008** | **Ciclo di vita installer** — `upgrade`/`uninstall` (sertor + sertor-flow) | Could | ✅ **CONSEGNATA (PR #71, 2026-06-17)** — primitive nel kit, diff a posteriori, `--purge-wiki` CI-safe ([[installer-lifecycle]]) |
+| FEAT-010 | **Ergonomia & portabilità** (fallback `pip` · avviso target non-Python · hook Linux `sh` · install multi-target · reviewer clean-code) | Could | 📋 **da decomporre** (leak audit 2026-06-16) |
+| FEAT-006 | Distribuzione pubblica **PyPI** | Won't | 💤 rinviata (gating: licenza MIT scelta) |
+
+> **Stato epica:** tutti i **Must** chiusi (incl. packaging FEAT-001) e tutte le **Could rilevanti**
+> consegnate (lifecycle FEAT-008). Residuo: **FEAT-003 wizard config** (Should), **FEAT-010 ergonomia**
+> (Could, da decomporre), **Codex** (Could, non avviato per scelta utente), **PyPI** (Won't).
 
 > Oggi il prodotto si usa come **libreria** (`import sertor_core`), via **server MCP** e via
 > **CLI `sertor-rag`** ([[sertor-rag-cli]]). Il vecchio ramo CLI (`specs/004`) è definitivamente
