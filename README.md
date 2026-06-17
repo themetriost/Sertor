@@ -86,10 +86,14 @@ In development / next: incremental index refresh (only changed files), multi-ass
 
 ## Installation on another repository
 
-See **[`docs/install.md`](docs/install.md)** — interim installation via `git+url`, `.env`
-configuration, first `sertor-rag` commands, MCP server, and wiki tooling. It covers the three
-installable capabilities: **`sertor install rag`** (RAG), **`sertor install wiki`** (LLM Wiki), and
-**`sertor-flow install`** (the development method / SDLC — a separate package, orthogonal to the RAG).
+**Quick start — pick your assistant:**
+
+- **[`docs/install-claude.md`](docs/install-claude.md)** — for **Claude Code** hosts.
+- **[`docs/install-copilot.md`](docs/install-copilot.md)** — for **GitHub Copilot** hosts (VS Code & CLI).
+
+Each is a concise, three-section guide — **RAG**, **Wiki**, **Governance (SDLC)** — covering
+`sertor install rag`, `sertor install wiki`, and `sertor-flow install`. The full reference (every
+flag, all config knobs, refresh & uninstall) is **[`docs/install.md`](docs/install.md)**.
 
 For how to query a project once indexed — when to use **hybrid retrieval** vs the **code graph**
 (the *discover → navigate* pattern) — see **[`docs/retrieval.md`](docs/retrieval.md)**.

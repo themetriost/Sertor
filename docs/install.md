@@ -1,5 +1,10 @@
 # Installing Sertor on another repository
 
+> **Just want to get started?** Use the concise per-assistant quick starts instead:
+> **[install-claude.md](install-claude.md)** (Claude Code) · **[install-copilot.md](install-copilot.md)**
+> (GitHub Copilot). This page is the **complete reference** — every flag, all configuration knobs, the
+> MCP server, host-root hygiene, and refresh/uninstall (§10).
+
 > **Status.** Sertor is not yet on PyPI: the interim distribution is **`git+url`** (decision DA-4
 > of the CLI epic). This guide covers all the installable capabilities: the **full RAG capability**
 > (indexing + search + MCP server) and the guided **`sertor install rag`** (§6); the **deterministic
