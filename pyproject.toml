@@ -47,10 +47,17 @@ graph = [
 tui = [
     "textual>=8,<9",
 ]
+# Conteggio token preciso per il tetto del chunk (max_chunk_tokens): tiktoken (cl100k_base, il
+# tokenizer di text-embedding-3) è importato lazy in chunking. Senza questo extra il core ripiega su
+# una stima conservativa-sicura per carattere (resta installabile e offline-safe).
+tokenizer = [
+    "tiktoken>=0.7",
+]
 dev = [
     "pytest>=8.0",
     "ruff>=0.6",
     "textual>=8,<9",   # per i test headless del pannello (Pilot)
+    "tiktoken>=0.7",   # conteggio token preciso del tetto chunk (dogfood/test)
 ]
 
 [tool.uv.workspace]

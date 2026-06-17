@@ -5,6 +5,7 @@ import dataclasses
 
 from sertor_core.config.settings import Settings
 from sertor_core.domain.entities import ChunkerKind, DocType, Document
+from sertor_core.services.chunking._tokens import count_tokens
 from sertor_core.services.chunking.dispatch import chunk_document
 from sertor_core.services.chunking.fallback import size_chunks
 from sertor_core.services.chunking.markdown import markdown_chunks
@@ -75,7 +76,10 @@ def test_chunk_ids_are_stable_and_positional():
 
 # --- oversized chunk capping (robustness: embedders reject inputs over a token budget) -----------
 
-_SMALL_CAP = dataclasses.replace(S, max_chunk_chars=120, chunk_overlap=20)
+# A small TOKEN cap forces splitting of a big section without needing thousands of lines. Token
+# counting adapts (tiktoken when installed, else a safe per-char estimate) so the assertions hold
+# in both environments.
+_SMALL_CAP = dataclasses.replace(S, max_chunk_tokens=20, chunk_overlap=4)
 
 
 def test_oversized_markdown_section_is_capped():
@@ -84,22 +88,23 @@ def test_oversized_markdown_section_is_capped():
     doc = Document(id="docs/big.md", text=f"# Huge\n\n{body}\n", doc_type=DocType.DOC,
                    language="markdown")
     chunks = chunk_document(doc, _SMALL_CAP)
-    assert len(chunks) > 1                                            # actually split
-    assert all(len(c.text) <= _SMALL_CAP.max_chunk_chars for c in chunks)  # no chunk over the cap
+    assert len(chunks) > 1                                                   # actually split
+    assert all(count_tokens(c.text) <= _SMALL_CAP.max_chunk_tokens for c in chunks)  # within budget
     assert all(c.metadata.chunker is ChunkerKind.MARKDOWN for c in chunks)  # metadata preserved
     assert all(c.metadata.heading_path == ("Huge",) for c in chunks)        # heading inherited
     assert [c.id for c in chunks] == [f"docs/big.md#{i}" for i in range(len(chunks))]  # contiguous
 
 
-def test_oversized_chunk_line_numbers_offset_onto_document():
-    # Sub-pieces of an oversized section keep document-relative (not section-relative) line numbers.
+def test_oversized_pieces_inherit_section_metadata():
+    # Sub-pieces of an oversized section inherit its structural metadata and line range.
     body = "\n".join(f"line {i}" for i in range(60))
     doc = Document(id="docs/big.md", text=f"# Huge\n\n{body}\n", doc_type=DocType.DOC,
                    language="markdown")
     chunks = chunk_document(doc, _SMALL_CAP)
-    assert chunks[0].metadata.start_line == 1                     # section starts at the heading
+    assert chunks[0].metadata.start_line == 1                      # section starts at the heading
     assert all(c.metadata.start_line <= c.metadata.end_line for c in chunks)
-    assert chunks[-1].metadata.end_line <= doc.text.count("\n") + 1   # within the document
+    n_lines = doc.text.count("\n") + 1
+    assert all(c.metadata.end_line <= n_lines for c in chunks)     # within the document
 
 
 def test_small_chunks_unchanged_by_cap():
