@@ -438,7 +438,12 @@ def _apply_wiki_uninstall(
         if dry_run:
             return ArtifactOutcome(art.target_rel, project_removal(dest), "hook entries")
         fragment = _wiki_hook_fragment(art, assistant)
-        outcome, detail = remove_settings_entries(dest, fragment)
+        # The Copilot dedicated hooks file (`sertor-hooks.json`) is entirely Sertor-owned: if it is
+        # left empty after removal, delete it (don't leave a `{"version":1}` shell). The shared
+        # Claude `.claude/settings.json` keeps the user's content → never delete-if-empty.
+        outcome, detail = remove_settings_entries(
+            dest, fragment, delete_if_empty=(dest.name == "sertor-hooks.json")
+        )
         return ArtifactOutcome(art.target_rel, outcome, detail)
     raise ConfigError(f"unhandled artifact kind: {art.kind}")  # pragma: no cover
 

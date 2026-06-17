@@ -440,7 +440,11 @@ def _apply_rag_uninstall(
         if dry_run:
             return ArtifactOutcome(art.target_rel, project_removal(dest), "hook entries")
         fragment = _rag_settings_fragment(art, is_copilot)
-        outcome, detail = remove_settings_entries(dest, fragment)
+        # Copilot dedicated hooks file (`sertor-hooks.json`): delete if left empty after removal;
+        # the shared Claude `.claude/settings.json` is preserved (never delete-if-empty).
+        outcome, detail = remove_settings_entries(
+            dest, fragment, delete_if_empty=(dest.name == "sertor-hooks.json")
+        )
         return ArtifactOutcome(art.target_rel, outcome, detail)
     if art.kind is ArtifactKind.MCP_MERGE:
         dest = root / art.target_rel
