@@ -116,6 +116,20 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### ✅ DONE (su `master`, le rilevanti)
 
+- **🔧 Fix runtime Copilot + verifica empirica LIVE (PR #74, branch 050, 2026-06-17)** — la **verifica
+  empirica** della distribuzione Copilot su un **ospite reale** (Copilot CLI 1.0.63) ha chiuso il loop
+  «installato≠funzionante» e scoperto **3 difetti** che i test offline di FEAT-011 non coprivano (uno li
+  *codificava*): (1) il server MCP crashava `-32000 Connection closed` su config incompleta → warm-up
+  protetto, ora parte e l'errore è azionabile al tool-call; (2) SessionStart usava `command` invece di
+  `prompt` (Copilot lo ignorava) → campo corretto + dedup/idempotenza/uninstall sul payload `prompt`;
+  (3) `description` del custom-agent non quotata → un `:` rompeva lo YAML e `wiki-author` non si caricava
+  → quoting `_yaml_scalar`. **Confermato LIVE:** `.mcp.json` auto-caricato in sessione interattiva,
+  `sertor-rag` connesso (7 tool), 3 agent caricati; con creds mancanti il server resta connesso con
+  errore azionabile (niente `-32000`). Test che pinnano i fix (+ guard sugli asset veri). Suite verde
+  (kit 127 · sertor 221 · root 583 · packaging 2). **Lezione:** i test offline non bastano per superfici
+  di un tool esterno → la verifica sul client reale è parte del «done». *Decisioni: distribuzione
+  Copilot CLI-only + naming `copilot-cli` + governance prompt→custom-agent → da decomporre.*
+
 - **🚢 Hardening compatibilità Copilot — schema nativo (FEAT-011 `sertor-cli`, feature 049, PR #73, 2026-06-17)** —
   corregge la falsa "parità piena" di FEAT-007/009 emersa da un **audit dogfooding** su Copilot CLI
   1.0.63 (hook in formato Claude → file scartato; comandi prompt-file ignorati dalla CLI). Principio
@@ -477,7 +491,8 @@ Legenda: ✅ consegnata · 🔄 parziale (nucleo fatto, residuo aperto) · 📋 
 
 | Idea | Valore / perché | Note / vincoli | Stato |
 |------|-----------------|----------------|-------|
-| **Verifica empirica della distribuzione Copilot su ospite reale** (chiudere `[ASSUNTO-VSC]` + MCP CLI) | FEAT-011 ha reso le superfici Copilot conformi allo schema *offline*; la prova che **funzionino davvero** (hook caricati/eseguiti su Copilot CLI 1.0.63, SessionStart VS Code, lettura `.mcp.json`) si ha solo sul client reale — è lo spirito «installato≠funzionante» | Ospite disponibile: **Sentinel** (Copilot CLI 1.0.63). Esito: chiude i gap dichiarati di FEAT-011 o apre micro-fix mirati. Decisione utente 2026-06-17 «merge ora, verifica dopo» | 👍 **follow-up tracciato (2026-06-17)** — preparare i comandi di verifica per l'utente |
+| **Verifica empirica della distribuzione Copilot su ospite reale** | FEAT-011 conforme *offline*; la prova che **funzioni davvero** si ha solo sul client reale (spirito «installato≠funzionante») | **FATTA** su Copilot CLI 1.0.63: `.mcp.json` di progetto auto-caricato in sessione interattiva, `sertor-rag` connesso (7 tool), custom-agent caricati. Ha scoperto **3 bug** (server `-32000`, SessionStart `prompt`, agent YAML) → **risolti e ri-verificati live** (PR #74). | ✅ **fatto (2026-06-17, PR #74)** — path CLI verificato; VS Code non verificato → si droppa (CLI-only) |
+| **Refactor distribuzione Copilot CLI-only** (decisioni utente 2026-06-17) | Eliminare il footgun VS Code↔CLI e l'incoerenza di naming; supporto nativo pieno di un solo target | (1) drop del target VS Code (`.vscode/mcp.json`, prompt-file); (2) **naming unico `copilot-cli`** ovunque (oggi `sertor-flow` usa solo `copilot`); (3) governance: installare i prompt SpecKit e **trasformarli in custom-agent** (i prompt-file non vivono su CLI); (4) niente bash/cloud-agent | 👍 **da decomporre** (utente, 2026-06-17) |
 | **Rilevamento attivo dei gap di documentazione** (codice→wiki generativo) | Il residuo *genuino* di FEAT-008: oggi il legame codice↔doc è **passivo** (lo interroghi con `get_context`/`related_docs`), manca il **generativo** — il RAG/code-graph che rileva **entità di codice senza pagina wiki** e le **propone** al `wiki-author` | Scorporato dalla chiusura di FEAT-008 (✅ composita, verificata live 2026-06-16). Casa candidata: feature wiki dedicata o `debito-tecnico` FEAT-005 (igiene-wiki). Riusa il [[code-graph]] (`find_symbol`/`related_docs`) + lint C | 💡 **idea, scorporata da FEAT-008** (2026-06-16) |
 | **Pannello di controllo (TUI) di osservabilità** | Vedere log, consumo (token/€), #chunk, **hit/miss della cache** e fare report. Sertor già emette log strutturati ricchi ma effimeri | **Epica aperta** `requirements/osservabilita/epic.md` (10 feature MoSCoW, 2 strati: osservabilità persistente nel core + pannello TUI). Fork decisi: **superficie = TUI** (web=Could fase 2), **dati = store SQLite locale + export OTel opzionale**. Assorbe «logging come strategia runtime» e i Could **H9/H10** dell'hardening. MVP = FEAT-001→004 (persisti→aggrega→TUI live→report) **+ stima € (Should, DA-O-g risolta)**. Privacy fissata (DA-O-d): **privacy-by-default a strati** (metriche di default · testo opt-in · semantico opt-in ulteriore). Restano domande di design (cattura "live", retention, innesto su `log_event`) | 👍 **epica aperta, da decomporre** (utente, 2026-06-14) |
 | **Memoria conversazioni (terzo livello / episodica, pattern Hermes)** | Archiviare TUTTE le conversazioni come tier grezzo episodico, interrogabile nei casi speciali («ne avevamo già parlato?»); è il tassello mancante sotto il diario del wiki, fonte grezza per la distillazione | **Epica aperta** `requirements/memoria-conversazioni/epic.md` (8 feature MoSCoW). Distinta dall'osservabilità (conoscenza ≠ telemetria), **privacy condivisa** (privacy-by-default, FTS locale, semantico opt-in). MVP = cattura + ricerca episodica locale. **Nodo:** la cattura è host-specifica (Claude Code → harness) → si lega alla distribuzione multi-assistente. Mappa Hermes↔Sertor in epic.md | 👍 **epica aperta, da decomporre, in parallelo** (utente, 2026-06-14) |
