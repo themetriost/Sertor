@@ -28,7 +28,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **Packaging distribuibile** `git+url` (FEAT-001, LICENSE+metadati+build verificata, 2026-06-17) | `sertor-cli` |
 | **Ciclo di vita installer** — `upgrade`/`uninstall` per `sertor` e `sertor-flow` (FEAT-008, 2026-06-17) | `sertor-cli` |
 | Governance SDLC — pacchetto separato `sertor-flow` | `sertor-cli` |
-| Distribuzione Copilot (VS Code + CLI) — FEAT-007+009 ⚠️ *parità non piena, hardening FEAT-011 in corso* | `sertor-cli` |
+| Distribuzione Copilot (VS Code + CLI) — FEAT-007+009 + **hardening nativo FEAT-011** ✅ *(verifica empirica VS Code/MCP CLI = follow-up)* | `sertor-cli` |
 | Igiene radice host · tema lingua (tutto il prodotto in EN) | `sertor-cli` |
 | MVP osservabilità F1–F4 (**accesa** sul dogfood) | `osservabilita` |
 | MVP memoria: cattura→ricerca→CLI/hook→distillazione (**acceso**) | `memoria-conversazioni` |
@@ -45,7 +45,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | Epica | Stato | Residuo / 1° passo |
 |---|---|---|
 | [`sertor-core`](../../requirements/sertor-core/epic.md) | ✅ completa | — (agenzia incorporata ❌ abbandonata by design) |
-| [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | ⚠️ **FEAT-011 hardening compat Copilot (Must riaperto)** · wizard config · ergonomia installer · Codex · PyPI *(packaging ✅ + lifecycle ✅ 2026-06-17)* |
+| [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | wizard config · ergonomia installer · Codex · PyPI *(packaging ✅ + lifecycle ✅ + hardening compat Copilot FEAT-011 ✅ 2026-06-17; verifica empirica Copilot = follow-up)* |
 | [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | OTel · metriche aggregate · **stima € (Should)** · web · export CSV/MD |
 | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso | ricerca semantica · remember-this · retention · **distribuzione installer (Must)** · multi-assist |
 | [`multiutente`](../../requirements/multiutente/epic.md) | 📋 differita | finché il caso d'uso team non è concreto |
@@ -115,6 +115,21 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   `sertor-core/motore-agentico/` restano **elicitazione storica**, non pianificata.
 
 ### ✅ DONE (su `master`, le rilevanti)
+
+- **🚢 Hardening compatibilità Copilot — schema nativo (FEAT-011 `sertor-cli`, feature 049, PR #73, 2026-06-17)** —
+  corregge la falsa "parità piena" di FEAT-007/009 emersa da un **audit dogfooding** su Copilot CLI
+  1.0.63 (hook in formato Claude → file scartato; comandi prompt-file ignorati dalla CLI). Principio
+  **nativo, niente hack** ([[feedback nativo no-hack]]): nuovo `render_copilot_hooks` + `HookEntrySpec`
+  generano hook in **formato Copilot** (`version:1`, entry piatte, `powershell`/`bash`, `timeoutSec`)
+  al posto degli asset Claude-format **rimossi**; gli script `.ps1` condivisi emettono il **contratto
+  nativo per assistente** via `-Assistant` (sessionStart→`additionalContext`, agentStop→`decision:allow`
+  non-bloccante, preToolUse **fail-open**); comandi **per-target** (VS Code prompt-file `agent:`, Copilot
+  CLI **custom-agent**); `model:` omesso; **suite di validità-schema offline** che fallisce se un bug
+  dell'audit rientra. Estensione **mirata** del seam `AssistantProfile`/`Surface` (non revisione profonda,
+  YAGNI). Pipeline SpecKit completa; **Constitution 11/11**; **453 test verdi** (kit 126 · sertor 219 ·
+  sertor-flow 108); `sertor-core` invariato, `sertor-flow` senza dipendenza dal core. **Gap dichiarato
+  (mai parità piena):** SessionStart VS Code `[ASSUNTO-VSC]` + target MCP CLI da **verificare
+  empiricamente** su ospite reale (follow-up). [[assistant-targeting]] aggiornato.
 
 - **🚢 Ciclo di vita installer — `upgrade`/`uninstall` (FEAT-008 `sertor-cli`, feature 048, PR #71, 2026-06-17)** —
   l'installer acquista i verbi di **ciclo di vita** oltre al primo install: `sertor upgrade`/`uninstall`
@@ -422,19 +437,19 @@ Legenda: ✅ consegnata · 🔄 parziale (nucleo fatto, residuo aperto) · 📋 
 | FEAT-003 | **Configurazione** (provider LLM + vector DB; **wizard**) | Should | 🔄 lettura config ✅; **wizard rinviato** |
 | FEAT-004 | Comando esecuzione RAG (`index`/`search`) | Should | ✅ feature `esecuzione` (PR #21) |
 | FEAT-005 | Setup governance (skill/agenti SDLC + requisiti) | Should | ✅ pacchetto separato `sertor-flow` (PR #56) |
-| FEAT-007 | Distribuzione **Copilot** — pacchetto `sertor` (wiki+rag) | Must | ⚠️ **parità NON piena** — consegnata (PR #64/#66) ma audit 2026-06-17 ha trovato superfici non conformi allo schema Copilot (hook, prompt-file su CLI) → vedi FEAT-011 |
-| FEAT-009 | Distribuzione **Copilot** — governance `sertor-flow` | Must | ⚠️ **parità NON piena** — consegnata (PR #65), stessa regressione di FEAT-007 (hook + comandi su CLI) → FEAT-011 |
+| FEAT-007 | Distribuzione **Copilot** — pacchetto `sertor` (wiki+rag) | Must | ✅ consegnata (PR #64/#66); **conformità schema sanata da FEAT-011** (PR #73). Resta da verificare sul campo il SessionStart VS Code |
+| FEAT-009 | Distribuzione **Copilot** — governance `sertor-flow` | Must | ✅ consegnata (PR #65); **conformità schema sanata da FEAT-011** (PR #73) |
 | **FEAT-008** | **Ciclo di vita installer** — `upgrade`/`uninstall` (sertor + sertor-flow) | Could | ✅ **CONSEGNATA (PR #71, 2026-06-17)** — primitive nel kit, diff a posteriori, `--purge-wiki` CI-safe ([[installer-lifecycle]]) |
-| **FEAT-011** | **Hardening compatibilità Copilot** — conformità schema reale (hook `version:1`/flat/`powershell`; contratto output `.ps1`; comandi via custom-agent su CLI; frontmatter agent; test di validità-schema) | Must | 🔄 **in decomposizione (2026-06-17)** — corregge FEAT-007/009; audit dogfooding su Copilot CLI 1.0.63 |
+| **FEAT-011** | **Hardening compatibilità Copilot** — schema nativo (hook `version:1`/flat/`powershell`; output `.ps1` per-assistente; comandi via custom-agent su CLI; frontmatter `agent:`/no `model:`; suite validità-schema) | Must | ✅ **CONSEGNATA (PR #73, 2026-06-17)** — 453 test verdi, no-hack nativo. ⚠️ **Gap dichiarato:** SessionStart VS Code `[ASSUNTO-VSC]` + MCP CLI da **verificare empiricamente** su ospite reale (follow-up) |
 | FEAT-010 | **Ergonomia & portabilità** (fallback `pip` · avviso target non-Python · hook Linux `sh` · install multi-target · reviewer clean-code) | Could | 📋 **da decomporre** (leak audit 2026-06-16) |
 | FEAT-006 | Distribuzione pubblica **PyPI** | Won't | 💤 rinviata (gating: licenza MIT scelta) |
 
-> **Stato epica:** nucleo consegnato (packaging FEAT-001 + lifecycle FEAT-008), ma **un Must è
-> riaperto** → **FEAT-011 hardening compatibilità Copilot**: l'audit dogfooding del 2026-06-17 (Copilot
-> CLI 1.0.63) ha trovato che la parità Copilot di FEAT-007/009 **non è piena** (hook in formato Claude
-> non conformi allo schema Copilot; comandi prompt-file ignorati dalla CLI). Altro residuo: **FEAT-003
-> wizard config** (Should), **FEAT-010 ergonomia** (Could, da decomporre), **Codex** (Could, non
-> avviato), **PyPI** (Won't).
+> **Stato epica:** nucleo consegnato (packaging FEAT-001 + lifecycle FEAT-008 + **hardening compat
+> Copilot FEAT-011**, PR #73). La conformità allo schema nativo Copilot è sanata (hook/output/comandi/
+> frontmatter); **resta da verificare empiricamente sul client reale** il SessionStart VS Code
+> (`[ASSUNTO-VSC]`) e il target MCP della CLI → **follow-up** (vedi §Nuove funzionalità). Altro
+> residuo: **FEAT-003 wizard config** (Should), **FEAT-010 ergonomia** (Could, da decomporre),
+> **Codex** (Could, non avviato), **PyPI** (Won't).
 
 > Oggi il prodotto si usa come **libreria** (`import sertor_core`), via **server MCP** e via
 > **CLI `sertor-rag`** ([[sertor-rag-cli]]). Il vecchio ramo CLI (`specs/004`) è definitivamente
@@ -462,6 +477,7 @@ Legenda: ✅ consegnata · 🔄 parziale (nucleo fatto, residuo aperto) · 📋 
 
 | Idea | Valore / perché | Note / vincoli | Stato |
 |------|-----------------|----------------|-------|
+| **Verifica empirica della distribuzione Copilot su ospite reale** (chiudere `[ASSUNTO-VSC]` + MCP CLI) | FEAT-011 ha reso le superfici Copilot conformi allo schema *offline*; la prova che **funzionino davvero** (hook caricati/eseguiti su Copilot CLI 1.0.63, SessionStart VS Code, lettura `.mcp.json`) si ha solo sul client reale — è lo spirito «installato≠funzionante» | Ospite disponibile: **Sentinel** (Copilot CLI 1.0.63). Esito: chiude i gap dichiarati di FEAT-011 o apre micro-fix mirati. Decisione utente 2026-06-17 «merge ora, verifica dopo» | 👍 **follow-up tracciato (2026-06-17)** — preparare i comandi di verifica per l'utente |
 | **Rilevamento attivo dei gap di documentazione** (codice→wiki generativo) | Il residuo *genuino* di FEAT-008: oggi il legame codice↔doc è **passivo** (lo interroghi con `get_context`/`related_docs`), manca il **generativo** — il RAG/code-graph che rileva **entità di codice senza pagina wiki** e le **propone** al `wiki-author` | Scorporato dalla chiusura di FEAT-008 (✅ composita, verificata live 2026-06-16). Casa candidata: feature wiki dedicata o `debito-tecnico` FEAT-005 (igiene-wiki). Riusa il [[code-graph]] (`find_symbol`/`related_docs`) + lint C | 💡 **idea, scorporata da FEAT-008** (2026-06-16) |
 | **Pannello di controllo (TUI) di osservabilità** | Vedere log, consumo (token/€), #chunk, **hit/miss della cache** e fare report. Sertor già emette log strutturati ricchi ma effimeri | **Epica aperta** `requirements/osservabilita/epic.md` (10 feature MoSCoW, 2 strati: osservabilità persistente nel core + pannello TUI). Fork decisi: **superficie = TUI** (web=Could fase 2), **dati = store SQLite locale + export OTel opzionale**. Assorbe «logging come strategia runtime» e i Could **H9/H10** dell'hardening. MVP = FEAT-001→004 (persisti→aggrega→TUI live→report) **+ stima € (Should, DA-O-g risolta)**. Privacy fissata (DA-O-d): **privacy-by-default a strati** (metriche di default · testo opt-in · semantico opt-in ulteriore). Restano domande di design (cattura "live", retention, innesto su `log_event`) | 👍 **epica aperta, da decomporre** (utente, 2026-06-14) |
 | **Memoria conversazioni (terzo livello / episodica, pattern Hermes)** | Archiviare TUTTE le conversazioni come tier grezzo episodico, interrogabile nei casi speciali («ne avevamo già parlato?»); è il tassello mancante sotto il diario del wiki, fonte grezza per la distillazione | **Epica aperta** `requirements/memoria-conversazioni/epic.md` (8 feature MoSCoW). Distinta dall'osservabilità (conoscenza ≠ telemetria), **privacy condivisa** (privacy-by-default, FTS locale, semantico opt-in). MVP = cattura + ricerca episodica locale. **Nodo:** la cattura è host-specifica (Claude Code → harness) → si lega alla distribuzione multi-assistente. Mappa Hermes↔Sertor in epic.md | 👍 **epica aperta, da decomporre, in parallelo** (utente, 2026-06-14) |
