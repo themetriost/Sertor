@@ -471,6 +471,39 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/049-compatibilita-copilot/plan.md` (FEAT-011 epica **sertor-cli** — **hardening compatibilità
+GitHub Copilot** dell'installer: corregge FEAT-007 (PR #64) e FEAT-009 (PR #65) dopo un audit di dogfooding
+(Copilot CLI 1.0.63) che ha dimostrato che la "parità piena" Copilot è **falsa** su più superfici —
+l'installer depositava artefatti in **formato Claude** non conformi allo schema Copilot. **Principio guida
+vincolante:** supporto **NATIVO** per ogni tool, **niente hack** (no JSON con campi-di-entrambi, no formato
+Claude tollerato, no veicolo sbagliato); il **riuso** è del CONTENUTO (corpo istruzionale + corpo logico
+`.ps1`, fonte unica byte-for-byte), il CONTENITORE/contratto è **tradotto nativamente**. FR-014 di FEAT-007
+**rilassato**: corpo `.ps1` condiviso, output nativo per assistente via `-Assistant`. **5 difetti chiusi:**
+(A) hook JSON nativi (`{"version":1,"hooks":{<evento>:[entry PIATTA]}}`, `timeoutSec`, niente
+`shell`/`statusMessage`/`timeout`) — senza `version:1` il file era scartato → 0 hook eseguiti; (B) output
+`.ps1` **per-evento** (`agentStop`→`{decision:"allow",reason}` non-bloccante Q3=b; `preToolUse` **fail-open**
+exit 0 sempre, NFR-3, è il rischio più grave perché Copilot è fail-closed; `sessionEnd`→nessun stdout
+consumato, msg su stderr; **mai dual-field**); (C) SessionStart nativo (CLI `type:"prompt"` Q1=b; VS Code
+`type:"command"`→`{additionalContext}`); (D) veicolo comandi **per-target** Q2=c (VS Code prompt-file +
+CLI **custom-agent**, perché i prompt-file NON esistono su Copilot CLI); (E) frontmatter (`agent:` non
+`mode:`; **omesso** `model:` Claude Q6=a; persona+corpo byte-for-byte). **2 nodi di design risolti:**
+(1) SessionStart VS Code = `{additionalContext}` via hook `command`, con **[ASSUNTO-VSC] dichiarato** (non
+verificato sul campo) + fallback nativo (direttiva statica nel blocco istruzioni) + gap dichiarato finché
+non confermato; (2) seam **esteso in modo mirato** (NON revisione profonda — YAGNI): `AssistantProfile`
+copilot-cli → veicolo COMMAND custom-agent; `render_prompt_file` (`agent:`); `render_custom_agent`
+(no `model`); nuova `render_copilot_hooks(events)` + `HookEntrySpec` (fonte unica del wiring, gli asset
+statici `copilot/hooks/*.json` in formato Claude sono SOSTITUITI dal generato); `settings_merge` dedup
+**schema-aware** (riconosce forma piatta Copilot + annidata Claude, retrocompatibile). **Gruppo G:** suite
+di **validità-schema OFFLINE** (FR-021..026, NFR-5) che avrebbe preso tutti i bug dell'audit (verifica
+struttura, non solo presenza); reintroducendo un difetto → almeno un test fallisce (SC-007). **Gruppo H:**
+onestà claim — nessuna parità non-verificata, gap espliciti nell'output d'installazione e surface-mapping
+(FR-027/028); MCP CLI (FR-020/Q5) = solo documentare l'evidenza (PR #66 vs doc `~/.copilot/mcp-config.json`),
+correggere solo se smentita. Vive nei pacchetti installer (`sertor-install-kit` stdlib-only + `sertor` +
+`sertor-flow`); le correzioni si propagano a `sertor-flow` riusando il renderer del kit **senza** dipendenza
+da `sertor-core`/`sertor` (FR-042/SC-011). `sertor-core` **invariato** (NFR-3). Invarianti: install≠run,
+non-distruttività, idempotenza, **non-regressione `claude`** (gate duro, default `-Assistant claude`,
+SC-010). Constitution **PASS 11/11** (pre e post-design) senza deroghe. Branch `049-compatibilita-copilot`.
+Storico:
 `specs/048-lifecycle-installer/plan.md` (FEAT-008 epica **sertor-cli** — **ciclo di vita** dell'installer:
 i due verbi mancanti `upgrade`/`uninstall` (oggi solo procedura manuale `docs/install.md §10.1/§10.2`).
 4 decisioni di prodotto chiuse: **Q1 (a)** wiki protetto (`--purge-wiki`+`--yes`); **Q2 (a)** obsoleti via

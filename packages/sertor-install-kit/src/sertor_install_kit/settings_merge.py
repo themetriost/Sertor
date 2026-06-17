@@ -16,12 +16,21 @@ from sertor_install_kit.errors import ConfigError
 
 
 def _inner_commands(entry: dict) -> set[str]:
-    """Extracts the `command` values from the innermost entries of a hook entry
-    (`{hooks:[{command:...}]}`)."""
+    """Extracts the `command` values of a hook entry, schema-aware (FEAT-011/data-model §4).
+
+    Two shapes coexist after FEAT-011:
+      - Claude (nested): `{matcher?, hooks: [{command, ...}]}` — commands live in the inner list.
+      - Copilot (flat): `{type, command, timeoutSec, matcher?}` — the command is on the entry.
+    Recognizing BOTH keeps the dedup (and the inverse removal) correct on either wiring, and on a
+    file that mixes both shapes. Backward-compatible: the Claude nested form is unchanged.
+    """
     commands: set[str] = set()
     for inner in entry.get("hooks", []):
         if isinstance(inner, dict) and "command" in inner:
             commands.add(inner["command"])
+    # Copilot flat form: the command is directly on the entry (no nested `hooks`).
+    if "command" in entry and isinstance(entry["command"], str):
+        commands.add(entry["command"])
     return commands
 
 
@@ -32,6 +41,11 @@ def _dedup_hooks(existing: dict, fragment: dict) -> tuple[dict, int]:
     Does not mutate `existing` in place: operates on a deep copy of the `hooks` section.
     """
     merged = json.loads(json.dumps(existing))  # copia profonda
+    # FEAT-011: the Copilot wiring file carries a top-level `"version": 1` (schema requirement R1).
+    # Carry it over from the fragment when the existing file does not already declare one, so the
+    # merged file stays schema-valid. Claude's `settings.json` has no such key → no-op for Claude.
+    if "version" in fragment and "version" not in merged:
+        merged["version"] = fragment["version"]
     hooks = merged.setdefault("hooks", {})
     added = 0
 

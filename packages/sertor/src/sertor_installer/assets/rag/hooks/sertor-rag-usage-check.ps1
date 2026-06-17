@@ -13,9 +13,15 @@
 
   Default severity = `warn` → **exit 0 ALWAYS** (never blocks). Parse error / unknown context →
   FAIL-OPEN (exit 0, no signal). The hook's absence must not break anything (Principle X).
+
+  FEAT-011: on Copilot the `preToolUse` event is FAIL-CLOSED (a non-zero exit / a `decision:"deny"`
+  signal would BLOCK the tool call). This hook is a non-blocking reminder, so it MUST exit 0 in
+  every case (even on a parse error) and emit NO stdout payload Copilot could read as a `deny`
+  decision — the warning goes ONLY to stderr. `-Assistant` is accepted for wiring symmetry; the
+  fail-open contract (exit 0, stderr-only) is already identical for both assistants.
 #>
 [CmdletBinding()]
-param()
+param([ValidateSet('claude', 'copilot')][string]$Assistant = 'claude')
 
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 

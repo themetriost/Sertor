@@ -292,6 +292,13 @@ def execute_governance_plan(
     # Merge the plan outcomes into the report that already carries the launch outcome.
     for outcome in plan_report.outcomes:
         report.add(outcome)
+    if profile.assistant == "copilot":
+        # FEAT-011 (FR-027/028): the Copilot VS Code surfaces are schema-valid (offline) but not
+        # verified on a real client — declare the gap honestly, never claim "full parity".
+        report.note(
+            "[ASSUNTO-VSC] Copilot VS Code governance surfaces are schema-valid (offline) but NOT "
+            "verified on a real VS Code client — declared gap, NOT full parity."
+        )
     return report
 
 

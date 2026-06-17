@@ -37,6 +37,11 @@ class InstallReport:
     # Defaults to INSTALL → every existing call site renders exactly as before.
     op: LifecycleOp = LifecycleOp.INSTALL
     outcomes: list[ArtifactOutcome] = field(default_factory=list)
+    # FEAT-011: honest gap declarations (Principio IX). Free-text caveats surfaced to the user about
+    # surfaces NOT verified end-to-end (e.g. the VS Code SessionStart `additionalContext`
+    # mechanism), so the install never claims "full parity" it cannot back up. Additive: empty by
+    # default → existing renderings unchanged; the JSON gains a `notes` array only when non-empty.
+    notes: list[str] = field(default_factory=list)
     created: int = 0
     skipped: int = 0
     merged: int = 0
@@ -66,6 +71,11 @@ class InstallReport:
             if self.failed_step is None:
                 self.failed_step = outcome.target_rel
 
+    def note(self, message: str) -> None:
+        """Adds a gap/caveat declaration (FEAT-011, FR-028). Idempotent on duplicate messages."""
+        if message not in self.notes:
+            self.notes.append(message)
+
     def exit_code(self) -> int:
         """0 if no errors (even if everything was skipped — idempotency); 1 on domain error."""
         return 1 if self.errors else 0
@@ -88,6 +98,8 @@ class InstallReport:
                 f"{self.merged} merged · {self.block} block · {self.updated} updated · "
                 f"{self.removed} removed · {self.errors} errors"
             )
+        for note in self.notes:
+            lines.append(f"Note: {note}")
         return "\n".join(lines)
 
     def render_json(self) -> str:
@@ -111,4 +123,6 @@ class InstallReport:
             },
             "failed_step": self.failed_step,
         }
+        if self.notes:  # additive: present only when there are gap declarations (FEAT-011)
+            payload["notes"] = list(self.notes)
         return json.dumps(payload, ensure_ascii=False, sort_keys=False)

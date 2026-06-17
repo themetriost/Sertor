@@ -74,9 +74,29 @@ report (mai omissione silenziosa, FR-016).
 ## Grounding Copilot (giugno 2026)
 
 Copilot (VS Code agent mode) ha gli **stessi 8 eventi hook** di Claude (`SessionStart`/`Stop`/
-`PreToolUse`/…), custom-agent `.agent.md`, prompt-file, MCP `.vscode/mcp.json`, e legge nativamente
-`.claude/settings.json`/`CLAUDE.md` — il che rende la parità realizzabile (e ha smentito l'assunzione
-obsoleta «Copilot niente hook»).
+`PreToolUse`/…), custom-agent `.agent.md`, prompt-file, MCP `.vscode/mcp.json` — il che rende la parità
+realizzabile (e ha smentito l'assunzione obsoleta «Copilot niente hook»).
+
+## Hardening compatibilità (FEAT-011, giugno 2026)
+
+Un audit di dogfooding (Copilot CLI 1.0.63) ha mostrato che la «parità piena» dichiarata era **falsa**: i
+primi installer FEAT-007/009 depositavano artefatti in **formato Claude** non conformi allo schema Copilot
+(hook JSON senza `version:1` → **scartati in silenzio**; output `.ps1` con `systemMessage` Claude-only;
+SessionStart con stringhe nude; comandi solo-prompt-file non invocabili da CLI; frontmatter `mode:` invece
+di `agent:`; `model:` Claude nei custom-agent). FEAT-011 corregge **tradicendo nativamente il contenitore**:
+
+- gli hook Copilot sono **generati nativamente** da `render_copilot_hooks`/`HookEntrySpec` nel kit
+  (`version:1`, voci piatte, `timeoutSec`, nessun campo Claude-only); gli asset statici sono rimossi;
+- gli script `.ps1` rendono l'output **nativo per assistente** via `-Assistant copilot` (agentStop
+  `{decision:"allow",reason}`, sessionEnd su stderr, **mai dual-field**); preToolUse resta **fail-open**;
+- il **COMMAND** su `copilot-cli` è un **custom-agent** (`.github/agents/*.agent.md`, l'unica forma
+  invocabile da CLI) via il nuovo `command_vehicle` del profilo; su VS Code resta prompt-file (`agent:`);
+- SessionStart è **per-famiglia**: VS Code `type:"command"`→`{additionalContext}` (**[ASSUNTO-VSC]**, gap
+  dichiarato nelle `InstallReport.notes`, mai «parità piena»); CLI `type:"prompt"` statico;
+- una **suite di validità-schema offline** (gruppo G) avrebbe preso ognuno dei bug dell'audit.
+
+Le superfici sono **validate dallo schema (offline)**; la conferma runtime su client reale resta fuori
+ambito di prodotto → i claim di parità VS Code sono **gap dichiarati**, non «pieni».
 
 ## Relazioni
 

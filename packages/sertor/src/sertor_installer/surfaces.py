@@ -8,9 +8,17 @@ functions, keeping the existing `sertor_installer.surfaces.<fn>` import sites un
 from __future__ import annotations
 
 from sertor_install_kit.surfaces import (
+    HookEntrySpec,
+    render_copilot_hooks,
     render_custom_agent,
     render_prompt_file,
     split_frontmatter,
 )
 
-__all__ = ["split_frontmatter", "render_prompt_file", "render_custom_agent"]
+__all__ = [
+    "split_frontmatter",
+    "render_prompt_file",
+    "render_custom_agent",
+    "HookEntrySpec",
+    "render_copilot_hooks",
+]

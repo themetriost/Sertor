@@ -11,6 +11,7 @@ import pytest
 from sertor_install_kit.assistant import (
     AssistantId,
     AssistantProfile,
+    CommandVehicle,
     Surface,
 )
 from sertor_install_kit.errors import ConfigError
@@ -88,8 +89,46 @@ def test_copilot_cli_reuses_github_surfaces():
     p = AssistantProfile.for_assistant(AssistantId.COPILOT_CLI)
     assert p.target_for(Surface.INSTRUCTION_BLOCK).target_rel == ".github/copilot-instructions.md"
     assert p.target_for(Surface.HOOK).target_rel.startswith(".github/hooks/")
-    assert p.render_path(Surface.COMMAND, "wiki").startswith(".github/prompts/")
     assert p.render_path(Surface.AGENT, "wiki-curator").startswith(".github/agents/")
+
+
+# ----------------------------------------------- FEAT-011: COMMAND vehicle per target (Q2=c)
+
+def test_command_vehicle_per_target():
+    """The COMMAND vehicle is explicit: prompt-file for claude/copilot, custom-agent for the CLI."""
+    assert (
+        AssistantProfile.for_assistant(AssistantId.CLAUDE).command_vehicle
+        is CommandVehicle.PROMPT_FILE
+    )
+    assert (
+        AssistantProfile.for_assistant(AssistantId.COPILOT).command_vehicle
+        is CommandVehicle.PROMPT_FILE
+    )
+    assert (
+        AssistantProfile.for_assistant(AssistantId.COPILOT_CLI).command_vehicle
+        is CommandVehicle.CUSTOM_AGENT
+    )
+
+
+def test_copilot_cli_command_is_custom_agent_path():
+    """FEAT-011: the COMMAND surface on the CLI renders to a custom-agent (`.agent.md`), not a
+    prompt-file — a prompt-file is not CLI-invocable (audit 🔴)."""
+    p = AssistantProfile.for_assistant(AssistantId.COPILOT_CLI)
+    path = p.render_path(Surface.COMMAND, "wiki")
+    assert path == ".github/agents/wiki.agent.md"
+    assert not path.endswith(".prompt.md")
+
+
+def test_copilot_vscode_command_stays_prompt_file():
+    """Non-regression: VS Code keeps the prompt-file for COMMANDs."""
+    p = AssistantProfile.for_assistant(AssistantId.COPILOT)
+    assert p.render_path(Surface.COMMAND, "wiki") == ".github/prompts/wiki.prompt.md"
+
+
+def test_claude_command_path_unchanged():
+    """Non-regression: Claude COMMAND path is byte-for-byte the historical `.claude/<rel>`."""
+    p = AssistantProfile.for_assistant(AssistantId.CLAUDE)
+    assert p.render_path(Surface.COMMAND, "commands/wiki.md") == ".claude/commands/wiki.md"
 
 
 # ------------------------------------------------------------ validity (Principio I / artifacts)

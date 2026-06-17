@@ -15,10 +15,10 @@ from sertor_installer.install_wiki import build_install_plan, execute_plan
 from sertor_installer.resources import read_asset_text
 
 
-def _install(target: Path, **kwargs):
+def _install(target: Path, assistant: AssistantId = AssistantId.COPILOT, **kwargs):
     profile = build_host_profile(target, **kwargs)
-    plan = build_install_plan(AssistantId.COPILOT)
-    return execute_plan(plan, profile, AssistantId.COPILOT)
+    plan = build_install_plan(assistant)
+    return execute_plan(plan, profile, assistant)
 
 
 # ---------------------------------------------------------------- US2: instruction block + commands
@@ -50,7 +50,9 @@ def test_prompt_files_present_and_formed(tmp_path: Path):  # FR-010
     assert wiki_prompt.is_file() and skill_prompt.is_file()
     head = wiki_prompt.read_text(encoding="utf-8")
     assert head.startswith("---")
-    assert "mode: agent" in head.splitlines()[1]
+    # FEAT-011/FR-016: the prompt-file mode key is `agent:`, never `mode:`.
+    assert "agent:" in head.splitlines()[1]
+    assert "mode:" not in head.splitlines()[1]
     # no Claude commands/skills dirs for copilot
     assert not (tmp_path / ".claude").exists()
 
@@ -73,6 +75,70 @@ def test_hook_wiring_session_events(tmp_path: Path):  # FR-012
     data = json.loads(wiring.read_text(encoding="utf-8"))
     assert "SessionStart" in data["hooks"]
     assert "Stop" in data["hooks"]
+
+
+# ------------------------------------------------- FEAT-011: native Copilot hook schema (US1)
+
+def _wiring(tmp_path: Path) -> dict:
+    return json.loads(
+        (tmp_path / ".github" / "hooks" / "sertor-hooks.json").read_text(encoding="utf-8")
+    )
+
+
+def test_wiki_wiring_is_native_copilot_schema(tmp_path: Path):  # FR-001..004 / R1..R4
+    _install(tmp_path)
+    data = _wiring(tmp_path)
+    assert data["version"] == 1                                  # R1
+    for entries in data["hooks"].values():
+        for entry in entries:
+            assert "hooks" not in entry                          # R2 (flat, no nesting)
+            assert "shell" not in entry                          # R3
+            assert "statusMessage" not in entry                  # R3
+            assert "timeout" not in entry                        # R4 (timeoutSec only)
+
+
+def test_wiki_stop_command_passes_assistant_copilot(tmp_path: Path):
+    _install(tmp_path)
+    stop = _wiring(tmp_path)["hooks"]["Stop"][0]
+    assert "-Assistant copilot" in stop["command"]
+    assert "-Mode Stop" in stop["command"]
+    assert stop["timeoutSec"] == 10
+
+
+def test_vscode_session_start_is_command_invoking_script(tmp_path: Path):  # ASSUNTO-VSC
+    """VS Code: SessionStart is `type:"command"` invoking the extracted script with -Assistant
+    copilot (native additionalContext). [ASSUNTO-VSC]: not verified on a real VS Code client."""
+    _install(tmp_path, assistant=AssistantId.COPILOT)
+    ss = _wiring(tmp_path)["hooks"]["SessionStart"][0]
+    assert ss["type"] == "command"
+    assert "wiki-session-start.ps1" in ss["command"]
+    assert "-Assistant copilot" in ss["command"]
+    # the session-start script is installed for VS Code
+    assert (tmp_path / ".github/hooks/wiki-session-start.ps1").is_file()
+
+
+def test_cli_session_start_is_prompt_not_command(tmp_path: Path):  # FR-006 / SC-003
+    """CLI: SessionStart is `type:"prompt"` (a static directive), never a bare command-string."""
+    _install(tmp_path, assistant=AssistantId.COPILOT_CLI)
+    ss = _wiring(tmp_path)["hooks"]["SessionStart"][0]
+    assert ss["type"] == "prompt"
+    assert isinstance(ss["command"], str) and ss["command"].strip()
+
+
+def test_cli_command_is_custom_agent_not_prompt_file(tmp_path: Path):  # FR-013 / SC-004
+    """CLI: `/wiki` and `wiki-author` COMMANDs are custom-agents (CLI-invocable), not prompt."""
+    _install(tmp_path, assistant=AssistantId.COPILOT_CLI)
+    assert (tmp_path / ".github/agents/wiki.agent.md").is_file()
+    assert (tmp_path / ".github/agents/wiki-author.agent.md").is_file()
+    assert not (tmp_path / ".github/prompts/wiki.prompt.md").exists()
+
+
+def test_custom_agent_omits_model(tmp_path: Path):  # FR-017 / SC-005
+    _install(tmp_path)
+    from sertor_installer.surfaces import split_frontmatter
+
+    text = (tmp_path / ".github/agents/wiki-curator.agent.md").read_text(encoding="utf-8")
+    assert "model:" not in split_frontmatter(text)[0]
 
 
 def test_hook_script_reused_identically(tmp_path: Path):  # FR-014 / surface-mapping prop.3
@@ -108,3 +174,39 @@ def test_report_declares_assistant(tmp_path: Path):  # Principio IX
     assert report.assistant == "copilot"
     payload = json.loads(report.render_json())
     assert payload["assistant"] == "copilot"
+
+
+def test_vscode_report_declares_session_start_gap(tmp_path: Path):  # FR-027/028 / SC-009
+    """VS Code install declares the [ASSUNTO-VSC] SessionStart gap — never claims full parity."""
+    report = _install(tmp_path, assistant=AssistantId.COPILOT)
+    assert any("[ASSUNTO-VSC]" in n for n in report.notes)
+    payload = json.loads(report.render_json())
+    assert any("[ASSUNTO-VSC]" in n for n in payload.get("notes", []))
+    assert "[ASSUNTO-VSC]" in report.render_human()
+
+
+def test_cli_report_has_no_vscode_gap(tmp_path: Path):
+    """The CLI does not use the VS Code SessionStart mechanism → no VS Code gap note."""
+    report = _install(tmp_path, assistant=AssistantId.COPILOT_CLI)
+    assert not any("[ASSUNTO-VSC]" in n for n in report.notes)
+
+
+def test_claude_report_has_no_gap_note(tmp_path: Path):  # non-regression
+    profile = build_host_profile(tmp_path)
+    plan = build_install_plan(AssistantId.CLAUDE)
+    report = execute_plan(plan, profile, AssistantId.CLAUDE)
+    assert report.notes == []
+
+
+def test_cli_double_run_idempotent(tmp_path: Path):  # FR-040 / NFR-1
+    """The CLI plan re-run leaves the filesystem stable (idempotence)."""
+    _install(tmp_path, assistant=AssistantId.COPILOT_CLI)
+    snapshot = {p: p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()}
+    report2 = _install(tmp_path, assistant=AssistantId.COPILOT_CLI)
+    assert report2.exit_code() == 0
+    assert report2.created == 0
+    assert report2.block == 0
+    after = {p: p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()}
+    assert snapshot.keys() == after.keys()
+    for p, content in snapshot.items():
+        assert after[p] == content, f"{p} changed on re-run"

@@ -26,6 +26,31 @@ def test_prompt_body_equals_canonical_command_body():
     assert _body(rendered) == _body(canonical)
 
 
+def test_prompt_file_uses_agent_key_not_mode():
+    """FEAT-011/FR-016: prompt-file frontmatter mode key is `agent:`, never `mode:`."""
+    canonical = read_asset_text("claude/commands/wiki.md")
+    front = split_frontmatter(render_prompt_file(canonical))[0]
+    assert "agent:" in front
+    assert "mode:" not in front
+
+
+def test_custom_agent_omits_model_field():
+    """FEAT-011/FR-017: the Claude `model:` value is omitted on Copilot custom-agents."""
+    canonical = read_asset_text("claude/agents/wiki-curator.md")
+    front = split_frontmatter(render_custom_agent(canonical))[0]
+    assert "model:" not in front
+
+
+def test_custom_agent_drops_injected_model():
+    """Anti-pattern (SC-007): an asset with `model: haiku` → no `model:` in the rendered file."""
+    asset = "---\nname: x\ndescription: y\ntools: z\nmodel: haiku\n---\n\nbody\n"
+    front = split_frontmatter(render_custom_agent(asset))[0]
+    assert "model:" not in front
+    assert "name: x" in front
+    assert "description: y" in front
+    assert "tools: z" in front
+
+
 def test_prompt_body_equals_canonical_skill_body():
     canonical = read_asset_text("claude/skills/wiki-author/SKILL.md")
     rendered = render_prompt_file(canonical)

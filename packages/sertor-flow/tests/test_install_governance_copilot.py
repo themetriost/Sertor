@@ -98,3 +98,42 @@ def test_copilot_agent_body_reused_from_canonical(installed_copilot: Path):
     ).read_text(encoding="utf-8")
     canonical = read_asset_text("sertor_flow", "claude/agents/requirements-analyst.md")
     assert split_frontmatter(rendered)[1].strip() == split_frontmatter(canonical)[1].strip()
+
+
+# --- FEAT-011: COMMAND on copilot-cli is a custom-agent (FR-014/FR-042, SC-004/SC-011) ----------
+
+
+@pytest.fixture()
+def installed_copilot_cli(tmp_path: Path) -> Path:
+    profile = build_governance_profile(tmp_path, assistant="copilot-cli")
+    report = execute_governance_plan(profile, runner=FakeSpecifyRunner())
+    assert report.exit_code() == 0
+    return tmp_path
+
+
+def test_cli_requirements_command_is_custom_agent(installed_copilot_cli: Path):
+    """FR-014: on the CLI the `requirements` COMMAND is a custom-agent (CLI-invocable), never a
+    bare prompt-file (audit 🔴)."""
+    assert (installed_copilot_cli / ".github/agents/requirements.agent.md").exists()
+    assert not (installed_copilot_cli / ".github/prompts/requirements.prompt.md").exists()
+
+
+def test_cli_custom_agent_omits_model(installed_copilot_cli: Path):
+    """FR-017: the CLI custom-agent for the COMMAND omits the Claude `model:` field."""
+    from sertor_install_kit import split_frontmatter
+
+    text = (installed_copilot_cli / ".github/agents/requirements.agent.md").read_text(
+        encoding="utf-8"
+    )
+    assert "model:" not in split_frontmatter(text)[0]
+
+
+def test_cli_command_body_reused_from_canonical(installed_copilot_cli: Path):
+    """Anti-drift: the CLI custom-agent body equals the canonical skill body (FR-042)."""
+    from sertor_install_kit import read_asset_text, split_frontmatter
+
+    rendered = (
+        installed_copilot_cli / ".github/agents/requirements.agent.md"
+    ).read_text(encoding="utf-8")
+    canonical = read_asset_text("sertor_flow", "claude/skills/requirements/SKILL.md")
+    assert split_frontmatter(rendered)[1].strip() == split_frontmatter(canonical)[1].strip()

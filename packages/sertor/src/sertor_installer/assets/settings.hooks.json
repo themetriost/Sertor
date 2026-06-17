@@ -8,7 +8,7 @@
             "shell": "powershell",
             "timeout": 15,
             "statusMessage": "Carico lo stato del wiki",
-            "command": "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; $logDir = Join-Path $d 'wiki/log'; $log = if (Test-Path $logDir) { Get-ChildItem $logDir -Filter '*.md' | Where-Object { $_.Name -ne 'index.md' } | Sort-Object Name | Select-Object -Last 1 -ExpandProperty Name } else { 'log.md' }; 'AVVIO SESSIONE - carica il contesto del progetto PRIMA di rispondere all utente.'; 'Esegui ORA, di tua iniziativa, questi passi:'; \"1. Leggi con il tool Read (gli output entrano interi nel contesto, nessun limite di troncatura): wiki/syntheses/roadmap.md ; wiki/index.md (catalogo del wiki) ; wiki/log/$log (coda del registro).\"; '2. Poi mostra all utente l executive summary della roadmap: il blocco tra i marker <!-- EXEC:START --> e <!-- EXEC:END --> di wiki/syntheses/roadmap.md.'; 'Promemoria: durante le attivita di progetto delega l aggiornamento del wiki all agente wiki-curator (vedi CLAUDE.md, sezione Wiki e documentazione).'"
+            "command": "$d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; & (Join-Path $d '.claude/hooks/wiki-session-start.ps1') -Assistant claude"
           }
         ]
       }

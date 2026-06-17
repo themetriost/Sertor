@@ -96,3 +96,20 @@ def test_hook_script_byte_identical_to_claude(tmp_path: Path, make_runner):  # s
     assert copied.is_file()
     canonical = read_asset_text("rag/hooks/sertor-rag-usage-check.ps1")
     assert copied.read_text(encoding="utf-8") == canonical
+
+
+# ------------------------------------------- FEAT-011: native Copilot rag wiring schema (US1)
+
+def test_rag_wiring_is_native_copilot_schema(tmp_path: Path, make_runner):  # FR-001..004
+    runner = make_runner()
+    _run(tmp_path, runner, backend="azure", with_deps=False)
+    data = json.loads(
+        (tmp_path / ".github/hooks/sertor-hooks.json").read_text(encoding="utf-8")
+    )
+    assert data["version"] == 1                                       # R1
+    entry = data["hooks"]["PreToolUse"][0]
+    assert "hooks" not in entry                                       # R2 flat
+    assert "shell" not in entry and "statusMessage" not in entry      # R3
+    assert "timeout" not in entry and entry["timeoutSec"] == 10       # R4
+    assert entry["matcher"] == "Bash|Write|Edit|MultiEdit"            # PreToolUse matcher
+    assert "-Assistant copilot" in entry["command"]                   # native output selector

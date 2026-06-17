@@ -57,6 +57,7 @@ from sertor_installer.artifacts import (
 from sertor_installer.rag_profile import RagHostProfile
 from sertor_installer.report import InstallReport
 from sertor_installer.resources import read_asset_text
+from sertor_installer.surfaces import HookEntrySpec, render_copilot_hooks
 
 _UV = "uv"
 # `uv init` uses the folder name as the package name: `.sertor` is INVALID (starts with a dot) →
@@ -95,8 +96,27 @@ class McpRegistrationError(InstallerError):
 
 # Copilot rag surfaces (feature 044): host-facing artifacts under `.github/**` (script reused).
 _RAG_HOOK_TARGET_COPILOT = ".github/hooks/sertor-rag-usage-check.ps1"
-_RAG_USAGE_SETTINGS_COPILOT = "copilot/hooks/rag-usage.hooks.json"
+# FEAT-011: the Copilot PreToolUse wiring is GENERATED natively (render_copilot_hooks). The sentinel
+# source marks the GENERATED rag wiring so the apply callback builds it instead of reading a file.
+_COPILOT_RAG_WIRING_SENTINEL = "(generated: copilot rag-usage hooks)"
 _COPILOT_HOOK_WIRING = ".github/hooks/sertor-hooks.json"
+_PWSH = "pwsh -File"
+_RAG_MATCHER = "Bash|Write|Edit|MultiEdit"
+
+
+def _copilot_rag_hook_specs() -> list[HookEntrySpec]:
+    """Logical PreToolUse entry for the Copilot rag-usage wiring (FEAT-011, FR-008).
+
+    Fail-open by design: the script exits 0 always and emits no `deny` payload; the wiring just
+    invokes it with `-Assistant copilot` on the tool matcher.
+    """
+    return [
+        HookEntrySpec(
+            "PreToolUse", "command",
+            f"{_PWSH} {_RAG_HOOK_TARGET_COPILOT} -Assistant copilot", 10,
+            matcher=_RAG_MATCHER,
+        )
+    ]
 
 
 def build_rag_plan(
@@ -168,8 +188,9 @@ def build_rag_plan(
         )
     )
     # Group C (042): anti-bypass hook — script REUSED identically (FR-014), wiring per-assistant.
+    # FEAT-011: the Copilot wiring is GENERATED natively (sentinel source), not a static asset.
     hook_target = _RAG_HOOK_TARGET_COPILOT if is_copilot else _RAG_HOOK_TARGET
-    settings_source = _RAG_USAGE_SETTINGS_COPILOT if is_copilot else _RAG_USAGE_SETTINGS
+    settings_source = _COPILOT_RAG_WIRING_SENTINEL if is_copilot else _RAG_USAGE_SETTINGS
     settings_target = _COPILOT_HOOK_WIRING if is_copilot else _SETTINGS_TARGET
     plan.append(
         Artifact(
@@ -267,13 +288,24 @@ def _apply_rag_hook_file(profile: RagHostProfile, art: Artifact) -> ArtifactOutc
     return ArtifactOutcome(art.target_rel, Outcome.CREATED)
 
 
+def _rag_hook_fragment(art: Artifact) -> dict:
+    """The PreToolUse hook fragment for the settings merge/remove (single source).
+
+    FEAT-011: the Copilot wiring is GENERATED natively via `render_copilot_hooks` (sentinel source);
+    the Claude wiring is read from the static `settings.rag-usage.json` asset (unchanged).
+    """
+    if art.source == _COPILOT_RAG_WIRING_SENTINEL:
+        return render_copilot_hooks(_copilot_rag_hook_specs())
+    assert art.source is not None
+    return json.loads(read_asset_text(art.source))
+
+
 def _apply_rag_settings(profile: RagHostProfile, art: Artifact) -> ArtifactOutcome:
-    """`MERGE_DEDUP` (042, group C): additive merge of the PreToolUse hook entry into
-    `.claude/settings.json` (dedup by command → preserves the user's existing hooks)."""
+    """`MERGE_DEDUP` (042, group C): additive merge of the PreToolUse hook entry into the wiring
+    file (dedup by command → preserves the user's existing hooks). Copilot wiring is generated."""
     dest = profile.target_root / art.target_rel
     dest.parent.mkdir(parents=True, exist_ok=True)
-    assert art.source is not None
-    fragment = json.loads(read_asset_text(art.source))
+    fragment = _rag_hook_fragment(art)
     outcome, detail = merge_settings(dest, fragment)
     return ArtifactOutcome(art.target_rel, outcome, detail)
 
@@ -330,9 +362,17 @@ def execute_rag_plan(
     """
 
     apply = make_rag_apply(profile, runner, assistant)
-    return _kit_execute_plan(
+    report = _kit_execute_plan(
         plan, apply, target=str(profile.target_root), capability="rag", assistant=assistant.value
     )
+    if assistant is AssistantId.COPILOT:
+        # FEAT-011 (FR-027/028): the Copilot hook surfaces are not validated end-to-end on a real
+        # VS Code client — declare the gap honestly, never claim "full parity".
+        report.note(
+            "[ASSUNTO-VSC] Copilot VS Code hooks (PreToolUse) are schema-valid (offline) but NOT "
+            "verified on a real VS Code client — declared gap, NOT full parity."
+        )
+    return report
 
 
 # --- feature 048: lifecycle (upgrade/uninstall) -------------------------------------------------
@@ -369,9 +409,13 @@ def sertor_owned_paths(assistant: AssistantId = AssistantProfile.DEFAULT) -> Ser
 
 
 def _rag_settings_fragment(art: Artifact, is_copilot: bool) -> dict:
-    """The Sertor hook fragment for the settings merge/remove (same source as install)."""
-    source = _RAG_USAGE_SETTINGS_COPILOT if is_copilot else _RAG_USAGE_SETTINGS
-    return json.loads(read_asset_text(source))
+    """The Sertor hook fragment for the settings merge/remove (same source as install).
+
+    FEAT-011: Copilot wiring is generated natively; Claude wiring is the static asset.
+    """
+    if is_copilot:
+        return render_copilot_hooks(_copilot_rag_hook_specs())
+    return json.loads(read_asset_text(_RAG_USAGE_SETTINGS))
 
 
 def _apply_rag_uninstall(

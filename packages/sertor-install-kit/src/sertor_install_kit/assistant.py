@@ -50,6 +50,20 @@ class Surface(Enum):
     HOOK = "hook"                            # event→script wiring (script reused) — wiki, rag
 
 
+class CommandVehicle(Enum):
+    """Native vehicle through which a COMMAND surface is invocable on a target (FEAT-011, Q2=c).
+
+    A COMMAND (a `/wiki`, `wiki-author`, `requirements` skill) is invocable in different ways per
+    target: Claude commands/skills (`.claude/**`), Copilot VS Code prompt-files (`.prompt.md`,
+    user-triggered), or Copilot CLI custom-agents (`.agent.md`, the only CLI-invocable form). A
+    command shipped ONLY as a prompt-file is NOT invocable on the CLI (audit 🔴) — the CLI needs a
+    custom-agent. The vehicle makes this explicit instead of inferring it from the file suffix.
+    """
+
+    PROMPT_FILE = "prompt_file"    # claude commands/skills; copilot VS Code `.prompt.md`
+    CUSTOM_AGENT = "custom_agent"  # copilot-cli `.agent.md` (CLI-invocable)
+
+
 @dataclass(frozen=True)
 class SurfaceTarget:
     """Concrete container for a `Surface` on a given assistant (data-model §3).
@@ -88,6 +102,10 @@ class AssistantProfile:
     _agent_dir: str
     _agent_suffix: str
     _file_prefix: str | None  # Claude: ".claude" (keep the historical layout); Copilot: None
+    # FEAT-011: the native vehicle of the COMMAND surface for this target. Drives BOTH the render
+    # path (`render_path`) and the plan-builders (which renderer/container to use). `copilot-cli`
+    # ships COMMANDs as custom-agents (`.github/agents/*.agent.md`); the others as prompt-files.
+    command_vehicle: CommandVehicle = CommandVehicle.PROMPT_FILE
 
     DEFAULT = AssistantId.CLAUDE  # documented default when `--assistant` is absent (FR-002)
 
@@ -154,12 +172,18 @@ class AssistantProfile:
                 _agent_dir=".github/agents",
                 _agent_suffix=".agent.md",
                 _file_prefix=None,
+                command_vehicle=CommandVehicle.PROMPT_FILE,
             )
         if assistant is AssistantId.COPILOT_CLI:
             # GitHub Copilot CLI: it does NOT read VS Code's `.vscode/mcp.json` (`servers` root).
             # It reads `.mcp.json` (cwd → git root) with the `mcpServers` root — the Claude-standard
             # format. The other surfaces reuse Copilot's `.github/**` containers (the CLI reads
-            # `.github/copilot-instructions.md`, prompt-files and custom agents).
+            # `.github/copilot-instructions.md` and custom agents).
+            #
+            # FEAT-011 (Q2=c): the COMMAND surface is a CUSTOM-AGENT here, not a prompt-file — a
+            # prompt-file is not invocable from the CLI (audit 🔴). So `render_path(COMMAND)`
+            # resolves `.github/agents/<name>.agent.md` (same container as AGENT), and the
+            # plan-builders use `render_custom_agent` for COMMANDs on this target.
             return cls(
                 assistant=assistant,
                 _targets={
@@ -173,10 +197,11 @@ class AssistantProfile:
                         ".github/hooks/sertor-hooks.json", WriteStrategy.MERGE_DEDUP
                     ),
                 },
-                _command_dir=".github/prompts",
-                _command_suffix=".prompt.md",
+                _command_dir=".github/agents",
+                _command_suffix=".agent.md",
                 _agent_dir=".github/agents",
                 _agent_suffix=".agent.md",
                 _file_prefix=None,
+                command_vehicle=CommandVehicle.CUSTOM_AGENT,
             )
         raise ConfigError(f"unsupported assistant: {assistant}")  # pragma: no cover
