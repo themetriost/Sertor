@@ -455,7 +455,7 @@ Legenda: ✅ consegnata · 🔄 parziale (nucleo fatto, residuo aperto) · 📋 
 | FEAT-009 | Distribuzione **Copilot** — governance `sertor-flow` | Must | ✅ consegnata (PR #65); **conformità schema sanata da FEAT-011** (PR #73) |
 | **FEAT-008** | **Ciclo di vita installer** — `upgrade`/`uninstall` (sertor + sertor-flow) | Could | ✅ **CONSEGNATA (PR #71, 2026-06-17)** — primitive nel kit, diff a posteriori, `--purge-wiki` CI-safe ([[installer-lifecycle]]) |
 | **FEAT-011** | **Hardening compatibilità Copilot** — schema nativo (hook `version:1`/flat/`powershell`; output `.ps1` per-assistente; comandi via custom-agent su CLI; frontmatter `agent:`/no `model:`; suite validità-schema) | Must | ✅ **CONSEGNATA (PR #73, 2026-06-17)** — 453 test verdi, no-hack nativo. ⚠️ **Gap dichiarato:** SessionStart VS Code `[ASSUNTO-VSC]` + MCP CLI da **verificare empiricamente** su ospite reale (follow-up) |
-| FEAT-010 | **Ergonomia & portabilità** (fallback `pip` · avviso target non-Python · hook Linux `sh` · install multi-target · reviewer clean-code) | Could | 📋 **da decomporre** (leak audit 2026-06-16) |
+| FEAT-010 | **Ergonomia & portabilità** (fallback `pip` · avviso target non-Python · hook Linux `sh` · install multi-target · reviewer clean-code) | Could | 📋 **in coda** (dopo FEAT-003 wizard + refactor CLI-only; decisione utente 2026-06-17) |
 | FEAT-006 | Distribuzione pubblica **PyPI** | Won't | 💤 rinviata (gating: licenza MIT scelta) |
 
 > **Stato epica:** nucleo consegnato (packaging FEAT-001 + lifecycle FEAT-008 + **hardening compat
