@@ -122,7 +122,9 @@ def test_cli_session_start_is_prompt_not_command(tmp_path: Path):  # FR-006 / SC
     _install(tmp_path, assistant=AssistantId.COPILOT_CLI)
     ss = _wiring(tmp_path)["hooks"]["SessionStart"][0]
     assert ss["type"] == "prompt"
-    assert isinstance(ss["command"], str) and ss["command"].strip()
+    # a prompt-hook carries its text in `prompt`, NOT `command` (Copilot ignores `command` here)
+    assert isinstance(ss["prompt"], str) and ss["prompt"].strip()
+    assert "command" not in ss
 
 
 def test_cli_command_is_custom_agent_not_prompt_file(tmp_path: Path):  # FR-013 / SC-004

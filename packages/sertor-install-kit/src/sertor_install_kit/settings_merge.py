@@ -28,9 +28,13 @@ def _inner_commands(entry: dict) -> set[str]:
     for inner in entry.get("hooks", []):
         if isinstance(inner, dict) and "command" in inner:
             commands.add(inner["command"])
-    # Copilot flat form: the command is directly on the entry (no nested `hooks`).
-    if "command" in entry and isinstance(entry["command"], str):
-        commands.add(entry["command"])
+    # Copilot flat form: the payload is directly on the entry — `command` for a command-hook,
+    # `prompt` for a prompt-hook (SessionStart on copilot-cli). BOTH serve as the dedup/removal
+    # identity, so a re-run recognizes a prompt entry (idempotency, FR-040) and uninstall recognizes
+    # it as Sertor-owned. Without `prompt`, a prompt entry has an empty identity → re-added every run.
+    for key in ("command", "prompt"):
+        if isinstance(entry.get(key), str):
+            commands.add(entry[key])
     return commands
 
 
