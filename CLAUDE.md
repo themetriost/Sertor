@@ -471,6 +471,24 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/047-packaging-distribuibile/plan.md` (FEAT-001 epica **sertor-cli** — packaging **distribuibile**
+via distribuzione interim **`git+url`** (NO PyPI, FEAT-006). Chiude 3 lacune sui 4 pacchetti del `uv
+workspace` (`sertor-core`+`sertor`+`sertor-install-kit`+`sertor-flow`, tutti hatchling): (1) **licenza** —
+file `LICENSE` MIT in radice + ogni package, incluso nelle wheel, coerente coi metadati; (2)
+**versione+metadati** — **versione unica** da un file `/VERSION` letto dinamicamente dai 4 pyproject via
+`[tool.hatch.version]` (`dynamic=["version"]`; scartati bump2version/hatch-vcs/script-sync = YAGNI), +
+metadati completi (`urls`/`classifiers`/`keywords`) per i 2 **user-facing** (`sertor`,`sertor-flow`); (3)
+**verifica ripetibile** — suite pytest `@integration` `tests/integration/test_packaging.py`, 3 stage a
+costo crescente: statico (licenza/metadati/versione, offline) → build `uv build` sdist+wheel (LICENSE in
+wheel, `assets/**` di sertor, entry-points) → install pulito in **venv effimero** per `uv`/`uvx` (**gate**
+hard) e `pip` (**soft `xfail`**, limite workspace documentato → **FEAT-010**). Verifica = **stdlib**
+(`tomllib`/`zipfile`/`email.parser`/`configparser`) + **subprocess** (`uv`/`pip`/`git`), **NO import di
+`sertor_core`** (Princ. XI). Due insiemi (DA-P3/P4): build-validati = tutti 4; user-facing = `sertor`/
+`sertor-flow` (gli interni `sertor-core`/`sertor-install-kit` esonerati dai metadati). Decisioni onorate
+DA-P1..P4. Confini: NO pubblicazione PyPI/firma/SBOM (FEAT-006), NO versioning-da-tag, NO ergonomia
+avanzata pip/installer (FEAT-010). Nessuna modifica al runtime del core (porte/adapter/composition
+INVARIATI, NFR-3). Constitution **PASS 11/11** (pre e post-design) senza deroghe. Branch
+`047-packaging-distribuibile`. Storico:
 `specs/046-refresh-incrementale/plan.md` (FEAT-009 epica **sertor-core** — refresh **incrementale**
 dell'indice RAG. Oggi `index(rebuild)` ricostruisce FULL i 5 stadi (discover/chunk/embed/reset+upsert/
 BM25+code-graph); solo l'embed è incrementale via cache FEAT-019 → su ospiti grandi = minuti. Introduce un
