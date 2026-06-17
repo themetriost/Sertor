@@ -168,7 +168,42 @@ def test_mixed_claude_nested_and_copilot_flat_in_same_file(tmp_path: Path):
 def test_copilot_flat_remove_entries(tmp_path: Path):
     p = tmp_path / "sertor-hooks.json"
     merge_settings(p, _COPILOT_FRAGMENT)
-    outcome, _ = remove_settings_entries(p, _COPILOT_FRAGMENT)
+    outcome, _ = remove_settings_entries(p, _COPILOT_FRAGMENT)  # default: keep the file
     assert outcome is Outcome.REMOVED
     data = json.loads(p.read_text(encoding="utf-8"))
     assert not data.get("hooks")  # all Sertor flat entries removed
+
+
+def test_dedicated_file_deleted_when_empty(tmp_path: Path):
+    """delete_if_empty=True: a Sertor-dedicated hooks file left with no hooks is DELETED, not left
+    as a `{"version": 1}` shell (regression fix 2026-06-17)."""
+    p = tmp_path / "sertor-hooks.json"
+    merge_settings(p, _COPILOT_FRAGMENT)
+    assert p.exists()
+    outcome, detail = remove_settings_entries(p, _COPILOT_FRAGMENT, delete_if_empty=True)
+    assert outcome is Outcome.REMOVED
+    assert not p.exists()  # empty shell removed
+    assert "removed" in detail.lower()
+
+
+def test_shared_file_kept_when_empty(tmp_path: Path):
+    """Default (delete_if_empty=False): a SHARED settings file is kept even if emptied — the user's
+    file/structure must survive (e.g. Claude `.claude/settings.json`)."""
+    p = tmp_path / "settings.json"
+    merge_settings(p, _COPILOT_FRAGMENT)
+    outcome, _ = remove_settings_entries(p, _COPILOT_FRAGMENT)
+    assert outcome is Outcome.REMOVED
+    assert p.exists()  # NOT deleted
+
+
+def test_dedicated_file_with_leftover_user_hook_kept(tmp_path: Path):
+    """delete_if_empty deletes ONLY when nothing remains: a non-Sertor hook keeps the file."""
+    p = tmp_path / "sertor-hooks.json"
+    user = {"version": 1, "hooks": {"Stop": [{"type": "command", "command": "echo mine"}]}}
+    p.write_text(json.dumps(user), encoding="utf-8")
+    merge_settings(p, _COPILOT_FRAGMENT)  # add Sertor entries alongside the user one
+    outcome, _ = remove_settings_entries(p, _COPILOT_FRAGMENT, delete_if_empty=True)
+    assert outcome is Outcome.REMOVED
+    assert p.exists()  # the user's "echo mine" survives → file kept
+    data = json.loads(p.read_text(encoding="utf-8"))
+    assert any(e.get("command") == "echo mine" for e in data["hooks"]["Stop"])
