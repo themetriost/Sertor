@@ -28,7 +28,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **Packaging distribuibile** `git+url` (FEAT-001, LICENSE+metadati+build verificata, 2026-06-17) | `sertor-cli` |
 | **Ciclo di vita installer** — `upgrade`/`uninstall` per `sertor` e `sertor-flow` (FEAT-008, 2026-06-17) | `sertor-cli` |
 | Governance SDLC — pacchetto separato `sertor-flow` | `sertor-cli` |
-| Distribuzione Copilot (VS Code + CLI) — parità FEAT-007+009 | `sertor-cli` |
+| Distribuzione Copilot (VS Code + CLI) — FEAT-007+009 ⚠️ *parità non piena, hardening FEAT-011 in corso* | `sertor-cli` |
 | Igiene radice host · tema lingua (tutto il prodotto in EN) | `sertor-cli` |
 | MVP osservabilità F1–F4 (**accesa** sul dogfood) | `osservabilita` |
 | MVP memoria: cattura→ricerca→CLI/hook→distillazione (**acceso**) | `memoria-conversazioni` |
@@ -45,7 +45,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | Epica | Stato | Residuo / 1° passo |
 |---|---|---|
 | [`sertor-core`](../../requirements/sertor-core/epic.md) | ✅ completa | — (agenzia incorporata ❌ abbandonata by design) |
-| [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | wizard config · ergonomia installer · Codex · PyPI *(packaging ✅ + lifecycle upgrade/uninstall ✅ 2026-06-17)* |
+| [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | ⚠️ **FEAT-011 hardening compat Copilot (Must riaperto)** · wizard config · ergonomia installer · Codex · PyPI *(packaging ✅ + lifecycle ✅ 2026-06-17)* |
 | [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | OTel · metriche aggregate · **stima € (Should)** · web · export CSV/MD |
 | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso | ricerca semantica · remember-this · retention · **distribuzione installer (Must)** · multi-assist |
 | [`multiutente`](../../requirements/multiutente/epic.md) | 📋 differita | finché il caso d'uso team non è concreto |
@@ -422,15 +422,19 @@ Legenda: ✅ consegnata · 🔄 parziale (nucleo fatto, residuo aperto) · 📋 
 | FEAT-003 | **Configurazione** (provider LLM + vector DB; **wizard**) | Should | 🔄 lettura config ✅; **wizard rinviato** |
 | FEAT-004 | Comando esecuzione RAG (`index`/`search`) | Should | ✅ feature `esecuzione` (PR #21) |
 | FEAT-005 | Setup governance (skill/agenti SDLC + requisiti) | Should | ✅ pacchetto separato `sertor-flow` (PR #56) |
-| FEAT-007 | Distribuzione **Copilot** — pacchetto `sertor` (wiki+rag) | Must | ✅ `--assistant claude\|copilot\|copilot-cli` (PR #64/#66). Codex = Could (non avviato) |
-| FEAT-009 | Distribuzione **Copilot** — governance `sertor-flow` | Must | ✅ launch-installer SpecKit per Copilot (PR #65). Codex = Could |
+| FEAT-007 | Distribuzione **Copilot** — pacchetto `sertor` (wiki+rag) | Must | ⚠️ **parità NON piena** — consegnata (PR #64/#66) ma audit 2026-06-17 ha trovato superfici non conformi allo schema Copilot (hook, prompt-file su CLI) → vedi FEAT-011 |
+| FEAT-009 | Distribuzione **Copilot** — governance `sertor-flow` | Must | ⚠️ **parità NON piena** — consegnata (PR #65), stessa regressione di FEAT-007 (hook + comandi su CLI) → FEAT-011 |
 | **FEAT-008** | **Ciclo di vita installer** — `upgrade`/`uninstall` (sertor + sertor-flow) | Could | ✅ **CONSEGNATA (PR #71, 2026-06-17)** — primitive nel kit, diff a posteriori, `--purge-wiki` CI-safe ([[installer-lifecycle]]) |
+| **FEAT-011** | **Hardening compatibilità Copilot** — conformità schema reale (hook `version:1`/flat/`powershell`; contratto output `.ps1`; comandi via custom-agent su CLI; frontmatter agent; test di validità-schema) | Must | 🔄 **in decomposizione (2026-06-17)** — corregge FEAT-007/009; audit dogfooding su Copilot CLI 1.0.63 |
 | FEAT-010 | **Ergonomia & portabilità** (fallback `pip` · avviso target non-Python · hook Linux `sh` · install multi-target · reviewer clean-code) | Could | 📋 **da decomporre** (leak audit 2026-06-16) |
 | FEAT-006 | Distribuzione pubblica **PyPI** | Won't | 💤 rinviata (gating: licenza MIT scelta) |
 
-> **Stato epica:** tutti i **Must** chiusi (incl. packaging FEAT-001) e tutte le **Could rilevanti**
-> consegnate (lifecycle FEAT-008). Residuo: **FEAT-003 wizard config** (Should), **FEAT-010 ergonomia**
-> (Could, da decomporre), **Codex** (Could, non avviato per scelta utente), **PyPI** (Won't).
+> **Stato epica:** nucleo consegnato (packaging FEAT-001 + lifecycle FEAT-008), ma **un Must è
+> riaperto** → **FEAT-011 hardening compatibilità Copilot**: l'audit dogfooding del 2026-06-17 (Copilot
+> CLI 1.0.63) ha trovato che la parità Copilot di FEAT-007/009 **non è piena** (hook in formato Claude
+> non conformi allo schema Copilot; comandi prompt-file ignorati dalla CLI). Altro residuo: **FEAT-003
+> wizard config** (Should), **FEAT-010 ergonomia** (Could, da decomporre), **Codex** (Could, non
+> avviato), **PyPI** (Won't).
 
 > Oggi il prodotto si usa come **libreria** (`import sertor_core`), via **server MCP** e via
 > **CLI `sertor-rag`** ([[sertor-rag-cli]]). Il vecchio ramo CLI (`specs/004`) è definitivamente
