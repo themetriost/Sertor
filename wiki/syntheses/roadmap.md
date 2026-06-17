@@ -43,7 +43,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | Epica | Stato | Residuo / 1° passo |
 |---|---|---|
 | [`sertor-core`](../../requirements/sertor-core/epic.md) | ✅ completa | — (agenzia incorporata ❌ abbandonata by design) |
-| [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | **packaging del pacchetto (FEAT-001, Must)** · wizard · lifecycle · Codex · PyPI |
+| [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | **packaging del pacchetto (FEAT-001, 2026-06-17 decomposto)** → `/speckit-specify` · wizard · lifecycle · Codex · PyPI |
 | [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | OTel · metriche aggregate · **stima € (Should)** · web · export CSV/MD |
 | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso | ricerca semantica · remember-this · retention · **distribuzione installer (Must)** · multi-assist |
 | [`multiutente`](../../requirements/multiutente/epic.md) | 📋 differita | finché il caso d'uso team non è concreto |
@@ -102,7 +102,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   FEAT-008 (cattura multi-assistente), FEAT-010 (parità MCP `show`/`list`). *(FEAT-003 ✅ DONE.)*
 - **Osservabilità 2 — Should/Could** — export OTel (FEAT-005), metriche aggregate (FEAT-006), **stima €
   (FEAT-007, Should, non fatto)**, web mode, trend qualità, metriche graph/wiki, export CSV/MD (FEAT-011).
-- **Distribuzione/CLI — Must/Could** — **packaging del pacchetto (FEAT-001, Must)**, wizard config
+- **Distribuzione/CLI — Must/Could** — **packaging del pacchetto (FEAT-001, decomposto 2026-06-17)** → `/speckit-specify`, wizard config
   (FEAT-003), lifecycle upgrade/uninstall (FEAT-008), ergonomia installer (FEAT-010), **Codex** (FEAT-007/009
   Could, non avviato per scelta utente), PyPI (Won't) — gating sulla **licenza** (da aprire).
 - **Multiutente** — epica differita finché il caso d'uso team non è concreto.
