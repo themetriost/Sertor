@@ -471,6 +471,26 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/048-lifecycle-installer/plan.md` (FEAT-008 epica **sertor-cli** — **ciclo di vita** dell'installer:
+i due verbi mancanti `upgrade`/`uninstall` (oggi solo procedura manuale `docs/install.md §10.1/§10.2`).
+4 decisioni di prodotto chiuse: **Q1 (a)** wiki protetto (`--purge-wiki`+`--yes`); **Q2 (a)** obsoleti via
+**diff a posteriori** contro lista statica di path Sertor-owned, **NO manifest**; **Q3 (c)** `sertor
+uninstall` tutto-in-uno **e** per-capacità; **Q4 (a)** `sertor-flow upgrade`/`uninstall` **in ambito**
+(simmetria piena). 4 ambiguità di *come* risolte nel plan: **D1** niente `ArtifactKind`/`WriteStrategy`
+inversi → **verbo ortogonale** `LifecycleOp`{INSTALL/UPGRADE/UNINSTALL} + 2 `Outcome`{UPDATED/REMOVED} +
+**funzioni inverse pure nel kit** (`remove_marker_block`/`update_marker_block`/`remove_settings_entries`/
+`remove_gitignore_lines`/`remove_mcp_server`/`deregister_mcp_client`/`update_file_if_changed`/`remove_path`),
+duali 1:1 delle additive esistenti; **D2** i plan di upgrade/uninstall **riusano lo stesso plan-builder
+d'install** (UNICA fonte di verità) percorso col verbo, dispatch `apply(art, op)`; **D3** dichiarazione
+path Sertor-owned = funzione pura `sertor_owned_paths(cap, assistant)` co-localizzata + **test di
+copertura** (`plan ⊆ owned`) al posto del manifest; **D4** `--purge-wiki` deterministico/CI-safe (no TTY
++ no `--yes` → NON cancella, avviso; `--purge-wiki --dry-run` = usage error exit 2). Primitive **una volta
+nel `sertor-install-kit`** (stdlib-only, FR-053/SC-010), consumate da `sertor`+`sertor-flow` (invariante:
+`sertor-flow` NON dipende da `sertor-core`/`sertor`). `.sertor/` (tipo A) rimosso in blocco; file
+condivisi (tipo C) byte-per-byte salvo porzione Sertor; MCP (tipo D) de-registrazione o solo-voce.
+`install.report/1` **esteso** (no 2° schema). NESSUNA modifica a `sertor-core` (porte/adapter/composition
+INVARIATI). Constitution **PASS 11/11** (pre e post-design) senza deroghe. Branch
+`048-lifecycle-installer`. Storico:
 `specs/047-packaging-distribuibile/plan.md` (FEAT-001 epica **sertor-cli** — packaging **distribuibile**
 via distribuzione interim **`git+url`** (NO PyPI, FEAT-006). Chiude 3 lacune sui 4 pacchetti del `uv
 workspace` (`sertor-core`+`sertor`+`sertor-install-kit`+`sertor-flow`, tutti hatchling): (1) **licenza** —
