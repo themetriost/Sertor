@@ -22,7 +22,7 @@
 Questa fase non produce codice di produzione ma garantisce che l'ambiente di test sia coerente
 prima di iniziare l'implementazione.
 
-- [ ] **T-000** Verificare che la suite esistente di `packages/sertor` sia verde sul branch corrente.
+- [x] **T-000** Verificare che la suite esistente di `packages/sertor` sia verde sul branch corrente.
   Comando: `uv run pytest packages/sertor/tests/ -q`.
   Blocco se fallisce: investigare prima di procedere (non-regressione baseline).
 
@@ -40,7 +40,7 @@ File da creare:
 - `packages/sertor/src/sertor_installer/configure_fields.py` (includerà anche il catalogo)
 
 Compito:
-- [ ] Implementare `mask_secret(value: str) -> str` in
+- [x] Implementare `mask_secret(value: str) -> str` in
   `packages/sertor/src/sertor_installer/configure_fields.py`.
   Regola: stringa vuota o solo spazi → `"(unset)"`; valore < 8 caratteri → `"****"`;
   altrimenti `"****" + value[-4:]`. Funzione pura, zero import di terze parti.
@@ -49,10 +49,10 @@ File di test da creare:
 - `packages/sertor/tests/test_config_fields.py`
 
 Task di test inclusi:
-- [ ] `test_mask_secret_empty` — stringa vuota → `"(unset)"`.
-- [ ] `test_mask_secret_short` — valore di 4 caratteri → `"****"` (no suffisso).
-- [ ] `test_mask_secret_long` — valore di 12 caratteri → `"****" + ultimi 4`.
-- [ ] `test_mask_secret_pure` — dato un segreto noto (`"sk-my-secret-key"`), il risultato
+- [x] `test_mask_secret_empty` — stringa vuota → `"(unset)"`.
+- [x] `test_mask_secret_short` — valore di 4 caratteri → `"****"` (no suffisso).
+- [x] `test_mask_secret_long` — valore di 12 caratteri → `"****" + ultimi 4`.
+- [x] `test_mask_secret_pure` — dato un segreto noto (`"sk-my-secret-key"`), il risultato
   non contiene il valore originale (anti-leak elementare).
 
 ---
@@ -62,33 +62,33 @@ Task di test inclusi:
 File: `packages/sertor/src/sertor_installer/configure_fields.py` (estende T-100)
 
 Compito:
-- [ ] Definire `FieldStatus` (enum: `SET`, `KEPT`, `MISSING`, `OVERWRITTEN`).
-- [ ] Definire dataclass `ConfigField(name: str, description: str, secret: bool,
+- [x] Definire `FieldStatus` (enum: `SET`, `KEPT`, `MISSING`, `OVERWRITTEN`).
+- [x] Definire dataclass `ConfigField(name: str, description: str, secret: bool,
   default: str | None)`.
-- [ ] Definire il catalogo statico `FIELD_CATALOG: dict[str, ConfigField]` con le cinque voci
+- [x] Definire il catalogo statico `FIELD_CATALOG: dict[str, ConfigField]` con le cinque voci
   verificate in `settings.py:203-214` + `env.azure.tmpl`:
   - `AZURE_OPENAI_ENDPOINT` (non segreto, no default)
   - `AZURE_OPENAI_API_KEY` (segreto, no default)
   - `AZURE_OPENAI_EMBED_DEPLOYMENT` (non segreto, default `"text-embedding-3-large"`)
   - `AZURE_SEARCH_ENDPOINT` (non segreto, no default)
   - `AZURE_SEARCH_API_KEY` (segreto, no default)
-- [ ] Esporre `get_field(name: str) -> ConfigField` che solleva `KeyError` se il nome non è
+- [x] Esporre `get_field(name: str) -> ConfigField` che solleva `KeyError` se il nome non è
   nel catalogo (errore esplicito, Principio IV).
 
 File di test: `packages/sertor/tests/test_config_fields.py` (estende T-100)
 
 Task di test inclusi:
-- [ ] **T-110-COV** `test_catalog_covers_all_validate_backend_fields` — test di copertura
+- [x] **T-110-COV** `test_catalog_covers_all_validate_backend_fields` — test di copertura
   catalogo ↔ `validate_backend` (invariante di non-drift, Principio V / data-model §2).
   Per ogni `backend ∈ {azure, local}` × `store ∈ {local, azure}`, costruisce un `Settings`
   fittizio con quei valori e chiama `Settings.validate_backend()` su un environment privo
   delle variabili; verifica che ogni nome restituito sia presente in `FIELD_CATALOG`.
   Questo test fallisce se il core aggiunge un campo richiesto non coperto dal catalogo.
-- [ ] `test_field_catalog_secret_flags` — `AZURE_OPENAI_API_KEY` e `AZURE_SEARCH_API_KEY`
+- [x] `test_field_catalog_secret_flags` — `AZURE_OPENAI_API_KEY` e `AZURE_SEARCH_API_KEY`
   hanno `secret=True`; gli altri tre hanno `secret=False`.
-- [ ] `test_field_catalog_default_deployment` — `AZURE_OPENAI_EMBED_DEPLOYMENT` ha
+- [x] `test_field_catalog_default_deployment` — `AZURE_OPENAI_EMBED_DEPLOYMENT` ha
   `default="text-embedding-3-large"`.
-- [ ] `test_local_profile_no_required_fields` — con `backend=local, store=local`,
+- [x] `test_local_profile_no_required_fields` — con `backend=local, store=local`,
   `validate_backend` restituisce lista vuota (SC-007: local-only senza cloud).
 
 ---
@@ -100,15 +100,15 @@ File da creare:
 - `packages/sertor/src/sertor_installer/configure_report.py`
 
 Compito:
-- [ ] Definire `ConfigProfile(backend: str, store: str)` con validazione `__post_init__`
+- [x] Definire `ConfigProfile(backend: str, store: str)` con validazione `__post_init__`
   (valori fuori da `{azure,local}` / `{local,azure}` → `ValueError`, uscirà come exit 2 nel
   parser).
-- [ ] Definire `FieldResolution(field: ConfigField, value: str | None, status: FieldStatus,
+- [x] Definire `FieldResolution(field: ConfigField, value: str | None, status: FieldStatus,
   source: str)`. I campi con `field.secret=True` devono esporre il valore già mascherato
   (`mask_secret`) tramite una proprietà `display_value`.
-- [ ] Definire `ValidationOutcome(complete: bool, missing: tuple[str, ...])`.
-- [ ] Definire `LiveCheckOutcome(requested: bool, ok: bool | None, detail: str)`.
-- [ ] Definire `ConfigureReport(target: str, profile: ConfigProfile,
+- [x] Definire `ValidationOutcome(complete: bool, missing: tuple[str, ...])`.
+- [x] Definire `LiveCheckOutcome(requested: bool, ok: bool | None, detail: str)`.
+- [x] Definire `ConfigureReport(target: str, profile: ConfigProfile,
   fields: tuple[FieldResolution, ...], validation: ValidationOutcome,
   live_check: LiveCheckOutcome, env_path: str, notes: tuple[str, ...])` con:
   - `exit_code() -> int`: 0 se `validation.complete ∧ (¬live_check.requested ∨ live_check.ok)`,
@@ -122,20 +122,20 @@ File di test da creare:
 - `packages/sertor/tests/test_configure_report.py`
 
 Task di test inclusi:
-- [ ] **T-120-LEAK** `test_no_secret_in_render_human` — costruisce un `ConfigureReport` con un
+- [x] **T-120-LEAK** `test_no_secret_in_render_human` — costruisce un `ConfigureReport` con un
   segreto noto (`"sk-secret-1234"`) in un `FieldResolution`; asserisce che la stringa non
   compare in `render_human()`. (SC-008 / FR-013 — anti-leak strutturale)
-- [ ] **T-120-LEAK-JSON** `test_no_secret_in_render_json` — stessa asserzione su `render_json()`.
-- [ ] `test_exit_code_complete_no_check` — `validation.complete=True`, `live_check.requested=False`
+- [x] **T-120-LEAK-JSON** `test_no_secret_in_render_json` — stessa asserzione su `render_json()`.
+- [x] `test_exit_code_complete_no_check` — `validation.complete=True`, `live_check.requested=False`
   → `exit_code() == 0`.
-- [ ] `test_exit_code_missing_fields` — `validation.complete=False` → `exit_code() == 1`.
-- [ ] `test_exit_code_probe_failed` — `validation.complete=True`, `live_check.requested=True`,
+- [x] `test_exit_code_missing_fields` — `validation.complete=False` → `exit_code() == 1`.
+- [x] `test_exit_code_probe_failed` — `validation.complete=True`, `live_check.requested=True`,
   `live_check.ok=False` → `exit_code() == 1`.
-- [ ] `test_exit_code_probe_unavailable` — `live_check.ok=None` (degrado onesto) → exit code
+- [x] `test_exit_code_probe_unavailable` — `live_check.ok=None` (degrado onesto) → exit code
   determinato solo dalla validazione statica.
-- [ ] `test_render_json_structure` — `render_json()` produce JSON valido con i campi attesi
+- [x] `test_render_json_structure` — `render_json()` produce JSON valido con i campi attesi
   (target, profile, fields, validation, live_check, env_path, notes, exit_code).
-- [ ] `test_render_human_contains_profile` — `render_human()` contiene backend e store.
+- [x] `test_render_human_contains_profile` — `render_human()` contiene backend e store.
 
 ---
 
@@ -154,7 +154,7 @@ File da creare:
 - `packages/sertor/src/sertor_installer/configure.py` (modulo orchestratore principale)
 
 Compito:
-- [ ] Implementare `scaffold_env_if_absent(target_root: Path, backend: str,
+- [x] Implementare `scaffold_env_if_absent(target_root: Path, backend: str,
   corpus: str | None = None) -> bool` in `packages/sertor/src/sertor_installer/configure.py`.
   Logica: se `.sertor/.env` non esiste, legge `rag/env.{backend}.tmpl` via `read_asset_text`,
   applica `sanitize_corpus` (da `rag_profile.py`) per il corpus, chiama `merge_env` per scriverlo.
@@ -165,13 +165,13 @@ File di test da creare:
 - `packages/sertor/tests/test_configure_write.py`
 
 Task di test inclusi:
-- [ ] `test_scaffold_creates_env_from_template_azure` — `tmp_path` senza `.sertor/.env`;
+- [x] `test_scaffold_creates_env_from_template_azure` — `tmp_path` senza `.sertor/.env`;
   chiama `scaffold_env_if_absent(tmp_path, "azure")`; verifica che `.sertor/.env` esista
   e contenga `RAG_BACKEND=azure`.
-- [ ] `test_scaffold_creates_env_from_template_local` — stesso per `backend=local`.
-- [ ] `test_scaffold_skips_if_existing` — `.sertor/.env` già presente; `scaffold_env_if_absent`
+- [x] `test_scaffold_creates_env_from_template_local` — stesso per `backend=local`.
+- [x] `test_scaffold_skips_if_existing` — `.sertor/.env` già presente; `scaffold_env_if_absent`
   ritorna `False` e non sovrascrive il contenuto.
-- [ ] `test_scaffold_no_uv_no_index` — verifica che `scaffold_env_if_absent` non richiami
+- [x] `test_scaffold_no_uv_no_index` — verifica che `scaffold_env_if_absent` non richiami
   alcun subprocess (mock `SubprocessRunner` non viene invocato).
 
 ---
@@ -181,7 +181,7 @@ Task di test inclusi:
 File: `packages/sertor/src/sertor_installer/configure.py`
 
 Compito:
-- [ ] Implementare `resolve_field(field: ConfigField, explicit_values: dict[str, str],
+- [x] Implementare `resolve_field(field: ConfigField, explicit_values: dict[str, str],
   env_path: Path, interactive: bool) -> FieldResolution` in
   `packages/sertor/src/sertor_installer/configure.py`.
   Catena di risoluzione (research Punto 1):
@@ -198,15 +198,15 @@ Compito:
 File di test: `packages/sertor/tests/test_configure_write.py`
 
 Task di test inclusi:
-- [ ] `test_resolve_from_flag` — `explicit_values` contiene la chiave → `status=SET,
+- [x] `test_resolve_from_flag` — `explicit_values` contiene la chiave → `status=SET,
   source="flag"`.
-- [ ] `test_resolve_from_existing_env` — chiave già nel `.env` → `status=KEPT,
+- [x] `test_resolve_from_existing_env` — chiave già nel `.env` → `status=KEPT,
   source="existing"`.
-- [ ] `test_resolve_from_template_default` — chiave non in env, campo non segreto con default
+- [x] `test_resolve_from_template_default` — chiave non in env, campo non segreto con default
   → `status=SET, source="template-default"`.
-- [ ] **T-210-CI** `test_resolve_missing_non_interactive` — nessuna fonte disponibile e
+- [x] **T-210-CI** `test_resolve_missing_non_interactive` — nessuna fonte disponibile e
   `interactive=False` → `status=MISSING, value=None` (mai un prompt, CI-safe, FR-005).
-- [ ] `test_resolve_secret_not_echoed` — campo `secret=True`; valore risolto da flag; verifica
+- [x] `test_resolve_secret_not_echoed` — campo `secret=True`; valore risolto da flag; verifica
   che la `FieldResolution` abbia `display_value` mascherato (non il valore in chiaro).
 
 ---
@@ -217,7 +217,7 @@ File: `packages/sertor/src/sertor_installer/configure.py`
 Riuso: `sertor_install_kit.env_merge.merge_env`, `_replace_key_line` (da kit)
 
 Compito:
-- [ ] Implementare `write_resolved_fields(env_path: Path,
+- [x] Implementare `write_resolved_fields(env_path: Path,
   resolutions: list[FieldResolution], overwrite: bool) -> list[FieldResolution]`
   in `packages/sertor/src/sertor_installer/configure.py`.
   Logica (research Punto 5, contratto §3):
@@ -231,18 +231,18 @@ Compito:
 File di test: `packages/sertor/tests/test_configure_write.py`
 
 Task di test inclusi:
-- [ ] **T-220-IDEM** `test_write_idempotent` — stessi input due volte → `env_path` identico
+- [x] **T-220-IDEM** `test_write_idempotent` — stessi input due volte → `env_path` identico
   byte-per-byte dopo il secondo run (FR-014 / SC-005).
-- [ ] `test_write_adds_missing_key` — chiave assente in `.env` → aggiunta da `merge_env`.
-- [ ] `test_write_keeps_existing_without_overwrite` — chiave già valorizzata, `overwrite=False`
+- [x] `test_write_adds_missing_key` — chiave assente in `.env` → aggiunta da `merge_env`.
+- [x] `test_write_keeps_existing_without_overwrite` — chiave già valorizzata, `overwrite=False`
   → valore originale preservato, `status=KEPT`.
-- [ ] `test_write_overwrites_with_flag` — chiave già valorizzata, `overwrite=True` →
+- [x] `test_write_overwrites_with_flag` — chiave già valorizzata, `overwrite=True` →
   `status=OVERWRITTEN`, nuovo valore scritto.
-- [ ] `test_write_preserves_unmanaged_lines` — commenti e righe non gestite nel `.env` restano
+- [x] `test_write_preserves_unmanaged_lines` — commenti e righe non gestite nel `.env` restano
   intatti dopo la scrittura (FR-010 / spec §Edge Cases).
-- [ ] `test_write_no_partial_on_missing` — `resolution` con `status=MISSING` non viene scritto;
+- [x] `test_write_no_partial_on_missing` — `resolution` con `status=MISSING` non viene scritto;
   `.env` invariato per quella chiave.
-- [ ] **T-220-NOVCS** `test_secret_not_in_versioned_file` — esegue la scrittura; verifica che
+- [x] **T-220-NOVCS** `test_secret_not_in_versioned_file` — esegue la scrittura; verifica che
   nessun file al di fuori di `.sertor/.env` venga toccato (SC-003 / FR-012).
 
 ---
@@ -260,7 +260,7 @@ funzionano end-to-end (modalità interattiva — con TTY — e flag-driven).
 File: `packages/sertor/src/sertor_installer/configure.py`
 
 Compito:
-- [ ] Implementare `configure_rag(target_root: Path, backend: str, store: str,
+- [x] Implementare `configure_rag(target_root: Path, backend: str, store: str,
   explicit_values: dict[str, str], overwrite: bool, interactive: bool,
   check: bool, runner: CommandRunner | None = None) -> ConfigureReport`
   in `packages/sertor/src/sertor_installer/configure.py`.
@@ -290,7 +290,7 @@ Compito:
 File: `packages/sertor/src/sertor_installer/__main__.py`
 
 Compito:
-- [ ] Aggiungere il sub-parser `configure` in `_build_parser()`, con:
+- [x] Aggiungere il sub-parser `configure` in `_build_parser()`, con:
   - posizionale opzionale `capability` (default `"rag"`, unico valore accettato ora).
   - `--target DIR` (default `"."`, coerente con `install`/`upgrade`/`uninstall`).
   - `--backend {azure,local}` (argparse `choices`, default `"azure"`).
@@ -303,7 +303,7 @@ Compito:
   - `--check` (flag booleano, Should/deferred — presente nel parser ma il probe degrada onesto
     se `sertor-rag check` non è disponibile).
   - `--json` (flag booleano).
-- [ ] Aggiungere `_cmd_configure(args) -> int` in `__main__.py`:
+- [x] Aggiungere `_cmd_configure(args) -> int` in `__main__.py`:
   - Valida `--target` (usa `_validate_target` esistente).
   - Costruisce `explicit_values: dict[str, str]` da `args.set` + `args.backend` +
     `args.store`.
@@ -312,7 +312,7 @@ Compito:
   - Chiama `configure_rag(...)`.
   - Stampa `report.render_json() if args.json else report.render_human()`.
   - Ritorna `report.exit_code()`.
-- [ ] Aggiungere il dispatch in `_dispatch()`: `if args.command == "configure": return
+- [x] Aggiungere il dispatch in `_dispatch()`: `if args.command == "configure": return
   _cmd_configure(args)`.
 
 ---
@@ -323,26 +323,26 @@ File di test da creare:
 - `packages/sertor/tests/test_cli_configure.py`
 
 Task di test inclusi (tutti F.I.R.S.T., no rete, no cloud):
-- [ ] **T-320-HELP** `test_configure_help_exit_0` — `main(["configure", "--help"])` → exit 0;
+- [x] **T-320-HELP** `test_configure_help_exit_0` — `main(["configure", "--help"])` → exit 0;
   output contiene `"backend"` e `"check"`.
-- [ ] **T-320-LOCAL** `test_configure_local_exit_0` — `main(["configure", "--backend", "local",
+- [x] **T-320-LOCAL** `test_configure_local_exit_0` — `main(["configure", "--backend", "local",
   "--target", str(tmp_path)])` → exit 0; `.sertor/.env` contiene `RAG_BACKEND=local`; nessun
   campo cloud richiesto (SC-007 / FR-006).
-- [ ] **T-320-AZURE-NODEPS** `test_configure_azure_flag_driven_exit_0` — tutti i campi azure
+- [x] **T-320-AZURE-NODEPS** `test_configure_azure_flag_driven_exit_0` — tutti i campi azure
   forniti via `--set`; `--non-interactive`; exit 0; `.sertor/.env` contiene i valori.
-- [ ] **T-320-MISSING** `test_configure_missing_field_non_interactive_exit_1` — backend `azure`,
+- [x] **T-320-MISSING** `test_configure_missing_field_non_interactive_exit_1` — backend `azure`,
   campo `AZURE_OPENAI_API_KEY` assente, `--non-interactive`; exit 1; stderr nomina il campo
   mancante; `.sertor/.env` non contiene la chiave (nessuna scrittura parziale, FR-005).
-- [ ] **T-320-MALFORMED-SET** `test_configure_set_without_equals_exit_2` — `--set BADKEY` →
+- [x] **T-320-MALFORMED-SET** `test_configure_set_without_equals_exit_2` — `--set BADKEY` →
   exit 2 (UsageError, contratto §7).
-- [ ] **T-320-BAD-BACKEND** `test_configure_bad_backend_exit_2` — `--backend foo` → exit 2
+- [x] **T-320-BAD-BACKEND** `test_configure_bad_backend_exit_2` — `--backend foo` → exit 2
   (argparse `choices`).
-- [ ] **T-320-JSON** `test_configure_json_output` — `--json`; output è JSON valido; contiene
+- [x] **T-320-JSON** `test_configure_json_output` — `--json`; output è JSON valido; contiene
   chiave `"exit_code"`.
-- [ ] **T-320-NORUN** `test_configure_does_not_index` — verifica che nessun processo `uv` o
+- [x] **T-320-NORUN** `test_configure_does_not_index` — verifica che nessun processo `uv` o
   `sertor-rag index` venga avviato (mock `SubprocessRunner`; zero invocazioni di indexing).
   (install ≠ run, FR-030 / SC-009)
-- [ ] **T-320-NOLEAK** `test_configure_no_secret_in_stdout` — fornisce un segreto noto via
+- [x] **T-320-NOLEAK** `test_configure_no_secret_in_stdout` — fornisce un segreto noto via
   `--set AZURE_OPENAI_API_KEY=mysecret`; verifica che `"mysecret"` non compaia in `capsys.readouterr().out`
   né `.err` (SC-008 / FR-013 — anti-leak CLI).
 
@@ -361,17 +361,17 @@ formalmente i criteri di accettazione di US2.
 File di test: `packages/sertor/tests/test_cli_configure.py` (estende Fase 3)
 
 Task di test inclusi:
-- [ ] **T-400-CI-COMPLETE** `test_ci_complete_no_prompt` — simula assenza TTY
+- [x] **T-400-CI-COMPLETE** `test_ci_complete_no_prompt` — simula assenza TTY
   (`monkeypatch` su `sys.stdin.isatty` → `False`); tutti i campi forniti via ambiente
   (`monkeypatch.setenv`); exit 0; nessun prompt chiamato (mock `input`/`getpass` mai
   invocato). (FR-004 / SC-006)
-- [ ] **T-400-CI-MISSING** `test_ci_missing_field_explicit_error` — assenza TTY + campo
+- [x] **T-400-CI-MISSING** `test_ci_missing_field_explicit_error` — assenza TTY + campo
   richiesto mancante; exit 1; messaggio nomina il campo per nome (FR-005). Verifica che
   `.sertor/.env` non contenga la chiave mancante con un valore parziale.
-- [ ] **T-400-IDEM** `test_configure_idempotent_double_run` — due esecuzioni con gli stessi
+- [x] **T-400-IDEM** `test_configure_idempotent_double_run` — due esecuzioni con gli stessi
   flag/environment su `tmp_path`; il contenuto di `.sertor/.env` è identico dopo il secondo run
   (SC-005 / FR-014). Usa comparazione hash o byte-level.
-- [ ] **T-400-KEPT** `test_configure_keeps_extra_env_vars` — `.sertor/.env` contiene una
+- [x] **T-400-KEPT** `test_configure_keeps_extra_env_vars` — `.sertor/.env` contiene una
   variabile non gestita dal comando (es. `MY_CUSTOM_VAR=hello`); dopo `configure`, quella riga
   è ancora presente (merge additivo non distruttivo, FR-010).
 
@@ -390,13 +390,13 @@ cloud. La logica è già coperta dall'orchestratore (T-300) tramite `validate_ba
 File di test: `packages/sertor/tests/test_cli_configure.py` (estende Fase 3)
 
 Task di test inclusi:
-- [ ] **T-500-LOCAL-NOCLOUD** `test_local_profile_no_cloud_fields` — `--backend local`;
+- [x] **T-500-LOCAL-NOCLOUD** `test_local_profile_no_cloud_fields` — `--backend local`;
   verifica che nel report (umano o JSON) non compaia alcuna delle cinque variabili cloud
   (`AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_EMBED_DEPLOYMENT`,
   `AZURE_SEARCH_ENDPOINT`, `AZURE_SEARCH_API_KEY`). (SC-007 / FR-006)
-- [ ] **T-500-LOCAL-VALID** `test_local_profile_validation_complete` — `--backend local`;
+- [x] **T-500-LOCAL-VALID** `test_local_profile_validation_complete` — `--backend local`;
   `validation.complete=True`; exit 0; nessun campo mancante nel report. (US3 SC-002)
-- [ ] **T-500-LOCAL-ENV** `test_local_profile_env_has_backend_local` — dopo il run,
+- [x] **T-500-LOCAL-ENV** `test_local_profile_env_has_backend_local` — dopo il run,
   `.sertor/.env` contiene `RAG_BACKEND=local`.
 
 ---
@@ -410,15 +410,15 @@ Dipendenza: Fasi 3 e 4 completate.
 File di test: `packages/sertor/tests/test_cli_configure.py` (estende Fase 3)
 
 Task di test inclusi:
-- [ ] **T-600-KEEP** `test_reconfigure_keeps_existing_without_overwrite` — su `.sertor/.env`
+- [x] **T-600-KEEP** `test_reconfigure_keeps_existing_without_overwrite` — su `.sertor/.env`
   con `AZURE_OPENAI_ENDPOINT=https://vecchio.endpoint/`; riesegue `configure` con
   `--set AZURE_OPENAI_ENDPOINT=https://nuovo.endpoint/` senza `--overwrite` e senza TTY;
   verifica che il valore in `.env` sia ancora `https://vecchio.endpoint/` e che il report
   segnali `status=kept`. (FR-011 / SC-005)
-- [ ] **T-600-OVERWRITE** `test_reconfigure_overwrites_with_flag` — stesso scenario con
+- [x] **T-600-OVERWRITE** `test_reconfigure_overwrites_with_flag` — stesso scenario con
   `--overwrite`; verifica che il valore sia aggiornato a `https://nuovo.endpoint/` e che
   il report segnali `status=overwritten`. (FR-011)
-- [ ] **T-600-COMMENTS** `test_reconfigure_preserves_comments_and_unmanaged` — `.sertor/.env`
+- [x] **T-600-COMMENTS** `test_reconfigure_preserves_comments_and_unmanaged` — `.sertor/.env`
   con commenti (`# mio commento`) e una riga non gestita (`MY_CUSTOM=hello`); dopo il run,
   entrambi sono ancora presenti. (FR-010)
 
@@ -439,7 +439,7 @@ di estensione; il completamento reale del probe arriverà con quella FEAT.
 File: `packages/sertor/src/sertor_installer/configure.py`
 
 Compito:
-- [ ] Implementare `_probe_live(target_root: Path, runner: CommandRunner | None)
+- [x] Implementare `_probe_live(target_root: Path, runner: CommandRunner | None)
   -> LiveCheckOutcome` in `packages/sertor/src/sertor_installer/configure.py`.
   Comportamento attuale (degrado onesto, contratto §5 riga 4):
   - Tenta di localizzare l'eseguibile `sertor-rag` nell'isolato `.sertor/` dell'ospite.
@@ -458,16 +458,16 @@ File di test da creare:
 - `packages/sertor/tests/test_configure_check.py`
 
 Task di test inclusi (tutti usano `runner` mock, zero rete):
-- [ ] **T-700-NOCHECK** `test_check_not_requested_no_network` — `configure_rag(..., check=False)`;
+- [x] **T-700-NOCHECK** `test_check_not_requested_no_network` — `configure_rag(..., check=False)`;
   `runner` mock mai invocato; `live_check.requested=False, ok=None`. (FR-022 / SC-009)
-- [ ] **T-700-UNAVAILABLE** `test_check_degrades_when_sertor_rag_check_missing` —
+- [x] **T-700-UNAVAILABLE** `test_check_degrades_when_sertor_rag_check_missing` —
   `runner` mock che simula `sertor-rag check` con exit 2 (unknown command); ritorna
   `ok=None, detail` contiene "non disponibile". (contratto §5 degrado onesto)
-- [ ] **T-700-FAIL** `test_check_fails_env_intact` — `runner` mock che simula probe fallito
+- [x] **T-700-FAIL** `test_check_fails_env_intact` — `runner` mock che simula probe fallito
   (exit 1 con messaggio azionabile); `ok=False`; `.sertor/.env` non viene rimosso o alterato
   (FR-023). (BLOCKED: richiede `sertor-rag check` reale per il test end-to-end; questo test usa
   solo il mock)
-- [ ] **T-700-OK** `test_check_ok` — `runner` mock che simula probe con exit 0; `ok=True`.
+- [x] **T-700-OK** `test_check_ok` — `runner` mock che simula probe con exit 0; `ok=True`.
   (BLOCKED: richiede `sertor-rag check` reale per il test di integrazione — il mock passa)
 
 **Task bloccati / deferred** — da completare quando FEAT `sertor-rag check` sarà su `master`:
@@ -485,9 +485,9 @@ Task di test inclusi (tutti usano `runner` mock, zero rete):
 File di test: `packages/sertor/tests/test_cli_configure.py`
 
 Task di test inclusi:
-- [ ] **T-710-COMPLETE** `test_static_validation_complete_exit_0` — `--backend local`;
+- [x] **T-710-COMPLETE** `test_static_validation_complete_exit_0` — `--backend local`;
   validazione statica `complete=True`; exit 0; report contiene `"complete": true`. (US5 SC1)
-- [ ] **T-710-MISSING** `test_static_validation_missing_exit_1` — `--backend azure`,
+- [x] **T-710-MISSING** `test_static_validation_missing_exit_1` — `--backend azure`,
   `--non-interactive`, senza campi azure; exit 1; report elenca i campi mancanti;
   `.env` scritto ma marcato incompleto (FR-021). (US5 SC2)
 
@@ -502,11 +502,11 @@ Dipendenza: Fasi 3–7 completate.
 File di test: suite esistente `packages/sertor/tests/`
 
 Compito:
-- [ ] Eseguire `uv run pytest packages/sertor/tests/ -q --tb=short` e verificare che TUTTI i test
+- [x] Eseguire `uv run pytest packages/sertor/tests/ -q --tb=short` e verificare che TUTTI i test
   preesistenti rimangano verdi. Il sub-parser `configure` è additivo: nessun comando esistente
   (`install`, `upgrade`, `uninstall`) deve essere alterato nel comportamento (NFR non-regressione,
   plan §Summary).
-- [ ] Verificare che `main(["--help"])` contenga ancora `"install"`, `"upgrade"`, `"uninstall"`
+- [x] Verificare che `main(["--help"])` contenga ancora `"install"`, `"upgrade"`, `"uninstall"`
   (test già presente in `test_cli.py`, non va rotto).
 
 ---
@@ -514,7 +514,7 @@ Compito:
 ### T-810 Verifica host-agnostico [P]
 
 Compito:
-- [ ] Aggiungere in `packages/sertor/tests/test_cli_configure.py` (o `test_host_agnostic.py`):
+- [x] Aggiungere in `packages/sertor/tests/test_cli_configure.py` (o `test_host_agnostic.py`):
   `test_configure_host_agnostic` — esegue `configure --backend local` su due `tmp_path` distinti
   con nomi cartella diversi; entrambi producono un `.sertor/.env` valido con `SERTOR_CORPUS` che
   riflette il nome della cartella sanitizzato. Nessun path fisso hardcodato nel codice.
@@ -525,9 +525,9 @@ Compito:
 ### T-820 Lint e copertura [P]
 
 Compito:
-- [ ] Eseguire `uv run ruff check packages/sertor/` — zero errori (nessun F/E/I/UP/B non risolto,
+- [x] Eseguire `uv run ruff check packages/sertor/` — zero errori (nessun F/E/I/UP/B non risolto,
   line-length 100). Correggere eventuali warning prodotti dal nuovo codice.
-- [ ] Verificare che `packages/sertor/tests/test_config_fields.py::test_catalog_covers_all_validate_backend_fields`
+- [x] Verificare che `packages/sertor/tests/test_config_fields.py::test_catalog_covers_all_validate_backend_fields`
   (T-110-COV) sia incluso nell'esecuzione CI ordinaria (no marker `cloud` / `integration`):
   è un test puramente statico (no rete, no env cloud) e deve girare in ogni PR.
 
@@ -538,7 +538,7 @@ Compito:
 File di test: `packages/sertor/tests/test_cli_configure.py`
 
 Compito:
-- [ ] `test_observability_event_no_secrets` — esegue `configure --backend azure` con un segreto
+- [x] `test_observability_event_no_secrets` — esegue `configure --backend azure` con un segreto
   noto via `--set`; cattura l'evento `configure` emesso da `log_event` (mock del logger o
   caplog pytest); verifica che il messaggio strutturato non contenga il segreto in chiaro.
   (Principio IX / contratto §8)

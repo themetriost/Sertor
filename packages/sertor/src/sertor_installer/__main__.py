@@ -124,6 +124,41 @@ def _build_parser() -> argparse.ArgumentParser:
         "governance", help="governance/SDLC — provided by the separate `sertor-flow` package"
     )
 
+    # --- feature 051: configure (guided wizard) ----------------------------------------------
+    configure = sub.add_parser(
+        "configure", help="guided configuration of .sertor/.env (provider/store credentials)"
+    )
+    configure.add_argument(
+        "capability", nargs="?", default="rag", choices=["rag"],
+        help="capability to configure (default: rag — the only one today)",
+    )
+    configure.add_argument("--target", default=".", help="host repo root (default: cwd)")
+    configure.add_argument(
+        "--backend", choices=["azure", "local"], default="azure",
+        help="embeddings provider → RAG_BACKEND (default: azure)",
+    )
+    configure.add_argument(
+        "--store", choices=["local", "azure"], default=None,
+        help="vector store → SERTOR_STORE_BACKEND (default: = backend)",
+    )
+    configure.add_argument(
+        "--set", action="append", default=None, metavar="KEY=VALUE", dest="set",
+        help="explicit value for a field (repeatable); KEY must be a known field",
+    )
+    configure.add_argument(
+        "--overwrite", action="store_true",
+        help="allow overwriting values already present in .sertor/.env",
+    )
+    configure.add_argument(
+        "--non-interactive", action="store_true",
+        help="never prompt (flag-driven only), even with a TTY (CI-safe)",
+    )
+    configure.add_argument(
+        "--check", action="store_true",
+        help="opt-in live probe of the provider (via the sertor-rag vehicle); Should/deferred",
+    )
+    configure.add_argument("--json", action="store_true", help="emit the report as JSON")
+
     # --- feature 048: lifecycle verbs --------------------------------------------------------
     upgrade = sub.add_parser(
         "upgrade", help="upgrade installed capabilities (refresh assets, remove obsoletes)"
@@ -220,6 +255,47 @@ def _cmd_install_rag(args) -> int:
     )
     report = execute_rag_plan(plan, profile, SubprocessRunner(), assistant)
 
+    print(report.render_json() if args.json else report.render_human())
+    return report.exit_code()
+
+
+def _parse_set_pairs(raw: list[str] | None) -> dict[str, str]:
+    """Parse `--set KEY=VALUE` pairs. Missing `=` → UsageError (exit 2, contracts §7)."""
+    pairs: dict[str, str] = {}
+    for item in raw or []:
+        if "=" not in item:
+            raise UsageError(f"--set expects KEY=VALUE, got: {item}")
+        key, value = item.split("=", 1)
+        key = key.strip()
+        if not key:
+            raise UsageError(f"--set expects a non-empty KEY, got: {item}")
+        pairs[key] = value.strip()
+    return pairs
+
+
+def _cmd_configure(args) -> int:
+    """Handler for `configure`: validates the target, runs the wizard, prints the report.
+
+    `interactive` requires BOTH stdin and stdout to be a TTY and `--non-interactive` absent
+    (NFR-05): otherwise the flow is strictly flag-driven (never a hidden prompt, CI-safe).
+    """
+    from sertor_installer.configure import configure_rag
+
+    target_root = _validate_target(args)
+    explicit_values = _parse_set_pairs(args.set)
+    interactive = (
+        sys.stdin.isatty() and sys.stdout.isatty() and not args.non_interactive
+    )
+    report = configure_rag(
+        target_root=target_root,
+        backend=args.backend,
+        store=args.store,  # None → resolved from .env/template (default = local for azure)
+        explicit_values=explicit_values,
+        overwrite=args.overwrite,
+        interactive=interactive,
+        check=args.check,
+        runner=SubprocessRunner(),
+    )
     print(report.render_json() if args.json else report.render_human())
     return report.exit_code()
 
@@ -373,6 +449,8 @@ def _dispatch(args) -> int:
             return _cmd_install_rag(args)
         # governance is not a `sertor` capability: it lives in `sertor-flow` (D9). Point there.
         raise GovernanceElsewhereError()
+    if args.command == "configure":
+        return _cmd_configure(args)
     if args.command == "upgrade":
         return _run_lifecycle(args, LifecycleOp.UPGRADE)
     if args.command == "uninstall":
