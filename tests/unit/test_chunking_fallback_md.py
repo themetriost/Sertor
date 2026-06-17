@@ -1,6 +1,8 @@
 """Test US2 — size fallback (REQ-009) and Markdown chunking (REQ-008) via dispatcher."""
 from __future__ import annotations
 
+import dataclasses
+
 from sertor_core.config.settings import Settings
 from sertor_core.domain.entities import ChunkerKind, DocType, Document
 from sertor_core.services.chunking.dispatch import chunk_document
@@ -69,3 +71,41 @@ def test_chunk_ids_are_stable_and_positional():
     assert [c.id for c in first] == [c.id for c in second]          # idempotent (REQ-010)
     assert first[0].id == "app/calculator.py#0"                      # positional id
     assert all(c.id.startswith("app/calculator.py#") for c in first)
+
+
+# --- oversized chunk capping (robustness: embedders reject inputs over a token budget) -----------
+
+_SMALL_CAP = dataclasses.replace(S, max_chunk_chars=120, chunk_overlap=20)
+
+
+def test_oversized_markdown_section_is_capped():
+    # A single heading section larger than the cap must be sub-split, not emitted whole.
+    body = "\n".join(f"line {i} of a very long section" for i in range(60))
+    doc = Document(id="docs/big.md", text=f"# Huge\n\n{body}\n", doc_type=DocType.DOC,
+                   language="markdown")
+    chunks = chunk_document(doc, _SMALL_CAP)
+    assert len(chunks) > 1                                            # actually split
+    assert all(len(c.text) <= _SMALL_CAP.max_chunk_chars for c in chunks)  # no chunk over the cap
+    assert all(c.metadata.chunker is ChunkerKind.MARKDOWN for c in chunks)  # metadata preserved
+    assert all(c.metadata.heading_path == ("Huge",) for c in chunks)        # heading inherited
+    assert [c.id for c in chunks] == [f"docs/big.md#{i}" for i in range(len(chunks))]  # contiguous
+
+
+def test_oversized_chunk_line_numbers_offset_onto_document():
+    # Sub-pieces of an oversized section keep document-relative (not section-relative) line numbers.
+    body = "\n".join(f"line {i}" for i in range(60))
+    doc = Document(id="docs/big.md", text=f"# Huge\n\n{body}\n", doc_type=DocType.DOC,
+                   language="markdown")
+    chunks = chunk_document(doc, _SMALL_CAP)
+    assert chunks[0].metadata.start_line == 1                     # section starts at the heading
+    assert all(c.metadata.start_line <= c.metadata.end_line for c in chunks)
+    assert chunks[-1].metadata.end_line <= doc.text.count("\n") + 1   # within the document
+
+
+def test_small_chunks_unchanged_by_cap():
+    # Regression: documents whose units are within the cap are not altered.
+    doc = Document(id="docs/guide.md", text="# Titolo\n\ncorpo\n\n## Sezione\n\naltro\n",
+                   doc_type=DocType.DOC, language="markdown")
+    capped = chunk_document(doc, _SMALL_CAP)
+    plain = chunk_document(doc, S)
+    assert [c.text for c in capped] == [c.text for c in plain]         # untouched under the cap
