@@ -65,7 +65,7 @@ def _logic_version(settings: Settings) -> str:
     """
     coverage_sig = ";".join(f"{lang}:{','.join(kinds)}" for lang, kinds in sorted(COVERAGE.items()))
     return (
-        f"chunk={settings.chunk_size}/{settings.chunk_overlap}/max{settings.max_chunk_chars}"
+        f"chunk={settings.chunk_size}/{settings.chunk_overlap}/maxtok{settings.max_chunk_tokens}"
         f"|cov={coverage_sig}"
     )
 
