@@ -471,6 +471,35 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/052-copilot-cli-only/plan.md` (FEAT-012 epica **sertor-cli** — **consolidamento Copilot
+CLI-only**: un solo target Copilot esposto, **`copilot-cli`** (la CLI); il valore `copilot` (VS Code)
+non è più raggiungibile da alcun flag `--assistant`. Refactor **sottrattivo** confinato ai 3 pacchetti
+installer (`sertor`/`sertor-flow`/`sertor-install-kit`); `sertor-core` **invariato** (NFR-03). 5 nodi di
+*come* risolti: **(1)** rimozione TOTALE `AssistantId.COPILOT` (Q1=a) a 3 cerchi — enum value
+(`assistant.py:25`), ramo `for_assistant(COPILOT)` (156-176), semplificazione consumatori `is_copilot →
+is COPILOT_CLI`; l'errore nominante su `copilot` **cade dal `from_str` esistente** (Principio IV già
+cablato, no logica nuova); `CommandVehicle.PROMPT_FILE`/`render_prompt_file` **restano** primitive del
+kit (default+Claude, non VS-Code-specifici) ma nessun plan li richiama più. **(2)** mapping upstream =
+nuova mappa `_SPECKIT_AI_FLAG = {claude:claude, copilot-cli:copilot}` in `speckit_launch.py`
+(unico punto documentato, FR-015), usata in `build_specify_command`; `_EXPECTED_LAYOUT` **rinominato**
+chiave `copilot → copilot-cli` mantenendo i marker che spec-kit produce per Copilot
+(`.github/prompts/speckit.specify.prompt.md`) → idempotenza preservata (R-04/SC-007). **(3)** skill
+`requirements` su CLI = **nessun ramo nuovo**: il profilo `copilot-cli` (FEAT-011,
+`command_vehicle=CUSTOM_AGENT`) già risolve COMMAND→`.github/agents/*.agent.md`; azione concreta = solo
+esporre `copilot-cli` in `sertor-flow` (`choices`) + copertura test (anti-drift via `render_custom_agent`
+già garantito). **(4)** test = **tabella superficie→test** (research §Nodo 4): rimozione sottrattiva dei
+rami VS Code + completamento casi unici su `copilot-cli`, **nessuna superficie scoperta** (SC-008), tutto
+offline (`Fake*Runner`, NFR-05); `test_install_rag_copilot.py` eliminato (coperto da
+`*_copilot_cli.py`), `test_assistant.py` aggiunge `from_str("copilot")→ConfigError`. **(5)** nota di
+migrazione **inline in `docs/install-copilot.md`** (un solo percorso `copilot-cli`, cleanup manuale degli
+artefatti VS Code residui — Q3=a), allineamento `docs/install.md` + `packages/sertor/docs/install.md` a
+`claude|copilot-cli` (FR-020/021). Naming unificato `claude|copilot-cli` su entrambi i pacchetti e tutti
+i verbi (FR-005/006/007); `sertor` valida via `from_str` (exit 1), `sertor-flow` via argparse `choices`
+(exit 2). Breaking change voluta e dichiarata (Q4=a, niente alias). **Data-model = restrizione del seam**
+(nessuna entità nuova): `AssistantId={CLAUDE,COPILOT_CLI}`, `for_assistant` a 2 rami. **Nota di processo:**
+`.specify/scripts/.../setup-plan.ps1` e `.claude/skills/speckit-plan/SKILL.md` **ASSENTI** → parametri per
+convenzione dal branch, nessun hook eseguito; MCP `sertor-rag` non interrogato (lavoro su codice locale).
+Constitution **PASS 11/11** (pre e post-design) senza deroghe. Branch `052-copilot-cli-only`. Storico:
 `specs/051-configurazione-wizard/plan.md` (FEAT-003 epica **sertor-cli** — wizard di configurazione
 `sertor configure [rag]` nell'installer `sertor`: porta `.sertor/.env` da «segreti vuoti» a «pronto»
 con un percorso guidato **ibrido CI-safe** (Q1 a: prompt con TTY, flag-driven senza TTY, **mai**
