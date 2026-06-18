@@ -90,7 +90,7 @@ resta davvero portabile e lo sviluppo resta veloce.
 | ID | Feature | Valore / obiettivo | Priorità (MoSCoW) | Stato |
 |----|---------|--------------------|-------------------|-------|
 | FEAT-001 | **Host-agnosticità degli asset residui** (skill wiki / playbook / rituale ancora Sertor-coupled) | Onora il Principio X anche sugli asset interni | **Should** | da decomporre |
-| FEAT-002 | **Unificazione degli ambienti** (`.venv` / `.venv-core` → uno coerente) | Elimina un footgun operativo | **Should** | da decomporre |
+| FEAT-002 | **Unificazione degli ambienti** (`.venv` / `.venv-core` → uno coerente) | Elimina un footgun operativo | **Should** | ✅ **DONE (2026-06-18)** — un solo `.venv` (default workspace `uv`); `dev` superset (incl. `mcp`+`graph`), `azure` opt-in; `.mcp.json` ripuntato; `.venv-core` eliminato; guard test CS-3 |
 | FEAT-003 | **CI Linux nativo** (suite verde su Linux oltre Windows; debito rag-baseline DA-2) | Portabilità reale verificata in CI | **Should** | da decomporre |
 | FEAT-004 | **Rituale/governance come plugin portabile** repo-agnostico (oltre ciò che `sertor-flow` copre) | Riuso del metodo su repo terzi senza Sertor | **Could** | da decomporre |
 | FEAT-005 | **Igiene del wiki** — hub/overview per-area, tassonomia più fine, distill pagina osservabilità, ripasso [[tree-sitter-language-pack]], override seed `[strings]`, trigger periodico `reconcile` | Wiki navigabile e senza deriva organizzativa | **Could** | da decomporre — guidata dal lint C |

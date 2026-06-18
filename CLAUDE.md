@@ -34,7 +34,7 @@ dogfood: `SERTOR_CORPUS=prototype python prototype/01-baseline/index.py --provid
 (Chroma) e `… prototype/03-graphrag/build_graph.py` (grafo AST).
 
 > **Errori MCP = segnale, non rumore (regola standing).** Se un tool `mcp__sertor-rag__*` ritorna un
-> errore (es. `http 401` per key scaduta, `No module named …` per venv `.venv-core` stantio, indice
+> errore (es. `http 401` per key scaduta, `No module named …` per venv `.venv` non sincronizzato, indice
 > assente), **non degradare in silenzio** su `Read`/`Grep`: ripiega pure per non bloccarti, ma
 > **segnala esplicitamente** l'errore (è dogfooding — un nostro strumento rotto va visto, non sepolto).
 > Il server stesso ora persiste ogni errore tool come evento `mcp.<tool>.error` e fa un self-test
@@ -158,7 +158,9 @@ Regole architetturali da rispettare quando si estende il core:
 Si usa **`uv`** (il progetto ha `uv.lock`). Anteporre `uv run` esegue nel venv del progetto.
 
 ```bash
-uv sync --extra dev                 # crea/sincronizza l'env con le dipendenze di sviluppo
+uv sync --all-packages --extra dev  # crea/sincronizza l'UNICO venv (.venv): membri del workspace +
+                                    # dipendenze di sviluppo + server MCP (mcp) + code-graph (graph).
+                                    # Per il dogfood-su-Azure aggiungi --extra azure (extra pesante opt-in).
 uv run pytest                       # intera suite (i test cloud/integration partono se l'env c'è)
 uv run pytest -m "not cloud"        # salta i test che richiedono credenziali/servizi cloud
 uv run pytest tests/unit            # solo unit test (veloci, no rete)
@@ -170,7 +172,9 @@ uv run ruff check --fix .           # lint con autofix
 I marker pytest sono definiti in `pyproject.toml`: `cloud` (richiede credenziali Azure/servizi) e
 `integration` (end-to-end). La CI locale gira **senza cloud**: i test devono passare con
 `RAG_BACKEND=local` e adapter mock, senza rete. `pythonpath` include già `src` e root (nessun
-`pip install -e` necessario per i test). Esistono due venv: `.venv-core/` (nucleo) e `.venv/`.
+`pip install -e` necessario per i test). **Un solo venv** `.venv/` (E10-FEAT-002): è il default del
+workspace `uv`, popolato da `uv sync --all-packages --extra dev` (+ `--extra azure` per il dogfood),
+e fa girare anche il server MCP (`.mcp.json` lo punta). Il vecchio `.venv-core/` è stato eliminato.
 
 ## Setup ed esecuzione
 
