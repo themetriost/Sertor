@@ -221,9 +221,9 @@ def main() -> None:
         # A configuration fault (e.g. AZURE_OPENAI_ENDPOINT/API_KEY missing in .sertor/.env) raised
         # by build_facade()/build_embedder() would otherwise crash the process before mcp.run(), and
         # the client only sees an opaque "-32000 Connection closed" (verified on Copilot CLI 1.0.63,
-        # wiki/log/2026-06-17). Start the server regardless: `_facade()` is not cached on failure, so
-        # the first tool call retries and the actionable error surfaces through `_guard` as a tool
-        # error — not as a dropped connection.
+        # wiki/log/2026-06-17). Start the server regardless: `_facade()` is not cached on failure,
+        # so the first tool call retries and the actionable error surfaces through `_guard` as a
+        # tool error — not as a dropped connection.
         log_event(logging.ERROR, "mcp.warmup.error", error=type(exc).__name__, detail=str(exc))
         print(
             f"[sertor-rag] startup warm-up FAILED ({type(exc).__name__}: {exc}). "

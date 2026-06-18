@@ -103,9 +103,10 @@ For how to query a project once indexed — when to use **hybrid retrieval** vs 
 Uses [`uv`](https://github.com/astral-sh/uv):
 
 ```bash
-uv sync --extra dev          # environment with development dependencies
-uv run pytest -m "not cloud" # suite without cloud services
-uv run ruff check .          # lint
+uv sync --all-packages --extra dev  # single venv: workspace members + dev + MCP server + code-graph
+                                    # (add --extra azure for the Azure dogfood; azure is an opt-in heavy extra)
+uv run pytest -m "not cloud"        # suite without cloud services
+uv run ruff check .                 # lint
 ```
 
 See [`CLAUDE.md`](CLAUDE.md) for the full operational guide.

@@ -88,10 +88,11 @@ strati** (vedi record nel log del 2026-06-14):
    in `CLAUDE.md` impongono di **segnalare esplicitamente gli errori MCP** invece di degradare silenziosamente
    a fallback (Read/Grep manuale).
 
-**Nota operativa:** il venv `.venv-core` (usato dal server secondo `.mcp.json`) deve restare sincronizzato
-con le dipendenze di progetto; divergenza facile su `uv sync` → risolvibile con `uv pip install --python
-.venv-core/Scripts/python.exe -e ".[mcp,graph]"`. Opzioni aperte: (1) ripuntare `.mcp.json` su `.venv`
-(un solo env); (2) scriptare il sync (fuori scope presente).
+**Nota operativa:** dal 2026-06-18 (E10-FEAT-002) c'è **un solo venv** `.venv` e `.mcp.json` lo punta
+(`.venv/Scripts/python.exe`). Si mantiene coerente con `uv sync --all-packages --extra dev` (+ `--extra
+azure` per il dogfood): l'extra `dev` include ora `mcp` e `graph`, quindi lo stesso comando che prepara
+test e lint prepara anche il server. Il vecchio `.venv-core` (costruito a mano, sorgente della divergenza
+silenziosa) è stato eliminato.
 
 ## Troubleshooting (metodo collaudato, 2026-06-12)
 
@@ -109,7 +110,7 @@ Quando una chiamata MCP sembra appesa o il server pare morto:
    chiudendo stdin, l'esecuzione era parcheggiata nell'event loop (la firma dell'episodio
    2026-06-12). Per bisezionare: server FastMCP minimo + un tool per componente (Settings / Chroma /
    embed / facade). Driver usati: `%TEMP%\mcp_probe.py`, `mcp_probe2.py`, `mini_mcp*.py`.
-4. **Ricordare:** il server gira da `.venv-core` (editable su `src/`) → serve il codice del **branch
+4. **Ricordare:** il server gira da `.venv` (editable su `src/`) → serve il codice del **branch
    correntemente checked-out**; va riavviato (nuova sessione o riconnessione) per servire codice nuovo.
 
 ## Vedi anche

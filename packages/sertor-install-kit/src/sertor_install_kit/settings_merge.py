@@ -171,8 +171,8 @@ def remove_settings_entries(
         return Outcome.SKIPPED, "no Sertor entries"
     # A Sertor-DEDICATED hooks file (Copilot's `.github/hooks/sertor-hooks.json`) left with no hooks
     # after removing the Sertor entries is an empty shell (`{"version": 1}`) — delete it instead of
-    # writing back the shell. NEVER for a SHARED file (Claude's `.claude/settings.json`), which keeps
-    # the user's other content; there `delete_if_empty` stays False.
+    # writing back the shell. NEVER for a SHARED file (Claude's `.claude/settings.json`), which
+    # keeps the user's other content; there `delete_if_empty` stays False.
     if delete_if_empty and "hooks" not in pruned and set(pruned.keys()) <= {"version"}:
         settings_path.unlink()
         return Outcome.REMOVED, "file removed (no Sertor entries left)"

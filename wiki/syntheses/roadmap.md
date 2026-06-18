@@ -54,7 +54,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | 🆕 [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 📋 aperta | chunking SQL → **sblocca** schema-SQL |
 | 🆕 [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | 📋 aperta | bloccata a monte da `ingestione-estesa` |
 | 🆕 [`second-brain`](../../requirements/second-brain/epic.md) | 📋 da espandere | decidere bivi §9 prima di decomporre |
-| 🆕 [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 📋 aperta (interna) | host-agnosticità · unif. venv · CI Linux (Should) |
+| 🆕 [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 📋 aperta (interna) | host-agnosticità · CI Linux (Should) — *unif. venv ✅ 2026-06-18* |
 
 *Legenda:* ✅ completa · 🔄 nucleo consegnato, residui aperti · 📋 da fare · 🆕 nuova (2026-06-16).
 
