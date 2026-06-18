@@ -176,6 +176,9 @@ _CLAUDE_NAMES = (
     re.compile(r"\bClaude\b"),
     re.compile(r"\bOpus\b"),
     re.compile(r"\bHaiku\b"),
+    # Claude slash-command argument placeholder: substituted on Claude, but a meaningless literal
+    # on a Copilot custom-agent — a host-specific construct that must not leak into a Copilot body.
+    re.compile(r"\$ARGUMENTS"),
 )
 
 

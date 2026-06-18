@@ -77,6 +77,21 @@ install time), the `requirements` skill rendered as a custom-agent (`.github/age
 > **Note:** all three capabilities (RAG, Wiki, Governance) support the same targets:
 > **`claude` and `copilot-cli`**.
 
+## Invoking the agent capabilities (no slash-commands)
+
+Copilot CLI has **no slash-commands** for custom capabilities (that is a Claude/VS Code paradigm — so
+`/wiki` does *not* exist here). The Wiki and Governance capabilities are installed as **custom agents**
+under `.github/agents/`, and you invoke them with the **`--agent`** flag:
+
+```powershell
+copilot --agent wiki          # then give it a brief, e.g. "record this session"
+copilot --agent requirements  # the requirements / elicitation capability
+```
+
+Other installed agents use the same `copilot --agent <name>` form: `wiki-author`, `wiki-curator`,
+`requirements-analyst`, `configuration-manager`. The **RAG** tools, instead, are exposed via the **MCP
+server** (section 1) and used by the model automatically once loaded — no agent flag needed.
+
 ---
 
 ## Migrating from the VS Code target

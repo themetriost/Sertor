@@ -3,8 +3,8 @@ description: Consolidates the session's work into the local wiki (record/distill
 argument-hint: "[operation and/or scope, e.g. 'lint', 'generate media', 'distill <conversation brief>', 'ingest https://...', 'rag-sync']"
 ---
 
-Maintain the project's **LLM Wiki**. Requested scope/operation: $ARGUMENTS
-(if empty, consider the relevant work done in this session → `record` operation).
+Maintain the project's **LLM Wiki**. The requested scope/operation is whatever you were asked to do
+(if none was specified, consider the relevant work done in this session → `record` operation).
 
 **Single source of truth:** read the wiki playbook bundled with the `wiki-author` skill
 (`wiki-playbook.md`) and **follow it**. It is the **index**
@@ -19,7 +19,7 @@ Proceed as follows:
 
 1. Read the **playbook** (index), then the wiki index and the tail of the log (file names from config) for current
    state; use `sertor-wiki-tools collect --json` for the mechanical page inventory.
-2. **Determine the operation** from `$ARGUMENTS` or from the session work, among:
+2. **Determine the operation** from the request or from the session work, among:
    `record` · `distill` (durable entities from a step, backlog, or **brief of a full conversation**, even
    old/external — never the raw transcript: condense it first) · `ingest` · `query` · `lint` (levels A
    structural / B semantic / C organizational) ·
