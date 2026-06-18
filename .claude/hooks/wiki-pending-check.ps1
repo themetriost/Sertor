@@ -65,12 +65,12 @@ $pending = [int]$scan.pending
 
 # --- build the localized message (shared body — same for every assistant) ---
 if ($Mode -eq 'Stop') {
-    $msg = "$($scan.message) Per the golden rule (see CLAUDE.md, Wiki section): consider " +
-           "delegating to wiki-curator (record operation) or running /wiki."
+    $msg = "$($scan.message) Per the golden rule: consider delegating to the wiki-curator " +
+           "agent (record operation) or triggering a wiki consolidation."
 }
 else {
-    $msg = "Wiki: $pending modified files are not yet recorded. " +
-           "At the next session run /wiki record (or delegate to wiki-curator)."
+    $msg = "Wiki: $pending modified files are not yet recorded. At the next session, delegate " +
+           "to the wiki-curator agent (record) or trigger a wiki consolidation."
 }
 
 # --- render the output NATIVELY per assistant (FEAT-011, no dual-field) ---

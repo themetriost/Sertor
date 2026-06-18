@@ -34,11 +34,17 @@ checklist:
 **Delegation.** That these actions happen is the main flow's responsibility; executing or delegating them
 is merely a choice to avoid blocking. The `record` (structured transcription) is delegatable to the
 `wiki-curator` agent; distillation and semantic lint, being judgment, stay in the main flow.
-To manually trigger a consolidation use the `/wiki` command (main flow)
+To manually trigger a consolidation, invoke the wiki capability of your assistant (main flow)
 or delegate to `wiki-curator` (background).
 
 **When to record:** at the same moment as the step commit. The log entry is
 not deferrable: a step is not closed until both the commit **and** the log entry are done.
+
+**Definition of Done — host-agnostic assets.** Touching a distributable asset (a skill, agent,
+command, instruction block, or its support payload) requires verifying **parity across assistants**:
+the body must stay host-agnostic (no literal assistant paths, no slash-command invocations, payload
+referenced by name) so the SAME body works on every assistant. A step that edits such an asset is not
+done until that parity holds (a parity guard enforces it where available).
 
 ### Wiki operations
 

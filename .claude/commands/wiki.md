@@ -6,7 +6,8 @@ argument-hint: "[operation and/or scope, e.g. 'lint', 'generate media', 'distill
 Maintain the project's **LLM Wiki**. Requested scope/operation: $ARGUMENTS
 (if empty, consider the relevant work done in this session → `record` operation).
 
-**Single source of truth:** read `.claude/skills/wiki-author/wiki-playbook.md` and **follow it**. It is the **index**
+**Single source of truth:** read the wiki playbook bundled with the `wiki-author` skill
+(`wiki-playbook.md`) and **follow it**. It is the **index**
 that defines host-agnosticism, taxonomy, conventions, and the D↔N boundary; the **procedure for each operation**
 lives in an `ops/<operation>.md` module to `Read` on-demand (table in §5). Do not reinvent the rules here.
 

@@ -96,7 +96,7 @@ pages, exhaustive lists. Countermeasures:
   - Single source: new file playbook.md (identity + taxonomy + 6 operations: record, ingest…)
     1. Skill: hyperlink to playbook…
     2. Command: brief + parameters…
-- **Files touched:** New: …; Updated: SKILL.md, wiki.md, agent, settings.json, CLAUDE.md
+- **Files touched:** New: …; Updated: SKILL.md, wiki.md, agent, settings.json, the host instruction file
 - **Benefits:** Rules consolidated, unique taxonomy, less duplication, centralized maintenance. Ready to scale.
 ```
 *— 4 levels of nesting, copies the page content, file dump (git tracks them), adjective-laden "Benefits".
@@ -108,7 +108,7 @@ The log does the page's job.*
 Wiki rules were duplicated across skill/command/agent → consolidated into a single source with thin interfaces.
 - **What:** new playbook as single source; skill/command/agent become wrappers that read it.
 - **Where:** rationale and architecture in [[wiki-system-single-source]].
-- **Key file:** `.claude/skills/.../wiki-playbook.md` (new).
+- **Key file:** `wiki-playbook.md` (new).
 - **Verification:** lint A 0/0/0/0.
 ```
 *— lead with the why, flat bullets, points to the page for content, closes with the outcome.*

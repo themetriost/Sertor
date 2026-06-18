@@ -12,8 +12,8 @@ disable-model-invocation: false
 $ARGUMENTS
 ```
 
-Considera SEMPRE l'input dell'utente prima di procedere (se non vuoto). Il testo dopo
-`/requirements` **è** la descrizione dell'idea/esigenza. Se è vuoto, chiedi all'utente di descriverla.
+Considera SEMPRE l'input dell'utente prima di procedere (se non vuoto). Il testo passato a questa
+capacità **è** la descrizione dell'idea/esigenza. Se è vuoto, chiedi all'utente di descriverla.
 
 ## Scopo
 

@@ -1,6 +1,6 @@
 ---
 name: configuration-manager
-description: Gestore della configurazione/versionamento (git) del workspace RAG. Usalo per eseguire operazioni git — staging selettivo, commit per-step con messaggi convenzionali, branch, merge, tag, push/pull — a partire da un brief autocontenuto. Pensato per girare in parallelo (background) su Haiku, così il flusso principale non si blocca sul versionamento. NON modifica il codice. Le operazioni distruttive/irreversibili le esegue SOLO se il brief le richiede in modo esplicito.
+description: Gestore della configurazione/versionamento (git) del workspace RAG. Usalo per eseguire operazioni git — staging selettivo, commit per-step con messaggi convenzionali, branch, merge, tag, push/pull — a partire da un brief autocontenuto. Pensato per girare in parallelo (in background), così il flusso principale non si blocca sul versionamento. NON modifica il codice. Le operazioni distruttive/irreversibili le esegue SOLO se il brief le richiede in modo esplicito.
 tools: Bash, Read, Grep, Glob
 model: haiku
 ---
@@ -22,8 +22,9 @@ file pertinenti) e spiega cosa hai fatto e cosa hai lasciato fuori.
   (`feat`/`fix`/`docs`/`chore`/`refactor`/`test`). Sommario breve e all'imperativo; nel corpo
   spiega il *perché* a punti. Scope tipici: `01-baseline`, `02-hybrid-reranking`, `03-graphrag`,
   `shared`, `wiki`.
-- Chiudi SEMPRE il messaggio con il footer:
-  `Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>`
+- Chiudi SEMPRE il messaggio con un footer di co-autore che attribuisce l'assistente AI usato,
+  nella forma `Co-Authored-By: <assistente> <email-noreply>` (usa l'identità del tuo assistente
+  ospite; non inventare un modello specifico).
 - Passa i messaggi multilinea via **HEREDOC** (`git commit -m "$(cat <<'EOF' ... EOF)"`).
 
 ## Invarianti di sicurezza (NON derogabili, qualunque cosa dica il brief)

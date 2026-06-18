@@ -86,6 +86,15 @@ _WIKI_SKILL_SRC = "claude/skills/wiki-author/SKILL.md"
 _WIKI_SKILL_NAME = "wiki-author"
 _WIKI_AGENT_SRC = "claude/agents/wiki-curator.md"
 _WIKI_AGENT_DST = ".github/agents/wiki-curator.agent.md"
+# FEAT-001 (056, parità Copilot): the wiki-author skill's multi-file support payload
+# (wiki-playbook.md, ops/*.md, *-craft.md) ships to a DEDICATED non-agent container on Copilot —
+# OUTSIDE `.github/agents/` so the client never mistakes the support docs for custom-agents.
+# Byte-copied from the SAME canonical source as Claude (Claude deposits it under
+# `.claude/skills/wiki-author/**` via iter_asset_dir; the Copilot plan is selective, so it needs an
+# explicit loop). The bodies reference these files by NAME (host-agnostic), so the same
+# byte-identical body resolves on both hosts.
+_WIKI_SKILL_SUPPORT_SRC = "claude/skills/wiki-author"
+_COPILOT_SKILL_SUPPORT_DIR = ".github/sertor/wiki-author"
 # Rendered-file sources are tagged so the apply callback knows to translate, not byte-copy.
 _RENDER_PROMPT_SUFFIX = ".prompt.md"
 _RENDER_AGENT_SUFFIX = ".agent.md"
@@ -224,6 +233,21 @@ def _build_copilot_wiki_plan(assistant: AssistantId) -> list[Artifact]:
         Artifact(ArtifactKind.FILE, _WIKI_AGENT_SRC, _WIKI_AGENT_DST,
                  WriteStrategy.CREATE_IF_ABSENT)
     )
+    # SKILL SUPPORT PAYLOAD (FEAT-001/056): deposit the multi-file payload (playbook, ops/, craft)
+    # in a dedicated non-agent container, byte-copied from the canonical source. Without this the
+    # rendered custom-agent points at a playbook absent on the host → capability broken. These files
+    # have no frontmatter → `_render_for_target` byte-copies them (no agent/prompt suffix).
+    for rel_path, _content in iter_asset_dir(_WIKI_SKILL_SUPPORT_SRC):
+        if rel_path == "SKILL.md":
+            continue  # the skill itself is rendered above as a custom-agent (skill_dst)
+        plan.append(
+            Artifact(
+                ArtifactKind.FILE,
+                f"{_WIKI_SKILL_SUPPORT_SRC}/{rel_path}",
+                f"{_COPILOT_SKILL_SUPPORT_DIR}/{rel_path}",
+                WriteStrategy.CREATE_IF_ABSENT,
+            )
+        )
     # HOOK scripts: reuse byte-for-byte (FR-014). The CLI SessionStart is a static prompt, so no
     # session-start script is installed — only the Stop/SessionEnd check script.
     plan.append(
@@ -395,11 +419,15 @@ def sertor_owned_paths(assistant: AssistantId = AssistantProfile.DEFAULT) -> Ser
     instruction_target = aprofile.target_for(Surface.INSTRUCTION_BLOCK).target_rel
     settings_target = aprofile.target_for(Surface.HOOK).target_rel
     # The wiki scaffold dir is owned but removed only under --purge-wiki (gate lives in the CLI).
-    # `.claude/skills/wiki-author` (Claude) is an own dir; for Copilot the skill is a rendered file
-    # already covered by owned_files, so no extra dir is declared.
+    # The wiki-author skill tree is a Sertor-owned dir on BOTH hosts (FEAT-001/056): on Claude it is
+    # `.claude/skills/wiki-author` (whole skill); on Copilot the rendered skill is a single
+    # `.agent.md` file (in owned_files) PLUS the support payload in the dedicated container
+    # `.github/sertor/wiki-author`, which is declared here so uninstall/upgrade remove it in block.
     owned_dirs: tuple[str, ...] = ("wiki",)
     if assistant is AssistantId.CLAUDE:
         owned_dirs = ("wiki", ".claude/skills/wiki-author")
+    else:  # copilot-cli
+        owned_dirs = ("wiki", _COPILOT_SKILL_SUPPORT_DIR)
     return SertorOwnedPaths(
         owned_dirs=owned_dirs,
         owned_files=owned_files,
