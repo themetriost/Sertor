@@ -49,17 +49,19 @@ class ObservabilityApp(App):
 
     def compose(self) -> ComposeResult:
         yield Header()
+        # markup=False: our renderers emit plain text; event details (e.g. `results_preview=[...]`,
+        # `provider=azure:...`) contain `[`/`:` that Textual would otherwise parse as Rich markup.
         with TabbedContent():
             with TabPane("Live", id="tab-live"):
-                yield Static(id="live")
+                yield Static(id="live", markup=False)
             with TabPane("Cache", id="tab-cache"):
-                yield Static(id="cache")
+                yield Static(id="cache", markup=False)
             with TabPane("Cost", id="tab-cost"):
-                yield Static(id="cost")
+                yield Static(id="cost", markup=False)
             with TabPane("Corpus", id="tab-corpus"):
-                yield Static(id="corpus")
+                yield Static(id="corpus", markup=False)
             with TabPane("RAG", id="tab-rag"):
-                yield Static(id="rag")
+                yield Static(id="rag", markup=False)
         yield Footer()
 
     def on_mount(self) -> None:

@@ -67,6 +67,27 @@ def test_app_smoke_empty_state():
     asyncio.run(_run())
 
 
+def test_app_renders_bracketed_event_details():
+    # Regression: event details with `[`/`:` (results_preview list, provider) are plain text, NOT
+    # Rich markup → mounting must not raise MarkupError.
+    pytest.importorskip("textual")
+    app = _app_with_events([
+        (1_700_000_000.0, "embeddings", {"provider": "azure:text-embedding-3-large", "tokens": 8}),
+        (1_700_000_001.0, "hybrid_query", {
+            "fused_k": 2,
+            "query": "what is hybrid search?",
+            "results_preview": ["src/a.py|0.91", "src/b.py|0.80"],
+        }),
+    ])
+
+    async def _run():
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            assert "results_preview=" in app.rendered["live"]
+
+    asyncio.run(_run())
+
+
 def test_app_refresh_and_last_update():
     # Manual refresh binding (`r`) re-runs _update; the sub_title carries a last-update note.
     pytest.importorskip("textual")
