@@ -5,8 +5,9 @@ launcher `composition.run_observability_panel` does it lazily and raises an acti
 when the extra is missing). All the *what to show* logic lives in `live.py` (pure, testable without
 a terminal); here we only draw the snapshot/reports and refresh on a timer. Read-only.
 
-The panel is tabbed: **Live** (current state, 022) + **Cache/Cost/Corpus** (browsable reports, 023),
-with a `t` key to cycle the time range (all → 7d → 24h).
+The panel is tabbed: **Live** (current state, 022) + **Cache/Cost/Corpus** (browsable reports, 023)
++ **RAG** (demonstrability, 064), with `t` to cycle the time range (all → 7d → 24h) and `r` to
+refresh on demand; the sub-title carries the last-update clock.
 """
 from __future__ import annotations
 
@@ -32,7 +33,11 @@ class ObservabilityApp(App):
     """Observability panel: live state + browsable reports, refreshed on a timer (read-only)."""
 
     TITLE = "Sertor — observability"
-    BINDINGS = [("t", "cycle_window", "Time range"), ("q", "quit", "Quit")]
+    BINDINGS = [
+        ("r", "refresh", "Refresh"),
+        ("t", "cycle_window", "Time range"),
+        ("q", "quit", "Quit"),
+    ]
 
     def __init__(self, reports: ObservabilityReports, refresh_s: float = 2.0):
         super().__init__()
@@ -64,7 +69,8 @@ class ObservabilityApp(App):
     def _update(self) -> None:
         now = time.time()
         since, until = time_window(self._window, now)
-        self.sub_title = f"range: {self._window}"
+        clock = time.strftime("%H:%M:%S", time.localtime(now))
+        self.sub_title = f"range: {self._window} · updated {clock}"
         snap = live_snapshot(self._reports, since=since, until=until)
         self.rendered = {
             "live": render_snapshot(snap),
@@ -75,6 +81,9 @@ class ObservabilityApp(App):
         }
         for key, text in self.rendered.items():
             self.query_one(f"#{key}", Static).update(text)
+
+    def action_refresh(self) -> None:
+        self._update()
 
     def action_cycle_window(self) -> None:
         self._window = next_window(self._window)

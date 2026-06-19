@@ -67,6 +67,24 @@ def test_app_smoke_empty_state():
     asyncio.run(_run())
 
 
+def test_app_refresh_and_last_update():
+    # Manual refresh binding (`r`) re-runs _update; the sub_title carries a last-update note.
+    pytest.importorskip("textual")
+    app = _app_with_events([(1_700_000_000.0, "index", {"documents": 1, "chunks": 1})])
+
+    async def _run():
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            assert "updated" in app.sub_title
+            app.rendered = {}
+            await pilot.press("r")
+            await pilot.pause()
+            assert app.rendered  # _update ran again
+            assert "1 chunks" in app.rendered["live"]
+
+    asyncio.run(_run())
+
+
 def test_app_cycle_time_range():
     # FR-003/004: pressing `t` cycles the time range.
     pytest.importorskip("textual")
