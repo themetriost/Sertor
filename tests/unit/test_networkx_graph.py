@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sys
 
 import pytest
@@ -38,6 +39,15 @@ def _data() -> GraphData:
     return GraphData(nodes=nodes, edges=edges, coverage=(("python", ("calls",)),))
 
 
+def _data_aiuta_line(line: int) -> GraphData:
+    base = _data()
+    nodes = tuple(
+        GraphNode(n.id, n.kind, n.name, n.path, line, n.qualname) if n.name == "aiuta" else n
+        for n in base.nodes
+    )
+    return GraphData(nodes=nodes, edges=base.edges, coverage=base.coverage)
+
+
 def _graph(tmp_path, *, build: bool = True) -> NetworkxCodeGraph:
     g = NetworkxCodeGraph(tmp_path, CORPUS)
     if build:
@@ -67,6 +77,20 @@ def test_build_is_idempotent_and_atomic(tmp_path):
     assert artifact.read_text(encoding="utf-8") == first  # same input → same artifact
     leftovers = [p for p in (tmp_path / "graph").iterdir() if p.suffix != ".json"]
     assert leftovers == []                                # no leftover tmp files (atomic)
+
+
+def test_load_reloads_when_artifact_rewritten_on_disk(tmp_path):
+    # A graph cached in memory must not go stale when the artifact is rebuilt by another writer
+    # (e.g. a re-index in a separate process): the next query reloads via the artifact's identity.
+    reader = NetworkxCodeGraph(tmp_path, CORPUS)
+    reader.build(CORPUS, _data())                       # aiuta at line 10
+    assert reader.find_symbol("aiuta")[0].line == 10    # caches the line-10 graph
+    # "another process" rewrites the same artifact with aiuta at a different line
+    NetworkxCodeGraph(tmp_path, CORPUS).build(CORPUS, _data_aiuta_line(99))
+    art = tmp_path / "graph" / f"{CORPUS}.json"
+    bump = art.stat().st_mtime_ns + 1_000_000_000       # force a distinct mtime (coarse-clock safe)
+    os.utime(art, ns=(bump, bump))
+    assert reader.find_symbol("aiuta")[0].line == 99    # reloaded from disk, not the stale 10
 
 
 def test_build_event_emitted_by_adapter(tmp_path, caplog):

@@ -45,7 +45,10 @@ class NetworkxCodeGraph:
         self._dir = Path(index_dir) / "graph"
         self._corpus = corpus
         self._limits = limits  # (definitions, relations, docs) for get_context (FR-016)
-        # per-corpus cache: (DiGraph, nodes by id, name→ids index) — invalidated by build/reset.
+        # per-corpus cache keyed by artifact identity (mtime_ns, size): a re-index by another
+        # process rewrites the artifact → the next query reloads instead of serving a stale graph
+        # (sibling of the ChromaStore refresh; surfaced by dogfooding 2026-06-19). Same-process
+        # build/reset also invalidate eagerly. Value: (token, (DiGraph, nodes by id, name→ids)).
         self._cache: dict[str, tuple] = {}
 
     def _artifact(self, corpus: str) -> Path:
@@ -92,14 +95,20 @@ class NetworkxCodeGraph:
     # --- lazy loading (with extra, DA-5) ---------------------------------------------------------
 
     def _load(self):
-        if self._corpus in self._cache:
-            return self._cache[self._corpus]
         artifact = self._artifact(self._corpus)
         if not artifact.exists():
+            self._cache.pop(self._corpus, None)  # a vanished artifact invalidates a stale cache
             raise GraphNotFoundError(
                 "graph not found: build it (index) before querying",
                 corpus=self._corpus,
             )
+        # Reload when the artifact changed on disk (mtime+size): keeps a long-lived server (the MCP
+        # memoizes this adapter) from serving a graph stale after a re-index in another process.
+        stat = artifact.stat()
+        token = (stat.st_mtime_ns, stat.st_size)
+        cached = self._cache.get(self._corpus)
+        if cached is not None and cached[0] == token:
+            return cached[1]
         try:
             import networkx as nx
         except ImportError as exc:
@@ -133,8 +142,9 @@ class NetworkxCodeGraph:
             graph.add_edge(item["source"], item["target"], type=item["type"])
         for ids in name_index.values():
             ids.sort()
-        self._cache[self._corpus] = (graph, by_id, name_index)
-        return self._cache[self._corpus]
+        loaded = (graph, by_id, name_index)
+        self._cache[self._corpus] = (token, loaded)
+        return loaded
 
     # --- navigation (FR-013..018) ----------------------------------------------------------------
 

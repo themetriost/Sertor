@@ -3,7 +3,7 @@ title: sertor — l'installer (pacchetto e comando)
 type: tech
 tags: [installer, cli, wiki, package-data, host-agnostico, produzione]
 created: 2026-06-11
-updated: 2026-06-15 (+ motore estratto in [[sertor-install-kit]], governace in [[sertor-flow]])
+updated: 2026-06-19 (blocco SERTOR:RAG-USAGE host-facing: nuova disciplina "Search first, MCP-first") · 2026-06-15 (+ motore estratto in [[sertor-install-kit]], governace in [[sertor-flow]])
 sources: ["packages/sertor/", "specs/012-sertor-install-wiki/", "specs/015-sertor-install-rag/", "specs/016-igiene-radice-host/", "requirements/sertor-cli/installer/requirements.md", "requirements/sertor-cli/install-rag/requirements.md", "requirements/sertor-cli/igiene-radice-host/requirements.md"]
 ---
 
@@ -54,6 +54,13 @@ Flag: `--backend azure|local`, `--corpus` (default = nome dir sanitizzato), `--n
 "pythonizzati"**; disinstallare ≈ cancellare `.sertor/`. Lo stesso ambiente `.sertor/` fa girare
 `sertor-rag` e `sertor-wiki-tools`. Il server/CLI girano con cwd `.sertor/` → caricano `.sertor/.env`
 e tengono indice/grafo dentro `.sertor/`.
+
+**Blocco host `SERTOR:RAG-USAGE`** (asset `claude-md-block-rag-usage.md`, depositato in `.claude/CLAUDE.md`
+come marker): istruisce l'agente ospite a interrogare il RAG (CLI/MCP) **prima** di leggere i file a mano,
+trattando gli errori dei tool come segnale (non degradare silenziosamente a fallback). Dal 2026-06-19
+include la disciplina operativa "Search first, MCP-first" — sanzionata anche nel rituale di step di Sertor
+(CLAUDE.md linea 287/388) — che accelera il rilevamento dei guasti (ogni fallimento MCP dice qualcosa). La
+regola è host-generalizzata, non Sertor-specifica.
 
 **Finding di distribuzione (lezione).** L'ipotesi dei requirements — che `sertor` standalone cercasse
 `sertor-core` su PyPI e fallisse — era **errata**: `uvx --from "git+…#subdirectory=packages/sertor"`

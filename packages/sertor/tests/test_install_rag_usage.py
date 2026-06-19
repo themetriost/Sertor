@@ -67,6 +67,16 @@ def test_plan_order_block_after_gitignore(tmp_path: Path):
 
 # --- group B: CLAUDE.md block ----------------------------------------------------------------
 
+def test_rag_usage_block_includes_search_first_discipline(tmp_path: Path, make_runner):
+    # The host block must carry the "search first / errors are a signal" discipline (MCP-first),
+    # not only the do-not-import rule, so installed hosts inherit it (feature-complete corollary).
+    report, _ = _run(tmp_path, make_runner(), backend="azure", with_deps=False)
+    assert report.exit_code() == 0
+    md = (tmp_path / "CLAUDE.md").read_text(encoding="utf-8")
+    assert "Search first, read second" in md
+    assert "query the Sertor RAG before reading files" in md
+
+
 def test_claude_md_block_deposited_with_distinct_markers(tmp_path: Path, make_runner):
     report, _ = _run(tmp_path, make_runner(), backend="azure", with_deps=False)
     assert report.exit_code() == 0

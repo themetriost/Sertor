@@ -3,7 +3,7 @@ title: Code-graph strutturale (navigazione del codice)
 type: concept
 tags: [code-graph, graphrag, find-symbol, who-calls, navigazione, tree-sitter, networkx, sertor-core, feat-005]
 created: 2026-06-12
-updated: 2026-06-12
+updated: 2026-06-19 (auto-reload su artefatto cambiato: cache chiavata su mtime_ns+size, niente staleness dopo re-index)
 sources: ["src/sertor_core/services/graph_extraction.py", "src/sertor_core/adapters/graph/networkx_graph.py", "specs/014-motore-grafo/**"]
 ---
 
@@ -27,7 +27,7 @@ che è supportato, persistita nell'artefatto e **verificata dai test** (un mini-
 i 10 linguaggi): nodi+gerarchia ovunque, chiamate per tutti, import/ereditarietà per Python.
 Per C/C++ il chunker non nomina i simboli → fallback dichiarato sul `declarator` (R-3 gestito).
 
-## Mai stantio: build dentro `index()`
+## Mai stantio: build dentro `index()` e reload su cambio disco
 
 Il grafo si costruisce **nello stesso passaggio dell'indicizzazione** (sink opzionale in
 `IndexingService`, default `SERTOR_GRAPH=true`): un solo comando tiene freschi retrieval e grafo
@@ -35,6 +35,11 @@ Il grafo si costruisce **nello stesso passaggio dell'indicizzazione** (sink opzi
 sempre reale». Artefatto **JSON `sertor.graph/1`** atomico in `<index_dir>/graph/<corpus>.json`,
 namespace per **solo corpus** (il grafo non dipende dal provider di embeddings — diverso da
 collezioni vettoriali e sidecar lessicale).
+
+Dal 2026-06-19, l'adapter `NetworkxCodeGraph` non cacheia il grafo indefinitamente: la **cache è
+chiavata su `(st_mtime_ns, st_size)` dell'artefatto su disco**. Se il file viene riscritto (es. da
+un re-index in parallelo), la prossima query lo rileva e **ricarica** il grafo aggiornato, senza
+riavvio del server. Questo elimina il rischio di staleness tra re-index e riavvio.
 
 ## Porta, adapter e l'asimmetria chiave
 

@@ -109,9 +109,11 @@ Quando una chiamata MCP sembra appesa o il server pare morto:
    `InternalError` mentre `search_combined` regge, il client Chroma del server è divergente dallo store
    riscritto su disco (il process mantiene in memoria una connessione che non vede le modifiche). Sintomo
    gemello: `find_symbol` ritorna righe obsolete. **Rimedio immediato:** riconnettere il server (nuova
-   sessione o comando `/mcp` + riconnessione). **Dal 2026-06-19:** `ChromaStore.query()` si auto-guarisce
-   — su errore ricrea il client e riprova una volta, così il guasto non dovrebbe più accadere. Se persiste:
-   riconnetti il server, che ora ha il fix.
+   sessione o comando `/mcp` + riconnessione). **Dal 2026-06-19:** il client si auto-guarisce su entrambi
+   i fronti — `ChromaStore.query()` ricrea il client su errore e riprova una volta; il **code-graph** è
+   cachiato per artefatto su `(mtime_ns, size)` e si ricarica se il disco lo aggiorna, senza riavvio del
+   server. Così la staleness non dovrebbe più accadere. Se persiste: riconnetti il server o avvia una nuova
+   sessione.
 4. **Probe fuori sessione:** pilotare il server con un driver JSON-RPC su stdio (initialize →
    initialized → tools/call) misurando i tempi, tenendo stdin aperto; se la risposta arriva solo
    chiudendo stdin, l'esecuzione era parcheggiata nell'event loop (la firma dell'episodio
@@ -119,8 +121,8 @@ Quando una chiamata MCP sembra appesa o il server pare morto:
    embed / facade). Driver usati: `%TEMP%\mcp_probe.py`, `mcp_probe2.py`, `mini_mcp*.py`.
 5. **Ricordare:** il server gira da `.venv` (editable su `src/`) → serve il codice del **branch
    correntemente checked-out**; va riavviato (nuova sessione o riconnessione) per servire codice nuovo.
-   **NB:** il code-graph è caricato all'avvio, non refreshed a runtime (stantio se aggiornato tra re-index
-   e riavvio) — riavviare il server è il rimedio.
+   L'artefatto del code-graph è ora auto-refreshed su cambio disco (mtime/size), quindi nessuna staleness
+   del grafo nemmeno tra re-index e riavvio — solo il codice del server rimane stantio.
 
 ## Vedi anche
 - Il pattern che incarna: [[thin-consumer]]. Cosa consuma: [[indexing-and-retrieval]] · [[retrieval-core]].
