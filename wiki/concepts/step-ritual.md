@@ -3,7 +3,7 @@ title: Step ritual & wiki anti-drift
 type: concept
 tags: [wiki, automazione, hook, governance, processo, delega, fonte-unica, rituale-di-step]
 created: 2026-06-04
-updated: 2026-06-10 (rituale a 6 punti: + executive summary roadmap, + re-index dei corpora toccati)
+updated: 2026-06-19 (MCP-first di apertura + smoke test di chiusura, punti 8 e standing behavior preiniziale; aggiornati anche mcp-server.md) · 2026-06-10 (rituale a 6 punti: + executive summary roadmap, + re-index dei corpora toccati)
 sources: ["CLAUDE.md", ".claude/skills/wiki-author/wiki-playbook.md", ".claude/agents/wiki-curator.md", ".claude/agents/configuration-manager.md", ".claude/settings.json", ".claude/hooks/wiki-pending-check.ps1"]
 ---
 
@@ -46,6 +46,12 @@ Il rituale è del secondo tipo: per esso non esiste limite tecnico. L'automazion
 pre-PR, guard su reset/force-push, distillazione dai transcript) resta un **secondo strato** valido ma
 separato, che copre i casi «quando non c'è nessuno».
 
+## Standing behavior prima del rituale (apertura dello step)
+
+Dal 2026-06-19, due regole standing di apertura — comportamenti sistematici mentre lavoriamo che precedono la checklist numerata e la precedono:
+
+- **MCP-first (dogfooding prioritario, regola SEMPRE attiva).** Quando uno step richiede di **orientarsi nel codice o nella documentazione del corpus** (`src/`, `specs/`, `requirements/`, `wiki/`, doc), la **prima mossa è interrogare il RAG** via server MCP `sertor-rag` (`search_combined`/`search_code`/`search_docs`, `find_symbol`/`who_calls`/`related_docs`/`get_context`), **non** leggere i file a mano. Solo *dopo* che il RAG ha indicato, si usa `Read` per leggerli interi. **Perché:** ogni uso è il **test che lo strumento funzioni** — è così che misuriamo convenienza e così che i guasti **emergono** invece di marcire invisibili. *Se Sertor non usa Sertor, chi dovrebbe?* Corollari: (1) errori MCP = finding, mai rumore (segnala esplicitamente); (2) unica eccezione = fatto puntuale a posizione nota (es. «che default ha `default_k`?»), allora `Read` diretto. (3) Il Principio XI resta: accesso via vehicles (MCP/CLI), mai importare `sertor_core` direttamente.
+
 ## Il rituale (Definition of Done)
 
 Codificato in `CLAUDE.md`. A fine di ogni step significativo, di propria iniziativa:
@@ -69,7 +75,28 @@ Codificato in `CLAUDE.md`. A fine di ogni step significativo, di propria iniziat
    `master`/`main`, mostra all'utente l'executive summary della [[roadmap]] (blocco `EXEC:START/END`), così
    dopo ogni consegna si vede subito «dove siamo e cosa fare adesso». Si innesca **solo** al merge. Fallback:
    se la roadmap non esiste, **chiedi** all'utente e creala su conferma (non inventarla a freddo).
-7. **\<altre azioni\>** — lista estendibile: ciò che l'utente chiede di rendere standing si aggiunge qui.
+7. **Riassunto non tecnico (explainer)** — quando uno step **sviluppa o pianifica una capacità significativa**
+   (un requisito/epica, una feature, una capacità di prodotto), produci o aggiorna una **descrizione in
+   linguaggio comune** nell'area `wiki/explainers/` (per non tecnici): cosa fa e perché, con un'immagine
+   quotidiana e zero gergo, e un rimando «dettaglio tecnico» alla pagina di concetto/feature corrispondente.
+   È giudizio (scrivere per chi non è tecnico) → resta nel flusso principale. Calibra al valore (opzionale):
+   solo per capacità che vale spiegare a uno stakeholder non tecnico — non per lo step meccanico o di solo
+   tooling. Vale sia per ciò che è *fatto* sia per ciò che si *sta per sviluppare* (la pagina marca lo
+   stato). Fa parte dell'asset installabile (`claude-md-block.md`): gli ospiti ricevono questa pratica con il
+   sistema-wiki.
+8. **Smoke test del RAG di dogfooding** (dal 2026-06-19) — **allo stesso momento del commit** dello step
+   (specie dopo un re-index), il flusso principale **esercita il server MCP `sertor-rag`** per verificare che
+   sia *vivo e fresco*, non solo che l'indice su disco esista. Il test DEVE colpire il **path del filtro
+   metadata**: `search_code` **e** `search_docs` — **non basta `search_combined`** (la query con `where`
+   metadata è proprio ciò che cede quando il server è **stantio** dopo un re-index, mentre la sola ricerca
+   vettoriale regge) — più un `find_symbol` su un **simbolo a posizione nota** come controllo di **freschezza**
+   del code-graph (la riga deve combaciare col file reale). Un tool in errore o un indice stantio → **segnala**
+   (regola *errori-MCP = finding, mai rumore*), **riconnetti** il server e **ri-verifica**; mai degradare in
+   silenzio. È il **complemento di chiusura** della regola MCP-first di apertura: ogni step verifica che lo
+   strumento sia usabile. Esecuzione meccanica, ma l'esito («fresco?») è giudizio → flusso principale. Calibra
+   al valore: gli step che non toccano il corpus possono saltarlo; **obbligatorio dopo un re-index / merge su
+   `master`**.
+9. **\<altre azioni\>** — lista estendibile: ciò che l'utente chiede di rendere standing si aggiunge qui.
 
 La voce di log **non è posticipabile**: si scrive **nello stesso momento del commit** dello step.
 
