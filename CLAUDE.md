@@ -475,6 +475,25 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/061-export-otel/plan.md` (FEAT-005 epica **osservabilità** — **export OpenTelemetry**: gli eventi
+che il core già emette via `log_event` sono esportati **anche** verso un backend OTel esterno
+(Langfuse/Phoenix/Grafana), **in aggiunta** allo store locale F1 (REQ-E4). **Design = gemello di F1:** un
+secondo `logging.Handler` (`OtelExportHandler`, `observability/otel.py`) attaccato in
+`enable_observability` SOLO con extra `[otel]` + manopola `SERTOR_OBSERVABILITY_OTEL` (default off);
+mappa ogni event-record a uno **span** — attributi **GenAI semconv** dove applicabile
+(`embeddings`→`gen_ai.operation.name=embeddings`+`gen_ai.usage.input_tokens`+`gen_ai.provider.name`;
+search→`retrieval`), namespace `sertor.*` altrove (index/rerank). **Additivo** (`log_event`/call-site/F1
+invariati), **non-fatale** (handleError), **non-bloccante** (BatchSpanProcessor), **privacy
+metrics-only** (mai testo libero/query/path; campi già redatti). Extra OTel **lazy** (core importabile
+senza OTel — verificato: 0 `opentelemetry` in sys.modules; assente+richiesto → `ConfigError` come
+`[tui]`). Endpoint/trasporto dalle env **standard OTel** (`OTEL_EXPORTER_OTLP_*`), non reinventati. Mappa
+attributi centralizzata (R-1). **Verifica offline** con `InMemorySpanExporter` (8 test: mapping puro,
+emissione e2e, privacy, disabilitato→0 handler, extra-assente→ConfigError). Manopola nei template `.env`
+dell'installer (corollario installabile). **Gap dichiarato:** span **flat post-hoc** (no tracing
+nidificato → follow-up). ruff clean; 580 unit / 627 root non-cloud / sertor 292 · kit 131 · flow 134
+verdi; `sertor-core` invariato salvo modulo nuovo + manopola + ramo wiring + extra. Branch
+`061-export-otel`. **NB:** 2 test `test_packaging` falliscono in locale finché il branch non è pushato
+(installano da `git+url@<branch>`) — artefatto, non regressione. Storico:
 `specs/058-distribuzione-costituzione/plan.md` (FEAT-009 epica **debito-tecnico** — **distribuzione
 corretta della costituzione neutra (replace-if-placeholder) + rifinitura principi**: la
 costituzione-starter di `sertor-flow` **non arrivava** sull'ospite — `specify init` (Step 0, pivot
