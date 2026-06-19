@@ -53,9 +53,13 @@ def test_install_ships_both_shells_via_launch(installed: Path):
 
 
 def test_install_deposits_constitution_starter(installed: Path):
+    """FEAT-009: the host gets our NEUTRAL STARTER, not the spec-kit placeholder that `specify init`
+    scaffolds (the mock now reproduces that placeholder; the install must replace it)."""
     constitution = installed / ".specify/memory/constitution.md"
     assert constitution.exists()
-    assert "Constitution" in constitution.read_text(encoding="utf-8")
+    text = constitution.read_text(encoding="utf-8")
+    assert "[PROJECT_NAME]" not in text  # the placeholder was replaced, not left in place
+    assert "Replaceable Details" in text  # a starter principle is present
 
 
 def test_install_inserts_sdlc_block_in_claude_md(installed: Path):

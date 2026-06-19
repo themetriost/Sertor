@@ -475,6 +475,24 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/058-distribuzione-costituzione/plan.md` (FEAT-009 epica **debito-tecnico** — **distribuzione
+corretta della costituzione neutra (replace-if-placeholder) + rifinitura principi**: la
+costituzione-starter di `sertor-flow` **non arrivava** sull'ospite — `specify init` (Step 0, pivot
+FEAT-045) scaffolda un `.specify/memory/constitution.md` **PLACEHOLDER** (`[PROJECT_NAME]`), poi il nostro
+CONFIG `create-if-absent` (`_apply_config`) faceva **SKIP** → l'ospite riceveva il template vuoto di
+spec-kit, non lo starter curato (bug scoperto con **verifica empirica** su Spike + install pulito, mentre
+si esaminava quali principi della costituzione sono agnostici). **Fix:** helper puro
+`_is_speckit_placeholder` (sentinelle `[PROJECT_NAME]`/`[PRINCIPLE_1_NAME]`/`[CONSTITUTION_VERSION]`) +
+`_apply_constitution(dest, starter, dry_run)` **condiviso** da install (`_apply_config`) e upgrade
+(`_apply_gov_upgrade`): placeholder → **sovrascrivi** con lo starter (UPDATED); costituzione **reale** →
+**preserva** (SKIPPED, Principio VI); idempotente; uninstall invariato. Mock `FakeSpecifyRunner` (conftest)
+reso **FEDELE** (ora deposita il placeholder create-if-absent) — era il blind-spot che nascondeva il bug
+ai test offline. **Rifinitura starter:** + «Replaceable Details / No Vendor Lock-In» (kernel Principio II)
++ «Consume Through Stable Interfaces, Not Internals» (gen. Principio XI) + allineamento leggibilità SESE;
+v0.1.0→0.2.0; esclusi i principi Sertor/RAG-specifici (X, veicoli, motori, hit@k). `sertor-core`
+**INVARIATO**; `sertor-flow` senza dipendenza dal core. SpecKit completo (requirements→spec→plan
+Constitution Check 11/11→tasks→implement); ruff clean, **sertor-flow 132 · kit 131 · sertor 292**; empirica
+end-to-end placeholder→starter. Branch `058-distribuzione-costituzione`. Storico:
 `specs/056-parita-asset-copilot/plan.md` (FEAT-001 epica **debito-tecnico** — **parità funzionale
 completa su Copilot CLI + governance dual-target**: dal dogfooding su host Copilot reale la capacità wiki
 era **ROTTA** — il payload multi-file della skill `wiki-author` (`wiki-playbook.md` + 9 `ops/` + 3 craft)

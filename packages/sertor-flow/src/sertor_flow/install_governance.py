@@ -72,6 +72,26 @@ _SDLC_BLOCK_ASSET = "claude-md-block-sdlc.md"
 # Targets on the host (assistant-agnostic).
 _CONSTITUTION_TARGET = ".specify/memory/constitution.md"
 
+# FEAT-009: `specify init` (Step 0) scaffolds a PLACEHOLDER `.specify/memory/constitution.md` (the
+# spec-kit template), so our `create-if-absent` starter was always SKIPPED → hosts got the empty
+# `[PROJECT_NAME]` template instead of our curated neutral starter. These sentinels identify that
+# placeholder: bracketed tokens of the upstream template that NEVER appear in a real constitution
+# or our starter. `replace-if-placeholder`: overwrite the placeholder, preserve a real constitution.
+_SPECKIT_PLACEHOLDER_SENTINELS = (
+    "[PROJECT_NAME]",
+    "[PRINCIPLE_1_NAME]",
+    "[CONSTITUTION_VERSION]",
+)
+
+
+def _is_speckit_placeholder(text: str) -> bool:
+    """True if `text` is the spec-kit constitution TEMPLATE (placeholder), not a real constitution.
+
+    Deterministic, offline: matches bracketed template tokens that a real constitution (or our
+    starter) never contains. Fail-safe: when no sentinel is present the text is treated as a real
+    constitution and PRESERVED (Principle VI, non-destructiveness)."""
+    return any(sentinel in text for sentinel in _SPECKIT_PLACEHOLDER_SENTINELS)
+
 # Sertor-authored surfaces rendered per-assistant from a single canonical source (feature 045).
 # Each: (canonical asset under assets/, Surface, logical name).
 #   - For Claude the logical name is the path relative to `.claude/` (kept verbatim).
@@ -202,15 +222,39 @@ def _apply_file(target_root: Path, art: Artifact) -> ArtifactOutcome:
     return ArtifactOutcome(art.target_rel, Outcome.CREATED)
 
 
+def _apply_constitution(
+    dest: Path, target_rel: str, starter: str, dry_run: bool = False
+) -> ArtifactOutcome:
+    """Replace-if-placeholder for the constitution (FEAT-009; shared by install/upgrade).
+
+    `specify init` (Step 0) deposits a spec-kit PLACEHOLDER at `.specify/memory/constitution.md`; a
+    plain create-if-absent would then SKIP our starter forever. So:
+      - absent → write the neutral starter (`CREATED`);
+      - spec-kit placeholder → overwrite with the starter (`UPDATED`);
+      - real host constitution → preserve untouched (`SKIPPED`, Principle VI).
+    Idempotent: a second run sees the starter (no sentinels) → preserved. `dry_run` projects the
+    outcome without writing.
+    """
+    if not dest.exists():
+        if not dry_run:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_text(starter, encoding="utf-8")
+        return ArtifactOutcome(target_rel, Outcome.CREATED, "constitution starter")
+    if _is_speckit_placeholder(dest.read_text(encoding="utf-8")):
+        if not dry_run:
+            dest.write_text(starter, encoding="utf-8")
+        return ArtifactOutcome(
+            target_rel, Outcome.UPDATED, "replaced spec-kit placeholder with neutral starter"
+        )
+    return ArtifactOutcome(target_rel, Outcome.SKIPPED, "host constitution preserved")
+
+
 def _apply_config(target_root: Path, art: Artifact) -> ArtifactOutcome:
-    """Constitution starter (`CREATE_IF_ABSENT`): copy the starter; exists → skip (FR-014)."""
-    dest = _resolve(target_root, art.target_rel)
-    if dest.exists():
-        return ArtifactOutcome(art.target_rel, Outcome.SKIPPED, "already present")
-    dest.parent.mkdir(parents=True, exist_ok=True)
+    """Constitution: replace-if-placeholder (FEAT-009) — starter wins over the spec-kit placeholder,
+    a real host constitution is preserved."""
     assert art.source is not None
-    dest.write_text(read_asset_text(_ANCHOR, art.source), encoding="utf-8")
-    return ArtifactOutcome(art.target_rel, Outcome.CREATED, "constitution starter")
+    dest = _resolve(target_root, art.target_rel)
+    return _apply_constitution(dest, art.target_rel, read_asset_text(_ANCHOR, art.source))
 
 
 def _apply_generate_init(
@@ -354,11 +398,15 @@ def _apply_gov_upgrade(
 ) -> ArtifactOutcome:
     """Inverse-aware dispatch for `op=UPGRADE` (data-model §3). `dry_run` projects without mutating.
 
-    Constitution (`CREATE_IF_ABSENT`) is NOT overwritten (FR-040). FILE → update-if-changed;
-    MARKER_BLOCK → update; generated init files → create-if-absent (preserve user edits).
+    Constitution: replace-if-placeholder (FEAT-009) — an upgrade repairs a host still stuck on the
+    spec-kit placeholder, while a real host constitution stays preserved (FR-040). FILE →
+    update-if-changed; MARKER_BLOCK → update; generated init → create-if-absent (preserve edits).
     """
     if art.kind is ArtifactKind.CONFIG and art.strategy is WriteStrategy.CREATE_IF_ABSENT:
-        return ArtifactOutcome(art.target_rel, Outcome.SKIPPED, "constitution preserved")
+        assert art.source is not None
+        dest = _resolve(target_root, art.target_rel)
+        starter = read_asset_text(_ANCHOR, art.source)
+        return _apply_constitution(dest, art.target_rel, starter, dry_run=dry_run)
     if art.kind is ArtifactKind.FILE:
         dest = _resolve(target_root, art.target_rel)
         content = _render_for_target(art)
