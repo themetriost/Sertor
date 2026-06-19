@@ -21,6 +21,7 @@ from sertor_core.observability.live import (
     render_cache_report,
     render_corpus_report,
     render_cost_report,
+    render_rag_report,
     render_snapshot,
     time_window,
 )
@@ -52,6 +53,8 @@ class ObservabilityApp(App):
                 yield Static(id="cost")
             with TabPane("Corpus", id="tab-corpus"):
                 yield Static(id="corpus")
+            with TabPane("RAG", id="tab-rag"):
+                yield Static(id="rag")
         yield Footer()
 
     def on_mount(self) -> None:
@@ -62,11 +65,13 @@ class ObservabilityApp(App):
         now = time.time()
         since, until = time_window(self._window, now)
         self.sub_title = f"range: {self._window}"
+        snap = live_snapshot(self._reports, since=since, until=until)
         self.rendered = {
-            "live": render_snapshot(live_snapshot(self._reports)),
+            "live": render_snapshot(snap),
             "cache": render_cache_report(self._reports.cache_report(since, until)),
             "cost": render_cost_report(self._reports.cost_report(since, until)),
             "corpus": render_corpus_report(self._reports.health_report(since, until), now),
+            "rag": render_rag_report(snap.recent_events),
         }
         for key, text in self.rendered.items():
             self.query_one(f"#{key}", Static).update(text)

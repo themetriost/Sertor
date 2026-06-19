@@ -475,6 +475,25 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/064-visibilita-rag-tui/plan.md` (FEAT-015 epica **osservabilità** — **visibilità del RAG nella
+TUI / dimostrabilità**: nuovo opt-in **`SERTOR_OBSERVABILITY_CONTENT`** (default off, richiede lo store)
+che realizza l'**opt-in raw-text REQ-E9** per **uso LOCALE** (scopo: *vedere/dimostrare* come funziona il
+RAG, NON audit; decisione utente: dati locali, TUI-user ≡ LLM-user → niente da nascondere localmente).
+**Cattura:** quando on, gli eventi di retrieval (`retrieve` facade + `hybrid_query` engine) portano
+`query`+`results_preview`(top-k path|score)+`snippet`(top-1) **tutti scrubbati** via `scrub_text`, +
+`abstained` (sempre, bool). Helper puro condiviso `content_fields()` in `services/retrieval.py` (riusato
+da facade e ibrido); flag cablato dal composition (`build_facade`, `content_enabled =
+observability_content_enabled AND observability_enabled`); l'ibrido legge `self._settings`. **Vista:**
+nuova **scheda TUI "RAG"** (`render_rag_report` puro in `observability/live.py` + `TabPane` in `tui.py`)
+con verdetto **3 stati hit/miss/astenuto** (`retrieval_verdict`, da `results`/`fused_k`+`abstained`) ·
+query · top result+snippet · operazioni MCP. **Privacy:** default off ovunque (REQ-012); contenuto solo
+opt-in+scrubbato; l'**export OTel resta metrics-only** (l'handler scarta query/snippet — testo libero).
+**SpecKit:** requirements (6 forche risolte: hit/miss=3 stati · risultato=top-k path+score+snippet 1° ·
+gate=manopola dedicata · scheda dedicata · MCP query-arg · retention by-count) + plan (Constitution
+11/11). Additivo; `sertor-core` invariato fuori dai punti citati. **Verificato live** (evento porta
+query/preview/snippet 200ch/abstained, verdetto=hit); 594 unit verdi, ruff clean. **Follow-up:** MCP
+query-arg negli eventi `mcp.<tool>` (REQ-006, render già pronto); correlazione hard MCP↔retrieval;
+retention store. Branch `064-visibilita-rag-tui`. Storico:
 `specs/061-export-otel/plan.md` (FEAT-005 epica **osservabilità** — **export OpenTelemetry**: gli eventi
 che il core già emette via `log_event` sono esportati **anche** verso un backend OTel esterno
 (Langfuse/Phoenix/Grafana), **in aggiunta** allo store locale F1 (REQ-E4). **Design = gemello di F1:** un

@@ -26,6 +26,7 @@ from sertor_core.domain.ports import (
     VectorStore,
 )
 from sertor_core.observability.logging import log_event
+from sertor_core.observability.scrub import scrub_text
 
 
 def apply_min_score(
@@ -44,6 +45,28 @@ def apply_min_score(
     return kept, (bool(results) and not kept)
 
 
+_SNIPPET_MAX = 200
+
+
+def content_fields(query: str, results: list[RetrievalResult], k: int, *, enabled: bool) -> dict:
+    """Optional RAG-demonstrability content for a retrieval event (064, FEAT-015).
+
+    Returns `{}` unless `enabled` (the local opt-in). When on: the (secret-scrubbed) `query`, a
+    `results_preview` of the top-k as `path|score`, and a scrubbed/truncated `snippet` of the top-1.
+    Paths are not content (already visible to whoever has the repo); the snippet is the only free
+    text, so it is scrubbed and capped. Pure → shared by the facade and the hybrid engine (D1).
+    """
+    if not enabled:
+        return {}
+    out: dict = {
+        "query": scrub_text(query),
+        "results_preview": [f"{r.path}|{round(r.score, 3)}" for r in results[:k]],
+    }
+    if results:
+        out["snippet"] = scrub_text(results[0].text or "")[:_SNIPPET_MAX]
+    return out
+
+
 class RetrievalFacade:
     """Backend-independent retrieval interface."""
 
@@ -57,11 +80,15 @@ class RetrievalFacade:
         extra_collections: Mapping[str, str] | None = None,
         retriever: RetrieverStrategy | None = None,
         min_score: float | None = None,
+        content_enabled: bool = False,
     ):
         self._embedder = embedder
         self._store = store
         self._collection = collection
         self._default_k = default_k
+        # RAG-demonstrability opt-in (064, FEAT-015): when on, the facade's own dense `retrieve`
+        # event also carries the query/preview/snippet (scrubbed). Default off (privacy-by-default).
+        self._content_enabled = content_enabled
         # corpus -> expected collection name (derived from the current provider, see composition).
         self._extra_collections = dict(extra_collections or {})
         # Retrieval strategy injected by the composition root (FEAT-004, FR-017/018): when
@@ -99,7 +126,9 @@ class RetrievalFacade:
             doc_type=doc_type,
             k=k,
             results=len(results),
+            abstained=low,  # results==0 + abstained → "abstained" verdict (vs plain miss)
             elapsed_ms=round((time.perf_counter() - started) * 1000, 2),
+            **content_fields(query, results, k, enabled=self._content_enabled),
         )
         if low:
             self._log_low_confidence([self._collection], raw)

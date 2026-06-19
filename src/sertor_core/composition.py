@@ -336,6 +336,8 @@ def build_facade(settings: Settings | None = None):
         extra_collections=extra,
         retriever=retriever,
         min_score=settings.retrieval_min_score,
+        # RAG-demonstrability content (064): only when BOTH the store and the content opt-in are on.
+        content_enabled=settings.observability_content_enabled and settings.observability_enabled,
     )
 
 
