@@ -151,8 +151,9 @@ vincoli/assunzioni · rischi/edge case · prioritizzazione **MoSCoW**.
 - **Git: mai eseguirlo direttamente** — delegato al `configuration-manager`. Al termine proponi un
   messaggio di commit (`docs(requirements): ...`).
 - **Segreti/artefatti:** niente segreti; non toccare `.env`, `*.key`, `raw/`.
-- **Dogfooding:** se l'esigenza tocca codice esistente, usa i tool di retrieval del repo per
-  ancorare i requisiti a ciò che già esiste (cita i file).
+- **Ancoraggio al codice:** se l'esigenza tocca codice esistente, usa i tool di code-search/retrieval
+  del progetto (Grep/Read, o un server MCP se presente) per ancorare i requisiti a ciò che già esiste
+  (cita i file).
 
 ## Done When
 
