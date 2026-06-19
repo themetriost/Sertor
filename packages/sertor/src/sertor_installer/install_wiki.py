@@ -51,6 +51,7 @@ from sertor_installer.surfaces import (
     HookEntrySpec,
     render_copilot_hooks,
     render_custom_agent,
+    render_native_skill,
     render_prompt_file,
 )
 
@@ -78,23 +79,22 @@ _WIKI_HOOK_SCRIPT_DST = ".github/hooks/wiki-pending-check.ps1"
 # from a static Claude-format asset. The sentinel source marks the GENERATED-wiki wiring so the
 # apply callback builds it instead of reading a file (no new ArtifactKind, data-model §4).
 _COPILOT_WIKI_WIRING_SENTINEL = "(generated: copilot wiki hooks)"
-# Canonical command/skill + agent sources. The DST is resolved per-target by the AssistantProfile
-# (VS Code → prompt-file; CLI → custom-agent), so these are bare logical names.
-_WIKI_COMMAND_SRC = "claude/commands/wiki.md"
-_WIKI_COMMAND_NAME = "wiki"
-_WIKI_SKILL_SRC = "claude/skills/wiki-author/SKILL.md"
+# Canonical sources for the wiki surfaces (single source = `assets/claude/**`).
+# FEAT-001 (056, parità Copilot — NATIVE agent-skills): the wiki capability on Copilot is a SINGLE
+# NATIVE agent-skill. The whole skill tree is deposited under `.github/skills/wiki-author/` and
+# Copilot auto-discovers all its files (incl. `ops/`). Its `SKILL.md` is the DISPATCHER (the 8 wiki
+# operations) rendered from the canonical command body (`commands/wiki.md`): Copilot CLI has no
+# custom slash-commands, so the native skill ABSORBS the `/wiki` command role (it is both
+# user-invocable via `/skills` and model-invocable). The support payload (playbook, ops/, craft) is
+# byte-copied; the bodies reference it with RELATIVE co-located paths that resolve identically on
+# both hosts (parallel containers `.claude/skills/wiki-author/` ↔ `.github/skills/wiki-author/`).
+_WIKI_COMMAND_SRC = "claude/commands/wiki.md"          # → Copilot native SKILL.md (dispatcher)
 _WIKI_SKILL_NAME = "wiki-author"
+_WIKI_SKILL_SUPPORT_SRC = "claude/skills/wiki-author"  # payload tree (byte-copied)
 _WIKI_AGENT_SRC = "claude/agents/wiki-curator.md"
 _WIKI_AGENT_DST = ".github/agents/wiki-curator.agent.md"
-# FEAT-001 (056, parità Copilot): the wiki-author skill's multi-file support payload
-# (wiki-playbook.md, ops/*.md, *-craft.md) ships to a DEDICATED non-agent container on Copilot —
-# OUTSIDE `.github/agents/` so the client never mistakes the support docs for custom-agents.
-# Byte-copied from the SAME canonical source as Claude (Claude deposits it under
-# `.claude/skills/wiki-author/**` via iter_asset_dir; the Copilot plan is selective, so it needs an
-# explicit loop). The bodies reference these files by NAME (host-agnostic), so the same
-# byte-identical body resolves on both hosts.
-_WIKI_SKILL_SUPPORT_SRC = "claude/skills/wiki-author"
-_COPILOT_SKILL_SUPPORT_DIR = ".github/sertor/wiki-author"
+_COPILOT_SKILL_DIR = ".github/skills/wiki-author"      # native skill container (Copilot)
+_COPILOT_SKILL_MD = f"{_COPILOT_SKILL_DIR}/SKILL.md"   # the dispatcher SKILL.md target
 # Rendered-file sources are tagged so the apply callback knows to translate, not byte-copy.
 _RENDER_PROMPT_SUFFIX = ".prompt.md"
 _RENDER_AGENT_SUFFIX = ".agent.md"
@@ -205,49 +205,43 @@ def _build_claude_wiki_plan() -> list[Artifact]:
 
 
 def _build_copilot_wiki_plan(assistant: AssistantId) -> list[Artifact]:
-    """Copilot CLI wiki plan (feature 044 + FEAT-011): `.github/**`, content reused from Claude.
+    """Copilot CLI wiki plan (feature 044 + FEAT-001/056): NATIVE agent-skill + `.github/**`.
 
-    Surfaces, routed via the `AssistantProfile`:
-      - COMMAND (`/wiki`, `wiki-author` skill): `.github/agents/*.agent.md` (custom-agent — the only
-        CLI-invocable form, FEAT-011/FR-013). The renderer is chosen by the target suffix.
-      - AGENT (`wiki-curator`): `.github/agents/*.agent.md` (custom-agent, no `model:`).
+    Surfaces:
+      - SKILL (`wiki-author`): a NATIVE agent-skill under `.github/skills/wiki-author/` — `SKILL.md`
+        is the DISPATCHER rendered from the canonical command body (it absorbs the `/wiki` command,
+        which has no native vehicle on the CLI), and the support payload (playbook/ops/craft) is
+        byte-copied. Copilot auto-discovers the whole folder; bodies use relative co-located refs.
+      - AGENT (`wiki-curator`): `.github/agents/wiki-curator.agent.md` (custom-agent, no `model:`).
       - HOOK: reuse `wiki-pending-check.ps1` byte-for-byte + GENERATED native wiring
         (`render_copilot_hooks`); SessionStart is a native prompt (no script).
       - INSTRUCTION_BLOCK → `.github/copilot-instructions.md`.
       - CONFIG/STRUCTURE: assistant-agnostic (the wiki scaffold lives in `wiki/`).
     """
-    aprofile = AssistantProfile.for_assistant(assistant)
     plan: list[Artifact] = []
 
-    # COMMAND: render command + skill into the target's vehicle (custom-agent on the CLI).
-    command_dst = aprofile.render_path(Surface.COMMAND, _WIKI_COMMAND_NAME)
-    skill_dst = aprofile.render_path(Surface.COMMAND, _WIKI_SKILL_NAME)
+    # SKILL (native): the dispatcher SKILL.md (rendered from the command) + the byte-copied support
+    # payload (playbook/ops/craft) together form one self-contained, auto-discovered agent-skill.
     plan.append(
-        Artifact(ArtifactKind.FILE, _WIKI_COMMAND_SRC, command_dst, WriteStrategy.CREATE_IF_ABSENT)
+        Artifact(ArtifactKind.FILE, _WIKI_COMMAND_SRC, _COPILOT_SKILL_MD,
+                 WriteStrategy.CREATE_IF_ABSENT)
     )
-    plan.append(
-        Artifact(ArtifactKind.FILE, _WIKI_SKILL_SRC, skill_dst, WriteStrategy.CREATE_IF_ABSENT)
-    )
+    for rel_path, _content in iter_asset_dir(_WIKI_SKILL_SUPPORT_SRC):
+        if rel_path == "SKILL.md":
+            continue  # the native SKILL.md is the dispatcher rendered from the command (above)
+        plan.append(
+            Artifact(
+                ArtifactKind.FILE,
+                f"{_WIKI_SKILL_SUPPORT_SRC}/{rel_path}",
+                f"{_COPILOT_SKILL_DIR}/{rel_path}",
+                WriteStrategy.CREATE_IF_ABSENT,
+            )
+        )
     # AGENT: render the persona into a custom-agent file (no model:).
     plan.append(
         Artifact(ArtifactKind.FILE, _WIKI_AGENT_SRC, _WIKI_AGENT_DST,
                  WriteStrategy.CREATE_IF_ABSENT)
     )
-    # SKILL SUPPORT PAYLOAD (FEAT-001/056): deposit the multi-file payload (playbook, ops/, craft)
-    # in a dedicated non-agent container, byte-copied from the canonical source. Without this the
-    # rendered custom-agent points at a playbook absent on the host → capability broken. These files
-    # have no frontmatter → `_render_for_target` byte-copies them (no agent/prompt suffix).
-    for rel_path, _content in iter_asset_dir(_WIKI_SKILL_SUPPORT_SRC):
-        if rel_path == "SKILL.md":
-            continue  # the skill itself is rendered above as a custom-agent (skill_dst)
-        plan.append(
-            Artifact(
-                ArtifactKind.FILE,
-                f"{_WIKI_SKILL_SUPPORT_SRC}/{rel_path}",
-                f"{_COPILOT_SKILL_SUPPORT_DIR}/{rel_path}",
-                WriteStrategy.CREATE_IF_ABSENT,
-            )
-        )
     # HOOK scripts: reuse byte-for-byte (FR-014). The CLI SessionStart is a static prompt, so no
     # session-start script is installed — only the Stop/SessionEnd check script.
     plan.append(
@@ -281,13 +275,19 @@ def _resolve(target_root: Path, target_rel: str) -> Path:
 
 
 def _render_for_target(art: Artifact) -> str:
-    """Content for a FILE artifact: rendered for Copilot prompt/agent files, byte-copy otherwise.
+    """Content for a FILE artifact: rendered for Copilot skill/agent files, byte-copy otherwise.
 
-    Rendered files (`*.prompt.md`/`*.agent.md`) are DERIVED from the canonical Claude asset
-    (anti-drift, REQ-021): the body is reused verbatim, only the frontmatter is translated.
+    Derived files are translated from the canonical Claude asset (anti-drift, REQ-021): the body is
+    reused verbatim, only the frontmatter is translated.
+      - the Copilot native skill `SKILL.md` is the DISPATCHER rendered from the command body
+        (`render_native_skill`) — the skill absorbs the `/wiki` command (FEAT-001/056);
+      - a `*.agent.md` is a custom-agent (`render_custom_agent`); a `*.prompt.md` a prompt-file.
+    Everything else (the byte-copied skill payload) is returned verbatim.
     """
     assert art.source is not None
     canonical = read_asset_text(art.source)
+    if art.target_rel == _COPILOT_SKILL_MD and art.source == _WIKI_COMMAND_SRC:
+        return render_native_skill(canonical, _WIKI_SKILL_NAME)
     if art.target_rel.endswith(_RENDER_PROMPT_SUFFIX):
         return render_prompt_file(canonical)
     if art.target_rel.endswith(_RENDER_AGENT_SUFFIX):
@@ -419,15 +419,15 @@ def sertor_owned_paths(assistant: AssistantId = AssistantProfile.DEFAULT) -> Ser
     instruction_target = aprofile.target_for(Surface.INSTRUCTION_BLOCK).target_rel
     settings_target = aprofile.target_for(Surface.HOOK).target_rel
     # The wiki scaffold dir is owned but removed only under --purge-wiki (gate lives in the CLI).
-    # The wiki-author skill tree is a Sertor-owned dir on BOTH hosts (FEAT-001/056): on Claude it is
-    # `.claude/skills/wiki-author` (whole skill); on Copilot the rendered skill is a single
-    # `.agent.md` file (in owned_files) PLUS the support payload in the dedicated container
-    # `.github/sertor/wiki-author`, which is declared here so uninstall/upgrade remove it in block.
+    # The wiki-author skill is a NATIVE skill on BOTH hosts (FEAT-001/056) → its whole tree is a
+    # Sertor-owned dir, removed/upgraded in block: `.claude/skills/wiki-author` on Claude,
+    # `.github/skills/wiki-author` on Copilot. The `wiki-curator` custom-agent
+    # (`.github/agents/wiki-curator.agent.md`) is a standalone owned_file.
     owned_dirs: tuple[str, ...] = ("wiki",)
     if assistant is AssistantId.CLAUDE:
         owned_dirs = ("wiki", ".claude/skills/wiki-author")
     else:  # copilot-cli
-        owned_dirs = ("wiki", _COPILOT_SKILL_SUPPORT_DIR)
+        owned_dirs = ("wiki", _COPILOT_SKILL_DIR)
     return SertorOwnedPaths(
         owned_dirs=owned_dirs,
         owned_files=owned_files,

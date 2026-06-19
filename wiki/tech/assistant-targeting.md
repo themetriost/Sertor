@@ -3,7 +3,7 @@ title: Targeting per-assistente (AssistantProfile / Surface)
 type: tech
 tags: [installer, sertor-install-kit, copilot, copilot-cli, claude, host-agnostico, principio-x, feat-007]
 created: 2026-06-15
-updated: 2026-06-18 (+ sezione «Parità by construction» FEAT-001/feature 056: body host-agnostici + payload per-host + guardia di parità con closure)
+updated: 2026-06-19 (sezione «Parità by construction» FEAT-001/056 RIVISTA al meccanismo NATIVO: skill nativa `.github/skills/wiki-author/` (dispatcher SKILL.md che assorbe `/wiki` + payload byte-copiato), riferimenti relativi co-locati; abbandonati custom-agent-skill + `.github/sertor/` + `{SKILL_DIR}`) · 2026-06-18 (+ sezione «Parità by construction» FEAT-001/feature 056)
 sources: ["packages/sertor-install-kit/src/sertor_install_kit/assistant.py", "packages/sertor/src/sertor_installer/install_wiki.py", "packages/sertor/src/sertor_installer/install_rag.py", "specs/044-distribuzione-copilot/plan.md", "requirements/sertor-cli/distribuzione-copilot/requirements.md"]
 ---
 
@@ -104,24 +104,30 @@ Il seam traduce il **contenitore**, ma **riusa il body verbatim** (anti-drift). 
 un'arma a doppio taglio: un path `.claude/...` o un comando `/wiki` lasciati **dentro il body**
 **trapelano** sull'host Copilot, dove non risolvono. Un audit di dogfooding (Copilot CLI 1.0.63) ha
 mostrato che la capacità wiki era **rotta** lì: (1) il **payload multi-file** della skill
-`wiki-author` (`wiki-playbook.md`, `ops/*.md`, `*-craft.md`) **non veniva depositato** (il piano
-Copilot rendeva solo `SKILL.md`→custom-agent); (2) i body citavano `.claude/...` e `/wiki`,
-inesistenti su quell'host. La guardia byte-identica non lo vedeva: verifica che il body **non
-forki**, non i suoi riferimenti interni.
+`wiki-author` (`wiki-playbook.md`, `ops/*.md`, `*-craft.md`) **non veniva depositato**; (2) i body
+citavano `.claude/...` e `/wiki`, inesistenti su quell'host. La guardia byte-identica non lo vedeva:
+verifica che il body **non forki**, non i suoi riferimenti interni.
 
-La regola che chiude il buco è **host-agnosticità alla sorgente**:
+> **Revisione (meccanismo NATIVO).** Una prima correzione depositava la skill come custom-agent + un
+> container dedicato `.github/sertor/wiki-author/` + placeholder `{SKILL_DIR}`. Letta la doc ufficiale
+> Copilot (agent skills native, auto-discovery **per-cartella-skill**), questa era una reinvenzione: la
+> via corretta è il **meccanismo nativo**.
+
+La regola che chiude il buco è **host-agnosticità alla sorgente** + **deposito nativo per host**:
 
 - **Body host-agnostici.** Niente path d'assistente letterali, niente slash-command come
-  invocazione, niente nomi di assistente nei body LLM-facing; il payload si referenzia **per nome di
-  file** (`wiki-playbook.md`), non per path assoluto — così lo **stesso body byte-identico** risolve
-  su entrambi gli host (risolve la tensione body-identico × container-diversi). I link **interni** al
-  payload restano relativi (`ops/<x>.md`, `../wiki-craft.md`): viaggiano insieme nello stesso
-  container.
-- **Payload depositato per host.** Su Claude il payload sta nell'albero skill
-  (`.claude/skills/wiki-author/**`); su Copilot in un **container dedicato non-agente**
-  `.github/sertor/wiki-author/` (fuori da `.github/agents/` per non generare agenti-fantasma),
-  byte-copiato dalla **stessa fonte unica** via `iter_asset_dir` — **nessun nuovo `Surface`/
-  `ArtifactKind`**. Dichiarato in `sertor_owned_paths` come owned_dir (uninstall/upgrade in blocco).
+  invocazione, niente nomi di assistente né `$ARGUMENTS` nei body LLM-facing; il payload si
+  referenzia con **path relativi co-locati** (`wiki-playbook.md`, `ops/<x>.md`, `../wiki-craft.md`).
+  Poiché i container sono **paralleli** (`.claude/skills/wiki-author/` ↔ `.github/skills/wiki-author/`),
+  gli stessi riferimenti relativi risolvono identici su entrambi gli host.
+- **Skill nativa per host.** La capacità wiki è una **agent-skill nativa** depositata dove ciascun host
+  la cerca — `.claude/skills/wiki-author/**` su Claude, `.github/skills/wiki-author/**` su Copilot — e
+  auto-scoperta dal client (tutti i file della cartella, incl. `ops/`). Su Copilot la skill **assorbe il
+  ruolo del command `/wiki`** (la CLI non ha slash-command custom): il suo `SKILL.md` è il **dispatcher**
+  delle 8 operazioni, reso dalla fonte unica `commands/wiki.md`; il payload (playbook/ops/craft) è
+  byte-copiato via `iter_asset_dir` — **nessun nuovo `ArtifactKind`**, nessun render skill→custom-agent.
+  `wiki-curator` resta un custom-agent (`.github/agents/wiki-curator.agent.md`). Tutto dichiarato in
+  `sertor_owned_paths` come owned_dir (uninstall/upgrade in blocco).
 
 **Enforcement = guardia di parità** (`packages/sertor/tests/test_assets_copilot_parity.py`): rende i
 piani Copilot (wiki + governance + rag) — e quello Claude per la closure — e fallisce su un body che

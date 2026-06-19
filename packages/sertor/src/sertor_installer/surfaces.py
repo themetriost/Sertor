@@ -11,6 +11,7 @@ from sertor_install_kit.surfaces import (
     HookEntrySpec,
     render_copilot_hooks,
     render_custom_agent,
+    render_native_skill,
     render_prompt_file,
     split_frontmatter,
 )
@@ -19,6 +20,7 @@ __all__ = [
     "split_frontmatter",
     "render_prompt_file",
     "render_custom_agent",
+    "render_native_skill",
     "HookEntrySpec",
     "render_copilot_hooks",
 ]

@@ -1,10 +1,11 @@
 """Acceptance tests for `install wiki --assistant copilot-cli` (FEAT-012, US2 + US3).
 
 Host simulated in `tmp_path`. US2: instruction block in `.github/copilot-instructions.md`
-(idempotent). US3: COMMANDs (`/wiki`, `wiki-author`) rendered as custom-agents in `.github/agents/`
-(the only CLI-invocable form — NOT prompt-files), custom-agent persona in `.github/agents/`, native
-hook wiring in `.github/hooks/*.json` (SessionStart as a native prompt, Stop/SessionEnd via the
-reused script). The VS Code (`copilot`) target was removed (FEAT-012): no `.github/prompts/**`.
+(idempotent). FEAT-001/056 (native agent-skills): the wiki capability is a SINGLE NATIVE skill in
+`.github/skills/wiki-author/` (SKILL.md = dispatcher absorbing the `/wiki` command + byte-copied
+payload, auto-discovered); the `wiki-curator` persona stays a custom-agent in `.github/agents/`;
+native hook wiring in `.github/hooks/*.json` (SessionStart as a native prompt, Stop/SessionEnd via
+the reused script). No `.github/prompts/**`, no `.github/agents/wiki*.agent.md` command/skill files.
 """
 from __future__ import annotations
 
@@ -45,18 +46,36 @@ def test_instruction_block_idempotent(tmp_path: Path):  # FR-009
     assert instr.read_bytes() == before  # block already present → untouched
 
 
-# -------------------------------------------------- US3: COMMANDs are custom-agents (C2.4/C2.5)
+# ---------------------------------------------- FEAT-001/056: wiki is a NATIVE agent-skill
 
-def test_cli_command_is_custom_agent_not_prompt_file(tmp_path: Path):  # FR-003 / SC-004
-    """CLI: `/wiki` and `wiki-author` COMMANDs are custom-agents (CLI-invocable), never prompt
-    files — the VS Code prompt-file vehicle was removed (FEAT-012)."""
+def test_cli_wiki_is_native_skill(tmp_path: Path):  # FR-001..004 / SC-001
+    """CLI: the wiki capability is a single NATIVE skill in `.github/skills/wiki-author/` (SKILL.md
+    dispatcher + auto-discovered payload), NOT a custom-agent and NOT a prompt-file. The skill
+    absorbs the `/wiki` command (no custom slash-commands on the CLI)."""
     _install(tmp_path)
-    assert (tmp_path / ".github/agents/wiki.agent.md").is_file()
-    assert (tmp_path / ".github/agents/wiki-author.agent.md").is_file()
-    assert not (tmp_path / ".github/prompts/wiki.prompt.md").exists()
+    skill_dir = tmp_path / ".github/skills/wiki-author"
+    assert (skill_dir / "SKILL.md").is_file()                 # dispatcher
+    assert (skill_dir / "wiki-playbook.md").is_file()         # payload co-located
+    assert (skill_dir / "ops" / "record.md").is_file()        # ops/ subfolder preserved
+    # the command/skill are NOT separate custom-agents anymore (absorbed by the native skill)
+    assert not (tmp_path / ".github/agents/wiki.agent.md").exists()
+    assert not (tmp_path / ".github/agents/wiki-author.agent.md").exists()
+    # no prompt-file vehicle, no dedicated `.github/sertor/` container, no Claude dirs
     assert not (tmp_path / ".github/prompts").exists()
-    # no Claude commands/skills dirs for copilot-cli
+    assert not (tmp_path / ".github/sertor").exists()
     assert not (tmp_path / ".claude").exists()
+
+
+def test_cli_skill_md_is_dispatcher_from_command(tmp_path: Path):  # FR-002
+    """The native SKILL.md is the dispatcher: native frontmatter (`name`) + the command body."""
+    _install(tmp_path)
+    from sertor_installer.surfaces import split_frontmatter
+
+    text = (tmp_path / ".github/skills/wiki-author/SKILL.md").read_text(encoding="utf-8")
+    front, body = split_frontmatter(text)
+    assert "name: wiki-author" in front
+    assert "argument-hint" not in front           # Claude-command-only key dropped
+    assert "Determine the operation" in body      # the 8-operation dispatcher body
 
 
 def test_custom_agent_present_and_formed(tmp_path: Path):  # FR-011

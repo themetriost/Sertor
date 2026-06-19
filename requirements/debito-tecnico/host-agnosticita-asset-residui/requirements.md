@@ -36,36 +36,56 @@ ma **non** i path interni né la presenza dei file referenziati → il bug è pa
 
 ## 3. Decisioni di design (vincolanti, già approvate)
 
+> **Revisione 2026-06-19 — meccanismo NATIVO.** D2/D3 sono stati corretti dopo aver letto la
+> **documentazione ufficiale Copilot** (docs.github.com/copilot CLI «add-skills»): Copilot ha le **agent
+> skills native** (cartelle `.github/skills/`, `.claude/skills/`, `.agents/skills/`; `SKILL.md`+corpo) e
+> **auto-scopre tutti i file della cartella della skill** (incl. sotto-cartelle come `ops/`). L'approccio
+> precedente (skill→custom-agent + container `.github/sertor/` + placeholder `{SKILL_DIR}`) era una
+> **reinvenzione** del meccanismo nativo ed è abbandonato. Vincolo: leggere i doc ufficiali prima di
+> progettare integrazioni con tool esterni.
+
 - **D1** Body **neutralizzati** alla sorgente (no `.claude/` letterale, no `/slash` come comando, no nomi
-  assistente) → restano **byte-identici** Claude↔Copilot. NON si traduce il body per-target.
-- **D2** Payload multi-file su Copilot in **container dedicato `.github/sertor/wiki-author/`** (dir
-  non-agente, fuori da `.github/agents/` per evitare agent-discovery). Claude invariato (`.claude/skills/wiki-author/`).
-- **D3** Deposito via **riuso `iter_asset_dir` + byte-copy**; niente nuovi `Surface`/`ArtifactKind`;
-  aggiornare `sertor_owned_paths` (ramo Copilot).
+  assistente, no `$ARGUMENTS`). Il **payload** (playbook/ops/craft) resta **byte-identico** Claude↔Copilot
+  (stessa fonte unica). NON si traduce il payload per-target.
+- **D2** La capacità wiki su Copilot è **una sola skill NATIVA** `.github/skills/wiki-author/**`
+  (`SKILL.md` + `wiki-playbook.md` + `ops/*.md` + `*-craft.md`), auto-scoperta dal client. La skill
+  **assorbe il ruolo del command `/wiki`**: il suo `SKILL.md` è il **dispatcher delle 8 operazioni**
+  (corpo derivato dalla fonte unica `commands/wiki.md`), perché su Copilot una skill nativa è già
+  user-invocabile (`/skills`) e model-invocabile → nessuna skill `wiki` separata, nessun custom-agent per
+  la skill, nessun container `.github/sertor/`. Claude invariato (`.claude/skills/wiki-author/` + command
+  `/wiki` separato). `wiki-curator` resta custom-agent `.github/agents/wiki-curator.agent.md`.
+- **D3** Deposito via **riuso `iter_asset_dir` + byte-copy** dell'albero skill in `.github/skills/`;
+  niente nuovi `ArtifactKind`; **eliminati** il render skill/command→custom-agent e il placeholder
+  `{SKILL_DIR}`; aggiornare `sertor_owned_paths` (ramo Copilot → `.github/skills/wiki-author`).
 - **D4** Nuova **guardia di parità offline** con **closure dei riferimenti**.
 - **D5** Governance dual-target in tre artefatti (playbook, `assistant-targeting.md`, DoD del rituale).
 - **D6** Scope = **full sweep** (wiki + governance + rag).
 
-> **Affinamento (risolve la tensione D1×D2):** poiché il body è byte-identico ma il payload vive in path
-> **diversi** per host (`.claude/skills/wiki-author/` vs `.github/sertor/wiki-author/`), il body **non può
-> contenere un path assoluto** valido per entrambi. Regola di neutralizzazione: i body referenziano il
-> payload **per nome di file** (`wiki-playbook.md`, `ops/<op>.md`, …) con formulazione host-agnostica
-> ("il playbook fornito con questa skill"), lasciando all'agente la localizzazione (nome univoco,
-> reperibile). I **link interni del playbook** restano **relativi** (`ops/record.md`, `../page-craft.md`)
-> e funzionano perché la struttura della cartella è preservata byte-per-byte su entrambi i container.
+> **Semplificazione rispetto alla versione `.github/sertor/`:** con i container **strutturalmente
+> paralleli** (`.claude/skills/wiki-author/` ↔ `.github/skills/wiki-author/`), il payload è **co-locato**
+> con la skill su entrambi gli host. Quindi i **riferimenti relativi** (`wiki-playbook.md`,
+> `ops/<op>.md`, `../page-craft.md`) risolvono **identici** su Claude e Copilot: svanisce la tensione
+> "path divergenti" che la versione precedente risolveva col riferimento-per-nome / `{SKILL_DIR}`.
+> Conseguenza sul byte-identico: il **payload** è byte-identico Claude↔Copilot; il `SKILL.md` di Copilot
+> **diverge** (è il dispatcher derivato dal command) — wrapper sottile host-shaped, fonte unica
+> comunque preservata (sorgente = `commands/wiki.md`).
 
 ## 4. Requisiti funzionali (EARS)
 
-### Deposito del payload (US1)
-- **REQ-001 (Must, Ubiquitous):** Il sistema DEVE depositare, per `--assistant copilot-cli`, l'intero
-  payload di supporto della skill `wiki-author` (`wiki-playbook.md`, `ops/*.md`, `*-craft.md`) sotto
-  `.github/sertor/wiki-author/`, preservando la struttura relativa.
-- **REQ-002 (Must, Event):** QUANDO il plan Copilot deposita i file di supporto, il sistema DEVE copiarli
-  **byte-per-byte** (sono documenti senza frontmatter, non resi come agenti).
-- **REQ-003 (Must, Ubiquitous):** Il payload DEVE provenire dalla **stessa fonte unica** degli asset
+### Deposito della skill nativa (US1)
+- **REQ-001 (Must, Ubiquitous):** Il sistema DEVE depositare, per `--assistant copilot-cli`, l'intera
+  skill `wiki-author` come **skill nativa** sotto `.github/skills/wiki-author/` (`SKILL.md` +
+  `wiki-playbook.md` + `ops/*.md` + `*-craft.md`), preservando la struttura relativa, così che Copilot
+  la auto-scopra e inietti i suoi file alla cartella della skill.
+- **REQ-002 (Must, Ubiquitous):** Il `SKILL.md` Copilot DEVE essere il **dispatcher delle 8 operazioni**
+  (corpo derivato dalla fonte unica `commands/wiki.md`, neutralizzato) con frontmatter nativo
+  (`name`/`description`); i file di payload (playbook/ops/craft) DEVONO essere copiati **byte-per-byte**
+  dagli asset canonici Claude.
+- **REQ-003 (Must, Ubiquitous):** L'albero skill DEVE provenire dalla **stessa fonte unica** degli asset
   Claude (`assets/claude/skills/wiki-author/`) via `iter_asset_dir`, senza enumerazione hardcoded dei file.
 - **REQ-004 (Must, Ubiquitous):** `sertor_owned_paths` (ramo Copilot) DEVE dichiarare
-  `.github/sertor/wiki-author` come directory di proprietà, così uninstall/upgrade la rimuovono in blocco.
+  `.github/skills/wiki-author` come directory di proprietà, così uninstall/upgrade la rimuovono in blocco;
+  il render skill→custom-agent e il container `.github/sertor/` NON DEVONO più essere prodotti.
 
 ### Neutralizzazione dei body (US2, US3)
 - **REQ-005 (Must, Ubiquitous):** Gli asset sorgente distribuibili NON DEVONO contenere path `.claude/`
@@ -74,8 +94,11 @@ ma **non** i path interni né la presenza dei file referenziati → il bug è pa
   (`/wiki`, `/requirements`, …) come modo d'invocazione; DEVONO usare linguaggio capability-neutro.
 - **REQ-007 (Should, Ubiquitous):** I body NON DOVREBBERO contenere nomi di assistente ("Claude Code")
   in contesto istruzionale LLM-facing.
-- **REQ-008 (Must, Ubiquitous):** Dopo neutralizzazione, il body sorgente DEVE restare **byte-identico**
-  tra reso Claude e reso Copilot (la guardia byte-identica esistente resta verde).
+- **REQ-008 (Must, Ubiquitous):** Dopo neutralizzazione, i **file di payload** (playbook/ops/craft)
+  DEVONO restare **byte-identici** tra deposito Claude e deposito Copilot (sono byte-copiati dalla stessa
+  fonte). Il `SKILL.md` Copilot (dispatcher) deriva dalla fonte unica `commands/wiki.md` e differisce dal
+  `SKILL.md` Claude (autore): la guardia byte-identica esistente resta verde per le superfici che ancora
+  rende custom-agent (`wiki-curator`).
 - **REQ-009 (Must, Ubiquitous):** La neutralizzazione DEVE applicarsi a **tutti** gli asset distribuibili:
   wiki (`sertor`), governance `requirements`/agenti (`sertor-flow`), rag.
 
@@ -107,9 +130,10 @@ ma **non** i path interni né la presenza dei file referenziati → il bug è pa
 ## 5. Requisiti non funzionali
 
 - **NFR-01:** Ramo `_build_claude_wiki_plan` **invariato** (non-regressione dogfood Claude).
-- **NFR-02:** Nessun nuovo `Surface`/`ArtifactKind`; riuso dell'infrastruttura esistente.
+- **NFR-02:** Nessun nuovo `ArtifactKind`; riuso dell'infrastruttura esistente (`iter_asset_dir` +
+  byte-copy come nel ramo Claude). Si **rimuovono** il render skill/command→custom-agent e `{SKILL_DIR}`.
 - **NFR-03:** `sertor-flow` resta **senza dipendenza** da `sertor-core`/`sertor`.
-- **NFR-04:** install≠run, non distruttivo, idempotente; uninstall rimuove `.github/sertor/wiki-author/`
+- **NFR-04:** install≠run, non distruttivo, idempotente; uninstall rimuove `.github/skills/wiki-author/`
   in blocco.
 - **NFR-05:** La guardia di parità è **offline** (nessuna rete/credenziali), eseguibile in CI senza cloud.
 - **NFR-06:** La guardia byte-identica esistente (`test_assets_copilot_guard.py`) resta verde.
@@ -118,16 +142,18 @@ ma **non** i path interni né la presenza dei file referenziati → il bug è pa
 
 ## 6. Criteri di successo
 
-- **CS-1:** Dopo `install wiki --assistant copilot-cli`, `.github/sertor/wiki-author/wiki-playbook.md` +
-  `ops/*` + craft **esistono** sull'host (oggi assenti).
+- **CS-1:** Dopo `install wiki --assistant copilot-cli`, `.github/skills/wiki-author/` contiene `SKILL.md`
+  (dispatcher) + `wiki-playbook.md` + `ops/*` + craft **esistono** sull'host (oggi assenti).
 - **CS-2:** **0** occorrenze di `.claude/` nei file resi per Copilot (tutti gli installer).
 - **CS-3:** **0** comandi slash come invocazione nei file resi per Copilot.
 - **CS-4:** **0** riferimenti dangling (closure verde) su piano Copilot **e** Claude.
 - **CS-5:** Suite Claude di non-regressione + guard byte-identico **verdi**.
-- **CS-6:** I link relativi interni del payload risolvono nel container Copilot.
+- **CS-6:** I link relativi interni della skill (SKILL.md→playbook, playbook→ops/craft) risolvono
+  nella cartella skill Copilot (co-locazione preservata).
 - **CS-7:** Governance dual-target presente nei tre artefatti (playbook, assistant-targeting, DoD).
-- **CS-8 (empirico, Spike):** invocando l'agente wiki su Copilot CLI 1.0.63, la prima azione (Read del
-  playbook) **riesce**; e `.github/sertor/` **non** genera agenti-fantasma (validazione rischio R4).
+- **CS-8 (empirico, Spike):** `/skills` su Copilot CLI 1.0.63 mostra la skill `wiki-author`; invocandola,
+  la prima azione (Read del playbook co-locato) **riesce**; la cartella `.github/skills/wiki-author/`
+  **non** è interpretata come agente-fantasma.
 
 ## 7. Ambito
 
@@ -144,7 +170,8 @@ nella stessa FEAT-001 se trovati).
 - **A1:** I file di supporto della skill **non hanno frontmatter** → byte-copy corretto (verificare in audit).
 - **A2:** Un agente LLM su Copilot CLI localizza un file di payload citato per nome univoco (Read/ricerca).
 - **A3:** Spike è disponibile come host Copilot reale per la verifica empirica pre-merge.
-- **A4:** `.github/sertor/` non è interpretato da Copilot CLI come area di agent-discovery (da confermare, R4).
+- **A4:** `.github/skills/wiki-author/` è una skill nativa auto-scoperta da Copilot CLI (documentato);
+  la verifica empirica (CS-8) la conferma sul campo.
 
 ## 9. Rischi
 
@@ -152,11 +179,11 @@ nella stessa FEAT-001 se trovati).
   i riferimenti dai body. *Mitigazione:* regex mirate + test-del-test; un falso negativo riaprirebbe il bug.
 - **R2 (audit incompleto):** payload nascosti in rag/governance non coperti. *Mitigazione:* il full sweep
   + closure sui tre piani li espone.
-- **R3 (precisione body):** body neutri meno espliciti su Claude. *Mitigazione:* riferimento-per-nome è
-  reperibile su entrambi; verifica CS-8.
-- **R4 (container Copilot):** `.github/sertor/` potrebbe essere scandito per agenti. *Mitigazione:* scelto
-  apposta fuori da `.github/agents/`; **validare empiricamente su Spike** (CS-8). Fallback: altro path
-  non-agent + aggiornare il riferimento-per-nome.
+- **R3 (precisione body):** body neutri meno espliciti su Claude. *Mitigazione:* riferimenti relativi
+  co-locati funzionano su entrambi; verifica CS-8.
+- **R4 (skill nativa Copilot):** la skill nativa `.github/skills/wiki-author/` potrebbe non essere
+  auto-scoperta come atteso. *Mitigazione:* è il **meccanismo documentato** (docs.github.com); **validare
+  empiricamente su Spike** (CS-8 — `/skills` la elenca, la prima azione legge il playbook co-locato).
 
 ## 10. Prioritizzazione (MoSCoW)
 
@@ -168,9 +195,10 @@ nella stessa FEAT-001 se trovati).
 
 ## 11. Domande aperte — risolte
 
-- **Q-1** Container Copilot → **`.github/sertor/wiki-author/`** (D2, deciso).
-- **Q-2** Neutralizzazione path → **riferimento-per-nome host-agnostico** (no path assoluto; vedi §3
-  affinamento), così il body resta byte-identico e valido su entrambi.
+- **Q-1** Deposito skill Copilot → **skill nativa `.github/skills/wiki-author/**`** (D2, rivisto
+  2026-06-19 sui doc ufficiali); skill unica che assorbe il command `/wiki`.
+- **Q-2** Neutralizzazione path → con i container **paralleli** i riferimenti restano **relativi**
+  co-locati (no path d'assistente letterale), risolti identici su entrambi gli host.
 - **Q-3** Pattern slash nella guardia → match istruzionale (es. inizio token `` `/wiki` `` / `/wiki ` ),
   con test-del-test su falsi positivi (URL, path POSIX). Dettaglio d'implementazione.
 - **Q-4** Verifica Copilot reale → **Spike** (CS-8), non `xfail`.
