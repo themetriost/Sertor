@@ -50,6 +50,7 @@ _OP_SPEC = {
     "search": ("retrieval", "retrieval"),
     "retrieve": ("retrieval", "retrieval"),
     "query": ("retrieval", "retrieval"),
+    "hybrid_query": ("retrieval", "retrieval"),  # hybrid engine's retrieval op (engine in a tag)
 }
 
 # Categorical string fields safe to export. Any OTHER string value is dropped (privacy-by-default:
@@ -100,10 +101,30 @@ class OtelExportHandler(logging.Handler):
         try:
             fields = {k: v for k, v in record.__dict__.items() if k not in _RESERVED}
             span_name, attrs = event_to_span(operation, fields)
+            attrs["sertor.level"] = record.levelname  # severity on every span (INFO/WARNING/ERROR)
             span = self._tracer.start_span(span_name, attributes=attrs)
+            # The OUTCOME of the operation: an error-level event (embeddings_error, store_error, …)
+            # becomes a RED span carrying the reason — visible at a glance, not just another span.
+            if record.levelno >= logging.ERROR:
+                from opentelemetry.trace import Status, StatusCode
+
+                reason = fields.get("error") or fields.get("reason") or record.getMessage()
+                span.set_status(Status(StatusCode.ERROR, str(reason)[:300]))
             span.end()
         finally:
             self._in_emit = False
+
+
+def _otel_resource(service_name: str):
+    """OTel `Resource` carrying `service.name` (lazy import). The standard `OTEL_SERVICE_NAME` env
+    wins when set; otherwise the default is `service_name` (so the backend labels the service
+    `sertor` out of the box, without requiring the env var)."""
+    import os
+
+    from opentelemetry.sdk.resources import Resource
+
+    name = os.getenv("OTEL_SERVICE_NAME") or service_name
+    return Resource.create({"service.name": name})
 
 
 def build_otel_handler(service_name: str = "sertor") -> OtelExportHandler:
@@ -111,7 +132,8 @@ def build_otel_handler(service_name: str = "sertor") -> OtelExportHandler:
 
     Missing extra → actionable `ConfigError` (like `[tui]`). The OTLP exporter reads its endpoint
     and transport from the standard `OTEL_EXPORTER_OTLP_*` env vars; a `BatchSpanProcessor` keeps
-    the export non-blocking (the hot path never waits on the network).
+    the export non-blocking (the hot path never waits on the network). `service.name` defaults to
+    `service_name` so the backend labels the service correctly without extra config (FEAT-013).
     """
     try:
         from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
@@ -123,6 +145,6 @@ def build_otel_handler(service_name: str = "sertor") -> OtelExportHandler:
             "(opentelemetry-sdk + otlp exporter)",
             key="otel",
         ) from exc
-    provider = TracerProvider()
+    provider = TracerProvider(resource=_otel_resource(service_name))
     provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
     return OtelExportHandler(provider.get_tracer(service_name))

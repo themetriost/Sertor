@@ -37,6 +37,14 @@ def test_search_event_maps_to_retrieval_span():
     assert attrs["sertor.engine"] == "hybrid"  # whitelisted categorical string
 
 
+def test_hybrid_query_maps_to_retrieval_span():
+    """FEAT-013: the hybrid engine's `hybrid_query` op is labelled GenAI `retrieval`."""
+    name, attrs = event_to_span("hybrid_query", {"fused_k": 5, "dense_hits": 30, "engine": "h"})
+    assert name == "retrieval"
+    assert attrs["gen_ai.operation.name"] == "retrieval"
+    assert attrs["sertor.fused_k"] == 5  # final result count (0 = miss) → hit/miss readable
+
+
 def test_unknown_operation_maps_to_sertor_namespace():
     name, attrs = event_to_span("index", {"documents": 12, "chunks": 240})
     assert name == "sertor.index"
@@ -131,3 +139,51 @@ def test_otel_disabled_attaches_no_handler():
     assert enable_observability(settings) is False
     assert not any(isinstance(h, OtelExportHandler) for h in logger.handlers)
     assert logger.handlers == before  # nothing attached
+
+
+# --- enrichment (FEAT-013): outcome/status, level, service.name ------------------------------
+
+def test_event_carries_level_attr(in_memory_handler):
+    """Every span gets `sertor.level` (severity visible at a glance)."""
+    handler, exporter = in_memory_handler
+    logger = get_logger()
+    prev = logger.level
+    logger.setLevel(logging.INFO)
+    logger.addHandler(handler)
+    try:
+        log_event(logging.INFO, "embeddings", provider="ollama", texts=1, tokens=4)
+    finally:
+        logger.removeHandler(handler)
+        logger.setLevel(prev)
+    assert exporter.get_finished_spans()[0].attributes["sertor.level"] == "INFO"
+
+
+def test_error_event_sets_span_status_error(in_memory_handler):
+    """An error-level event becomes a span with ERROR status + the reason (the OUTCOME)."""
+    from opentelemetry.trace import StatusCode
+
+    handler, exporter = in_memory_handler
+    logger = get_logger()
+    prev = logger.level
+    logger.setLevel(logging.INFO)
+    logger.addHandler(handler)
+    try:
+        log_event(logging.ERROR, "embeddings_error", provider="azure", error="rate limited")
+    finally:
+        logger.removeHandler(handler)
+        logger.setLevel(prev)
+    span = exporter.get_finished_spans()[0]
+    assert span.name == "sertor.embeddings_error"
+    assert span.status.status_code is StatusCode.ERROR
+    assert "rate limited" in (span.status.description or "")
+    assert span.attributes["sertor.level"] == "ERROR"
+
+
+def test_resource_service_name_defaults_and_env_override(monkeypatch):
+    """`service.name` defaults to the given name; `OTEL_SERVICE_NAME` env wins when set."""
+    from sertor_core.observability.otel import _otel_resource
+
+    monkeypatch.delenv("OTEL_SERVICE_NAME", raising=False)
+    assert _otel_resource("sertor").attributes["service.name"] == "sertor"
+    monkeypatch.setenv("OTEL_SERVICE_NAME", "my-host")
+    assert _otel_resource("sertor").attributes["service.name"] == "my-host"
