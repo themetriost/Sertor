@@ -46,7 +46,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 |---|---|---|
 | [`sertor-core`](../../requirements/sertor-core/epic.md) | ✅ completa | — (agenzia incorporata ❌ abbandonata by design) |
 | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | ergonomia installer · Codex · PyPI · `configure --check` (probe live, deferred) *(packaging ✅ + lifecycle ✅ + hardening Copilot FEAT-011 ✅ + wizard config ✅ + Copilot CLI-only ✅ + verifica empirica Copilot LIVE ✅, 2026-06-17)* |
-| [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | OTel · metriche aggregate · **stima € (Should)** · web · export CSV/MD |
+| [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | **export OTel (FEAT-005) 🔄 implementato su branch `061`** · metriche aggregate · stima € (Should) · web · export CSV/MD |
 | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso | ricerca semantica · remember-this · retention · **distribuzione installer (Must)** · multi-assist |
 | [`multiutente`](../../requirements/multiutente/epic.md) | 📋 differita | finché il caso d'uso team non è concreto |
 | 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | 📋 aperta | **ground-truth + metriche (Must)** |
@@ -60,13 +60,15 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-> **Nessun lavoro attivamente in corso (al 2026-06-19).** Le ultime feature — parità Copilot wiki
-> NATIVE (PR #80), distribuzione costituzione-starter (PR #82), host-agnosticità asset governance
-> (PR #83) — sono **merged su `master`**. La sessione 2026-06-19 ha chiuso tre buchi di
-> **host-agnosticità della distribuzione** scoperti per verifica empirica (payload wiki non
-> depositato · costituzione-starter shadowata · asset governance project-coupled).
+- **Export OpenTelemetry (FEAT-005, epica `osservabilita`) — 🔄 implementato su branch `061`, PR in
+  apertura.** *Cosa:* gli eventi che il core già emette sono esportati **anche** verso un backend OTel
+  (Langfuse/Phoenix/Grafana), in aggiunta allo store locale. *Come:* handler additivo gemello di F1
+  (`OtelExportHandler`) gated su `SERTOR_OBSERVABILITY_OTEL` + extra `[otel]`; mappa eventi→span GenAI
+  semconv (embeddings/retrieval) / `sertor.*` altrove; privacy metrics-only; non-fatale/non-bloccante.
+  *Verifica:* suite offline `InMemorySpanExporter`; core importabile senza OTel. *Gap dichiarato:* span
+  flat post-hoc (no tracing nidificato → follow-up). *Prossimo:* merge.
 
-**Prossimi candidati a valore = i Must aperti** (nessuno ancora iniziato):
+**Altri candidati a valore = i Must aperti** (non ancora iniziati):
 
 - **Memoria → distribuzione via installer (Must, `memoria-conversazioni`)** — la memoria è *accesa* sul
   dogfood ma **non installabile su un ospite**: chiude il corollario "una feature è completa solo se

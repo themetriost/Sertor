@@ -211,31 +211,44 @@ def run_observability_panel(settings: Settings | None = None) -> None:
 
 
 def enable_observability(settings: Settings | None = None) -> bool:
-    """Attach the event-persistence handler to the `sertor_core` logger if enabled (020).
+    """Attach the observability handlers to the `sertor_core` logger if enabled (020 + 061).
 
-    Idempotent: if a persistence handler is already attached, do nothing. A no-op (returns False)
-    when `observability_enabled` is off — no handler attached, no store created (FR-004). Consumers
-    (CLI/MCP) call this once at startup; the observed operations stay untouched (additive, FR-005).
+    Two INDEPENDENT, idempotent sinks on the same event stream:
+    - `EventPersistenceHandler` (020) when `observability_enabled` → persists events to the store;
+    - `OtelExportHandler` (061, FEAT-005) when `observability_otel_enabled` → exports events to an
+      OTLP backend (IN ADDITION to the store, REQ-E4). Requires the `[otel]` extra → actionable
+      `ConfigError` if missing.
+    A no-op (returns False) when BOTH are off — no handler attached, no store created (FR-004).
+    Consumers (CLI/MCP) call this once at startup; the observed operations stay untouched (FR-005).
     """
     settings = settings or Settings.load()
-    if not settings.observability_enabled:
+    if not (settings.observability_enabled or settings.observability_otel_enabled):
         return False
 
     import logging
 
-    from sertor_core.observability.capture import EventPersistenceHandler
     from sertor_core.observability.logging import get_logger
 
     logger = get_logger()
     # The logger gates record CREATION: by default it inherits WARNING, so INFO events (index,
     # embeddings, cache, retrieve) would never reach a handler. Lower the threshold to INFO so the
-    # persistence handler can CAPTURE them. This does not add stderr noise on its own: whether INFO
-    # is DISPLAYED still depends on the consumer's own (stderr) handler level.
+    # handlers can CAPTURE them. This adds no stderr noise on its own: whether INFO is DISPLAYED
+    # still depends on the consumer's own (stderr) handler level.
     if logger.level == logging.NOTSET or logger.level > logging.INFO:
         logger.setLevel(logging.INFO)
-    if any(isinstance(h, EventPersistenceHandler) for h in logger.handlers):
-        return True  # already enabled (idempotent)
-    logger.addHandler(EventPersistenceHandler(build_observability_store(settings)))
+
+    if settings.observability_enabled:
+        from sertor_core.observability.capture import EventPersistenceHandler
+
+        if not any(isinstance(h, EventPersistenceHandler) for h in logger.handlers):
+            logger.addHandler(EventPersistenceHandler(build_observability_store(settings)))
+
+    if settings.observability_otel_enabled:
+        from sertor_core.observability.otel import OtelExportHandler, build_otel_handler
+
+        if not any(isinstance(h, OtelExportHandler) for h in logger.handlers):
+            logger.addHandler(build_otel_handler())
+
     return True
 
 

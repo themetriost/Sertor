@@ -53,6 +53,13 @@ tui = [
 tokenizer = [
     "tiktoken>=0.7",
 ]
+# Export OpenTelemetry (feature 061, FEAT-005): SDK + OTLP exporter importati lazy in
+# `observability/otel.py`. Il core resta installabile senza (export opt-in, default off): assente +
+# export richiesto → ConfigError azionabile (come `[tui]`). Endpoint/trasporto via env OTEL standard.
+otel = [
+    "opentelemetry-sdk>=1.20",
+    "opentelemetry-exporter-otlp-proto-http>=1.20",
+]
 # Ambiente di sviluppo = UNICO venv coerente (E10-FEAT-002, unificazione venv): superset che fa
 # girare test + lint + il server MCP del dogfood + il code-graph, così `uv sync --extra dev` da solo
 # produce un ambiente completo e non esiste più un secondo venv che diverge in silenzio. `azure`
@@ -64,6 +71,8 @@ dev = [
     "tiktoken>=0.7",   # conteggio token preciso del tetto chunk (dogfood/test)
     "mcp>=1.2",        # server MCP del dogfood (era solo nel venv .venv-core costruito a mano)
     "networkx>=3",     # navigazione code-graph (find_symbol/who_calls) servita dal server MCP
+    "opentelemetry-sdk>=1.20",                    # export OTel (feature 061) + InMemory exporter nei test
+    "opentelemetry-exporter-otlp-proto-http>=1.20",
 ]
 
 [tool.uv.workspace]

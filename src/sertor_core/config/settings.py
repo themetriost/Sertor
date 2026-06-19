@@ -117,6 +117,10 @@ class Settings:
     observability_bucket: str = "day"     # day | hour
     # observability live panel (022): refresh interval of the TUI panel, in seconds.
     observability_refresh_s: float = 2.0
+    # observability OTel export (061, FEAT-005): export the structured events ALSO to an external
+    # OpenTelemetry backend (in addition to the local store). Default off; needs the optional extra
+    # `[otel]`. Endpoint/transport come from the standard `OTEL_EXPORTER_OTLP_*` env vars.
+    observability_otel_enabled: bool = False
 
     # conversation memory — capture & archive (031, FEAT-001). Privacy-by-default: OFF unless the
     # host opts in. With it off no adapter/store is built and no file is opened (SC-003).
@@ -268,6 +272,7 @@ class Settings:
             observability_enabled=_bool_env("SERTOR_OBSERVABILITY", False),
             observability_bucket=os.getenv("SERTOR_OBSERVABILITY_BUCKET", "day"),
             observability_refresh_s=float(os.getenv("SERTOR_OBSERVABILITY_REFRESH", "2.0")),
+            observability_otel_enabled=_bool_env("SERTOR_OBSERVABILITY_OTEL", False),
             memory_enabled=_bool_env("SERTOR_MEMORY", False),
             memory_adapter=os.getenv("SERTOR_MEMORY_ADAPTER", "claude-code"),
             memory_retention_days=_int_or_none_env("SERTOR_MEMORY_RETENTION_DAYS"),
