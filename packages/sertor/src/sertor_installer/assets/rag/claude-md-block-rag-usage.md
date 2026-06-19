@@ -12,5 +12,15 @@ through its vehicles (CLI / MCP), which wire in the cross-cutting concerns — c
 observability, error handling — for you. Importing `sertor_core` by hand bypasses them and is not a
 supported way to use the capability.
 
+### Search first, read second
+
+When you need to understand code or docs in this corpus, **query the Sertor RAG before reading files
+by hand**: run `sertor-rag search` or use the MCP search/navigation tools, let the results point you
+to the relevant files, then read those. It keeps your answers anchored to what is actually indexed.
+
+If a Sertor RAG tool returns an **error** (unreachable backend, missing or stale index), treat it as
+a **signal**, not noise: say so instead of silently falling back to a blind file read. A broken
+retrieval tool is worth surfacing, not burying.
+
 This is a **usage instruction**, not a constraint on your project: your own code and tests are
 unaffected.
