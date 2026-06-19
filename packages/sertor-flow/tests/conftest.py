@@ -30,6 +30,20 @@ COPILOT_LAUNCH_LAYOUT = (
     ".specify/scripts/powershell/check-prerequisites.ps1",
 )
 
+# FEAT-009 (fidelity): the REAL `specify init` scaffolds a PLACEHOLDER
+# `.specify/memory/constitution.md` (the spec-kit template). The earlier mock did NOT — that blind
+# spot hid the bug where our neutral starter was SKIPPED (create-if-absent) behind the placeholder.
+# The mock now deposits this placeholder **create-if-absent** (real `specify init` does not clobber
+# an existing constitution), so the install path exercises replace-if-placeholder as in production.
+_SPECKIT_CONSTITUTION_TARGET = ".specify/memory/constitution.md"
+_SPECKIT_CONSTITUTION_PLACEHOLDER = (
+    "# [PROJECT_NAME] Constitution\n\n"
+    "## Core Principles\n\n"
+    "### [PRINCIPLE_1_NAME]\n"
+    "[PRINCIPLE_1_DESCRIPTION]\n\n"
+    "**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE]\n"
+)
+
 
 class FakeSpecifyRunner:
     """CommandRunner double: simulates `specify init` depositing the right layout per assistant.
@@ -58,6 +72,11 @@ class FakeSpecifyRunner:
             dest = cwd / rel
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_text("# speckit asset (mocked launch)\n", encoding="utf-8")
+        # Scaffold the placeholder constitution create-if-absent (as real `specify init` does).
+        constitution = cwd / _SPECKIT_CONSTITUTION_TARGET
+        if not constitution.exists():
+            constitution.parent.mkdir(parents=True, exist_ok=True)
+            constitution.write_text(_SPECKIT_CONSTITUTION_PLACEHOLDER, encoding="utf-8")
         return CommandResult(0, "ok", "")
 
 
