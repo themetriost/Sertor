@@ -14,7 +14,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > `requirements → spec → plan → tasks → implement`.
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-06-17)
+## ⚡ Executive summary (stato al 2026-06-19)
 
 ### ✅ Capacità consegnate (feature su `master`)
 
@@ -45,7 +45,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | Epica | Stato | Residuo / 1° passo |
 |---|---|---|
 | [`sertor-core`](../../requirements/sertor-core/epic.md) | ✅ completa | — (agenzia incorporata ❌ abbandonata by design) |
-| [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | wizard config · ergonomia installer · Codex · PyPI *(packaging ✅ + lifecycle ✅ + hardening compat Copilot FEAT-011 ✅ 2026-06-17; verifica empirica Copilot = follow-up)* |
+| [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | ergonomia installer · Codex · PyPI · `configure --check` (probe live, deferred) *(packaging ✅ + lifecycle ✅ + hardening Copilot FEAT-011 ✅ + wizard config ✅ + Copilot CLI-only ✅ + verifica empirica Copilot LIVE ✅, 2026-06-17)* |
 | [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | OTel · metriche aggregate · **stima € (Should)** · web · export CSV/MD |
 | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso | ricerca semantica · remember-this · retention · **distribuzione installer (Must)** · multi-assist |
 | [`multiutente`](../../requirements/multiutente/epic.md) | 📋 differita | finché il caso d'uso team non è concreto |
@@ -54,24 +54,28 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | 🆕 [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 📋 aperta | chunking SQL → **sblocca** schema-SQL |
 | 🆕 [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | 📋 aperta | bloccata a monte da `ingestione-estesa` |
 | 🆕 [`second-brain`](../../requirements/second-brain/epic.md) | 📋 da espandere | decidere bivi §9 prima di decomporre |
-| 🆕 [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 🔄 in progress | CI Linux (Should) — *unif. venv ✅ · host-agnosticità asset **FEAT-001 ✅** (parità Copilot wiki NATIVE, PR #80) · **FEAT-009 ✅** distribuzione costituzione-starter (replace-if-placeholder, PR #82) · **FEAT-010 🔄** host-agnosticità asset governance asse Sertor↔ospite (via `mcp__sertor-rag` hardcoded da `requirements-analyst` + scope-prototipo da `configuration-manager`; branch `059`, PR in apertura) (2026-06-19)* |
+| 🆕 [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 🔄 in progress | **CI Linux (FEAT-003, Should)** — unico residuo Should; il resto è Could *(unif. venv ✅ · host-agnosticità asset **FEAT-001 ✅** parità Copilot wiki NATIVE PR #80 · **FEAT-009 ✅** distribuzione costituzione-starter PR #82 · **FEAT-010 ✅** host-agnosticità asset governance asse Sertor↔ospite PR #83, 2026-06-19)* |
 
 *Legenda:* ✅ completa · 🔄 nucleo consegnato, residui aperti · 📋 da fare · 🆕 nuova (2026-06-16).
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- **Memoria conversazioni — MVP ✅ COMPLETO, USABILE e ACCESO (epica `memoria-conversazioni`)** —
-  *cosa:* il tier grezzo episodico, archivio interrogabile di tutte le conversazioni, ora **fonte
-  della distillazione**. *Dove:* `specs/031-cattura-archiviazione/` + `specs/033-ricerca-episodica/`
-  + `specs/035-memoria-cli-hook/` + `specs/036-aggancio-distillazione/`; codice su master. *Fatto:*
-  cattura (PR #45) + ricerca FTS5 (PR #47) + superficie CLI & hook (PR #49) + **aggancio distillazione
-  (PR #51)** — `sertor-rag memory archive`/`search`/`show`/`list` + hook `SessionEnd`, tutto *gated*
-  su `SERTOR_MEMORY`. Con FEAT-003 la modalità «from conversation» di `distill` **attinge
-  all'archivio** (`memory show`/`list`) invece di pretendere un brief a mano — loop
-  cattura→distillazione **chiuso**; vincolo cardine FR-013 (sempre sessione mirata, mai automatica).
-  `SERTOR_MEMORY=true` **acceso sul dogfood** (2026-06-14). Ciclo completo *provato live*. *Resta:*
-  Should/Could (004 ricerca semantica opt-in / 005 remember-this / 006 retention / 008
-  multi-assistente).
+> **Nessun lavoro attivamente in corso (al 2026-06-19).** Le ultime feature — parità Copilot wiki
+> NATIVE (PR #80), distribuzione costituzione-starter (PR #82), host-agnosticità asset governance
+> (PR #83) — sono **merged su `master`**. La sessione 2026-06-19 ha chiuso tre buchi di
+> **host-agnosticità della distribuzione** scoperti per verifica empirica (payload wiki non
+> depositato · costituzione-starter shadowata · asset governance project-coupled).
+
+**Prossimi candidati a valore = i Must aperti** (nessuno ancora iniziato):
+
+- **Memoria → distribuzione via installer (Must, `memoria-conversazioni`)** — la memoria è *accesa* sul
+  dogfood ma **non installabile su un ospite**: chiude il corollario "una feature è completa solo se
+  installabile". *Primo passo:* decomporre la feature installer (riusa `sertor-install-kit`).
+- **Retrieval-qualità → ground-truth + metriche (Must, `retrieval-qualita`)** — manca la base per
+  **misurare** la qualità del RAG (Principio V: "una feature senza misura non è fatta"). *Primo passo:*
+  corpus ground-truth + hit@k/MRR ripetibili.
+
+*(Le capacità già consegnate stanno in ✅ Capacità consegnate sopra e in ✅ DONE in fondo.)*
 
 ### 📋 PLANNED (per priorità)
 
