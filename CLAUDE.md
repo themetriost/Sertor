@@ -475,6 +475,28 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/056-parita-asset-copilot/plan.md` (FEAT-001 epica **debito-tecnico** — **parità funzionale
+completa su Copilot CLI + governance dual-target**: dal dogfooding su host Copilot reale la capacità wiki
+era **ROTTA** — il payload multi-file della skill `wiki-author` (`wiki-playbook.md` + 9 `ops/` + 3 craft)
+non veniva depositato dall'installer Copilot, e i body citavano `.claude/` path, comandi `/wiki`,
+`CLAUDE.md` e nomi-modello Claude (Opus/Haiku) inesistenti su Copilot. **6 decisioni:** **D1**
+**neutralizzare la sorgente** (body host-agnostici **byte-identici** Claude↔Copilot, **riferimento-per-nome**
+al payload; NON tradurre per-target); **D2** payload in **container dedicato `.github/sertor/wiki-author/`**
+(non-agente, fuori da `.github/agents/` per evitare agent-discovery; Claude invariato in `.claude/skills/`);
+**D3** **riuso `iter_asset_dir`+byte-copy** in `_build_copilot_wiki_plan`, niente nuovi `Surface`/`ArtifactKind`,
+`sertor_owned_paths` Copilot aggiornato (owned_dir → uninstall/upgrade in blocco); **D4** nuova **guardia di
+parità offline** `test_assets_copilot_parity.py` (0 `.claude/` · 0 slash-command · 0 nomi-prodotto Claude +
+**closure dei riferimenti** — ogni file citato da un body è depositato, il check che avrebbe preso il bug;
+closure anche sul piano Claude); **D5** **governance dual-target** (sezione "Host-agnostic authoring" nel
+playbook + voce DoD nel `claude-md-block` + sezione "Parità by construction" in `wiki/tech/assistant-targeting.md`);
+**D6** **full sweep** wiki+governance(`requirements`)+rag. Nomi-modello neutralizzati preservando il tier
+(Opus→main flow, Haiku→background curator); footer commit host-agnostico. **Verifica empirica** su host
+puliti Claude+Copilot: payload depositato, **0 leak** di ogni classe nei resi Copilot, closure ok (l'agent
+cita il playbook per nome → esiste), **R4** nessun agente-fantasma da `.github/sertor/`; ha SCOPERTO 2 classi
+non coperte offline (`/wiki` nel messaggio runtime dell'hook, nomi-modello Claude), poi codificate nella
+guardia. `sertor-core` **INVARIATO**; `sertor-flow` senza dipendenza dal core. SpecKit completo
+specify→implement (spec `b38a1af`, impl `b6e85b7`). Constitution **PASS 11/11** senza deroghe. **Resta:**
+prova live agente wiki su Copilot CLI reale (Spike, SC-008) + merge. Branch `056-parita-asset-copilot`. Storico:
 `specs/052-copilot-cli-only/plan.md` (FEAT-012 epica **sertor-cli** — **consolidamento Copilot
 CLI-only**: un solo target Copilot esposto, **`copilot-cli`** (la CLI); il valore `copilot` (VS Code)
 non è più raggiungibile da alcun flag `--assistant`. Refactor **sottrattivo** confinato ai 3 pacchetti

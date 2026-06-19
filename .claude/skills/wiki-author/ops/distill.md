@@ -1,7 +1,7 @@
 # Operation `distill` — extract durable entities, slim down records
 
-> **Operation module.** Executor: **main flow only (Opus)** — this is judgment (what counts as an entity, how to
-> abstract it), not transcription: it is not delegated to the `curator` (Haiku), like lint B/C and `reorg`. For the
+> **Operation module.** Executor: **main flow only** — this is judgment (what counts as an entity, how to
+> abstract it), not transcription: it is not delegated to the `curator` (background), like lint B/C and `reorg`. For the
 > **shared substrate** (taxonomy §3, log entry §6) see `wiki-playbook.md`; for **whether/what deserves a
 > page** [`../wiki-craft.md`](../wiki-craft.md) (§1 + the *product lens* §2), for **how to write the entity page**
 > [`../page-craft.md`](../page-craft.md). Only the specific procedure is described here.
@@ -10,8 +10,8 @@ Distillation is the **dual** of `record`: where `record` captures the **dated ev
 **durable knowledge** into dedicated entity pages, so it does not remain buried in the session diary. Three
 **inputs**, same judgment:
 
-- **step-driven** (the typical case): second step of the ritual (immediately after `record`, see the host ritual,
-  e.g. in `CLAUDE.md`) — a **newly implemented feature**: the record is born *lean by design*
+- **step-driven** (the typical case): second step of the ritual (immediately after `record`, see the host's
+  step ritual) — a **newly implemented feature**: the record is born *lean by design*
   (event + outcome + pointers), entities go into pages;
 - **from backlog**, on request: an old fat record to be slimmed down;
 - **from conversation**: a **targeted past session** retrieved from the episodic archive, condensed, then

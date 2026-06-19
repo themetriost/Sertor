@@ -74,6 +74,30 @@ def render_custom_agent(canonical_text: str, *, include_model: bool = False) -> 
     return "\n".join(lines) + "\n" + body.lstrip("\n")
 
 
+def render_native_skill(canonical_text: str, name: str) -> str:
+    """Renders a native agent-skill `SKILL.md` from a canonical command/skill asset.
+
+    Native agent skills (Copilot `.github/skills/<name>/`, Claude `.claude/skills/<name>/`) require
+    a `SKILL.md` whose frontmatter carries `name` (lowercase, hyphenated identifier) and
+    `description` (when the assistant should use it). The instructional **body** is the shared
+    substrate, reused verbatim from the canonical asset (anti-drift); `description` is taken from
+    the canonical frontmatter. Claude-command-only keys (e.g. `argument-hint`) are dropped — not
+    native agent-skill keys.
+
+    Used on Copilot CLI to deposit the `wiki-author` skill as a single native skill whose SKILL.md
+    is the dispatcher derived from the `/wiki` command body (the CLI has no custom slash-commands,
+    so the skill absorbs the command role).
+    """
+    front, body = split_frontmatter(canonical_text)
+    fields = _parse_simple_frontmatter(front)
+    lines = [_FRONTMATTER_FENCE, f"name: {_yaml_scalar(name)}"]
+    if "description" in fields:
+        lines.append(f"description: {_yaml_scalar(fields['description'])}")
+    lines.append(_FRONTMATTER_FENCE)
+    lines.append("")
+    return "\n".join(lines) + "\n" + body.lstrip("\n")
+
+
 def _yaml_scalar(value: str) -> str:
     """Render a single-line frontmatter value as a YAML-safe scalar.
 

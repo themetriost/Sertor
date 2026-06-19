@@ -101,47 +101,46 @@ def _frontmatter_values_are_yaml_safe(front: str) -> bool:
     return True
 
 
-def test_real_cli_agents_have_yaml_safe_frontmatter(tmp_path: Path):
-    """SC-007 (real-asset guard): every custom-agent the CLI install actually writes must have
-    YAML-safe frontmatter. This would have caught the `wiki-author` defect of 2026-06-17 (its
-    canonical description contains a colon)."""
+def test_real_cli_frontmatter_is_yaml_safe(tmp_path: Path):
+    """SC-007 (real-asset guard): every frontmatter the CLI install actually writes must be
+    YAML-safe. This would have caught the `wiki-author` defect of 2026-06-17 (its canonical
+    description contains a colon). Covers the native skill SKILL.md (dispatcher) and the
+    `wiki-curator` custom-agent (FEAT-001/056 native topology)."""
     profile = build_host_profile(tmp_path)
     plan = build_install_plan(AssistantId.COPILOT_CLI)
     execute_plan(plan, profile, AssistantId.COPILOT_CLI)
-    for name in ("wiki", "wiki-author", "wiki-curator"):
-        agent = tmp_path / f".github/agents/{name}.agent.md"
-        front = split_frontmatter(agent.read_text(encoding="utf-8"))[0]
-        assert _frontmatter_values_are_yaml_safe(
-            front
-        ), f"{name}.agent.md unsafe frontmatter:\n{front}"
+    frontmattered = (
+        ".github/skills/wiki-author/SKILL.md",
+        ".github/agents/wiki-curator.agent.md",
+    )
+    for rel in frontmattered:
+        front = split_frontmatter((tmp_path / rel).read_text(encoding="utf-8"))[0]
+        assert _frontmatter_values_are_yaml_safe(front), f"{rel} unsafe frontmatter:\n{front}"
 
 
-# --- COMMAND on CLI is a custom-agent, never only a prompt-file (C1/C3 / SC-004) ---------------
+# --- the wiki capability on the CLI is a native skill, never a prompt-file (C1/C3 / SC-004) ----
 
 
-def test_cli_wiki_command_is_agent_not_prompt(tmp_path: Path):
+def test_cli_wiki_is_native_skill_not_prompt(tmp_path: Path):
     profile = build_host_profile(tmp_path)
     plan = build_install_plan(AssistantId.COPILOT_CLI)
     execute_plan(plan, profile, AssistantId.COPILOT_CLI)
-    assert (tmp_path / ".github/agents/wiki.agent.md").is_file()
+    assert (tmp_path / ".github/skills/wiki-author/SKILL.md").is_file()
     assert not (tmp_path / ".github/prompts/wiki.prompt.md").exists()
+    assert not (tmp_path / ".github/agents/wiki.agent.md").exists()
 
 
-def test_anti_pattern_cli_plan_has_no_command_only_prompt_file():
-    """SC-007 scenario 5: in the CLI plan no COMMAND target is a `.prompt.md` (must be `.agent.md`).
-
-    The COMMAND surfaces (`wiki`, `wiki-author`) are derived from the canonical command/skill
-    assets; on the CLI their plan targets must be custom-agents. Reintroducing a prompt-file target
-    for a COMMAND on the CLI would make this fail.
+def test_anti_pattern_cli_plan_has_no_command_prompt_file():
+    """SC-007 scenario 5: on the CLI plan no COMMAND/skill target is a `.prompt.md` (the VS Code
+    vehicle is removed). The wiki capability is the native skill SKILL.md; `wiki-curator` is the
+    only `.agent.md`. Reintroducing a prompt-file for the wiki capability would make this fail.
     """
     plan = build_install_plan(AssistantId.COPILOT_CLI)
-    command_targets = [
-        a.target_rel for a in plan
-        if a.target_rel.startswith(".github/")
-        and (a.target_rel.endswith(".prompt.md") or a.target_rel.endswith(".agent.md"))
-    ]
-    # the wiki + wiki-author COMMANDs resolve to .agent.md on the CLI
-    assert ".github/agents/wiki.agent.md" in command_targets
-    assert ".github/agents/wiki-author.agent.md" in command_targets
-    # no COMMAND prompt-file on the CLI plan
-    assert not any(t.startswith(".github/prompts/") for t in command_targets)
+    targets = [a.target_rel for a in plan]
+    # the native skill SKILL.md is a plan target
+    assert ".github/skills/wiki-author/SKILL.md" in targets
+    # wiki-curator is the only custom-agent
+    agent_targets = [t for t in targets if t.endswith(".agent.md")]
+    assert agent_targets == [".github/agents/wiki-curator.agent.md"]
+    # no prompt-file anywhere on the CLI plan
+    assert not any(t.startswith(".github/prompts/") for t in targets)

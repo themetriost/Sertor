@@ -20,7 +20,7 @@ of the previous one:
 6. **analyze** — cross-check spec ↔ plan ↔ tasks for consistency and coverage.
 7. **implement** — execute the tasks in order, producing real code and tests.
 
-The phases are driven by the SpecKit skills installed under `.claude/skills/speckit-*`
+The phases are driven by the SpecKit skills installed for your assistant (the `speckit-*` skills)
 and the templates/scripts under `.specify/`.
 
 ### Constitution Check (gate)

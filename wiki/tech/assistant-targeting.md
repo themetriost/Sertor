@@ -3,7 +3,7 @@ title: Targeting per-assistente (AssistantProfile / Surface)
 type: tech
 tags: [installer, sertor-install-kit, copilot, copilot-cli, claude, host-agnostico, principio-x, feat-007]
 created: 2026-06-15
-updated: 2026-06-16 (+ target `copilot-cli`, PR #66: la Copilot CLI legge `.mcp.json`/`mcpServers`, non `.vscode/mcp.json`)
+updated: 2026-06-19 (sezione «Parità by construction» FEAT-001/056 RIVISTA al meccanismo NATIVO: skill nativa `.github/skills/wiki-author/` (dispatcher SKILL.md che assorbe `/wiki` + payload byte-copiato), riferimenti relativi co-locati; abbandonati custom-agent-skill + `.github/sertor/` + `{SKILL_DIR}`) · 2026-06-18 (+ sezione «Parità by construction» FEAT-001/feature 056)
 sources: ["packages/sertor-install-kit/src/sertor_install_kit/assistant.py", "packages/sertor/src/sertor_installer/install_wiki.py", "packages/sertor/src/sertor_installer/install_rag.py", "specs/044-distribuzione-copilot/plan.md", "requirements/sertor-cli/distribuzione-copilot/requirements.md"]
 ---
 
@@ -97,6 +97,45 @@ di `agent:`; `model:` Claude nei custom-agent). FEAT-011 corregge **tradicendo n
 
 Le superfici sono **validate dallo schema (offline)**; la conferma runtime su client reale resta fuori
 ambito di prodotto → i claim di parità VS Code sono **gap dichiarati**, non «pieni».
+
+## Parità by construction (FEAT-001, feature 056)
+
+Il seam traduce il **contenitore**, ma **riusa il body verbatim** (anti-drift). Questo riuso è
+un'arma a doppio taglio: un path `.claude/...` o un comando `/wiki` lasciati **dentro il body**
+**trapelano** sull'host Copilot, dove non risolvono. Un audit di dogfooding (Copilot CLI 1.0.63) ha
+mostrato che la capacità wiki era **rotta** lì: (1) il **payload multi-file** della skill
+`wiki-author` (`wiki-playbook.md`, `ops/*.md`, `*-craft.md`) **non veniva depositato**; (2) i body
+citavano `.claude/...` e `/wiki`, inesistenti su quell'host. La guardia byte-identica non lo vedeva:
+verifica che il body **non forki**, non i suoi riferimenti interni.
+
+> **Revisione (meccanismo NATIVO).** Una prima correzione depositava la skill come custom-agent + un
+> container dedicato `.github/sertor/wiki-author/` + placeholder `{SKILL_DIR}`. Letta la doc ufficiale
+> Copilot (agent skills native, auto-discovery **per-cartella-skill**), questa era una reinvenzione: la
+> via corretta è il **meccanismo nativo**.
+
+La regola che chiude il buco è **host-agnosticità alla sorgente** + **deposito nativo per host**:
+
+- **Body host-agnostici.** Niente path d'assistente letterali, niente slash-command come
+  invocazione, niente nomi di assistente né `$ARGUMENTS` nei body LLM-facing; il payload si
+  referenzia con **path relativi co-locati** (`wiki-playbook.md`, `ops/<x>.md`, `../wiki-craft.md`).
+  Poiché i container sono **paralleli** (`.claude/skills/wiki-author/` ↔ `.github/skills/wiki-author/`),
+  gli stessi riferimenti relativi risolvono identici su entrambi gli host.
+- **Skill nativa per host.** La capacità wiki è una **agent-skill nativa** depositata dove ciascun host
+  la cerca — `.claude/skills/wiki-author/**` su Claude, `.github/skills/wiki-author/**` su Copilot — e
+  auto-scoperta dal client (tutti i file della cartella, incl. `ops/`). Su Copilot la skill **assorbe il
+  ruolo del command `/wiki`** (la CLI non ha slash-command custom): il suo `SKILL.md` è il **dispatcher**
+  delle 8 operazioni, reso dalla fonte unica `commands/wiki.md`; il payload (playbook/ops/craft) è
+  byte-copiato via `iter_asset_dir` — **nessun nuovo `ArtifactKind`**, nessun render skill→custom-agent.
+  `wiki-curator` resta un custom-agent (`.github/agents/wiki-curator.agent.md`). Tutto dichiarato in
+  `sertor_owned_paths` come owned_dir (uninstall/upgrade in blocco).
+
+**Enforcement = guardia di parità** (`packages/sertor/tests/test_assets_copilot_parity.py`): rende i
+piani Copilot (wiki + governance + rag) — e quello Claude per la closure — e fallisce su un body che
+reintroduce `.claude/`, uno slash-command, un nome di assistente, **oppure** che cita un file del
+payload **non depositato** (*closure dei riferimenti*). Un riferimento dangling fa fallire nominando
+il file: un agente «rotto in silenzio» (playbook mancante) diventa un **fallimento esplicito** del
+test (Principio IV). La regola è codificata in tre sedi: questa pagina, la sezione *Host-agnostic
+authoring* del [[wiki-playbook]], e la **Definition of Done** del blocco rituale distribuito.
 
 ## Relazioni
 

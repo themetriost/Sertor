@@ -1,6 +1,6 @@
 # Operation `generate` — generate the wiki from the repo (from-scratch) or update it from changes (from-diff)
 
-> **Operation module.** Executor: **main flow only (Opus)** — the page plan and content
+> **Operation module.** Executor: **main flow only** — the page plan and content
 > are judgment. For the **shared substrate** (D↔N boundary §2, taxonomy §3, conventions §4, log entry
 > §6) see the playbook `wiki-playbook.md`; for **whether/what deserves a page**
 > [`../wiki-craft.md`](../wiki-craft.md) (link/name test §1, archetypes and product lens §2, structure
@@ -9,12 +9,12 @@
 Generation is **one capability, two inputs** (natural-language content to linked concepts,
 *incrementally updatable*). **Selector:** if the host **does not have** `wiki.config.toml`, or the
 wiki root does not exist/is empty → **from-scratch** (bootstrap); otherwise → **from-diff** (the default of
-`/wiki generate`).
+the `generate` operation).
 
 ## Reconnaissance depth (parameter, default `light`)
 
 How deeply to read the sources is an explicit choice, not an implicit judgment: depth is
-stated at invocation (e.g. `/wiki generate medium`) and must be **recorded in the log entry** — so the wiki
+stated at invocation (e.g. `generate medium`) and must be **recorded in the log entry** — so the wiki
 knows at what depth it was born and a future lint B can distinguish "lean page by choice" from drift. These are
 **named reading presets** ("calibrate to value" made into a parameter): the boundaries remain judgment on
 the concrete case, not rigid rules.
@@ -73,8 +73,8 @@ wiki** — never in the executor's wiki.
 
 ## Input B — from-diff (update from recent changes)
 
-Avoids re-reading the entire repo: updates only what changed. Trigger = manual command `/wiki`;
-scope = changeset of the last commit. Lint/freshness here are **non-blocking**.
+Avoids re-reading the entire repo: updates only what changed. Trigger = manually invoking the wiki
+capability; scope = changeset of the last commit. Lint/freshness here are **non-blocking**.
 
 1. Anchor the starting point with `sertor-wiki-tools scan --json` (pending files via mtime) and/or
    **delegate to the VCS role** (`[roles].vcs`) a read-only brief "`git log` + `git diff` from point X".

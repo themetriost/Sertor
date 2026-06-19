@@ -7,10 +7,11 @@ description: Generates/updates the project LLM Wiki by reading the repo and writ
 
 You are the **author** of the project's LLM Wiki: you read the repo and write/update wiki pages.
 
-**Single source of truth:** read `.claude/skills/wiki-author/wiki-playbook.md` (same folder) and
-**follow it**. It is the **index** with identity, taxonomy, conventions and the D↔N boundary; the **procedure for each
-operation** lives in an `ops/<operation>.md` module to `Read` on-demand (see §5 of the playbook). For this
-skill the typical operation is `record` → load `ops/record.md`. Do not duplicate those rules here.
+**Single source of truth:** read the wiki playbook bundled with this skill (`wiki-playbook.md`, same
+folder) and **follow it**. It is the **index** with identity, taxonomy, conventions and the D↔N boundary;
+the **procedure for each operation** lives in an `ops/<operation>.md` module to `Read` on-demand (see §5
+of the playbook). For this skill the typical operation is `record` → load `ops/record.md`. Do not
+duplicate those rules here.
 
 **Host-agnostic:** wiki root, taxonomy, frontmatter fields, roles and source folders come from
 `wiki.config.toml` (in `wiki/` on the host) — do not assume them. For the *mechanical* work (inventory, lint) use the
@@ -30,7 +31,8 @@ CLI `sertor-wiki-tools` instead of Glob/Grep by hand (see playbook).
 
 To ingest an external source, lint for consistency, generate the wiki from the repo or update it from
 the git diff (operation `generate`, inputs from-scratch/from-diff) or re-index in the RAG, use the
-corresponding operations in the playbook (typically via the `/wiki <operation>` command).
+corresponding operations in the playbook (trigger the wiki capability of your assistant for the chosen
+operation).
 
 ## Versioning (optional)
 At the end of generation, if the user wants to version, **delegate to the VCS role** (`[roles].vcs` in config; never direct git):

@@ -10,8 +10,8 @@ Your task is to keep the wiki accurate and interlinked based on the brief you re
 Do NOT write product code, do NOT touch original sources, do NOT run git.
 
 ## First: read the playbook
-**Your source of truth is `.claude/skills/wiki-author/wiki-playbook.md`.** `Read` that file as
-your **first action**: it is the **index** with the shared substrate (host-agnosticism, D↔N boundary, taxonomy,
+**Your source of truth is the wiki playbook bundled with the `wiki-author` skill (`wiki-playbook.md`).**
+`Read` that file as your **first action**: it is the **index** with the shared substrate (host-agnosticism, D↔N boundary, taxonomy,
 conventions, log entry format, limits). Follow it. You do not have the skill's context — the playbook is what
 replaces it. The **procedure for each individual operation** lives in an `ops/<operation>.md` module (see the table
 in §5): once you have identified which operation you are executing, `Read` **only that module** (normally `ops/record.md`;
@@ -43,7 +43,7 @@ do the bare minimum (or nothing) and explain why.
    lint). The following are NOT for you (they require **judgment** or the main flow's git/indexer): **semantic (B)**
    and **organizational (C)** lint, the **`reorg`** operation, `generate`, `rag-sync`
    — the judgment "this page contradicts the code / is misplaced / should be moved" stays with the main flow,
-   as does the ritual in `CLAUDE.md`. If the brief implies them, execute the documentary parts and
+   as does the host's step ritual. If the brief implies them, execute the documentary parts and
    signal that they need to be completed there.
 3. Execute the playbook procedure: create/update pages, update backlinks and index, append
    ONE log entry (today's date, correct operation).

@@ -1,6 +1,6 @@
 # Operation `lint` — consistency check
 
-> **Operation module.** Executor: **A** = curator OK · **B/C** = main flow only (Opus).
+> **Operation module.** Executor: **A** = curator OK · **B/C** = main flow only.
 > For the **shared substrate** (D↔N boundary §2, taxonomy §3, log entry §6) see the playbook
 > `wiki-playbook.md`; lint **C** judges against **how a page should look**
 > ([`../page-craft.md`](../page-craft.md)) and **how the whole should look** ([`../wiki-craft.md`](../wiki-craft.md)).
@@ -38,8 +38,8 @@ defects: a stub is not an error, it is a deliberate node awaiting content.
 
 **B) Semantic lint — judgment (LLM, main flow).** Verify that the **artifacts declared in
 `[[audit]]`** (not only the wiki: also `requirements`/`spec`/`tracker`) **are not drifted** from the
-reality of the project, applying the **profile of the `kind`** (table above). This is **judgment**: it stays with the LLM and **normally with the main flow (Opus)**, which has
-context; **the judgment part is not delegated to the `curator` (Haiku)** (see index §7 and the ritual in `CLAUDE.md`).
+reality of the project, applying the **profile of the `kind`** (table above). This is **judgment**: it stays with the LLM and **normally with the main flow**, which has
+context; **the judgment part is not delegated to the `curator`** (see index §7 and the host's step ritual).
 Repeatable procedure:
 
 1. **Baseline** = the report from (A).
@@ -76,13 +76,13 @@ for each `kind`; outcome = **report + NON-blocking warning** (never blocking, ne
 detection, not in automatic correction). **Automation caveat:** A at commit is mechanical
 (hook/CLI); **B at commit is LLM judgment** → its automatic execution depends on the orchestration/trigger
 (deterministic side, cf. `ops/generate.md` and the trigger-contract, not wired today). Until it is wired:
-the warning at commit covers A and **reminds you to run incremental B** (`/wiki lint` on the changeset).
+the warning at commit covers A and **reminds you to run incremental B** (the `lint` operation on the changeset).
 
 **C) Organizational lint — judgment (LLM, main flow).** Verify that the wiki is a **well-organized
 graph** (criteria in [`../wiki-craft.md`](../wiki-craft.md): archetypes, structure pages, two axes,
 SSoT, no fragmentation), not just hygienically sound. This is **all judgment**: placement and nature of a page **are
 not deterministic** — folder and `type` can agree with each other and **both lie** about the content,
-so no mechanical check catches them. Stays with the main flow (Opus), **not** with the `curator`. Applied to the `wiki` `kind` only, **on-demand** (not at commit). Starting inventory: `collect`
+so no mechanical check catches them. Stays with the main flow, **not** with the `curator`. Applied to the `wiki` `kind` only, **on-demand** (not at commit). Starting inventory: `collect`
 (rel_path/area/`type`/tags/wikilinks); **backlinks are not exposed** by the CLI → **compute them by inverting** the
 `wikilinks` from `collect`. Checks:
 

@@ -1,8 +1,9 @@
 # Wiki Playbook — single source of truth for the wiki system
 
-> **This file is the source of truth for the "wiki system".** The `wiki-author` skill, the `/wiki` command and
-> the `wiki-curator` agent do not duplicate these rules: they **read them here** and follow them. If you modify a
-> convention or an operation, modify it **only** in this file (or in the operation's `ops/` module).
+> **This file is the source of truth for the "wiki system".** The `wiki-author` skill, the wiki
+> command/capability and the `wiki-curator` agent do not duplicate these rules: they **read them here**
+> and follow them. If you modify a convention or an operation, modify it **only** in this file (or in the
+> operation's `ops/` module).
 >
 > **Structure (index + modules):** this file is the **index** with the **shared substrate** (host-agnosticity,
 > identity, D↔N boundary, taxonomy, conventions, log entry, limits). The **specific procedure of each operation**
@@ -10,7 +11,7 @@
 > invoking a single operation does not load the procedures of all the others (progressive disclosure), without
 > duplicating the substrate (DRY) and remaining portable `.md` documents (Principle X — no host-specific constructs).
 >
-> It is **tooling**, not wiki content: it lives in `.claude/`, it should not be indexed or recorded in the wiki.
+> It is **tooling**, not wiki content: it lives alongside your assistant's skill files, it should not be indexed or recorded in the wiki.
 
 ## 0. Host-agnostic: the host is configured, not assumed
 
@@ -31,6 +32,25 @@ varies between projects lives in **`wiki.config.toml`** (in `wiki/` on the host)
 below (`wiki/`, `concepts/`, `src/`…) are **examples from the host profile**, **not** universal laws. On another
 project only the config file changes.
 
+### Host-agnostic authoring (this file and its sibling assets)
+
+This playbook and the skill/agent/command bodies that read it are **distributed to multiple
+assistants**. The SAME body must work on each, so when you edit these assets keep them host-agnostic:
+
+- **No literal assistant paths.** Do not hard-code an assistant-specific directory in a body: the
+  payload lives in a different place on each host. Reference a bundled support file **by name**
+  instead (e.g. "read the wiki playbook bundled with this skill (`wiki-playbook.md`)"). Internal links
+  *between* the playbook and its sibling modules stay **relative** (`ops/<x>.md`, `../wiki-craft.md`) —
+  those travel together in the same container.
+- **No slash-command invocations.** Do not name a `/command` as the way to invoke a capability (slash
+  commands are not universal): describe it in capability-neutral terms (e.g. "trigger the wiki
+  capability of your assistant" / "run the `record` operation").
+- **No assistant product names** in instructional, LLM-facing text.
+
+These rules are enforced by a **parity guard** (renders the distributable plans for every assistant
+and fails on a leaked assistant path, a slash-command, an assistant name, or a payload file referenced
+but not deposited — *reference closure*). See [[assistant-targeting]] for the targeting mechanism.
+
 ## 1. Identity & philosophy
 
 The wiki is an **LLM Wiki** in the Karpathy style: *Obsidian is the IDE, the LLM is the programmer, the wiki is the
@@ -46,7 +66,7 @@ session.
   to another page) makes a page **stale**, realigning it **is part of the same work** — it is not
   a separate operation to request. The drift that *you* introduce is corrected **in the same step**, by
   default and without an explicit request; drift that you merely *discover* as pre-existing can become a worklist for
-  `lint`. *(The host can codify this in its own step ritual, e.g. in `CLAUDE.md`.)*
+  `lint`. *(The host can codify this in its own step ritual, in its instruction file.)*
 
 ## 2. Deterministic core vs judgment (the boundary)
 
@@ -197,18 +217,18 @@ The **specific procedure** of each operation lives in an **`ops/<operation>.md` 
 folder as this file): **`Read` only the module for the operation you need** — do not load them all
 (progressive disclosure). Documentary operations (`record`, `ingest`, `query`, lint **A**) can also be
 run by the `curator` in background; lint **B/C**, `distill`, `reorg`, `generate` and
-`rag-sync` require the **main flow** (Opus).
+`rag-sync` require the **main flow**.
 
 | Operation | Module (`Read` on-demand) | What it does | Executor |
 |---|---|---|---|
 | `record` | [`ops/record.md`](ops/record.md) | records completed work/decisions | curator OK |
-| `distill` | [`ops/distill.md`](ops/distill.md) | extracts durable entities/concepts into their own pages (inputs: step just completed · fat record from backlog · brief of an entire conversation, even an old one); slims down dated records | Opus only |
+| `distill` | [`ops/distill.md`](ops/distill.md) | extracts durable entities/concepts into their own pages (inputs: step just completed · fat record from backlog · brief of an entire conversation, even an old one); slims down dated records | main flow only |
 | `ingest` | [`ops/ingest.md`](ops/ingest.md) | acquires an external source → `sources/` | curator OK |
 | `query` | [`ops/query.md`](ops/query.md) | answers a question about the wiki (archives if valuable) | curator OK |
-| `lint` | [`ops/lint.md`](ops/lint.md) | consistency at 3 levels: A structural · B semantic · C organizational | A: curator · B/C: Opus only |
-| `reorg` | [`ops/reorg.md`](ops/reorg.md) | applies the organizational refactoring from lint C (on confirmation) | Opus only |
-| `generate` | [`ops/generate.md`](ops/generate.md) | generates the wiki from the repo: **from-scratch** (bootstrap on a host without a wiki) or **from-diff** (incremental: only the pages impacted by recent changes); reconnaissance depth preset (`light`/`medium`/`massive`, default light) | Opus only |
-| `rag-sync` | [`ops/rag-sync.md`](ops/rag-sync.md) | re-indexes the wiki in the RAG (the "corpus" role) | Opus only |
+| `lint` | [`ops/lint.md`](ops/lint.md) | consistency at 3 levels: A structural · B semantic · C organizational | A: curator · B/C: main flow only |
+| `reorg` | [`ops/reorg.md`](ops/reorg.md) | applies the organizational refactoring from lint C (on confirmation) | main flow only |
+| `generate` | [`ops/generate.md`](ops/generate.md) | generates the wiki from the repo: **from-scratch** (bootstrap on a host without a wiki) or **from-diff** (incremental: only the pages impacted by recent changes); reconnaissance depth preset (`light`/`medium`/`massive`, default light) | main flow only |
+| `rag-sync` | [`ops/rag-sync.md`](ops/rag-sync.md) | re-indexes the wiki in the RAG (the "corpus" role) | main flow only |
 | `structure` | [`ops/structure.md`](ops/structure.md) | idempotent bootstrap of the structure | curator/CLI |
 
 > **Write-back log/index.** Both **wired into the CLI**: the **log** with `append-log` (the LLM
