@@ -46,7 +46,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 |---|---|---|
 | [`sertor-core`](../../requirements/sertor-core/epic.md) | ✅ completa | — (agenzia incorporata ❌ abbandonata by design) |
 | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | ergonomia installer · Codex · PyPI · `configure --check` (probe live, deferred) *(packaging ✅ + lifecycle ✅ + hardening Copilot FEAT-011 ✅ + wizard config ✅ + Copilot CLI-only ✅ + verifica empirica Copilot LIVE ✅, 2026-06-17)* |
-| [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | **export OTel (FEAT-005) 🔄 implementato su branch `061`** · metriche aggregate · stima € (Should) · web · export CSV/MD |
+| [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | **export OTel FEAT-005 ✅ (PR #85)** + arricchimento span FEAT-013 🔄 (esito/status, branch `062`) · drift FEAT-012 · metriche aggregate · stima € (Should) · web · CSV/MD |
 | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso | ricerca semantica · remember-this · retention · **distribuzione installer (Must)** · multi-assist |
 | [`multiutente`](../../requirements/multiutente/epic.md) | 📋 differita | finché il caso d'uso team non è concreto |
 | 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | 📋 aperta | **ground-truth + metriche (Must)** |
@@ -60,13 +60,13 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- **Export OpenTelemetry (FEAT-005, epica `osservabilita`) — 🔄 implementato su branch `061`, PR in
-  apertura.** *Cosa:* gli eventi che il core già emette sono esportati **anche** verso un backend OTel
-  (Langfuse/Phoenix/Grafana), in aggiunta allo store locale. *Come:* handler additivo gemello di F1
-  (`OtelExportHandler`) gated su `SERTOR_OBSERVABILITY_OTEL` + extra `[otel]`; mappa eventi→span GenAI
-  semconv (embeddings/retrieval) / `sertor.*` altrove; privacy metrics-only; non-fatale/non-bloccante.
-  *Verifica:* suite offline `InMemorySpanExporter`; core importabile senza OTel. *Gap dichiarato:* span
-  flat post-hoc (no tracing nidificato → follow-up). *Prossimo:* merge.
+- **Export OpenTelemetry — ✅ FEAT-005 merged (PR #85), 🔄 arricchimento FEAT-013 su branch `062`
+  (epica `osservabilita`).** *Fatto:* gli eventi del core sono esportati **anche** verso un backend OTel
+  (Langfuse/Phoenix/Grafana) come span GenAI semconv (handler additivo gemello di F1, gated su
+  `SERTOR_OBSERVABILITY_OTEL`+extra `[otel]`, privacy metrics-only). **Provato live su Jaeger** (dogfood).
+  *In corso (FEAT-013, PR in apertura):* dal dogfooding si vedeva l'operazione ma non l'**esito** →
+  span **status** dal livello (errori rossi+reason), `sertor.level`, `service.name=sertor` di default,
+  `hybrid_query`→`retrieval`. *Gap residuo:* span flat post-hoc (tracing nidividato = follow-up separato).
 
 **Altri candidati a valore = i Must aperti** (non ancora iniziati):
 
