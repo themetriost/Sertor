@@ -27,7 +27,7 @@ from sertor_core.domain.ports import (
 )
 from sertor_core.observability.logging import log_event
 from sertor_core.services.indexing import IndexingService
-from sertor_core.services.retrieval import apply_min_score
+from sertor_core.services.retrieval import apply_min_score, content_fields
 
 
 def rrf(rankings: list[list[str]], k: int, c: int = 60) -> list[tuple[str, float]]:
@@ -111,7 +111,7 @@ class HybridEngine:
             # Confidence threshold (018, REQ-H1/H2): here the score is cosine similarity → filter.
             results, low = apply_min_score(raw, min_score)
             self._log_query(results, lexical_hits=0, dense_hits=len(raw),
-                            rerank_applied=False, started=started)
+                            rerank_applied=False, started=started, query=query, abstained=low)
             if low:
                 self._log_low_confidence(raw)
             return results
@@ -123,7 +123,8 @@ class HybridEngine:
         # fusion. If the dense leg is emptied by the threshold, abstain (empty + low_confidence).
         dense, low = apply_min_score(dense_raw, min_score)
         if low:
-            self._log_query([], lexical_hits=0, dense_hits=0, rerank_applied=False, started=started)
+            self._log_query([], lexical_hits=0, dense_hits=0, rerank_applied=False,
+                            started=started, query=query, abstained=True)
             self._log_low_confidence(dense_raw)
             return []
         lexical_ids = self._lexical.query(self._collection, query, pool, doc_type)
@@ -138,7 +139,8 @@ class HybridEngine:
             results = candidates[:k]
 
         self._log_query(results, lexical_hits=len(lexical_ids), dense_hits=len(dense),
-                        rerank_applied=self._use_reranker(), started=started)
+                        rerank_applied=self._use_reranker(), started=started,
+                        query=query, abstained=False)
         return results
 
     def _use_reranker(self) -> bool:
@@ -210,7 +212,12 @@ class HybridEngine:
         dense_hits: int,
         rerank_applied: bool,
         started: float,
+        query: str,
+        abstained: bool,
     ) -> None:
+        content_on = (
+            self._settings.observability_content_enabled and self._settings.observability_enabled
+        )
         log_event(
             logging.INFO,
             "hybrid_query",
@@ -221,5 +228,7 @@ class HybridEngine:
             dense_hits=dense_hits,
             fused_k=len(results),
             rerank_applied=rerank_applied,
+            abstained=abstained,  # 0 results + abstained → "abstained" verdict (vs plain miss)
             elapsed_ms=round((time.perf_counter() - started) * 1000, 2),
+            **content_fields(query, results, self._default_k, enabled=content_on),
         )

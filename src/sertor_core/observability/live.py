@@ -175,3 +175,53 @@ def render_corpus_report(r: HealthReport, now: float) -> str:
         f"Corpus: {r.documents} docs · {r.chunks} chunks · dim {r.embedding_dim}\n"
         f"Freshness: last index {_humanize_age(now - r.last_index_ts)} ago"
     )
+
+
+# --- RAG demonstrability view (feature 064, FEAT-015): query · result · hit/miss ---------------
+
+_RETRIEVAL_OPS = ("retrieve", "hybrid_query", "query")
+
+
+def retrieval_verdict(fields: dict) -> str:
+    """Classify a retrieval event as hit / miss / abstained (FEAT-015, REQ-008). Pure.
+
+    hit = at least one result; abstained = 0 results but the threshold emptied a non-empty pool
+    (`abstained`); miss = 0 results without abstention.
+    """
+    n = fields.get("results", fields.get("fused_k", 0)) or 0
+    if n > 0:
+        return "hit"
+    return "abstained" if fields.get("abstained") else "miss"
+
+
+def render_rag_report(events: list[ObservedEvent]) -> str:
+    """Render the RAG-demonstrability tab from recent events. Pure (`time.localtime` formats `ts`).
+
+    Shows retrieval events that carry the query (content opt-in on) as query · verdict · top result
+    (+ snippet), plus the recent MCP operations. Honest empty-state when content visibility is off.
+    """
+    rag = [e for e in events if e.operation in _RETRIEVAL_OPS and "query" in e.fields]
+    mcp = [e for e in events if e.operation.startswith("mcp.")]
+    if not rag and not mcp:
+        return (
+            "No RAG content captured.\n"
+            "Enable LOCALLY: SERTOR_OBSERVABILITY=true + SERTOR_OBSERVABILITY_CONTENT=true,\n"
+            "then run a search. (Default off — privacy-by-default; local demonstrability only.)"
+        )
+    lines: list[str] = ["Recent queries:", f"  {'TIME':<8}  {'VERDICT':<9}  QUERY"]
+    for e in reversed(rag[-10:]):
+        clock = time.strftime("%H:%M:%S", time.localtime(e.ts))
+        lines.append(f"  {clock:<8}  {retrieval_verdict(e.fields):<9}  {e.fields.get('query', '')}")
+        top = (e.fields.get("results_preview") or ["—"])[0]
+        snippet = e.fields.get("snippet", "")
+        detail = f"            → {top}"
+        if snippet:
+            detail += f"   “{snippet[:80].strip()}”"
+        lines.append(detail)
+    if mcp:
+        lines += ["", "Recent MCP operations:"]
+        for e in reversed(mcp[-10:]):
+            clock = time.strftime("%H:%M:%S", time.localtime(e.ts))
+            arg = e.fields.get("query", "")
+            lines.append(f"  {clock:<8}  {e.operation}{('  ' + arg) if arg else ''}")
+    return "\n".join(lines)

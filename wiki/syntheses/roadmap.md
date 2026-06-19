@@ -46,7 +46,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 |---|---|---|
 | [`sertor-core`](../../requirements/sertor-core/epic.md) | ✅ completa | — (agenzia incorporata ❌ abbandonata by design) |
 | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | ergonomia installer · Codex · PyPI · `configure --check` (probe live, deferred) *(packaging ✅ + lifecycle ✅ + hardening Copilot FEAT-011 ✅ + wizard config ✅ + Copilot CLI-only ✅ + verifica empirica Copilot LIVE ✅, 2026-06-17)* |
-| [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | **export OTel FEAT-005 ✅ (PR #85)** + arricchimento span FEAT-013 🔄 (esito/status, branch `062`) · drift FEAT-012 · metriche aggregate · stima € (Should) · web · CSV/MD |
+| [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | **export OTel FEAT-005 ✅** + arricchimento span FEAT-013 ✅ + TUI tabella FEAT-014 ✅ · **visibilità RAG/dimostrabilità FEAT-015 🔄** (branch `064`) · drift FEAT-012 · metriche aggregate · stima € (Should) · web · CSV/MD |
 | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso | ricerca semantica · remember-this · retention · **distribuzione installer (Must)** · multi-assist |
 | [`multiutente`](../../requirements/multiutente/epic.md) | 📋 differita | finché il caso d'uso team non è concreto |
 | 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | 📋 aperta | **ground-truth + metriche (Must)** |
@@ -60,13 +60,16 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-- **Export OpenTelemetry — ✅ FEAT-005 merged (PR #85), 🔄 arricchimento FEAT-013 su branch `062`
-  (epica `osservabilita`).** *Fatto:* gli eventi del core sono esportati **anche** verso un backend OTel
-  (Langfuse/Phoenix/Grafana) come span GenAI semconv (handler additivo gemello di F1, gated su
-  `SERTOR_OBSERVABILITY_OTEL`+extra `[otel]`, privacy metrics-only). **Provato live su Jaeger** (dogfood).
-  *In corso (FEAT-013, PR in apertura):* dal dogfooding si vedeva l'operazione ma non l'**esito** →
-  span **status** dal livello (errori rossi+reason), `sertor.level`, `service.name=sertor` di default,
-  `hybrid_query`→`retrieval`. *Gap residuo:* span flat post-hoc (tracing nidividato = follow-up separato).
+- **Visibilità del RAG nella TUI / dimostrabilità (FEAT-015, epica `osservabilita`) — 🔄 implementata
+  su branch `064`, PR in apertura.** *Cosa:* nuovo opt-in `SERTOR_OBSERVABILITY_CONTENT` (default off,
+  richiede lo store) che cattura, sotto opt-in **locale**, query+preview+snippet (scrubbati) negli eventi
+  di retrieval + `abstained`; nuova **scheda TUI "RAG"** con verdetto **hit/miss/astenuto** · query · top
+  result+snippet · operazioni MCP. Scopo = *dimostrare* come funziona il RAG (non audit). Realizza
+  l'opt-in raw-text REQ-E9; default privacy-safe preservato; export OTel resta metrics-only. SpecKit
+  (requirements 6 forche risolte + plan Constitution 11/11); verificato live (evento porta query/preview/
+  snippet/abstained, verdetto=hit); 594 unit verdi. *Follow-up:* MCP query-arg negli eventi `mcp.<tool>`
+  (render già pronto); correlazione hard MCP↔retrieval. *(Export OTel FEAT-005 + arricchimento FEAT-013
+  + tabella TUI FEAT-014 ✅ merged.)*
 
 **Altri candidati a valore = i Must aperti** (non ancora iniziati):
 
