@@ -284,6 +284,26 @@ automazione *unattended*: la distinzione è netta —
 - *comportamento standing* = ciò che faccio **sistematicamente mentre lavoriamo**, perché è il mio modo
   di operare. Il rituale qui sotto è di questo secondo tipo: per esso **non esiste alcun limite tecnico**.
 
+**Apertura dello step — MCP-first (dogfooding prioritario, regola SEMPRE attiva).** Quando uno step
+richiede di **orientarsi nel codice o nella documentazione del corpus** (`src/`, `specs/`,
+`requirements/`, `wiki/`, doc di radice), la **prima mossa è interrogare il RAG** via il server MCP
+`sertor-rag` (`search_combined`/`search_code`/`search_docs`, `find_symbol`/`who_calls`/`related_docs`/
+`get_context`), **non** leggere i file a mano. Solo *dopo* che il RAG ha indicato i file, si usa `Read`
+per leggerli interi: il RAG **trova**, `Read` **trasporta**. **Perché è prioritario e non cerimonia:**
+ogni uso è il **test del valore dello strumento** — è così che misuriamo se il RAG è *conveniente* o
+*inutile*, ed è così che i guasti **emergono** invece di marcire invisibili. *Se Sertor non usa Sertor,
+chi dovrebbe?* Corollari operativi:
+- **Errori MCP = finding, mai rumore** (regola standing, vedi *Riferirsi al prototipo* sopra): un tool
+  `mcp__sertor-rag__*` che erra (key scaduta, indice stale, `InternalError` dello store) va **segnalato
+  esplicitamente**; ripiega pure su `Read`/`Grep` per non bloccarti, ma il guasto **si vede**. *(Caso
+  reale 2026-06-19: `search_code` rotto con `chroma InternalError`, e drift di riga in `find_symbol` —
+  emersi **solo** perché si è usato l'MCP invece di leggere a mano.)*
+- **Unica eccezione:** un **fatto puntuale** di cui conosco già file e posizione esatti (es. «che default
+  ha `default_k`?») → `Read`/`Grep` diretti sono leciti. **Nel dubbio, MCP-first.**
+- **Confine Principio XI invariato:** si accede a Sertor **solo via vehicles** (MCP/CLI), mai importando
+  `sertor_core`. Questa regola è *in-flow* (apertura); la checklist numerata qui sotto resta la
+  *chiusura* (Definition of Done).
+
 1. **Registra** — appende la voce nel log (con la rotazione attiva, il **file del giorno**
    `wiki/log/<data>.md` via `append-log`) + pagine impattate e `index.md`: operazione `record` del
    playbook. *(già attivo)*
@@ -365,7 +385,21 @@ automazione *unattended*: la distinzione è netta —
    marca lo stato). Fa parte dell'**asset installabile** (`claude-md-block.md`): gli ospiti ricevono
    questa pratica con il sistema-wiki. Vedi [[step-ritual]] e la panoramica [[sertor-in-parole-semplici]].
 
-8. **\<altre azioni\>** — questa lista è **estendibile**: ogni azione che l'utente chiede di rendere
+8. **Smoke test del RAG di dogfooding** — **allo stesso momento del commit** dello step (specie dopo
+   un re-index), il flusso principale **esercita il server MCP `sertor-rag`** per verificare che sia
+   *vivo e fresco*, non solo che l'indice su disco esista. Il test DEVE colpire il **path del filtro
+   metadata**: `search_code` **e** `search_docs` — **non basta `search_combined`** (la query con `where`
+   è proprio ciò che cede quando il server è **stantio** dopo un re-index, mentre la solo-vettore regge:
+   è il guasto reale del 2026-06-19) — più un `find_symbol` su un **simbolo a posizione nota** come
+   controllo di **freschezza** del code-graph (la riga deve combaciare col file reale). Un tool in errore
+   o un indice stantio → **segnala** (regola *errori-MCP = finding, mai rumore*), **riconnetti** il server
+   e **ri-verifica**; mai degradare in silenzio. È il **complemento di chiusura** della regola MCP-first
+   di apertura: ogni step verifica che lo strumento sia usabile. Esecuzione **meccanica**, ma l'esito
+   («fresco?») è **giudizio** → flusso principale. **Calibra al valore:** gli step che non toccano il
+   corpus possono saltarlo; **obbligatorio dopo un re-index / merge su `master`**. *(Mitigazione manuale
+   in attesa del fix di prodotto: il server che rileva lo store riscritto e re-inizializza il client.)*
+
+9. **\<altre azioni\>** — questa lista è **estendibile**: ogni azione che l'utente chiede di rendere
    *standing* va aggiunta qui, e da quel momento fa parte del rituale a ogni step.
 
 **Responsabilità & delega.** Che queste azioni **avvengano** a ogni step è responsabilità del flusso

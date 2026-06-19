@@ -3,7 +3,7 @@ title: Server MCP sertor-rag
 type: tech
 tags: [mcp, server, sertor-mcp, thin-consumer, retrieval, dogfooding, sertor-core]
 created: 2026-06-08
-updated: 2026-06-14 (+ affidabilità e segnalazione errori: _guard su tool + self-test + governance, FEAT-001 affidabilità-dogfood) · 2026-06-12 (sera: superficie a 7 tool — tornati i 4 di grafo, FEAT-005/PR #25; mattina: warm-up eager PR #23 + troubleshooting)
+updated: 2026-06-19 (troubleshooting nota 3: client Chroma stantio dopo re-index + auto-heal da query(), con limiti dichiarati e mitigazioni; link a step-ritual) · 2026-06-14 (+ affidabilità e segnalazione errori: _guard su tool + self-test + governance, FEAT-001 affidabilità-dogfood) · 2026-06-12 (sera: superficie a 7 tool — tornati i 4 di grafo, FEAT-005/PR #25; mattina: warm-up eager PR #23 + troubleshooting)
 sources: ["src/sertor_mcp/server.py", ".mcp.json"]
 ---
 
@@ -94,7 +94,7 @@ azure` per il dogfood): l'extra `dev` include ora `mcp` e `graph`, quindi lo ste
 test e lint prepara anche il server. Il vecchio `.venv-core` (costruito a mano, sorgente della divergenza
 silenziosa) è stato eliminato.
 
-## Troubleshooting (metodo collaudato, 2026-06-12)
+## Troubleshooting (metodo collaudato, 2026-06-12; aggiornato 2026-06-19)
 
 Quando una chiamata MCP sembra appesa o il server pare morto:
 
@@ -105,13 +105,22 @@ Quando una chiamata MCP sembra appesa o il server pare morto:
 2. **Log lato server:** i `log_event` del core (`op=retrieve`, `op=mcp.<tool>`) escono su **stderr**
    del subprocess — visibili solo lanciando il server a mano. I guasti sono ora anche tracciati nel
    report di affidabilità se `SERTOR_OBSERVABILITY=true`.
-3. **Probe fuori sessione:** pilotare il server con un driver JSON-RPC su stdio (initialize →
+3. **Client Chroma stantio dopo re-index (dal 2026-06-19):** se `search_code` e `search_docs` tornano
+   `InternalError` mentre `search_combined` regge, il client Chroma del server è divergente dallo store
+   riscritto su disco (il process mantiene in memoria una connessione che non vede le modifiche). Sintomo
+   gemello: `find_symbol` ritorna righe obsolete. **Rimedio immediato:** riconnettere il server (nuova
+   sessione o comando `/mcp` + riconnessione). **Dal 2026-06-19:** `ChromaStore.query()` si auto-guarisce
+   — su errore ricrea il client e riprova una volta, così il guasto non dovrebbe più accadere. Se persiste:
+   riconnetti il server, che ora ha il fix.
+4. **Probe fuori sessione:** pilotare il server con un driver JSON-RPC su stdio (initialize →
    initialized → tools/call) misurando i tempi, tenendo stdin aperto; se la risposta arriva solo
    chiudendo stdin, l'esecuzione era parcheggiata nell'event loop (la firma dell'episodio
    2026-06-12). Per bisezionare: server FastMCP minimo + un tool per componente (Settings / Chroma /
    embed / facade). Driver usati: `%TEMP%\mcp_probe.py`, `mcp_probe2.py`, `mini_mcp*.py`.
-4. **Ricordare:** il server gira da `.venv` (editable su `src/`) → serve il codice del **branch
+5. **Ricordare:** il server gira da `.venv` (editable su `src/`) → serve il codice del **branch
    correntemente checked-out**; va riavviato (nuova sessione o riconnessione) per servire codice nuovo.
+   **NB:** il code-graph è caricato all'avvio, non refreshed a runtime (stantio se aggiornato tra re-index
+   e riavvio) — riavviare il server è il rimedio.
 
 ## Vedi anche
 - Il pattern che incarna: [[thin-consumer]]. Cosa consuma: [[indexing-and-retrieval]] · [[retrieval-core]].
