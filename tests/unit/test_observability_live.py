@@ -67,6 +67,17 @@ def test_render_snapshot_empty_has_call_to_action():
     assert "No observability data" in text and "SERTOR_OBSERVABILITY" in text
 
 
+def test_recent_events_rendered_as_table_not_raw_dict():
+    """FEAT (063): recent events are an aligned table (TIME · OPERATION · DETAILS) with `k=v`
+    fields, not the raw dict repr (`{'provider': ...}`)."""
+    text = render_snapshot(live_snapshot(_reports([
+        (DAY1, "embeddings", {"provider": "azure", "tokens": 100, "texts": 2}),
+    ])))
+    assert "OPERATION" in text and "DETAILS" in text          # table header
+    assert "provider=azure" in text and "tokens=100" in text  # fields as k=v
+    assert "{'provider'" not in text and "{" not in text.split("Recent events:")[1]  # no dict repr
+
+
 def test_live_snapshot_deterministic():
     events = [(DAY1, "embeddings_cache", {"hits": 1, "misses": 1})]
     assert live_snapshot(_reports(events)) == live_snapshot(_reports(events))  # SC-005

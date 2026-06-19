@@ -7,6 +7,7 @@ writes nothing (FR-004).
 """
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, field
 
 from sertor_core.domain.entities import ObservedEvent
@@ -73,6 +74,23 @@ def live_snapshot(
     )
 
 
+def _render_events_table(events: list[ObservedEvent]) -> list[str]:
+    """Recent events as an aligned text table (`TIME · OPERATION · DETAILS`), not a raw dict.
+
+    Fields are heterogeneous per operation, so DETAILS is a compact `k=v` join (no braces/quotes),
+    far more readable than the dict repr. Pure: `time.localtime` only formats the (injected) `ts`.
+    """
+    if not events:
+        return ["  (none)"]
+    op_w = min(max(len(e.operation) for e in events), 22)
+    lines = [f"  {'TIME':<8}  {'OPERATION':<{op_w}}  DETAILS"]
+    for e in events:
+        clock = time.strftime("%H:%M:%S", time.localtime(e.ts))
+        details = " ".join(f"{k}={v}" for k, v in e.fields.items())
+        lines.append(f"  {clock:<8}  {e.operation[:op_w]:<{op_w}}  {details}")
+    return lines
+
+
 def render_snapshot(s: LiveSnapshot) -> str:
     """Render a snapshot to plain text (pure, no terminal). The Textual shell draws this string."""
     if not s.has_data:
@@ -91,8 +109,7 @@ def render_snapshot(s: LiveSnapshot) -> str:
         "",
         "Recent events:",
     ]
-    for e in reversed(s.recent_events[-10:]):
-        lines.append(f"  {e.operation}: {e.fields}")
+    lines += _render_events_table(list(reversed(s.recent_events[-10:])))
     return "\n".join(lines)
 
 
