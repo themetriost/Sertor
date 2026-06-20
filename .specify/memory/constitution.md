@@ -1,10 +1,22 @@
 <!--
 SYNC IMPACT REPORT — Costituzione di Sertor
 ============================================
-Versione: 1.2.0 → 1.3.0
-Tipo di bump: MINOR (nuovo principio XII)
+Versione: 1.3.0 → 1.4.0
+Tipo di bump: MINOR (nuova sezione «Missione & stella polare» + check di allineamento nel gate)
 
 Modifiche di questo emendamento (2026-06-20):
+  + Sezione «Missione & stella polare (North Star)» — inserita subito dopo l'intro e prima di
+    «## Core Principles». Definisce il differenziatore di Sertor (fusione code+doc in un unico
+    corpus interrogabile insieme) e la stella polare vincolante: ogni capacità, feature e decisione
+    DEVE servire la missione e rafforzare la fusione code+doc; in caso di conflitto vince la missione
+    (o va riconsiderata esplicitamente).
+  + Check di allineamento alla missione nel Constitution Check (sezione Governance): gate
+    «Allineamento alla missione (fusione code+doc, qualità del retrieval reso all'agente)».
+  Template dipendenti: plan-template.md — aggiunto gate «Allineamento alla missione» + rif. versione → v1.4.0.
+  Origine: decisione utente (2026-06-20) — ancorare mission/vision in costituzione perché ogni
+    decisione di design vada nella direzione della fusione code+doc come punto di forza competitivo.
+
+Modifiche dell'emendamento precedente (2026-06-20, v1.2.0 → v1.3.0, MINOR):
   + Principio XII — Fail Loud, Fix the Cause: segnala ed elimina la causa, non sopprimere.
     Una capacità che fallisce va riparata nella causa, non disattivata/silenziata. La degradazione
     graziosa è ammessa solo se il fallimento è segnalato (warning/finding); la soppressione silenziosa
@@ -51,15 +63,18 @@ Principi (12):
   IX.   Osservabilità: ogni operazione a runtime è loggata
   X.    Capacità host-agnostiche
   XI.   Consumo attraverso i vehicles (CLI/MCP), non la libreria a runtime
-  XII.  Fail Loud, Fix the Cause — segnala ed elimina la causa, non sopprimere (NUOVO)
+  XII.  Fail Loud, Fix the Cause — segnala ed elimina la causa, non sopprimere
+
+Sezioni (1):
+  «Missione & stella polare» — cornice d'orientamento vincolante (NUOVA in v1.4.0)
 
 Template dipendenti:
-  ✅ .specify/templates/plan-template.md  — aggiunto gate "XII — Fail Loud, Fix the Cause" + rif. versione → v1.3.0
+  ✅ .specify/templates/plan-template.md  — aggiunto gate «Allineamento alla missione» + rif. versione → v1.4.0
   ✅ .specify/templates/spec-template.md  — nessuna modifica necessaria
   ✅ .specify/templates/tasks-template.md — nessuna modifica necessaria
 
 Artefatti correlati:
-  ✅ README.md (radice) — Vision/Mission: fonte del Principio X (creato in step precedente)
+  ✅ README.md (radice) — Vision/Mission: fonte del Principio X e della sezione «Missione & stella polare»
 Tracciabilità: ogni principio cita i requisiti/criteri Sertor che codifica (REQ-E*, CS, OBJ, SC, REQ-*).
 Fonti d'ispirazione: wiki "Clean Code" e "Clean Architecture" (Transcriptio).
 Follow-up TODO: refactor host-agnostico delle skill wiki / playbook / rituale (oggi Sertor-coupled),
@@ -73,6 +88,12 @@ Principi vincolanti per la costruzione delle **capacità** di Sertor (motori RAG
 LLM Wiki) e dei loro veicoli (**CLI**, **MCP**). Sertor è un framework **installabile su qualsiasi
 progetto** ospite: i principi valgono per ogni capacità, non solo per il core (vedi Principio X). Le
 parole chiave **MUST / SHOULD / MUST NOT** sono usate in senso RFC-2119.
+
+## Missione & stella polare (North Star)
+
+Sertor è un **framework installabile** che dota **qualsiasi progetto** — *code+doc*, *solo-doc*, *solo-code* — di **auto-conoscenza interrogabile**, **portabile e senza lock-in** (fonte di verità: [`README.md`](../../README.md); sintesi: [[mission-vision]]). Il **differenziatore** è la **fusione di codice e documenti** (requisiti, spec, wiki) in **un unico corpus interrogabile insieme**: il codice dice *cosa fa*, la documentazione dice *perché* — e il valore è restituirli **fusi** all'agente. Generare e servire sono **delegati per design** (all'agente frontier e a MCP): il fronte competitivo NON è generate/serve, ma la **qualità di ciò che si restituisce all'agente** — precisione/recall, segnale di confidenza, freschezza.
+
+**Stella polare (vincolante):** ogni capacità, feature e decisione di design DEVE **servire questa missione** e, dove tocca il retrieval, **rafforzare la fusione code+doc** invece di derivare su concern periferici. Questa cornice è il *fine* che i principi qui sotto servono; in caso di conflitto tra un design e la missione, vince la missione (o la missione va prima riconsiderata esplicitamente).
 
 ## Core Principles
 
@@ -272,11 +293,14 @@ principio, vince il principio (o il principio viene prima emendato).
   `main`/`master` (l'eccezione della fase prototipo termina con la ratifica).
 - **Constitution Check:** ogni `plan.md` MUST superare un gate di Constitution Check **prima** della
   ricerca (Phase 0) e **dopo** il design (Phase 1); un design che viola un principio non-negoziabile
-  (in particolare I e IV) MUST essere rivisto, oppure il principio emendato.
+  (in particolare I e IV) MUST essere rivisto, oppure il principio emendato. Il check include il gate
+  di **Allineamento alla missione:** il design serve la missione (auto-conoscenza portabile; **fusione
+  code+doc**; qualità del retrieval reso all'agente) e non deriva su concern periferici? Marca
+  PASS / N/A con motivo.
 - **Emendamenti:** via PR che documenta la modifica e il razionale; versionati con **semantic
   versioning** (MAJOR: rimozione/ridefinizione di un principio; MINOR: nuovo principio/sezione;
   PATCH: chiarimenti).
 - **Conformità:** il RAG di dogfooding sul prototipo è il riferimento di "cosa è buono"; le nuove
   capacità sono riviste rispetto a questi principi.
 
-**Version**: 1.3.0 | **Ratified**: 2026-05-31 | **Last Amended**: 2026-06-20
+**Version**: 1.4.0 | **Ratified**: 2026-05-31 | **Last Amended**: 2026-06-20

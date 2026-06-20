@@ -14,6 +14,18 @@ non si modifica più a mano, lo si consulta tramite il **RAG di dogfooding** (ve
 *Riferirsi al prototipo* sotto). La radice ospita la produzione (`requirements/`, nuovo
 `wiki/`, governance `.claude/` + `.specify/`).
 
+## Stella polare (mission) — regola SEMPRE attiva
+
+Ogni cosa che facciamo serve la **missione** di Sertor: dotare qualsiasi progetto di auto-conoscenza
+interrogabile, **portabile e senza lock-in**, il cui **differenziatore** è la **fusione di codice e
+documenti** (requisiti/spec/wiki) in **un unico corpus** reso all'agente — *il codice dice cosa fa, la
+documentazione dice perché*. Generare e servire sono **delegati per design** (agente frontier + MCP):
+il fronte di valore è la **qualità del retrieval reso all'agente** (precisione/recall, segnale di
+confidenza, freschezza). **A ogni step/design chiediti: questo rafforza la fusione code+doc e la qualità
+resa all'agente, o deriva su concern periferici?** È la *stella polare* della costituzione (sezione
+*Missione & stella polare*; fonte di verità `README.md`, sintesi [[mission-vision]]); il **Constitution
+Check** la verifica a ogni `plan`.
+
 ## Approcci RAG del prototipo (riferimento, in `prototype/`)
 
 | Cartella | Approccio | Note |
