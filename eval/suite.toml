@@ -1,5 +1,5 @@
-# Sertor eval suite (dogfood example). Versioned project data — no secrets.
-# kind ∈ {"symbol","nl"} (optional). Paths are repo-root-relative POSIX.
+# Sertor eval suite. Versioned project data — no secrets.
+# kind is optional (e.g. "symbol"/"nl"). Paths are POSIX, relative to the indexed root.
 
 [[case]]
 query = "EmbeddingProvider"
@@ -54,4 +54,44 @@ kind = "nl"
 [[case]]
 query = "chunking with dispatch by document type and language"
 expected = ["src/sertor_core/services/chunking/dispatch.py"]
+kind = "nl"
+
+[[case]]
+query = "HybridEngine"
+expected = ["src/sertor_core/engines/hybrid.py"]
+kind = "symbol"
+
+[[case]]
+query = "scrub_text"
+expected = ["src/sertor_core/observability/scrub.py"]
+kind = "symbol"
+
+[[case]]
+query = "CachingEmbedder"
+expected = ["src/sertor_core/adapters/embeddings/cache.py"]
+kind = "symbol"
+
+[[case]]
+query = "compare_to_baseline"
+expected = ["src/sertor_core/services/eval/regression.py"]
+kind = "symbol"
+
+[[case]]
+query = "retry with exponential backoff and jitter on transient embedder errors"
+expected = ["src/sertor_core/adapters/embeddings/_retry.py"]
+kind = "nl"
+
+[[case]]
+query = "reciprocal rank fusion combining dense and lexical retrieval"
+expected = ["src/sertor_core/engines/hybrid.py"]
+kind = "nl"
+
+[[case]]
+query = "exporting observability events as OpenTelemetry spans"
+expected = ["src/sertor_core/observability/otel.py"]
+kind = "nl"
+
+[[case]]
+query = "full-text episodic search over archived conversations"
+expected = ["src/sertor_core/services/episodic_search.py"]
 kind = "nl"
