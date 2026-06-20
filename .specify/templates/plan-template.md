@@ -40,7 +40,7 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-Gate derivati dalla costituzione (`.specify/memory/constitution.md`, v1.2.0). Marcare PASS/FAIL;
+Gate derivati dalla costituzione (`.specify/memory/constitution.md`, v1.3.0). Marcare PASS/FAIL;
 ogni FAIL va risolto o giustificato in "Complexity Tracking".
 
 - [ ] **I — Dipendenze verso l'interno (NON-NEGOZIABILE):** il design del core non importa SDK di
@@ -69,6 +69,9 @@ ogni FAIL va risolto o giustificato in "Complexity Tracking".
   capacità SOLO via CLI (`sertor-rag`/`sertor-wiki-tools`) o MCP, mai importando `sertor_core`
   direttamente (es. `build_indexer().index()`); unica eccezione gli unit/integration test. I vehicles
   cablano osservabilità/config/errori in modo uniforme; l'accesso diretto li bypassa.
+- [ ] **XII — Fail Loud, Fix the Cause:** nessuna capacità disattivata o silenziata per schivare un
+  errore; i fallimenti emergono presto (early feedback); la degradazione graziosa è ammessa solo se
+  il fallimento è segnalato (warning/finding); la causa viene rimossa, non aggirata.
 
 ## Project Structure
 

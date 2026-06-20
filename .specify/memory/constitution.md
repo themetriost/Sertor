@@ -1,10 +1,20 @@
 <!--
 SYNC IMPACT REPORT — Costituzione di Sertor
 ============================================
-Versione: 1.1.1 → 1.2.0
-Tipo di bump: MINOR (nuovo principio XI)
+Versione: 1.2.0 → 1.3.0
+Tipo di bump: MINOR (nuovo principio XII)
 
-Modifiche di questo emendamento (2026-06-15):
+Modifiche di questo emendamento (2026-06-20):
+  + Principio XII — Fail Loud, Fix the Cause: segnala ed elimina la causa, non sopprimere.
+    Una capacità che fallisce va riparata nella causa, non disattivata/silenziata. La degradazione
+    graziosa è ammessa solo se il fallimento è segnalato (warning/finding); la soppressione silenziosa
+    e il disabilitare per schivare un errore sono vietati. Generalizza a ogni capacità e veicolo la
+    regola standing «errori MCP = segnale, non rumore» già presente in CLAUDE.md/dogfooding.
+  Template dipendenti: plan-template.md — aggiunto gate "XII — Fail Loud, Fix the Cause".
+  Origine: episodio OTel (2026-06-20) in cui la mossa corretta fu riparare il collector, non
+    spegnere l'export + decisione utente (2026-06-20).
+
+Modifiche dell'emendamento precedente (2026-06-15, v1.1.1 → v1.2.0, MINOR):
   + Principio XI — Consumo attraverso i vehicles (CLI/MCP), non la libreria a runtime; unica eccezione
     gli unit/integration test. Motivazione: l'accesso diretto alla libreria (es. `build_indexer().index()`)
     bypassa il wiring trasversale dei consumatori (osservabilità, config, errori) → operazioni non
@@ -29,7 +39,7 @@ Modifiche dell'emendamento precedente (2026-06-05):
   Motivazione: codifica la mission (Sertor installabile su QUALSIASI progetto: code+doc,
   solo-doc, solo-code) e generalizza il Principio I a tutte le capacità (skill e LLM Wiki incluse).
 
-Principi (11):
+Principi (12):
   I.    Il core a dipendenze verso l'interno (la libreria è il prodotto)
   II.   Provider e backend intercambiabili dietro boundary; local-first
   III.  Semplicità giustificata (YAGNI) e unità piccole
@@ -40,15 +50,16 @@ Principi (11):
   VIII. Configurabilità centralizzata del core
   IX.   Osservabilità: ogni operazione a runtime è loggata
   X.    Capacità host-agnostiche
-  XI.   Consumo attraverso i vehicles (CLI/MCP), non la libreria a runtime (NUOVO)
+  XI.   Consumo attraverso i vehicles (CLI/MCP), non la libreria a runtime
+  XII.  Fail Loud, Fix the Cause — segnala ed elimina la causa, non sopprimere (NUOVO)
 
 Template dipendenti:
-  ✅ .specify/templates/plan-template.md  — aggiunto gate "X — Host-agnostico" + rif. versione → v1.1.0
-  ✅ .specify/templates/spec-template.md  — nessuna modifica necessaria (resta agnostico)
-  ✅ .specify/templates/tasks-template.md — nessuna modifica necessaria (resta agnostico)
+  ✅ .specify/templates/plan-template.md  — aggiunto gate "XII — Fail Loud, Fix the Cause" + rif. versione → v1.3.0
+  ✅ .specify/templates/spec-template.md  — nessuna modifica necessaria
+  ✅ .specify/templates/tasks-template.md — nessuna modifica necessaria
 
 Artefatti correlati:
-  ✅ README.md (radice) — Vision/Mission: fonte del Principio X (creato in questo step)
+  ✅ README.md (radice) — Vision/Mission: fonte del Principio X (creato in step precedente)
 Tracciabilità: ogni principio cita i requisiti/criteri Sertor che codifica (REQ-E*, CS, OBJ, SC, REQ-*).
 Fonti d'ispirazione: wiki "Clean Code" e "Clean Architecture" (Transcriptio).
 Follow-up TODO: refactor host-agnostico delle skill wiki / playbook / rituale (oggi Sertor-coupled),
@@ -226,6 +237,23 @@ proprio l'unità isolata. *Nota:* non contraddice il Principio I (la libreria re
 architetturalmente autonoma e importabile) — questo principio governa **chi consuma a runtime**, non la
 struttura delle dipendenze.
 
+### XII. Fail Loud, Fix the Cause — segnala ed elimina la causa, non sopprimere
+
+Quando una capacità fallisce, si **rimuove la causa**; MUST NOT disattivare, azzittire o aggirare la
+capacità solo per **far sparire l'errore**. Il **feedback precoce e visibile è un valore**, non rumore:
+i fallimenti MUST **emergere presto** (early feedback). La degradazione graziosa è ammessa **solo se il
+fallimento è segnalato** (warning/finding) — la **soppressione silenziosa è vietata**, così come
+spegnere una funzione per evitare di affrontarne l'errore. Rimuovere o disabilitare una capacità è
+legittimo **solo come decisione esplicita e tracciata**, mai come riflesso per schivare un errore.
+
+*Razionale:* un errore visto presto costa meno; spegnere la funzione che erra **distrugge il segnale**
+e sposta il difetto più a valle. Generalizza a ogni capacità e veicolo la regola standing «errori =
+segnale, non rumore» (oggi specifica dell'MCP/dogfooding). Non contraddice il Principio IV (gestione
+errori esplicita) né la *policy errori voluta* (core tollerante con warning ↔ motore baseline strict):
+la degradazione che **segnala** è conforme; ciò che il principio vieta è il **silenzio** o il
+**disattivare per non vedere**. Origine: episodio OTel (2026-06-20) — la mossa corretta fu riparare il
+collector, non spegnere l'export.
+
 ## Sicurezza, segreti e provenienza
 
 I segreti (chiavi API, credenziali) MUST NOT essere scritti in file versionati; transitano solo via
@@ -251,4 +279,4 @@ principio, vince il principio (o il principio viene prima emendato).
 - **Conformità:** il RAG di dogfooding sul prototipo è il riferimento di "cosa è buono"; le nuove
   capacità sono riviste rispetto a questi principi.
 
-**Version**: 1.2.0 | **Ratified**: 2026-05-31 | **Last Amended**: 2026-06-15
+**Version**: 1.3.0 | **Ratified**: 2026-05-31 | **Last Amended**: 2026-06-20

@@ -81,6 +81,16 @@ The system emits structured, leveled logs at meaningful operations and outcomes.
 Logs NEVER contain secrets (keys, tokens, credentials are redacted). An operation's
 report IS part of its observability: status is inspectable without side effects.
 
+### XI. Fail Loud, Fix the Cause
+
+When a capability fails, fix the root cause; do NOT disable, mute, or route around
+it just to make the error go away. Early, visible feedback is a value, not noise —
+failures surface early. Graceful degradation is allowed ONLY when the failure is
+reported (a warning/finding); silent suppression is prohibited, and so is switching
+a feature off to avoid confronting its error. Removing or gating a capability is
+legitimate only as an explicit, recorded decision — never as a reflex to dodge an
+error.
+
 ## Security & Secrets
 
 - Secrets (API keys, tokens, credentials) live ONLY in environment files (e.g.
@@ -102,4 +112,4 @@ report IS part of its observability: status is inspectable without side effects.
   backward-incompatible principle change, MINOR for a new principle/section, PATCH
   for clarifications. Record the version and dates below on every amendment.
 
-**Version**: 0.2.0 | **Ratified**: TODO | **Last Amended**: TODO
+**Version**: 0.3.0 | **Ratified**: TODO | **Last Amended**: TODO
