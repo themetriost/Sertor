@@ -11,6 +11,15 @@
 > che il RAG **non degradi** e tenga un livello alto; e si **raffina** la suite col feedback esplicito
 > dell'utente sui risultati delle ricerche.
 
+> **Chiarimento terminologico vincolante (utente, 2026-06-20).** In questo documento «**LLM**» e
+> «delegare a un LLM» indicano **l'agente conversazionale con cui l'utente interagisce** (es. Claude),
+> che opera tramite una **skill** e usa gli **strumenti di retrieval del progetto** (RAG/MCP) per
+> *leggere* il corpus indicizzato e *proporre* candidati. **NON** si intende una chiamata programmatica
+> a un servizio LLM terzo dentro `sertor-core`/CLI: il core e il comando di esecuzione **non chiamano
+> mai un LLM** (nessun SDK/chiave LLM per la genesi). È lo stesso pattern della skill
+> `derive-entity-types`. (L'unico LLM «di sistema» resta l'embedder del retrieval; la *generazione/
+> ragionamento* dei casi di test è dell'agente, fuori dal core.)
+
 ## 1. Contesto e problema (perché)
 
 Oggi Sertor restituisce risultati ma «funziona» non è «misurato» (Principio V). Una misura della
@@ -39,10 +48,11 @@ ripetibile su un set *del progetto*, le altre feature dell'epica non hanno un me
   dall'ospite** (query→atteso), indipendente dal codice di test, che vive nel progetto valutato.
   *CS:* su un progetto terzo (non Sertor), creo la suite e la versiono nel suo repo; nessun import di
   codice di test è necessario per usarla.
-- **OB-2 — Genesi assistita.** L'utente costruisce la suite **interattivamente** oppure **delegando a
-  un LLM** la generazione di candidati dai contenuti già indicizzati, che cura/approva.
-  *CS:* da una sessione di authoring ottengo una suite non vuota; i candidati LLM sono **proposti, non
-  imposti** (solo gli approvati vengono persistiti).
+- **OB-2 — Genesi assistita.** L'utente costruisce la suite **interattivamente** oppure **delegando
+  all'agente** (l'assistente con cui conversa, via skill) la generazione di candidati dai contenuti già
+  indicizzati, che cura/approva.
+  *CS:* da una sessione di authoring ottengo una suite non vuota; i candidati dell'agente sono
+  **proposti, non imposti** (solo gli approvati vengono persistiti).
 - **OB-3 — Misura ripetibile e deterministica.** Un comando ripetibile esegue la suite e calcola
   `hit-rate@k`/`MRR` in modo **deterministico** (stesso indice + stessa suite → stesso numero),
   accedendo al retrieval **solo via vehicle**.
@@ -77,7 +87,8 @@ ripetibile su un set *del progetto*, le altre feature dell'epica non hanno un me
 - Artefatto **suite di valutazione** del progetto (query → path attesi + metadati come `kind`),
   versionabile e fornito dall'ospite; migrazione del fixture Sertor a **esempio dogfood** in questa forma.
 - **Genesi interattiva** della suite (l'utente immette query→atteso curati).
-- **Genesi delegata a LLM** dai contenuti indicizzati, come **proposta da approvare** (giudizio).
+- **Genesi assistita dall'agente** (via skill) dai contenuti indicizzati, come **proposta da approvare**
+  (giudizio; «agente» = l'assistente dell'utente, non un servizio LLM terzo nel codice).
 - **Esecuzione ripetibile** della suite con metriche `hit-rate@k`/`MRR` deterministiche, via vehicle;
   report umano + macchina.
 - **Non-regressione**: confronto con un riferimento del progetto + segnalazione/gate del degrado;
@@ -122,15 +133,19 @@ ripetibile su un set *del progetto*, le altre feature dell'epica non hanno un me
 - **REQ-012 (Unwanted):** *If the user supplies an expected path that does not exist in the indexed
   corpus, then the system shall warn and require explicit confirmation before persisting that case.*
 
-### Gruppo C — Genesi delegata a un LLM (proposta da approvare) — *giudizio*
-- **REQ-020 (Optional):** *Where the user delegates suite generation to an LLM, the system shall derive
-  candidate query→expected cases from the already-indexed corpus and present them to the user for review.*
-- **REQ-021 (Event-driven):** *When the user reviews LLM-generated candidates, the system shall persist
-  only the approved cases into the suite and discard the rest.*
+### Gruppo C — Genesi assistita dall'agente (proposta da approvare) — *giudizio*
+> *«LLM/agente» = l'agente conversazionale dell'utente via skill (vedi Chiarimento terminologico in
+> testa), non un servizio LLM terzo chiamato dal codice.*
+- **REQ-020 (Optional):** *Where the user delegates suite generation to the agent, the agent shall
+  derive candidate query→expected cases from the already-indexed corpus, using the project's retrieval
+  tools, and present them to the user for review.*
+- **REQ-021 (Event-driven):** *When the user reviews the agent-generated candidates, the system shall
+  persist only the approved cases into the suite and discard the rest.*
 - **REQ-022 (Unwanted):** *If no index/corpus is available when generation is requested, then the
   system shall fail with an actionable message instructing the user to index the project first.*
-- **REQ-023 (Ubiquitous):** *The system shall keep LLM-assisted generation a judgment surface
-  (skill/agent) separate from the deterministic run, so the run never depends on an LLM.*
+- **REQ-023 (Ubiquitous):** *The system shall keep agent-assisted generation a judgment surface (a
+  skill the agent runs), separate from the deterministic run, so that neither the core nor the run
+  command ever invokes an LLM (no LLM SDK/key for generation).*
 
 ### Gruppo D — Esecuzione e misura (deterministica, via vehicle)
 - **REQ-030 (Ubiquitous):** *The system shall provide a repeatable command that runs the project's
@@ -183,8 +198,10 @@ ripetibile su un set *del progetto*, le altre feature dell'epica non hanno un me
   non modifica, le modalità di retrieval (Principio I).
 - **RNF-3 (Osservabilità):** l'esecuzione emette un evento strutturato con le metriche (per il trend di
   `osservabilita`), senza testo libero/segreti oltre la redazione già fatta dal core.
-- **RNF-4 (Confine D↔N):** run + metriche = deterministico (core/CLI); generazione LLM + cura/feedback =
-  giudizio (skill/agente). Le due metà non si mescolano: il run non dipende mai da un LLM.
+- **RNF-4 (Confine D↔N):** run + metriche = deterministico (core/CLI); generazione + cura/feedback =
+  giudizio dell'**agente** (skill). Le due metà non si mescolano: il run non dipende mai da un LLM, e il
+  core/CLI **non chiama mai un LLM** — la generazione è dell'agente che usa i tool di retrieval, non un
+  servizio LLM terzo cablato nel codice.
 - **RNF-5 (Prestazioni):** una suite di poche decine di casi si esegue in tempi compatibili con un uso
   interattivo/CI; il costo è dominato dalle query di retrieval, non dall'harness.
 - **RNF-6 (Privacy/segreti):** nessun segreto nell'artefatto suite/baseline; sono dati versionati del
@@ -240,11 +257,12 @@ ripetibile su un set *del progetto*, le altre feature dell'epica non hanno un me
   confronto significativo nel tempo. *Impatto:* la baseline-su-file coglie il *degrado relativo* (il caso
   d'uso «non peggiorare»); la soglia assoluta è più semplice ma arbitraria. *Raccomandazione:* **baseline
   su file versionato** come primario + tolleranza configurabile; soglia assoluta opzionale.]
-- **DA-c — La genesi LLM è una skill nuova o estende `derive-entity-types` (→ design).** [DA CHIARIRE.
-  *Contesto:* `derive-entity-types` già fa «proposta data-driven dal corpus indicizzato da approvare» —
-  stesso pattern. *Impatto:* riusare il pattern evita duplicazione ma i due output sono diversi
-  (entity_types vs casi di test). *Raccomandazione:* **skill dedicata** che riusa il *pattern* (non il
-  codice) di `derive-entity-types`.]
+- **DA-c — La genesi assistita è una skill nuova o estende `derive-entity-types` (→ design).** [DA
+  CHIARIRE. *Contesto:* la generazione è dell'**agente via skill** (non un servizio LLM terzo);
+  `derive-entity-types` già fa «proposta data-driven dal corpus indicizzato da approvare» — stesso
+  pattern (l'agente legge il corpus coi tool RAG/MCP e propone). *Impatto:* riusare il pattern evita
+  duplicazione ma i due output sono diversi (entity_types vs casi di test). *Raccomandazione:* **skill
+  dedicata** che riusa il *pattern* (non il codice) di `derive-entity-types`.]
 - **DA-d — Superficie di comando (→ design).** [DA CHIARIRE: un sottocomando di esecuzione (es.
   `sertor-rag eval`) per il run/non-regressione deterministico, e *separatamente* il flusso di authoring
   (interattivo + LLM) come skill/comando. *Contesto:* il confine D↔N (RNF-4) suggerisce comando
