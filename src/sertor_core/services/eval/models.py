@@ -26,10 +26,140 @@ class EvalCase:
 
 
 @dataclass(frozen=True)
-class EvalSuite:
-    """The evaluation suite as project data (REQ-001/002/006): an ordered set of cases."""
+class GraphCase:
+    """One graph-navigation case (066, REQ-001/003): relation + target → expected set of refs.
 
-    cases: tuple[EvalCase, ...]
+    `relation` ∈ MVP set (`"who_calls"`/`"defines"`); `target` is a symbol NAME; `expected` is the
+    expected SET of `ref` (`path#qualname`), stored as an ordered tuple for a diffable TOML (the
+    order does not matter to the metric). `expected` may be EMPTY (expected «no callers») — a
+    legitimate case, NOT a validation error (deliberate asymmetry vs `EvalCase`, which needs ≥1
+    path). Validation (relation supported, target non-empty, expected well-formed) is done by the
+    loader (`GraphSuiteValidationError` naming the case), not in the constructor.
+    """
+
+    relation: str
+    target: str
+    expected: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class SetMetric:
+    """Set-based metric of one graph-navigation case (066, REQ-020/023).
+
+    No rank, no @k (Won't): the navigation answer is a SET. Deterministic edge cases (REQ-015):
+    both empty → P=R=F1=1.0, `exact=True`; `expected` empty & `got` non-empty → P=0/R=1/F1=0;
+    `got` empty & `expected` non-empty → P=1/R=0/F1=0.
+    """
+
+    precision: float
+    recall: float
+    f1: float
+    exact: bool
+    got: tuple[str, ...]
+    expected: tuple[str, ...]
+    missing: tuple[str, ...]   # expected − got
+    extra: tuple[str, ...]     # got − expected
+
+
+@dataclass(frozen=True)
+class GraphCaseResult:
+    """Per-case outcome of a graph-navigation run (066)."""
+
+    relation: str
+    target: str
+    metric: SetMetric
+
+
+@dataclass(frozen=True)
+class GraphEvalReport:
+    """Outcome of a graph-navigation run (066, REQ-021/030).
+
+    Rendered in a DISTINCT section from the IR `EvalReport` (hit@k/MRR). `mean_f1` is the gate
+    metric (DA-a); `mean_recall`/`mean_precision` are secondary. An empty run (no graph_cases) →
+    all means 0.0 and `cases_count=0` (honest empty report, exit 0).
+    """
+
+    cases: tuple[GraphCaseResult, ...]
+    mean_precision: float
+    mean_recall: float
+    mean_f1: float
+    by_relation: dict[str, float]
+    cases_count: int
+
+
+@dataclass(frozen=True)
+class GraphBaseline:
+    """Recorded reference metrics for the graph-navigation non-regression gate (066, REQ-031).
+
+    Persisted as `eval/graph_baseline.toml` (versioned, DISTINCT from the IR `eval/baseline.toml`).
+    Built from a current `GraphEvalReport` only on an explicit `--record-baseline` (REQ-044-twin).
+    NEVER contains the cases' `expected` (the snapshot lives in `[[graph_case]]`, DA-c).
+    `recorded_at` is informative (ISO-8601 UTC).
+    """
+
+    mean_f1: float
+    mean_recall: float
+    mean_precision: float
+    cases: int
+    recorded_at: str
+
+
+@dataclass(frozen=True)
+class GraphMetricDelta:
+    """One graph metric's current-vs-baseline comparison (066, REQ-032).
+
+    The gate fires ONLY on `mean_f1` (`regressed` may be True); `mean_recall`/`mean_precision` are
+    informative deltas (`regressed=False` always — DA-a).
+    """
+
+    name: str
+    current: float
+    baseline: float
+    delta: float          # current - baseline
+    regressed: bool       # delta < -tolerance (only "mean_f1" gates)
+
+
+@dataclass(frozen=True)
+class GraphRegressionVerdict:
+    """Outcome of the graph non-regression gate (066, REQ-032/033).
+
+    `verdict` ∈ {`"pass"`, `"regressed"`, `"no-baseline"`}. `exit_code` is 0 for pass/no-baseline,
+    1 when regressed. Twin of `RegressionVerdict` (IR).
+    """
+
+    verdict: str
+    deltas: tuple[GraphMetricDelta, ...]
+    tolerance: float
+
+    def exit_code(self) -> int:
+        return 1 if self.verdict == "regressed" else 0
+
+
+@dataclass(frozen=True)
+class RefValidation:
+    """Write-time validation of expected `ref`s against the graph (066, REQ-042).
+
+    Twin of `PathValidation` (065) but on the GRAPH: a `ref` is *verifiable* if it appears among the
+    refs the graph derives for its `(relation, target)`. `graph_available` is False when the graph
+    is not built — honest degradation, not a silent pass: the caller warns and requires `--confirm`.
+    """
+
+    checked: tuple[str, ...]
+    unverifiable: tuple[str, ...]   # refs the graph does not confirm (named, not silently dropped)
+    graph_available: bool
+
+
+@dataclass(frozen=True)
+class EvalSuite:
+    """The evaluation suite as project data (REQ-001/002/006): an ordered set of cases.
+
+    Hosts BOTH the IR `cases` (`[[case]]`) and the navigation `graph_cases` (`[[graph_case]]`, 066,
+    DA-d). `graph_cases` is additive (default `()` → an IR-only suite is unchanged); the IR
+    projections (`to_ground_truth`/`kinds`/`rebased`) operate only on `cases` and are invariant.
+    """
+
+    cases: tuple[EvalCase, ...] = ()
+    graph_cases: tuple[GraphCase, ...] = ()
 
     def to_ground_truth(self) -> GroundTruth:
         """Project to the core `GroundTruth` shape `(query, list(expected))` for `evaluate`.

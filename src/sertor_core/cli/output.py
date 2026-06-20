@@ -21,7 +21,10 @@ from sertor_core.domain.memory import ArchivedSession, SessionSummary
 from sertor_core.engines.evaluation import EvalReport
 from sertor_core.services.episodic_search import EpisodicResults
 from sertor_core.services.eval.models import (
+    GraphEvalReport,
+    GraphRegressionVerdict,
     PathValidation,
+    RefValidation,
     RegressionVerdict,
 )
 from sertor_core.services.memory_archive import ArchiveRunReport
@@ -362,6 +365,141 @@ def format_path_validation(pv: PathValidation, *, json: bool) -> str:
     return (
         f"warning: {len(pv.missing)} of {len(pv.checked)} path(s) NOT in the index: "
         + ", ".join(pv.missing)
+    )
+
+
+def _case_tag(metric) -> str:
+    """`[exact]`/`[miss ]`/`[part ]` for one case (066, TASK-A02 rules)."""
+    if metric.exact:
+        return "exact"
+    if metric.recall < 1.0 and metric.precision == 1.0:
+        return "miss "
+    return "part "
+
+
+def _graph_verdict_line(verdict: GraphRegressionVerdict) -> str:
+    """One-line graph non-regression summary (066)."""
+    label = {"pass": "PASS", "regressed": "REGRESSED", "no-baseline": "NO-BASELINE"}[
+        verdict.verdict
+    ]
+    deltas = "  ".join(f"{d.name} Δ={d.delta:+.2f}" for d in verdict.deltas)
+    head = f"non-regression: {label} (tolerance={verdict.tolerance:.2f})"
+    return f"{head}  {deltas}".rstrip()
+
+
+def format_graph_eval_report(
+    report: GraphEvalReport, verdict: GraphRegressionVerdict, *, json: bool
+) -> str:
+    """Format a graph-navigation run: set metrics + per-case detail (066, REQ-021/030/SC-002).
+
+    Human: header + means + by-relation + one row per case (`[exact]`/`[part ]`/`[miss ]` + relation
+    + target + P/R/F1 + `+extra`/`-missing` when non-empty) + a non-regression line. JSON: the
+    informational equivalent. Rendered in a DISTINCT section from the IR `eval` report (REQ-030).
+    """
+    if json:
+        return _json.dumps(
+            {
+                "cases": report.cases_count,
+                "mean_f1": round(report.mean_f1, 6),
+                "mean_recall": round(report.mean_recall, 6),
+                "mean_precision": round(report.mean_precision, 6),
+                "by_relation": {k: round(v, 6) for k, v in report.by_relation.items()},
+                "per_case": [
+                    {
+                        "relation": c.relation,
+                        "target": c.target,
+                        "precision": round(c.metric.precision, 6),
+                        "recall": round(c.metric.recall, 6),
+                        "f1": round(c.metric.f1, 6),
+                        "exact": c.metric.exact,
+                        "got": list(c.metric.got),
+                        "expected": list(c.metric.expected),
+                        "missing": list(c.metric.missing),
+                        "extra": list(c.metric.extra),
+                    }
+                    for c in report.cases
+                ],
+                "non_regression": {
+                    "verdict": verdict.verdict,
+                    "tolerance": verdict.tolerance,
+                    "deltas": [
+                        {
+                            "name": d.name,
+                            "current": d.current,
+                            "baseline": d.baseline,
+                            "delta": d.delta,
+                            "regressed": d.regressed,
+                        }
+                        for d in verdict.deltas
+                    ],
+                },
+            }
+        )
+    lines = [
+        f"graph navigation eval  cases={report.cases_count}",
+        f"mean_f1={report.mean_f1:.2f}  mean_recall={report.mean_recall:.2f}  "
+        f"mean_precision={report.mean_precision:.2f}",
+    ]
+    if report.by_relation:
+        by_rel = "  ".join(f"{rel}={f1:.2f}" for rel, f1 in sorted(report.by_relation.items()))
+        lines.append(f"by-relation: {by_rel}")
+    for c in report.cases:
+        m = c.metric
+        row = (
+            f"[{_case_tag(m)}] {c.relation:<10} {c.target:<22} "
+            f"P={m.precision:.2f} R={m.recall:.2f} F1={m.f1:.2f}"
+        )
+        if m.extra:
+            row += f"  +extra: {', '.join(m.extra)}"
+        if m.missing:
+            row += f"  -missing: {', '.join(m.missing)}"
+        lines.append(row)
+    lines.append(_graph_verdict_line(verdict))
+    return "\n".join(lines)
+
+
+def format_graph_regression(verdict: GraphRegressionVerdict, *, json: bool) -> str:
+    """Format a standalone graph non-regression verdict (066). Reusable."""
+    if json:
+        return _json.dumps(
+            {
+                "verdict": verdict.verdict,
+                "tolerance": verdict.tolerance,
+                "deltas": [
+                    {
+                        "name": d.name,
+                        "current": d.current,
+                        "baseline": d.baseline,
+                        "delta": d.delta,
+                        "regressed": d.regressed,
+                    }
+                    for d in verdict.deltas
+                ],
+            }
+        )
+    return _graph_verdict_line(verdict)
+
+
+def format_ref_validation(rv: RefValidation, *, json: bool) -> str:
+    """Format a write-time ref validation (066, REQ-042). Exit 0 always (it is a check)."""
+    if json:
+        return _json.dumps(
+            {
+                "checked": list(rv.checked),
+                "unverifiable": list(rv.unverifiable),
+                "graph_available": rv.graph_available,
+            }
+        )
+    if not rv.graph_available:
+        return (
+            f"graph not available: cannot verify {len(rv.checked)} ref(s) "
+            "— index the project first with `sertor-rag index .`"
+        )
+    if not rv.unverifiable:
+        return f"all {len(rv.checked)} ref(s) confirmed by the graph"
+    return (
+        f"warning: {len(rv.unverifiable)} of {len(rv.checked)} ref(s) NOT confirmed by the graph: "
+        + ", ".join(rv.unverifiable)
     )
 
 

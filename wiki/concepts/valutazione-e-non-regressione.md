@@ -1,10 +1,10 @@
 ---
 title: Valutazione del retrieval & non-regressione (suite di valutazione host-side)
 type: concept
-tags: [retrieval-qualita, valutazione, ground-truth, non-regressione, eval, hit-rate, mrr, feat-001]
+tags: [retrieval-qualita, valutazione, ground-truth, non-regressione, eval, hit-rate, mrr, feat-001, graph-eval, precision, recall, f1, feat-011]
 created: 2026-06-20
 updated: 2026-06-20
-sources: ["specs/065-ground-truth-valutazione/plan.md", "requirements/retrieval-qualita/ground-truth-valutazione/requirements.md", "src/sertor_core/services/eval/", "src/sertor_core/engines/evaluation.py"]
+sources: ["specs/065-ground-truth-valutazione/plan.md", "specs/066-valutazione-navigazione-grafo/plan.md", "requirements/retrieval-qualita/ground-truth-valutazione/requirements.md", "src/sertor_core/services/eval/", "src/sertor_core/engines/evaluation.py"]
 ---
 
 # Valutazione del retrieval & non-regressione
@@ -104,13 +104,51 @@ Dimostra che il **sistema composito è sano** e isola i difetti *veri*: un simbo
 (materia di FEAT-003). *Idea correlata registrata:* **vedere nella TUI quando si scende sul grafo vs la
 ricerca densa/ibrida** (roadmap → Nuove funzionalità, epica `osservabilita`).
 
+## Valutazione SET-BASED della navigazione del grafo (FEAT-011)
+
+Una **seconda metà** della valutazione emerge dalle query relazionali del code-graph: «chi chiama X?»,
+«da cosa dipende Y?». L'oracolo a **insiemi** (non @k, non rank) è parallelo e complementare alla
+metrica IR.
+
+| Aspetto | Hit@k (IR) | Set-based (graph) |
+|---|---|---|
+| Domanda | Trova il documento top-1 in un ranking? | Tutti i risultati relazionali corretti? |
+| Oracolo | Elenco ordinato, misura posizione (MRR) | Insieme, misura copertura (precision/recall/F1) |
+| Semantica | Similarità: la risposta più rilevante per rank | Correttezza strutturale: il grafo conosce la relazione? |
+| Assenza | Silenzio su cosa manca (item non trovato) | Esplicita: nodo non toccato ↔ nodo falso positivo |
+
+Le **query symbol** come `find_symbol("log_event")` chiedono un **nodo esatto** — il grafo non risponde
+«top-10 risultati ordinati», bensì una lista di path/nomi qualificati. La correttezza non è una ranking
+ma l'**esattezza di copertura**: ricorda *tutte* le definizioni? ricorda solo definizioni vere?
+
+**Architettura:** un oracolo a insiemi **nuovo e separato** — modulo `services/eval/graph_eval.py`
+(navigazione + confronto puri) con runner `graph_runner.py` (+ evento `graph_eval` metrics-only),
+regressione `graph_regression.py` e I/O `graph_baseline_io.py`. È **parallelo** a `evaluate` e **distinto**
+da `RoutedEvalEngine` (che resta il router per-kind della metrica IR, symbol→`find_symbol` su path). Naviga
+via la porta `CodeGraph` (vehicle Principio XI, riusa `build_graph_service`). Nuovo tipo di caso versionato
+`[[graph_case]]` in `eval/suite.toml`: `relation` ∈ {`who_calls`, `defines`} (`defines` mappa su
+`find_symbol` della porta; `depends_on`/`related_docs` rinviate, Could), `target` (simbolo da cui navigare),
+`expected` (insieme di `ref` `path#qualname`). Metriche pure: **precision** (frazione di risultati veri),
+**recall** (frazione di veri trovati), **F1** (media armonica), per caso e aggregate. **Baseline separata**
+(`eval/graph_baseline.toml`) + manopola `SERTOR_GRAPH_EVAL_TOLERANCE`; il gate di non-regressione scatta sul
+**F1 medio**. Gate match-esatto opzionale (`--exact`/`SERTOR_GRAPH_EVAL_EXACT`).
+
+**Skill (genesi assistita):** `eval-suite-author` estesa a proporre i `[[graph_case]]` (snapshot dal
+grafo del corpus, da approvare). Nessun LLM nel core: l'agente via skill propone e persiste solo via
+vehicle (`graph-eval add-case`).
+
+**Run misurato:** sul dogfood (4 `[[graph_case]]`) con `sertor-rag graph-eval run` → mean_f1=0.96,
+recall=1.00, precision=0.94 (defines=1.00, who_calls=0.93). L'unico parziale è `who_calls build_graph_service`
+con un **extra** legittimo (un test che lo chiama, precision 0.75 su quel caso): raffinamento di authoring,
+non un difetto del grafo.
+
 ## Confini
 
-Misura e presidia; **non** ridefinisce le modalità di retrieval ([[retrieval-core]]). Fuori ambito:
-confronto live su provider forte/cloud (FEAT-002), miglioramento `search_code` architetturale (FEAT-003),
-calibrazione delle soglie dal ground-truth (FEAT-004), tecniche avanzate (FEAT-005/006/007), trend storico
-(`osservabilita` FEAT-009).
+Misura e presidia; **non** ridefinisce le modalità di retrieval ([[retrieval-core]]) né di navigazione
+([[code-graph]]). Fuori ambito: confronto live su provider forte/cloud (FEAT-002), miglioramento
+`search_code` architetturale (FEAT-003), calibrazione delle soglie dal ground-truth (FEAT-004),
+tecniche avanzate (FEAT-005/006/007), trend storico (`osservabilita` FEAT-009).
 
 ## Pagine collegate
 [[retrieval-core]] · [[deterministic-vs-judgment]] · [[thin-consumer]] · [[indexing-and-retrieval]] ·
-[[retrieval-confidence]] · [[sertor-rag-cli]] · [[assistant-targeting]] · [[roadmap]]
+[[retrieval-confidence]] · [[code-graph]] · [[sertor-rag-cli]] · [[assistant-targeting]] · [[roadmap]]

@@ -509,6 +509,39 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/066-valutazione-navigazione-grafo/plan.md` (FEAT-011 epica **retrieval-qualita** — **valutazione
+della navigazione del grafo (set-based)**: rende **misurabile** la potenza relazionale del code-graph,
+estendendo l'harness IR di FEAT-001 con un **secondo oracolo a insiemi** per i casi relazionali, **senza**
+toccare casi/metriche path-based. Un caso = **relazione + simbolo target + insieme atteso di `ref`**
+(`[[graph_case]]` nello **stesso** `eval/suite.toml`, accanto ai `[[case]]` IR); run deterministico via
+vehicle **`sertor-rag graph-eval run`** → `precision`/`recall`/`F1` per **insiemi** (NIENTE rank/@k) con
+dettaglio `expected`/`got`/`missing`/`extra`; gate di non-regressione sul **F1 medio** con **baseline
+SEPARATA** (`eval/graph_baseline.toml`, `SERTOR_GRAPH_EVAL_TOLERANCE` default 0.0; recall/precision medi
+**secondari** nel report); gate **match-esatto** opzionale (`--exact`/`SERTOR_GRAPH_EVAL_EXACT`); seam per
+genesi assistita (skill `eval-suite-author` estesa). **4 forche di design decise:** **(DA-a)** gate su
+`mean_f1` + baseline su file separato (riusa il *meccanismo* di tolleranza IR, file/manopola distinti);
+**(DA-b)** `related_docs` (unità=documento) **fuori MVP** (Could) — schema `expected` agnostico al tipo
+(tupla di stringhe) → non preclude i documenti; **(DA-c)** distinte NETTAMENTE **baseline** (pavimento
+metrico, `--record-baseline`, deterministico) e **snapshot** (insiemi attesi = `[[graph_case]].expected`,
+ri-autorato via skill/`amend-case` = giudizio): `--record-baseline` **non tocca mai** gli `expected`;
+**(DA-d)** confermato `[[graph_case]]` nello stesso file (writer ri-architettato per **preservare entrambe**
+le sezioni). **Ancoraggio (verificato MCP):** navigazione riusa la porta `CodeGraph`
+(`who_calls`→chiamanti, `defines`→`find_symbol` definizioni — **non esiste** `defines` nella porta) via
+`build_graph_service` (factory esistente); identità nodo = `SymbolHit.ref` (`path#qualname`); oracolo
+set-based = **modulo NUOVO** `services/eval/graph_eval.py` parallelo a `evaluate` (NON dentro
+`RoutedEvalEngine`, NON dentro `evaluate` rank-based); entità additive in `models.py`
+(`GraphCase`/`SetMetric`/`GraphEvalReport`/`GraphBaseline`/`GraphRegressionVerdict`/`RefValidation`;
+`EvalSuite + graph_cases` default `()`); `suite_io` esteso (legge/serializza `[[graph_case]]` preservando i
+`[[case]]`); `graph_baseline_io`/`graph_regression`/`graph_runner` nuovi; gruppo CLI `graph-eval`
+(run/add-case/amend-case/validate-ref). **Nodi:** evento osservabilità `graph_eval` **metrics-only**
+(`cases`/`relations` a cardinalità chiusa/medie/regressed/tolerance — mai nomi/path/insiemi, gemello
+`eval`/OTel 061); manopole `SERTOR_GRAPH_EVAL_*` nei template `.env` dell'installer; estensione skill =
+**debito di completamento P2** (gruppo E/Should). **Additivo a leve spente** (costo/comportamento identici,
+RNF-1); `sertor-core` invariato fuori da `services/eval/`+`composition`+`cli`+`settings`+`errors`. Nessuna
+nuova **porta** (riuso `CodeGraph`), nessuna nuova **dipendenza** (serializzatore a mano). Constitution
+**PASS 11/11** (pre e post-design) senza deroghe. **Nota di processo:** `setup-plan.ps1`/`speckit-plan/
+SKILL.md` ASSENTI → parametri per convenzione dal branch (forma da `065`), nessun hook eseguito; MCP
+`sertor-rag` interrogato (nessun errore tool). Branch `066-valutazione-navigazione-grafo`. Storico:
 `specs/065-ground-truth-valutazione/plan.md` (FEAT-001 epica **retrieval-qualita** — **ground-truth &
 valutazione della pertinenza**: promuove l'harness di valutazione da *fixture di test* a **capacità
 host-side**: una **suite-dato versionata** del progetto (`eval/suite.toml`, **TOML**), un **run

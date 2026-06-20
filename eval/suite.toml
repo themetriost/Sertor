@@ -1,4 +1,6 @@
 # Sertor eval suite. Versioned project data — no secrets.
+# [[case]]       = retrieval (IR) — query → expected paths (hit@k/MRR).
+# [[graph_case]] = graph navigation — relation + target → expected refs (precision/recall/F1).
 # kind is optional (e.g. "symbol"/"nl"). Paths are POSIX, relative to the indexed root.
 
 [[case]]
@@ -95,3 +97,58 @@ kind = "nl"
 query = "full-text episodic search over archived conversations"
 expected = ["src/sertor_core/services/episodic_search.py"]
 kind = "nl"
+
+[[case]]
+query = "NetworkxCodeGraph"
+expected = ["src/sertor_core/adapters/graph/networkx_graph.py"]
+kind = "symbol"
+
+[[case]]
+query = "who_calls"
+expected = ["src/sertor_core/adapters/graph/networkx_graph.py", "src/sertor_core/domain/ports.py"]
+kind = "symbol"
+
+[[case]]
+query = "related_docs"
+expected = ["src/sertor_core/adapters/graph/networkx_graph.py", "src/sertor_core/domain/ports.py"]
+kind = "symbol"
+
+[[case]]
+query = "extract_graph"
+expected = ["src/sertor_core/services/graph_extraction.py"]
+kind = "symbol"
+
+[[case]]
+query = "extracting symbols and call edges to build the code graph during indexing"
+expected = ["src/sertor_core/services/graph_extraction.py"]
+kind = "nl"
+
+[[case]]
+query = "where is the reranker applied to reorder hybrid retrieval results"
+expected = ["tests/unit/test_rerank.py", "src/sertor_core/engines/hybrid.py"]
+kind = "nl"
+
+[[case]]
+query = "spiegami come funziona il retrieval hybrid e dove e' implementato"
+expected = ["docs/retrieval.md", "wiki/concepts/hybrid-retrieval.md", "src/sertor_core/engines/hybrid.py"]
+kind = "nl"
+
+[[graph_case]]
+relation = "defines"
+target = "build_facade"
+expected = ["src/sertor_core/composition.py#build_facade"]
+
+[[graph_case]]
+relation = "defines"
+target = "collection_name"
+expected = ["src/sertor_core/composition.py#collection_name"]
+
+[[graph_case]]
+relation = "who_calls"
+target = "build_graph_service"
+expected = ["src/sertor_core/composition.py#build_indexer", "src/sertor_core/composition.py#_EvalRunner.run_by_kind", "src/sertor_mcp/server.py#_graph"]
+
+[[graph_case]]
+relation = "who_calls"
+target = "a_symbol_with_no_callers"
+expected = []
