@@ -93,20 +93,25 @@ migliorarla, senza toccare le modalità di retrieval del core (le consuma, non l
 
 | ID | Feature | Valore / obiettivo | Priorità (MoSCoW) | Stato |
 |----|---------|--------------------|-------------------|-------|
-| FEAT-001 | **Ground-truth & valutazione della pertinenza** — set query→atteso versionato + comando metriche (`hit-rate@k`/`MRR`), chiusura definitiva degli xfail con dati reali | Trasforma «funziona» in «misurato» (Principio V) | **Must** | da decomporre |
+| FEAT-001 | **Ground-truth & valutazione della pertinenza** — ciclo di vita di una suite di valutazione *del progetto ospite*: genesi (interattiva), artefatto-dato versionato (query→atteso), esecuzione ripetibile (`hit-rate@k`/`MRR` via vehicle), **non-regressione** (riferimento + gate); chiusura xfail con dati reali. *(Riformulata 2026-06-20: host-side, non solo dogfood.)* | Trasforma «funziona» in «misurato e presidiato» (Principio V) | **Must** | **decomposta** → [`ground-truth-valutazione/`](ground-truth-valutazione/requirements.md) |
 | FEAT-002 | **Eval comparativa live su provider reale** (REQ-051, marker `cloud`) — confronto motori/provider col modello forte | Misura la qualità reale oltre il mock | **Should** | da decomporre |
 | FEAT-003 | **Qualità di `search_code` su query architetturali** — migliorare la pertinenza sull'intento ampio (non solo simboli) | Il retrieval di codice è il caso d'uso primario | **Should** | da decomporre |
 | FEAT-004 | **Calibrazione delle soglie di pertinenza** — derivare `SERTOR_MIN_SCORE` e affini dal ground-truth | Confidenza/astensione affidabili, non arbitrarie | **Should** | da decomporre |
 | FEAT-005 | **Query transformation (multi-query / HyDE)** — riformulazione/espansione della query (opt-in) [ex REQ-H7] | Recupero migliore su query vaghe | **Could** | da decomporre — da `hardening-produzione` |
 | FEAT-006 | **Filtro per metadata esteso** — restrizione del retrieval per attributi (path/linguaggio/doc_type…) [ex REQ-H8] | Precisione su corpora grandi/eterogenei | **Could** | da decomporre — da `hardening-produzione` |
 | FEAT-007 | **Contextual retrieval (Anthropic)** — arricchimento del chunk con contesto di documento prima dell'embedding (opt-in) [ex REQ-H11] | Meno chunk «ciechi», più pertinenza | **Could** | da decomporre — da `hardening-produzione` |
+| FEAT-008 | **Generazione assistita della suite (LLM-from-corpus, da approvare)** — un LLM propone candidati query→atteso dai contenuti indicizzati; l'utente cura/approva. Riusa il pattern di `derive-entity-types`. *(Promossa da FEAT-001, Gruppo C; vedi `ground-truth-valutazione/` §5C.)* | Abbassa l'attrito di creare il ground-truth (R-1) | **Should** | requisiti in [`ground-truth-valutazione/`](ground-truth-valutazione/requirements.md) (Gruppo C) |
+| FEAT-009 | **Feedback esplicito di pertinenza (human-in-the-loop)** — l'utente giudica i risultati di ricerca (pertinente/no) e il giudizio raffina gli `expected` della suite. *(Promossa da FEAT-001, Gruppo F; vedi `ground-truth-valutazione/` §5F.)* | Suite viva che migliora con l'uso | **Should** | requisiti in [`ground-truth-valutazione/`](ground-truth-valutazione/requirements.md) (Gruppo F) |
 
 > **Nota sull'MVP:** la prima release utile è **FEAT-001** (il ground-truth e la misura): senza un numero
 > ripetibile, le altre feature non hanno un metro per dirsi migliorie. FEAT-002/003/004 (Should) seguono;
 > le tecniche avanzate (Could) si attivano e si giustificano **solo se** misurate meglio della baseline.
 
 ## 9. Domande aperte
-- **DA-Q-a — Forma del ground-truth:** [DA CHIARIRE: il set query→atteso è per-corpus versionato nel repo,
-  generato semi-automaticamente, o curato a mano? Default proposto: piccolo set curato, versionato, sul dogfood.]
+- **DA-Q-a — Forma del ground-truth:** ✅ **RISOLTA (utente, 2026-06-20):** è un **artefatto-dato del
+  progetto ospite**, versionato e **fornito dall'ospite** (non un fixture Python), creato a mano *oppure*
+  delegando la generazione a un LLM (proposta da approvare). Il set Sertor diventa l'**esempio dogfood** in
+  questa forma. Il formato esatto (TOML/JSON) resta dettaglio di design (vedi `ground-truth-valutazione/`
+  §10 DA-a). Capacità host-side, non solo dogfood.
 - **DA-Q-b — Confine con l'osservabilità:** confermato che il **trend** nel tempo è di `osservabilita`
   (FEAT-009); qui si produce la misura puntuale e il ground-truth, non la storicizzazione.
