@@ -23,6 +23,7 @@ from sertor_core.composition import (
     build_episodic_search,
     build_eval_runner,
     build_facade,
+    build_graph_eval_runner,
     build_indexed_docs,
     build_indexer,
     build_memory_archiver,
@@ -32,6 +33,7 @@ from sertor_core.composition import (
 from sertor_core.config.settings import Settings
 from sertor_core.domain.errors import (
     ConfigError,
+    GraphRegressionDetected,
     IngestionError,
     RegressionDetected,
     SertorError,
@@ -44,10 +46,22 @@ from sertor_core.services.eval.baseline_io import (
     now_iso_utc,
     write_baseline,
 )
-from sertor_core.services.eval.models import Baseline, EvalCase
+from sertor_core.services.eval.graph_baseline_io import (
+    now_iso_utc as graph_now_iso_utc,
+)
+from sertor_core.services.eval.graph_baseline_io import (
+    write_graph_baseline,
+)
+from sertor_core.services.eval.graph_runner import validate_refs
+from sertor_core.services.eval.models import Baseline, EvalCase, GraphBaseline, GraphCase
 from sertor_core.services.eval.regression import compare_to_baseline
 from sertor_core.services.eval.runner import emit_eval_event, validate_paths
-from sertor_core.services.eval.suite_io import add_case, load_suite
+from sertor_core.services.eval.suite_io import (
+    add_case,
+    add_graph_case,
+    amend_graph_case,
+    load_suite,
+)
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -101,6 +115,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     _add_memory_parser(sub)
     _add_eval_parser(sub)
+    _add_graph_eval_parser(sub)
 
     return parser
 
@@ -168,6 +183,88 @@ def _add_eval_parser(sub) -> None:
                        help="corpus namespace; overrides SERTOR_CORPUS")
     _add_logging_flags(p_val)
     p_val.set_defaults(handler=_cmd_eval_validate)
+
+
+def _add_graph_eval_parser(sub) -> None:
+    """`graph-eval` command group: set-based navigation eval + non-regression gate (066, US1/US2).
+
+    Separate from `eval` (IR): set-based semantics + a distinct baseline (`graph_baseline.toml`).
+    Sub-subcommands `run`/`add-case`/`amend-case`/`validate-ref`, each registering its handler via
+    `set_defaults`. `--relation` uses `choices` (usage error exit 2 outside the MVP set, REQ-005).
+    The run is a deterministic VEHICLE (Principio XI): never an LLM.
+    """
+    p_ge = sub.add_parser(
+        "graph-eval",
+        help="set-based evaluation of code-graph navigation + non-regression gate",
+        description="Measure precision/recall/F1 of graph navigation (who_calls/defines) against "
+                    "the [[graph_case]] of eval/suite.toml and gate non-regression on mean_f1.",
+    )
+    gsub = p_ge.add_subparsers(dest="graph_eval_command", required=True, metavar="subcommand")
+
+    p_run = gsub.add_parser(
+        "run", help="evaluate the [[graph_case]] and report set metrics + non-regression verdict",
+        description="Loads eval/suite.toml, navigates the code graph, computes precision/recall/F1 "
+                    "and gates mean_f1 against eval/graph_baseline.toml (exit 1 on regression).",
+    )
+    p_run.add_argument("--record-baseline", action="store_true",
+                       help="record/update eval/graph_baseline.toml with the current metrics")
+    p_run.add_argument("--exact", action="store_true",
+                       help="enable the exact-set gate: a case with got != expected fails the run")
+    p_run.add_argument("--json", action="store_true", help="report as a JSON object")
+    p_run.add_argument("--corpus", default=None,
+                       help="corpus namespace; overrides SERTOR_CORPUS")
+    _add_logging_flags(p_run)
+    p_run.set_defaults(handler=_cmd_graph_eval_run)
+
+    p_add = gsub.add_parser(
+        "add-case", help="add a graph-navigation case (validated against the graph)",
+        description="Persists a (relation, target → expected refs) [[graph_case]] in eval/suite. "
+                    "A ref the graph does not confirm warns and requires --confirm.",
+    )
+    _add_graph_case_args(p_add)
+    p_add.set_defaults(handler=_cmd_graph_eval_add)
+
+    p_amend = gsub.add_parser(
+        "amend-case", help="re-author the expected refs of an existing graph-navigation case",
+        description="Updates the expected set of the [[graph_case]] identified by (relation, "
+                    "target). Same write-time validation as add-case; absent case → exit 1.",
+    )
+    _add_graph_case_args(p_amend)
+    p_amend.set_defaults(handler=_cmd_graph_eval_amend)
+
+    p_vr = gsub.add_parser(
+        "validate-ref", help="navigate (relation, target) and check ref(s) (primitive for skills)",
+        description="Reports which of the given refs are confirmed by the graph. Exit 0 always "
+                    "(it is a check, not a gate). Vehicle for the eval-authoring skills.",
+    )
+    p_vr.add_argument("--relation", required=True, choices=["who_calls", "defines"],
+                      help="navigation relation (MVP: who_calls | defines)")
+    p_vr.add_argument("--target", required=True, help="the target symbol name")
+    p_vr.add_argument("refs", nargs="*", help="zero or more refs (path#qualname) to check")
+    p_vr.add_argument("--json", action="store_true", help="report as a JSON object")
+    p_vr.add_argument("--corpus", default=None,
+                      help="corpus namespace; overrides SERTOR_CORPUS")
+    _add_logging_flags(p_vr)
+    p_vr.set_defaults(handler=_cmd_graph_eval_validate_ref)
+
+
+def _add_graph_case_args(p: argparse.ArgumentParser) -> None:
+    """Shared args for `graph-eval add-case` / `amend-case`."""
+    p.add_argument("--relation", required=True, choices=["who_calls", "defines"],
+                   help="navigation relation (MVP: who_calls | defines)")
+    p.add_argument("--target", required=True, help="the target symbol name")
+    p.add_argument("--expected", required=True,
+                   help="comma-separated expected ref(s) (path#qualname); empty for «none»")
+    p.add_argument("--confirm", action="store_true",
+                   help="write even if a ref is not confirmed by the graph")
+    p.add_argument("--json", action="store_true", help="report as a JSON object")
+    p.add_argument("--corpus", default=None,
+                   help="corpus namespace; overrides SERTOR_CORPUS")
+    _add_logging_flags(p)
+
+
+def _graph_baseline_path(settings: Settings) -> Path:
+    return settings.eval_dir / "graph_baseline.toml"
 
 
 def _parse_ks(raw: str | None) -> tuple[int, ...]:
@@ -567,6 +664,136 @@ def _cmd_eval_validate(args) -> None:
     enable_observability(settings)
     pv = validate_paths(tuple(args.paths), build_indexed_docs(settings))
     print(output.format_path_validation(pv, json=args.json))
+
+
+def _cmd_graph_eval_run(args) -> None:
+    """Handler for `graph-eval run`: set-based navigation eval + non-regression gate (066, US1/US2).
+
+    Flow (contract cli-graph-eval.md §run): load suite (absent → SuiteNotFoundError, exit 1); no
+    `[[graph_case]]` → actionable message + empty honest report (exit 0). Builds the graph via
+    `build_graph_eval_runner` (vehicle, Principio XI); graph not built → GraphNotFoundError.
+    With `--exact` a non-exact case → GraphRegressionDetected (exit 1). With a baseline present (and
+    not `--record-baseline`), gate mean_f1 → GraphRegressionDetected on regression. `--record-
+    baseline` records the current metrics (explicit acceptance, NEVER touches `expected`, DA-c).
+    """
+    setup_logging(args)
+    settings = _resolve_settings(args)
+    _check_backend(settings)
+    enable_observability(settings)
+    suite = load_suite(_suite_path(settings))  # absent → SuiteNotFoundError (exit 1, actionable)
+    exact_gate = args.exact or settings.graph_eval_exact
+    runner = build_graph_eval_runner(settings, exact_gate=exact_gate)
+    report, verdict = runner.run(suite)
+
+    if report.cases_count == 0:
+        # No [[graph_case]] yet: honest empty report, exit 0 (not a fasullo gate on zero cases).
+        print(output.format_graph_eval_report(report, verdict, json=args.json))
+        print(
+            "no [[graph_case]] in the suite — create one with `sertor-rag graph-eval add-case`",
+            file=sys.stderr,
+        )
+        return
+
+    print(output.format_graph_eval_report(report, verdict, json=args.json))
+
+    if args.record_baseline:
+        baseline = GraphBaseline(
+            mean_f1=report.mean_f1,
+            mean_recall=report.mean_recall,
+            mean_precision=report.mean_precision,
+            cases=report.cases_count,
+            recorded_at=graph_now_iso_utc(),
+        )
+        write_graph_baseline(_graph_baseline_path(settings), baseline)
+        return
+
+    if exact_gate and any(not c.metric.exact for c in report.cases):
+        raise GraphRegressionDetected(verdict)
+    if verdict.verdict == "regressed":
+        raise GraphRegressionDetected(verdict)
+
+
+def _cmd_graph_eval_add(args) -> None:
+    """Handler for `graph-eval add-case`: validate refs against the graph, then persist (066, US1).
+
+    A ref the graph does not confirm → warning + requires `--confirm` (or, on a TTY, an interactive
+    confirmation) before writing; otherwise exit 1 azionabile, nothing written. The graph being
+    unavailable is the same path: persist only with `--confirm` (honest degrado).
+    """
+    setup_logging(args)
+    settings = _resolve_settings(args)
+    enable_observability(settings)
+    expected = tuple(r.strip() for r in args.expected.split(",") if r.strip())
+    rv = validate_refs(
+        build_graph_eval_runner(settings).graph, args.relation, args.target, expected
+    )
+    _gate_graph_write(args, rv)  # raises ConfigError (exit 1) if blocked and not confirmed
+    add_graph_case(
+        _suite_path(settings),
+        GraphCase(relation=args.relation, target=args.target, expected=expected),
+    )
+    print(output.format_ref_validation(rv, json=args.json))
+
+
+def _cmd_graph_eval_amend(args) -> None:
+    """Handler for `graph-eval amend-case`: re-author the expected refs of a case (066, DA-c).
+
+    Same write-time validation as add-case. The case must exist (else GraphSuiteValidationError,
+    exit 1, naming relation+target).
+    """
+    setup_logging(args)
+    settings = _resolve_settings(args)
+    enable_observability(settings)
+    expected = tuple(r.strip() for r in args.expected.split(",") if r.strip())
+    rv = validate_refs(
+        build_graph_eval_runner(settings).graph, args.relation, args.target, expected
+    )
+    _gate_graph_write(args, rv)  # raises ConfigError (exit 1) if blocked and not confirmed
+    amend_graph_case(_suite_path(settings), args.relation, args.target, expected)
+    print(output.format_ref_validation(rv, json=args.json))
+
+
+def _gate_graph_write(args, rv) -> None:
+    """Shared write-gate for add/amend (066, REQ-042): raise ConfigError if blocked and unconfirmed.
+
+    Blocks when a ref is unverifiable or the graph is unavailable. Without `--confirm` (nor a TTY
+    confirmation) → warning on stderr + `ConfigError` (exit 1, nothing written, no partial state).
+    With `--confirm` → prints the warning and returns (caller proceeds to write).
+    """
+    blocking = bool(rv.unverifiable) or not rv.graph_available
+    if not blocking:
+        return
+    if not args.confirm and not _confirm_refs_via_tty(rv):
+        print(output.format_ref_validation(rv, json=False), file=sys.stderr)
+        raise ConfigError(
+            "expected ref(s) not confirmed by the graph; "
+            "re-run with --confirm to add the case anyway"
+        )
+    print(output.format_ref_validation(rv, json=False), file=sys.stderr)
+
+
+def _confirm_refs_via_tty(rv) -> bool:
+    """Interactive confirmation when both stdin and stdout are a TTY; else False (CI-safe)."""
+    if not (sys.stdin.isatty() and sys.stdout.isatty()):
+        return False
+    print(output.format_ref_validation(rv, json=False), file=sys.stderr)
+    answer = input("add the case anyway? [y/N] ").strip().lower()
+    return answer in ("y", "yes")
+
+
+def _cmd_graph_eval_validate_ref(args) -> None:
+    """Handler for `graph-eval validate-ref`: report graph↔ref validation (066, skill primitive).
+
+    Exit 0 always (a verification, not a gate): `unverifiable` is information, not an error. It is
+    the deterministic vehicle the eval-authoring skill invokes (Principio XI).
+    """
+    setup_logging(args)
+    settings = _resolve_settings(args)
+    enable_observability(settings)
+    rv = validate_refs(
+        build_graph_eval_runner(settings).graph, args.relation, args.target, tuple(args.refs)
+    )
+    print(output.format_ref_validation(rv, json=args.json))
 
 
 def main(argv: list[str] | None = None) -> int:

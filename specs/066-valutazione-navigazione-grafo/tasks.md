@@ -36,25 +36,25 @@
 ### TASK-G01 — Aggiungi errori di dominio per il modulo graph-eval [P]
 **File**: `src/sertor_core/domain/errors.py`
 → dipende da: nessuno
-- [ ] Aggiungi `GraphSuiteValidationError(SertorError)`: campi `case_index: int` e `detail: str`,
+- [x] Aggiungi `GraphSuiteValidationError(SertorError)`: campi `case_index: int` e `detail: str`,
       messaggio che identifica il caso offendente (relazione/target/indice) — REQ-004/005.
       Può riusare/estendere `SuiteValidationError` se la forma del messaggio basta; l'entità
       separata è preferita per distinguere i casi di navigazione da quelli IR nel log.
-- [ ] Aggiungi `GraphRegressionDetected(SertorError)`: campo `verdict: GraphRegressionVerdict`
+- [x] Aggiungi `GraphRegressionDetected(SertorError)`: campo `verdict: GraphRegressionVerdict`
       (forward ref via `from __future__ import annotations`), messaggio che nomina la metrica
       degradata (`mean_f1`, delta, tolleranza) — REQ-032.
-- [ ] Verifica: entrambi i nuovi errori sono sottoclasse di `SertorError`; `domain/errors.py`
+- [x] Verifica: entrambi i nuovi errori sono sottoclasse di `SertorError`; `domain/errors.py`
       non importa nessun SDK esterno né adapter (Principio I); i test esistenti su `errors.py`
       continuano a passare invariati (RNF-4).
 
 ### TASK-G02 — Aggiungi manopole `graph_eval_tolerance` / `graph_eval_exact` in Settings [P]
 **File**: `src/sertor_core/config/settings.py`
 → dipende da: nessuno
-- [ ] Aggiungi campo `graph_eval_tolerance: float` con default `0.0`, letto da
+- [x] Aggiungi campo `graph_eval_tolerance: float` con default `0.0`, letto da
       `SERTOR_GRAPH_EVAL_TOLERANCE` (pattern identico a `eval_tolerance`).
-- [ ] Aggiungi campo `graph_eval_exact: bool` con default `False`, letto da
+- [x] Aggiungi campo `graph_eval_exact: bool` con default `False`, letto da
       `SERTOR_GRAPH_EVAL_EXACT` (usa `os.getenv(..., "false").lower() in ("1", "true")`).
-- [ ] Verifica: i default sono definiti **solo** qui (Principio VIII); nessun componente fuori
+- [x] Verifica: i default sono definiti **solo** qui (Principio VIII); nessun componente fuori
       da `Settings` hardcoda un valore per queste manopole; `Settings` resta importabile senza
       dipendenze esterne.
 
@@ -68,48 +68,48 @@
 ### TASK-F01 — Estendi `EvalSuite` e aggiungi entità graph-eval in `models.py` [P]
 **File**: `src/sertor_core/services/eval/models.py`
 → dipende da: TASK-G01
-- [ ] Aggiungi `GraphCase` (frozen dataclass): `relation: str`, `target: str`,
+- [x] Aggiungi `GraphCase` (frozen dataclass): `relation: str`, `target: str`,
       `expected: tuple[str, ...]`. La validazione (relazione supportata, target non vuoto,
       expected ben formato) avviene nel loader (`GraphSuiteValidationError`), non nel
       costruttore. `expected` vuoto è valido (atteso «nessun chiamante» — asimmetria deliberata
       vs EvalCase; REQ-003/004/005).
-- [ ] Aggiungi `SetMetric` (frozen dataclass): `precision: float`, `recall: float`, `f1: float`,
+- [x] Aggiungi `SetMetric` (frozen dataclass): `precision: float`, `recall: float`, `f1: float`,
       `exact: bool`, `got: tuple[str, ...]`, `expected: tuple[str, ...]`,
       `missing: tuple[str, ...]`, `extra: tuple[str, ...]`.
       Convenzioni casi-limite deterministiche (REQ-015):
         - entrambi vuoti → P=R=F1=1.0, `exact=True`;
         - `expected` vuoto & `got` non vuoto → P=0, R=1, F1=0;
         - `got` vuoto & `expected` non vuoto → P=1, R=0, F1=0.
-- [ ] Aggiungi `GraphCaseResult` (frozen dataclass): `relation: str`, `target: str`,
+- [x] Aggiungi `GraphCaseResult` (frozen dataclass): `relation: str`, `target: str`,
       `metric: SetMetric`.
-- [ ] Aggiungi `GraphEvalReport` (frozen dataclass): `cases: tuple[GraphCaseResult, ...]`,
+- [x] Aggiungi `GraphEvalReport` (frozen dataclass): `cases: tuple[GraphCaseResult, ...]`,
       `mean_precision: float`, `mean_recall: float`, `mean_f1: float`,
       `by_relation: dict[str, float]`, `cases_count: int`.
-- [ ] Aggiungi `GraphBaseline` (frozen dataclass): `mean_f1: float`, `mean_recall: float`,
+- [x] Aggiungi `GraphBaseline` (frozen dataclass): `mean_f1: float`, `mean_recall: float`,
       `mean_precision: float`, `cases: int`, `recorded_at: str` (ISO-8601 UTC).
-- [ ] Aggiungi `GraphMetricDelta` (frozen dataclass): `name: str`, `current: float`,
+- [x] Aggiungi `GraphMetricDelta` (frozen dataclass): `name: str`, `current: float`,
       `baseline: float`, `delta: float`, `regressed: bool`.
       Il gate scatta **solo** su `mean_f1` (`regressed=True`); `mean_recall`/`mean_precision`
       hanno `regressed=False` (informativi — DA-a).
-- [ ] Aggiungi `GraphRegressionVerdict` (frozen dataclass): `verdict: str`
+- [x] Aggiungi `GraphRegressionVerdict` (frozen dataclass): `verdict: str`
       (`"pass"` | `"regressed"` | `"no-baseline"`), `deltas: tuple[GraphMetricDelta, ...]`,
       `tolerance: float`. Metodo `exit_code() -> int`: 0 se `"pass"`/`"no-baseline"`, 1 se
       `"regressed"`.
-- [ ] Aggiungi `RefValidation` (frozen dataclass): `checked: tuple[str, ...]`,
+- [x] Aggiungi `RefValidation` (frozen dataclass): `checked: tuple[str, ...]`,
       `unverifiable: tuple[str, ...]`, `graph_available: bool`.
-- [ ] Estendi `EvalSuite` con campo `graph_cases: tuple[GraphCase, ...] = ()` (additivo,
+- [x] Estendi `EvalSuite` con campo `graph_cases: tuple[GraphCase, ...] = ()` (additivo,
       default `()` → suite IR-only invariata). I metodi `to_ground_truth()`/`kinds()`/`rebased()`
       operano solo su `cases` e restano **invariati** (RNF-4).
-- [ ] Verifica: nessun import di SDK esterni; `domain/` non è importato dai servizi fuori
+- [x] Verifica: nessun import di SDK esterni; `domain/` non è importato dai servizi fuori
       dalla porta `CodeGraph` (Principio I); i test esistenti di `models.py` continuano a
       passare (RNF-4).
 
 ### TASK-F02 — Implementa `graph_eval.py`: oracolo set-based puro [P]
 **File nuovo**: `src/sertor_core/services/eval/graph_eval.py`
 → dipende da: TASK-F01, TASK-G01
-- [ ] Implementa costante `_SUPPORTED_RELATIONS: frozenset[str] = frozenset({"who_calls", "defines"})`
+- [x] Implementa costante `_SUPPORTED_RELATIONS: frozenset[str] = frozenset({"who_calls", "defines"})`
       come unica fonte dell'insieme MVP (N2 research).
-- [ ] Implementa `evaluate_graph_case(navigated: frozenset[str], expected: frozenset[str]) -> SetMetric`
+- [x] Implementa `evaluate_graph_case(navigated: frozenset[str], expected: frozenset[str]) -> SetMetric`
       come funzione **pura** (zero I/O):
         - `intersection = navigated & expected`
         - `precision = |intersection| / |navigated|` (got vuoto & expected vuoto → 1.0;
@@ -120,7 +120,7 @@
         - `missing = tuple(sorted(expected - navigated))`
         - `extra = tuple(sorted(navigated - expected))`
       Applica le convenzioni di `SetMetric` per i casi-limite (REQ-015).
-- [ ] Implementa `navigate(graph: CodeGraph, relation: str, target: str) -> frozenset[str]`:
+- [x] Implementa `navigate(graph: CodeGraph, relation: str, target: str) -> frozenset[str]`:
         - `who_calls` → `frozenset(hit.ref for hit in graph.who_calls(target))`
         - `defines` → `frozenset(hit.ref for hit in graph.find_symbol(target))`
         - Simbolo assente → lista vuota dalla porta → `frozenset()` (REQ-014, assenza legittima)
@@ -129,7 +129,7 @@
         - Grafo non costruito → `GraphNotFoundError` propagato dalla porta (REQ-013)
       Solo import dalla porta `CodeGraph` (`domain/ports.py`), mai da adapter concreti
       (Principio I).
-- [ ] Implementa `evaluate_graph_suite(results: list[GraphCaseResult]) -> GraphEvalReport`
+- [x] Implementa `evaluate_graph_suite(results: list[GraphCaseResult]) -> GraphEvalReport`
       come funzione **pura**:
         - `mean_precision = media([r.metric.precision for r in results])`
         - `mean_recall = media([r.metric.recall for r in results])`
@@ -137,13 +137,13 @@
         - `by_relation = {rel: media(f1 di quel rel) for rel in relations}`
         - `cases_count = len(results)`
         - Suite vuota → report con tutti i valori 0.0 e `cases_count=0`.
-- [ ] Verifica: `evaluate_graph_case` è deterministica (REQ-015); nessun import di composition
+- [x] Verifica: `evaluate_graph_case` è deterministica (REQ-015); nessun import di composition
       o adapter; mockabile con `CodeGraph` a structural typing (nessuna eredità).
 
 ### TASK-F03 — Implementa `graph_regression.py`: funzione pura `compare_graph_to_baseline` [P]
 **File nuovo**: `src/sertor_core/services/eval/graph_regression.py`
 → dipende da: TASK-F01
-- [ ] Implementa `compare_graph_to_baseline(report: GraphEvalReport, baseline: GraphBaseline | None,
+- [x] Implementa `compare_graph_to_baseline(report: GraphEvalReport, baseline: GraphBaseline | None,
       tolerance: float) -> GraphRegressionVerdict` come funzione **pura** (zero I/O):
         - `baseline is None` → `GraphRegressionVerdict(verdict="no-baseline", deltas=(), tolerance=tolerance)`.
         - Calcola `delta = current - baseline` e `regressed = delta < -tolerance` per le tre metriche:
@@ -152,12 +152,12 @@
             - `mean_precision`: informativo → `regressed=False` sempre
         - Costruisce `tuple[GraphMetricDelta, ...]` nell'ordine `(mean_f1, mean_recall, mean_precision)`.
         - Se almeno un `MetricDelta.regressed=True` → `verdict="regressed"`, altrimenti `"pass"`.
-- [ ] Verifica: funzione deterministica (stesso input → stesso output); nessun import I/O.
+- [x] Verifica: funzione deterministica (stesso input → stesso output); nessun import I/O.
 
 ### TASK-F04 — Estendi `suite_io.py`: supporto `[[graph_case]]` + `add/amend_graph_case` [P]
 **File**: `src/sertor_core/services/eval/suite_io.py`
 → dipende da: TASK-F01, TASK-G01
-- [ ] Estendi `load_suite(path: Path) -> EvalSuite` per leggere **entrambi** gli array TOML:
+- [x] Estendi `load_suite(path: Path) -> EvalSuite` per leggere **entrambi** gli array TOML:
         - `data.get("case", [])` → lista di `EvalCase` (invariato, RNF-4)
         - `data.get("graph_case", [])` → lista di `GraphCase`:
             - campo `relation` mancante/non-stringa → `GraphSuiteValidationError(case_index=i, ...)`
@@ -167,48 +167,48 @@
             - `expected` con elementi non-stringa → `GraphSuiteValidationError` (REQ-004)
         - `EvalSuite.graph_cases` = `()` se la chiave `graph_case` è assente (non un errore —
           suite IR-only valida).
-- [ ] Estendi il **serializzatore TOML a mano** `_serialize_suite` per emettere **entrambe** le sezioni
+- [x] Estendi il **serializzatore TOML a mano** `_serialize_suite` per emettere **entrambe** le sezioni
       nell'ordine stabile: prima i `[[case]]` IR (invariato), poi i `[[graph_case]]` (nuovi).
       Non deve cancellare i `[[case]]` quando si scrivono `[[graph_case]]` e viceversa (DA-d,
       Principio VI/RNF-4).
       Regole di escape per `expected`: ogni elemento è una stringa basic TOML
       (`"`→`\"`, `\`→`\\`). Array `expected` vuoto → `expected = []`.
-- [ ] Verifica che `write_suite` ri-legge con `tomllib` dopo ogni scrittura (round-trip —
+- [x] Verifica che `write_suite` ri-legge con `tomllib` dopo ogni scrittura (round-trip —
       `SuiteWriteError` se fallisce, già esistente): il round-trip deve preservare ENTRAMBE le
       sezioni (test di non-distruttività).
-- [ ] Implementa `add_graph_case(path: Path, case: GraphCase) -> None`:
+- [x] Implementa `add_graph_case(path: Path, case: GraphCase) -> None`:
         - carica la suite esistente (o crea `EvalSuite()` se assente)
         - dedup su `(relation, target)`: se già presente, non aggiunge (idempotente — REQ-041)
         - appende in coda alla sezione `graph_cases`
         - chiama `write_suite`.
-- [ ] Implementa `amend_graph_case(path: Path, relation: str, target: str, expected: tuple[str, ...]) -> None`:
+- [x] Implementa `amend_graph_case(path: Path, relation: str, target: str, expected: tuple[str, ...]) -> None`:
         - carica la suite; trova il caso per `(relation, target)` →
           `GraphSuiteValidationError` se non esiste
         - aggiorna `expected` del caso trovato (ri-authoring dello snapshot, DA-c)
         - chiama `write_suite`.
-- [ ] Solo stdlib: `tomllib`, `pathlib`; nessun import da `composition.py`.
+- [x] Solo stdlib: `tomllib`, `pathlib`; nessun import da `composition.py`.
 
 ### TASK-F05 — Implementa `graph_baseline_io.py`: load/write baseline di navigazione [P]
 **File nuovo**: `src/sertor_core/services/eval/graph_baseline_io.py`
 → dipende da: TASK-F01
-- [ ] Implementa `load_graph_baseline(path: Path) -> GraphBaseline | None`:
+- [x] Implementa `load_graph_baseline(path: Path) -> GraphBaseline | None`:
         - file assente → `None` (assenza legittima, gate passa — REQ-033)
         - file malformato → `SuiteValidationError` (stile `baseline_io.py` esistente)
         - Legge con `tomllib.load` i campi `recorded_at`, `cases`, `mean_f1`,
           `mean_recall`, `mean_precision`.
-- [ ] Implementa `write_graph_baseline(path: Path, baseline: GraphBaseline) -> None`:
+- [x] Implementa `write_graph_baseline(path: Path, baseline: GraphBaseline) -> None`:
         - Serializzatore TOML a mano per lo schema piatto (contract `artifacts-toml.md`):
           `recorded_at`, `cases`, `mean_f1`, `mean_recall`, `mean_precision`.
         - Crea le cartelle intermedie (`path.parent.mkdir(parents=True, exist_ok=True)`).
         - Round-trip di validazione con `tomllib` dopo scrittura (`SuiteWriteError` se fallisce).
         - Scritto/aggiornato **solo** su `--record-baseline` esplicito (dal chiamante, non qui).
-- [ ] `recorded_at` generato con `datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")`.
-- [ ] Solo stdlib: `tomllib`, `pathlib`, `datetime`.
+- [x] `recorded_at` generato con `datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")`.
+- [x] Solo stdlib: `tomllib`, `pathlib`, `datetime`.
 
 ### TASK-F06 — Implementa `graph_runner.py`: `run_graph_evaluation` + `validate_refs` + evento [P]
 **File nuovo**: `src/sertor_core/services/eval/graph_runner.py`
 → dipende da: TASK-F01, TASK-F02, TASK-F03, TASK-F04, TASK-F05, TASK-G01
-- [ ] Implementa `run_graph_evaluation(graph: CodeGraph, suite: EvalSuite) -> GraphEvalReport`:
+- [x] Implementa `run_graph_evaluation(graph: CodeGraph, suite: EvalSuite) -> GraphEvalReport`:
         - Itera su `suite.graph_cases`; per ogni caso:
             - chiama `navigate(graph, case.relation, case.target)` →
               `GraphNotFoundError` se grafo non costruito (propagato, REQ-013)
@@ -218,7 +218,7 @@
         - Suite senza `graph_cases` (`graph_cases == ()`) → `GraphEvalReport` vuoto (report
           onesto, exit 0, messaggio azionabile dal CLI — non un errore del runner).
         - Determinismo garantito dall'ordine della suite e dal sorting dei `ref` (REQ-015).
-- [ ] Implementa `emit_graph_eval_event(report: GraphEvalReport, verdict: GraphRegressionVerdict,
+- [x] Implementa `emit_graph_eval_event(report: GraphEvalReport, verdict: GraphRegressionVerdict,
       exact_gate: bool) -> None` via `log_event` (contract `event-graph-eval.md`):
         - `operation="graph_eval"`, `cases=report.cases_count`,
           `relations={rel: count for rel, count in …}` (cardinalità chiusa, non testo libero),
@@ -228,14 +228,14 @@
           `exact_gate=exact_gate`.
         - **Mai** emettere `target`, `ref`, `missing`, `extra`, nomi di simboli, path
           o testo libero (RNF-3).
-- [ ] Implementa `validate_refs(graph: CodeGraph, relation: str, target: str,
+- [x] Implementa `validate_refs(graph: CodeGraph, relation: str, target: str,
       refs: tuple[str, ...]) -> RefValidation`:
         - Se grafo non costruito (`GraphNotFoundError`) → `RefValidation(checked=refs,
           unverifiable=(), graph_available=False)` (degrado onesto, non un crash).
         - Altrimenti: naviga `relation`+`target` per ottenere l'insieme dei `ref` reali;
           `unverifiable = tuple(r for r in refs if r not in real_refs)`.
         - Exit 0 sempre (è verifica, non gate — REQ-042/contract cli-graph-eval.md).
-- [ ] Solo import da `services/eval/` e dalla porta `CodeGraph`; nessun import di composition.
+- [x] Solo import da `services/eval/` e dalla porta `CodeGraph`; nessun import di composition.
 
 ---
 
@@ -248,7 +248,7 @@
 ### TASK-A01 — Factory `build_graph_eval_runner` in `composition.py`
 **File**: `src/sertor_core/composition.py`
 → dipende da: TASK-F01, TASK-F02, TASK-F03, TASK-F04, TASK-F05, TASK-F06, TASK-G02
-- [ ] Implementa classe privata `_GraphEvalRunner`:
+- [x] Implementa classe privata `_GraphEvalRunner`:
         - costruttore: riceve un `CodeGraph` concreto
         - metodo `run(suite: EvalSuite) -> tuple[GraphEvalReport, GraphRegressionVerdict]`:
             - verifica `graph.exists(corpus)` → `GraphNotFoundError` se assente (REQ-013)
@@ -260,19 +260,19 @@
           (può essere `None` — assenza legittima).
         - `tolerance` da `settings.graph_eval_tolerance`.
         - `exact_gate` da `settings.graph_eval_exact` o dal flag CLI (passato in costruzione).
-- [ ] Implementa `build_graph_eval_runner(settings: Settings) -> _GraphEvalRunner`:
+- [x] Implementa `build_graph_eval_runner(settings: Settings) -> _GraphEvalRunner`:
         - chiama `_wire_runtime(settings)` (auto-wire osservabilità, FEAT-041 pattern)
         - costruisce il grafo via `build_graph_service(settings)` (riuso — Principio XI)
         - ritorna `_GraphEvalRunner(graph, settings)`.
-- [ ] Aggiorna `composition.py` per riesportare `build_graph_eval_runner` coerentemente con
+- [x] Aggiorna `composition.py` per riesportare `build_graph_eval_runner` coerentemente con
       le altre factory pubbliche.
-- [ ] Verifica: `build_graph_eval_runner` è l'UNICO punto che conosce `NetworkxCodeGraph`
+- [x] Verifica: `build_graph_eval_runner` è l'UNICO punto che conosce `NetworkxCodeGraph`
       concreto per questo percorso (Principio I/XI); i test esistenti di composition passano.
 
 ### TASK-A02 — Formatter output `graph-eval` in `cli/output.py` [P]
 **File**: `src/sertor_core/cli/output.py`
 → dipende da: TASK-F01, TASK-F03
-- [ ] Aggiungi `format_graph_eval_report(report: GraphEvalReport, verdict: GraphRegressionVerdict,
+- [x] Aggiungi `format_graph_eval_report(report: GraphEvalReport, verdict: GraphRegressionVerdict,
       json_mode: bool) -> str` come funzione **pura** (zero I/O):
         - Output umano: intestazione `graph navigation eval  cases=N`,
           riga metriche (`mean_f1=… mean_recall=… mean_precision=…`),
@@ -283,19 +283,19 @@
           Formato coerente con l'esempio in `contracts/cli-graph-eval.md`.
         - Output JSON: equivalente informativo (tutti i campi di `GraphEvalReport` +
           `verdict`, `tolerance`, `deltas`); valido JSON (SC-001/invariante CLI).
-- [ ] Aggiungi `format_graph_regression(verdict: GraphRegressionVerdict,
+- [x] Aggiungi `format_graph_regression(verdict: GraphRegressionVerdict,
       json_mode: bool) -> str`: compatta (`PASS`/`REGRESSED` + deltas); riusabile standalone.
       Funzione pura.
-- [ ] Aggiungi `format_ref_validation(rv: RefValidation, json_mode: bool) -> str`:
+- [x] Aggiungi `format_ref_validation(rv: RefValidation, json_mode: bool) -> str`:
       lista `checked`/`unverifiable`/`graph_available`. Funzione pura.
-- [ ] Verifica: nessuna delle funzioni ha side-effect; compatibilità informativa umano↔JSON;
+- [x] Verifica: nessuna delle funzioni ha side-effect; compatibilità informativa umano↔JSON;
       `[exact]`/`[part ]`/`[miss ]` corretti: `[exact]` se `metric.exact`, `[miss ]` se
       `metric.recall < 1.0 and metric.precision == 1.0`, `[part ]` negli altri casi.
 
 ### TASK-A03 — Gruppo CLI `graph-eval` in `cli/__main__.py`
 **File**: `src/sertor_core/cli/__main__.py`
 → dipende da: TASK-A01, TASK-A02
-- [ ] Aggiungi gruppo di sottocomandi `graph-eval` al parser argparse con sub-azioni annidate
+- [x] Aggiungi gruppo di sottocomandi `graph-eval` al parser argparse con sub-azioni annidate
       (pattern identico al gruppo `eval` esistente: `add_subparsers` annidato,
       `set_defaults(handler=...)`):
         - `graph-eval run [--record-baseline] [--exact] [--corpus C] [--json] [-v] [--log-json] [--log-config F]`
@@ -303,7 +303,7 @@
         - `graph-eval amend-case --relation R --target T --expected REF[,REF…] [--confirm] [--corpus C] [--json]`
         - `graph-eval validate-ref --relation R --target T REF[…] [--corpus C] [--json]`
       `--relation` usa `choices=["who_calls", "defines"]` (exit 2 su valore fuori insieme — REQ-005).
-- [ ] Implementa `_cmd_graph_eval_run(args, settings)` seguendo il contratto `cli-graph-eval.md`:
+- [x] Implementa `_cmd_graph_eval_run(args, settings)` seguendo il contratto `cli-graph-eval.md`:
         1. `_resolve_settings` + `_check_backend` + `enable_observability` (pattern esistente).
         2. Carica `load_suite(settings.eval_dir / "suite.toml")`:
            suite assente → `SuiteNotFoundError` (exit 1);
@@ -320,7 +320,7 @@
            gli `expected` dei casi (DA-c).
         6. Stampa con `format_graph_eval_report(report, verdict, args.json)`.
         7. Exit 0 se nessun gate scatta.
-- [ ] Implementa `_cmd_graph_eval_add(args, settings)`:
+- [x] Implementa `_cmd_graph_eval_add(args, settings)`:
         - Analizza `--expected "r1,r2,r3"` → `tuple[str, ...]` (split su `,` e strip).
         - Costruisce `build_graph_eval_runner(settings)` per validare i `ref` via
           `validate_refs(graph, args.relation, args.target, refs)`.
@@ -331,24 +331,24 @@
           `--confirm` (degrado onesto).
         - Chiama `add_graph_case(settings.eval_dir / "suite.toml", GraphCase(...))` (REQ-041).
         - Successo: messaggio `«caso aggiunto a eval/suite.toml»`, exit 0.
-- [ ] Implementa `_cmd_graph_eval_amend(args, settings)`:
+- [x] Implementa `_cmd_graph_eval_amend(args, settings)`:
         - Stessa validazione write-time di `_cmd_graph_eval_add`.
         - Chiama `amend_graph_case(path, relation, target, expected)`.
         - Caso inesistente → `GraphSuiteValidationError` (exit 1, nomina relation+target).
-- [ ] Implementa `_cmd_graph_eval_validate_ref(args, settings)`:
+- [x] Implementa `_cmd_graph_eval_validate_ref(args, settings)`:
         - Costruisce `build_graph_eval_runner(settings)`.
         - Chiama `validate_refs(graph, args.relation, args.target, tuple(args.refs))`.
         - Stampa `format_ref_validation(rv, args.json)`. Exit 0 sempre (REQ-042/contract).
-- [ ] Aggiorna il blocco `except SertorError` in `main()`: `GraphRegressionDetected` e
+- [x] Aggiorna il blocco `except SertorError` in `main()`: `GraphRegressionDetected` e
       `GraphSuiteValidationError` sono già `SertorError` e vengono catturati automaticamente;
       verifica il messaggio azionabile nel formatter di errore.
-- [ ] Verifica: il CLI è thin (nessuna logica di navigazione/metrica); exit code coerenti
+- [x] Verifica: il CLI è thin (nessuna logica di navigazione/metrica); exit code coerenti
       (0/1/2); nessun import diretto di adapter (Principio XI).
 
 ### TASK-A04 — Test unitari: graph_eval, graph_regression (funzioni pure) [P]
 **File nuovi**: `tests/unit/test_graph_eval.py`, `tests/unit/test_graph_regression.py`
 → dipende da: TASK-F02, TASK-F03
-- [ ] `test_graph_eval.py` (funzioni pure, zero rete):
+- [x] `test_graph_eval.py` (funzioni pure, zero rete):
         - `evaluate_graph_case({A,B}, {A,B})` → P=1.0, R=1.0, F1=1.0, `exact=True`, `missing=()`, `extra=()`.
         - `evaluate_graph_case({A}, {A,B})` → P=1.0, R=0.5, F1=0.67, `exact=False`, `missing=(B,)`.
         - `evaluate_graph_case({A,C}, {A,B})` → P=0.5, R=0.5, F1=0.5, `extra=(C,)`, `missing=(B,)`.
@@ -359,7 +359,7 @@
         - `navigate` con `CodeGraph` mock che ritorna lista vuota → `frozenset()` (REQ-014).
         - `navigate` con relazione non supportata → `GraphSuiteValidationError`.
         - Determinismo: `evaluate_graph_case` stesso input → stesso output su chiamate multiple (REQ-015).
-- [ ] `test_graph_regression.py` (funzioni pure, zero I/O):
+- [x] `test_graph_regression.py` (funzioni pure, zero I/O):
         - `compare_graph_to_baseline(report, None, 0.0)` → `"no-baseline"`, exit 0.
         - `mean_f1` corrente < baseline - tolerance → `"regressed"`, exit 1.
         - `mean_f1` entro tolleranza (es. corrente=0.78, baseline=0.80, tolerance=0.05) → `"pass"`, exit 0.
@@ -370,7 +370,7 @@
 **File nuovi**: `tests/unit/test_graph_suite_io.py`, `tests/unit/test_graph_baseline_io.py`,
                `tests/unit/test_graph_runner.py`
 → dipende da: TASK-F04, TASK-F05, TASK-F06
-- [ ] `test_graph_suite_io.py`:
+- [x] `test_graph_suite_io.py`:
         - Round-trip `write_suite`→`load_suite` per una suite con ENTRAMBI `[[case]]` e
           `[[graph_case]]`: verifica che i `[[case]]` IR siano invariati dopo aver scritto
           `graph_cases` (non-distruttività — RNF-4).
@@ -383,11 +383,11 @@
         - `amend_graph_case` aggiorna `expected` correttamente.
         - `amend_graph_case` su caso inesistente → `GraphSuiteValidationError`.
         - `SuiteWriteError` se il round-trip fallisce (simula con mock `tomllib`).
-- [ ] `test_graph_baseline_io.py`:
+- [x] `test_graph_baseline_io.py`:
         - Round-trip `write_graph_baseline`→`load_graph_baseline` identico.
         - File assente → `None`.
         - `recorded_at` presente e formato ISO-8601 non vuoto.
-- [ ] `test_graph_runner.py`:
+- [x] `test_graph_runner.py`:
         - `run_graph_evaluation` con `CodeGraph` mock (structural typing, no eredità) che
           ritorna `[SymbolHit(...)]`: report corretto con metriche calcolate.
         - Suite con `graph_cases == ()` → `GraphEvalReport` vuoto, exit 0 (non un errore).
@@ -401,13 +401,13 @@
 ### TASK-A06 — Test unitari: formatter output graph-eval e CLI graph-eval (con core mockato) [P]
 **File nuovi**: `tests/unit/test_output_graph_eval.py`, `tests/unit/test_cli_graph_eval.py`
 → dipende da: TASK-A02, TASK-A03
-- [ ] `test_output_graph_eval.py` (funzioni pure):
+- [x] `test_output_graph_eval.py` (funzioni pure):
         - `format_graph_eval_report` con report completo: output umano contiene `mean_f1`,
           `[exact]`/`[part ]`/`[miss ]`, `+extra`/`-missing` corretti.
         - Output `--json` valido JSON con stessi campi informativi.
         - `format_graph_regression` con `"regressed"` → stringa contiene `REGRESSED` + delta.
         - `format_ref_validation` con `unverifiable` non vuoto → warning che li nomina.
-- [ ] `test_cli_graph_eval.py` (stile `test_cli_eval.py`, argparse + core mockato):
+- [x] `test_cli_graph_eval.py` (stile `test_cli_eval.py`, argparse + core mockato):
         - `graph-eval run` con suite e grafo mock → exit 0, metriche in stdout.
         - `graph-eval run` senza suite (file assente) → exit 1, messaggio azionabile.
         - `graph-eval run` con `graph_cases == ()` → exit 0, report vuoto onesto (non exit 1).
@@ -429,7 +429,7 @@
 **File**: `packages/sertor/src/sertor_installer/assets/rag/env.local.tmpl`
 **File**: `packages/sertor/src/sertor_installer/assets/rag/env.azure.tmpl`
 → dipende da: TASK-G02
-- [ ] Aggiungi in entrambi i template (sezione commentata, accanto alle manopole `SERTOR_EVAL_*`
+- [x] Aggiungi in entrambi i template (sezione commentata, accanto alle manopole `SERTOR_EVAL_*`
       già presenti — REQ-061):
       ```
       # Optional: absolute F1 tolerance for the graph-navigation non-regression gate (0.0 = zero tolerance).
@@ -437,9 +437,9 @@
       # Optional: enable exact-set gate (case fails if got != expected). Default false.
       # SERTOR_GRAPH_EVAL_EXACT=false
       ```
-- [ ] Verifica: le righe sono commentate di default (additività RNF-1); nessun segreto nei
+- [x] Verifica: le righe sono commentate di default (additività RNF-1); nessun segreto nei
       template (RNF-5).
-- [ ] Controlla che `test_packaging.py` (integration) non fallisca per le nuove righe; aggiorna
+- [x] Controlla che `test_packaging.py` (integration) non fallisca per le nuove righe; aggiorna
       eventuali riferimenti nel test se necessario.
 
 ---
@@ -454,7 +454,7 @@
 **File**: `.claude/skills/eval-suite-author/SKILL.md`
 **File distribuito**: `packages/sertor/src/sertor_installer/assets/rag/skills/eval-suite-author/SKILL.md`
 → dipende da: TASK-A03 (i sottocomandi `graph-eval validate-ref`/`add-case` devono esistere)
-- [ ] Estendi la skill esistente `eval-suite-author` aggiungendo la sezione
+- [x] Estendi la skill esistente `eval-suite-author` aggiungendo la sezione
       **«Genesi di casi di navigazione del grafo (`[[graph_case]]`)»**:
         - l'agente **esegue la navigazione corrente** del grafo per la relazione+simbolo richiesti
           invocando `sertor-rag graph-eval validate-ref --relation R --target T --json`
@@ -468,31 +468,31 @@
           o di procedere con `--confirm` (REQ-042).
         - Se grafo non costruito (`graph_available=False`): skill **fallisce azionabile**
           («indicizza prima il progetto con `sertor-rag index .`»).
-- [ ] Il corpo della skill deve esplicitare il confine D↔N: il run deterministico
+- [x] Il corpo della skill deve esplicitare il confine D↔N: il run deterministico
       (`graph-eval run`) non dipende dalla skill; la skill è la superficie di giudizio,
       il run è deterministico nel core (RNF-2/SC-005).
-- [ ] Corpo **host-agnostico** (Principio X): nessun riferimento a path Sertor-specifici
+- [x] Corpo **host-agnostico** (Principio X): nessun riferimento a path Sertor-specifici
       (es. `src/sertor_core/`); nessun nome-modello hardcodato (regola parità dual-target).
-- [ ] Verifica che la skill citi `sertor-rag graph-eval validate-ref` e
+- [x] Verifica che la skill citi `sertor-rag graph-eval validate-ref` e
       `sertor-rag graph-eval add-case` (vehicle), **mai** importi `sertor_core`.
 
 ### TASK-B02 — Skill cablata nel piano `build_rag_plan` (installabilità P2)
 **File**: `packages/sertor/src/sertor_installer/` (piano RAG)
 → dipende da: TASK-B01
-- [ ] Individua il plan-builder `build_rag_plan` (o equivalente) nell'installer del pacchetto
+- [x] Individua il plan-builder `build_rag_plan` (o equivalente) nell'installer del pacchetto
       `sertor` e verifica che la skill `eval-suite-author` (già esistente dal 065) includa le
       nuove istruzioni per `[[graph_case]]` nell'asset installato.
-- [ ] Se la skill ha un file unico (`SKILL.md`) che è già nel piano, verifica che il suo
+- [x] Se la skill ha un file unico (`SKILL.md`) che è già nel piano, verifica che il suo
       aggiornamento (TASK-B01) si propaghi automaticamente via il meccanismo di
       `iter_asset_dir` (non serve una voce nuova — la skill è già cablata da FEAT-001 065).
-- [ ] Aggiorna `sertor_owned_paths` se il path della skill è cambiato o se ne è stata
+- [x] Aggiorna `sertor_owned_paths` se il path della skill è cambiato o se ne è stata
       aggiunta una sottocartella.
-- [ ] Verifica (dry-run o test): `sertor install rag` include la skill aggiornata nel piano.
+- [x] Verifica (dry-run o test): `sertor install rag` include la skill aggiornata nel piano.
 
 ### TASK-B03 — Test unitari: invarianti skill genesi graph-eval [P]
 **File nuovo**: `tests/unit/test_skill_graph_eval_author.py`
 → dipende da: TASK-B01
-- [ ] Verifica statica/strutturale del corpo della skill (nessun LLM, solo file check):
+- [x] Verifica statica/strutturale del corpo della skill (nessun LLM, solo file check):
         - `.claude/skills/eval-suite-author/SKILL.md` esiste e contiene il richiamo esplicito a
           `sertor-rag graph-eval validate-ref` e `sertor-rag graph-eval add-case`.
         - Nessun import diretto di `sertor_core` menzionato nel corpo.
@@ -508,7 +508,7 @@
 ### TASK-P01 — Smoke test end-to-end non-regressione grafo (integration, not cloud)
 **File nuovo**: `tests/integration/test_graph_eval_gate.py`
 → dipende da: TASK-A01, TASK-A03, TASK-F04 (suite.toml con graph_cases)
-- [ ] Test `@integration` `not cloud` con grafo locale (Chroma + NetworkxCodeGraph temporanei
+- [x] Test `@integration` `not cloud` con grafo locale (Chroma + NetworkxCodeGraph temporanei
       su corpus minimale di 2-3 file Python sintetici indicizzati inline):
         - Esegue `sertor-rag graph-eval run` come subprocess → exit 0, metriche in stdout.
         - Esegue `sertor-rag graph-eval run --record-baseline` → scrive `graph_baseline.toml`.
@@ -516,40 +516,40 @@
           → exit 1 (`GraphRegressionDetected`).
         - Ri-esegue con tolleranza alta (`SERTOR_GRAPH_EVAL_TOLERANCE=1.0`) → exit 0.
         - Due run identici su grafo e suite identici → metriche identiche (SC-001/REQ-015).
-- [ ] Test `@integration` `not cloud` per `add-case` e `validate-ref` su grafo costruito:
+- [x] Test `@integration` `not cloud` per `add-case` e `validate-ref` su grafo costruito:
         - `add-case` con ref navigabili → exit 0, caso appare in `suite.toml`.
         - `add-case` con ref inesistente senza `--confirm` → exit 1, warning.
         - `validate-ref` → exit 0 sempre, JSON valido.
         - Gate baseline assente → `graph-eval run` exit 0 (REQ-033).
-- [ ] Tutti i test superano con `uv run pytest -m "not cloud" tests/integration/test_graph_eval_gate.py`.
+- [x] Tutti i test superano con `uv run pytest -m "not cloud" tests/integration/test_graph_eval_gate.py`.
 
 ### TASK-P02 — Lint ruff e verifica additività a leve spente
 → dipende da: tutti i task precedenti
-- [ ] Esegui `uv run ruff check .` e correggi eventuali errori nei file nuovi/modificati
+- [x] Esegui `uv run ruff check .` e correggi eventuali errori nei file nuovi/modificati
       (regole E,F,I,UP,B; line-length 100). Zero errori come pre-condizione al merge.
-- [ ] Verifica **additività** (RNF-1/SC-002): con leve di default (nessun `SERTOR_GRAPH_EVAL_*`
+- [x] Verifica **additività** (RNF-1/SC-002): con leve di default (nessun `SERTOR_GRAPH_EVAL_*`
       impostato, senza invocare `graph-eval`), esegui `sertor-rag index .` e
       `sertor-rag search "test"` e `sertor-rag eval run` (IR): comportamento e costo identici
       a prima (nessun warning, nessun overhead).
-- [ ] Esegui `uv run pytest -m "not cloud" tests/unit/` e verifica che TUTTA la suite unit
+- [x] Esegui `uv run pytest -m "not cloud" tests/unit/` e verifica che TUTTA la suite unit
       passi (inclusi i test IR esistenti e i nuovi graph-eval).
-- [ ] Verifica che `EvalSuite` con solo `cases` (senza `graph_cases`) continui a funzionare
+- [x] Verifica che `EvalSuite` con solo `cases` (senza `graph_cases`) continui a funzionare
       invariata (default `()` — RNF-4): i test IR esistenti costruiscono `EvalSuite` senza il
       campo e devono continuare a passare.
 
 ### TASK-P03 — Aggiorna dogfood: aggiungi esempi `[[graph_case]]` in `eval/suite.toml`
 **File**: `eval/suite.toml`
 → dipende da: TASK-F04, TASK-A03
-- [ ] Aggiungi in coda al file `eval/suite.toml` (dogfood Sertor) un blocco di 3-5 esempi
+- [x] Aggiungi in coda al file `eval/suite.toml` (dogfood Sertor) un blocco di 3-5 esempi
       reali di `[[graph_case]]` per le relazioni MVP:
         - almeno un caso `who_calls` su un simbolo con chiamanti noti nel corpus (es.
           `build_graph_service`, `build_facade`)
         - almeno un caso `defines` su un simbolo presente nel grafo del corpus
         - almeno un caso con `expected = []` (simbolo senza chiamanti noti — edge case)
       Aggiorna il commento in testa al file per includere `[[graph_case]]` nella descrizione.
-- [ ] Verifica round-trip: `tomllib.load(open("eval/suite.toml", "rb"))` non solleva; i
+- [x] Verifica round-trip: `tomllib.load(open("eval/suite.toml", "rb"))` non solleva; i
       `[[case]]` IR esistenti sono invariati (non-distruttività — RNF-4).
-- [ ] I `ref` usati sono verificabili sul corpus Sertor indicizzato (usa `sertor-rag
+- [x] I `ref` usati sono verificabili sul corpus Sertor indicizzato (usa `sertor-rag
       graph-eval validate-ref` per confermare prima di committare).
 
 ---

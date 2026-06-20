@@ -12,11 +12,13 @@ import tomllib
 from pathlib import Path
 
 from sertor_core.domain.errors import (
+    GraphSuiteValidationError,
     SuiteNotFoundError,
     SuiteValidationError,
     SuiteWriteError,
 )
-from sertor_core.services.eval.models import EvalCase, EvalSuite
+from sertor_core.services.eval.graph_eval import _SUPPORTED_RELATIONS
+from sertor_core.services.eval.models import EvalCase, EvalSuite, GraphCase
 
 
 def load_suite(path: Path) -> EvalSuite:
@@ -35,7 +37,13 @@ def load_suite(path: Path) -> EvalSuite:
     cases: list[EvalCase] = []
     for i, raw in enumerate(raw_cases):
         cases.append(_parse_case(i, raw))
-    return EvalSuite(cases=tuple(cases))
+    raw_graph = data.get("graph_case", [])
+    if not isinstance(raw_graph, list):
+        raise GraphSuiteValidationError(-1, "top-level `graph_case` must be an array of tables")
+    graph_cases: list[GraphCase] = []
+    for i, raw in enumerate(raw_graph):
+        graph_cases.append(_parse_graph_case(i, raw))
+    return EvalSuite(cases=tuple(cases), graph_cases=tuple(graph_cases))
 
 
 def _parse_case(index: int, raw: object) -> EvalCase:
@@ -57,6 +65,35 @@ def _parse_case(index: int, raw: object) -> EvalCase:
     return EvalCase(query=query, expected=tuple(expected), kind=kind)
 
 
+def _parse_graph_case(index: int, raw: object) -> GraphCase:
+    """Validate one `[[graph_case]]` table → `GraphCase`, or raise `GraphSuiteValidationError`.
+
+    `expected` may be EMPTY (atteso «nessun chiamante» — REQ-004/005, asimmetria vs EvalCase). A
+    relation outside the MVP set rejects the suite (REQ-005).
+    """
+    if not isinstance(raw, dict):
+        raise GraphSuiteValidationError(index, "graph_case must be a table")
+    relation = raw.get("relation")
+    if not isinstance(relation, str) or not relation.strip():
+        raise GraphSuiteValidationError(index, "missing or empty `relation`")
+    if relation not in _SUPPORTED_RELATIONS:
+        raise GraphSuiteValidationError(
+            index,
+            f"unsupported `relation`: {relation!r} "
+            f"(allowed: {', '.join(sorted(_SUPPORTED_RELATIONS))})",
+        )
+    target = raw.get("target")
+    if not isinstance(target, str) or not target.strip():
+        raise GraphSuiteValidationError(index, "missing or empty `target`")
+    expected = raw.get("expected")
+    if not isinstance(expected, list):
+        raise GraphSuiteValidationError(index, "missing or non-list `expected` (use [] for none)")
+    for r in expected:
+        if not isinstance(r, str) or not r.strip():
+            raise GraphSuiteValidationError(index, f"invalid ref in `expected`: {r!r}")
+    return GraphCase(relation=relation, target=target, expected=tuple(expected))
+
+
 def _escape_basic(value: str) -> str:
     """Escape a TOML basic string: backslash first, then double-quote."""
     return value.replace("\\", "\\\\").replace('"', '\\"')
@@ -72,9 +109,15 @@ def _format_string(value: str) -> str:
 
 
 def _serialize_suite(suite: EvalSuite) -> str:
-    """Serialize the suite as an array of `[[case]]` tables (hand-rolled, schema-flat)."""
+    """Serialize the suite: `[[case]]` (IR) then `[[graph_case]]` (navigation), hand-rolled.
+
+    BOTH sections are emitted in a stable order so writing one never drops the other (DA-d,
+    Principio VI/RNF-4). `graph_case.expected` may be an empty array.
+    """
     lines = [
         "# Sertor eval suite. Versioned project data — no secrets.",
+        '# [[case]]       = retrieval (IR) — query → expected paths (hit@k/MRR).',
+        "# [[graph_case]] = graph navigation — relation + target → expected refs (P/R/F1).",
         '# kind is optional (e.g. "symbol"/"nl"). Paths are POSIX, relative to the indexed root.',
         "",
     ]
@@ -85,6 +128,13 @@ def _serialize_suite(suite: EvalSuite) -> str:
         lines.append(f"expected = [{expected}]")
         if c.kind is not None:
             lines.append(f"kind = {_format_string(c.kind)}")
+        lines.append("")
+    for gc in suite.graph_cases:
+        lines.append("[[graph_case]]")
+        lines.append(f"relation = {_format_string(gc.relation)}")
+        lines.append(f"target = {_format_string(gc.target)}")
+        expected = ", ".join(_format_string(r) for r in gc.expected)
+        lines.append(f"expected = [{expected}]")
         lines.append("")
     return "\n".join(lines).rstrip("\n") + "\n"
 
@@ -101,9 +151,15 @@ def write_suite(path: Path, suite: EvalSuite) -> None:
     path.write_text(text, encoding="utf-8")
     try:
         reloaded = load_suite(path)
-    except (SuiteValidationError, SuiteNotFoundError, tomllib.TOMLDecodeError, OSError) as exc:
+    except (
+        SuiteValidationError,
+        GraphSuiteValidationError,
+        SuiteNotFoundError,
+        tomllib.TOMLDecodeError,
+        OSError,
+    ) as exc:
         raise SuiteWriteError(str(path)) from exc
-    if reloaded.cases != suite.cases:
+    if reloaded.cases != suite.cases or reloaded.graph_cases != suite.graph_cases:
         raise SuiteWriteError(str(path))
 
 
@@ -149,4 +205,46 @@ def amend_case(
             new_cases.append(c)
     if not found:
         raise SuiteValidationError(-1, f"no case with query {query!r} to amend")
-    write_suite(path, EvalSuite(cases=tuple(new_cases)))
+    write_suite(path, EvalSuite(cases=tuple(new_cases), graph_cases=suite.graph_cases))
+
+
+def add_graph_case(path: Path, case: GraphCase) -> None:
+    """Add a graph-navigation case (create the suite if absent), idempotent on `(relation, target)`.
+
+    The IR `[[case]]` and existing `[[graph_case]]` are preserved (DA-d); a case with a
+    `(relation, target)` already present is a no-op (no duplicate, REQ-041). New cases go in coda.
+    """
+    suite = load_suite(path) if path.exists() else EvalSuite()
+    if any(
+        gc.relation == case.relation and gc.target == case.target for gc in suite.graph_cases
+    ):
+        return  # idempotent: (relation, target) already in the suite
+    write_suite(
+        path,
+        EvalSuite(cases=suite.cases, graph_cases=(*suite.graph_cases, case)),
+    )
+
+
+def amend_graph_case(
+    path: Path, relation: str, target: str, expected: tuple[str, ...]
+) -> None:
+    """Amend the `expected` of the graph-case identified by `(relation, target)` (DA-c).
+
+    The suite must exist and contain the case (else `GraphSuiteValidationError` naming it). Only the
+    `expected` set is updated; the rest is preserved and the order of cases is stable. The IR
+    `[[case]]` are preserved.
+    """
+    suite = load_suite(path)
+    found = False
+    new_graph: list[GraphCase] = []
+    for gc in suite.graph_cases:
+        if gc.relation == relation and gc.target == target:
+            found = True
+            new_graph.append(GraphCase(relation=relation, target=target, expected=expected))
+        else:
+            new_graph.append(gc)
+    if not found:
+        raise GraphSuiteValidationError(
+            -1, f"no graph_case with relation={relation!r} target={target!r} to amend"
+        )
+    write_suite(path, EvalSuite(cases=suite.cases, graph_cases=tuple(new_graph)))

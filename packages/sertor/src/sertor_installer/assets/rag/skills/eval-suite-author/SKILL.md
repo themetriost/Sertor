@@ -1,6 +1,6 @@
 ---
 name: eval-suite-author
-description: "Assisted authoring of the retrieval evaluation suite (ground-truth). Using the project's RAG/MCP tools over the indexed corpus, the agent DERIVES candidate (query -> expected path) pairs, proposes them for approval, and persists ONLY the approved ones by invoking the CLI subcommand `eval add-case`. It never runs the evaluation (that is deterministic and does not depend on this skill); it never imports the core library."
+description: "Assisted authoring of the evaluation suite (ground-truth): retrieval cases (query -> expected path) and code-graph navigation cases (relation + symbol -> expected set of refs). Using the project's RAG/MCP tools over the indexed corpus, the agent DERIVES candidates, proposes them for approval, and persists ONLY the approved ones by invoking the CLI subcommands `eval add-case` / `graph-eval add-case`. It never runs the evaluation (that is deterministic and does not depend on this skill); it never imports the core library."
 argument-hint: "Describe the corpus area/capability you want evaluation cases for (e.g. 'retrieval over the domain symbols')"
 user-invocable: true
 disable-model-invocation: false
@@ -73,10 +73,61 @@ To deterministically check that a candidate path really exists in the index, use
    it must be committed. The evaluation is launched with `sertor-rag eval run` (deterministic,
    independent).
 
+## Authoring code-graph navigation cases (`[[graph_case]]`)
+
+Beyond retrieval cases, the suite can hold code-graph NAVIGATION cases: a case = relation + target
+symbol -> expected SET of `ref` (`path#qualname`). The metric is set-based (precision/recall/F1), not
+rank. MVP relations: `who_calls` (callers of the symbol) and `defines` (where it is defined). Here too
+authoring is assisted: the agent proposes a DETERMINISTIC snapshot, the user approves, and only the
+approved cases are written.
+
+1. Navigate the current graph state (deterministic snapshot). For the requested relation+symbol, get
+   the candidate set of refs by invoking the deterministic vehicle:
+
+   ```powershell
+   sertor-rag graph-eval validate-ref --relation who_calls --target build_facade --json
+   ```
+
+   The JSON output reports `checked`/`unverifiable`/`graph_available`. To DISCOVER the current set
+   (snapshot), pass the refs you expect and read which are `unverifiable`, or derive the real refs from
+   the RAG/MCP tools (symbol / who-calls search) and compare. The candidate set is what the graph
+   returns NOW, not the agent's autonomous judgment.
+
+2. Propose the set to the user. Present the candidate set of refs as a proposal to approve (it is a
+   snapshot: "these are the callers of `X` today"). Explain that the set becomes the case's expected
+   value and that the gate measures its non-regression.
+
+3. Persist only after explicit approval. For each approved case:
+
+   ```powershell
+   sertor-rag graph-eval add-case --relation who_calls --target build_facade `
+       --expected "path/to/a.py#A,path/to/b.py#B" --confirm
+   ```
+
+   - Never an implicit or automatic write: the user must approve the set first.
+   - If the check reports `unverifiable` refs (non-empty): name them to the user and offer to drop them
+     or proceed with `--confirm`. Do not force `--confirm` yourself.
+   - `add-case` is idempotent on `(relation, target)` and non-destructive (it preserves the retrieval
+     `[[case]]` and the other `[[graph_case]]`).
+   - A case with an EMPTY expected set is legitimate (expected "no callers"): use `--expected ""`.
+
+4. Re-authoring an existing snapshot. If the correct set changed and the user approves it, update the
+   case with `sertor-rag graph-eval amend-case --relation R --target T --expected "..."`. It is the
+   deterministic path to re-freeze the snapshot; the decision stays the user's.
+
+5. If the graph is not built (`graph_available=false`): STOP with an actionable message - "The code
+   graph does not appear to be built. Index the project first with `sertor-rag index .`, then re-run."
+
+Hard boundary (deterministic vs judgment, here too). The deterministic run (`sertor-rag graph-eval
+run`) DOES NOT depend on this skill or on any LLM: the skill is the judgment surface (propose/approve
+the sets), the run is the deterministic measure in the core. Every access to the graph goes ONLY
+through the `graph-eval validate-ref`/`add-case`/`amend-case` subcommands (vehicle): the skill never
+imports the core library.
+
 ## What NOT to do
 
 - Never write secrets into the suite (it is versioned data, diffable by hand).
-- Do not invent paths: every `expected` must be a real file in the index (verified with
-  `validate-path`).
+- Do not invent paths/refs: every `expected` must be real (verified with `validate-path` for retrieval
+  cases, with `graph-eval validate-ref` for navigation cases).
 - Do not run the evaluation on the user's behalf as if it were part of authoring: they are separate
   phases (authoring = assisted judgment; run = deterministic measure).

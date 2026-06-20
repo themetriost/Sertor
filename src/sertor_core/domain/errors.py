@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # forward ref only — avoid importing the services layer into `domain`
-    from sertor_core.services.eval.models import RegressionVerdict
+    from sertor_core.services.eval.models import GraphRegressionVerdict, RegressionVerdict
 
 
 class SertorError(Exception):
@@ -197,6 +197,47 @@ class SuiteWriteError(SertorError):
         super().__init__(
             f"could not serialise the eval artifact safely: {path} — "
             "the round-trip validation failed (the written TOML did not parse back)"
+        )
+
+
+class GraphSuiteValidationError(SertorError):
+    """A `[[graph_case]]` in the eval suite is malformed (066, REQ-004/005).
+
+    Twin of `SuiteValidationError`, but for the SET-BASED graph-navigation cases: a bad entry is an
+    authoring bug in the curated suite, not a legitimate empty result — fail and IDENTIFY the
+    offending case by index + a detail (relation/target/expected) so the author can fix it
+    (Principio IV). Kept distinct from the IR `SuiteValidationError` so the observability log and
+    the error message can tell a navigation problem apart from a retrieval one. Also raised on an
+    amend of a `(relation, target)` that does not exist, or on a relation outside the MVP set.
+    """
+
+    def __init__(self, case_index: int, detail: str):
+        self.case_index = case_index
+        self.detail = detail
+        super().__init__(f"invalid graph_case [{case_index}]: {detail}")
+
+
+class GraphRegressionDetected(SertorError):
+    """A graph-navigation run scored below the recorded baseline beyond tolerance (066, REQ-032).
+
+    The non-regression GATE for the SET-BASED navigation metric: `mean_f1` dropped by more than the
+    configured tolerance versus `eval/graph_baseline.toml` (or, with the exact-match gate on, a case
+    had `got != expected`). An explicit failure (exit 1) so CI can block the change; the message
+    names the degraded metric and the tolerance. Carries the full `GraphRegressionVerdict` so a
+    consumer can render the per-metric deltas. Twin of `RegressionDetected` (IR).
+    """
+
+    def __init__(self, verdict: GraphRegressionVerdict):
+        self.verdict = verdict
+        degraded = ", ".join(
+            f"{d.name} {d.current:.3f}<{d.baseline:.3f} (Δ={d.delta:+.3f})"
+            for d in verdict.deltas
+            if d.regressed
+        ) or "exact-match gate failed"
+        super().__init__(
+            f"graph non-regression gate FAILED (tolerance={verdict.tolerance:.3f}): {degraded} — "
+            "fix the navigation quality or, if this is an accepted new level, "
+            "re-record with `sertor-rag graph-eval run --record-baseline`"
         )
 
 

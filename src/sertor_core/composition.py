@@ -536,6 +536,69 @@ class _EvalRunner:
         return run_evaluation(routed, suite, ks)
 
 
+def build_graph_eval_runner(settings: Settings | None = None, *, exact_gate: bool = False):
+    """Build the graph-navigation eval runner — the vehicle for `sertor-rag graph-eval` (066).
+
+    REUSES `build_graph_service` to navigate (Principio XI — the ONLY place that knows the concrete
+    `NetworkxCodeGraph` for this path) and the `services/eval/graph_*` modules for the set-based
+    measure. Wires observability like the other consumer entry paths (feature 041). `exact_gate`
+    comes from the CLI flag or `Settings.graph_eval_exact`.
+    """
+    settings = settings or Settings.load()
+    _wire_runtime(settings)
+    graph = build_graph_service(settings)
+    return _GraphEvalRunner(graph, settings, exact_gate=exact_gate)
+
+
+class _GraphEvalRunner:
+    """Vehicle that runs the graph-navigation suite against the built code graph (066).
+
+    Lives in the composition root: the ONLY place that knows the concrete graph adapter for this
+    path (Principio I/XI). The CLI consumes it, never importing the graph/navigation directly.
+    """
+
+    def __init__(self, graph, settings: Settings, *, exact_gate: bool = False):
+        self._graph = graph
+        self._settings = settings
+        self._exact_gate = exact_gate
+
+    @property
+    def settings(self) -> Settings:
+        return self._settings
+
+    @property
+    def graph(self):
+        return self._graph
+
+    def run(self, suite):
+        """Navigate + score the suite → `(GraphEvalReport, GraphRegressionVerdict)` (REQ-013/032).
+
+        Requires the graph to be built (`graph.exists(corpus)` → else `GraphNotFoundError`,
+        actionable). Compares against `eval/graph_baseline.toml` (absent → `None`, gate passes) and
+        emits the metrics-only `graph_eval` event.
+        """
+        from sertor_core.domain.errors import GraphNotFoundError
+        from sertor_core.services.eval.graph_baseline_io import load_graph_baseline
+        from sertor_core.services.eval.graph_regression import compare_graph_to_baseline
+        from sertor_core.services.eval.graph_runner import (
+            emit_graph_eval_event,
+            run_graph_evaluation,
+        )
+
+        if not self._graph.exists(self._settings.corpus):
+            raise GraphNotFoundError(
+                "graph-eval requires the code graph; re-index with SERTOR_GRAPH=true",
+                corpus=self._settings.corpus,
+            )
+        report = run_graph_evaluation(self._graph, suite)
+        baseline = load_graph_baseline(self._settings.eval_dir / "graph_baseline.toml")
+        verdict = compare_graph_to_baseline(
+            report, baseline, self._settings.graph_eval_tolerance
+        )
+        emit_graph_eval_event(report, verdict, self._exact_gate)
+        return report, verdict
+
+
 def build_indexed_docs(settings: Settings | None = None) -> frozenset[str] | None:
     """Indexed document paths from the manifest, or `None` if absent/incompatible (065, DA-e).
 

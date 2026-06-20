@@ -198,6 +198,12 @@ class Settings:
     eval_dir: Path = field(default_factory=lambda: Path("eval"))  # SERTOR_EVAL_DIR
     eval_tolerance: float = 0.0        # SERTOR_EVAL_TOLERANCE — absolute gate tolerance (REQ-043)
 
+    # graph-navigation evaluation (066, FEAT-011): set-based oracle over the code graph. The suite
+    # `[[graph_case]]` and the navigation baseline live in `eval_dir` too (graph_baseline.toml).
+    # Defaults only here (Principio VIII); a comando non invocato il costo è identico a oggi.
+    graph_eval_tolerance: float = 0.0  # SERTOR_GRAPH_EVAL_TOLERANCE — mean_f1 gate tolerance
+    graph_eval_exact: bool = False     # SERTOR_GRAPH_EVAL_EXACT — exact-set gate (got != expected)
+
     # ingestione
     exclude_patterns: tuple[str, ...] = _DEFAULT_EXCLUDES
 
@@ -320,5 +326,7 @@ class Settings:
             index_reconcile_every=int(os.getenv("SERTOR_INDEX_RECONCILE_EVERY", "0")),
             eval_dir=Path(os.getenv("SERTOR_EVAL_DIR", "eval")),
             eval_tolerance=float(os.getenv("SERTOR_EVAL_TOLERANCE", "0.0")),
+            graph_eval_tolerance=float(os.getenv("SERTOR_GRAPH_EVAL_TOLERANCE", "0.0")),
+            graph_eval_exact=_bool_env("SERTOR_GRAPH_EVAL_EXACT", False),
             exclude_patterns=tuple(excludes) if excludes is not None else _DEFAULT_EXCLUDES,
         )

@@ -1,4 +1,6 @@
 # Sertor eval suite. Versioned project data — no secrets.
+# [[case]]       = retrieval (IR) — query → expected paths (hit@k/MRR).
+# [[graph_case]] = graph navigation — relation + target → expected refs (precision/recall/F1).
 # kind is optional (e.g. "symbol"/"nl"). Paths are POSIX, relative to the indexed root.
 
 [[case]]
@@ -130,3 +132,23 @@ kind = "nl"
 query = "spiegami come funziona il retrieval hybrid e dove e' implementato"
 expected = ["docs/retrieval.md", "wiki/concepts/hybrid-retrieval.md", "src/sertor_core/engines/hybrid.py"]
 kind = "nl"
+
+[[graph_case]]
+relation = "defines"
+target = "build_facade"
+expected = ["src/sertor_core/composition.py#build_facade"]
+
+[[graph_case]]
+relation = "defines"
+target = "collection_name"
+expected = ["src/sertor_core/composition.py#collection_name"]
+
+[[graph_case]]
+relation = "who_calls"
+target = "build_graph_service"
+expected = ["src/sertor_core/composition.py#build_indexer", "src/sertor_core/composition.py#_EvalRunner.run_by_kind", "src/sertor_mcp/server.py#_graph"]
+
+[[graph_case]]
+relation = "who_calls"
+target = "a_symbol_with_no_callers"
+expected = []
