@@ -14,7 +14,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > `requirements → spec → plan → tasks → implement`.
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-06-19)
+## ⚡ Executive summary (stato al 2026-06-20)
 
 ### ✅ Capacità consegnate (feature su `master`)
 
@@ -33,8 +33,11 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | MVP osservabilità F1–F4 (**accesa** sul dogfood) · **export OTel + visibilità RAG nella TUI** (FEAT-005/013/014/015, 2026-06-19) | `osservabilita` |
 | MVP memoria: cattura→ricerca→CLI/hook→distillazione (**acceso**) | `memoria-conversazioni` |
 | **Valutazione del retrieval & non-regressione** — `sertor-rag eval` (hit@k/MRR + gate baseline + `--by-kind` symbol→grafo) + skill genesi/feedback (FEAT-001, PR #92, 2026-06-20) | `retrieval-qualita` |
+| **Valutazione set-based della navigazione del grafo** — `sertor-rag graph-eval` (precision/recall/F1, `who_calls`/`defines`, baseline separata) (FEAT-011, 2026-06-20) | `retrieval-qualita` |
 
 *Dettaglio (PR, date, numeri) nella sezione ✅ DONE in fondo alla pagina.*
+
+> **Governance:** Costituzione **v1.3.0** — nuovo **Principio XII «Fail Loud, Fix the Cause»** (riparare la causa, non disattivare/silenziare per schivare un errore; *early feedback* è un valore). Distribuito agli ospiti via `sertor-flow` (starter neutro + blocco SDLC).
 
 ### 📋 Le 11 epiche (per stato)
 
@@ -49,7 +52,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **E2** | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | ergonomia installer · Codex · PyPI · `configure --check` (probe live, deferred) *(packaging ✅ + lifecycle ✅ + hardening Copilot FEAT-011 ✅ + wizard config ✅ + Copilot CLI-only ✅ + verifica empirica Copilot LIVE ✅, 2026-06-17)* |
 | **E3** | [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | **export OTel FEAT-005 ✅** + arricchimento span FEAT-013 ✅ + TUI tabella FEAT-014 ✅ + **visibilità RAG/dimostrabilità FEAT-015 ✅** (PR #88) · drift FEAT-012 · metriche aggregate · stima € (Should) · web · CSV/MD |
 | **E4** | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso | ricerca semantica · remember-this · retention · **distribuzione installer (Must)** · multi-assist |
-| **E5** | 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | 🔄 FEAT-001 ✅ su master | **suite di valutazione host-side ✅** (`sertor-rag eval` + gate non-regressione + `--by-kind` + skill, PR #92). Restano: FEAT-003 (qualità ibrido su NL, **ora misurabile**), FEAT-008/009 (skill da provare live), FEAT-002/004/005-007 |
+| **E5** | 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | 🔄 FEAT-001 + FEAT-011 ✅ su master | **eval IR host-side ✅** (`sertor-rag eval`, PR #92) + **eval set-based del grafo ✅** (`graph-eval`, FEAT-011, 2026-06-20). Skill genesi/feedback **provate live ✅** (FEAT-008/009). Restano: FEAT-003 (qualità ibrido su NL, **ora misurabile**), FEAT-002/004/005-007 |
 | **E6** | 🆕 [`backend-store-scala`](../../requirements/backend-store-scala/epic.md) | 📋 aperta | adapter PGVector (Should) |
 | **E7** | 🆕 [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 📋 aperta | chunking SQL → **sblocca** schema-SQL |
 | **E8** | 🆕 [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | 📋 aperta | bloccata a monte da `ingestione-estesa` |
@@ -61,8 +64,8 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-> Nessuna feature attiva su branch al momento (FEAT-001 `retrieval-qualita` ✅ **mergiata su `master`**,
-> PR #92, 2026-06-20 — vedi ✅ DONE). **Candidati a valore = i Must aperti** (sotto).
+> Nessuna feature attiva su branch al momento (FEAT-001 + **FEAT-011** `retrieval-qualita` ✅ **mergiate su `master`**,
+> 2026-06-20; skill FEAT-008/009 **provate live** — vedi ✅ DONE). **Candidati a valore = i Must aperti** (sotto).
 
 **Candidati a valore = Must aperti** (non ancora iniziati):
 
@@ -72,8 +75,8 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 - **Retrieval-qualità → migliorare l'ibrido sulle query NL (Should, `retrieval-qualita`, FEAT-003)** —
   la base di **misura** ora c'è (FEAT-001 ✅ su master): il run `--by-kind` ha isolato il bersaglio vero
   — i casi NL a rank 3-6 (es. un file di test sopra il sorgente). *Primo passo:* decomporre FEAT-003
-  («qualità di `search_code` su query architetturali»), ora con un numero di partenza misurato. *(Altri
-  follow-up di E5: FEAT-008 genesi assistita, FEAT-009 feedback — skill già implementate, da provare live.)*
+  («qualità di `search_code` su query architetturali»), ora con un numero di partenza misurato. *(FEAT-008
+  genesi assistita e FEAT-009 feedback: skill **provate live** il 2026-06-20.)*
 
 *(Le capacità già consegnate stanno in ✅ Capacità consegnate sopra e in ✅ DONE in fondo.)*
 

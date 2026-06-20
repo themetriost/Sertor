@@ -1,0 +1,5 @@
+recorded_at = "2026-06-20T18:25:47Z"
+cases = 4
+mean_f1 = 0.9375
+mean_recall = 1.0
+mean_precision = 0.9
