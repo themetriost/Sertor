@@ -1,0 +1,10 @@
+recorded_at = "2026-06-20T14:38:48Z"
+provider = "azure:text-embedding-3-large+graph(by-kind)"
+queries = 19
+mrr = 0.7741854636591479
+
+[hit_rate]
+1 = 0.6842105263157895
+3 = 0.8421052631578947
+5 = 0.9473684210526315
+10 = 1.0
