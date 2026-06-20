@@ -192,6 +192,12 @@ class Settings:
     index_incremental: bool = True     # SERTOR_INDEX_INCREMENTAL — incremental default (FR-002)
     index_reconcile_every: int = 0     # SERTOR_INDEX_RECONCILE_EVERY — full every N runs (FR-019)
 
+    # ground-truth evaluation (065, FEAT-001): the eval suite + non-regression baseline live as
+    # VERSIONED project data under `eval_dir` (NOT `.sertor/`, NOT the index). Default only here
+    # (Principio VIII); a comando non invocato il costo è identico a oggi (additività, REQ-062).
+    eval_dir: Path = field(default_factory=lambda: Path("eval"))  # SERTOR_EVAL_DIR
+    eval_tolerance: float = 0.0        # SERTOR_EVAL_TOLERANCE — absolute gate tolerance (REQ-043)
+
     # ingestione
     exclude_patterns: tuple[str, ...] = _DEFAULT_EXCLUDES
 
@@ -312,5 +318,7 @@ class Settings:
             graph_limit_docs=int(os.getenv("SERTOR_GRAPH_LIMIT_DOCS", "8")),
             index_incremental=_bool_env("SERTOR_INDEX_INCREMENTAL", True),
             index_reconcile_every=int(os.getenv("SERTOR_INDEX_RECONCILE_EVERY", "0")),
+            eval_dir=Path(os.getenv("SERTOR_EVAL_DIR", "eval")),
+            eval_tolerance=float(os.getenv("SERTOR_EVAL_TOLERANCE", "0.0")),
             exclude_patterns=tuple(excludes) if excludes is not None else _DEFAULT_EXCLUDES,
         )

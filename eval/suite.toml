@@ -1,0 +1,57 @@
+# Sertor eval suite (dogfood example). Versioned project data — no secrets.
+# kind ∈ {"symbol","nl"} (optional). Paths are repo-root-relative POSIX.
+
+[[case]]
+query = "EmbeddingProvider"
+expected = ["src/sertor_core/domain/ports.py"]
+kind = "symbol"
+
+[[case]]
+query = "IndexNotFoundError"
+expected = ["src/sertor_core/domain/errors.py", "src/sertor_core/engines/baseline.py"]
+kind = "symbol"
+
+[[case]]
+query = "collection_name"
+expected = ["src/sertor_core/composition.py"]
+kind = "symbol"
+
+[[case]]
+query = "log_event"
+expected = ["src/sertor_core/observability/logging.py"]
+kind = "symbol"
+
+[[case]]
+query = "ensure_index"
+expected = ["src/sertor_core/engines/baseline.py", "src/sertor_core/engines/hybrid.py"]
+kind = "symbol"
+
+[[case]]
+query = "ProviderMismatchError"
+expected = ["src/sertor_core/domain/errors.py", "src/sertor_core/services/retrieval.py"]
+kind = "symbol"
+
+[[case]]
+query = "where concrete adapters are chosen and the configuration is wired"
+expected = ["src/sertor_core/composition.py"]
+kind = "nl"
+
+[[case]]
+query = "atomic rebuild of the index from scratch"
+expected = ["src/sertor_core/services/indexing.py", "src/sertor_core/engines/baseline.py"]
+kind = "nl"
+
+[[case]]
+query = "fusion of multi-collection results in combined search"
+expected = ["src/sertor_core/services/retrieval.py"]
+kind = "nl"
+
+[[case]]
+query = "redaction of secrets in structured logs"
+expected = ["src/sertor_core/observability/logging.py"]
+kind = "nl"
+
+[[case]]
+query = "chunking with dispatch by document type and language"
+expected = ["src/sertor_core/services/chunking/dispatch.py"]
+kind = "nl"

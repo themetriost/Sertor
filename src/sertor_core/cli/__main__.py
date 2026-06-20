@@ -21,7 +21,9 @@ from sertor_core.cli.logging_setup import setup_logging
 from sertor_core.composition import (
     build_baseline_engine,
     build_episodic_search,
+    build_eval_runner,
     build_facade,
+    build_indexed_docs,
     build_indexer,
     build_memory_archiver,
     build_memory_reader,
@@ -31,11 +33,21 @@ from sertor_core.config.settings import Settings
 from sertor_core.domain.errors import (
     ConfigError,
     IngestionError,
+    RegressionDetected,
     SertorError,
     SessionNotFoundError,
 )
 from sertor_core.observability.logging import log_event
 from sertor_core.services.episodic_search import SearchQuery
+from sertor_core.services.eval.baseline_io import (
+    load_baseline,
+    now_iso_utc,
+    write_baseline,
+)
+from sertor_core.services.eval.models import Baseline, EvalCase
+from sertor_core.services.eval.regression import compare_to_baseline
+from sertor_core.services.eval.runner import emit_eval_event, validate_paths
+from sertor_core.services.eval.suite_io import add_case, load_suite
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -88,8 +100,89 @@ def _build_parser() -> argparse.ArgumentParser:
     p_observe.set_defaults(handler=_cmd_observe)
 
     _add_memory_parser(sub)
+    _add_eval_parser(sub)
 
     return parser
+
+
+def _add_eval_parser(sub) -> None:
+    """`eval` command group with `run`/`add-case`/`validate-path` sub-subcommands (065, US1/US5).
+
+    Mirrors the `memory` pattern: a nested `add_subparsers`, each action registering its handler
+    via `set_defaults`. `required=True` gives the usage error (exit 2) when `sertor-rag eval` is
+    invoked without an action. The run is a deterministic VEHICLE (Principio XI): never an LLM.
+    """
+    p_eval = sub.add_parser(
+        "eval", help="ground-truth evaluation of retrieval quality + non-regression gate",
+        description="Measure hit-rate@k/MRR against a versioned eval suite (eval/suite.toml) and "
+                    "gate non-regression against a recorded baseline.",
+    )
+    esub = p_eval.add_subparsers(dest="eval_command", required=True, metavar="subcommand")
+
+    p_run = esub.add_parser(
+        "run", help="evaluate the suite and report metrics + non-regression verdict",
+        description="Loads eval/suite.toml, builds the engine, computes hit-rate@k/MRR, and gates "
+                    "against eval/baseline.toml (exit 1 on regression beyond tolerance).",
+    )
+    p_run.add_argument("--compare", default=None,
+                       help="comma-separated config labels to compare on the same suite "
+                            "(e.g. baseline,hybrid)")
+    p_run.add_argument("--record-baseline", action="store_true",
+                       help="record/update eval/baseline.toml with the current metrics")
+    p_run.add_argument("-k", default=None,
+                       help="comma-separated k values for hit-rate@k (default: 1,3,5,10)")
+    p_run.add_argument("--json", action="store_true", help="report as a JSON object")
+    p_run.add_argument("--corpus", default=None,
+                       help="corpus namespace; overrides SERTOR_CORPUS")
+    _add_logging_flags(p_run)
+    p_run.set_defaults(handler=_cmd_eval_run)
+
+    p_add = esub.add_parser(
+        "add-case", help="add a case to the eval suite (validated against the index)",
+        description="Persists a (query → expected paths) case in eval/suite.toml. A path absent "
+                    "from the index warns and requires --confirm before writing.",
+    )
+    p_add.add_argument("--query", required=True, help="the query text (non-empty)")
+    p_add.add_argument("--expected", required=True,
+                       help="comma-separated expected path(s), POSIX, relative to the indexed root")
+    p_add.add_argument("--kind", default=None, help='optional kind (e.g. "symbol"/"nl")')
+    p_add.add_argument("--confirm", action="store_true",
+                       help="write even if an expected path is not in the index")
+    p_add.add_argument("--json", action="store_true", help="report as a JSON object")
+    p_add.add_argument("--corpus", default=None,
+                       help="corpus namespace; overrides SERTOR_CORPUS")
+    _add_logging_flags(p_add)
+    p_add.set_defaults(handler=_cmd_eval_add)
+
+    p_val = esub.add_parser(
+        "validate-path", help="check path(s) against the indexed documents (primitive for skills)",
+        description="Reports which of the given paths are present/missing in the index. Exit 0 "
+                    "always (it is a check, not a gate). Vehicle for the eval-authoring skills.",
+    )
+    p_val.add_argument("paths", nargs="+", help="one or more paths to check")
+    p_val.add_argument("--json", action="store_true", help="report as a JSON object")
+    p_val.add_argument("--corpus", default=None,
+                       help="corpus namespace; overrides SERTOR_CORPUS")
+    _add_logging_flags(p_val)
+    p_val.set_defaults(handler=_cmd_eval_validate)
+
+
+def _parse_ks(raw: str | None) -> tuple[int, ...]:
+    """Parse the `-k` flag (`1,3,5,10`) → tuple of ints; default when absent (REQ-033)."""
+    if not raw:
+        return (1, 3, 5, 10)
+    try:
+        return tuple(int(p.strip()) for p in raw.split(",") if p.strip())
+    except ValueError as exc:
+        raise ConfigError(f"invalid -k value {raw!r}: expected comma-separated integers") from exc
+
+
+def _suite_path(settings: Settings) -> Path:
+    return settings.eval_dir / "suite.toml"
+
+
+def _baseline_path(settings: Settings) -> Path:
+    return settings.eval_dir / "baseline.toml"
 
 
 def _add_memory_parser(sub) -> None:
@@ -369,6 +462,108 @@ def _cmd_memory_list(args) -> None:
     # Observability: counts only, never content (RNF-2, D8).
     log_event(logging.INFO, "memory_list", count=len(summaries), limit=limit)
     print(output.format_session_list(summaries, json=args.json))
+
+
+def _cmd_eval_run(args) -> None:
+    """Handler for `eval run`: measure + non-regression gate + optional compare (065, US1/US4).
+
+    Flow (contract cli-eval.md §run): load suite (absent → SuiteNotFoundError, exit 1) → build the
+    engine via `build_eval_runner` (vehicle, Principio XI) → `run_evaluation`. With `--compare`,
+    evaluate each label side-by-side. With a baseline present (and not `--record-baseline`), compare
+    and gate: a regression → `RegressionDetected` (exit 1). `--record-baseline` records the current
+    metrics (explicit acceptance, REQ-044). One `eval` event per evaluated config (metrics-only).
+    """
+    setup_logging(args)
+    settings = _resolve_settings(args)
+    _check_backend(settings)
+    enable_observability(settings)
+    ks = _parse_ks(args.k)
+    suite = load_suite(_suite_path(settings))  # absent → SuiteNotFoundError (exit 1, actionable)
+    runner = build_eval_runner(settings)
+
+    if args.compare:
+        labels = [s.strip() for s in args.compare.split(",") if s.strip()]
+        reports = []
+        for label in labels:
+            report, _kinds = runner.run_labelled(label, suite, ks)
+            emit_eval_event(report, None)
+            reports.append((label, report))
+        print(output.format_comparison(tuple(reports), json=args.json))
+        return
+
+    report, kinds = runner.run(suite, ks)
+    baseline_path = _baseline_path(settings)
+    if args.record_baseline:
+        baseline = Baseline(
+            hit_rate=report.hit_rate,
+            mrr=report.mrr,
+            queries=report.queries,
+            provider=report.provider,
+            recorded_at=now_iso_utc(),
+        )
+        write_baseline(baseline_path, baseline)
+        emit_eval_event(report, None)
+        print(output.format_eval_report(report, kinds, None, json=args.json))
+        return
+
+    baseline = load_baseline(baseline_path)
+    verdict = compare_to_baseline(report, baseline, settings.eval_tolerance)
+    emit_eval_event(report, verdict)
+    print(output.format_eval_report(report, kinds, verdict, json=args.json))
+    if verdict.verdict == "regressed":
+        raise RegressionDetected(verdict)
+
+
+def _cmd_eval_add(args) -> None:
+    """Handler for `eval add-case`: validate path(s) against the index, then persist (065, US1).
+
+    A path absent from the index → warning + requires `--confirm` (or, on a TTY, an interactive
+    confirmation) before writing; otherwise exit 1 azionabile, nothing written. The index being
+    unavailable (manifest absent) is the same path: persist only with `--confirm` (honest degrado).
+    """
+    setup_logging(args)
+    settings = _resolve_settings(args)
+    enable_observability(settings)
+    if not args.query.strip():
+        raise ConfigError("empty or whitespace-only query")
+    expected = tuple(p.strip() for p in args.expected.split(",") if p.strip())
+    if not expected:
+        raise ConfigError("no expected path provided")
+    pv = validate_paths(expected, build_indexed_docs(settings))
+    blocking = bool(pv.missing) or not pv.index_available
+    if blocking and not args.confirm and not _confirm_via_tty(pv):
+        # Print the warning to stderr; nothing is written (no partial state, REQ-012).
+        print(output.format_path_validation(pv, json=False), file=sys.stderr)
+        raise ConfigError(
+            "expected path(s) not verified against the index; "
+            "re-run with --confirm to add the case anyway"
+        )
+    if blocking:
+        print(output.format_path_validation(pv, json=False), file=sys.stderr)
+    add_case(_suite_path(settings), EvalCase(query=args.query, expected=expected, kind=args.kind))
+    print(output.format_path_validation(pv, json=args.json))
+
+
+def _confirm_via_tty(pv) -> bool:
+    """Interactive confirmation when both stdin and stdout are a TTY; else False (CI-safe)."""
+    if not (sys.stdin.isatty() and sys.stdout.isatty()):
+        return False
+    print(output.format_path_validation(pv, json=False), file=sys.stderr)
+    answer = input("add the case anyway? [y/N] ").strip().lower()
+    return answer in ("y", "yes")
+
+
+def _cmd_eval_validate(args) -> None:
+    """Handler for `eval validate-path`: report path↔index validation (065, primitive for skills).
+
+    Exit 0 always (it is a verification, not a gate): `missing` is information, not an error. It is
+    the deterministic vehicle the eval-authoring skills invoke (Principio XI).
+    """
+    setup_logging(args)
+    settings = _resolve_settings(args)
+    enable_observability(settings)
+    pv = validate_paths(tuple(args.paths), build_indexed_docs(settings))
+    print(output.format_path_validation(pv, json=args.json))
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -3,6 +3,11 @@
 This is the ONLY component that knows the concrete adapters and wires them from the configuration.
 Services and the facade depend only on ports; which implementation to use is decided here based
 on `Settings`. Extend here (not in services) to add providers/backends.
+
+Consumer entry points (`build_*`): facade/indexer/engine/graph/memory, plus the ground-truth eval
+vehicle (065): `build_eval_runner` (runs the suite against the configured engine) and
+`build_indexed_docs` (the indexed paths from the manifest, for write-time path validation). The
+CLI `eval` subcommand consumes these factories, never importing engines/manifest (Principio XI).
 """
 from __future__ import annotations
 
@@ -453,3 +458,76 @@ def build_engine(settings: Settings | None = None):
         settings,
         reranker=_build_reranker(settings),
     )
+
+
+def build_engine_for(settings: Settings, label: str):
+    """Build the engine named by `label` (`baseline`/`hybrid`) for the eval `--compare` (065).
+
+    The label overrides `Settings.engine` for THIS engine only (the comparison evaluates ≥2 configs
+    on the same suite, REQ-034); unknown label → `ConfigError` via `build_engine`'s validation.
+    """
+    from dataclasses import replace
+
+    return build_engine(replace(settings, engine=label))
+
+
+def build_eval_runner(settings: Settings | None = None):
+    """Build the eval runner — the vehicle for `sertor-rag eval` (065, Principio XI).
+
+    Returns a thin object that constructs the engine via `build_engine`/`build_engine_for` and runs
+    the deterministic measure (`run_evaluation`). The run has NO privacy gate (it is a local measure
+    over the index). Wires observability like the other consumer entry paths (feature 041).
+    """
+    settings = settings or Settings.load()
+    _wire_runtime(settings)
+    return _EvalRunner(settings)
+
+
+class _EvalRunner:
+    """Vehicle that runs the eval suite against the configured (or labelled) engine (065).
+
+    Lives in the composition root: the ONLY place that knows how to build the concrete engine
+    (Principio I/XI). The CLI consumes it, never importing engines/manifest directly.
+    """
+
+    def __init__(self, settings: Settings):
+        self._settings = settings
+
+    @property
+    def settings(self) -> Settings:
+        return self._settings
+
+    def run(self, suite, ks: tuple[int, ...] = (1, 3, 5, 10)):
+        """Evaluate `suite` against the current engine → `(EvalReport, kinds)`."""
+        from sertor_core.services.eval.runner import run_evaluation
+
+        engine = build_engine(self._settings)
+        engine.ensure_index()
+        return run_evaluation(engine, suite, ks)
+
+    def run_labelled(self, label: str, suite, ks: tuple[int, ...] = (1, 3, 5, 10)):
+        """Evaluate `suite` against the engine named `label` → `(EvalReport, kinds)` (REQ-034)."""
+        from sertor_core.services.eval.runner import run_evaluation
+
+        engine = build_engine_for(self._settings, label)
+        engine.ensure_index()
+        return run_evaluation(engine, suite, ks)
+
+
+def build_indexed_docs(settings: Settings | None = None) -> frozenset[str] | None:
+    """Indexed document paths from the manifest, or `None` if absent/incompatible (065, DA-e).
+
+    Reuses `IndexManifest.load(collection_name(...))` for the current `(corpus, provider)`: the
+    manifest's `files` keys are the indexed source paths (POSIX, relative to the indexing root). A
+    missing/incompatible manifest → `None` (honest degradation, Principio IV) so the caller can warn
+    «cannot verify» instead of pretending the index is empty. The vehicle for `validate_paths`.
+    """
+    from sertor_core.services.index_manifest import IndexManifest
+
+    settings = settings or Settings.load()
+    embedder = build_embedder(settings)
+    collection = collection_name(settings, embedder)
+    state = IndexManifest(settings.index_dir).load(collection)
+    if state is None:
+        return None
+    return frozenset(state.files.keys())

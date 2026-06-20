@@ -63,12 +63,15 @@ def test_env_excludes_dot_sertor(tmp_path: Path, make_runner):  # L1 / FR-020
 def test_no_wiki_artifacts_created(tmp_path: Path, make_runner):  # L1 / FR-021
     runner = make_runner()
     _run(tmp_path, runner, backend="azure")
-    # `install rag` deposits the RAG-usage hook under `.claude/` (feature 042) but NEVER the wiki
-    # scaffold (skills/commands/agents, wiki structure, wiki config).
+    # `install rag` deposits the RAG-usage hook + eval skills under `.claude/` but NEVER the wiki
+    # scaffold (the wiki-author skill, commands/agents, wiki structure, wiki config).
     assert not (tmp_path / "wiki").exists()
-    assert not (tmp_path / ".claude" / "skills").exists()
+    assert not (tmp_path / ".claude" / "skills" / "wiki-author").exists()
     assert not (tmp_path / ".claude" / "commands").exists()
     assert not (tmp_path / ".claude" / "agents").exists()
+    # The eval skills (065) ARE part of the RAG capability, by contrast.
+    assert (tmp_path / ".claude" / "skills" / "eval-suite-author" / "SKILL.md").exists()
+    assert (tmp_path / ".claude" / "skills" / "eval-feedback" / "SKILL.md").exists()
 
 
 def test_corpus_in_env_and_mcp(tmp_path: Path, make_runner):
