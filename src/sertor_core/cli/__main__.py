@@ -129,6 +129,9 @@ def _add_eval_parser(sub) -> None:
                             "(e.g. baseline,hybrid)")
     p_run.add_argument("--record-baseline", action="store_true",
                        help="record/update eval/baseline.toml with the current metrics")
+    p_run.add_argument("--by-kind", action="store_true",
+                       help="route each case by kind: symbol→code-graph, else→relevance engine "
+                            "(measures the right tool per query; requires the code graph)")
     p_run.add_argument("-k", default=None,
                        help="comma-separated k values for hit-rate@k (default: 1,3,5,10)")
     p_run.add_argument("--json", action="store_true", help="report as a JSON object")
@@ -491,7 +494,7 @@ def _cmd_eval_run(args) -> None:
         print(output.format_comparison(tuple(reports), json=args.json))
         return
 
-    report, kinds = runner.run(suite, ks)
+    report, kinds = runner.run_by_kind(suite, ks) if args.by_kind else runner.run(suite, ks)
     baseline_path = _baseline_path(settings)
     if args.record_baseline:
         baseline = Baseline(

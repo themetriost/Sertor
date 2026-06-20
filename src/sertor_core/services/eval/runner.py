@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import logging
 
+from sertor_core.domain.entities import DocType, RetrievalResult
+from sertor_core.domain.ports import CodeGraph
 from sertor_core.engines.evaluation import EvalReport, QueryableEngine, evaluate
 from sertor_core.observability.logging import log_event
 from sertor_core.services.eval.models import EvalSuite, PathValidation, RegressionVerdict
@@ -46,6 +48,40 @@ def emit_eval_event(report: EvalReport, verdict: RegressionVerdict | None) -> No
         regressed=verdict.verdict == "regressed" if verdict is not None else False,
         tolerance=verdict.tolerance if verdict is not None else None,
     )
+
+
+class RoutedEvalEngine:
+    """`QueryableEngine` that routes per case KIND: `symbol`→code-graph, else→relevance engine.
+
+    Measures the *right tool* for each case (065 follow-up, [[retrieval-vs-graph]]). For a `symbol`
+    case the answer is a DEFINITION, which lives in the code-graph (`find_symbol`); dense/lexical
+    retrieval instead ranks *mentions* (usages, tests, docs) above the definition, so measuring it
+    as a relevance query understates the system. For other kinds the relevance engine is correct.
+    The kind is looked up by query string (suite queries are unique). Graph hits become rank-ordered
+    `RetrievalResult`s — only `.path` matters to `evaluate`. Pure: depends on ports/entities, the
+    concrete graph/engine are built by the composition root (Principio XI).
+    """
+
+    def __init__(
+        self, engine: QueryableEngine, graph: CodeGraph, kind_by_query: dict[str, str]
+    ) -> None:
+        self._engine = engine
+        self._graph = graph
+        self._kind_by_query = kind_by_query
+
+    @property
+    def provider(self) -> str:
+        return f"{self._engine.provider}+graph(by-kind)"
+
+    def query(self, query: str, k: int | None = None) -> list[RetrievalResult]:
+        if self._kind_by_query.get(query) == "symbol":
+            return [
+                RetrievalResult(
+                    text="", path=hit.path, chunk_id=hit.ref, doc_type=DocType.CODE, score=1.0
+                )
+                for hit in self._graph.find_symbol(query)
+            ]
+        return self._engine.query(query, k)
 
 
 def validate_paths(

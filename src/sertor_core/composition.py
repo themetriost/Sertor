@@ -513,6 +513,28 @@ class _EvalRunner:
         engine.ensure_index()
         return run_evaluation(engine, suite, ks)
 
+    def run_by_kind(self, suite, ks: tuple[int, ...] = (1, 3, 5, 10)):
+        """Evaluate routing each case by KIND: `symbol`→code-graph, else→engine (065 follow-up).
+
+        Honest measure of the COMPOSITE system (relevance + graph), not one leg: a `symbol` lookup
+        is a definition question answered by `find_symbol`, the rest by the relevance engine. Builds
+        both vehicles (Principio XI) and wraps them in `RoutedEvalEngine`. Requires the code graph.
+        """
+        from sertor_core.domain.errors import ConfigError
+        from sertor_core.services.eval.runner import RoutedEvalEngine, run_evaluation
+
+        engine = build_engine(self._settings)
+        engine.ensure_index()
+        graph = build_graph_service(self._settings)
+        if not graph.exists(self._settings.corpus):
+            raise ConfigError(
+                "eval --by-kind requires the code graph; re-index with SERTOR_GRAPH=true",
+                key="SERTOR_GRAPH",
+            )
+        kind_by_query = {c.query: c.kind for c in suite.cases if c.kind}
+        routed = RoutedEvalEngine(engine, graph, kind_by_query)
+        return run_evaluation(routed, suite, ks)
+
 
 def build_indexed_docs(settings: Settings | None = None) -> frozenset[str] | None:
     """Indexed document paths from the manifest, or `None` if absent/incompatible (065, DA-e).

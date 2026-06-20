@@ -78,6 +78,32 @@ Sertor è migrato in `eval/suite.toml` (11 casi symbol/nl) come esempio dogfood.
 - **Osservabilità:** evento `eval` **metrics-only** (per il futuro trend di qualità, FEAT-009 di
   `osservabilita`).
 
+## Routing per-`kind` (`--by-kind`): misurare lo strumento giusto
+
+Una scoperta dal **primo run reale sul dogfood** (2026-06-20): la metrica "nuda" dava `hit@1=0.18`,
+`MRR=0.38` — *sospettosamente bassa* con due motori (denso+lessicale) + grafo. La causa non è la qualità
+del RAG ma la **misura**: `eval run` chiamava un **solo motore** (l'ibrido), e i casi `symbol` sono
+**domande da grafo poste alla ricerca**. La ricerca per similarità ordina le *menzioni* (usi, test, doc)
+sopra la *definizione*; per `"log_event"` la definizione (`observability/logging.py`) non era nemmeno nei
+primi 10 — mentre `find_symbol` la trova esatta e istantanea. *(Il "routing" del metodo a runtime non
+vive nel core: vive nell'**agente** che sceglie il tool MCP. Nessun router automatico nel core — decisione
+«agenzia composita». La modalità `--by-kind` è un router **deterministico** confinato all'eval.)*
+
+`RoutedEvalEngine` (`services/eval/runner.py`) instrada per `kind`: `symbol`→`find_symbol` (code-graph),
+altro→motore ibrido; riusa `evaluate` invariato. Opt-in `sertor-rag eval run --by-kind` (additivo).
+Effetto misurato sul dogfood:
+
+| Metrica | solo ibrido | `--by-kind` |
+|---|---|---|
+| hit@1 | 0.18 | **0.64** |
+| hit@10 | 0.91 | **1.00** |
+| MRR | 0.38 | **0.75** |
+
+Dimostra che il **sistema composito è sano** e isola i difetti *veri*: un simbolo definito due volte
+(`log_event` in `sertor_core` e in `sertor-install-kit`) e la qualità dell'ibrido sulle query NL
+(materia di FEAT-003). *Idea correlata registrata:* **vedere nella TUI quando si scende sul grafo vs la
+ricerca densa/ibrida** (roadmap → Nuove funzionalità, epica `osservabilita`).
+
 ## Confini
 
 Misura e presidia; **non** ridefinisce le modalità di retrieval ([[retrieval-core]]). Fuori ambito:
