@@ -34,6 +34,15 @@ not decoration:
   writing — it does not ship silently.
 - Amend the constitution through its own flow (semantic versioning), never by drift.
 
+### Error discipline — fix, don't suppress
+
+When something errors, remove the cause. **Never disable, mute, or route around a
+capability just to silence its error** — early, visible feedback is a value. Graceful
+degradation is acceptable only when it *reports* the failure (a warning/finding);
+silent suppression, or turning a feature off to dodge its error, is not. Disabling a
+capability is a deliberate, recorded decision, never a reflex. (Constitution: *Fail
+Loud, Fix the Cause*.)
+
 ### Version control discipline (owner of git/commit rules)
 
 This block is the **owner** of git and commit discipline for the project.
