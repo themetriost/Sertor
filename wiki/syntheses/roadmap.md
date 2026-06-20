@@ -48,7 +48,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **E2** | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | ergonomia installer · Codex · PyPI · `configure --check` (probe live, deferred) *(packaging ✅ + lifecycle ✅ + hardening Copilot FEAT-011 ✅ + wizard config ✅ + Copilot CLI-only ✅ + verifica empirica Copilot LIVE ✅, 2026-06-17)* |
 | **E3** | [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | **export OTel FEAT-005 ✅** + arricchimento span FEAT-013 ✅ + TUI tabella FEAT-014 ✅ + **visibilità RAG/dimostrabilità FEAT-015 ✅** (PR #88) · drift FEAT-012 · metriche aggregate · stima € (Should) · web · CSV/MD |
 | **E4** | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso | ricerca semantica · remember-this · retention · **distribuzione installer (Must)** · multi-assist |
-| **E5** | 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | 🔄 FEAT-001 in plan | **suite di valutazione host-side** (genesi → run → non-regressione) — branch `065`, SpecKit fino a **plan ✅ (Constitution 11/11)**, prossimo `/speckit-tasks` |
+| **E5** | 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | 🔄 FEAT-001 implementata | **suite di valutazione host-side** (`sertor-rag eval` + gate non-regressione + skill) — branch `065`, SpecKit completo, **718 verdi**, in attesa review/merge |
 | **E6** | 🆕 [`backend-store-scala`](../../requirements/backend-store-scala/epic.md) | 📋 aperta | adapter PGVector (Should) |
 | **E7** | 🆕 [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 📋 aperta | chunking SQL → **sblocca** schema-SQL |
 | **E8** | 🆕 [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | 📋 aperta | bloccata a monte da `ingestione-estesa` |
@@ -60,16 +60,21 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-> **Attiva su branch `065-ground-truth-valutazione`:** FEAT-001 `retrieval-qualita` (suite di valutazione
-> host-side). **Dove:** `specs/065-ground-truth-valutazione/` (requirements EARS + spec + plan completi).
-> **Pipeline SpecKit:** ✅ requirements → ✅ specify (checklist PASS) → ⏭️ clarify saltato (solo forche di
-> design, risolte con l'utente) → ✅ **plan (Constitution 11/11 pre+post)** → **prossimo `/speckit-tasks`**.
-> **Decisioni chiave:** artefatto suite TOML (+ writer minimale stdlib) in `eval/` versionato · baseline su
-> file + tolleranza → gate exit non-zero · run = sottocomando `sertor-rag eval` via vehicle (Principio XI) ·
-> genesi assistita + feedback = **skill** dell'agente (FEAT-008/009, P2, «LLM»=agente via skill, il core
-> non chiama mai un LLM) · estensione core non-breaking (`EvalReport.per_query`). **Blocco/decisione aperta:**
-> robustezza del serializzatore TOML a mano (fallback `tomli-w` se il round-trip cede in implementazione);
-> skill P2 da cablare in `build_rag_plan` prima che FEAT-008/009 contino come done.
+> **Implementata su branch `065-ground-truth-valutazione`, in attesa di review/merge:** FEAT-001
+> `retrieval-qualita` (suite di valutazione host-side). **Dove:** `specs/065-ground-truth-valutazione/`
+> (SpecKit completo) + `src/sertor_core/services/eval/` + `sertor-rag eval` + skill `eval-suite-author`/
+> `eval-feedback`. **Pipeline SpecKit:** ✅ requirements → ✅ specify → ⏭️ clarify saltato (forche di design
+> risolte con l'utente) → ✅ plan (Constitution 11/11) → ✅ tasks (24) → ✅ **implement (718 non-cloud verdi,
+> 3 skip packaging noti, ruff clean)**. **Cosa fa:** `eval run` misura hit-rate@k/MRR sulla suite TOML
+> versionata (`eval/suite.toml`) col dettaglio per-query e fa **gate di non-regressione** su baseline+tolleranza
+> (exit 1 sotto soglia); `add-case`/`validate-path` primitive per le skill; `--compare` confronta 2 config.
+> **Decisioni:** suite TOML (writer minimale stdlib, 0 nuove dipendenze) in `eval/` versionato · baseline su
+> file + tolleranza · run via vehicle (Principio XI, factory `build_eval_runner`/`build_indexed_docs`) ·
+> estensione core non-breaking (`EvalReport.per_query`/`QueryOutcome`) · genesi/feedback = **skill** vehicle-only
+> (FEAT-008/009, «LLM»=agente, il core non chiama mai un LLM) cablate in `build_rag_plan` (installabili). **Prossimo
+> passo:** review → merge su `master` → re-index dogfood + smoke test MCP (rituale). **Scoperta in implement:**
+> `derive-entity-types` non esiste nel repo e il rag-installer non depositava skill → eval-skill cablate come
+> native-skill dual-target (Claude `.claude/skills/` + Copilot `.github/skills/`).
 
 **Altri candidati a valore = Must aperti** (non ancora iniziati):
 
