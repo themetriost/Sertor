@@ -509,6 +509,35 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/065-ground-truth-valutazione/plan.md` (FEAT-001 epica **retrieval-qualita** — **ground-truth &
+valutazione della pertinenza**: promuove l'harness di valutazione da *fixture di test* a **capacità
+host-side**: una **suite-dato versionata** del progetto (`eval/suite.toml`, **TOML**), un **run
+deterministico via vehicle** (`sertor-rag eval run` → `hit-rate@k`/`MRR`, report umano + `--json` con
+dettaglio per-query hit/miss), un **gate di non-regressione** (`eval/baseline.toml` + tolleranza
+`SERTOR_EVAL_TOLERANCE`, exit non-zero sotto baseline oltre tolleranza), confronto **2 config locali**
+(`--compare baseline,hybrid`, `evaluate` 2×), e i **seam** per genesi assistita (FEAT-008, skill) e
+feedback (FEAT-009, skill) **senza** che il run dipenda mai da un LLM. **5 forche decise dall'utente,
+progettate:** **(a)** formato **TOML** — `tomllib` è read-only → **serializzatore minimale a mano** per
+lo schema piatto `[[case]]` (`tomli-w` scartato/rivalutabile, round-trip validato → `SuiteWriteError`
+fail-safe); **(b)** non-regressione = **baseline-su-file versionato + tolleranza** (pavimento assoluto
+rinviato Could); **(c)** genesi assistita = **skill NUOVA che riusa il PATTERN** (non il codice) di
+`derive-entity-types` — l'agente legge il corpus via RAG/MCP e **propone**, l'utente approva; **(d)**
+superficie = sottocomando **`sertor-rag eval`** (run/non-regressione/`add-case` deterministici) + skill
+per genesi/feedback (confine D↔N netto); **(e)** validazione `expected_path` **write-time** contro
+`IndexManifest.load(collection).files` esposto da `build_indexed_docs` (il CLI **è** il vehicle, Princ.
+XI). **Ancoraggio (promozione):** riusa `evaluate`/`EvalReport`/`QueryableEngine`
+(`engines/evaluation.py`) **estesi additivi non-breaking** (solo `EvalReport.per_query` + `QueryOutcome`
+nuovi; `kind` resta metadato dell'artefatto/report, la firma `GroundTruth=(query,expected)` invariata);
+servizio nuovo `services/eval/` (suite_io/baseline_io/regression/runner); fixture
+`tests/fixtures/ground_truth.py` **migrato** a `eval/suite.toml` come esempio dogfood (non spedito agli
+ospiti). **Nodi:** suite/baseline in **`eval/` versionato** (NON `.sertor/` gitignored — è dato del
+progetto, non output, REQ-006); evento osservabilità `eval` **metrics-only** (no query/path, gemello
+OTel 061); manopole `SERTOR_EVAL_DIR`/`_TOLERANCE` nei template `.env` dell'installer (skill P2 tracciate
+come **debito di completamento** della capacità). **Additivo a leve spente** (costo/comportamento
+identici, SC-009); `sertor-core` invariato fuori da `evaluation.py`+`services/eval/`+`composition`+`cli`.
+Constitution **PASS 11/11** (pre e post-design) senza deroghe. **Nota di processo:** `setup-plan.ps1`/
+`speckit-plan/SKILL.md` ASSENTI → parametri per convenzione dal branch, nessun hook eseguito; MCP
+`sertor-rag` interrogato (nessun errore tool). Branch `065-ground-truth-valutazione`. Storico:
 `specs/064-visibilita-rag-tui/plan.md` (FEAT-015 epica **osservabilità** — **visibilità del RAG nella
 TUI / dimostrabilità**: nuovo opt-in **`SERTOR_OBSERVABILITY_CONTENT`** (default off, richiede lo store)
 che realizza l'**opt-in raw-text REQ-E9** per **uso LOCALE** (scopo: *vedere/dimostrare* come funziona il

@@ -29,13 +29,35 @@ class QueryableEngine(Protocol):
 
 
 @dataclass(frozen=True)
+class QueryOutcome:
+    """Per-query outcome of a run, for the hit/miss detail of the report (065, REQ-033).
+
+    `kind` is NOT here: the core measures, it does not classify the case — the CLI report
+    re-associates the kind from the suite (Principio I/III). `rank` is 1-based (None on miss);
+    `top_path` is the path of the 1st result, a diagnosis hint for misses.
+    """
+
+    query: str
+    expected: tuple[str, ...]
+    hit: bool
+    rank: int | None
+    top_path: str | None
+
+
+@dataclass(frozen=True)
 class EvalReport:
-    """Evaluation result."""
+    """Evaluation result.
+
+    `per_query` (065, additive, default empty → backward-compatible, RNF-2): the per-query
+    detail populated by `evaluate`. Existing consumers that ignore it stay green; the field is
+    free to compute (the rank is already derived in the loop).
+    """
 
     hit_rate: dict[int, float]
     mrr: float
     queries: int
     provider: str
+    per_query: tuple[QueryOutcome, ...] = ()
 
 
 def evaluate(
@@ -46,14 +68,16 @@ def evaluate(
     """Computes hit-rate@k (for each k) and MRR@10 on the ground-truth.
 
     A result is relevant if its `path` is among the `expected_paths` for the query. Empty
-    ground-truth → metrics at 0, no error.
+    ground-truth → metrics at 0, no error. Also records a `QueryOutcome` per query (065): the
+    per-query detail reuses the SAME `rank` already computed for the metrics (no duplicated logic).
     """
     n = len(ground_truth)
     if n == 0:
-        return EvalReport({k: 0.0 for k in ks}, 0.0, 0, engine.provider)
+        return EvalReport({k: 0.0 for k in ks}, 0.0, 0, engine.provider, per_query=())
 
     hits = {k: 0 for k in ks}
     rr_sum = 0.0
+    outcomes: list[QueryOutcome] = []
     for query, expected in ground_truth:
         expected_set = set(expected)
         paths = [r.path for r in engine.query(query, k=10)]
@@ -64,9 +88,19 @@ def evaluate(
                     hits[k] += 1
             if rank <= 10:
                 rr_sum += 1.0 / rank
+        outcomes.append(
+            QueryOutcome(
+                query=query,
+                expected=tuple(expected),
+                hit=rank is not None,
+                rank=rank,
+                top_path=paths[0] if paths else None,
+            )
+        )
     return EvalReport(
         hit_rate={k: hits[k] / n for k in ks},
         mrr=rr_sum / n,
         queries=n,
         provider=engine.provider,
+        per_query=tuple(outcomes),
     )

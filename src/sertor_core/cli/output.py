@@ -18,7 +18,12 @@ from collections.abc import Sequence
 from sertor_core.config.settings import Settings
 from sertor_core.domain.entities import IndexReport, RetrievalResult
 from sertor_core.domain.memory import ArchivedSession, SessionSummary
+from sertor_core.engines.evaluation import EvalReport
 from sertor_core.services.episodic_search import EpisodicResults
+from sertor_core.services.eval.models import (
+    PathValidation,
+    RegressionVerdict,
+)
 from sertor_core.services.memory_archive import ArchiveRunReport
 
 
@@ -198,6 +203,166 @@ def format_session_transcript(session: ArchivedSession, *, json: bool) -> str:
         ts = _iso_utc(t.ts) if t.ts is not None else "?"
         blocks.append(f"[{t.index}] {t.role}  @={ts}\n    {t.text}")
     return "\n".join(blocks)
+
+
+def _hit_rate_line(hit_rate: dict[int, float]) -> str:
+    """`hit@1=0.55  hit@3=0.82  …` for a hit-rate dict, k ascending."""
+    return "  ".join(f"hit@{k}={hit_rate[k]:.2f}" for k in sorted(hit_rate))
+
+
+def _verdict_line(verdict: RegressionVerdict) -> str:
+    """One-line non-regression summary: `non-regression: PASS (tolerance=…)  mrr Δ=… …`."""
+    label = {"pass": "PASS", "regressed": "REGRESSED", "no-baseline": "NO-BASELINE"}[
+        verdict.verdict
+    ]
+    deltas = "  ".join(f"{d.name} Δ={d.delta:+.2f}" for d in verdict.deltas)
+    head = f"non-regression: {label} (tolerance={verdict.tolerance:.2f})"
+    return f"{head}  {deltas}".rstrip()
+
+
+def format_eval_report(
+    report: EvalReport,
+    kinds: tuple[str | None, ...],
+    verdict: RegressionVerdict | None,
+    *,
+    json: bool,
+) -> str:
+    """Format an eval run: aggregate metrics + per-query hit/miss detail (065, REQ-033/SC-002).
+
+    Human: a metrics line, then one row per query `[hit]`/`[miss]` + kind + rank + path; an
+    optional non-regression line. JSON: the informational equivalent (same fields). The `kind` is
+    re-associated from the suite by index (the core report does not carry it).
+    """
+    if json:
+        return _json.dumps(
+            {
+                "provider": report.provider,
+                "queries": report.queries,
+                "hit_rate": {str(k): report.hit_rate[k] for k in sorted(report.hit_rate)},
+                "mrr": round(report.mrr, 6),
+                "per_query": [
+                    {
+                        "query": o.query,
+                        "kind": kinds[i] if i < len(kinds) else None,
+                        "hit": o.hit,
+                        "rank": o.rank,
+                        "expected": list(o.expected),
+                        "top_path": o.top_path,
+                    }
+                    for i, o in enumerate(report.per_query)
+                ],
+                "non_regression": None
+                if verdict is None
+                else {
+                    "verdict": verdict.verdict,
+                    "tolerance": verdict.tolerance,
+                    "deltas": [
+                        {
+                            "name": d.name,
+                            "current": d.current,
+                            "baseline": d.baseline,
+                            "delta": d.delta,
+                            "regressed": d.regressed,
+                        }
+                        for d in verdict.deltas
+                    ],
+                },
+            }
+        )
+    lines = [
+        f"provider={report.provider}  queries={report.queries}",
+        f"{_hit_rate_line(report.hit_rate)}  mrr={report.mrr:.2f}",
+    ]
+    for i, o in enumerate(report.per_query):
+        kind = kinds[i] if i < len(kinds) else None
+        tag = "hit " if o.hit else "miss"
+        rank = str(o.rank) if o.rank is not None else "-"
+        detail = (
+            f"{', '.join(o.expected)} → {o.top_path}"
+            if o.hit
+            else f"{o.query}  (top: {o.top_path})"
+        )
+        lines.append(f"[{tag}] {kind or '-':<7} rank={rank:<3} {detail}")
+    if verdict is not None:
+        lines.append(_verdict_line(verdict))
+    return "\n".join(lines)
+
+
+def format_comparison(
+    reports: tuple[tuple[str, EvalReport], ...], *, json: bool
+) -> str:
+    """Format a side-by-side comparison of ≥2 configs on the same suite (065, REQ-034)."""
+    if json:
+        return _json.dumps(
+            {
+                label: {
+                    "provider": rep.provider,
+                    "hit_rate": {str(k): rep.hit_rate[k] for k in sorted(rep.hit_rate)},
+                    "mrr": round(rep.mrr, 6),
+                }
+                for label, rep in reports
+            }
+        )
+    if not reports:
+        return "(no configs to compare)"
+    labels = [label for label, _ in reports]
+    # Union of all k across reports, ascending.
+    ks = sorted({k for _, rep in reports for k in rep.hit_rate})
+    header = "metric".ljust(10) + "".join(label.ljust(11) for label in labels)
+    lines = [header]
+    for k in ks:
+        row = f"hit@{k}".ljust(10) + "".join(
+            f"{rep.hit_rate.get(k, 0.0):.2f}".ljust(11) for _, rep in reports
+        )
+        lines.append(row)
+    mrr_row = "mrr".ljust(10) + "".join(f"{rep.mrr:.2f}".ljust(11) for _, rep in reports)
+    lines.append(mrr_row)
+    return "\n".join(lines)
+
+
+def format_regression_report(verdict: RegressionVerdict, *, json: bool) -> str:
+    """Format a standalone non-regression verdict (065, REQ-043)."""
+    if json:
+        return _json.dumps(
+            {
+                "verdict": verdict.verdict,
+                "tolerance": verdict.tolerance,
+                "deltas": [
+                    {
+                        "name": d.name,
+                        "current": d.current,
+                        "baseline": d.baseline,
+                        "delta": d.delta,
+                        "regressed": d.regressed,
+                    }
+                    for d in verdict.deltas
+                ],
+            }
+        )
+    return _verdict_line(verdict)
+
+
+def format_path_validation(pv: PathValidation, *, json: bool) -> str:
+    """Format a write-time path validation (065, REQ-012). Exit 0 always (it is a check)."""
+    if json:
+        return _json.dumps(
+            {
+                "checked": list(pv.checked),
+                "missing": list(pv.missing),
+                "index_available": pv.index_available,
+            }
+        )
+    if not pv.index_available:
+        return (
+            f"index not available: cannot verify {len(pv.checked)} path(s) "
+            "— index the project first with `sertor-rag index .`"
+        )
+    if not pv.missing:
+        return f"all {len(pv.checked)} path(s) present in the index"
+    return (
+        f"warning: {len(pv.missing)} of {len(pv.checked)} path(s) NOT in the index: "
+        + ", ".join(pv.missing)
+    )
 
 
 def format_session_list(summaries: Sequence[SessionSummary], *, json: bool) -> str:

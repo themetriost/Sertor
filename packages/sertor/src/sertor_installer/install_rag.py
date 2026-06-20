@@ -85,6 +85,16 @@ _RAG_HOOK_TARGET = ".claude/hooks/sertor-rag-usage-check.ps1"
 _RAG_USAGE_SETTINGS = "rag/settings.rag-usage.json"
 _SETTINGS_TARGET = ".claude/settings.json"
 
+# Ground-truth eval skills (065, FEAT-001): the eval-authoring/feedback skills travel with the RAG
+# capability so the eval suite can be created/refined on the host ("feature complete only if
+# installable", Principio X). Host-agnostic bodies (CLI vehicle only, no slash-commands, no model
+# names) → byte-copied to each assistant's native skill container (`.claude/skills/` for Claude,
+# `.github/skills/` for the Copilot CLI). Single-file skills (no cross-references → closure
+# trivially satisfied). Source asset tree under `rag/skills/<name>/SKILL.md`.
+_EVAL_SKILL_NAMES = ("eval-suite-author", "eval-feedback")
+_CLAUDE_SKILLS_BASE = ".claude/skills"
+_COPILOT_SKILLS_BASE = ".github/skills"
+
 
 class DependencyError(InstallerError):
     """Dependency bootstrap failed: `uv` not found or `uv init`/`uv add` did not succeed."""
@@ -116,6 +126,20 @@ def _copilot_rag_hook_specs() -> list[HookEntrySpec]:
             f"{_PWSH} {_RAG_HOOK_TARGET_COPILOT} -Assistant copilot", 10,
             matcher=_RAG_MATCHER,
         )
+    ]
+
+
+def _eval_skill_artifacts(is_copilot: bool) -> list[Artifact]:
+    """FILE artifacts for the eval skills, routed to each assistant's skill container (065)."""
+    base = _COPILOT_SKILLS_BASE if is_copilot else _CLAUDE_SKILLS_BASE
+    return [
+        Artifact(
+            ArtifactKind.FILE,
+            f"rag/skills/{name}/SKILL.md",
+            f"{base}/{name}/SKILL.md",
+            WriteStrategy.CREATE_IF_ABSENT,
+        )
+        for name in _EVAL_SKILL_NAMES
     ]
 
 
@@ -207,6 +231,8 @@ def build_rag_plan(
             WriteStrategy.MERGE_DEDUP,
         )
     )
+    # Ground-truth eval skills (065): native skill bodies, byte-copied per-assistant (FILE).
+    plan.extend(_eval_skill_artifacts(is_copilot))
     return plan
 
 
@@ -386,8 +412,12 @@ def sertor_owned_paths(assistant: AssistantId = AssistantProfile.DEFAULT) -> Ser
     mcp_target = aprofile.target_for(Surface.MCP_SERVER)
     mcp_root_key = mcp_target.root_key or "mcpServers"
 
+    # Eval skill folders (065): each skill is a Sertor-owned dir (removed/upgraded in block).
+    skills_base = _COPILOT_SKILLS_BASE if is_copilot else _CLAUDE_SKILLS_BASE
+    eval_skill_dirs = tuple(f"{skills_base}/{name}" for name in _EVAL_SKILL_NAMES)
+
     return SertorOwnedPaths(
-        owned_dirs=(".sertor",),
+        owned_dirs=(".sertor", *eval_skill_dirs),
         owned_files=(hook_target,),
         shared_edits=(
             SharedEdit(instruction_target, SharedEditKind.MARKER, "SERTOR:RAG-USAGE"),
