@@ -596,6 +596,13 @@ Legenda: ✅ consegnata · 🔄 parziale (nucleo fatto, residuo aperto) · 📋 
 - **Soglie di pertinenza**: non fissate a priori; da misurare su ground-truth reale (DA-003 / DA-1·3).
 - **Numerazione**: epica FEAT-NNN ≠ `specs/NNN` (vedi banner sopra) — non riconciliarle a forza, documentare.
 - **Server MCP & nuovo indice**: dopo ogni feature che cambia il codice del server serve un **riavvio** del subprocess MCP per servirlo.
+- **Processo: `requirements.md` ↔ `spec.md` si sovrappongono?** (riflessione di metodo, 2026-06-20) — la fase
+  `requirements` (skill, EARS) e la `specify` SpecKit (user-story + accettazione) coprono entrambe il
+  *cosa/perché* e in FEAT-001 si sono sovrapposte parecchio. **Da fare:** confrontare i due artefatti di
+  `specs/065-ground-truth-valutazione/` e decidere — per le prossime feature conviene sempre entrambe, o a
+  volte saltarne una (es. `requirements`→`plan` diretto come feature 064)? **Nota emersa:** la skill
+  `speckit-specify` e il template `spec-template.md` **non sono nel repo** (l'agente ha proceduto per
+  convenzione) → eventuale debito di tooling. Casa possibile dell'esito: epica `debito-tecnico` o questa nota.
 
 ## Come mantenere questa pagina
 
