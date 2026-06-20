@@ -95,3 +95,38 @@ kind = "nl"
 query = "full-text episodic search over archived conversations"
 expected = ["src/sertor_core/services/episodic_search.py"]
 kind = "nl"
+
+[[case]]
+query = "NetworkxCodeGraph"
+expected = ["src/sertor_core/adapters/graph/networkx_graph.py"]
+kind = "symbol"
+
+[[case]]
+query = "who_calls"
+expected = ["src/sertor_core/adapters/graph/networkx_graph.py", "src/sertor_core/domain/ports.py"]
+kind = "symbol"
+
+[[case]]
+query = "related_docs"
+expected = ["src/sertor_core/adapters/graph/networkx_graph.py", "src/sertor_core/domain/ports.py"]
+kind = "symbol"
+
+[[case]]
+query = "extract_graph"
+expected = ["src/sertor_core/services/graph_extraction.py"]
+kind = "symbol"
+
+[[case]]
+query = "extracting symbols and call edges to build the code graph during indexing"
+expected = ["src/sertor_core/services/graph_extraction.py"]
+kind = "nl"
+
+[[case]]
+query = "where is the reranker applied to reorder hybrid retrieval results"
+expected = ["tests/unit/test_rerank.py", "src/sertor_core/engines/hybrid.py"]
+kind = "nl"
+
+[[case]]
+query = "spiegami come funziona il retrieval hybrid e dove e' implementato"
+expected = ["docs/retrieval.md", "wiki/concepts/hybrid-retrieval.md", "src/sertor_core/engines/hybrid.py"]
+kind = "nl"
