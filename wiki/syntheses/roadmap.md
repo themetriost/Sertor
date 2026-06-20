@@ -48,7 +48,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **E2** | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | ergonomia installer · Codex · PyPI · `configure --check` (probe live, deferred) *(packaging ✅ + lifecycle ✅ + hardening Copilot FEAT-011 ✅ + wizard config ✅ + Copilot CLI-only ✅ + verifica empirica Copilot LIVE ✅, 2026-06-17)* |
 | **E3** | [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | **export OTel FEAT-005 ✅** + arricchimento span FEAT-013 ✅ + TUI tabella FEAT-014 ✅ + **visibilità RAG/dimostrabilità FEAT-015 ✅** (PR #88) · drift FEAT-012 · metriche aggregate · stima € (Should) · web · CSV/MD |
 | **E4** | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso | ricerca semantica · remember-this · retention · **distribuzione installer (Must)** · multi-assist |
-| **E5** | 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | 📋 FEAT-001 decomposta | **suite di valutazione host-side** (genesi → run → non-regressione) — requisiti EARS pronti, prossimo `/speckit-plan` |
+| **E5** | 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | 🔄 FEAT-001 in plan | **suite di valutazione host-side** (genesi → run → non-regressione) — branch `065`, SpecKit fino a **plan ✅ (Constitution 11/11)**, prossimo `/speckit-tasks` |
 | **E6** | 🆕 [`backend-store-scala`](../../requirements/backend-store-scala/epic.md) | 📋 aperta | adapter PGVector (Should) |
 | **E7** | 🆕 [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 📋 aperta | chunking SQL → **sblocca** schema-SQL |
 | **E8** | 🆕 [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | 📋 aperta | bloccata a monte da `ingestione-estesa` |
@@ -60,9 +60,18 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-> Nessuna feature attiva su branch al momento. **Candidati a valore = i Must aperti** (sotto).
+> **Attiva su branch `065-ground-truth-valutazione`:** FEAT-001 `retrieval-qualita` (suite di valutazione
+> host-side). **Dove:** `specs/065-ground-truth-valutazione/` (requirements EARS + spec + plan completi).
+> **Pipeline SpecKit:** ✅ requirements → ✅ specify (checklist PASS) → ⏭️ clarify saltato (solo forche di
+> design, risolte con l'utente) → ✅ **plan (Constitution 11/11 pre+post)** → **prossimo `/speckit-tasks`**.
+> **Decisioni chiave:** artefatto suite TOML (+ writer minimale stdlib) in `eval/` versionato · baseline su
+> file + tolleranza → gate exit non-zero · run = sottocomando `sertor-rag eval` via vehicle (Principio XI) ·
+> genesi assistita + feedback = **skill** dell'agente (FEAT-008/009, P2, «LLM»=agente via skill, il core
+> non chiama mai un LLM) · estensione core non-breaking (`EvalReport.per_query`). **Blocco/decisione aperta:**
+> robustezza del serializzatore TOML a mano (fallback `tomli-w` se il round-trip cede in implementazione);
+> skill P2 da cablare in `build_rag_plan` prima che FEAT-008/009 contino come done.
 
-**Candidati a valore = i Must aperti** (non ancora iniziati):
+**Altri candidati a valore = Must aperti** (non ancora iniziati):
 
 - **Memoria → distribuzione via installer (Must, `memoria-conversazioni`)** — la memoria è *accesa* sul
   dogfood ma **non installabile su un ospite**: chiude il corollario "una feature è completa solo se
