@@ -48,7 +48,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 | # | Epica | Stato | Residuo / 1° passo |
 |---|---|---|---|
-| **E1** | [`sertor-core`](../../requirements/sertor-core/epic.md) | ✅ completa | — (agenzia incorporata ❌ abbandonata by design) · *robustezza staleness: ChromaStore auto-refresh PR #89 + code-graph auto-reload PR #90, 2026-06-19* |
+| **E1** | [`sertor-core`](../../requirements/sertor-core/epic.md) | 🔄 quasi completa (1 Should aperta) | **FEAT-011 embedder locale deterministico per eval/CI (local-first)** — aperta 2026-06-20 dall'audit RAG, prerequisito della CI (E10 FEAT-003). *(agenzia incorporata ❌ abbandonata by design)* |
 | **E2** | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | ergonomia installer · Codex · PyPI · `configure --check` (probe live, deferred) *(packaging ✅ + lifecycle ✅ + hardening Copilot FEAT-011 ✅ + wizard config ✅ + Copilot CLI-only ✅ + verifica empirica Copilot LIVE ✅, 2026-06-17)* |
 | **E3** | [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | **export OTel FEAT-005 ✅** + arricchimento span FEAT-013 ✅ + TUI tabella FEAT-014 ✅ + **visibilità RAG/dimostrabilità FEAT-015 ✅** (PR #88) · drift FEAT-012 · metriche aggregate · stima € (Should) · web · CSV/MD |
 | **E4** | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso | ricerca semantica · remember-this · retention · **distribuzione installer (Must)** · multi-assist |
