@@ -1,7 +1,8 @@
 # Sertor eval suite. Versioned project data — no secrets.
 # [[case]]       = retrieval (IR) — query → expected paths (hit@k/MRR).
-# [[graph_case]] = graph navigation — relation + target → expected refs (precision/recall/F1).
-# kind is optional (e.g. "symbol"/"nl"). Paths are POSIX, relative to the indexed root.
+#   intent (069) = "code" | "doc" | "both" — surface measured + expected types (fusion).
+# [[graph_case]] = graph navigation — relation + target → expected refs (P/R/F1).
+# kind/intent are optional. Paths are POSIX, relative to the indexed root.
 
 [[case]]
 query = "EmbeddingProvider"
@@ -37,26 +38,31 @@ kind = "symbol"
 query = "where concrete adapters are chosen and the configuration is wired"
 expected = ["src/sertor_core/composition.py"]
 kind = "nl"
+intent = "code"
 
 [[case]]
 query = "atomic rebuild of the index from scratch"
 expected = ["src/sertor_core/services/indexing.py", "src/sertor_core/engines/baseline.py"]
 kind = "nl"
+intent = "code"
 
 [[case]]
 query = "fusion of multi-collection results in combined search"
 expected = ["src/sertor_core/services/retrieval.py"]
 kind = "nl"
+intent = "code"
 
 [[case]]
 query = "redaction of secrets in structured logs"
 expected = ["src/sertor_core/observability/logging.py"]
 kind = "nl"
+intent = "code"
 
 [[case]]
 query = "chunking with dispatch by document type and language"
 expected = ["src/sertor_core/services/chunking/dispatch.py"]
 kind = "nl"
+intent = "code"
 
 [[case]]
 query = "HybridEngine"
@@ -82,16 +88,19 @@ kind = "symbol"
 query = "retry with exponential backoff and jitter on transient embedder errors"
 expected = ["src/sertor_core/adapters/embeddings/_retry.py"]
 kind = "nl"
+intent = "code"
 
 [[case]]
 query = "reciprocal rank fusion combining dense and lexical retrieval"
 expected = ["src/sertor_core/engines/hybrid.py"]
 kind = "nl"
+intent = "code"
 
 [[case]]
 query = "exporting observability events as OpenTelemetry spans"
 expected = ["src/sertor_core/observability/otel.py"]
 kind = "nl"
+intent = "code"
 
 [[case]]
 query = "full-text episodic search over archived conversations"
@@ -132,6 +141,90 @@ kind = "nl"
 query = "spiegami come funziona il retrieval hybrid e dove e' implementato"
 expected = ["docs/retrieval.md", "wiki/concepts/hybrid-retrieval.md", "src/sertor_core/engines/hybrid.py"]
 kind = "nl"
+
+[[case]]
+query = "why consumers must use the vehicles instead of importing the library at runtime"
+expected = ["wiki/concepts/constitution.md"]
+kind = "nl"
+intent = "doc"
+
+[[case]]
+query = "Sertor mission and the code+doc fusion differentiator"
+expected = ["wiki/concepts/mission-vision.md", "README.md"]
+kind = "nl"
+intent = "doc"
+
+[[case]]
+query = "what dogfooding is and why we do it"
+expected = ["wiki/concepts/dogfooding.md"]
+kind = "nl"
+intent = "doc"
+
+[[case]]
+query = "why hybrid retrieval is the default engine"
+expected = ["wiki/concepts/hybrid-retrieval.md", "docs/retrieval.md"]
+kind = "nl"
+intent = "doc"
+
+[[case]]
+query = "the deterministic versus judgment boundary"
+expected = ["wiki/concepts/deterministic-vs-judgment.md"]
+kind = "nl"
+intent = "doc"
+
+[[case]]
+query = "hybrid retrieval versus the code graph when to use which"
+expected = ["wiki/concepts/retrieval-vs-graph.md", "docs/retrieval.md"]
+kind = "nl"
+intent = "doc"
+
+[[case]]
+query = "the step ritual and definition of done"
+expected = ["wiki/concepts/step-ritual.md"]
+kind = "nl"
+intent = "doc"
+
+[[case]]
+query = "privacy by default in conversation memory"
+expected = ["wiki/concepts/memoria-conversazioni.md"]
+kind = "nl"
+intent = "doc"
+
+[[case]]
+query = "what Principle XI requires and where it is wired in the composition root"
+expected = ["wiki/concepts/constitution.md", "src/sertor_core/composition.py"]
+kind = "nl"
+intent = "both"
+
+[[case]]
+query = "incremental index refresh requirements and implementation"
+expected = ["requirements/sertor-core/refresh-incrementale/requirements.md", "src/sertor_core/services/indexing.py"]
+kind = "nl"
+intent = "both"
+
+[[case]]
+query = "fusion coverage how it is specified and implemented"
+expected = ["requirements/retrieval-qualita/qualita-search-code-nl/requirements.md", "src/sertor_core/services/eval/fusion.py"]
+kind = "nl"
+intent = "both"
+
+[[case]]
+query = "local-first embedder requirements and code"
+expected = ["requirements/sertor-core/embedder-locale/requirements.md", "src/sertor_core/adapters/embeddings/glove.py"]
+kind = "nl"
+intent = "both"
+
+[[case]]
+query = "secret scrubbing in content requirement and implementation"
+expected = ["requirements/memoria-conversazioni/cattura-archiviazione/requirements.md", "src/sertor_core/observability/scrub.py"]
+kind = "nl"
+intent = "both"
+
+[[case]]
+query = "set-based graph evaluation spec and code"
+expected = ["requirements/retrieval-qualita/valutazione-navigazione-grafo/requirements.md", "src/sertor_core/services/eval/graph_eval.py"]
+kind = "nl"
+intent = "both"
 
 [[graph_case]]
 relation = "defines"

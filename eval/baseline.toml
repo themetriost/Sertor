@@ -8,3 +8,36 @@ mrr = 0.7772893772893773
 3 = 0.8846153846153846
 5 = 0.9615384615384616
 10 = 1.0
+
+[fused_baseline]
+recorded_at = "2026-06-21T17:48:26Z"
+provider = "azure:text-embedding-3-large"
+queries = 28
+fusion_coverage = 0.16666666666666666
+
+[[fused_baseline.surface]]
+surface = "search_code"
+mrr = 0.7395833333333334
+[fused_baseline.surface.hit_rate]
+1 = 0.625
+3 = 0.875
+5 = 1.0
+10 = 1.0
+
+[[fused_baseline.surface]]
+surface = "search_docs"
+mrr = 0.5520833333333333
+[fused_baseline.surface.hit_rate]
+1 = 0.375
+3 = 0.75
+5 = 0.875
+10 = 0.875
+
+[[fused_baseline.surface]]
+surface = "search_combined"
+mrr = 0.5779761904761905
+[fused_baseline.surface.hit_rate]
+1 = 0.5
+3 = 0.5
+5 = 0.6666666666666666
+10 = 1.0
