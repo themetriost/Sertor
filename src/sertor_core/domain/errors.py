@@ -89,6 +89,25 @@ class GraphNotFoundError(SertorError):
         super().__init__(f"{message} [corpus={corpus}]")
 
 
+class GloveUnavailableError(SertorError):
+    """The GloVe vectors file is not available and cannot be acquired (068, REQ-040/041).
+
+    Raised when GloVe is selected (the default provider) but the data file is absent from cache,
+    no `SERTOR_GLOVE_PATH` is set, and it cannot be downloaded (no network / download or parse
+    failure). A fail-loud error (Principio XII), NEVER a silent fallback to another provider: the
+    message names BOTH exits (a local file via `SERTOR_GLOVE_PATH`, or the lexical provider via
+    `SERTOR_EMBED_PROVIDER=hash`). Carries the reason so the cause is visible.
+    """
+
+    def __init__(self, message: str, *, reason: str):
+        self.reason = reason
+        super().__init__(
+            f"{message} [reason={reason}] — "
+            "set SERTOR_GLOVE_PATH to a local glove.6B.300d.txt file, "
+            "or select the lexical provider with SERTOR_EMBED_PROVIDER=hash"
+        )
+
+
 class IndexNotFoundError(SertorError):
     """An index is queried before it exists (REQ-009 from FEAT-002).
 

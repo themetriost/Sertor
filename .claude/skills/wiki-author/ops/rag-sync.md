@@ -7,9 +7,10 @@
 Makes the wiki queryable via RAG (the wiki's "corpus" role).
 
 1. Run `sertor-wiki-tools index --config wiki/wiki.config.toml --root .`. The CLI reads `[rag]` (isolated corpus,
-   default `wiki`) and performs an idempotent rebuild-from-scratch; the backend (local Chroma / Azure AI Search)
-   depends on `RAG_BACKEND` in `.env`. **Do not** launch Python interpreters manually.
-2. If the CLI reports an unconfigured embeddings provider (e.g. `RAG_BACKEND=azure` without credentials),
-   **stop and report** (do not fail silently).
+   default `wiki`) and performs an idempotent rebuild-from-scratch; the embedding provider and the vector
+   store are read from `.env` (see the env knobs documented in the install guide). **Do not** launch
+   Python interpreters manually.
+2. If the CLI reports an unconfigured embeddings provider (e.g. the cloud provider selected without
+   credentials), **stop and report** (do not fail silently).
 3. Append a log entry `rag-sync` with `documents`/`collection` from the `wiki.index/1` contract.
 4. **Cost:** with the azure backend, embeddings are billable.

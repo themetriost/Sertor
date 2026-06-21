@@ -521,6 +521,43 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/068-embedder-locale/plan.md` (FEAT-011 epica **sertor-core** — **embedder locale**: due provider di
+embeddings **locali e deterministici** dietro la porta `EmbeddingProvider` esistente — **`glove`** (GloVe 6B
+300d, PDDL, **nuovo default**, semantica NL locale) + **`hash`** (char-n-gram stdlib, dim 512, sign-hashing
+`blake2b`, pavimento airgapped/CI) — e **semplificazione della config: `RAG_BACKEND` RIMOSSO** (decisione
+utente). Unica superficie del provider = manopola dedicata **`SERTOR_EMBED_PROVIDER`** (`glove|hash|ollama|
+azure`, default `glove`); lo store = **`SERTOR_STORE_BACKEND`** con **default proprio `local`** (non più
+derivato). **NESSUNA** logica «se RAG_BACKEND=azure → azure»; `RAG_BACKEND` residuo in env → **warning
+fail-loud** (REQ-007, Princ. XII) che nomina le manopole sostitutive, mai lettura silenziosa. **8 forche
+decise:** **(DA-1)** `embed_provider` da property derivata→**campo** da `SERTOR_EMBED_PROVIDER`; `store_backend`
+default indipendente `local`; `validate_backend` ri-chiavata su `embed_provider`/`store_backend` (locali →
+`[]`, mai blocco). **(DA-2)** `hash` = char-n-gram n=3..5 → `blake2b(digest_size=8)` sign-hashing su dim
+**512** → L2-norm, `name="hash:512"`, **solo stdlib**, deterministico cross-macchina/cross-Python (mai
+`hash()` salted). **(DA-3)** `glove` = media vettori token in-vocab + L2-norm; OOV via split camel/snake;
+tutto-OOV→vettore zero deterministico; `name="glove:300"`; **`numpy` lazy** (già transitiva da chromadb,
+nessun nuovo extra). **(DA-4)** cache utente condivisa per-macchina XDG-style **stdlib** (`%LOCALAPPDATA%`/
+`~/.cache/sertor/glove`, no `platformdirs`); `glove.6B.zip` Stanford NLP via `urllib`+`zipfile`, atomic
+`os.replace`; override `SERTOR_GLOVE_PATH` → mai download; download **legato alla sola indicizzazione** (non
+install/query). **(DA-5)** fail-loud: nuovo errore di dominio **`GloveUnavailableError`** azionabile che
+nomina ENTRAMBE le vie d'uscita (`SERTOR_GLOVE_PATH`, `SERTOR_EMBED_PROVIDER=hash`); **mai** fallback
+silenzioso; avviso `hash` «NL limitata» + avviso una-tantum download (~822 MB). **(DA-6)** osservabilità: 3
+eventi **metrics-only** (`embeddings_provider_selected`/`glove_download`/`glove_cache_hit`, niente segreti/
+path/query). **(DA-7/8)** wiring eval/CI via vehicle (`build_embedder`/composizione, Princ. XI), nessun
+nuovo seam. **Additivo** (composition `build_embedder`→4 rami + nuovi adapter `adapters/embeddings/{hashing,
+glove,glove_cache}.py` + Settings + 1 errore di dominio) **salvo la rimozione mirata di `RAG_BACKEND`**;
+**porta/servizi/engine INVARIATI** (REQ-050), `build_store` invariato nel corpo, `collection_name` invariato
+(il `name` stabile isola le collezioni, REQ-051). **Cambiamento trasversale enumerato nel plan** (~25 punti:
+`settings.py` 6 punti, `composition.py`, ~10 file di test core, template `.env` installer, wizard
+`configure`/`rag_profile`/`__main__`, doc utente). **Corollario installabile:** template `.env` (- `RAG_BACKEND`,
++ `SERTOR_EMBED_PROVIDER`/`# SERTOR_GLOVE_PATH`) + doc + nota di migrazione (rimozione + cambio default) =
+Must (REQ-060/061); allineamento concetto installer `backend`→`provider` (`rag_profile`/`configure`) =
+**debito di completamento P2** (gruppo G Should). **CI vera = FUORI AMBITO** (FEAT-003 epica debito-tecnico;
+questa feature consegna il **determinismo offline** che la abilita). Constitution **PASS 12/12 + missione
+PASS** (pre e post-design) senza deroghe; gate missione: abilita retrieval **semantico locale sul versante
+doc** (profilo doc-only/doc-heavy, cuore della fusione code+doc) + sblocca adozione enterprise/gate eval in
+CI + semplifica la config. **Nota di processo:** `setup-plan.ps1`/`speckit-plan/SKILL.md` ASSENTI →
+parametri per convenzione dal branch (forma da `066`); nessun hook eseguito; MCP `sertor-rag` interrogato
+(nessun errore tool). Branch `068-embedder-locale`. Storico:
 `specs/066-valutazione-navigazione-grafo/plan.md` (FEAT-011 epica **retrieval-qualita** — **valutazione
 della navigazione del grafo (set-based)**: rende **misurabile** la potenza relazionale del code-graph,
 estendendo l'harness IR di FEAT-001 con un **secondo oracolo a insiemi** per i casi relazionali, **senza**

@@ -41,7 +41,8 @@ def _use(monkeypatch, factory) -> None:
     """Replaces facade construction and clears the memoized cache.
 
     Also neutralises `Settings.load`: `_facade()` calls it with the default `env_file=".env"`, which
-    with `override=True` would pollute the global `os.environ` (e.g. `RAG_BACKEND`), breaking
+    with `override=True` would pollute the global `os.environ` (e.g. `SERTOR_EMBED_PROVIDER`),
+    breaking
     isolation for subsequent tests. Mock factories ignore settings anyway.
     """
     monkeypatch.setattr(srv, "build_facade", factory)

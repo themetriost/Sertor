@@ -19,12 +19,12 @@ def _base(env, **over):
 
 # ----------------------------------------------------------------- validate_backend
 def test_validate_backend_local_returns_empty():
-    s = Settings(backend="local", store_backend="local")
+    s = Settings(embed_provider="glove", store_backend="local")
     assert s.validate_backend() == []
 
 
 def test_validate_backend_azure_embeddings_missing_endpoint():
-    s = Settings(backend="azure", store_backend="local")
+    s = Settings(embed_provider="azure", store_backend="local")
     missing = s.validate_backend()
     assert "AZURE_OPENAI_ENDPOINT" in missing
     assert "AZURE_OPENAI_API_KEY" in missing
@@ -32,7 +32,7 @@ def test_validate_backend_azure_embeddings_missing_endpoint():
 
 
 def test_validate_backend_azure_store_missing_key():
-    s = Settings(backend="local", store_backend="azure")
+    s = Settings(embed_provider="glove", store_backend="azure")
     missing = s.validate_backend()
     assert "AZURE_SEARCH_ENDPOINT" in missing
     assert "AZURE_SEARCH_API_KEY" in missing
@@ -42,7 +42,7 @@ def test_validate_backend_azure_store_missing_key():
 
 def test_validate_backend_azure_complete_returns_empty():
     s = Settings(
-        backend="azure",
+        embed_provider="azure",
         store_backend="azure",
         azure_openai_endpoint="https://x",
         azure_openai_api_key="k",

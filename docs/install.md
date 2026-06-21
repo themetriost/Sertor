@@ -92,19 +92,36 @@ scripts — **`sertor-rag`** (RAG execution) and **`sertor-wiki-tools`** (determ
 
 ## 2. Configuration (`.env` in the target repo, never committed)
 
-All operational choices are read from the centralised configuration (env and/or `.env`). Minimum
-required:
+All operational choices are read from the centralised configuration (env and/or `.env`). The
+embedding **provider** (`SERTOR_EMBED_PROVIDER`) and the vector **store** (`SERTOR_STORE_BACKEND`)
+are two independent knobs.
 
-**Local (default):**
+**Embedding providers (`SERTOR_EMBED_PROVIDER`):**
+
+| Value | Description | Credentials | Cost |
+|-------|-------------|-------------|------|
+| `glove` (default) | static GloVe 6B 300d word vectors, local NL semantics; downloaded once per machine (~822 MB, [PDDL / public domain](https://opendatacommons.org/licenses/pddl/)) | none | free |
+| `hash` | char-n-gram lexical floor, airgapped/CI, zero-download; lexical only (limited NL) | none | free |
+| `ollama` | local embedding model (requires `ollama serve`) | none | free |
+| `azure` | Azure OpenAI cloud embeddings | Azure OpenAI | billable |
+
+**Local, zero-credentials (default):**
 ```bash
-RAG_BACKEND=local
-OLLAMA_HOST=http://localhost:11434     # default, can be omitted
+SERTOR_EMBED_PROVIDER=glove            # default; downloads GloVe once on the first index
 SERTOR_CORPUS=my-project              # collection namespace (recommended)
+```
+
+**Airgapped / offline:** use the lexical provider (no download), or point `glove` at a local file:
+```bash
+SERTOR_EMBED_PROVIDER=hash             # zero-download lexical floor
+# or:
+SERTOR_EMBED_PROVIDER=glove
+SERTOR_GLOVE_PATH=/path/to/glove.6B.300d.txt   # skips the download
 ```
 
 **Azure (cloud embeddings + local Chroma store — recommended combination):**
 ```bash
-RAG_BACKEND=azure
+SERTOR_EMBED_PROVIDER=azure
 SERTOR_STORE_BACKEND=local             # local Chroma vector store
 AZURE_OPENAI_ENDPOINT=...
 AZURE_OPENAI_API_KEY=...
@@ -112,10 +129,16 @@ AZURE_OPENAI_EMBED_DEPLOYMENT=text-embedding-3-large
 SERTOR_CORPUS=my-project
 ```
 
-If the configuration for the chosen backend is incomplete, every command **stops before contacting
-any service**, listing the missing variables. Useful optional settings: `SERTOR_INDEX_DIR` (index
-directory, default `.index` — add it to the host's `.gitignore`), `SERTOR_EXCLUDE_PATTERNS`,
-`DEFAULT_K`, `SERTOR_PREVIEW_CHARS`.
+> **Migration note (`RAG_BACKEND` removed).** `RAG_BACKEND` is **no longer honoured**: select the
+> embedding provider with `SERTOR_EMBED_PROVIDER` and the vector store with `SERTOR_STORE_BACKEND`.
+> A residual `RAG_BACKEND` in your `.env` triggers a warning and is ignored (no silent migration).
+> The **default has changed**: local-first used to imply Ollama; it is now `glove` (static vectors).
+> Ollama and Azure must be selected explicitly.
+
+If the configuration for the chosen provider/store is incomplete, every command **stops before
+contacting any service**, listing the missing variables. Useful optional settings:
+`SERTOR_INDEX_DIR` (index directory, default `.index` — add it to the host's `.gitignore`),
+`SERTOR_EXCLUDE_PATTERNS`, `DEFAULT_K`, `SERTOR_PREVIEW_CHARS`.
 
 **Retrieval engine (FEAT-004):** the default is the **hybrid** engine (lexical BM25 + vector
 fused with RRF) — significantly improves symbol/exact-term queries:
@@ -315,8 +338,8 @@ uv run --directory .sertor sertor-rag index ..   # index host sources, excluding
 > index and graph inside `.sertor/` **from any cwd**: if there is no `.env` in the cwd, the CLI
 > uses the one next to its own venv (`.sertor/`). The `uv run --directory .sertor …` form remains
 > recommended (the MCP server uses it), but you are no longer forced to launch from inside
-> `.sertor/`. If no `.env` or `RAG_BACKEND` is found, it warns instead of silently falling back to
-> `local`/Ollama.
+> `.sertor/`. If no `.env` is found, it warns instead of silently falling back to the defaults
+> (provider `glove`, store `local`).
 > **Uninstall** ≈ delete `.sertor/` and the `sertor-rag` entry from `.mcp.json`.
 
 > **Distribution note (interim).** Standalone execution via `uvx --from "git+…#subdirectory=packages/sertor"`

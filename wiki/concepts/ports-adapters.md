@@ -3,8 +3,8 @@ title: Porte e adapter (boundary del retrieval-core)
 type: concept
 tags: [ports, adapters, protocol, hexagonal, clean-architecture, sertor-core, composition]
 created: 2026-06-08
-updated: 2026-06-14 (+ 7ª porta ObservabilityStore + cattura via logging.Handler, feature 020) · 2026-06-14 (+ CachingEmbedder decoratore di EmbeddingProvider + token nei log, 019) · 2026-06-12 (sera: +CodeGraph, FEAT-005 — sei porte; pomeriggio: +LexicalIndex/Reranker/RetrieverStrategy, FEAT-004)
-sources: ["src/sertor_core/domain/ports.py", "src/sertor_core/composition.py", "src/sertor_core/adapters/**"]
+updated: 2026-06-21 (FEAT-011: +glove (6B 300d PDDL default) e +hash (char-n-gram blake2b stdlib) per EmbeddingProvider; rimozione RAG_BACKEND, manopole ortogonali SERTOR_EMBED_PROVIDER/SERTOR_STORE_BACKEND) · 2026-06-14 (+ 7ª porta ObservabilityStore + cattura via logging.Handler, feature 020) · 2026-06-14 (+ CachingEmbedder decoratore di EmbeddingProvider + token nei log, 019) · 2026-06-12 (sera: +CodeGraph, FEAT-005 — sei porte; pomeriggio: +LexicalIndex/Reranker/RetrieverStrategy, FEAT-004)
+sources: ["src/sertor_core/domain/ports.py", "src/sertor_core/composition.py", "src/sertor_core/adapters/**", "requirements/sertor-core/epic.md"]
 ---
 
 # Porte e adapter (boundary del retrieval-core)
@@ -21,9 +21,14 @@ FEAT-005 ([[code-graph]]) e la `ObservabilityStore` della feature 020 (osservabi
 
 - **`EmbeddingProvider`** — trasforma testo in vettori. Metodo `embed(texts) -> list[list[float]]` (a batch,
   ordine preservato, `[]` per input vuoto) + attributi `name`, `dim` (dimensione del vettore, scoperta al
-  primo batch se inizialmente `None`), `batch_size`. Gli adapter ritentano gli errori transitori (retry+backoff,
-  018) ed emettono un evento di log `embeddings` col **conteggio token** del provider quando disponibile
-  (`usage.total_tokens` Azure, `prompt_eval_count` Ollama; omesso se assente) — segnale di costo, 019/REQ-H5.
+  primo batch se inizialmente `None`), `batch_size`. **Quattro adapter deterministici e combinabili:**
+  `GloveEmbedder` (FEAT-011, 6B 300d PDDL, lazy numpy, cache XDG) = nuovo default;
+  `HashEmbedder` (FEAT-011, char-n-gram blake2b 512d stdlib, zero-download, pavimento airgapped/CI);
+  `OllamaEmbedder` (Ollama locale, openai-compatible API);
+  `AzureEmbedder` (Azure OpenAI Service embeddings v1).
+  Gli adapter ritentano gli errori transitori (retry+backoff, 018) ed emettono un evento di log
+  `embeddings` col **conteggio token** quando disponibile (`usage.total_tokens` Azure, `prompt_eval_count`
+  Ollama; assente per glove/hash) — segnale di costo, 019/REQ-H5.
   Un **decoratore della stessa porta**, `CachingEmbedder` (`adapters/embeddings/cache.py`), aggiunge la
   [[indexing-and-retrieval|cache per content-hash]] senza che servizi o porta cambino — è l'esempio canonico
   di come si estende un comportamento di provider (adapter + composition, mai i servizi).
@@ -78,7 +83,7 @@ nucleo.
 
 | Porta | Adapter locale (default) | Adapter Azure |
 |---|---|---|
-| `EmbeddingProvider` | `adapters/embeddings/ollama.py` (`OllamaEmbedder`) | `adapters/embeddings/azure.py` (`AzureEmbedder`) |
+| `EmbeddingProvider` | `adapters/embeddings/glove.py` (`GloveEmbedder`, **default FEAT-011**) · `adapters/embeddings/hash.py` (`HashEmbedder`) · `adapters/embeddings/ollama.py` (`OllamaEmbedder`) | `adapters/embeddings/azure.py` (`AzureEmbedder`) |
 | `VectorStore` | `adapters/vectorstores/chroma.py` (`ChromaStore`) | `adapters/vectorstores/azure_search.py` (`AzureSearchStore`) |
 | `LexicalIndex` | `adapters/lexical/bm25.py` (`Bm25LexicalIndex`, sidecar JSON) | — (delega nativa per-store = Could, Gruppo E) |
 | `Reranker` | `adapters/rerank/flashrank.py` (`FlashRankReranker`, extra `rerank`) | — |
@@ -88,14 +93,26 @@ nucleo.
 
 `composition.py` è l'**unico** componente che conosce gli adapter concreti: le `build_*` (`build_embedder`,
 `build_store`, `build_indexer`, `build_facade`, `build_baseline_engine`) leggono `Settings` e cablano
-l'implementazione. Provider di **embeddings** e backend del **vector store** sono scelti da **due manopole
-distinte** (FEAT-009): `backend` (`RAG_BACKEND`) governa l'embedder (Ollama vs Azure OpenAI),
-`store_backend` (`SERTOR_STORE_BACKEND`, default = `backend`) governa lo store (Chroma vs Azure AI Search).
-Sono **combinabili** — es. embeddings Azure con store Chroma locale (la combinazione usata per l'indice di
-dogfooding `sertor`) — fedeli al local-first del Principio II. Due conseguenze di design:
+l'implementazione. Provider di **embeddings** è scelto da **una sola manopola** (FEAT-011):
+`SERTOR_EMBED_PROVIDER` (default `glove` — valore stringa `glove|hash|ollama|azure`) governa l'embedder;
+il backend del **vector store** è scelto dalla **manopola indipendente** `SERTOR_STORE_BACKEND` (default
+`local` — valori `local|azure`). Sono **combinabili e ortogonali** — es. embeddings Azure con store Chroma
+locale (la combinazione usata per l'indice di dogfooding `sertor`) — fedeli al local-first del Principio II.
+
+**Provider locali deterministici (FEAT-011):** `glove` (GloVe 6B 300d PDDL, vettori statici, semantica NL,
+lazy numpy) è il nuovo default (acquisisce il file on-demand a prima indicizzazione, cache XDG per
+macchina); `hash` (char-n-gram blake2b 512d, stdlib-only, zero-download, cross-macchina) è il pavimento
+per ambienti airgapped/offline/CI quando la semantica non serve e la determinismo cross-piattaforma è
+fondamentale. Entrambi abilitano la **local-first** (niente cicli di autorizzazione Ollama/Azure in CI).
+
+**Conseguenze di design:**
 
 - **Import lazy.** Gli SDK pesanti sono importati **dentro** le `build_*`, solo sul ramo che li usa: l'extra
-  `azure` non serve in locale (isolamento delle dipendenze).
+  `azure` non serve in locale (isolamento delle dipendenze), numpy per glove è lazy (costo ~zero se
+  `SERTOR_EMBED_PROVIDER != glove`).
+- **Fail-loud su RAG_BACKEND (Principio XII).** La manopola legacy `RAG_BACKEND` non è più onorata; se
+  presente in ambiente, l'avvio emette **fail-loud** `ConfigError` suggerendo di rimuoverla (nessun cambio
+  silenzioso).
 - **Estendere qui, non nei servizi.** Aggiungere un provider/backend significa toccare il composition root e
   scrivere un adapter — **non** modificare i servizi, che vedono solo le porte.
 
@@ -108,3 +125,4 @@ embedding di dimensioni diverse (vedi [[corpus-index-naming]]).
 - Cosa scambiano: [[domain-model]].
 - Chi le cabla in pipeline: [[indexing-and-retrieval]].
 - Perché i consumatori entrano dalle `build_*`: [[thin-consumer]].
+- Il principio di local-first e la scelta di glove come default: [[mission-vision]].

@@ -30,23 +30,23 @@ def test_scaffold_creates_env_from_template_azure(tmp_path: Path):
     created = scaffold_env_if_absent(tmp_path, "azure")
     assert created is True
     content = _env(tmp_path).read_text(encoding="utf-8")
-    assert "RAG_BACKEND=azure" in content
+    assert "SERTOR_EMBED_PROVIDER=azure" in content
 
 
 def test_scaffold_creates_env_from_template_local(tmp_path: Path):
     created = scaffold_env_if_absent(tmp_path, "local")
     assert created is True
     content = _env(tmp_path).read_text(encoding="utf-8")
-    assert "RAG_BACKEND=local" in content
+    assert "SERTOR_EMBED_PROVIDER=glove" in content
 
 
 def test_scaffold_skips_if_existing(tmp_path: Path):
     env = _env(tmp_path)
     env.parent.mkdir(parents=True)
-    env.write_text("RAG_BACKEND=local\nMY=1\n", encoding="utf-8")
+    env.write_text("SERTOR_EMBED_PROVIDER=glove\nMY=1\n", encoding="utf-8")
     created = scaffold_env_if_absent(tmp_path, "azure")
     assert created is False
-    assert env.read_text(encoding="utf-8") == "RAG_BACKEND=local\nMY=1\n"  # untouched
+    assert env.read_text(encoding="utf-8") == "SERTOR_EMBED_PROVIDER=glove\nMY=1\n"  # untouched
 
 
 def test_scaffold_no_uv_no_index(tmp_path: Path, monkeypatch):
@@ -128,7 +128,7 @@ def _set(field, value, status=FieldStatus.SET, source="flag"):
 def test_write_adds_missing_key(tmp_path: Path):
     env = _env(tmp_path)
     env.parent.mkdir(parents=True)
-    env.write_text("RAG_BACKEND=azure\n", encoding="utf-8")
+    env.write_text("SERTOR_EMBED_PROVIDER=azure\n", encoding="utf-8")
     write_resolved_fields(env, [_set(_ENDPOINT, "https://x/")], overwrite=False)
     assert "AZURE_OPENAI_ENDPOINT=https://x/" in env.read_text(encoding="utf-8")
 
@@ -156,7 +156,7 @@ def test_write_overwrites_with_flag(tmp_path: Path):
 def test_write_preserves_unmanaged_lines(tmp_path: Path):
     env = _env(tmp_path)
     env.parent.mkdir(parents=True)
-    env.write_text("# my comment\nMY_CUSTOM=hello\nRAG_BACKEND=azure\n", encoding="utf-8")
+    env.write_text("# my comment\nMY_CUSTOM=hello\nSERTOR_EMBED_PROVIDER=azure\n", encoding="utf-8")
     write_resolved_fields(env, [_set(_ENDPOINT, "https://x/")], overwrite=False)
     content = env.read_text(encoding="utf-8")
     assert "# my comment" in content
@@ -166,7 +166,7 @@ def test_write_preserves_unmanaged_lines(tmp_path: Path):
 def test_write_no_partial_on_missing(tmp_path: Path):
     env = _env(tmp_path)
     env.parent.mkdir(parents=True)
-    env.write_text("RAG_BACKEND=azure\n", encoding="utf-8")
+    env.write_text("SERTOR_EMBED_PROVIDER=azure\n", encoding="utf-8")
     write_resolved_fields(
         env, [_set(_APIKEY, None, status=FieldStatus.MISSING, source="none")], overwrite=False
     )
@@ -177,7 +177,7 @@ def test_write_idempotent(tmp_path: Path):
     # T-220-IDEM: two identical runs → byte-identical .env (FR-014/SC-005).
     env = _env(tmp_path)
     env.parent.mkdir(parents=True)
-    env.write_text("RAG_BACKEND=azure\n", encoding="utf-8")
+    env.write_text("SERTOR_EMBED_PROVIDER=azure\n", encoding="utf-8")
     res = [_set(_ENDPOINT, "https://x/"), _set(_DEPLOY, "text-embedding-3-large")]
     write_resolved_fields(env, list(res), overwrite=False)
     first = env.read_bytes()
@@ -189,7 +189,7 @@ def test_secret_not_in_versioned_file(tmp_path: Path):
     # T-220-NOVCS: only .sertor/.env is touched; nothing else under target (SC-003/FR-012).
     env = _env(tmp_path)
     env.parent.mkdir(parents=True)
-    env.write_text("RAG_BACKEND=azure\n", encoding="utf-8")
+    env.write_text("SERTOR_EMBED_PROVIDER=azure\n", encoding="utf-8")
     write_resolved_fields(env, [_set(_APIKEY, "sk-secret-1234")], overwrite=False)
     others = [
         p for p in tmp_path.rglob("*")

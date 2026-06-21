@@ -20,7 +20,8 @@ def _no_dotenv(monkeypatch):
     """Isolate tests from the repo's `.env`: `Settings.load()` must not read/inject the file.
 
     `load_dotenv(override=True)` would mutate `os.environ` in a way not restorable by monkeypatch,
-    contaminating subsequent tests (e.g. `RAG_BACKEND=azure` from the local .env). Tests that need
+    contaminating subsequent tests (e.g. `SERTOR_EMBED_PROVIDER=azure` from the local .env). Tests
+    that need
     a specific config override `Settings.load` themselves after this fixture.
     """
     _orig = Settings.load.__func__
@@ -105,7 +106,7 @@ def test_index_incomplete_backend_blocks_before_embedding(monkeypatch, sample_re
     # incomplete azure config, injected without reading the repo's .env
     monkeypatch.setattr(
         cli.Settings, "load",
-        classmethod(lambda c, env_file=".env": c(backend="azure", store_backend="local")),
+        classmethod(lambda c, env_file=".env": c(embed_provider="azure", store_backend="local")),
     )
     code = _run(["index", str(sample_repo)])
     err = capsys.readouterr().err

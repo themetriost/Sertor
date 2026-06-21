@@ -44,7 +44,9 @@ class _RealRunner:
 def wired(tmp_path, sample_repo, monkeypatch):
     """Index the sample repo into an in-memory engine and wire the CLI eval to it."""
     eval_dir = tmp_path / "eval"
-    settings = Settings(eval_dir=eval_dir, corpus="default", backend="local", index_dir=tmp_path)
+    settings = Settings(
+        eval_dir=eval_dir, corpus="default", embed_provider="hash", index_dir=tmp_path
+    )
     emb = FakeEmbedder(dim=8)
     store = InMemoryStore()
     engine = BaselineEngine(emb, store, _COLL, settings)

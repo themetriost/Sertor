@@ -89,9 +89,11 @@ def _int_or_none_env(name: str) -> int | None:
 class Settings:
     """Core settings. Instantiate via `Settings.load()` to read env/`.env`."""
 
-    # backend & corpus
-    backend: str = "local"                 # local | azure — EMBEDDINGS provider
+    # embeddings provider & store (068, FEAT-011): two INDEPENDENT knobs (RAG_BACKEND removed).
+    # `embed_provider` selects the embedding provider; `store_backend` selects the vector store.
+    embed_provider: str = "glove"          # glove | hash | ollama | azure (validated downstream)
     store_backend: str = "local"           # local | azure — VECTOR STORE backend (decoupled)
+    glove_path: Path | None = None         # SERTOR_GLOVE_PATH — override of glove.6B.300d.txt
     corpus: str = "default"                # logical namespace for the collection
     extra_corpora: tuple[str, ...] = ()    # additional corpora for combined search (FR-007)
 
@@ -207,21 +209,17 @@ class Settings:
     # ingestione
     exclude_patterns: tuple[str, ...] = _DEFAULT_EXCLUDES
 
-    @property
-    def embed_provider(self) -> str:
-        """Embedding provider consistent with the backend: azure in cloud, ollama locally."""
-        return "azure" if self.backend == "azure" else "ollama"
-
     def validate_backend(self) -> list[str]:
-        """Names of required but missing environment variables for the selected backend (D3).
+        """Names of required but missing environment variables for the selected provider/store (D3).
 
         **Static** validation (FR-015): does not contact services; returns only the list of
-        empty configuration fields required by the chosen backend/store. This is the ONLY source
-        of the "which fields are needed for azure" map (Principio VIII): the CLI knows only the
-        outcome. `local` (Ollama/Chroma, valid defaults) is never blocked → empty list.
+        empty configuration fields required by the chosen embedding provider/store. This is the ONLY
+        source of the "which fields are needed for azure" map (Principio VIII): the CLI knows only
+        the outcome. Local providers (`glove`/`hash`/Ollama, Chroma — valid defaults) are never
+        blocked → empty list (068, REQ-005/007, DA-7).
         """
         missing: list[str] = []
-        if self.backend == "azure":
+        if self.embed_provider == "azure":
             if not self.azure_openai_endpoint:
                 missing.append("AZURE_OPENAI_ENDPOINT")
             if not self.azure_openai_api_key:
@@ -251,16 +249,26 @@ class Settings:
         excludes = _split_env("SERTOR_EXCLUDE_PATTERNS")
         extra_corpora = _split_env("SERTOR_EXTRA_CORPORA")
         index_dir = os.getenv("SERTOR_INDEX_DIR")
-        backend = os.getenv("RAG_BACKEND", "local")
-        if env_path is None and env_file is not None and os.getenv("RAG_BACKEND") is None:
-            # No configuration source (neither `.env` in cwd/next to the runtime, nor
-            # `RAG_BACKEND` in the environment): falling back to defaults (backend `local`/Ollama).
-            # Signalled to avoid the silent fallback that causes confusion (e.g. "ollama
-            # unreachable" when Azure was intended but `.sertor/.env` was not loaded).
+        if env_path is None and env_file is not None:
+            # No configuration source (no `.env` in cwd nor next to the runtime): falling back to
+            # defaults (provider `glove`, store `local`). Signalled to avoid the silent fallback
+            # that causes confusion when a configured `.sertor/.env` was simply not loaded.
             from sertor_core.observability.logging import log_event
             log_event(
                 logging.WARNING, "config_no_env_found",
-                note="no .env found and RAG_BACKEND not set; using defaults (local)",
+                note="no .env found; using defaults (provider glove, store local)",
+            )
+        if os.getenv("RAG_BACKEND") is not None:
+            # Fail loud, do not migrate silently (068, REQ-007, Principio XII): `RAG_BACKEND` is no
+            # longer honoured. The value is NEITHER read NOR mapped — only signalled, naming the
+            # replacement knobs so the host can migrate `.env` deliberately.
+            from sertor_core.observability.logging import log_event
+            log_event(
+                logging.WARNING, "config_rag_backend_ignored",
+                note=(
+                    "RAG_BACKEND is no longer honoured; select the embedding provider with "
+                    "SERTOR_EMBED_PROVIDER and the vector store with SERTOR_STORE_BACKEND"
+                ),
             )
         # Index anchor: explicit > runtime home (folder of resolved `.env`) > cwd.
         if index_dir:
@@ -270,11 +278,16 @@ class Settings:
         else:
             resolved_index_dir = Path(".index")
         return cls(
-            backend=backend,
-            # The store is decoupled from the embedding provider: default = `RAG_BACKEND`
-            # (backward-compatible), overridable with `SERTOR_STORE_BACKEND` to combine, e.g.,
-            # Azure embeddings with a local Chroma store.
-            store_backend=os.getenv("SERTOR_STORE_BACKEND", backend),
+            # Provider and store are INDEPENDENT knobs (068, DA-1): the embedding provider from
+            # SERTOR_EMBED_PROVIDER (default glove), the vector store from SERTOR_STORE_BACKEND
+            # (default local). Any combination is valid (e.g. Azure embeddings + local Chroma).
+            embed_provider=os.getenv("SERTOR_EMBED_PROVIDER", "glove"),
+            store_backend=os.getenv("SERTOR_STORE_BACKEND", "local"),
+            glove_path=(
+                Path(os.environ["SERTOR_GLOVE_PATH"])
+                if os.getenv("SERTOR_GLOVE_PATH")
+                else None
+            ),
             corpus=os.getenv("SERTOR_CORPUS", "default"),
             extra_corpora=tuple(extra_corpora) if extra_corpora is not None else (),
             ollama_host=os.getenv("OLLAMA_HOST", "http://localhost:11434"),

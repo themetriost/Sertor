@@ -55,8 +55,10 @@ embed project-specific assumptions. This principle is binding: see the
 
 - **The library is the product.** The core lives in [`src/sertor_core/`](src/sertor_core/) in
   **Clean Architecture** (dependencies point inward; the `domain` does not import any SDK).
-- **Local-first ↔ Azure**, swappable via configuration (`RAG_BACKEND=local|azure`), without
-  touching the code. LLM/embeddings providers and vector store are behind abstract *ports*.
+- **Local-first ↔ Azure**, swappable via configuration: the embedding provider
+  (`SERTOR_EMBED_PROVIDER=glove|hash|ollama|azure`, default `glove`) and the vector store
+  (`SERTOR_STORE_BACKEND=local|azure`) are independent knobs, without touching the code.
+  LLM/embeddings providers and vector store are behind abstract *ports*.
 - **CLI and MCP** are thin consumers of the library.
 
 ## Status

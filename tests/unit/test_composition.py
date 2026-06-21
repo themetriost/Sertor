@@ -19,7 +19,7 @@ from tests.fixtures.mocks import FakeEmbedder
 
 def test_azure_embeddings_with_local_store(monkeypatch):
     # Azure embeddings but local Chroma store: prototype combination (decoupling Princ. II).
-    monkeypatch.setenv("RAG_BACKEND", "azure")
+    monkeypatch.setenv("SERTOR_EMBED_PROVIDER", "azure")
     monkeypatch.setenv("SERTOR_STORE_BACKEND", "local")
     monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://x.openai.azure.com/openai/v1")
     monkeypatch.setenv("AZURE_OPENAI_API_KEY", "k")
@@ -27,12 +27,29 @@ def test_azure_embeddings_with_local_store(monkeypatch):
     settings = Settings.load(env_file=None)
 
     assert isinstance(build_embedder(settings), AzureEmbedder)
-    assert isinstance(build_store(settings), ChromaStore)   # local store despite backend=azure
+    # local store despite embed_provider=azure
+    assert isinstance(build_store(settings), ChromaStore)
+
+
+def test_build_embedder_glove_branch(monkeypatch, tmp_path):
+    # 068: the default provider builds a GloveEmbedder (no download in tests → override path).
+    from sertor_core.adapters.embeddings.glove import GloveEmbedder
+
+    fixture = Path(__file__).parent.parent / "fixtures" / "glove_mini.txt"
+    settings = Settings(embed_provider="glove", glove_path=fixture)
+    assert isinstance(build_embedder(settings), GloveEmbedder)
+
+
+def test_build_embedder_hash_branch():
+    # 068: the airgapped provider builds a HashingEmbedder.
+    from sertor_core.adapters.embeddings.hashing import HashingEmbedder
+
+    assert isinstance(build_embedder(Settings(embed_provider="hash")), HashingEmbedder)
 
 
 def test_build_facade_wires_extra_corpora(monkeypatch):
     # Extra corpora (FR-007) become derived collections with the current provider (feature 010).
-    monkeypatch.setenv("RAG_BACKEND", "local")
+    monkeypatch.setenv("SERTOR_EMBED_PROVIDER", "hash")
     monkeypatch.setenv("SERTOR_STORE_BACKEND", "local")
     monkeypatch.setenv("SERTOR_CORPUS", "sertor")
     monkeypatch.setenv("SERTOR_EXTRA_CORPORA", "wiki")
@@ -50,7 +67,7 @@ def test_build_facade_wires_extra_corpora(monkeypatch):
 
 def test_build_facade_without_extra_corpora_has_empty_map(monkeypatch):
     monkeypatch.delenv("SERTOR_EXTRA_CORPORA", raising=False)
-    monkeypatch.setenv("RAG_BACKEND", "local")
+    monkeypatch.setenv("SERTOR_EMBED_PROVIDER", "hash")
     monkeypatch.setenv("SERTOR_STORE_BACKEND", "local")
     settings = Settings.load(env_file=None)
 

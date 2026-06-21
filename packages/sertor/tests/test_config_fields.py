@@ -85,9 +85,9 @@ def test_catalog_covers_all_validate_backend_fields():
     Builds a `Settings` with empty cloud fields so the validator reports every required name; if the
     core adds a required field not covered by the catalog, this test fails (Principio V / no drift).
     """
-    for backend, store in product(("azure", "local"), ("local", "azure")):
+    for provider, store in product(("azure", "glove", "hash", "ollama"), ("local", "azure")):
         settings = Settings(
-            backend=backend,
+            embed_provider=provider,
             store_backend=store,
             azure_openai_endpoint="",
             azure_openai_api_key="",
@@ -97,12 +97,12 @@ def test_catalog_covers_all_validate_backend_fields():
         )
         for name in settings.validate_backend():
             assert name in FIELD_CATALOG, (
-                f"validate_backend emits {name!r} for backend={backend}/store={store} "
+                f"validate_backend emits {name!r} for provider={provider}/store={store} "
                 f"but the catalog does not cover it (drift)"
             )
 
 
 def test_local_profile_no_required_fields():
-    """backend=local, store=local → validate_backend returns [] (SC-007: local-only, no cloud)."""
-    settings = Settings(backend="local", store_backend="local")
+    """provider=glove, store=local → validate_backend returns [] (SC-007: local-only, no cloud)."""
+    settings = Settings(embed_provider="glove", store_backend="local")
     assert settings.validate_backend() == []

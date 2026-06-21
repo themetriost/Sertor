@@ -81,7 +81,7 @@ def wired(tmp_path, monkeypatch):
 
     def _settings():
         return Settings(
-            eval_dir=eval_dir, corpus=_CORPUS, backend="local", index_dir=tmp_path,
+            eval_dir=eval_dir, corpus=_CORPUS, embed_provider="hash", index_dir=tmp_path,
             graph_eval_tolerance=state["tolerance"],
         )
 

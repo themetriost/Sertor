@@ -40,7 +40,7 @@ class _FakeRunner:
 @pytest.fixture
 def wired(tmp_path, monkeypatch):
     eval_dir = tmp_path / "eval"
-    settings = Settings(eval_dir=eval_dir, corpus="default", backend="local")
+    settings = Settings(eval_dir=eval_dir, corpus="default", embed_provider="hash")
     monkeypatch.setattr(cli.Settings, "load", classmethod(lambda c, env_file=".env": settings))
     monkeypatch.setattr(cli, "build_eval_runner", lambda s: _FakeRunner(s))
     add_case(eval_dir / "suite.toml", EvalCase("q", ("p.py",), "nl"))
