@@ -48,7 +48,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 | # | Epica | Stato | Residuo / 1° passo |
 |---|---|---|---|
-| **E1** | [`sertor-core`](../../requirements/sertor-core/epic.md) | 🔄 quasi completa (1 Should aperta) | **FEAT-011 embedder locale deterministico per eval/CI (local-first)** — aperta 2026-06-20 dall'audit RAG, prerequisito della CI (E10 FEAT-003). *(agenzia incorporata ❌ abbandonata by design)* |
+| **E1** | [`sertor-core`](../../requirements/sertor-core/epic.md) | 🔄 FEAT-011 implementata su branch `068` (attesa merge) | **FEAT-011 embedder locale (glove default + hash floor)** — pipeline SpecKit req→implement completa, Constitution 12/12, suite verde; resta **merge + migrazione `.sertor/.env` + re-index dogfood**. *(agenzia incorporata ❌ abbandonata by design)* |
 | **E2** | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | ergonomia installer · Codex · PyPI · `configure --check` (probe live, deferred) *(packaging ✅ + lifecycle ✅ + hardening Copilot FEAT-011 ✅ + wizard config ✅ + Copilot CLI-only ✅ + verifica empirica Copilot LIVE ✅, 2026-06-17)* |
 | **E3** | [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | **export OTel FEAT-005 ✅** + arricchimento span FEAT-013 ✅ + TUI tabella FEAT-014 ✅ + **visibilità RAG/dimostrabilità FEAT-015 ✅** (PR #88) · drift FEAT-012 · metriche aggregate · stima € (Should) · web · CSV/MD |
 | **E4** | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso | ricerca semantica · remember-this · retention · **distribuzione installer (Must)** · multi-assist |
@@ -64,8 +64,15 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-> Nessuna feature attiva su branch al momento (FEAT-001 + **FEAT-011** `retrieval-qualita` ✅ **mergiate su `master`**,
-> 2026-06-20; skill FEAT-008/009 **provate live** — vedi ✅ DONE). **Candidati a valore = i Must aperti** (sotto).
+> **Attiva su branch:** **FEAT-011 `sertor-core` — embedder locale** (branch `068-embedder-locale`):
+> pipeline SpecKit req→implement **completa**, Constitution 12/12, test verdi (core 874 · sertor 293 ·
+> kit 131 · flow 134), ruff pulito. Due provider locali deterministici (`glove` GloVe 6B 300d PDDL =
+> nuovo default · `hash` char-n-gram stdlib = pavimento airgapped/CI); **`RAG_BACKEND` rimosso** →
+> manopola unica `SERTOR_EMBED_PROVIDER` (store su `SERTOR_STORE_BACKEND`, default local); fail-loud.
+> **Prossimo passo concreto:** decisione merge su `master`, poi migrazione manuale `.sertor/.env`
+> (`RAG_BACKEND=azure`→`SERTOR_EMBED_PROVIDER=azure`) + re-index dogfood + smoke MCP (TASK-P03).
+> **Debito tracciato:** TASK-D04 rinomina flag installer `--backend`→`--provider` (P2 Should).
+> *(FEAT-001 + FEAT-011 `retrieval-qualita` ✅ su `master` 2026-06-20; skill FEAT-008/009 provate live.)*
 
 **Candidati a valore = Must aperti** (non ancora iniziati):
 
