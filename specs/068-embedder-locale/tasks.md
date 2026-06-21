@@ -45,44 +45,44 @@
 ### TASK-G01 — Aggiungi `GloveUnavailableError` in `domain/errors.py` [P]
 **File**: `src/sertor_core/domain/errors.py`
 → dipende da: nessuno
-- [ ] Aggiungi `GloveUnavailableError(SertorError)` con costruttore
+- [x] Aggiungi `GloveUnavailableError(SertorError)` con costruttore
       `__init__(self, message: str, *, reason: str)`.
       Il messaggio deve nominare **entrambe** le vie d'uscita:
       `"imposta SERTOR_GLOVE_PATH a un file glove.6B.300d.txt locale,
       oppure seleziona il provider lessicale con SERTOR_EMBED_PROVIDER=hash"` (REQ-040/041, DA-5).
-- [ ] Verifica: `GloveUnavailableError` è sottoclasse di `SertorError`; `domain/errors.py`
+- [x] Verifica: `GloveUnavailableError` è sottoclasse di `SertorError`; `domain/errors.py`
       non importa nessun SDK esterno né adapter (Principio I).
-- [ ] Verifica: i test esistenti su `errors.py` continuano a passare invariati (RNF-4).
+- [x] Verifica: i test esistenti su `errors.py` continuano a passare invariati (RNF-4).
 
 ### TASK-G02 — Ristruttura `Settings` (rimuovi `RAG_BACKEND`/`backend`, aggiungi nuovi campi) [P]
 **File**: `src/sertor_core/config/settings.py`
 → dipende da: nessuno
 
 Piano di modifica (righe del plan §"Punti del repo che referenziano `RAG_BACKEND`", punti 1–5):
-- [ ] **Punto 1** — Rimuovi campo `backend: str = "local"` (riga 93).
-- [ ] **Punto 2** — Rimuovi la property `embed_provider` (riga 211) derivata da `backend`;
+- [x] **Punto 1** — Rimuovi campo `backend: str = "local"` (riga 93).
+- [x] **Punto 2** — Rimuovi la property `embed_provider` (riga 211) derivata da `backend`;
       aggiungi al suo posto un **campo** `embed_provider: str = "glove"`.
       Valori ammessi: `glove` / `hash` / `ollama` / `azure`; la validazione del valore avviene
       nel composition root (non in Settings). (REQ-001/002)
-- [ ] **Punto 3** — Ri-chiava `validate_backend()` (riga 224): usa `embed_provider == "azure"`
+- [x] **Punto 3** — Ri-chiava `validate_backend()` (riga 224): usa `embed_provider == "azure"`
       al posto di `backend == "azure"`; provider locali (`glove`/`hash`) e `ollama` → lista vuota
       → mai blocco (REQ-005/007, DA-7). Il nome del metodo **resta** invariato (consumatori:
       `configure.py`/`config_fields.py` dell'installer).
-- [ ] **Punto 4** — In `load()` (riga 254): elimina lettura di `RAG_BACKEND`; aggiungi warning
+- [x] **Punto 4** — In `load()` (riga 254): elimina lettura di `RAG_BACKEND`; aggiungi warning
       fail-loud `log_event(WARNING, "config_rag_backend_ignored", …)` se
       `os.getenv("RAG_BACKEND")` è presente nell'ambiente, nominando le manopole sostitutive
       `SERTOR_EMBED_PROVIDER` e `SERTOR_STORE_BACKEND` (REQ-007, Principio XII). Il valore di
       `RAG_BACKEND` NON viene letto né mappato — segnalato e ignorato.
       Il warning `config_no_env_found` perde la condizione su `RAG_BACKEND`; la condizione resta
       su `env_path is None and env_file is not None`.
-- [ ] **Punto 5** — In `load()` (righe 273–277): sostituisci
+- [x] **Punto 5** — In `load()` (righe 273–277): sostituisci
       `backend=…, store_backend=os.getenv(…, backend)` con
       `embed_provider=os.getenv("SERTOR_EMBED_PROVIDER", "glove")`,
       `store_backend=os.getenv("SERTOR_STORE_BACKEND", "local")`,
       `glove_path=Path(os.getenv("SERTOR_GLOVE_PATH")) if os.getenv("SERTOR_GLOVE_PATH") else None`.
       (REQ-002/006, DA-1)
-- [ ] Aggiungi campo `glove_path: Path | None = None` letto da `SERTOR_GLOVE_PATH` (REQ-032).
-- [ ] Verifica: `Settings` è importabile senza dipendenze esterne; i default sono definiti **solo**
+- [x] Aggiungi campo `glove_path: Path | None = None` letto da `SERTOR_GLOVE_PATH` (REQ-032).
+- [x] Verifica: `Settings` è importabile senza dipendenze esterne; i default sono definiti **solo**
       qui (Principio VIII); `validate_backend()` per provider locali restituisce lista vuota.
 
 ### TASK-G03 — Aggiorna `build_embedder` in `composition.py` a 4 rami [P]
@@ -90,7 +90,7 @@ Piano di modifica (righe del plan §"Punti del repo che referenziano `RAG_BACKEN
 → dipende da: TASK-G01, TASK-G02
 
 Piano di modifica (piano §"Punti", punto 6):
-- [ ] Sostituisci la logica attuale di `build_embedder` (riga 82, 2 rami `azure`/else) con un
+- [x] Sostituisci la logica attuale di `build_embedder` (riga 82, 2 rami `azure`/else) con un
       match a **4 rami** (`glove` / `hash` / `ollama` / `azure`) con import lazy per ciascun ramo
       (Principio I — nessun import in testa al modulo per i nuovi adapter):
       ```
@@ -102,14 +102,14 @@ Piano di modifica (piano §"Punti", punto 6):
           "azure"  -> AzureEmbedder(...)              # INVARIATO
           _        -> raise ConfigError(key="SERTOR_EMBED_PROVIDER", …)  # REQ-003
       ```
-- [ ] Aggiungi `log_event("embeddings_provider_selected", {"provider": provider})` per i
+- [x] Aggiungi `log_event("embeddings_provider_selected", {"provider": provider})` per i
       provider locali (`glove` e `hash`), dopo la costruzione dell'adapter (DA-6/REQ-042).
       Aggiungilo come evento informativo: `provider` è a cardinalità chiusa (mai testo libero).
-- [ ] Per il ramo `hash`: aggiungi `log_event(WARNING, …)` «ricerca NL limitata; configura
+- [x] Per il ramo `hash`: aggiungi `log_event(WARNING, …)` «ricerca NL limitata; configura
       glove/ollama/azure per semantica» (REQ-014, DA-5).
-- [ ] Verifica: i rami `ollama` e `azure` restano **invariati** nel corpo (RNF-4/REQ-052);
+- [x] Verifica: i rami `ollama` e `azure` restano **invariati** nel corpo (RNF-4/REQ-052);
       `build_store` **non viene toccato** (il default cambia solo nel Settings, non qui).
-- [ ] Verifica: `composition.py` non importa direttamente adapter GloVe/Hashing in testa al
+- [x] Verifica: `composition.py` non importa direttamente adapter GloVe/Hashing in testa al
       file; gli import lazy avvengono dentro il ramo (Principio I/RNF-2/REQ-053).
 
 ---
@@ -122,12 +122,12 @@ Piano di modifica (piano §"Punti", punto 6):
 ### TASK-F01 — Implementa `HashingEmbedder` (`adapters/embeddings/hashing.py`) [P]
 **File nuovo**: `src/sertor_core/adapters/embeddings/hashing.py`
 → dipende da: TASK-G02
-- [ ] Implementa `HashingEmbedder` che soddisfa la porta `EmbeddingProvider` (structural typing):
+- [x] Implementa `HashingEmbedder` che soddisfa la porta `EmbeddingProvider` (structural typing):
       - `name = "hash:512"` (stabile, codifica la dimensione — REQ-012/051)
       - `dim = 512` (costante nota da subito, non lazy)
       - `batch_size: int` da `Settings.embed_batch_size`
       - `embed(texts: list[str]) -> list[list[float]]`
-- [ ] Algoritmo char-n-gram (DA-2, contratto `local-providers.md`):
+- [x] Algoritmo char-n-gram (DA-2, contratto `local-providers.md`):
       - Per ogni testo: lowercase; estrai char-n-gram con `n ∈ {3, 4, 5}` con padding di
         confine (padding con spazio ai confini di parola così token corti contribuiscono).
       - Per ogni n-gram: `hashlib.blake2b(ngram.encode("utf-8"), digest_size=8)` → intero
@@ -135,25 +135,25 @@ Piano di modifica (piano §"Punti", punto 6):
       - Indice: `h % 512`; segno dal bit successivo `(h >> 8) & 1` (*sign-hashing*,
         riduce collisione sistematica verso il positivo).
       - Accumulo su array di 512 float, poi **L2-norm**. Testo vuoto → 512 zeri. (REQ-011)
-- [ ] Solo **stdlib** (`hashlib`, `math`): nessun extra, nessuna rete, nessuna credenziale
+- [x] Solo **stdlib** (`hashlib`, `math`): nessun extra, nessuna rete, nessuna credenziale
       (REQ-010/053).
-- [ ] Verifica: `HashingEmbedder` non importa SDK esterni; è importabile senza nessun
+- [x] Verifica: `HashingEmbedder` non importa SDK esterni; è importabile senza nessun
       extra opzionale; la dimensione è fissa a 512 sempre.
 
 ### TASK-F02 — Implementa `GloveEmbedder` (`adapters/embeddings/glove.py`) [P]
 **File nuovo**: `src/sertor_core/adapters/embeddings/glove.py`
 → dipende da: TASK-G01, TASK-G02
-- [ ] Implementa `GloveEmbedder` che soddisfa la porta `EmbeddingProvider`:
+- [x] Implementa `GloveEmbedder` che soddisfa la porta `EmbeddingProvider`:
       - `name = "glove:300"` (stabile, codifica la dimensione, distinto dagli altri — REQ-022)
       - `dim = 300` (costante nota)
       - `batch_size: int` da Settings
       - `embed(texts: list[str]) -> list[list[float]]`
       - Costruttore riceve il path risolto al file `glove.6B.300d.txt`; **non carica il file
         al costruttore** ma **lazy alla prima `embed`** (install≠run — REQ-024, DA-3).
-- [ ] Caricamento vocabolario (lazy, `numpy` importato lazy dentro il metodo, non in testa
+- [x] Caricamento vocabolario (lazy, `numpy` importato lazy dentro il metodo, non in testa
       al modulo — REQ-024/053): legge `glove.6B.300d.txt` linea per linea, costruisce
       `dict[str, numpy.ndarray]`; failure di parse → `GloveUnavailableError` (REQ-041).
-- [ ] Tokenizzazione e aggregazione (DA-3, contratto `local-providers.md`):
+- [x] Tokenizzazione e aggregazione (DA-3, contratto `local-providers.md`):
       - Lowercase + split su non-alfanumerici.
       - Per ogni token: lookup nel vocabolario; se OOV → split camelCase/snake_case
         (`getUserId`→`get`,`user`,`id`) poi retry dei sotto-token; sotto-token ancora OOV
@@ -161,27 +161,27 @@ Piano di modifica (piano §"Punti", punto 6):
       - Aggregazione: **media dei vettori in-vocab** poi **L2-norm** (REQ-021).
       - Tutto-OOV / testo vuoto → vettore **zero** (300 zeri) deterministico;
         non fa fallire la chiamata (REQ-023).
-- [ ] Emetti `log_event("glove_cache_hit", {"hit": True})` quando il vocabolario è già
+- [x] Emetti `log_event("glove_cache_hit", {"hit": True})` quando il vocabolario è già
       caricato (riuso da run precedente — DA-6).
-- [ ] Verifica: `GloveEmbedder` non importa `numpy` in testa al modulo; selezionare
+- [x] Verifica: `GloveEmbedder` non importa `numpy` in testa al modulo; selezionare
       `SERTOR_EMBED_PROVIDER=hash` non importa `numpy` (RNF-2/REQ-053).
 
 ### TASK-F03 — Implementa resolver/acquisizione GloVe (`adapters/embeddings/glove_cache.py`) [P]
 **File nuovo**: `src/sertor_core/adapters/embeddings/glove_cache.py`
 → dipende da: TASK-G01, TASK-G02
-- [ ] Implementa `glove_cache_dir() -> Path`: directory cache utente condivisa per-macchina,
+- [x] Implementa `glove_cache_dir() -> Path`: directory cache utente condivisa per-macchina,
       **stdlib** (no `platformdirs`) — DA-4/REQ-031:
       - Windows: `%LOCALAPPDATA%\sertor\glove\`
       - macOS/Linux: `$XDG_CACHE_HOME/sertor/glove/` se impostata, altrimenti
         `~/.cache/sertor/glove/`
-- [ ] Implementa `resolve_glove_file(settings: Settings) -> Path` — priorità di risoluzione
+- [x] Implementa `resolve_glove_file(settings: Settings) -> Path` — priorità di risoluzione
       (REQ-032/035/040):
       1. `settings.glove_path` se impostato ed esistente → usa quel file, nessun download.
       2. File `glove.6B.300d.txt` in `glove_cache_dir()` esistente → usa la cache.
       3. Durante l'indicizzazione: chiama `ensure_glove(settings)` (download).
       4. File assente, no path, no rete → solleva `GloveUnavailableError` (REQ-040).
       Emette `log_event("glove_cache_hit", {"hit": True/False})` in base alla risoluzione (DA-6).
-- [ ] Implementa `ensure_glove(settings: Settings) -> Path` — acquisizione on-demand (REQ-030):
+- [x] Implementa `ensure_glove(settings: Settings) -> Path` — acquisizione on-demand (REQ-030):
       - Emette `log_event(WARNING, "glove_download", {"size_mb": 822, "source_host": "nlp.stanford.edu"})`
         una-tantum prima del download (REQ-033, DA-5).
       - Scarica `https://nlp.stanford.edu/data/glove.6B.zip` via `urllib.request` (stdlib,
@@ -190,8 +190,8 @@ Piano di modifica (piano §"Punti", punto 6):
       - Replace atomico con `os.replace` (concorrenza sicura senza lock esplicito — DA-4).
       - Errore di rete o HTTP → solleva `GloveUnavailableError` con il motivo (REQ-041).
       - Errore di parse/formato inatteso → `GloveUnavailableError` (REQ-041).
-- [ ] Verifica: solo **stdlib** (`urllib`, `zipfile`, `os`, `pathlib`) — RNF-2.
-- [ ] Verifica: `ensure_glove` non viene mai chiamato da `search`/`install` (solo da `index`) —
+- [x] Verifica: solo **stdlib** (`urllib`, `zipfile`, `os`, `pathlib`) — RNF-2.
+- [x] Verifica: `ensure_glove` non viene mai chiamato da `search`/`install` (solo da `index`) —
       REQ-034; questa distinzione è garantita dal fatto che `resolve_glove_file` viene chiamata
       solo dentro `build_embedder` che è invocato dal percorso di indicizzazione.
 
@@ -206,62 +206,62 @@ Piano di modifica (piano §"Punti", punto 6):
 ### TASK-A01 — Test unitari `HashingEmbedder` (determinismo, OOV, testo vuoto) [P]
 **File nuovo**: `tests/unit/test_hashing_embedder.py`
 → dipende da: TASK-F01
-- [ ] Test di base: `embed(["x"])` produce lista di 1 vettore di lunghezza 512; tutti float.
-- [ ] Test determinismo stesso-run: `embed(["hello world"]) == embed(["hello world"])`.
-- [ ] Test **determinismo cross-`PYTHONHASHSEED`** (subprocess): lancia due subprocess Python
+- [x] Test di base: `embed(["x"])` produce lista di 1 vettore di lunghezza 512; tutti float.
+- [x] Test determinismo stesso-run: `embed(["hello world"]) == embed(["hello world"])`.
+- [x] Test **determinismo cross-`PYTHONHASHSEED`** (subprocess): lancia due subprocess Python
       con `PYTHONHASHSEED=0` e `PYTHONHASHSEED=42` che stampano `embed(["test text"])` come JSON;
       verifica che i due output siano identici (REQ-013, SC-003).
       > Usare `subprocess.run([sys.executable, "-c", "..."], env={…})` senza download reali.
-- [ ] Test OOV / identificatori di codice: `embed(["build_indexer"])` produce vettore **non nullo**
+- [x] Test OOV / identificatori di codice: `embed(["build_indexer"])` produce vettore **non nullo**
       (i char-n-gram garantiscono segnale anche per token fuori vocabolario — REQ-011, US2-AC2).
-- [ ] Test testo vuoto: `embed([""])` → vettore di 512 zeri; nessuna eccezione (REQ-011 edge).
-- [ ] Test batch: `embed(["a", "b"])` → 2 vettori; ordine preservato.
-- [ ] Tutti i test: no rete, no cloud (`not cloud`), solo stdlib.
+- [x] Test testo vuoto: `embed([""])` → vettore di 512 zeri; nessuna eccezione (REQ-011 edge).
+- [x] Test batch: `embed(["a", "b"])` → 2 vettori; ordine preservato.
+- [x] Tutti i test: no rete, no cloud (`not cloud`), solo stdlib.
 
 ### TASK-A02 — Test unitari `GloveEmbedder` (fixture mini-vocabolario, OOV, caricamento lazy) [P]
 **File nuovo**: `tests/unit/test_glove_embedder.py`
 **File fixture**: `tests/fixtures/glove_mini.txt` (mini-file GloVe con 2–3 token e 300 dim)
 → dipende da: TASK-F01, TASK-F02
-- [ ] Crea fixture `tests/fixtures/glove_mini.txt`: mini-file GloVe con 3 token
+- [x] Crea fixture `tests/fixtures/glove_mini.txt`: mini-file GloVe con 3 token
       (es. `hello`, `world`, `code`) e 300 float casuali ma fissi (hardcodati nel file),
       formato `token v1 v2 … v300` per riga. Usato da TUTTI i test GloVe offline —
       **NON scaricare mai il file reale (~822 MB) nei test**.
-- [ ] Test base: `GloveEmbedder(path_mini).embed(["hello world"])` → vettore di 300 float;
+- [x] Test base: `GloveEmbedder(path_mini).embed(["hello world"])` → vettore di 300 float;
       media dei due vettori in-vocab, L2-normalizzato.
-- [ ] Test **determinismo**: `embed(["hello world"]) == embed(["hello world"])` con stessa fixture
+- [x] Test **determinismo**: `embed(["hello world"]) == embed(["hello world"])` con stessa fixture
       (REQ-021/RNF-1/SC-003).
-- [ ] Test **OOV camelCase**: `embed(["getUserId"])` → split in `get`, `user`, `id`; sotto-token
+- [x] Test **OOV camelCase**: `embed(["getUserId"])` → split in `get`, `user`, `id`; sotto-token
       in-vocab (se presenti nella fixture) contribuiscono; non solleva eccezione (REQ-023).
-- [ ] Test **tutto-OOV**: `embed(["xqzjvbk"])` → vettore zero (300 zeri); nessuna eccezione
+- [x] Test **tutto-OOV**: `embed(["xqzjvbk"])` → vettore zero (300 zeri); nessuna eccezione
       (REQ-023, US3-AC4).
-- [ ] Test testo vuoto: `embed([""])` → vettore zero; nessuna eccezione.
-- [ ] Test **caricamento lazy**: costruire `GloveEmbedder(path_mini)` non carica il file;
+- [x] Test testo vuoto: `embed([""])` → vettore zero; nessuna eccezione.
+- [x] Test **caricamento lazy**: costruire `GloveEmbedder(path_mini)` non carica il file;
       il caricamento avviene solo alla prima `embed` (verifica con monkeypatch del metodo
       `_load_vocab` che conta le chiamate).
-- [ ] Test batch: `embed(["hello", "world"])` → 2 vettori; ordine preservato.
-- [ ] Tutti i test: no rete, no cloud; nessun download reale.
+- [x] Test batch: `embed(["hello", "world"])` → 2 vettori; ordine preservato.
+- [x] Tutti i test: no rete, no cloud; nessun download reale.
 
 ### TASK-A03 — Test unitari resolver GloVe (cache, override path, fail-loud) [P]
 **File nuovo**: `tests/unit/test_glove_cache.py`
 → dipende da: TASK-F02, TASK-F03
-- [ ] Test **override path presente**: `resolve_glove_file` con `Settings(glove_path=path_mini)`
+- [x] Test **override path presente**: `resolve_glove_file` con `Settings(glove_path=path_mini)`
       → restituisce `path_mini` senza chiamare il downloader (monkeypatch `ensure_glove` e
       verifica che non sia chiamato — US3-AC3, REQ-032).
-- [ ] Test **cache presente**: con `glove_cache_dir()`/`glove.6B.300d.txt` esistente (tmpdir),
+- [x] Test **cache presente**: con `glove_cache_dir()`/`glove.6B.300d.txt` esistente (tmpdir),
       `resolve_glove_file` restituisce il path dalla cache; downloader non chiamato; emette
       `glove_cache_hit` con `hit=True` (REQ-035, DA-6).
-- [ ] Test **file assente, downloader che solleva** (simula no-rete): monkeypatch `ensure_glove`
+- [x] Test **file assente, downloader che solleva** (simula no-rete): monkeypatch `ensure_glove`
       per sollevare `GloveUnavailableError`; `resolve_glove_file` propaga l'errore con il
       messaggio azionabile che nomina entrambe le vie d'uscita (REQ-040, SC-005, US4-AC1).
-- [ ] Test **download riuscito** (mock `urllib` e `zipfile`): `ensure_glove` con mock del download
+- [x] Test **download riuscito** (mock `urllib` e `zipfile`): `ensure_glove` con mock del download
       che crea il file nella tmpdir; verifica che il path restituito sia corretto e che
       `os.replace` atomico sia avvenuto (DA-4).
-- [ ] Test **emissione evento glove_download**: prima del download, l'evento `glove_download`
+- [x] Test **emissione evento glove_download**: prima del download, l'evento `glove_download`
       con `size_mb=822` e `source_host` non vuoto è emesso (REQ-033/042, DA-6);
       usa `caplog` o mock di `log_event`.
-- [ ] Test **glove_cache_dir() cross-OS**: su Windows stub `os.environ["LOCALAPPDATA"]` e
+- [x] Test **glove_cache_dir() cross-OS**: su Windows stub `os.environ["LOCALAPPDATA"]` e
       verifica path; su posix stub `XDG_CACHE_HOME` e verifica.
-- [ ] Tutti i test: no rete reale; `urllib.request.urlretrieve` mockato; no cloud.
+- [x] Tutti i test: no rete reale; `urllib.request.urlretrieve` mockato; no cloud.
 
 ### TASK-A04 — Test unitari Settings e composition: default provider, `validate_backend` ri-chiavata [P]
 **File**: `tests/unit/test_settings.py`
@@ -271,7 +271,7 @@ Piano di modifica (piano §"Punti", punto 6):
 → dipende da: TASK-G02, TASK-G03
 
 Migrazione test core (piano punti 7–11):
-- [ ] **`test_settings.py`** (punti 7): sostituisci tutti i riferimenti a `s.backend` e
+- [x] **`test_settings.py`** (punti 7): sostituisci tutti i riferimenti a `s.backend` e
       `RAG_BACKEND` con `embed_provider`/`SERTOR_EMBED_PROVIDER` e `store_backend` default `local`.
       Rimuovi `test_embed_provider_follows_backend` e `test_store_backend_defaults_to_rag_backend`;
       aggiungi:
@@ -282,15 +282,15 @@ Migrazione test core (piano punti 7–11):
       - `Settings(embed_provider="azure")` → `validate_backend()` → 3 campi Azure OpenAI.
       - `Settings(embed_provider="bogus")` → valore non riconosciuto (il composition root
         solleverà `ConfigError`; settings è solo il campo grezzo).
-- [ ] **`test_settings_runtime.py`** (punto 8): sostituisci `.env` con `RAG_BACKEND` →
+- [x] **`test_settings_runtime.py`** (punto 8): sostituisci `.env` con `RAG_BACKEND` →
       `SERTOR_EMBED_PROVIDER`; verifica che `RAG_BACKEND` residuo nell'env produca il warning
       `config_rag_backend_ignored` (REQ-007) senza cambiare comportamento.
-- [ ] **`test_settings_validate_backend.py`** (punto 9): `Settings(backend=…)` →
+- [x] **`test_settings_validate_backend.py`** (punto 9): `Settings(backend=…)` →
       `Settings(embed_provider=…)`.
-- [ ] **`test_composition.py`** (punto 10): `RAG_BACKEND` e `backend=azure` → `embed_provider`;
+- [x] **`test_composition.py`** (punto 10): `RAG_BACKEND` e `backend=azure` → `embed_provider`;
       aggiorna il commento «local store despite backend=azure» → «despite embed_provider=azure».
       Aggiungi test per i due nuovi rami `glove` e `hash` in `build_embedder`.
-- [ ] Verifica: tutti i test modificati continuano a passare; nessun test nuovo dipende da rete
+- [x] Verifica: tutti i test modificati continuano a passare; nessun test nuovo dipende da rete
       o cloud (usa `FakeEmbedder` per mock dove serve).
 
 ### TASK-A05 — Migrazione test CLI/integration che referenziano `RAG_BACKEND`/`backend` [P]
@@ -306,49 +306,49 @@ Migrazione test core (piano punti 7–11):
 → dipende da: TASK-G02, TASK-G03
 
 Migrazione test core (piano punti 11–16):
-- [ ] **`test_cli_index.py`** (punto 11, riga 23 e 108): `Settings(backend="azure",…)` →
+- [x] **`test_cli_index.py`** (punto 11, riga 23 e 108): `Settings(backend="azure",…)` →
       `Settings(embed_provider="azure",…)`.
-- [ ] **`test_cli_graph_eval.py`** (punto 12, riga 67): rimuovi kwarg `backend="local"` o
+- [x] **`test_cli_graph_eval.py`** (punto 12, riga 67): rimuovi kwarg `backend="local"` o
       sostituisci con `embed_provider="hash"` se il test richiede un provider deterministico.
-- [ ] **`test_cli_eval_compare.py`** (punto 12, riga 43): stessa migrazione.
-- [ ] **`test_cli_eval.py`** (punto 12, riga 59): stessa migrazione.
-- [ ] **`test_graph_eval_gate.py`** (punto 12, riga 84): stessa migrazione.
-- [ ] **`test_eval_gate.py`** (punto 12, riga 47): stessa migrazione.
-- [ ] **`test_local_only.py`** (punto 13, righe 3/16/28): `RAG_BACKEND=local` →
+- [x] **`test_cli_eval_compare.py`** (punto 12, riga 43): stessa migrazione.
+- [x] **`test_cli_eval.py`** (punto 12, riga 59): stessa migrazione.
+- [x] **`test_graph_eval_gate.py`** (punto 12, riga 84): stessa migrazione.
+- [x] **`test_eval_gate.py`** (punto 12, riga 47): stessa migrazione.
+- [x] **`test_local_only.py`** (punto 13, righe 3/16/28): `RAG_BACKEND=local` →
       `SERTOR_EMBED_PROVIDER=ollama` (il test verifica che la composizione locale instanzi
       Ollama+Chroma).
-- [ ] **`test_baseline_engine.py`** (punto 14, riga 110): `RAG_BACKEND=local` →
+- [x] **`test_baseline_engine.py`** (punto 14, riga 110): `RAG_BACKEND=local` →
       `SERTOR_EMBED_PROVIDER=ollama`.
-- [ ] **`test_mcp_server.py`** (punto 15, riga 44): aggiorna il commento che cita `RAG_BACKEND`.
-- [ ] **`test_logging.py`** (punto 16): **NON toccare** — usa `backend="local"` come campo di
+- [x] **`test_mcp_server.py`** (punto 15, riga 44): aggiorna il commento che cita `RAG_BACKEND`.
+- [x] **`test_logging.py`** (punto 16): **NON toccare** — usa `backend="local"` come campo di
       `log_event`, non come `Settings.backend`; non è correlato.
-- [ ] Verifica: `uv run pytest -m "not cloud" tests/unit/test_cli_index.py tests/unit/test_cli_graph_eval.py tests/unit/test_cli_eval.py tests/integration/test_local_only.py` → tutti verdi.
+- [x] Verifica: `uv run pytest -m "not cloud" tests/unit/test_cli_index.py tests/unit/test_cli_graph_eval.py tests/unit/test_cli_eval.py tests/integration/test_local_only.py` → tutti verdi.
 
 ### TASK-A06 — Test unitari: Settings default, warning `RAG_BACKEND`, composizione a 4 rami [P]
 **File nuovo**: `tests/unit/test_embedder_local_composition.py`
 → dipende da: TASK-G02, TASK-G03, TASK-F01, TASK-F02
-- [ ] Test **default provider**: con `Settings()` (nessuna env impostata), `build_embedder`
+- [x] Test **default provider**: con `Settings()` (nessuna env impostata), `build_embedder`
       costruisce un `GloveEmbedder` (ramo `glove` — REQ-002/SC-001).
       Usa monkeypatch per evitare il caricamento del file vocabolario (non indicizzare davvero).
-- [ ] Test **provider `hash`**: `Settings(embed_provider="hash")` → `build_embedder` costruisce
+- [x] Test **provider `hash`**: `Settings(embed_provider="hash")` → `build_embedder` costruisce
       un `HashingEmbedder`; emette warning «NL limitata» (verifica con `caplog` — REQ-014).
-- [ ] Test **provider `ollama`** (invarianza): `Settings(embed_provider="ollama")` →
+- [x] Test **provider `ollama`** (invarianza): `Settings(embed_provider="ollama")` →
       `build_embedder` costruisce un `OllamaEmbedder`; nessun import di `GloveEmbedder`
       né di `numpy` (RNF-4/REQ-052).
-- [ ] Test **provider `azure`** (invarianza): `Settings(embed_provider="azure")` →
+- [x] Test **provider `azure`** (invarianza): `Settings(embed_provider="azure")` →
       `build_embedder` costruisce un `AzureEmbedder` (RNF-4/REQ-052).
-- [ ] Test **valore non riconosciuto**: `Settings(embed_provider="bogus")` →
+- [x] Test **valore non riconosciuto**: `Settings(embed_provider="bogus")` →
       `build_embedder` solleva `ConfigError(key="SERTOR_EMBED_PROVIDER")` che nomina i valori
       ammessi (REQ-003, SC-005).
-- [ ] Test **evento `embeddings_provider_selected`**: rami `glove` e `hash` emettono l'evento
+- [x] Test **evento `embeddings_provider_selected`**: rami `glove` e `hash` emettono l'evento
       con campo `provider` a valore chiuso (verifica con `caplog`/mock `log_event` — REQ-042).
       I rami `ollama` e `azure` **non** emettono questo evento (invarianza).
-- [ ] Test **warning `RAG_BACKEND` residuo**: con `RAG_BACKEND=azure` in env e
+- [x] Test **warning `RAG_BACKEND` residuo**: con `RAG_BACKEND=azure` in env e
       `SERTOR_EMBED_PROVIDER=glove` → `Settings.load()` emette `config_rag_backend_ignored`
       e instanzia comunque `GloveEmbedder` (comportamento non cambiato — REQ-007, DA-1).
-- [ ] Test **store ortogonale**: `SERTOR_EMBED_PROVIDER=glove` + `SERTOR_STORE_BACKEND=azure` →
+- [x] Test **store ortogonale**: `SERTOR_EMBED_PROVIDER=glove` + `SERTOR_STORE_BACKEND=azure` →
       `Settings` ha `embed_provider="glove"` e `store_backend="azure"` (REQ-006).
-- [ ] Tutti i test: no rete, no cloud; mock di `ensure_glove` dove serve.
+- [x] Tutti i test: no rete, no cloud; mock di `ensure_glove` dove serve.
 
 ---
 
@@ -360,75 +360,75 @@ Migrazione test core (piano punti 11–16):
 ### TASK-B01 — Test unitari GloVe: avviso download, cache hit, override airgapped [P]
 **File nuovo**: `tests/unit/test_glove_acquisition.py`
 → dipende da: TASK-F02, TASK-F03, TASK-A02, TASK-A03
-- [ ] Test **prima indicizzazione — cache assente**: `resolve_glove_file` chiama `ensure_glove`
+- [x] Test **prima indicizzazione — cache assente**: `resolve_glove_file` chiama `ensure_glove`
       quando né il path esplicito né la cache esistono; verifica con monkeypatch di `ensure_glove`
       che sia chiamato esattamente una volta (REQ-030, US3-AC1).
-- [ ] Test **seconda indicizzazione — cache presente**: dopo il primo download (simulato creando
+- [x] Test **seconda indicizzazione — cache presente**: dopo il primo download (simulato creando
       il file in tmpdir), `resolve_glove_file` restituisce il file dalla cache senza chiamare
       `ensure_glove` (REQ-035, US3-AC2); evento `glove_cache_hit(hit=True)` emesso.
-- [ ] Test **override airgapped**: `SERTOR_GLOVE_PATH=path_mini` →
+- [x] Test **override airgapped**: `SERTOR_GLOVE_PATH=path_mini` →
       `resolve_glove_file` restituisce `path_mini` senza chiamare `ensure_glove` (REQ-032,
       US3-AC3).
-- [ ] Test **avviso dimensione prima del download**: prima che `ensure_glove` inizi a scaricare,
+- [x] Test **avviso dimensione prima del download**: prima che `ensure_glove` inizi a scaricare,
       l'evento `glove_download` con `size_mb≈822` è emesso (REQ-033/042).
-- [ ] Test **nessun download a `search`/`install`**: `resolve_glove_file` chiamata con
+- [x] Test **nessun download a `search`/`install`**: `resolve_glove_file` chiamata con
       `in_index_path=False` (o equivalente flag che blocca il download) solleva
       `GloveUnavailableError` invece di scaricare (REQ-034, US3-AC5).
       > Nota implementativa: il confine "solo durante l'indicizzazione" può essere implementato
       > passando un flag booleano `allow_download: bool = False` a `resolve_glove_file`;
       > `build_embedder` per i percorsi di indicizzazione lo passa `True`.
-- [ ] Test **errore rete → `GloveUnavailableError` azionabile**: `ensure_glove` con mock che
+- [x] Test **errore rete → `GloveUnavailableError` azionabile**: `ensure_glove` con mock che
       solleva `urllib.error.URLError`; l'errore propagato nomina entrambe le vie d'uscita
       (REQ-040/041, US4-AC2).
-- [ ] Test **file corrotto → `GloveUnavailableError`**: mock che produce un file GloVe con
+- [x] Test **file corrotto → `GloveUnavailableError`**: mock che produce un file GloVe con
       formato inatteso; `GloveEmbedder._load_vocab` solleva `GloveUnavailableError` (REQ-041).
-- [ ] Tutti i test: no rete reale; mock completo di `urllib.request` e `zipfile`.
+- [x] Tutti i test: no rete reale; mock completo di `urllib.request` e `zipfile`.
 
 ### TASK-B02 — Test di fumo GloVe con fixture locale (offline, non cloud) [P]
 **File nuovo**: `tests/unit/test_glove_embedding_offline.py`
 → dipende da: TASK-A02, TASK-B01
-- [ ] Test **media+norm deterministica**: con vocabolario fixture mini (TASK-A02), calcola
+- [x] Test **media+norm deterministica**: con vocabolario fixture mini (TASK-A02), calcola
       manualmente la media attesa dei vettori di `hello world` e verifica che
       `GloveEmbedder(path_mini).embed(["hello world"])` coincida (entro fp-epsilon).
-- [ ] Test **OOV split camelCase con fixture**: con token `worldCode` (split: `world` in-vocab,
+- [x] Test **OOV split camelCase con fixture**: con token `worldCode` (split: `world` in-vocab,
       `code` in-vocab) → vettore non nullo, media dei due sotto-token.
-- [ ] Test **tutto-OOV**: token non presente nella fixture e non splittabile →
+- [x] Test **tutto-OOV**: token non presente nella fixture e non splittabile →
       vettore di 300 zeri (REQ-023/SC-010).
-- [ ] Test **batch deterministico**: `embed(["hello", "world"])` due volte → risultati identici
+- [x] Test **batch deterministico**: `embed(["hello", "world"])` due volte → risultati identici
       (RNF-1/SC-003).
-- [ ] Test **`numpy` non importato se non si usa GloVe**: importa il modulo `hashing` in un
+- [x] Test **`numpy` non importato se non si usa GloVe**: importa il modulo `hashing` in un
       processo separato (subprocess) e verifica che `numpy` non sia in `sys.modules`
       (RNF-2/REQ-053).
-- [ ] Tutti i test: no rete, no cloud; usa solo la fixture mini.
+- [x] Tutti i test: no rete, no cloud; usa solo la fixture mini.
 
 ### TASK-B03 — Aggiunta flag `allow_download` a `resolve_glove_file` e wiring composition [P]
 **File**: `src/sertor_core/adapters/embeddings/glove_cache.py`
 **File**: `src/sertor_core/composition.py`
 → dipende da: TASK-F03, TASK-G03
-- [ ] Aggiungi parametro `allow_download: bool = False` a `resolve_glove_file(settings, …)`:
+- [x] Aggiungi parametro `allow_download: bool = False` a `resolve_glove_file(settings, …)`:
       se `False` e il file non è in cache/path esplicito → solleva `GloveUnavailableError`
       invece di chiamare `ensure_glove` (REQ-034, US3-AC5 — acquisizione solo in index).
-- [ ] In `composition.py`, ramo `glove` di `build_embedder`: passa `allow_download=True`
+- [x] In `composition.py`, ramo `glove` di `build_embedder`: passa `allow_download=True`
       solo quando il contesto è quello di indicizzazione (l'unico che chiama `build_indexer`).
       Per i percorsi di query/search: `allow_download=False` (cache deve essere già presente).
       > Il modo più semplice: `build_indexer` chiama `resolve_glove_file(settings, allow_download=True)`;
       > `build_facade`/`build_engine` passano `allow_download=False`.
-- [ ] Verifica: `uv run pytest -m "not cloud" tests/unit/test_glove_acquisition.py` → verde.
+- [x] Verifica: `uv run pytest -m "not cloud" tests/unit/test_glove_acquisition.py` → verde.
 
 ### TASK-B04 — Test integrazione composizione con provider `glove` su fixture (not cloud) [P]
 **File nuovo**: `tests/integration/test_local_glove.py`
 → dipende da: TASK-A01, TASK-A02, TASK-A03, TASK-B01, TASK-B02, TASK-B03
-- [ ] Test `@integration` `not cloud`: costruisce `build_embedder` con
+- [x] Test `@integration` `not cloud`: costruisce `build_embedder` con
       `Settings(embed_provider="glove", glove_path=path_mini)` (override path, no download)
       → restituisce un `GloveEmbedder`; chiama `embed(["hello world"])` → vettore valido
       (verifica dimensione 300 e L2-norm ≈ 1.0 entro epsilon).
-- [ ] Test `@integration` `not cloud`: costruisce `build_embedder` con
+- [x] Test `@integration` `not cloud`: costruisce `build_embedder` con
       `Settings(embed_provider="hash")` → restituisce `HashingEmbedder`; chiama
       `embed(["hello"])` → vettore di dim 512, norma ≈ 1.0.
-- [ ] Test **namespacing collezione**: `collection_name(corpus="test", embedder=glove_adapter)`
+- [x] Test **namespacing collezione**: `collection_name(corpus="test", embedder=glove_adapter)`
       contiene `"glove"` nel nome; `collection_name(corpus="test", embedder=hash_adapter)`
       contiene `"hash"` — provider diversi producono nomi distinti (REQ-051, RNF-6 di R-6).
-- [ ] Tutti i test: no rete reale; `path_mini` dalla fixture TASK-A02.
+- [x] Tutti i test: no rete reale; `path_mini` dalla fixture TASK-A02.
 
 ---
 
@@ -440,48 +440,48 @@ Migrazione test core (piano punti 11–16):
 ### TASK-C01 — Test unitari fail-loud: `GloveUnavailableError`, `ConfigError` valore non valido [P]
 **File nuovo**: `tests/unit/test_fail_loud.py`
 → dipende da: TASK-G01, TASK-G03, TASK-F03
-- [ ] Test **`GloveUnavailableError` azionabile**: cattura l'eccezione e verifica che il messaggio
+- [x] Test **`GloveUnavailableError` azionabile**: cattura l'eccezione e verifica che il messaggio
       contenga `SERTOR_GLOVE_PATH` **e** `SERTOR_EMBED_PROVIDER=hash` (entrambe le vie — REQ-040,
       US4-AC1).
-- [ ] Test **nessun fallback silenzioso**: `resolve_glove_file` con file assente + `ensure_glove`
+- [x] Test **nessun fallback silenzioso**: `resolve_glove_file` con file assente + `ensure_glove`
       che simula no-rete → `GloveUnavailableError` propagato; il composition root non cattura e
       non ripiega su un altro provider (US4-AC2).
-- [ ] Test **`ConfigError` su valore non valido**: `build_embedder` con
+- [x] Test **`ConfigError` su valore non valido**: `build_embedder` con
       `Settings(embed_provider="typo")` → `ConfigError` con `key="SERTOR_EMBED_PROVIDER"` e
       messaggio che nomina i valori ammessi (`glove`, `hash`, `ollama`, `azure`) — REQ-003,
       US4-AC3.
-- [ ] Test **evento osservabilità strutturato**: per i provider locali, `build_embedder` emette
+- [x] Test **evento osservabilità strutturato**: per i provider locali, `build_embedder` emette
       `embeddings_provider_selected` con campo `provider` a valore chiuso; verifica con mock
       `log_event` che nessun segreto, path con `~`/username, né testo di query sia incluso
       (REQ-042, Principio IX, RNF-3/DA-6).
-- [ ] Test **osservabilità `glove_download`**: i campi emessi sono `size_mb` e `source_host`
+- [x] Test **osservabilità `glove_download`**: i campi emessi sono `size_mb` e `source_host`
       (non l'URL completo, non il path locale — RNF-3).
-- [ ] Tutti i test: no rete; no cloud.
+- [x] Tutti i test: no rete; no cloud.
 
 ### TASK-C02 — Test unitari: avviso NL limitata per provider `hash` [P]
 **File**: `tests/unit/test_embedder_local_composition.py` (aggiungi, o nuovo file)
 → dipende da: TASK-G03, TASK-F01
-- [ ] Verifica che, quando `build_embedder` costruisce un `HashingEmbedder`, venga emesso
+- [x] Verifica che, quando `build_embedder` costruisce un `HashingEmbedder`, venga emesso
       il warning `log_event(WARNING, …)` con il messaggio che invita a configurare
       `glove`/`ollama`/`azure` per semantica NL (REQ-014, US2-AC4).
-- [ ] Verifica che il warning sia emesso **una volta** per costruzione, non per ogni chunk
+- [x] Verifica che il warning sia emesso **una volta** per costruzione, non per ogni chunk
       (non spam per batch — comportamento from `build_embedder`).
-- [ ] Verifica che i provider `glove`, `ollama`, `azure` **non** emettano questo warning.
-- [ ] No rete, no cloud.
+- [x] Verifica che i provider `glove`, `ollama`, `azure` **non** emettano questo warning.
+- [x] No rete, no cloud.
 
 ### TASK-C03 — Verifica isolamento dipendenze e importabilità senza extra [P]
 **File nuovo**: `tests/unit/test_dependency_isolation.py`
 → dipende da: TASK-F01, TASK-F02
-- [ ] Test **lessicale importabile senza `numpy`**: subprocess con env che non ha `numpy` nel
+- [x] Test **lessicale importabile senza `numpy`**: subprocess con env che non ha `numpy` nel
       path (o con monkeypatch che rende `numpy` non importabile) + import di
       `sertor_core.adapters.embeddings.hashing` → nessuna eccezione (REQ-010/053).
-- [ ] Test **provider non-GloVe non importa `numpy`**: subprocess con
+- [x] Test **provider non-GloVe non importa `numpy`**: subprocess con
       `SERTOR_EMBED_PROVIDER=hash`, import di `sertor_core` e verifica che `numpy` non sia
       in `sys.modules` dopo `Settings.load()` e `build_embedder` (RNF-2/REQ-053).
-- [ ] Test **provider non-GloVe non scarica file**: con `SERTOR_EMBED_PROVIDER=hash`,
+- [x] Test **provider non-GloVe non scarica file**: con `SERTOR_EMBED_PROVIDER=hash`,
       `build_embedder` non chiama mai `ensure_glove` né `resolve_glove_file`
       (verifica con monkeypatch — REQ-024).
-- [ ] No rete, no cloud.
+- [x] No rete, no cloud.
 
 ---
 
@@ -500,7 +500,7 @@ Migrazione test core (piano punti 11–16):
 → dipende da: TASK-G02 (le manopole devono essere definite in Settings)
 
 Migrazione installer (piano punti 17–18):
-- [ ] **`env.local.tmpl`** (punto 17, riga 3): rimuovi `RAG_BACKEND=local`; aggiungi:
+- [x] **`env.local.tmpl`** (punto 17, riga 3): rimuovi `RAG_BACKEND=local`; aggiungi:
       ```
       # Embedding provider: glove (default), hash (airgapped/CI), ollama, azure
       SERTOR_EMBED_PROVIDER=glove
@@ -510,13 +510,13 @@ Migrazione installer (piano punti 17–18):
       # SERTOR_STORE_BACKEND=local
       ```
       (REQ-060, US5-AC1)
-- [ ] **`env.azure.tmpl`** (punto 18, riga 3): rimuovi `RAG_BACKEND=azure`; aggiungi:
+- [x] **`env.azure.tmpl`** (punto 18, riga 3): rimuovi `RAG_BACKEND=azure`; aggiungi:
       ```
       SERTOR_EMBED_PROVIDER=azure
       # SERTOR_GLOVE_PATH=
       ```
       e mantieni `SERTOR_STORE_BACKEND=local` (il default locale è ok anche con embed azure).
-- [ ] Verifica: nessun segreto nei template; nessuna riga `RAG_BACKEND` residua in nessuno
+- [x] Verifica: nessun segreto nei template; nessuna riga `RAG_BACKEND` residua in nessuno
       dei due file.
 
 ### TASK-D02 — Aggiorna documentazione utente (4 provider, nuovo default, nota di migrazione) [P]
@@ -527,7 +527,7 @@ Migrazione installer (piano punti 17–18):
 → dipende da: TASK-D01
 
 Migrazione documentazione (piano punto 25, REQ-061):
-- [ ] In ogni file di documentazione utente:
+- [x] In ogni file di documentazione utente:
       - Descrivi i **4 provider** di embeddings: `glove` (default, semantica NL locale, download
         822 MB una-tantum per-macchina), `hash` (airgapped/CI, zero-download, lessicale), `ollama`
         (modello locale), `azure` (cloud, credenziali richieste).
@@ -539,7 +539,7 @@ Migrazione documentazione (piano punto 25, REQ-061):
         2. Il **default è cambiato**: prima il local-first implicava Ollama; ora è il provider
            a vettori statici (GloVe); Ollama/Azure vanno selezionati esplicitamente.
       - Cita la licenza GloVe (PDDL/pubblico dominio) per l'approvazione enterprise (R-5).
-- [ ] Verifica: nessun riferimento a `RAG_BACKEND` nelle sezioni di documentazione aggiornate
+- [x] Verifica: nessun riferimento a `RAG_BACKEND` nelle sezioni di documentazione aggiornate
       (eccetto nella nota di migrazione, dove si nomina come manopola rimossa).
 
 ### TASK-D03 — Migrazione test installer (RAG_BACKEND → SERTOR_EMBED_PROVIDER) [P]
@@ -554,21 +554,21 @@ Migrazione documentazione (piano punto 25, REQ-061):
 → dipende da: TASK-D01, TASK-G02
 
 Migrazione test installer (piano punto 24):
-- [ ] **`test_install_rag.py`** (riga 126–128): aggiorna asserzione su `RAG_BACKEND=local` →
+- [x] **`test_install_rag.py`** (riga 126–128): aggiorna asserzione su `RAG_BACKEND=local` →
       `SERTOR_EMBED_PROVIDER=glove` nel template installato.
-- [ ] **`test_env_merge.py`** (pacchetto `sertor`, righe 10/21/49): aggiorna riferimenti a
+- [x] **`test_env_merge.py`** (pacchetto `sertor`, righe 10/21/49): aggiorna riferimenti a
       `RAG_BACKEND` → `SERTOR_EMBED_PROVIDER`.
-- [ ] **`test_env_merge.py`** (pacchetto `sertor-install-kit`, righe 10/21/49): stessa migrazione.
-- [ ] **`test_cli_configure.py`** (righe multiple): `RAG_BACKEND` → `SERTOR_EMBED_PROVIDER`/
+- [x] **`test_env_merge.py`** (pacchetto `sertor-install-kit`, righe 10/21/49): stessa migrazione.
+- [x] **`test_cli_configure.py`** (righe multiple): `RAG_BACKEND` → `SERTOR_EMBED_PROVIDER`/
       `SERTOR_STORE_BACKEND`; aggiorna la validazione attesa a includere i provider locali.
-- [ ] **`test_configure_write.py`** (righe multiple): aggiorna scrittura `RAG_BACKEND` →
+- [x] **`test_configure_write.py`** (righe multiple): aggiorna scrittura `RAG_BACKEND` →
       `SERTOR_EMBED_PROVIDER`.
-- [ ] **`test_config_fields.py`** (righe 90–107): aggiorna i campi del catalogo `ConfigField` per
+- [x] **`test_config_fields.py`** (righe 90–107): aggiorna i campi del catalogo `ConfigField` per
       il nuovo schema; i provider locali non generano campi obbligatori mancanti (REQ-005).
-- [ ] **`test_configure_check.py`** (riga 33): aggiorna riferimento a `RAG_BACKEND`.
-- [ ] **`test_configure_report.py`** (riga 114): aggiorna il campo `backend` del report →
+- [x] **`test_configure_check.py`** (riga 33): aggiorna riferimento a `RAG_BACKEND`.
+- [x] **`test_configure_report.py`** (riga 114): aggiorna il campo `backend` del report →
       `provider`/`embed_provider`.
-- [ ] Verifica: `uv run pytest -m "not cloud" packages/` → tutti i test installer verdi.
+- [x] Verifica: `uv run pytest -m "not cloud" packages/` → tutti i test installer verdi.
 
 ### TASK-D04 — Allineamento wizard installer `rag_profile`/`configure`/`__main__` (P2 Should)
 **File**: `packages/sertor/src/sertor_installer/rag_profile.py`
@@ -578,12 +578,21 @@ Migrazione test installer (piano punto 24):
 **File**: `packages/sertor/src/sertor_installer/__main__.py`
 → dipende da: TASK-D01, TASK-D02, TASK-D03
 
+> **Stato P2 (2026-06-21): PARZIALE.** Fatto il pezzo che realizza la Must dell'installabilità:
+> `configure.py` ora scrive `SERTOR_EMBED_PROVIDER` (helper `_embed_provider_for`: profilo
+> `local`→`glove`, `azure`→`azure`) e costruisce `Settings(embed_provider=…)` (campo `backend`
+> rimosso → questo era OBBLIGATORIO, non opzionale). **Rinviato (P2 Should):** la rinomina del flag
+> CLI `--backend`→`--provider` con i 4 valori `glove|hash|ollama|azure` e l'allineamento di
+> `rag_profile`/`install_rag`/`configure_report` al concetto a 4 valori. Il wizard parla ancora di
+> profilo `azure|local`, ma deposita le manopole corrette. Debito tracciato.
+
 Debito di completamento P2 — allineamento concetto installer `backend` → `provider` (piano punti 19–23):
 - [ ] **`rag_profile.py`** (punto 19, righe 19/30–40/57–58/87): allinea il concetto
       `backend=azure|local` a `provider=glove|hash|ollama|azure`; aggiorna `compose_extras`
-      (extra `azure` solo per provider `azure`).
-- [ ] **`configure.py`** (punto 20, righe 205/222/258/307–311/343): scrive `SERTOR_EMBED_PROVIDER`
-      invece di `RAG_BACKEND`; usa `Settings(embed_provider=…)` invece di `Settings(backend=…)`.
+      (extra `azure` solo per provider `azure`). *(RINVIATO P2)*
+- [x] **`configure.py`** (punto 20): scrive `SERTOR_EMBED_PROVIDER`
+      invece di `RAG_BACKEND`; usa `Settings(embed_provider=…)` invece di `Settings(backend=…)`
+      (via `_embed_provider_for`). *(FATTO — era obbligatorio per il fix del campo rimosso.)*
 - [ ] **`configure_report.py`** (punto 21, righe 27–28/94/127): rinomina/allinea campo `backend`
       del report a `embed_provider` o `provider`.
 - [ ] **`install_rag.py`** (punto 22, righe 175/265): seleziona il template da `provider`
@@ -605,7 +614,7 @@ Debito di completamento P2 — allineamento concetto installer `backend` → `pr
 
 ### TASK-P01 — Verifica finale "nessun riferimento residuo a `RAG_BACKEND`"
 → dipende da: tutti i task delle Fasi 0–5
-- [ ] Esegui una ricerca grepping cross-repo per `RAG_BACKEND` in tutto il codice sorgente
+- [x] Esegui una ricerca grepping cross-repo per `RAG_BACKEND` in tutto il codice sorgente
       di produzione (escludi `prototype/`, `wiki/`, `specs/` vecchie, `CLAUDE.md`,
       `wiki/log/`, `.sertor/.env`):
       ```
@@ -615,25 +624,25 @@ Debito di completamento P2 — allineamento concetto installer `backend` → `pr
       - la nota di migrazione in `docs/install.md` e `packages/sertor/docs/install.md`
         (dove si nomina come manopola rimossa — è intenzionale)
       - eventuali commenti di test che spiegano la migrazione
-- [ ] Per ogni riferimento residuo trovato, correggi nel task appropriato delle fasi precedenti
+- [x] Per ogni riferimento residuo trovato, correggi nel task appropriato delle fasi precedenti
       (o aggiungi un nuovo task di fix se sfuggito).
-- [ ] Esegui la stessa verifica per `Settings.backend` (il campo rimosso) nei file di produzione
+- [x] Esegui la stessa verifica per `Settings.backend` (il campo rimosso) nei file di produzione
       `src/` e `packages/`: nessuna occorrenza fuori da `adapters/vectorstores/` e `domain/errors.py`
       (gli omonimi non correlati — `VectorStoreError.backend` — che il plan esclude esplicitamente).
 
 ### TASK-P02 — Lint ruff e verifica suite completa non-cloud
 → dipende da: TASK-P01
-- [ ] Esegui `uv run ruff check .` su tutti i file nuovi e modificati; correggi ogni errore
+- [x] Esegui `uv run ruff check .` su tutti i file nuovi e modificati; correggi ogni errore
       (regole E,F,I,UP,B; line-length 100). Zero errori come pre-condizione al merge.
-- [ ] Esegui `uv run pytest -m "not cloud" tests/unit/` → suite unit **completamente verde**
+- [x] Esegui `uv run pytest -m "not cloud" tests/unit/` → suite unit **completamente verde**
       (inclusi i test IR esistenti, i nuovi adapter, la migrazione `RAG_BACKEND`).
-- [ ] Esegui `uv run pytest -m "not cloud" packages/` → suite installer **verde**.
-- [ ] Esegui `uv run pytest -m "not cloud" tests/integration/test_local_glove.py` → verde.
-- [ ] Verifica **additività** (RNF-4/SC-004): con `SERTOR_EMBED_PROVIDER=ollama` e store local,
+- [x] Esegui `uv run pytest -m "not cloud" packages/` → suite installer **verde**.
+- [x] Esegui `uv run pytest -m "not cloud" tests/integration/test_local_glove.py` → verde.
+- [x] Verifica **additività** (RNF-4/SC-004): con `SERTOR_EMBED_PROVIDER=ollama` e store local,
       `sertor-rag index .` e `sertor-rag search "test"` hanno comportamento e costo identici
       a prima (nessun warning aggiuntivo, nessun overhead — REQ-052).
-- [ ] Verifica **additività** con `SERTOR_EMBED_PROVIDER=azure`: stessa verifica.
-- [ ] Verifica: `EvalSuite` e `GraphEvalReport` (feature 066) invariati con le nuove Settings
+- [x] Verifica **additività** con `SERTOR_EMBED_PROVIDER=azure`: stessa verifica.
+- [x] Verifica: `EvalSuite` e `GraphEvalReport` (feature 066) invariati con le nuove Settings
       (i test IR/graph-eval esistenti continuano a passare senza modifiche).
 
 ### TASK-P03 — Aggiornamento dogfood `.sertor/.env` (manuale, documentato)

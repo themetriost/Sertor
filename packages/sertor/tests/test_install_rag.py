@@ -125,7 +125,7 @@ def test_backend_local_env_and_extras(tmp_path: Path, make_runner):  # SC-006
     runner = make_runner()
     _run(tmp_path, runner, backend="local")
     env = (tmp_path / ".sertor" / ".env").read_text(encoding="utf-8")
-    assert "RAG_BACKEND=local" in env and "AZURE_OPENAI" not in env
+    assert "SERTOR_EMBED_PROVIDER=glove" in env and "AZURE_OPENAI" not in env
     add = next(cmd for cmd in _uv_calls(runner) if cmd[:2] == ["uv", "add"])
     assert "sertor-core[mcp,graph,rerank] @ git+" in add[2]  # no azure
 

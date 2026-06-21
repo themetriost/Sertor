@@ -189,6 +189,16 @@ def _overwrite_key(env_path: Path, key: str, value: str) -> None:
 # --- T-300: orchestrator -------------------------------------------------------------------------
 
 
+def _embed_provider_for(backend: str) -> str:
+    """Map the installer profile `backend` to a core embedding provider (068, REQ-060).
+
+    The wizard still speaks of `azure`/`local` profiles; `local` maps to the default local provider
+    (`glove`, no required fields) and `azure` to the cloud provider. The CLI flag rename
+    `--backend`→`--provider` (4 values) is the tracked P2 completion debt.
+    """
+    return "azure" if backend == "azure" else "glove"
+
+
 def _settings_for_validation(backend: str, store: str, env_path: Path) -> Settings:
     """Build a `Settings` reflecting the chosen profile + the cloud fields currently in `.env`/env.
 
@@ -202,7 +212,7 @@ def _settings_for_validation(backend: str, store: str, env_path: Path) -> Settin
         return (file_values.get(name) or os.getenv(name, "")).strip()
 
     return Settings(
-        backend=backend,
+        embed_provider=_embed_provider_for(backend),
         store_backend=store,
         azure_openai_endpoint=_val("AZURE_OPENAI_ENDPOINT"),
         azure_openai_api_key=_val("AZURE_OPENAI_API_KEY"),
@@ -219,7 +229,7 @@ def _applicable_fields(backend: str, store: str) -> list[ConfigField]:
     requires (not only the currently-missing ones). This drives resolution AND overwrite of values
     already present; the post-write `validate_backend()` (on real values) decides completeness.
     """
-    settings = Settings(backend=backend, store_backend=store)
+    settings = Settings(embed_provider=_embed_provider_for(backend), store_backend=store)
     return [FIELD_CATALOG[name] for name in settings.validate_backend()]
 
 
@@ -252,10 +262,10 @@ def configure_rag(
     store = _resolve_store(store, backend, env_path)
     profile = ConfigProfile(backend, store)
 
-    # Ensure the chosen backend/store are written too (a re-run with a different profile updates
+    # Ensure the chosen provider/store are written too (a re-run with a different profile updates
     # them when --overwrite is given; merge_env adds them when absent).
     explicit_values = dict(explicit_values)
-    explicit_values.setdefault("RAG_BACKEND", backend)
+    explicit_values.setdefault("SERTOR_EMBED_PROVIDER", _embed_provider_for(backend))
     explicit_values.setdefault("SERTOR_STORE_BACKEND", store)
 
     fields = _applicable_fields(backend, store)
@@ -304,11 +314,14 @@ def configure_rag(
 
 
 def _write_profile_knobs(env_path: Path, backend: str, store: str, overwrite: bool) -> None:
-    """Ensure RAG_BACKEND/SERTOR_STORE_BACKEND reflect the profile (additive; overwrite gated)."""
+    """Ensure SERTOR_EMBED_PROVIDER/SERTOR_STORE_BACKEND reflect the profile (additive; gated)."""
     existing = _read_env_values(env_path)
     text = env_path.read_text(encoding="utf-8") if env_path.exists() else ""
     to_add: dict[str, str] = {}
-    for key, val in (("RAG_BACKEND", backend), ("SERTOR_STORE_BACKEND", store)):
+    for key, val in (
+        ("SERTOR_EMBED_PROVIDER", _embed_provider_for(backend)),
+        ("SERTOR_STORE_BACKEND", store),
+    ):
         present = existing.get(key, "").strip()
         if present:
             if overwrite and present != val:

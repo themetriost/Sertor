@@ -41,7 +41,7 @@ def test_configure_local_exit_0(tmp_path: Path):
     rc = main(["configure", "--backend", "local", "--target", str(tmp_path), "--non-interactive"])
     assert rc == 0
     content = _env(tmp_path).read_text(encoding="utf-8")
-    assert "RAG_BACKEND=local" in content
+    assert "SERTOR_EMBED_PROVIDER=glove" in content
 
 
 def test_configure_azure_flag_driven_exit_0(tmp_path: Path):
@@ -164,7 +164,7 @@ def test_configure_idempotent_double_run(tmp_path: Path):
 def test_configure_keeps_extra_env_vars(tmp_path: Path):
     env = _env(tmp_path)
     env.parent.mkdir(parents=True)
-    env.write_text("RAG_BACKEND=azure\nMY_CUSTOM_VAR=hello\n", encoding="utf-8")
+    env.write_text("SERTOR_EMBED_PROVIDER=azure\nMY_CUSTOM_VAR=hello\n", encoding="utf-8")
     main([
         "configure", "--backend", "azure", "--target", str(tmp_path),
         "--non-interactive", *_AZURE_FLAGS,
@@ -206,7 +206,7 @@ def test_local_profile_validation_complete(tmp_path: Path, capsys):
 
 def test_local_profile_env_has_backend_local(tmp_path: Path):
     main(["configure", "--backend", "local", "--target", str(tmp_path), "--non-interactive"])
-    assert "RAG_BACKEND=local" in _env(tmp_path).read_text(encoding="utf-8")
+    assert "SERTOR_EMBED_PROVIDER=glove" in _env(tmp_path).read_text(encoding="utf-8")
 
 
 # --- Fase 6: US4 reconfiguration ----------------------------------------------------------------
@@ -216,7 +216,7 @@ def test_reconfigure_keeps_existing_without_overwrite(tmp_path: Path, capsys):
     env = _env(tmp_path)
     env.parent.mkdir(parents=True)
     env.write_text(
-        "RAG_BACKEND=azure\nSERTOR_STORE_BACKEND=local\n"
+        "SERTOR_EMBED_PROVIDER=azure\nSERTOR_STORE_BACKEND=local\n"
         "AZURE_OPENAI_ENDPOINT=https://vecchio.endpoint/\n"
         "AZURE_OPENAI_API_KEY=sk-old-1234\n"
         "AZURE_OPENAI_EMBED_DEPLOYMENT=text-embedding-3-large\n",
@@ -241,7 +241,7 @@ def test_reconfigure_overwrites_with_flag(tmp_path: Path):
     env = _env(tmp_path)
     env.parent.mkdir(parents=True)
     env.write_text(
-        "RAG_BACKEND=azure\nSERTOR_STORE_BACKEND=local\n"
+        "SERTOR_EMBED_PROVIDER=azure\nSERTOR_STORE_BACKEND=local\n"
         "AZURE_OPENAI_ENDPOINT=https://vecchio.endpoint/\n"
         "AZURE_OPENAI_API_KEY=sk-old-1234\n"
         "AZURE_OPENAI_EMBED_DEPLOYMENT=text-embedding-3-large\n",
@@ -261,7 +261,7 @@ def test_reconfigure_preserves_comments_and_unmanaged(tmp_path: Path):
     env = _env(tmp_path)
     env.parent.mkdir(parents=True)
     env.write_text(
-        "# mio commento\nRAG_BACKEND=azure\nMY_CUSTOM=hello\n", encoding="utf-8"
+        "# mio commento\nSERTOR_EMBED_PROVIDER=azure\nMY_CUSTOM=hello\n", encoding="utf-8"
     )
     main([
         "configure", "--backend", "azure", "--target", str(tmp_path), "--non-interactive",

@@ -7,7 +7,7 @@ from sertor_installer.artifacts import Outcome
 from sertor_installer.env_merge import merge_env
 
 AZURE = (
-    "RAG_BACKEND=azure\n"
+    "SERTOR_EMBED_PROVIDER=azure\n"
     "SERTOR_CORPUS=myapp\n"
     "AZURE_OPENAI_API_KEY=\n"
     "SERTOR_EXCLUDE_PATTERNS=.venv,.index,.sertor\n"
@@ -18,7 +18,7 @@ def test_create_writes_template(tmp_path: Path):
     env = tmp_path / ".env"
     outcome, _ = merge_env(env, AZURE)
     assert outcome is Outcome.CREATED
-    assert "RAG_BACKEND=azure" in env.read_text(encoding="utf-8")
+    assert "SERTOR_EMBED_PROVIDER=azure" in env.read_text(encoding="utf-8")
 
 
 def test_secret_left_empty(tmp_path: Path):
@@ -46,7 +46,7 @@ def test_preserve_user_value_add_missing(tmp_path: Path):
     assert outcome is Outcome.MERGED
     text = env.read_text(encoding="utf-8")
     assert "SERTOR_CORPUS=mio" in text  # user value NOT overwritten
-    assert "RAG_BACKEND=azure" in text  # missing key added
+    assert "SERTOR_EMBED_PROVIDER=azure" in text  # missing key added
 
 
 def test_m1_ensure_sertor_in_existing_excludes(tmp_path: Path):

@@ -107,7 +107,7 @@ def test_mode_name_is_stable():
 
 
 def test_build_baseline_engine_local(monkeypatch, tmp_path):
-    monkeypatch.setenv("RAG_BACKEND", "local")
+    monkeypatch.setenv("SERTOR_EMBED_PROVIDER", "ollama")
     monkeypatch.setenv("SERTOR_INDEX_DIR", str(tmp_path / "idx"))
     engine = build_baseline_engine(Settings.load(env_file=None))
     assert engine.name == "baseline"

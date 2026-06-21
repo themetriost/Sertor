@@ -42,7 +42,10 @@ def settings(tmp_path):
 @pytest.fixture(autouse=True)
 def _fake_embedder(monkeypatch):
     emb = FakeEmbedder(dim=8)
-    monkeypatch.setattr(composition, "build_embedder", lambda _s=None, *, cache=False: emb)
+    monkeypatch.setattr(
+        composition, "build_embedder",
+        lambda _s=None, *, cache=False, allow_download=False: emb,
+    )
     return emb
 
 

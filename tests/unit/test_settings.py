@@ -4,16 +4,19 @@ from __future__ import annotations
 from sertor_core.config.settings import Settings
 
 
-def test_defaults_are_centralized():
+def test_defaults_are_centralized(monkeypatch):
+    monkeypatch.delenv("SERTOR_EMBED_PROVIDER", raising=False)
+    monkeypatch.delenv("SERTOR_STORE_BACKEND", raising=False)
     s = Settings.load(env_file=None)
-    assert s.backend == "local"
+    assert s.embed_provider == "glove"   # new default (068, REQ-002)
+    assert s.store_backend == "local"    # independent default (REQ-006)
     assert s.default_k == 5
     assert s.chunk_size == 1600
     assert s.exclude_patterns  # non-empty default, defined only in Settings
 
 
 def test_all_choices_read_from_env(monkeypatch):
-    monkeypatch.setenv("RAG_BACKEND", "azure")
+    monkeypatch.setenv("SERTOR_EMBED_PROVIDER", "azure")
     monkeypatch.setenv("SERTOR_CORPUS", "mio")
     monkeypatch.setenv("CHUNK_SIZE", "800")
     monkeypatch.setenv("CHUNK_OVERLAP", "50")
@@ -21,7 +24,7 @@ def test_all_choices_read_from_env(monkeypatch):
     monkeypatch.setenv("EMBED_BATCH_SIZE", "16")
     monkeypatch.setenv("SERTOR_EXCLUDE_PATTERNS", "foo, bar, *.tmp")
     s = Settings.load(env_file=None)
-    assert s.backend == "azure"
+    assert s.embed_provider == "azure"
     assert s.corpus == "mio"
     assert s.chunk_size == 800
     assert s.chunk_overlap == 50
@@ -30,29 +33,75 @@ def test_all_choices_read_from_env(monkeypatch):
     assert s.exclude_patterns == ("foo", "bar", "*.tmp")   # configurable override (REQ-002/030)
 
 
-def test_embed_provider_follows_backend(monkeypatch):
-    monkeypatch.setenv("RAG_BACKEND", "local")
+def test_embed_provider_from_env(monkeypatch):
+    # `embed_provider` is now a direct field from SERTOR_EMBED_PROVIDER (068, REQ-001/002).
+    monkeypatch.setenv("SERTOR_EMBED_PROVIDER", "hash")
+    assert Settings.load(env_file=None).embed_provider == "hash"
+    monkeypatch.setenv("SERTOR_EMBED_PROVIDER", "ollama")
     assert Settings.load(env_file=None).embed_provider == "ollama"
-    monkeypatch.setenv("RAG_BACKEND", "azure")
-    assert Settings.load(env_file=None).embed_provider == "azure"
 
 
-def test_store_backend_defaults_to_rag_backend(monkeypatch):
-    # Backward-compatible: without SERTOR_STORE_BACKEND the store follows the embeddings backend.
+def test_store_backend_independent_default(monkeypatch):
+    # The store no longer follows the embeddings provider: its own default is `local` (REQ-006).
     monkeypatch.delenv("SERTOR_STORE_BACKEND", raising=False)
-    monkeypatch.setenv("RAG_BACKEND", "azure")
-    assert Settings.load(env_file=None).store_backend == "azure"
-    monkeypatch.setenv("RAG_BACKEND", "local")
+    monkeypatch.setenv("SERTOR_EMBED_PROVIDER", "azure")
     assert Settings.load(env_file=None).store_backend == "local"
+
+
+def test_store_backend_from_env(monkeypatch):
+    monkeypatch.setenv("SERTOR_STORE_BACKEND", "azure")
+    assert Settings.load(env_file=None).store_backend == "azure"
 
 
 def test_store_backend_decouples_from_embeddings(monkeypatch):
     # Azure embeddings + local store: combination enabled by SERTOR_STORE_BACKEND (Princ. II).
-    monkeypatch.setenv("RAG_BACKEND", "azure")
+    monkeypatch.setenv("SERTOR_EMBED_PROVIDER", "azure")
     monkeypatch.setenv("SERTOR_STORE_BACKEND", "local")
     s = Settings.load(env_file=None)
     assert s.embed_provider == "azure"   # embeddings provider unchanged
-    assert s.store_backend == "local"    # store decoupled from the embeddings backend
+    assert s.store_backend == "local"    # store decoupled from the embeddings provider
+
+
+def test_glove_path_from_env(monkeypatch, tmp_path):
+    from pathlib import Path
+
+    target = tmp_path / "glove.6B.300d.txt"
+    monkeypatch.setenv("SERTOR_GLOVE_PATH", str(target))
+    assert Settings.load(env_file=None).glove_path == Path(str(target))
+    monkeypatch.delenv("SERTOR_GLOVE_PATH", raising=False)
+    assert Settings.load(env_file=None).glove_path is None
+
+
+def test_validate_backend_local_providers_empty(monkeypatch):
+    # Local providers (glove/hash) and Ollama → never blocked (REQ-005, DA-7).
+    assert Settings(embed_provider="glove").validate_backend() == []
+    assert Settings(embed_provider="hash").validate_backend() == []
+    assert Settings(embed_provider="ollama").validate_backend() == []
+
+
+def test_validate_backend_azure_provider_lists_fields():
+    missing = Settings(embed_provider="azure").validate_backend()
+    assert "AZURE_OPENAI_ENDPOINT" in missing
+    assert "AZURE_OPENAI_API_KEY" in missing
+    assert "AZURE_OPENAI_EMBED_DEPLOYMENT" in missing
+
+
+def test_validate_backend_azure_store_lists_fields():
+    missing = Settings(embed_provider="glove", store_backend="azure").validate_backend()
+    assert "AZURE_SEARCH_ENDPOINT" in missing
+    assert "AZURE_SEARCH_API_KEY" in missing
+
+
+def test_rag_backend_residual_warns_and_ignored(monkeypatch, caplog):
+    # RAG_BACKEND is no longer honoured: warns, does NOT change behaviour (068, REQ-007).
+    import logging
+
+    monkeypatch.setenv("RAG_BACKEND", "azure")
+    monkeypatch.setenv("SERTOR_EMBED_PROVIDER", "glove")
+    with caplog.at_level(logging.WARNING, logger="sertor_core"):
+        s = Settings.load(env_file=None)
+    assert s.embed_provider == "glove"  # not migrated to azure
+    assert any("config_rag_backend_ignored" in r.getMessage() for r in caplog.records)
 
 
 def test_extra_corpora_default_empty(monkeypatch):

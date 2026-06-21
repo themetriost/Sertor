@@ -135,7 +135,7 @@ def _build_parser() -> argparse.ArgumentParser:
     configure.add_argument("--target", default=".", help="host repo root (default: cwd)")
     configure.add_argument(
         "--backend", choices=["azure", "local"], default="azure",
-        help="embeddings provider → RAG_BACKEND (default: azure)",
+        help="embeddings profile → SERTOR_EMBED_PROVIDER (azure→azure, local→glove; def: azure)",
     )
     configure.add_argument(
         "--store", choices=["local", "azure"], default=None,

@@ -56,7 +56,9 @@ def _report(mrr=0.83) -> EvalReport:
 def wired(tmp_path, monkeypatch):
     """Wire the CLI eval to a tmp eval_dir + a fake runner + a fixed indexed-docs set."""
     eval_dir = tmp_path / "eval"
-    settings = Settings(eval_dir=eval_dir, eval_tolerance=0.0, corpus="default", backend="local")
+    settings = Settings(
+        eval_dir=eval_dir, eval_tolerance=0.0, corpus="default", embed_provider="hash"
+    )
     monkeypatch.setattr(cli.Settings, "load", classmethod(lambda c, env_file=".env": settings))
 
     state = {"report": _report(), "indexed": frozenset({"src/ports.py"})}

@@ -28,7 +28,7 @@ def test_runtime_dotenv_loaded_from_any_cwd(monkeypatch, tmp_path):
     sertor_dir = tmp_path / ".sertor"
     (sertor_dir / ".venv").mkdir(parents=True)
     (sertor_dir / ".env").write_text(
-        "RAG_BACKEND=azure\nAZURE_OPENAI_ENDPOINT=https://x\n"
+        "SERTOR_EMBED_PROVIDER=azure\nAZURE_OPENAI_ENDPOINT=https://x\n"
         "AZURE_OPENAI_API_KEY=k\nAZURE_OPENAI_EMBED_DEPLOYMENT=d\nSERTOR_CORPUS=kaelen\n",
         encoding="utf-8",
     )
@@ -36,22 +36,39 @@ def test_runtime_dotenv_loaded_from_any_cwd(monkeypatch, tmp_path):
     other.mkdir()
     monkeypatch.chdir(other)                          # different cwd, without .env
     monkeypatch.setattr(os, "environ", dict(os.environ))  # isolate load_dotenv writes
-    monkeypatch.delenv("RAG_BACKEND", raising=False)
+    monkeypatch.delenv("SERTOR_EMBED_PROVIDER", raising=False)
     monkeypatch.setattr("sertor_core.config.settings.sys.prefix", str(sertor_dir / ".venv"))
 
     s = Settings.load()                               # default ".env": auto-localizes to runtime
-    assert s.backend == "azure"
+    assert s.embed_provider == "azure"
     assert s.corpus == "kaelen"
     assert s.index_dir == sertor_dir / ".index"       # anchored to .sertor/, not to cwd
 
 
 def test_cwd_dotenv_takes_precedence(monkeypatch, tmp_path):
     """If the cwd has a `.env`, it wins over the runtime one (explicit > runtime)."""
-    (tmp_path / ".env").write_text("RAG_BACKEND=local\n", encoding="utf-8")
+    (tmp_path / ".env").write_text("SERTOR_EMBED_PROVIDER=hash\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(os, "environ", dict(os.environ))
+    monkeypatch.delenv("SERTOR_EMBED_PROVIDER", raising=False)
+    s = Settings.load()
+    assert s.embed_provider == "hash"
+    # cwd `.env` is relative → relative index `.index` (preserved behavior, = cwd/.index)
+    assert s.index_dir == Path(".index")
+
+
+def test_rag_backend_residual_warns(monkeypatch, tmp_path, caplog):
+    """A residual `RAG_BACKEND` in `.env` is signalled, not honoured (068, REQ-007)."""
+    import logging
+
+    (tmp_path / ".env").write_text(
+        "RAG_BACKEND=azure\nSERTOR_EMBED_PROVIDER=glove\n", encoding="utf-8"
+    )
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(os, "environ", dict(os.environ))
     monkeypatch.delenv("RAG_BACKEND", raising=False)
-    s = Settings.load()
-    assert s.backend == "local"
-    # cwd `.env` is relative → relative index `.index` (preserved behavior, = cwd/.index)
-    assert s.index_dir == Path(".index")
+    monkeypatch.delenv("SERTOR_EMBED_PROVIDER", raising=False)
+    with caplog.at_level(logging.WARNING, logger="sertor_core"):
+        s = Settings.load()
+    assert s.embed_provider == "glove"  # unchanged
+    assert any("config_rag_backend_ignored" in r.getMessage() for r in caplog.records)

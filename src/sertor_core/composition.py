@@ -11,6 +11,7 @@ CLI `eval` subcommand consumes these factories, never importing engines/manifest
 """
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 from sertor_core.config.settings import Settings
@@ -22,6 +23,7 @@ from sertor_core.domain.ports import (
     TranscriptCaptureAdapter,
     VectorStore,
 )
+from sertor_core.observability.logging import log_event
 
 _VALID_ENGINES = ("baseline", "hybrid")
 _VALID_MEMORY_ADAPTERS = ("claude-code",)
@@ -60,36 +62,54 @@ def _build_reranker(settings: Settings) -> Reranker | None:
         ) from exc
 
 
+_VALID_EMBED_PROVIDERS = ("glove", "hash", "ollama", "azure")
+
+
 def build_embedder(
-    settings: Settings | None = None, *, cache: bool = False
+    settings: Settings | None = None, *, cache: bool = False, allow_download: bool = False
 ) -> EmbeddingProvider:
-    """Build the embedding provider selected by the configuration (REQ-013/030).
+    """Build the embedding provider selected by `Settings.embed_provider` (068, REQ-001/003).
 
-    Wires the retry policy (018, REQ-H3) from `Settings`: transient provider failures are retried
-    with exponential backoff + jitter. `embed_retry_attempts=1` disables retries (as before).
+    FOUR branches with a lazy import per branch (Principio I — no new adapter imported at module
+    top): `glove` (default, static NL vectors), `hash` (airgapped/CI lexical floor), `ollama`,
+    `azure`. An unknown value → `ConfigError(key="SERTOR_EMBED_PROVIDER")` naming allowed values.
 
-    With `cache=True` (019, REQ-H4) the provider is wrapped in a `CachingEmbedder` so re-indexing
-    an unchanged corpus does not re-embed identical chunks. Only the indexing path opts in (the
-    query path has low reuse): see `build_indexer`. Lazy import keeps the cache off the hot path.
+    Wires the retry policy (018, REQ-H3) for the cloud/Ollama providers; the local providers
+    (`glove`/`hash`) need none. `allow_download` (068, REQ-034) is passed `True` only by the
+    indexing path: it lets `glove` acquire its data file on-demand; query paths pass `False`.
+
+    With `cache=True` (019, REQ-H4) the provider is wrapped in a `CachingEmbedder`.
     """
     from sertor_core.adapters.embeddings._retry import RetryPolicy
 
     settings = settings or Settings.load()
+    provider = settings.embed_provider
     retry = RetryPolicy(
         max_attempts=settings.embed_retry_attempts,
         base_backoff_s=settings.embed_retry_base_s,
     )
-    if settings.embed_provider == "azure":
-        from sertor_core.adapters.embeddings.azure import AzureEmbedder
+    if provider == "glove":
+        from sertor_core.adapters.embeddings.glove import GloveEmbedder
+        from sertor_core.adapters.embeddings.glove_cache import resolve_glove_file
 
-        embedder: EmbeddingProvider = AzureEmbedder(
-            endpoint=settings.azure_openai_endpoint,
-            api_key=settings.azure_openai_api_key,
-            deployment=settings.azure_openai_embed_deployment,
-            batch_size=settings.embed_batch_size,
-            retry=retry,
+        glove_file = resolve_glove_file(settings, allow_download=allow_download)
+        embedder: EmbeddingProvider = GloveEmbedder(
+            glove_file, batch_size=settings.embed_batch_size
         )
-    else:
+        log_event(logging.INFO, "embeddings_provider_selected", provider=provider)
+    elif provider == "hash":
+        from sertor_core.adapters.embeddings.hashing import HashingEmbedder
+
+        embedder = HashingEmbedder(batch_size=settings.embed_batch_size)
+        log_event(logging.INFO, "embeddings_provider_selected", provider=provider)
+        log_event(
+            logging.WARNING, "embeddings_lexical_only",
+            note=(
+                "the 'hash' provider gives lexical signal only; NL semantic search is limited; "
+                "configure glove/ollama/azure for semantic retrieval"
+            ),
+        )
+    elif provider == "ollama":
         from sertor_core.adapters.embeddings.ollama import OllamaEmbedder
 
         embedder = OllamaEmbedder(
@@ -97,6 +117,22 @@ def build_embedder(
             model=settings.ollama_embed_model,
             batch_size=settings.embed_batch_size,
             retry=retry,
+        )
+    elif provider == "azure":
+        from sertor_core.adapters.embeddings.azure import AzureEmbedder
+
+        embedder = AzureEmbedder(
+            endpoint=settings.azure_openai_endpoint,
+            api_key=settings.azure_openai_api_key,
+            deployment=settings.azure_openai_embed_deployment,
+            batch_size=settings.embed_batch_size,
+            retry=retry,
+        )
+    else:
+        raise ConfigError(
+            f"unknown embedding provider: {provider!r} "
+            f"(allowed: {', '.join(_VALID_EMBED_PROVIDERS)})",
+            key="SERTOR_EMBED_PROVIDER",
         )
     if cache:
         from sertor_core.adapters.embeddings.cache import CachingEmbedder, EmbeddingCache
@@ -284,8 +320,11 @@ def build_indexer(settings: Settings | None = None):
     _wire_runtime(settings)
     engine = _validated_engine(settings)
     # Cache opt-in on the indexing path only (019, REQ-H4): re-index skips re-embedding unchanged
-    # chunks. Default off → today's full re-embed (FR-007/013).
-    embedder = build_embedder(settings, cache=settings.embed_cache_enabled)
+    # chunks. Default off → today's full re-embed (FR-007/013). `allow_download=True` (068, REQ-034)
+    # makes the indexing path the ONLY one allowed to acquire the GloVe data file on-demand.
+    embedder = build_embedder(
+        settings, cache=settings.embed_cache_enabled, allow_download=True
+    )
     store = build_store(settings)
     lexical = _build_lexical(settings) if engine == "hybrid" else None
     graph = build_graph_service(settings) if settings.graph_enabled else None

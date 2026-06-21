@@ -42,7 +42,8 @@ Chunking uses `tree-sitter-language-pack` (pre-built wheels, no C toolchain requ
 ## Configuration
 
 All choices flow through `Settings`, read from env + `.env` file (not versioned). See
-`.env.example` at the root. `RAG_BACKEND=local` mode → no cloud network calls.
+`.env.example` at the root. A local embedding provider (`SERTOR_EMBED_PROVIDER=glove|hash|ollama`,
+default `glove`) with the local store → no cloud network calls.
 
 ## Usage as a library
 
