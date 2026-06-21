@@ -521,6 +521,40 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/069-qualita-fusione-code-doc/plan.md` (FEAT-003 epica **retrieval-qualita** — **qualità del retrieval
+fuso code+doc su query NL/architetturali**: rende **misurabile e migliorabile** il differenziatore di Sertor
+(fusione code+doc) **prima** di introdurre tecniche, così ogni «migliore» è ancorato a un numero (Principio V,
+stella polare). **Cardine:** estensione **ADDITIVA** dell'harness IR FEAT-001 (`evaluate`/`EvalReport`
+**INVARIATI**) — NON un secondo oracolo come FEAT-011 (qui la misura è rank-based; la fusion coverage è un
+passaggio puro sui `RetrievalResult.doc_type`, che esiste già). Tre novità: **(1)** campo additivo `intent ∈
+{code,doc,both}` su `[[case]]` (decide superficie + tipi attesi; i casi `both` **SONO** la categoria fusione,
+no campo `category` ridondante; tipi letti da `doc_type` a runtime, **nessuna doppia etichettatura**); **(2)**
+misura **per-superficie** (`search_code`/`search_docs`/`search_combined`) via 3 adattatori `QueryableEngine`
+sottili sul `RetrievalFacade`, riusando `evaluate`; combined = test d'integrazione; **(3)** **fusion coverage**
+pura/additiva (`fusion.py`): caso `both` «coperto» SOLO se top-k ha ≥1 `DOC` pertinente E ≥1 `CODE` pertinente,
+riportata **accanto** a hit@k/MRR (REQ-022: hit@k non nasconde la lacuna → `hit_but_not_covered` visibile). +
+**baseline per-superficie** (sezione `[fused_baseline]` nello stesso `eval/baseline.toml`, preserve-both) +
+**gate** (riuso `Baseline`+tolleranza). **5 forche decise (research):** **DA-a** ordine di **valutazione**
+leve metadata→contextual→query-transform deciso dai numeri (finding: query-transform/HyDE rischia RNF-3 se
+porta un LLM nel run → fuori dal run deterministico o solo documentazione); **DA-b** `intent` additivo +
+≥8/superficie (≥6 fusione) + genesi via skill `eval-suite-author` estesa (P2); **DA-c** baseline per-superficie
++ tolleranza 0.0 + lift +0.05 (criterio di **adozione** leva, NON gate; target assoluto fusion coverage =
+Could, dopo la baseline reale); **DA-d** FEAT-004 ortogonale (no `min_score` di default nel run),
+FEAT-005/006/007 = **leve candidate** (le loro feature dedicate = il «come» se adottate); **DA-e** target =
+miglioramento **single-shot misurabile** (la misura serve in ogni caso; pattern agentico documentato se i dati
+lo indicano; non blocca lo scope). **Phasing (vincolante):** MUST = infrastruttura di misura (schema+metrica+
+baseline+gate, tutto **MECCANICO**/deterministico); SOLO DOPO Should empirico = registrare baseline reali →
+valutare ≥1 leva → adottare opt-in solo con lift (**GIUDIZIO**: genesi set + scelta leva, separati dal run,
+confine D↔N). **Niente LLM nel run** oltre l'embedder (RNF-3, SC-004). Additivo a leve spente (costo/comport.
+identici, RNF-1); `sertor-core` invariato fuori da `services/eval/` (+`fusion.py`/`fused_runner.py` nuovi,
+estensioni `models/suite_io/regression/baseline_io`) + `composition` + `cli` + `settings`. **Nessuna nuova
+porta** (riuso `QueryableEngine`/facade), **nessuna nuova dipendenza** (serializzatore a mano). Evento osserv.
+`fused_eval` metrics-only (gemello `eval`/`graph_eval`/OTel 061). Manopola `SERTOR_EVAL_FUSION_K` nel template
+`.env`; estensione skill = **debito P2**. Constitution **PASS 12/12 + missione PASS** (pre e post-design) senza
+deroghe — è la **stella polare resa misurabile** (la fusion coverage verifica che requisito→implementazione
+restituisca doc+codice insieme). **Nota di processo:** `setup-plan.ps1`/`speckit-plan/SKILL.md` ASSENTI →
+parametri per convenzione dal branch (forma da `066`); nessun hook eseguito; MCP `sertor-rag` interrogato
+(nessun errore tool). Branch `069-qualita-fusione-code-doc`. Storico:
 `specs/068-embedder-locale/plan.md` (FEAT-011 epica **sertor-core** — **embedder locale**: due provider di
 embeddings **locali e deterministici** dietro la porta `EmbeddingProvider` esistente — **`glove`** (GloVe 6B
 300d, PDDL, **nuovo default**, semantica NL locale) + **`hash`** (char-n-gram stdlib, dim 512, sign-hashing
