@@ -35,6 +35,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | MVP memoria: cattura→ricerca→CLI/hook→distillazione (**acceso**) | `memoria-conversazioni` |
 | **Valutazione del retrieval & non-regressione** — `sertor-rag eval` (hit@k/MRR + gate baseline + `--by-kind` symbol→grafo) + skill genesi/feedback (FEAT-001, PR #92, 2026-06-20) | `retrieval-qualita` |
 | **Valutazione set-based della navigazione del grafo** — `sertor-rag graph-eval` (precision/recall/F1, `who_calls`/`defines`, baseline separata) (FEAT-011, 2026-06-20) | `retrieval-qualita` |
+| **Misura della fusione code+doc** (FEAT-003 infra, 2026-06-21) — campo `intent` + metrica **fusion coverage** + baseline per-superficie + `eval run --fused` *(fase empirica = miglioramento pendente)* | `retrieval-qualita` |
 
 *Dettaglio (PR, date, numeri) nella sezione ✅ DONE in fondo alla pagina.*
 
@@ -53,7 +54,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **E2** | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | ergonomia installer · Codex · PyPI · `configure --check` (probe live, deferred) *(packaging ✅ + lifecycle ✅ + hardening Copilot FEAT-011 ✅ + wizard config ✅ + Copilot CLI-only ✅ + verifica empirica Copilot LIVE ✅, 2026-06-17)* |
 | **E3** | [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | **export OTel FEAT-005 ✅** + arricchimento span FEAT-013 ✅ + TUI tabella FEAT-014 ✅ + **visibilità RAG/dimostrabilità FEAT-015 ✅** (PR #88) · drift FEAT-012 · metriche aggregate · stima € (Should) · web · CSV/MD |
 | **E4** | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso | ricerca semantica · remember-this · retention · **distribuzione installer (Must)** · multi-assist |
-| **E5** | 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | 🔄 FEAT-001+011 ✅ su master · FEAT-003 infra su branch `069` | **eval IR ✅** (PR #92) + **graph-eval ✅** (FEAT-011) + skill genesi/feedback **live ✅**. **FEAT-003 (fusione code+doc): infrastruttura di misura implementata su branch `069`** (campo `intent`, **fusion coverage**, baseline per-superficie, `eval run --fused`); resta la **fase empirica** (set NL reale + baseline dogfood + valutazione leve). Aperte FEAT-002/004/005-007 |
+| **E5** | 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | 🔄 FEAT-001+011 ✅ · FEAT-003 infra ✅ su master | **eval IR ✅** (PR #92) + **graph-eval ✅** (FEAT-011) + skill genesi/feedback **live ✅** + **FEAT-003 infra di misura fusione ✅** (merge `42aceaf`: campo `intent`, **fusion coverage**, baseline per-superficie, `eval run --fused`). Resta la **fase empirica di FEAT-003** (set NL reale + baseline dogfood + valutazione leve) + FEAT-002/004/005-007 |
 | **E6** | 🆕 [`backend-store-scala`](../../requirements/backend-store-scala/epic.md) | 📋 aperta | adapter PGVector (Should) |
 | **E7** | 🆕 [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 📋 aperta | chunking SQL → **sblocca** schema-SQL |
 | **E8** | 🆕 [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | 📋 aperta | bloccata a monte da `ingestione-estesa` |
@@ -65,26 +66,21 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-> **Attiva su branch:** **FEAT-003 `retrieval-qualita` — qualità del retrieval fuso code+doc** (branch
-> `069-qualita-fusione-code-doc`). *Cosa:* infrastruttura di misura della fusione (campo `intent` code|doc|both
-> sui casi, metrica **fusion coverage**, misura per-superficie, baseline `[fused_baseline]` + gate,
-> `sertor-rag eval run --fused`, evento `fused_eval`). *Stato:* **MVP meccanico implementato e committato**
-> (`70f445c`, core 938 verdi, ruff pulito, Constitution 12/12), non mergiato. *Prossimo passo:* **decisione
-> merge infra** + **fase empirica** (autoraggio set NL intent-typed reale via `eval-suite-author`, baseline
-> sul dogfood, valutazione leve metadata→contextual→query-transform — adozione opt-in solo se lift ≥+0.05).
-> *Debito:* skill `eval-suite-author` estesa (P2). **— FEAT-011 `sertor-core` embedder locale ✅ mergiata
-> `34b599a`** (2026-06-21).
+> Nessuna feature attiva su branch al momento (**FEAT-003 infra di misura fusione ✅ mergiata su `master`**
+> `42aceaf`, 2026-06-21; **FEAT-011 embedder locale ✅ mergiata** `34b599a`). **Candidati a valore = i
+> Must aperti + la fase empirica di FEAT-003** (sotto).
 
 **Candidati a valore = Must aperti** (non ancora iniziati):
 
 - **Memoria → distribuzione via installer (Must, `memoria-conversazioni`)** — la memoria è *accesa* sul
   dogfood ma **non installabile su un ospite**: chiude il corollario "una feature è completa solo se
   installabile". *Primo passo:* decomporre la feature installer (riusa `sertor-install-kit`).
-- **Retrieval-qualità → migliorare l'ibrido sulle query NL (Should, `retrieval-qualita`, FEAT-003)** —
-  la base di **misura** ora c'è (FEAT-001 ✅ su master): il run `--by-kind` ha isolato il bersaglio vero
-  — i casi NL a rank 3-6 (es. un file di test sopra il sorgente). *Primo passo:* decomporre FEAT-003
-  («qualità di `search_code` su query architetturali»), ora con un numero di partenza misurato. *(FEAT-008
-  genesi assistita e FEAT-009 feedback: skill **provate live** il 2026-06-20.)*
+- **FEAT-003 → fase empirica del miglioramento fusione code+doc (Should, `retrieval-qualita`)** —
+  l'**infrastruttura di misura** è ora su `master` (`42aceaf`: `intent`, fusion coverage, baseline
+  per-superficie, `eval run --fused`). *Primo passo:* **autorare il set NL intent-typed reale** (via
+  `eval-suite-author` estesa) → **registrare le baseline** per-superficie/fused sul dogfood → **valutare
+  ≥1 leva** (metadata→contextual→query-transform) e adottarla opt-in **solo se lift ≥ +0.05**. *(Debito:
+  estensione skill `eval-suite-author`, P2. HyDE/query-transform: non introdurre LLM nel run, RNF-3.)*
 
 *(Le capacità già consegnate stanno in ✅ Capacità consegnate sopra e in ✅ DONE in fondo.)*
 
