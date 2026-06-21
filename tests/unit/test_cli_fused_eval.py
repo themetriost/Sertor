@@ -33,15 +33,15 @@ def _surface(name: str, mrr: float = 0.7) -> SurfaceEvalReport:
     )
 
 
-def _fused_report(coverage: float = 1.0) -> FusedEvalReport:
+def _fused_report(union: float = 1.0) -> FusedEvalReport:
+    hit = union >= 1.0
     fusion = FusionReport(
-        cases=(FusionCaseResult("both Q", ("r.md", "x.py"), True, True, coverage >= 1.0, True),),
-        coverage=coverage,
+        cases=(FusionCaseResult("both Q", ("r.md", "x.py"), hit, hit, hit),),
+        union_hit_rate=union,
         cases_count=1,
-        hit_but_not_covered=0 if coverage >= 1.0 else 1,
     )
     return FusedEvalReport(
-        surfaces=(_surface("search_code"), _surface("search_docs"), _surface("search_combined")),
+        surfaces=(_surface("search_code"), _surface("search_docs")),  # 070: two surfaces
         fusion=fusion,
         provider="hash",
     )
@@ -88,7 +88,7 @@ def test_fused_run_succeeds(wired, capsys):
     code = cli.main(["eval", "run", "--fused"])
     out = capsys.readouterr().out
     assert code == 0
-    assert "fusion coverage" in out
+    assert "union hit-rate" in out
 
 
 def test_fused_run_without_suite_exits_1(wired, capsys):
@@ -123,7 +123,7 @@ def test_fused_run_record_baseline_writes_section(wired, capsys):
     code = cli.main(["eval", "run", "--fused", "--record-baseline"])
     assert code == 0
     loaded = baseline_io.load_fused_baseline(eval_dir / "baseline.toml")
-    assert loaded is not None and loaded.fusion_coverage == 1.0
+    assert loaded is not None and loaded.union_hit_rate == 1.0
 
 
 def test_fused_run_record_baseline_preserves_ir(wired, capsys):
@@ -147,14 +147,14 @@ def test_fused_run_regression_exits_1(wired, capsys):
     baseline_io.write_fused_baseline(
         eval_dir / "baseline.toml",
         FusedBaseline(
-            surfaces=(SurfaceBaseline("search_combined", {3: 0.8}, 0.9),),
-            fusion_coverage=1.0,
+            surfaces=(SurfaceBaseline("search_docs", {3: 0.8}, 0.9),),
+            union_hit_rate=1.0,
             queries=1,
             provider="hash",
             recorded_at=baseline_io.now_iso_utc(),
         ),
     )
-    state["report"] = _fused_report(coverage=0.0)  # coverage collapsed → regression
+    state["report"] = _fused_report(union=0.0)  # union hit-rate collapsed → regression
     code = cli.main(["eval", "run", "--fused"])
     err = capsys.readouterr().err
     assert code == 1
@@ -174,14 +174,14 @@ def test_fused_run_within_tolerance_exits_0(wired, monkeypatch, capsys):
     baseline_io.write_fused_baseline(
         eval_dir / "baseline.toml",
         FusedBaseline(
-            surfaces=(SurfaceBaseline("search_combined", {3: 0.8}, 0.9),),
-            fusion_coverage=1.0,
+            surfaces=(SurfaceBaseline("search_docs", {3: 0.8}, 0.9),),
+            union_hit_rate=1.0,
             queries=1,
             provider="hash",
             recorded_at=baseline_io.now_iso_utc(),
         ),
     )
-    state["report"] = _fused_report(coverage=0.0)
+    state["report"] = _fused_report(union=0.0)
     code = cli.main(["eval", "run", "--fused"])
     assert code == 0
 
@@ -252,4 +252,4 @@ def test_fused_run_json(wired, capsys):
     out = capsys.readouterr().out
     assert code == 0
     obj = json.loads(out)
-    assert obj["fusion"]["coverage"] == 1.0
+    assert obj["fusion"]["union_hit_rate"] == 1.0

@@ -1,7 +1,9 @@
-"""Test baseline_io for the `[fused_baseline]` section (069, TASK-A05): round-trip + preserve-both.
+"""Test baseline_io for the `[fused_baseline]` section (070, TASK-R07): round-trip + preserve-both.
 
 stdlib only; a tmp baseline file. Verifies the fused section round-trips, that an absent
 file/section returns None, and that the fused write preserves the IR `[baseline]` (preserve-both).
+After 070 the fused baseline carries TWO surfaces (search_code/search_docs); the round-trip is
+agnostic to their count, so it covers the new shape unchanged.
 """
 from __future__ import annotations
 
@@ -24,9 +26,8 @@ def _fused() -> FusedBaseline:
         surfaces=(
             SurfaceBaseline("search_code", {1: 0.5, 3: 0.75, 5: 0.88}, 0.64),
             SurfaceBaseline("search_docs", {1: 0.62, 3: 0.88, 5: 0.88}, 0.73),
-            SurfaceBaseline("search_combined", {1: 0.55, 3: 0.82, 5: 0.91}, 0.69),
-        ),
-        fusion_coverage=0.5,
+        ),  # 070: two surfaces, no search_combined
+        union_hit_rate=0.5,
         queries=22,
         provider="hash",
         recorded_at=now_iso_utc(),
@@ -50,7 +51,7 @@ def test_round_trip(tmp_path):
     loaded = load_fused_baseline(path)
     assert loaded is not None
     assert loaded.surfaces == fused.surfaces
-    assert loaded.fusion_coverage == 0.5
+    assert loaded.union_hit_rate == 0.5
     assert loaded.queries == 22
     assert loaded.recorded_at == fused.recorded_at
 
@@ -73,7 +74,7 @@ def test_write_fused_preserves_ir_baseline(tmp_path):
     ir = load_baseline(path)
     fused = load_fused_baseline(path)
     assert ir is not None and ir.mrr == 0.83  # IR untouched (preserve-both)
-    assert fused is not None and fused.fusion_coverage == 0.5
+    assert fused is not None and fused.union_hit_rate == 0.5
 
 
 def test_write_ir_preserves_fused_baseline(tmp_path):

@@ -96,8 +96,8 @@ def test_facade_no_threshold_is_regression(caplog):
 def test_facade_multi_collection_applies_threshold(caplog):
     facade = _facade([_r(0.2, "a")], min_score=0.5, extra={"other": "other__fake"})
     with caplog.at_level(logging.WARNING, logger="sertor_core"):
-        out = facade.search_combined("q")
-    assert out == []
+        docs, code = facade.search_combined("q")  # 070: tuple; both flows filtered out
+    assert docs == [] and code == []
     assert "low_confidence" in caplog.text
 
 

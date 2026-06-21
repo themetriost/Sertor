@@ -45,6 +45,27 @@ def apply_min_score(
     return kept, (bool(results) and not kept)
 
 
+def merge_fused(
+    docs: list[RetrievalResult], code: list[RetrievalResult]
+) -> list[RetrievalResult]:
+    """Courtesy helper: a single deterministic list from the two flows of `search_combined` (070).
+
+    `search_combined` returns the two flows as a TUPLE `(docs, code)` (070): no cross-type blended
+    ranking — code/doc scores are incommensurable (the root cause of 069's low fusion quality), so
+    they are never merged by score. This free function INTERLEAVES the two by rank
+    (`docs[0], code[0], docs[1], …`); leftovers of the longer flow are appended in order. Pure and
+    deterministic; it never re-introduces the score merge. A method on an object is deliberately
+    avoided (the contract is a plain tuple): consumers that want a single list call this explicitly.
+    """
+    out: list[RetrievalResult] = []
+    for i in range(max(len(docs), len(code))):
+        if i < len(docs):
+            out.append(docs[i])
+        if i < len(code):
+            out.append(code[i])
+    return out
+
+
 _SNIPPET_MAX = 200
 
 
@@ -163,16 +184,35 @@ class RetrievalFacade:
         """Semantic search over documentation only."""
         return self._search(query, k, "doc")
 
-    def search_combined(self, query: str, k: int | None = None) -> list[RetrievalResult]:
-        """Semantic search over code + documentation together.
+    def search_combined(
+        self, query: str, k: int | None = None
+    ) -> tuple[list[RetrievalResult], list[RetrievalResult]]:
+        """Semantic search over code + documentation together — TWO labelled flows (070).
 
-        With extra corpora configured, fans out across all target collections and merges the
-        top-k results by score (FR-001/002); without them, behaviour is identical to before
-        (FR-006).
+        Returns a TUPLE `(docs, code)`: the doc flow and the code flow, **each with its own top-k**
+        (separate budget, FR-001), unpackable as `docs, code = facade.search_combined(q)`. There is
+        no cross-type blended ranking — code/doc scores are incommensurable (the root cause of 069's
+        low fusion quality); the consumer that wants a single list calls the free `merge_fused`.
+        `docs`/`code` reuse the SAME mono-type paths as `search_docs`/`search_code` (so those remain
+        invariant, FR-003), including the multi-corpus fan-out (feature 010): each list fans out
+        with its own `doc_type` filter and its own top-k. With extra corpora,
+        `ProviderMismatchError` and the `no_index` policy are preserved per type.
+        """
+        docs = self._search_typed(query, k, "doc")
+        code = self._search_typed(query, k, "code")
+        return docs, code
+
+    def _search_typed(
+        self, query: str, k: int | None, doc_type: DocTypeFilter
+    ) -> list[RetrievalResult]:
+        """A single-type search that honours the multi-corpus fan-out (feature 010, 070).
+
+        Without extra corpora this is exactly `_search` (the mono-type path used by
+        `search_docs`/`search_code`); with them it fans out per type across the target collections.
         """
         if not self._extra_collections:
-            return self._search(query, k, "both")
-        return self._search_multi(query, k)
+            return self._search(query, k, doc_type)
+        return self._search_multi(query, k, doc_type)
 
     def _available_targets(self) -> list[str]:
         """Queryable target collections; degrades or fails for missing ones.
@@ -205,8 +245,15 @@ class RetrievalFacade:
                       status="no_index", doc_type="both")
         return targets
 
-    def _search_multi(self, query: str, k: int | None) -> list[RetrievalResult]:
-        """Fan-out across target collections + top-k merge by score (FR-001..005)."""
+    def _search_multi(
+        self, query: str, k: int | None, doc_type: DocTypeFilter = "both"
+    ) -> list[RetrievalResult]:
+        """Fan-out across target collections + top-k merge by score (FR-001..005).
+
+        `doc_type` filters each collection's query: `search_combined` (070) calls this once per type
+        (`doc`/`code`) so the budget stays separate; the historical `both` behaviour is preserved
+        for any other caller.
+        """
         k = k or self._default_k
         targets = self._available_targets()
         if not targets:
@@ -215,7 +262,7 @@ class RetrievalFacade:
         vector = self._embedder.embed([query])[0]
         candidates: list[RetrievalResult] = []
         for collection in targets:
-            candidates.extend(self._store.query(collection, vector, k, "both"))
+            candidates.extend(self._store.query(collection, vector, k, doc_type))
         # Total deterministic ordering: descending score, ties broken by chunk_id (FR-003).
         fused = sorted(candidates, key=lambda r: (-r.score, r.chunk_id))[:k]
         fused, low = apply_min_score(fused, self._min_score)
@@ -224,7 +271,7 @@ class RetrievalFacade:
             "retrieve",
             collections=targets,
             provider=self._embedder.name,
-            doc_type="both",
+            doc_type=doc_type,
             k=k,
             results=len(fused),
             elapsed_ms=round((time.perf_counter() - started) * 1000, 2),

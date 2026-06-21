@@ -109,7 +109,7 @@ def load_fused_baseline(path: Path) -> FusedBaseline | None:
     if not isinstance(raw, dict):
         return None
     try:
-        fusion_coverage = float(raw["fusion_coverage"])
+        union_rate = float(raw["union_hit_rate"])
         queries = int(raw["queries"])
         provider = str(raw["provider"])
         recorded_at = str(raw.get("recorded_at", ""))
@@ -132,7 +132,7 @@ def load_fused_baseline(path: Path) -> FusedBaseline | None:
         raise SuiteValidationError(-1, f"malformed fused_baseline: {exc}") from exc
     return FusedBaseline(
         surfaces=tuple(surfaces),
-        fusion_coverage=fusion_coverage,
+        union_hit_rate=union_rate,
         queries=queries,
         provider=provider,
         recorded_at=recorded_at,
@@ -166,7 +166,7 @@ def _serialize_fused_baseline(baseline: FusedBaseline) -> str:
         f'recorded_at = "{baseline.recorded_at}"',
         f'provider = "{provider}"',
         f"queries = {baseline.queries}",
-        f"fusion_coverage = {baseline.fusion_coverage!r}",
+        f"union_hit_rate = {baseline.union_hit_rate!r}",
     ]
     for s in baseline.surfaces:
         surface = s.surface.replace("\\", "\\\\").replace('"', '\\"')

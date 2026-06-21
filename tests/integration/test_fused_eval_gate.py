@@ -2,7 +2,7 @@
 
 Uses a real `RetrievalFacade` over an in-memory store indexed from a tiny synthetic corpus with
 explicit `doc_type=CODE`/`doc_type=DOC` documents, driven through the CLI vehicle (`sertor-rag eval
-run --fused`). Exercises the fused measure (fusion coverage in stdout), `--record-baseline` (writes
+run --fused`). Exercises the fused measure (union hit-rate in stdout), `--record-baseline` (writes
 `[fused_baseline]` without touching `[baseline]`), the gate (degraded baseline → exit 1; high
 tolerance → exit 0), determinism, no-baseline (exit 0), and additivity (plain `eval run` unchanged).
 """
@@ -116,13 +116,13 @@ def _seed_fused_suite(eval_dir):
     )
 
 
-def test_fused_run_succeeds_with_coverage(wired, capsys):
+def test_fused_run_succeeds_with_union(wired, capsys):
     _settings, eval_dir = wired
     _seed_fused_suite(eval_dir)
     code = cli.main(["eval", "run", "--fused"])
     out = capsys.readouterr().out
     assert code == 0
-    assert "fusion coverage" in out
+    assert "union hit-rate" in out
 
 
 def test_record_baseline_writes_fused_section_preserving_ir(wired, capsys):
@@ -147,8 +147,8 @@ def test_gate_fails_on_degraded_run(wired, capsys):
     _seed_fused_suite(eval_dir)
     assert cli.main(["eval", "run", "--fused", "--record-baseline"]) == 0
     capsys.readouterr()
-    # Then DEGRADE: add a `both` case whose expected paths are absent → never covered →
-    # fusion coverage drops below the recorded baseline → gate fails at tolerance 0.0.
+    # Then DEGRADE: add a `both` case whose expected paths are absent → not a union hit →
+    # union hit-rate drops below the recorded baseline → gate fails at tolerance 0.0.
     add_case(
         eval_dir / "suite.toml",
         EvalCase("absent both query", ("requirements/absent.md", "src/absent.py"), "nl", "both"),
@@ -166,7 +166,7 @@ def test_high_tolerance_passes(wired, monkeypatch, capsys):
     _seed_fused_suite(eval_dir)
     assert cli.main(["eval", "run", "--fused", "--record-baseline"]) == 0
     capsys.readouterr()
-    # degrade the run (absent `both` case → coverage drops) but allow it with a huge tolerance
+    # degrade the run (absent `both` case → union hit-rate drops) but allow it with a huge tolerance
     add_case(
         eval_dir / "suite.toml",
         EvalCase("absent both query", ("requirements/absent.md", "src/absent.py"), "nl", "both"),
@@ -187,7 +187,7 @@ def test_determinism_two_runs_same_metrics(wired, capsys):
     first = json.loads(capsys.readouterr().out)
     cli.main(["eval", "run", "--fused", "--json"])
     second = json.loads(capsys.readouterr().out)
-    assert first["fusion"]["coverage"] == second["fusion"]["coverage"]
+    assert first["fusion"]["union_hit_rate"] == second["fusion"]["union_hit_rate"]
     assert first["surfaces"] == second["surfaces"]
 
 
@@ -210,7 +210,7 @@ def test_plain_run_unaffected(wired, monkeypatch, capsys):
     code = cli.main(["eval", "run"])  # no --fused
     out = capsys.readouterr().out
     assert code == 0
-    assert "fusion coverage" not in out  # additivity: IR path carries no fusion
+    assert "union hit-rate" not in out  # additivity: IR path carries no fusion
 
 
 def test_add_case_intent_grows_suite_preserving_graph_case(wired, capsys):

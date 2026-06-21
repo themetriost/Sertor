@@ -8,7 +8,7 @@ from __future__ import annotations
 from sertor_core.adapters.vectorstores.chroma import ChromaStore
 from sertor_core.config.settings import Settings
 from sertor_core.services.indexing import IndexingService
-from sertor_core.services.retrieval import RetrievalFacade
+from sertor_core.services.retrieval import RetrievalFacade, merge_fused
 from tests.fixtures.mocks import FakeEmbedder
 
 S = Settings.load(env_file=None)
@@ -34,7 +34,7 @@ def test_search_returns_results_with_required_fields(sample_repo, tmp_path):
     for hits in (
         facade.search_code("calculator"),
         facade.search_docs("installazione"),
-        facade.search_combined("server"),
+        merge_fused(*facade.search_combined("server")),  # 070: combined returns (docs, code)
     ):
         assert hits
         h = hits[0]
@@ -51,4 +51,4 @@ def test_search_filters_respect_doc_type(sample_repo, tmp_path):
 def test_empty_collection_returns_empty(tmp_path):
     store = ChromaStore(persist_dir=tmp_path / "empty-index")
     facade = RetrievalFacade(FakeEmbedder(dim=8), store, "vuota", default_k=5)
-    assert facade.search_combined("qualsiasi") == []   # REQ-028
+    assert merge_fused(*facade.search_combined("qualsiasi")) == []  # REQ-028 (070: (docs, code))
