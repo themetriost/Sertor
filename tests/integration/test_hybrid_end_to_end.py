@@ -66,8 +66,8 @@ def test_baseline_explicit_uses_legacy_dense_path(corpus, settings):
     composition.build_indexer(settings).index(corpus, rebuild=True)
     baseline = composition.build_facade(replace(settings, engine="baseline"))
     assert baseline._retriever is None                 # current path, identical to today (FR-031)
-    fused = baseline.search_combined("configurazione", k=3)  # 070: FusedResults
-    assert isinstance(fused.flatten(), list)           # functional without strategy
+    docs, code = baseline.search_combined("configurazione", k=3)  # 070: (docs, code) tuple
+    assert isinstance(docs, list) and isinstance(code, list)  # functional without strategy
 
 
 def test_facade_stays_tolerant_when_collection_missing(settings):

@@ -181,33 +181,6 @@ class RetrievalResult:
     metadata: dict | None = None
 
 
-@dataclass(frozen=True)
-class FusedResults:
-    """Structured return of `search_combined` (070): the two labelled flows of the fusion.
-
-    The mission's differentiator made structural: `docs` (the *why*) and `code` (the *what*) are
-    returned SIDE BY SIDE, each rank-ordered with its OWN top-k (separate budget). There is no
-    cross-type blended ranking — code/doc scores are incommensurable (the root cause of 069's 0.17
-    fusion coverage), so they are never merged by score. `flatten()` interleaves the two for the
-    consumer that wants a single list, deterministically (never re-introducing the score merge).
-    Pure data, no SDK (Principio I).
-    """
-
-    docs: tuple[RetrievalResult, ...] = ()
-    code: tuple[RetrievalResult, ...] = ()
-
-    def flatten(self) -> list[RetrievalResult]:
-        """Deterministic single list: interleave by rank (docs[0], code[0], docs[1], …); leftovers
-        of the longer list appended in order (DA-c). Empty + empty → []."""
-        out: list[RetrievalResult] = []
-        for i in range(max(len(self.docs), len(self.code))):
-            if i < len(self.docs):
-                out.append(self.docs[i])
-            if i < len(self.code):
-                out.append(self.code[i])
-        return out
-
-
 class FileClassification(StrEnum):
     """Outcome of comparing a source file against the index manifest (046, FR-002/003).
 

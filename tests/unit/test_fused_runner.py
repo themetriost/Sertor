@@ -1,15 +1,15 @@
 """Test the fused runner + event (070, TASK-R03).
 
 The facade is a structural-typing fake (no inheritance): it exposes `provider`, the two mono-type
-`search_*` methods, and `search_combined` returning `FusedResults`. The runner reuses the invariant
-`evaluate` for the two IR surfaces (`search_combined` is NOT an IR surface anymore). The event is
-asserted metrics-only (no query/path/expected/names) with exactly two `surface_*` keys.
+`search_*` methods, and `search_combined` returning the tuple `(docs, code)`. The runner reuses the
+invariant `evaluate` for the two IR surfaces (`search_combined` is NOT an IR surface anymore). The
+event is asserted metrics-only (no query/path/expected/names) with exactly two `surface_*` keys.
 """
 from __future__ import annotations
 
 import logging
 
-from sertor_core.domain.entities import DocType, FusedResults, RetrievalResult
+from sertor_core.domain.entities import DocType, RetrievalResult
 from sertor_core.services.eval.fused_runner import (
     emit_fused_eval_event,
     run_fused_evaluation,
@@ -39,9 +39,9 @@ class _FakeFacade:
         return [_hit("requirements/req.md", DocType.DOC)]
 
     def search_combined(self, query, k=None):
-        return FusedResults(
-            docs=(_hit("requirements/req.md", DocType.DOC),),
-            code=(_hit("src/impl.py", DocType.CODE),),
+        return (
+            [_hit("requirements/req.md", DocType.DOC)],
+            [_hit("src/impl.py", DocType.CODE)],
         )
 
 
@@ -68,7 +68,7 @@ def test_run_fused_produces_two_surfaces_and_fusion():
     ]  # 070: search_combined is no longer an IR surface
     assert report.provider == "hash"
     assert report.fusion.cases_count == 1
-    assert report.fusion.coverage == 1.0  # combined returns doc + code (separate flows)
+    assert report.fusion.union_hit_rate == 1.0  # union: doc OR code found the expected
     # each surface measured only its own intent cases
     by_surface = {s.surface: s.report for s in report.surfaces}
     assert by_surface["search_code"].queries == 1
@@ -102,7 +102,7 @@ def test_emit_event_is_metrics_only(caplog):
     assert "requirements/req.md" not in blob
     assert "src/impl.py" not in blob
     assert rec.cases == {"code": 1, "doc": 1, "both": 1}
-    assert rec.fusion_coverage == 1.0
+    assert rec.union_hit_rate == 1.0
     assert rec.tolerance is None  # no-baseline → null tolerance
     # 070: surface metrics have exactly the two mono-type keys (closed cardinality), not 3.
     assert set(rec.surface_mrr) == {"search_code", "search_docs"}

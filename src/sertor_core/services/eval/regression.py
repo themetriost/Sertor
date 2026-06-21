@@ -57,8 +57,8 @@ def compare_fused_to_baseline(
 
     `baseline is None` → `verdict="no-baseline"` (no reference to gate against, exit 0). Otherwise a
     `MetricDelta` per surface (MRR and hit@3, the representative k) matched by `surface`, plus one
-    for `fusion_coverage`: `delta = current - baseline`, `regressed = delta < -tolerance`. ANY
-    regressed metric (a surface OR the fusion coverage) → `verdict="regressed"` (gate, exit 1, R-3),
+    for `union_hit_rate`: `delta = current - baseline`, `regressed = delta < -tolerance`. ANY
+    regressed metric (a surface OR the union hit-rate) → `verdict="regressed"` (gate, exit 1, R-3),
     else `"pass"`. Pure and deterministic (zero I/O). Reuses `MetricDelta` (IR), no new dataclass.
     """
     if baseline is None:
@@ -84,9 +84,9 @@ def compare_fused_to_baseline(
             )
     deltas.append(
         _delta(
-            "fusion_coverage",
-            report.fusion.coverage,
-            baseline.fusion_coverage,
+            "union_hit_rate",
+            report.fusion.union_hit_rate,
+            baseline.union_hit_rate,
             tolerance,
         )
     )

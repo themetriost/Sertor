@@ -1,9 +1,9 @@
 """Test `compare_fused_to_baseline` (070, TASK-R07): pure non-regression gate.
 
-Zero I/O. Covers no-baseline, per-surface MRR regression, fusion coverage regression (R-3), the
-tolerance window, the «better MRR but worse coverage» case, and determinism. After 070 the surfaces
-are TWO (search_code/search_docs); `search_combined` is no longer an IR surface — the fused surface
-is gated only via `fusion_coverage`.
+Zero I/O. Covers no-baseline, per-surface MRR regression, union hit-rate regression (R-3), the
+tolerance window, the «better MRR but worse union» case, and determinism. After 070 the surfaces are
+TWO (search_code/search_docs); `search_combined` is no longer an IR surface — the fused surface is
+gated only via `union_hit_rate`.
 """
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from sertor_core.services.eval.models import (
 from sertor_core.services.eval.regression import compare_fused_to_baseline
 
 
-def _report(docs_mrr: float = 0.73, coverage: float = 0.5) -> FusedEvalReport:
+def _report(docs_mrr: float = 0.73, union: float = 0.5) -> FusedEvalReport:
     def surf(name, mrr):
         return SurfaceEvalReport(
             name, EvalReport({3: 0.8}, mrr, 1, "hash")
@@ -29,18 +29,18 @@ def _report(docs_mrr: float = 0.73, coverage: float = 0.5) -> FusedEvalReport:
             surf("search_code", 0.64),
             surf("search_docs", docs_mrr),
         ),  # 070: two surfaces, no search_combined
-        fusion=FusionReport(cases=(), coverage=coverage, cases_count=1, hit_but_not_covered=0),
+        fusion=FusionReport(cases=(), union_hit_rate=union, cases_count=1),
         provider="hash",
     )
 
 
-def _baseline(docs_mrr: float = 0.73, coverage: float = 0.5) -> FusedBaseline:
+def _baseline(docs_mrr: float = 0.73, union: float = 0.5) -> FusedBaseline:
     return FusedBaseline(
         surfaces=(
             SurfaceBaseline("search_code", {3: 0.8}, 0.64),
             SurfaceBaseline("search_docs", {3: 0.8}, docs_mrr),
         ),  # 070: two surfaces, no search_combined
-        fusion_coverage=coverage,
+        union_hit_rate=union,
         queries=1,
         provider="hash",
         recorded_at="2026-06-21T00:00:00Z",
@@ -59,10 +59,10 @@ def test_surface_mrr_regression():
     assert v.exit_code() == 1
 
 
-def test_fusion_coverage_regression():
-    v = compare_fused_to_baseline(_report(coverage=0.2), _baseline(coverage=0.5), 0.0)
+def test_union_hit_rate_regression():
+    v = compare_fused_to_baseline(_report(union=0.2), _baseline(union=0.5), 0.0)
     assert v.verdict == "regressed"
-    assert any(d.name == "fusion_coverage" and d.regressed for d in v.deltas)
+    assert any(d.name == "union_hit_rate" and d.regressed for d in v.deltas)
 
 
 def test_within_tolerance_passes():
@@ -76,10 +76,10 @@ def test_all_within_tolerance_passes():
     assert v.verdict == "pass"
 
 
-def test_better_mrr_worse_coverage_regresses():
-    # surface MRR up, fusion coverage down past tolerance → still regressed (R-3)
+def test_better_mrr_worse_union_regresses():
+    # surface MRR up, union hit-rate down past tolerance → still regressed (R-3)
     v = compare_fused_to_baseline(
-        _report(docs_mrr=0.90, coverage=0.2), _baseline(docs_mrr=0.73, coverage=0.5), 0.0
+        _report(docs_mrr=0.90, union=0.2), _baseline(docs_mrr=0.73, union=0.5), 0.0
     )
     assert v.verdict == "regressed"
 
@@ -89,9 +89,9 @@ def test_deterministic():
     assert compare_fused_to_baseline(r, b, 0.0) == compare_fused_to_baseline(r, b, 0.0)
 
 
-def test_fusion_coverage_delta_separate_from_mrr():
+def test_union_hit_rate_delta_separate_from_mrr():
     v = compare_fused_to_baseline(_report(), _baseline(), 0.0)
     names = {d.name for d in v.deltas}
-    assert "fusion_coverage" in names
+    assert "union_hit_rate" in names
     assert "search_docs mrr" in names
     assert "search_combined mrr" not in names  # 070: combined no longer an IR surface

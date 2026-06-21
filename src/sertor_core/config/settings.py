@@ -206,11 +206,12 @@ class Settings:
     graph_eval_tolerance: float = 0.0  # SERTOR_GRAPH_EVAL_TOLERANCE — mean_f1 gate tolerance
     graph_eval_exact: bool = False     # SERTOR_GRAPH_EVAL_EXACT — exact-set gate (got != expected)
 
-    # fused code+doc evaluation (069, FEAT-003): top-k on which the fusion coverage of `both`-intent
-    # cases is computed (a case is «covered» only if the top-k carries ≥1 relevant DOC AND ≥1
-    # relevant CODE). `eval_tolerance` (above) is REUSED for the fused non-regression gate (the
-    # tolerance is unique). Default only here (Principio VIII); a comando non invocato costo uguale.
-    eval_fusion_k: int = 5             # SERTOR_EVAL_FUSION_K — top-k for fusion coverage (DA-c)
+    # fused code+doc evaluation (070, FEAT-003): top-k on which the union hit-rate of `both`-intent
+    # cases is computed (a case «hits» when the top-k carries ≥1 relevant DOC OR ≥1 relevant CODE —
+    # the union, not the product). `eval_tolerance` (above) is REUSED for the fused non-regression
+    # gate (the tolerance is unique). Default only here (Principio VIII); a comando non invocato
+    # costo uguale.
+    eval_fusion_k: int = 5             # SERTOR_EVAL_FUSION_K — top-k for the union hit-rate (DA-c)
 
     # ingestione
     exclude_patterns: tuple[str, ...] = _DEFAULT_EXCLUDES

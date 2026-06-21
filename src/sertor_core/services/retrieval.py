@@ -17,7 +17,7 @@ import logging
 import time
 from collections.abc import Mapping
 
-from sertor_core.domain.entities import FusedResults, RetrievalResult
+from sertor_core.domain.entities import RetrievalResult
 from sertor_core.domain.errors import ProviderMismatchError
 from sertor_core.domain.ports import (
     DocTypeFilter,
@@ -43,6 +43,27 @@ def apply_min_score(
         return results, False
     kept = [r for r in results if r.score >= min_score]
     return kept, (bool(results) and not kept)
+
+
+def merge_fused(
+    docs: list[RetrievalResult], code: list[RetrievalResult]
+) -> list[RetrievalResult]:
+    """Courtesy helper: a single deterministic list from the two flows of `search_combined` (070).
+
+    `search_combined` returns the two flows as a TUPLE `(docs, code)` (070): no cross-type blended
+    ranking — code/doc scores are incommensurable (the root cause of 069's low fusion quality), so
+    they are never merged by score. This free function INTERLEAVES the two by rank
+    (`docs[0], code[0], docs[1], …`); leftovers of the longer flow are appended in order. Pure and
+    deterministic; it never re-introduces the score merge. A method on an object is deliberately
+    avoided (the contract is a plain tuple): consumers that want a single list call this explicitly.
+    """
+    out: list[RetrievalResult] = []
+    for i in range(max(len(docs), len(code))):
+        if i < len(docs):
+            out.append(docs[i])
+        if i < len(code):
+            out.append(code[i])
+    return out
 
 
 _SNIPPET_MAX = 200
@@ -163,21 +184,23 @@ class RetrievalFacade:
         """Semantic search over documentation only."""
         return self._search(query, k, "doc")
 
-    def search_combined(self, query: str, k: int | None = None) -> FusedResults:
+    def search_combined(
+        self, query: str, k: int | None = None
+    ) -> tuple[list[RetrievalResult], list[RetrievalResult]]:
         """Semantic search over code + documentation together — TWO labelled flows (070).
 
-        Returns a `FusedResults(docs, code)`: the doc flow and the code flow, **each with its own
-        top-k** (separate budget, FR-001). There is no cross-type blended ranking — code/doc scores
-        are incommensurable (the root cause of 069's 0.17 fusion coverage); the consumer that wants
-        a single list calls `FusedResults.flatten()`. `docs`/`code` reuse the SAME mono-type paths
-        as `search_docs`/`search_code` (so those remain invariant, FR-003), including the
-        multi-corpus fan-out (feature 010): each list fans out with its own `doc_type` filter and
-        its own top-k. With extra corpora, `ProviderMismatchError` and the `no_index` policy are
-        preserved per type.
+        Returns a TUPLE `(docs, code)`: the doc flow and the code flow, **each with its own top-k**
+        (separate budget, FR-001), unpackable as `docs, code = facade.search_combined(q)`. There is
+        no cross-type blended ranking — code/doc scores are incommensurable (the root cause of 069's
+        low fusion quality); the consumer that wants a single list calls the free `merge_fused`.
+        `docs`/`code` reuse the SAME mono-type paths as `search_docs`/`search_code` (so those remain
+        invariant, FR-003), including the multi-corpus fan-out (feature 010): each list fans out
+        with its own `doc_type` filter and its own top-k. With extra corpora,
+        `ProviderMismatchError` and the `no_index` policy are preserved per type.
         """
         docs = self._search_typed(query, k, "doc")
         code = self._search_typed(query, k, "code")
-        return FusedResults(docs=tuple(docs), code=tuple(code))
+        return docs, code
 
     def _search_typed(
         self, query: str, k: int | None, doc_type: DocTypeFilter

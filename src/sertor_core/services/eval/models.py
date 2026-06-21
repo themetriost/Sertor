@@ -253,35 +253,35 @@ class ComparisonReport:
 
 @dataclass(frozen=True)
 class FusionCaseResult:
-    """Outcome of the fused coverage of one `intent="both"` case (069, REQ-020/022).
+    """Outcome of the fused union measure of one `intent="both"` case (070, REQ-020/022).
 
-    `pertinente` = a result whose `path` is in `expected`; `covered` = `has_doc AND has_code` (the
-    top-k carries at least one relevant DOC result AND one relevant CODE result). `hit_at_k` makes
-    REQ-022 visible: a case can be `hit_at_k=True` (a path is retrieved) but `covered=False` (one
-    type drowns the other) — exactly the lacuna the feature renders instead of masking with hit@k.
+    The headline number is the UNION (OR), not the product (AND): `hit` = an expected path appears
+    in the docs flow OR in the code flow. `has_doc`/`has_code` are kept ONLY as per-case informative
+    detail — they show WHICH stream found the expected — and never enter the aggregate score. The OR
+    fixes the wrong metric of 069/0d89bf8 (`covered = has_doc AND has_code`, the «multiplication»
+    the user excluded): the fusion is the union of the two flows, not their intersection.
     """
 
     query: str
     expected: tuple[str, ...]
-    has_doc: bool
-    has_code: bool
-    covered: bool
-    hit_at_k: bool
+    has_doc: bool          # informative: an expected path is in the docs flow
+    has_code: bool         # informative: an expected path is in the code flow
+    hit: bool              # headline: has_doc OR has_code (union)
 
 
 @dataclass(frozen=True)
 class FusionReport:
-    """Aggregate of the fusion coverage on the combined surface (069, REQ-021).
+    """Aggregate of the union hit-rate on the combined surface (070, REQ-021).
 
-    Reported ACCANTO a hit@k/MRR (not instead). A run without `both`-intent cases → `coverage=0.0`
-    and `cases_count=0` (honest empty report, exit 0). `hit_but_not_covered` is the explicit lacuna
-    (REQ-022): how many cases are retrieved (hit@k) but not covered (a type is missing).
+    Reported ACCANTO a hit@k/MRR (not instead). The primary number is the UNION (OR) hit-rate:
+    `union_hit_rate` = (#cases with a union hit) / (#`both`-intent cases). `has_doc`/`has_code` stay
+    per-case detail only (which stream found the expected), never aggregated. A run without
+    `both`-intent cases → `union_hit_rate=0.0` and `cases_count=0` (honest empty report, exit 0).
     """
 
     cases: tuple[FusionCaseResult, ...]
-    coverage: float        # covered_count / cases_count (0.0 if cases_count == 0)
+    union_hit_rate: float  # hit_count / cases_count (0.0 if cases_count == 0)
     cases_count: int
-    hit_but_not_covered: int
 
 
 @dataclass(frozen=True)
@@ -325,11 +325,12 @@ class FusedBaseline:
     Persisted as the `[fused_baseline]` section of `eval/baseline.toml`, additive to the IR
     `Baseline` (sezioni distinte; il writer preserva entrambe, preserve-both di FEAT-011). Built
     from a current `FusedEvalReport` only on an explicit `--record-baseline`. `recorded_at` is
-    informative (ISO-8601 UTC).
+    informative (ISO-8601 UTC). The fusion floor is the UNION hit-rate (070), not the old AND
+    coverage.
     """
 
     surfaces: tuple[SurfaceBaseline, ...]
-    fusion_coverage: float
+    union_hit_rate: float
     queries: int
     provider: str
     recorded_at: str

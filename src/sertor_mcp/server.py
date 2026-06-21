@@ -25,7 +25,7 @@ from mcp.server.fastmcp import FastMCP
 
 from sertor_core.composition import build_facade, build_graph_service, enable_observability
 from sertor_core.config.settings import Settings
-from sertor_core.domain.entities import FusedResults, RetrievalResult, SymbolHit
+from sertor_core.domain.entities import RetrievalResult, SymbolHit
 from sertor_core.observability.logging import log_event
 
 mcp = FastMCP(
@@ -122,10 +122,10 @@ def search_combined(query: str, k: int = 6) -> dict:
     citable `path#chunk` form (`_fmt`).
     """
     def _body() -> dict:
-        fused: FusedResults = _facade().search_combined(query, k)
+        docs, code = _facade().search_combined(query, k)
         out = {
-            "docs": [_fmt(r) for r in fused.docs],
-            "code": [_fmt(r) for r in fused.code],
+            "docs": [_fmt(r) for r in docs],
+            "code": [_fmt(r) for r in code],
         }
         log_event(
             logging.INFO,

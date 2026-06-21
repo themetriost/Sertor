@@ -1,8 +1,8 @@
 """Test US5 — retrieval facade reusable as a library (REQ-023..029).
 
-`search_combined` returns `FusedResults(docs, code)` (070): the two labelled flows, each with its
-own top-k (separate budget). Tests use `.docs`/`.code` for the per-flow contract and `.flatten()`
-for the single-list view.
+`search_combined` returns the tuple `(docs, code)` (070): the two labelled flows, each with its own
+top-k (separate budget), unpackable as `docs, code = facade.search_combined(q)`. Tests unpack the
+tuple for the per-flow contract and use the free `merge_fused` for the single-list view.
 """
 from __future__ import annotations
 
@@ -10,9 +10,9 @@ import logging
 
 import pytest
 
-from sertor_core.domain.entities import DocType, EmbeddedChunk, FusedResults
+from sertor_core.domain.entities import DocType, EmbeddedChunk
 from sertor_core.domain.errors import EmbeddingError
-from sertor_core.services.retrieval import RetrievalFacade
+from sertor_core.services.retrieval import RetrievalFacade, merge_fused
 from tests.fixtures.mocks import FakeEmbedder, InMemoryStore
 
 COLL = "test-collection"
@@ -37,19 +37,21 @@ def _populated_store(embedder: FakeEmbedder) -> InMemoryStore:
     return store
 
 
-def test_combined_returns_fused_results():
+def test_combined_returns_tuple_of_two_flows():
     emb = FakeEmbedder(dim=8)
     facade = RetrievalFacade(emb, _populated_store(emb), COLL, default_k=5)
-    fused = facade.search_combined("validate")
-    assert isinstance(fused, FusedResults)
-    assert all(r.doc_type is DocType.DOC for r in fused.docs)    # 070: docs flow is DOC only
-    assert all(r.doc_type is DocType.CODE for r in fused.code)   # 070: code flow is CODE only
+    result = facade.search_combined("validate")
+    assert isinstance(result, tuple) and len(result) == 2
+    docs, code = result
+    assert all(r.doc_type is DocType.DOC for r in docs)    # 070: docs flow is DOC only
+    assert all(r.doc_type is DocType.CODE for r in code)   # 070: code flow is CODE only
 
 
 def test_results_carry_required_fields():
     emb = FakeEmbedder(dim=8)
     facade = RetrievalFacade(emb, _populated_store(emb), COLL, default_k=5)
-    hits = facade.search_combined("validate").flatten()
+    docs, code = facade.search_combined("validate")
+    hits = merge_fused(docs, code)
     assert hits
     h = hits[0]
     assert h.text and h.path and h.chunk_id           # REQ-025
@@ -61,9 +63,9 @@ def test_combined_budget_is_separate_code_not_starved():
     # so it is NOT empty (the 069 root cause does not re-appear).
     emb = FakeEmbedder(dim=8)
     facade = RetrievalFacade(emb, _populated_store(emb), COLL, default_k=1)
-    fused = facade.search_combined("come configurare il backend")
-    assert fused.docs            # a doc surfaces
-    assert fused.code            # AND code is present (separate budget), not starved
+    docs, code = facade.search_combined("come configurare il backend")
+    assert docs            # a doc surfaces
+    assert code            # AND code is present (separate budget), not starved
 
 
 def test_filter_by_type():
@@ -82,7 +84,7 @@ def test_code_and_docs_unchanged_return_lists():
 
 
 def test_combined_without_code_in_index_yields_empty_code_flow():
-    # Edge case: a corpus with no code → code=(), docs populated; the pair is still structured.
+    # Edge case: a corpus with no code → code=[], docs populated; the pair is still structured.
     emb = FakeEmbedder(dim=8)
     store = InMemoryStore()
     store.upsert(COLL, [EmbeddedChunk(
@@ -90,27 +92,29 @@ def test_combined_without_code_in_index_yields_empty_code_flow():
         payload={"text": "solo documentazione", "path": "only.md", "doc_type": "doc"},
     )])
     facade = RetrievalFacade(emb, store, COLL, default_k=5)
-    fused = facade.search_combined("documentazione")
-    assert fused.code == ()
-    assert fused.docs
+    docs, code = facade.search_combined("documentazione")
+    assert code == []
+    assert docs
 
 
 def test_k_default_and_override():
     emb = FakeEmbedder(dim=8)
     facade = RetrievalFacade(emb, _populated_store(emb), COLL, default_k=1)
     # default_k applies per flow: 1 doc + 1 code at most.
-    assert len(facade.search_combined("x").flatten()) <= 2
+    docs, code = facade.search_combined("x")
+    assert len(merge_fused(docs, code)) <= 2
     # k > available per flow → all of each (REQ-026): 1 doc + 2 code = 3.
-    assert len(facade.search_combined("x", k=10).flatten()) == 3
+    docs, code = facade.search_combined("x", k=10)
+    assert len(merge_fused(docs, code)) == 3
 
 
 def test_empty_index_returns_empty_with_warning(caplog):
     emb = FakeEmbedder(dim=8)
     facade = RetrievalFacade(emb, InMemoryStore(), "vuota", default_k=5)
     with caplog.at_level(logging.WARNING, logger="sertor_core"):
-        fused = facade.search_combined("qualsiasi")
-    assert fused.flatten() == []                           # REQ-028: empty, not an exception
-    assert fused.docs == () and fused.code == ()
+        docs, code = facade.search_combined("qualsiasi")
+    assert merge_fused(docs, code) == []                   # REQ-028: empty, not an exception
+    assert docs == [] and code == []
     assert any("no_index" in r.message for r in caplog.records)
     assert emb.calls == 0                                  # does not query the embedder when empty
 
@@ -129,7 +133,7 @@ def test_errors_propagate_not_silently_empty():
 
 def test_usable_as_imported_library():
     # Importable and usable without touching concrete store/embeddings (REQ-029).
-    from sertor_core import FusedResults, RetrievalResult, build_facade  # noqa: F401
+    from sertor_core import RetrievalResult, build_facade  # noqa: F401
 
     assert callable(build_facade)
 
@@ -165,12 +169,12 @@ def _multi_facade(emb: FakeEmbedder, store: InMemoryStore, k: int = 5) -> Retrie
 def test_combined_fuses_results_from_both_collections():
     emb = FakeEmbedder(dim=8)
     facade = _multi_facade(emb, _two_collection_store(emb))
-    fused = facade.search_combined("come configurare il backend")
+    docs, code = facade.search_combined("come configurare il backend")
     # The docs flow fans out across primary + wiki collections (FR-001), all DOC type.
-    doc_sources = {h.chunk_id.split("#")[0] for h in fused.docs}
+    doc_sources = {h.chunk_id.split("#")[0] for h in docs}
     assert any(s.endswith(".md") and "/" in s for s in doc_sources)   # hit from wiki
-    assert all(h.doc_type is DocType.DOC for h in fused.docs)
-    assert len(fused.docs) <= 5 and len(fused.code) <= 5              # per-flow ≤ k (FR-002)
+    assert all(h.doc_type is DocType.DOC for h in docs)
+    assert len(docs) <= 5 and len(code) <= 5                          # per-flow ≤ k (FR-002)
 
 
 def test_combined_merge_is_deterministic_on_ties():
@@ -185,10 +189,11 @@ def test_combined_merge_is_deterministic_on_ties():
             payload={"text": same_text, "path": cid.split("#")[0], "doc_type": "code"},
         )])
     facade = _multi_facade(emb, store)
-    first = facade.search_combined(same_text)
-    assert [h.chunk_id for h in first.code] == ["a.py#0", "z.py#0"]   # tie-break by chunk_id
-    assert [h.chunk_id for h in facade.search_combined(same_text).code] == \
-        [h.chunk_id for h in first.code]                              # stable output
+    _, first_code = facade.search_combined(same_text)
+    assert [h.chunk_id for h in first_code] == ["a.py#0", "z.py#0"]   # tie-break by chunk_id
+    _, again_code = facade.search_combined(same_text)
+    assert [h.chunk_id for h in again_code] == \
+        [h.chunk_id for h in first_code]                             # stable output
 
 
 def test_combined_degrades_when_extra_corpus_never_indexed(caplog):
@@ -196,8 +201,8 @@ def test_combined_degrades_when_extra_corpus_never_indexed(caplog):
     emb = FakeEmbedder(dim=8)
     facade = _multi_facade(emb, _populated_store(emb))
     with caplog.at_level(logging.WARNING, logger="sertor_core"):
-        fused = facade.search_combined("validate")
-    assert fused.flatten()                                         # primary responds
+        docs, code = facade.search_combined("validate")
+    assert merge_fused(docs, code)                                 # primary responds
     assert any("no_index" in r.message for r in caplog.records)
 
 
@@ -206,8 +211,8 @@ def test_combined_all_collections_absent_returns_empty(caplog):
     facade = RetrievalFacade(emb, InMemoryStore(), COLL, default_k=5,
                              extra_collections={"wiki": WIKI_COLL})
     with caplog.at_level(logging.WARNING, logger="sertor_core"):
-        fused = facade.search_combined("qualsiasi")
-    assert fused.flatten() == []                                   # FR-005
+        docs, code = facade.search_combined("qualsiasi")
+    assert merge_fused(docs, code) == []                           # FR-005
     assert emb.calls == 0                                          # no embed on empty
 
 
@@ -234,8 +239,10 @@ def test_combined_without_extra_collections_unchanged():
     legacy = RetrievalFacade(emb, store, COLL, default_k=5)
     multi_empty = RetrievalFacade(emb, store, COLL, default_k=5, extra_collections={})
     q = "come configurare il backend"
-    assert [h.chunk_id for h in legacy.search_combined(q).flatten()] == \
-        [h.chunk_id for h in multi_empty.search_combined(q).flatten()]
+    legacy_docs, legacy_code = legacy.search_combined(q)
+    multi_docs, multi_code = multi_empty.search_combined(q)
+    assert [h.chunk_id for h in merge_fused(legacy_docs, legacy_code)] == \
+        [h.chunk_id for h in merge_fused(multi_docs, multi_code)]
 
 
 def test_code_and_docs_do_not_fan_out():

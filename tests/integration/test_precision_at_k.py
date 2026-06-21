@@ -15,7 +15,7 @@ from sertor_core.adapters.lexical.bm25 import Bm25LexicalIndex
 from sertor_core.config.settings import Settings
 from sertor_core.engines.hybrid import HybridEngine
 from sertor_core.services.indexing import IndexingService
-from sertor_core.services.retrieval import RetrievalFacade
+from sertor_core.services.retrieval import RetrievalFacade, merge_fused
 from tests.fixtures.ground_truth import relative_to
 from tests.fixtures.mocks import FakeEmbedder, InMemoryStore
 
@@ -48,7 +48,7 @@ def facades(tmp_path_factory):
 def _precision_at_5(facade: RetrievalFacade) -> float:
     hits_ok = 0
     for query, expected, _ in _GT:
-        paths = {h.path for h in facade.search_combined(query, k=5).flatten()}
+        paths = {h.path for h in merge_fused(*facade.search_combined(query, k=5))}
         hits_ok += 1 if paths & set(expected) else 0
     return hits_ok / len(_GT)
 

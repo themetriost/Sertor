@@ -506,10 +506,12 @@ def _cmd_search(args) -> None:
     engine = build_baseline_engine(settings)
     engine.ensure_index()
     if args.type == "both":
-        # search_combined returns FusedResults (070): two labelled flows, rendered as two sections.
-        # It inherits the fan-out over extra corpora per type (fix F13).
-        fused = build_facade(settings).search_combined(args.query, k=args.k)
-        print(output.format_fused_search_results(fused, settings, json=args.json, full=args.full))
+        # search_combined returns the tuple (docs, code) (070): two labelled flows, rendered as two
+        # sections. It inherits the fan-out over extra corpora per type (fix F13).
+        docs, code = build_facade(settings).search_combined(args.query, k=args.k)
+        print(
+            output.format_fused_search_results(docs, code, settings, json=args.json, full=args.full)
+        )
         return
     facade = build_facade(settings)
     results = (
@@ -699,7 +701,7 @@ def _fused_baseline_from(report) -> FusedBaseline:
     queries = sum(s.report.queries for s in report.surfaces) + report.fusion.cases_count
     return FusedBaseline(
         surfaces=surfaces,
-        fusion_coverage=report.fusion.coverage,
+        union_hit_rate=report.fusion.union_hit_rate,
         queries=queries,
         provider=report.provider,
         recorded_at=now_iso_utc(),

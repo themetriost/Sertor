@@ -16,7 +16,7 @@ import time
 from collections.abc import Sequence
 
 from sertor_core.config.settings import Settings
-from sertor_core.domain.entities import FusedResults, IndexReport, RetrievalResult
+from sertor_core.domain.entities import IndexReport, RetrievalResult
 from sertor_core.domain.memory import ArchivedSession, SessionSummary
 from sertor_core.engines.evaluation import EvalReport
 from sertor_core.services.episodic_search import EpisodicResults
@@ -123,28 +123,35 @@ def _results_human(
 
 
 def format_fused_search_results(
-    fused: FusedResults, settings: Settings, *, json: bool, full: bool
+    docs: list[RetrievalResult],
+    code: list[RetrievalResult],
+    settings: Settings,
+    *,
+    json: bool,
+    full: bool,
 ) -> str:
     """Formats `search_combined` (070, DA-d): TWO labelled flows (`docs` / `code`).
 
-    Human: a `docs:` section then a `code:` section, each rendered with the existing per-result
-    logic (no duplication, Principio III/VII); an empty flow → its label + `(no results)` (honest
-    empty state, never silence). JSON: `{"docs": [...], "code": [...]}` — the twin of the MCP.
-    The citable `path#chunk` form is preserved in both. `--type code`/`--type doc` are unchanged
-    (they keep using `format_search_results`).
+    Takes the two flows of the `(docs, code)` tuple returned by `search_combined`. Human: a `docs:`
+    section then a `code:` section, each rendered with the existing per-result logic (no
+    duplication, Principio III/VII); an empty flow → its label + `(no results)` (honest empty,
+    never
+    silence). JSON: `{"docs": [...], "code": [...]}` — the twin of the MCP. The citable `path#chunk`
+    form is preserved in both. `--type code`/`--type doc` are unchanged (they keep using
+    `format_search_results`).
     """
     if json:
         return _json.dumps(
             {
-                "docs": _results_json(fused.docs, settings, full=full),
-                "code": _results_json(fused.code, settings, full=full),
+                "docs": _results_json(docs, settings, full=full),
+                "code": _results_json(code, settings, full=full),
             }
         )
     return (
         "docs:\n"
-        + _indent(_results_human(fused.docs, settings, full=full))
+        + _indent(_results_human(docs, settings, full=full))
         + "\n\ncode:\n"
-        + _indent(_results_human(fused.code, settings, full=full))
+        + _indent(_results_human(code, settings, full=full))
     )
 
 
@@ -391,7 +398,7 @@ def format_regression_report(verdict: RegressionVerdict, *, json: bool) -> str:
 
 
 def _fused_verdict_line(verdict: FusedRegressionVerdict) -> str:
-    """One-line fused non-regression summary (069): label + per-metric Δ (incl. fusion_coverage)."""
+    """One-line fused non-regression summary (070): label + per-metric Δ (incl. union_hit_rate)."""
     label = {"pass": "PASS", "regressed": "REGRESSED", "no-baseline": "no baseline"}[
         verdict.verdict
     ]
@@ -420,12 +427,13 @@ def _fused_verdict_json(verdict: FusedRegressionVerdict) -> dict:
 def format_fused_eval_report(
     report: FusedEvalReport, verdict: FusedRegressionVerdict, *, json: bool
 ) -> str:
-    """Format a fused run: per-surface metrics + fusion coverage + non-regression (069, REQ-021).
+    """Format a fused run: per-surface metrics + union hit-rate + non-regression (070, REQ-021).
 
-    Human: header (cases per intent + provider) + per-surface hit-rate@k/MRR + the fusion coverage
-    block (one `[covered]`/`[GAP    ]` row per `both`-intent case with the missing type) + a
-    non-regression line. JSON: the informational equivalent. The fusion coverage is reported
-    ACCANTO a hit@k/MRR, never instead (REQ-042/SC-008).
+    Human: header (cases per intent + provider) + per-surface hit-rate@k/MRR + the union hit-rate
+    block (one `[hit]`/`[miss]` row per `both`-intent case with which stream found it) + a
+    non-regression line. The headline is the UNION (OR), not the AND (`has_doc`/`has_code` survive
+    only as informative per-case detail). JSON: the informational equivalent. The union hit-rate is
+    reported ACCANTO a hit@k/MRR, never instead (REQ-042/SC-008).
     """
     fusion = report.fusion
     by_surface = {s.surface: s.report for s in report.surfaces}
@@ -449,17 +457,15 @@ def format_fused_eval_report(
                     for s in report.surfaces
                 ],
                 "fusion": {
-                    "coverage": round(fusion.coverage, 6),
+                    "union_hit_rate": round(fusion.union_hit_rate, 6),
                     "cases_count": fusion.cases_count,
-                    "hit_but_not_covered": fusion.hit_but_not_covered,
                     "cases": [
                         {
                             "query": c.query,
                             "expected": list(c.expected),
                             "has_doc": c.has_doc,
                             "has_code": c.has_code,
-                            "covered": c.covered,
-                            "hit_at_k": c.hit_at_k,
+                            "hit": c.hit,
                         }
                         for c in fusion.cases
                     ],
@@ -467,7 +473,7 @@ def format_fused_eval_report(
                 "non_regression": _fused_verdict_json(verdict),
             }
         )
-    covered_count = sum(1 for c in fusion.cases if c.covered)
+    hit_count = sum(1 for c in fusion.cases if c.hit)
     lines = [
         f"fused eval  cases: code={code_n} docs={docs_n} fusion={fusion.cases_count}  "
         f"provider={report.provider}",
@@ -481,30 +487,27 @@ def format_fused_eval_report(
         lines.append(f"  {s.surface:<16} {at_k}  MRR={s.report.mrr:.2f}")
     lines.append("")
     head = (
-        f"fusion coverage: {fusion.coverage:.2f}  "
-        f"({covered_count}/{fusion.cases_count} covered;  "
-        f"{fusion.hit_but_not_covered} hit@k but NOT covered "
-        "← one type drowns the other)"
+        f"union hit-rate: {fusion.union_hit_rate:.2f}  "
+        f"({hit_count}/{fusion.cases_count} hit in doc OR code)"
     )
     lines.append(head)
     for c in fusion.cases:
-        if c.covered:
-            lines.append(f"  [covered] {c.query}   doc+code")
+        if c.hit:
+            lines.append(f"  [hit ] {c.query}   {_fusion_hit_detail(c)}")
         else:
-            detail = _fusion_gap_detail(c)
-            lines.append(f"  [GAP    ] {c.query}   {detail}")
+            lines.append(f"  [miss] {c.query}   neither doc nor code retrieved")
     lines.append("")
     lines.append(_fused_verdict_line(verdict))
     return "\n".join(lines)
 
 
-def _fusion_gap_detail(case) -> str:
-    """Human detail of why a `both` case is not covered (069, REQ-022)."""
-    if case.has_doc and not case.has_code:
-        return "doc only  (missing CODE)"
-    if case.has_code and not case.has_doc:
-        return "code only (missing DOC)"
-    return "neither doc nor code retrieved"
+def _fusion_hit_detail(case) -> str:
+    """Human detail of which stream(s) found a `both` case (070, informative only)."""
+    if case.has_doc and case.has_code:
+        return "doc+code"
+    if case.has_doc:
+        return "doc only"
+    return "code only"
 
 
 def format_fused_regression(verdict: FusedRegressionVerdict, *, json: bool) -> str:
