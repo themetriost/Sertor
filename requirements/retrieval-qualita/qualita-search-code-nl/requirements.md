@@ -92,14 +92,21 @@ con una misura di **fusione**, non lo reinventa.
 - **REQ-014 (Ubiquitous):** *The system shall not declare any technique an improvement unless it shows
   a measured lift on the relevant surface versus baseline.*
 
-### Gruppo C — Metrica di fusione (fusion coverage, P2.b)
-- **REQ-020 (Ubiquitous):** *For a fusion/cross-artifact case, the system shall measure fusion
-  coverage: the case counts as covered only when the top-k contains at least one relevant document AND
-  at least one relevant source.*
-- **REQ-021 (Ubiquitous):** *The system shall report fusion coverage alongside hit-rate@k/MRR so that a
-  "one type drowns the other" failure is explicitly visible.*
-- **REQ-022 (Unwanted):** *If a fusion case's top-k satisfies plain hit@k but lacks one required type,
-  then it shall count as a miss on fusion coverage (hit@k alone must not hide the gap).*
+### Gruppo C — Metrica di fusione (union hit-rate, P2.b — corretta 2026-06-21)
+> **Correzione empirica (2026-06-21, decisione utente).** La formulazione originale misurava la
+> «fusion coverage» come **congiunzione** (doc **AND** code nel top-k). In implementazione (feature
+> 070) si è visto che `search_combined` deve restituire una **tupla `(docs, code)`** — due liste, due
+> budget — e che la congiunzione è la «moltiplicazione» da evitare: gonfiava un finto gap (0.17) che
+> *non* rifletteva il retrieval (gli item rankavano a 6-8, fuori da `fusion_k=5`). La metrica corretta
+> è **OR/unione**; il segnale di qualità vero è **per-superficie** (REQ-010/013).
+- **REQ-020 (Ubiquitous):** *`search_combined` shall return the two surfaces as a structured pair
+  `(docs, code)`, each with its own top-k; the consumer (agent) uses both.*
+- **REQ-021 (Ubiquitous):** *For a fusion/cross-artifact case, the system shall measure a **union
+  hit-rate** (OR): the case hits when a relevant result appears in the docs list **or** the code list;
+  per-case `has_doc`/`has_code` are reported as detail, not multiplied into the score.*
+- **REQ-022 (Ubiquitous):** *The system shall keep the per-surface metrics (`search_code`,
+  `search_docs`) as the primary quality signal, reported alongside the union hit-rate; no AND/product
+  metric is used (a conjunction misrepresents independent surfaces).*
 
 ### Gruppo D — Leve come opt-in additive, scelte per misura
 - **REQ-030 (Optional feature):** *Where an NL-improvement lever (query transformation, extended

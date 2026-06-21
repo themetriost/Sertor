@@ -1,8 +1,16 @@
 # Feature Specification: `search_combined` a contratto strutturato (due flussi etichettati) — Tempo 2 FEAT-003
 
-**Feature Branch**: `070-search-combined-strutturato` · **Created**: 2026-06-21 · **Status**: Draft
+**Feature Branch**: `070-search-combined-strutturato` · **Created**: 2026-06-21 · **Status**: Implemented (con revisione)
 
 <!-- Deriva da: FEAT-003 (epica retrieval-qualita) — Tempo 2 (refactor strutturale) -->
+
+> **⚠️ Revisione in implementazione (2026-06-21, decisione utente).** Due correzioni rispetto a questa
+> spec: (1) `search_combined` ritorna una **tupla `(docs, code)`**, NON una dataclass `FusedResults`
+> (rimossa; aggiunta funzione libera `merge_fused`); (2) la metrica di fusione è **OR/unione**
+> (`union_hit_rate`), **non AND/coverage**: l'AND era la «moltiplicazione» che gonfiava un finto gap
+> (0.17). Esito reale a OR: **union hit-rate 1.00 (6/6)**; il segnale di qualità vero è **per-superficie**
+> (`search_docs` MRR 0.55 = punto debole). Dove sotto si legge «FusedResults»/«fusion coverage AND»,
+> vale la versione corretta. Requirements aggiornati (P2.b, REQ-020/021/022).
 
 **Input**: Tempo 2 di **FEAT-003** (epica `retrieval-qualita`). Il Tempo 1
 (`specs/069-qualita-fusione-code-doc/spec.md`) ha reso **misurabile** la fusione code+doc e ha **misurato**
