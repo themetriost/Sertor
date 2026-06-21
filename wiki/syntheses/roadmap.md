@@ -14,7 +14,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > `requirements → spec → plan → tasks → implement`.
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-06-20)
+## ⚡ Executive summary (stato al 2026-06-21)
 
 ### ✅ Capacità consegnate (feature su `master`)
 
@@ -24,6 +24,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | RAG ibrido+reranking (default) · code-graph · agentico & Wiki↔RAG (compositi) | `sertor-core` |
 | **Refresh incrementale dell'indice** (FEAT-009, 2026-06-16) | `sertor-core` |
 | Hardening retrieval (Must + Should gruppo C: retry · soglia · cache embeddings) | `sertor-core` |
+| **Embedder locale local-first** (FEAT-011, 2026-06-21) — `glove` (GloVe 6B 300d PDDL, **nuovo default**) + `hash` (char-n-gram stdlib, pavimento airgapped/CI); **`RAG_BACKEND` rimosso** → `SERTOR_EMBED_PROVIDER` unico | `sertor-core` |
 | CLI `sertor-rag` · installer `sertor install wiki`/`rag` | `sertor-cli` |
 | **Packaging distribuibile** `git+url` (FEAT-001, LICENSE+metadati+build verificata, 2026-06-17) | `sertor-cli` |
 | **Ciclo di vita installer** — `upgrade`/`uninstall` per `sertor` e `sertor-flow` (FEAT-008, 2026-06-17) | `sertor-cli` |
@@ -48,7 +49,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 | # | Epica | Stato | Residuo / 1° passo |
 |---|---|---|---|
-| **E1** | [`sertor-core`](../../requirements/sertor-core/epic.md) | 🔄 FEAT-011 implementata su branch `068` (attesa merge) | **FEAT-011 embedder locale (glove default + hash floor)** — pipeline SpecKit req→implement completa, Constitution 12/12, suite verde; resta **merge + migrazione `.sertor/.env` + re-index dogfood**. *(agenzia incorporata ❌ abbandonata by design)* |
+| **E1** | [`sertor-core`](../../requirements/sertor-core/epic.md) | ✅ completa (FEAT-011 ✅ merge `34b599a`) | **Nessun residuo Should aperto** — FEAT-011 embedder locale consegnata (2026-06-21). Resta solo il debito P2 **TASK-D04** (rinomina flag installer `--backend`→`--provider`). *(agenzia incorporata ❌ abbandonata by design)* |
 | **E2** | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | ergonomia installer · Codex · PyPI · `configure --check` (probe live, deferred) *(packaging ✅ + lifecycle ✅ + hardening Copilot FEAT-011 ✅ + wizard config ✅ + Copilot CLI-only ✅ + verifica empirica Copilot LIVE ✅, 2026-06-17)* |
 | **E3** | [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | **export OTel FEAT-005 ✅** + arricchimento span FEAT-013 ✅ + TUI tabella FEAT-014 ✅ + **visibilità RAG/dimostrabilità FEAT-015 ✅** (PR #88) · drift FEAT-012 · metriche aggregate · stima € (Should) · web · CSV/MD |
 | **E4** | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso | ricerca semantica · remember-this · retention · **distribuzione installer (Must)** · multi-assist |
@@ -64,15 +65,10 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-> **Attiva su branch:** **FEAT-011 `sertor-core` — embedder locale** (branch `068-embedder-locale`):
-> pipeline SpecKit req→implement **completa**, Constitution 12/12, test verdi (core 874 · sertor 293 ·
-> kit 131 · flow 134), ruff pulito. Due provider locali deterministici (`glove` GloVe 6B 300d PDDL =
-> nuovo default · `hash` char-n-gram stdlib = pavimento airgapped/CI); **`RAG_BACKEND` rimosso** →
-> manopola unica `SERTOR_EMBED_PROVIDER` (store su `SERTOR_STORE_BACKEND`, default local); fail-loud.
-> **Prossimo passo concreto:** decisione merge su `master`, poi migrazione manuale `.sertor/.env`
-> (`RAG_BACKEND=azure`→`SERTOR_EMBED_PROVIDER=azure`) + re-index dogfood + smoke MCP (TASK-P03).
-> **Debito tracciato:** TASK-D04 rinomina flag installer `--backend`→`--provider` (P2 Should).
-> *(FEAT-001 + FEAT-011 `retrieval-qualita` ✅ su `master` 2026-06-20; skill FEAT-008/009 provate live.)*
+> Nessuna feature attiva su branch al momento (**FEAT-011 `sertor-core` — embedder locale ✅ mergiata su
+> `master`** `34b599a`, 2026-06-21: `.sertor/.env` migrata a `SERTOR_EMBED_PROVIDER=azure`, re-index
+> dogfood fatto, smoke MCP fresco). **Candidati a valore = i Must aperti** (sotto). **Debito residuo
+> FEAT-011:** TASK-D04 (rinomina flag installer `--backend`→`--provider`, P2 Should).
 
 **Candidati a valore = Must aperti** (non ancora iniziati):
 
