@@ -521,6 +521,41 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/070-search-combined-strutturato/plan.md` (FEAT-003 epica **retrieval-qualita** — **`search_combined` a
+contratto strutturato (Tempo 2)**: il Tempo 1 (`069`) ha **misurato** che la superficie fusa **non funziona**
+(fusion coverage **0.17**, 1/6) per il caso-firma requisito→implementazione; questa feature **ripara la causa**
+(Principio XII). **Causa-radice (verificata):** `search_combined → _search(..., "both")`
+(`services/retrieval.py:166`) fonde doc+code in **una lista ranked a budget condiviso**; score code/doc
+**incommensurabili** → i documenti **annegano** il codice nello stesso top-k. **Decisione fissa:**
+`search_combined` ritorna una **coppia strutturata** `FusedResults(docs, code)` (frozen dataclass di dominio,
+nessun SDK), **ciascuna col proprio top-k** (budget separato — è il punto), nome invariato, + helper
+`flatten()`; `search_code`/`search_docs` **INVARIATI**. **BREAKING CHANGE volontario** = deviazione
+dall'additività (I/III) **giustificata** da Principio XII + gate **Allineamento alla missione** (la fusione
+code+doc è la stella polare, oggi rotta); ammissibile perché pre-1.0 `git+url`, **tutti i consumatori di prima
+parte e nel repo** (aggiornati in blocco). **4 forche decise:** **(DA-a)** `FusedResults(docs:
+tuple[RetrievalResult,...], code: tuple[...])` frozen nel domain, `flatten()` metodo. **(DA-b)** budget
+**separato**, stesso `k` per entrambe (da `Settings`), nessuna manopola nuova (YAGNI); riuso dei percorsi
+mono-tipo `_search(..., "doc"/"code")`. **(DA-c)** `flatten()` = **interleave per rank** deterministico
+(docs[0],code[0],…; avanzi in coda); score-merge **scartato** (è la causa-radice). **(DA-d)** MCP tool
+`search_combined` → output **etichettato** `{"docs":[…],"code":[…]}` (meglio per l'agente); CLI `--type both` →
+**due sezioni etichettate** docs/code (+ JSON `{"docs","code"}`); formato citabile `path#chunk` preservato.
+**Fusion coverage adattata alle DUE liste:** `has_doc` dalla lista `docs`, `has_code` dalla lista `code`,
+`covered = has_doc AND has_code` (concettualmente invariato, ora sul contratto giusto). **Superficie IR ranked
+`search_combined` RIMOSSA** dal fused-runner (`_SURFACES` 3→2: `search_code`/`search_docs`): `evaluate` esige
+una lista ranked unica che il combined non fornisce più — la fusion coverage **È** la misura della superficie
+fusa (la metrica giusta; il ranking cross-tipo era la metrica sbagliata, Princ. XII). **Re-baseline (passo del
+piano, non del design):** `[fused_baseline]` ri-registrata (2 superfici + `fusion_coverage` > 0.17 atteso) via
+`--record-baseline`; `[baseline]` IR intatto (preserve-both). **9 consumatori di prima parte** aggiornati in
+blocco: entità nuova, facade, fusion coverage, fused_runner, CLI esecuzione+resa+baseline, MCP, test.
+**Confini:** NON toccare `search_code`/`search_docs`/le porte/gli engine (`evaluate` invariato);
+fuori ambito qualità per-superficie `search_docs`, HyDE/contextual/metadata (FEAT-005/006/007), eval cloud
+(FEAT-002). Local-first/deterministico, niente LLM nel run oltre l'embedder (RNF-3); misura via vehicle
+`sertor-rag eval --fused` (Princ. XI). **Costo:** la coppia esegue 2 retrieval mono-tipo (~2× sulla query del
+combined; atteso, prezzo del budget separato). Constitution **PASS 12/12 + missione PASS** (pre e post-design)
+con **1 deviazione tracciata** (additività I/III) nel Complexity Tracking. **Nota di processo:**
+`setup-plan.ps1`/`speckit-plan/SKILL.md` ASSENTI → parametri per convenzione dal branch (forma da `069`);
+nessun hook eseguito; MCP `sertor-rag` interrogato (nessun errore tool). Branch
+`070-search-combined-strutturato`. Storico:
 `specs/069-qualita-fusione-code-doc/plan.md` (FEAT-003 epica **retrieval-qualita** — **qualità del retrieval
 fuso code+doc su query NL/architetturali**: rende **misurabile e migliorabile** il differenziatore di Sertor
 (fusione code+doc) **prima** di introdurre tecniche, così ogni «migliore» è ancorato a un numero (Principio V,
