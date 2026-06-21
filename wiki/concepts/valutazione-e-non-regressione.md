@@ -1,10 +1,10 @@
 ---
 title: Valutazione del retrieval & non-regressione (suite di valutazione host-side)
 type: concept
-tags: [retrieval-qualita, valutazione, ground-truth, non-regressione, eval, hit-rate, mrr, feat-001, graph-eval, precision, recall, f1, feat-011, fusion-coverage, feat-003]
+tags: [retrieval-qualita, valutazione, ground-truth, non-regressione, eval, hit-rate, mrr, feat-001, graph-eval, precision, recall, f1, feat-011, union-hit-rate, feat-003]
 created: 2026-06-20
-updated: 2026-06-21
-sources: ["specs/065-ground-truth-valutazione/plan.md", "specs/066-valutazione-navigazione-grafo/plan.md", "specs/069-qualita-fusione-code-doc/plan.md", "requirements/retrieval-qualita/ground-truth-valutazione/requirements.md", "src/sertor_core/services/eval/", "src/sertor_core/engines/evaluation.py"]
+updated: 2026-06-21 (FEAT-003 Tempo 2: metrica AND→OR, union_hit_rate, contratto search_combined tupla, segnale per-superficie, lezione di misura)
+sources: ["specs/065-ground-truth-valutazione/plan.md", "specs/066-valutazione-navigazione-grafo/plan.md", "specs/069-qualita-fusione-code-doc/plan.md", "specs/070-search-combined-strutturato/plan.md", "requirements/retrieval-qualita/ground-truth-valutazione/requirements.md", "src/sertor_core/services/eval/", "src/sertor_core/engines/evaluation.py"]
 ---
 
 # Valutazione del retrieval & non-regressione
@@ -142,40 +142,51 @@ recall=1.00, precision=0.94 (defines=1.00, who_calls=0.93). L'unico parziale è 
 con un **extra** legittimo (un test che lo chiama, precision 0.75 su quel caso): raffinamento di authoring,
 non un difetto del grafo.
 
-## Misura della fusione code+doc (fusion coverage) — FEAT-003
+## Misura della fusione code+doc (union hit-rate) — FEAT-003 Tempo 2
 
 La **stella polare** della mission è la **fusione di codice e documenti in un unico corpus** (Principio XII).
 I due strumenti — `search_code` (per il codice) e `search_docs` (per la documentazione) — sono misurati
-*separatamente* dalle metriche IR precedenti. Ma un caso significativo come «passare da **requisito a
-implementazione**» rimane **nascosto**: se il top-k contiene la documentazione del requisito senza
-l'implementazione (o viceversa), le metriche hit@k/MRR non lo segnalano — la fusion coverage lo rende
-**esplicito e quantificato**.
+*separatamente* dalle metriche IR precedenti. Un caso significativo come «passare da **requisito a
+implementazione**» è un **test di integrazione**: il retrieval è **completo** quando ALMENO UNA delle due
+sorgenti porta il materiale pertinente (requisiti E codice rispondono a domande diverse; non sono
+ridondanza, sono complementarità).
 
 **Campo `intent` nei casi di valutazione:** ogni caso versionato in `[case]` di `eval/suite.toml`
-porta ora un attributo `intent ∈ {code, doc, both}`:
+porta un attributo `intent ∈ {code, doc, both}`:
 - `code` — aspetta nel top-k **codice** (funzioni, simboli, test). Evalua su `search_code`.
 - `doc` — aspetta **documentazione** (requisiti, spec, commenti). Evalua su `search_docs`.
-- `both` — il **caso di fusione**: aspetta **documentazione E codice** correlati nello stesso top-k. Evalua su
-  `search_combined`.
+- `both` — il **caso di fusione**: aspetta materiale pertinente dal codice **O** dalla documentazione
+  nello stesso top-k. Evalua su `search_combined`.
 
-**Metrica fusion coverage:** un caso `intent="both"` è "coperto" SOLO se il top-k contiene:
-- ≥1 risultato di tipo `doc` **pertinente**, E
+**Metrica union hit-rate (OR):** un caso `intent="both"` è "coperto" (hit) SOLO se il top-k contiene:
+- ≥1 risultato di tipo `doc` **pertinente**, **O**
 - ≥1 risultato di tipo `code` **pertinente**.
 
-L'assenza di una sorgente non è nascosta dal valore di hit@k (che conta solo «entrato nel top-k»), bensì
-**riportata esplicitamente** nel verdetto coverage: `code_found=true`, `doc_found=false` → coverage falso.
-Riflette il valore della missione: **il retrieval fuso è *completo* solo se entrambe le sorgenti
-convergono su una risposta**.
+La metrica riflette l'**integrazione reale**: il retrieval risponde alla domanda dell'utente se ALMENO UNA
+sorgente converge. (La precedente metrica AND «fusion_coverage» contava il caso solo se ENTRAMBE le sorgenti
+convergevano nel top-k, inventando un gap finto: le metriche per-superficie rivelano il vero segnale.)*
 
-**Misurazione per-superficie:** la suite eval giuda su tre **test di integrazione**:
+**Scoperta empirica (2026-06-21):** la metrica **AND iniziale era un artefatto** della misura, non un
+problema reale. Su 6 query requisito→implementazione, la metrica AND dava **0.17** (solo 1 caso coperto),
+ma il retrieval funzionava: ogni query trovava materiale utile, solo in sorgenti diverse. A metrica OR:
+**union hit-rate = 1.00** (6/6 coperte). Il **segnale di qualità vero è per-superficie**: `search_code` MRR
+0.74 (sano), **`search_docs` MRR 0.55** (il punto debole, leva futura per qualità doc e indice).
+
+**Contratto di `search_combined` (Tempo 2):** il tool MCP (e la CLI) ritorna una **tupla `(docs, code)`**,
+due liste distinte etichettate per sorgente. L'agente e il consumatore ricevono i flussi separati, possono
+usarli in parallelo o sequenzialmente. È preferibile al blending per diagnostica e controllo granulare.
+Funzione pura `merge_fused(docs, code)` disponibile per l'interleaving.
+
+**Misurazione per-superficie:** la suite eval guida su tre **test di integrazione**:
 1. `search_code` → `intent="code"`, hit-rate@k/MRR (azione: affinare `search_code` lessicale/semantica).
-2. `search_docs` → `intent="doc"`, hit-rate@k/MRR (azione: qualità doc, indice, completezza).
-3. `search_combined` → `intent="both"`, hit-rate@k/MRR + **fusion_coverage** (azione: diagnostica: se coverage è
-   basso, quale sorgente manca? → indirizza il lavoro sul sub-problema).
+2. `search_docs` → `intent="doc"`, hit-rate@k/MRR (azione: qualità doc, indice, completezza — **il vero gap
+   2026-06-21**).
+3. `search_combined` → `intent="both"`, hit-rate@k/MRR + **union_hit_rate** (azione: diagnostica: quale
+   sorgente porta la risposta? → indirizza il lavoro di miglioramento sui sub-problemi per-superficie).
 
 **Baseline separata e gate di non-regressione:** un file `eval/fused_baseline.toml` (parallelo a
-`baseline.toml` per i casi IR) registra il baseline di fusion coverage per i casi `both`. Manopola
-`SERTOR_EVAL_FUSION_TOLERANCE` (default 0.0, no tolleranza) per il gate: se mean fusion coverage degrada
+`baseline.toml` per i casi IR) registra il baseline di union hit-rate per i casi `both`. Manopola
+`SERTOR_EVAL_FUSION_TOLERANCE` (default 0.0, no tolleranza) per il gate: se mean union hit-rate degrada
 oltre il baseline, `sertor-rag eval run --fused` esce **non-zero** (fail-loud).
 
 **Vehicle CLI:** opt-in `sertor-rag eval run --fused` (additivo, default OFF); comandi di authoring
@@ -186,15 +197,21 @@ modifica al run predefinito (backward-compatible).
 parte della firma API di `EvalReport` / `GroundTruth`. A leve spente (intent non specificato = default al
 tipo singolo), il comportamento e il costo sono **identici a FEAT-001** (Principio III).
 
+**Lezione di misura (Principio V):** la metrica **non è una scelta neutrale**. La metrica AND inventava
+un gap che non esisteva; la metrica OR rivela il segnale reale. Un sistema RAG può essere **perfetto nelle
+sue parti** (search_code sano, find_symbol esatto) ma produrre una metrica di fusione pessima se la metrica
+è mal posta. Il valore della **misurazione granulare per-superficie** è separare il segnale (dov'è il vero
+problema?) dal rumore (è proprio un problema, o è come misuro?).
+
 **Differiti (fase successiva, empirica/giudizio):**
 - **Autoraggio (TASK-C01):** genesi assistita via skill `eval-suite-author` estesa, propone candidati
   intent-typed dal corpus, utente approva.
 - **Baseline reale (C02):** run sul dogfood con i casi intent-typed reali, registrazione baseline.
-- **Adozione (D01/D02):** misurazione dell'impatto (es. fusion coverage prima/dopo ottimizzazione); opt-in
-  per leve operative (es. agire sulla precisione lessicale vs semantica per categoria).
+- **Adozione (D01/D02):** miglioramento doc/indice (la leva: elevare search_docs MRR da 0.55 a pari di
+  search_code); misurazione dell'impatto.
 
 **Connessione alla mission:** il **Principio XII «Fail Loud»** fa sì che le lacune di fusione siano
-**visibili, non silenziate**. La fusion coverage trasforma il claim astratto «fusiamo codice e doc» in un
+**visibili, non silenziate**. La union hit-rate trasforma il claim astratto «fusiamo codice e doc» in un
 numero misurabile e presidiato, parte del **ciclo di valutazione continua** dell'ospite.
 
 ## Confini
