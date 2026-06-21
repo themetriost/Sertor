@@ -70,29 +70,32 @@ def _run(argv):
     return cli.main(argv)
 
 
-# --------------------------------------------------------------------- success both
+# --------------------------------------------------------------------- success both (070: 2 flows)
 def test_search_both_human_output(populated, capsys):
+    # 070: `--type both` (default) renders the two labelled flows (docs/code sections).
     code = _run(["search", "composition"])
     out = capsys.readouterr().out
     assert code == 0
+    assert "docs:" in out and "code:" in out
     assert "score=" in out
     assert "path=" in out
-    assert "doc=" in out
     assert "chunk=" in out
 
 
-def test_search_json_output_fields(populated, capsys):
+def test_search_both_json_output_fields(populated, capsys):
+    # 070: `--type both --json` is the labelled object `{"docs":[...],"code":[...]}`.
     code = _run(["search", "composition", "--json"])
     out = capsys.readouterr().out
     assert code == 0
-    arr = json.loads(out)
-    assert isinstance(arr, list) and arr
-    for hit in arr:
+    obj = json.loads(out)
+    assert set(obj) == {"docs", "code"}
+    for hit in obj["docs"] + obj["code"]:
         assert {"path", "doc_type", "chunk_id", "score", "preview"} <= hit.keys()
 
 
 def test_search_full_returns_text_field(populated, capsys):
-    code = _run(["search", "hybrid", "--json", "--full"])
+    # mono-type path: a flat JSON list (unchanged) — `--type doc` to hit the long doc.
+    code = _run(["search", "hybrid", "--type", "doc", "--json", "--full"])
     out = capsys.readouterr().out
     assert code == 0
     arr = json.loads(out)
@@ -102,7 +105,7 @@ def test_search_full_returns_text_field(populated, capsys):
 
 
 def test_search_truncates_preview(populated, capsys):
-    code = _run(["search", "hybrid", "--json"])
+    code = _run(["search", "hybrid", "--type", "doc", "--json"])
     out = capsys.readouterr().out
     assert code == 0
     arr = json.loads(out)
@@ -112,7 +115,8 @@ def test_search_truncates_preview(populated, capsys):
 
 # --------------------------------------------------------------------- -k e --type
 def test_search_k_limits_results(populated, capsys):
-    code = _run(["search", "composition", "-k", "2", "--json"])
+    # mono-type list: -k caps the single-flow result count (unchanged).
+    code = _run(["search", "composition", "-k", "2", "--type", "code", "--json"])
     out = capsys.readouterr().out
     assert code == 0
     assert len(json.loads(out)) <= 2

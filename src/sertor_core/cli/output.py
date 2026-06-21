@@ -16,7 +16,7 @@ import time
 from collections.abc import Sequence
 
 from sertor_core.config.settings import Settings
-from sertor_core.domain.entities import IndexReport, RetrievalResult
+from sertor_core.domain.entities import FusedResults, IndexReport, RetrievalResult
 from sertor_core.domain.memory import ArchivedSession, SessionSummary
 from sertor_core.engines.evaluation import EvalReport
 from sertor_core.services.episodic_search import EpisodicResults
@@ -84,20 +84,32 @@ def format_search_results(
     `--full` the text field is the full chunk text (`text`), otherwise the truncated preview
     (`preview`).
     """
-    field = "text" if full else "preview"
     if json:
-        return _json.dumps(
-            [
-                {
-                    "path": r.path,
-                    "doc_type": str(r.doc_type),
-                    "chunk_id": r.chunk_id,
-                    "score": round(r.score, 6),
-                    field: _preview(r.text, settings, full=full),
-                }
-                for r in results
-            ]
-        )
+        return _json.dumps(_results_json(results, settings, full=full))
+    return _results_human(results, settings, full=full)
+
+
+def _results_json(
+    results: Sequence[RetrievalResult], settings: Settings, *, full: bool
+) -> list[dict]:
+    """One result → its JSON dict (shared by the mono-type and fused renderers)."""
+    field = "text" if full else "preview"
+    return [
+        {
+            "path": r.path,
+            "doc_type": str(r.doc_type),
+            "chunk_id": r.chunk_id,
+            "score": round(r.score, 6),
+            field: _preview(r.text, settings, full=full),
+        }
+        for r in results
+    ]
+
+
+def _results_human(
+    results: Sequence[RetrievalResult], settings: Settings, *, full: bool
+) -> str:
+    """Human block for a result list (shared); empty → `(no results)` (honest empty state)."""
     if not results:
         return "(no results)"
     blocks: list[str] = []
@@ -108,6 +120,37 @@ def format_search_results(
             f"    {body}"
         )
     return "\n".join(blocks)
+
+
+def format_fused_search_results(
+    fused: FusedResults, settings: Settings, *, json: bool, full: bool
+) -> str:
+    """Formats `search_combined` (070, DA-d): TWO labelled flows (`docs` / `code`).
+
+    Human: a `docs:` section then a `code:` section, each rendered with the existing per-result
+    logic (no duplication, Principio III/VII); an empty flow → its label + `(no results)` (honest
+    empty state, never silence). JSON: `{"docs": [...], "code": [...]}` — the twin of the MCP.
+    The citable `path#chunk` form is preserved in both. `--type code`/`--type doc` are unchanged
+    (they keep using `format_search_results`).
+    """
+    if json:
+        return _json.dumps(
+            {
+                "docs": _results_json(fused.docs, settings, full=full),
+                "code": _results_json(fused.code, settings, full=full),
+            }
+        )
+    return (
+        "docs:\n"
+        + _indent(_results_human(fused.docs, settings, full=full))
+        + "\n\ncode:\n"
+        + _indent(_results_human(fused.code, settings, full=full))
+    )
+
+
+def _indent(block: str) -> str:
+    """Indent each line of a rendered result block by two spaces (section nesting)."""
+    return "\n".join(f"  {line}" if line else line for line in block.split("\n"))
 
 
 def format_archive_report(report: ArchiveRunReport, *, json: bool) -> str:

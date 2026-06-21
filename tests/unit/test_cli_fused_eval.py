@@ -41,7 +41,7 @@ def _fused_report(coverage: float = 1.0) -> FusedEvalReport:
         hit_but_not_covered=0 if coverage >= 1.0 else 1,
     )
     return FusedEvalReport(
-        surfaces=(_surface("search_code"), _surface("search_docs"), _surface("search_combined")),
+        surfaces=(_surface("search_code"), _surface("search_docs")),  # 070: two surfaces
         fusion=fusion,
         provider="hash",
     )
@@ -147,7 +147,7 @@ def test_fused_run_regression_exits_1(wired, capsys):
     baseline_io.write_fused_baseline(
         eval_dir / "baseline.toml",
         FusedBaseline(
-            surfaces=(SurfaceBaseline("search_combined", {3: 0.8}, 0.9),),
+            surfaces=(SurfaceBaseline("search_docs", {3: 0.8}, 0.9),),
             fusion_coverage=1.0,
             queries=1,
             provider="hash",
@@ -174,7 +174,7 @@ def test_fused_run_within_tolerance_exits_0(wired, monkeypatch, capsys):
     baseline_io.write_fused_baseline(
         eval_dir / "baseline.toml",
         FusedBaseline(
-            surfaces=(SurfaceBaseline("search_combined", {3: 0.8}, 0.9),),
+            surfaces=(SurfaceBaseline("search_docs", {3: 0.8}, 0.9),),
             fusion_coverage=1.0,
             queries=1,
             provider="hash",

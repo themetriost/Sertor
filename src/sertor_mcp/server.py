@@ -25,7 +25,7 @@ from mcp.server.fastmcp import FastMCP
 
 from sertor_core.composition import build_facade, build_graph_service, enable_observability
 from sertor_core.config.settings import Settings
-from sertor_core.domain.entities import RetrievalResult, SymbolHit
+from sertor_core.domain.entities import FusedResults, RetrievalResult, SymbolHit
 from sertor_core.observability.logging import log_event
 
 mcp = FastMCP(
@@ -33,7 +33,8 @@ mcp = FastMCP(
     instructions=(
         "Retrieval over an indexed corpus (code + documentation) with the Sertor engine. "
         "Use search_code for implementations/symbols, search_docs for conceptual explanations, "
-        "search_combined when both are needed. Always cite the file (path#chunk)."
+        "search_combined when both are needed (it returns the two labelled flows "
+        "{\"docs\": [...], \"code\": [...]}). Always cite the file (path#chunk)."
     ),
 )
 
@@ -112,9 +113,29 @@ def search_docs(query: str, k: int = 5) -> list[dict]:
 
 
 @mcp.tool()
-def search_combined(query: str, k: int = 6) -> list[dict]:
-    """Search CODE + DOCS together: when both implementation and explanation are needed."""
-    return _run("search_combined", _facade().search_combined, query, k)
+def search_combined(query: str, k: int = 6) -> dict:
+    """Search CODE + DOCS together: when both implementation and explanation are needed.
+
+    Returns the two labelled flows `{"docs": [...], "code": [...]}` (070): the documentation flow
+    (the *why*) and the code flow (the *what*), each rank-ordered with its OWN top-k (separate
+    budget). A key is always present, with `[]` when its flow is empty. Each element keeps the
+    citable `path#chunk` form (`_fmt`).
+    """
+    def _body() -> dict:
+        fused: FusedResults = _facade().search_combined(query, k)
+        out = {
+            "docs": [_fmt(r) for r in fused.docs],
+            "code": [_fmt(r) for r in fused.code],
+        }
+        log_event(
+            logging.INFO,
+            "mcp.search_combined",
+            k=k,
+            docs=len(out["docs"]),
+            code=len(out["code"]),
+        )
+        return out
+    return _guard("search_combined", _body)
 
 
 # --- Structural navigation (FEAT-005): thin surfaces over the code-graph -----------------------

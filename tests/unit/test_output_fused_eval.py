@@ -1,12 +1,19 @@
-"""Test the fused output formatters (069, TASK-A06): pure, human↔JSON equivalence.
+"""Test the fused output formatters (070, TASK-R08): pure, human↔JSON equivalence.
 
-Zero I/O. Builds report/verdict entities directly.
+Zero I/O. Builds report/verdict entities directly. After 070 the eval report carries TWO surfaces
+(search_code/search_docs); also covers the new `format_fused_search_results` (two labelled flows).
 """
 from __future__ import annotations
 
 import json
 
-from sertor_core.cli.output import format_fused_eval_report, format_fused_regression
+from sertor_core.cli.output import (
+    format_fused_eval_report,
+    format_fused_regression,
+    format_fused_search_results,
+)
+from sertor_core.config.settings import Settings
+from sertor_core.domain.entities import DocType, FusedResults, RetrievalResult
 from sertor_core.engines.evaluation import EvalReport
 from sertor_core.services.eval.models import (
     FusedEvalReport,
@@ -39,8 +46,7 @@ def _report() -> FusedEvalReport:
         surfaces=(
             _surface("search_code", 0.64),
             _surface("search_docs", 0.73),
-            _surface("search_combined", 0.69),
-        ),
+        ),  # 070: two surfaces, no search_combined
         fusion=fusion,
         provider="hash",
     )
@@ -72,7 +78,7 @@ def test_json_output_is_valid_and_equivalent():
     assert obj["fusion"]["coverage"] == 0.5
     assert obj["fusion"]["hit_but_not_covered"] == 1
     assert obj["non_regression"]["verdict"] == "pass"
-    assert len(obj["surfaces"]) == 3
+    assert len(obj["surfaces"]) == 2  # 070: two surfaces
 
 
 def test_format_fused_regression_regressed():
@@ -95,8 +101,7 @@ def test_empty_report_does_not_crash():
         surfaces=(
             _surface("search_code", 0.0),
             _surface("search_docs", 0.0),
-            _surface("search_combined", 0.0),
-        ),
+        ),  # 070: two surfaces
         fusion=FusionReport(cases=(), coverage=0.0, cases_count=0, hit_but_not_covered=0),
         provider="hash",
     )
@@ -104,3 +109,49 @@ def test_empty_report_does_not_crash():
     out = format_fused_eval_report(empty, verdict, json=False)
     assert "fusion coverage: 0.00" in out
     assert "no baseline" in out
+
+
+# --- format_fused_search_results: the two labelled flows (070, TASK-R05/DA-d) ---
+
+
+def _settings() -> Settings:
+    return Settings()
+
+
+def _r(name: str, doc_type: DocType) -> RetrievalResult:
+    return RetrievalResult(
+        text=f"body of {name}", path=f"{name}.x", chunk_id=f"{name}#0",
+        doc_type=doc_type, score=0.5,
+    )
+
+
+def test_fused_search_human_has_two_labelled_sections():
+    fused = FusedResults(
+        docs=(_r("d0", DocType.DOC),), code=(_r("c0", DocType.CODE),)
+    )
+    out = format_fused_search_results(fused, _settings(), json=False, full=False)
+    assert "docs:" in out and "code:" in out
+    assert "d0.x" in out and "c0.x" in out
+
+
+def test_fused_search_empty_flow_is_honest():
+    fused = FusedResults(docs=(), code=(_r("c0", DocType.CODE),))
+    out = format_fused_search_results(fused, _settings(), json=False, full=False)
+    assert "docs:" in out
+    assert "(no results)" in out  # empty docs flow → honest empty state, never silence
+
+
+def test_fused_search_json_has_docs_and_code_keys():
+    fused = FusedResults(
+        docs=(_r("d0", DocType.DOC),), code=(_r("c0", DocType.CODE),)
+    )
+    obj = json.loads(format_fused_search_results(fused, _settings(), json=True, full=False))
+    assert set(obj) == {"docs", "code"}
+    assert obj["docs"][0]["path"] == "d0.x"
+    assert obj["code"][0]["chunk_id"] == "c0#0"
+
+
+def test_fused_search_json_empty_flow_is_empty_list():
+    fused = FusedResults(docs=(), code=())
+    obj = json.loads(format_fused_search_results(fused, _settings(), json=True, full=False))
+    assert obj == {"docs": [], "code": []}

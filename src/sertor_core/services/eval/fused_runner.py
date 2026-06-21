@@ -1,12 +1,15 @@
-"""Deterministic fused (per-surface + fusion coverage) runner + event (069, data-model §7/§8).
+"""Deterministic fused (per-surface + fusion coverage) runner + event (070, data-model §3/§4).
 
-`run_fused_evaluation` measures the three retrieval surfaces (`search_code`/`search_docs`/
-`search_combined`) by wrapping the `RetrievalFacade` in thin `_SurfaceEngine` adapters and reusing
-the INVARIANT `evaluate`; it then computes the pure fusion coverage on the `both`-intent cases via
-`facade.search_combined` (so the `doc_type`s are visible). The observability event `fused_eval` is
-emitted SEPARATELY by `emit_fused_eval_event` (after the comparison, so `regressed`/`tolerance` are
-known): metrics-only, no free text (RNF-3/Principio IX, contract event-fused-eval.md). No
-composition/adapter imports here — the facade is the vehicle (Principio XI).
+`run_fused_evaluation` measures the TWO mono-type retrieval surfaces (`search_code`/`search_docs`)
+by wrapping the `RetrievalFacade` in thin `_SurfaceEngine` adapters and reusing the INVARIANT
+`evaluate`; it then computes the pure fusion coverage on the `both`-intent cases via
+`facade.search_combined` (which now returns the structured `FusedResults` — the two labelled flows).
+The fused surface `search_combined` is NO LONGER measured as an IR-ranked surface (its cross-type
+ranking was the wrong metric on incommensurable scores, 070 root-cause fix): the fusion coverage IS
+the measure of the fused surface. The observability event `fused_eval` is emitted SEPARATELY by
+`emit_fused_eval_event` (after the comparison, so `regressed`/`tolerance` are known): metrics-only,
+no free text (RNF-3/Principio IX, contract event-fused-eval.md). No composition/adapter imports here
+— the facade is the vehicle (Principio XI).
 """
 from __future__ import annotations
 
@@ -24,17 +27,20 @@ from sertor_core.services.eval.models import (
 )
 from sertor_core.services.retrieval import RetrievalFacade
 
-# The surfaces measured by a fused run, in stable order (code, docs, combined). The combined surface
-# is the integration test (REQ-013): it is where the fusion coverage is computed.
-_SURFACES: tuple[str, ...] = ("search_code", "search_docs", "search_combined")
+# The IR-ranked surfaces measured by a fused run, in stable order (code, docs). `search_combined` is
+# NOT here (070): the fused surface is measured exclusively by the fusion coverage, not by an
+# IR-ranked metric over a cross-type list (that ranking on incommensurable scores was the wrong
+# measure — Principio XII, fix the cause).
+_SURFACES: tuple[str, ...] = ("search_code", "search_docs")
 
 
 class _SurfaceEngine:
     """A `QueryableEngine` (structural typing — NO inheritance) routing query → `facade.<surface>`.
 
-    `evaluate` uses only `provider` + `query`; three instances (code/docs/combined) measure the
-    three surfaces with the SAME `evaluate` machine (invariant). `surface` is the name of the facade
-    method (`search_code`/`search_docs`/`search_combined`).
+    `evaluate` uses only `provider` + `query`; two instances (code/docs) measure the two mono-type
+    surfaces with the SAME `evaluate` machine (invariant). `surface` is the name of the facade
+    method (`search_code`/`search_docs`). It does NOT wrap `search_combined` (070): that surface
+    returns `FusedResults`, not a single ranked list, and is measured only by the fusion coverage.
     """
 
     def __init__(self, facade: RetrievalFacade, surface: str, provider: str):
@@ -56,12 +62,13 @@ def run_fused_evaluation(
     ks: tuple[int, ...],
     fusion_k: int,
 ) -> FusedEvalReport:
-    """Measure the three surfaces + fusion coverage → `FusedEvalReport` (069, REQ-010/013/020).
+    """Measure the two mono-type surfaces + fusion coverage → `FusedEvalReport` (070, REQ-010/020).
 
     For each surface: select the suite cases of the matching `intent` (via `INTENT_SURFACE`), rebase
     them to a per-surface `EvalSuite`, project to `GroundTruth`, and run the INVARIANT `evaluate`.
     The fusion coverage is computed on the `both`-intent cases via `facade.search_combined` (which
-    exposes the `doc_type`s). A surface with no cases of its intent yields an empty `EvalReport`
+    now returns the structured `FusedResults`). A surface with no cases of its intent yields an
+    empty `EvalReport`
     (honest, exit 0). A suite with no intent-typed cases → empty surfaces + an empty `FusionReport`
     (`cases_count=0`); the actionable message comes from the CLI. Deterministic (REQ-041).
     """

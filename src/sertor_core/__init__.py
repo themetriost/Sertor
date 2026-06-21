@@ -34,6 +34,7 @@ from sertor_core.domain.entities import (
     DocType,
     Document,
     EmbeddedChunk,
+    FusedResults,
     IndexReport,
     RetrievalResult,
 )
@@ -78,6 +79,7 @@ __all__ = [
     "ChunkMetadata",
     "EmbeddedChunk",
     "RetrievalResult",
+    "FusedResults",
     "IndexReport",
     "SertorError",
     "ConfigError",

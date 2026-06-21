@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from sertor_core.domain.entities import DocType, RetrievalResult
+from sertor_core.domain.entities import FusedResults
 from sertor_core.services.eval.models import EvalCase, FusionCaseResult, FusionReport
 
 # Unique source of the intent→surface mapping (Principio VII): the `intent` of a case decides which
@@ -25,26 +25,26 @@ INTENT_SURFACE: dict[str, str] = {
 
 def fusion_coverage(
     cases: tuple[EvalCase, ...],
-    search_fn: Callable[[str, int], list[RetrievalResult]],
+    search_fn: Callable[[str, int], FusedResults],
     k: int,
 ) -> FusionReport:
-    """Compute the fusion coverage of the `both`-intent `cases` via `search_fn` (069, REQ-020/022).
+    """Compute the fusion coverage of the `both`-intent `cases` via `search_fn` (070, REQ-020/022).
 
-    For each case: query `search_fn(query, k)` (already rank-ordered), keep the results whose `path`
-    is in `expected`; `has_doc`/`has_code` from their `doc_type`; `covered = has_doc AND has_code`;
-    `hit_at_k` = any expected path is in the top-k. A case `hit_at_k=True, covered=False` increments
-    `hit_but_not_covered` (the visible lacuna). `cases` empty → an honest empty report (coverage
-    0.0, `cases_count=0`) — not an error. Pure and deterministic (REQ-041).
+    `search_fn` now returns a `FusedResults(docs, code)` (the structured combined surface). For each
+    case: `has_doc` = an expected path appears in the **docs** list (own top-k), `has_code` = an
+    expected path appears in the **code** list (own top-k); `covered = has_doc AND has_code`;
+    `hit_at_k` = any expected path is in either list (≡ `flatten()`). A case `hit_at_k=True,
+    covered=False` increments `hit_but_not_covered` (the visible lacuna). `cases` empty → an honest
+    empty report (coverage 0.0, `cases_count=0`) — not an error. Pure and deterministic (REQ-041).
     """
     results: list[FusionCaseResult] = []
     for case in cases:
         expected = set(case.expected)
-        top_k = search_fn(case.query, k)
-        relevant = [r for r in top_k if r.path in expected]
-        has_doc = any(r.doc_type == DocType.DOC for r in relevant)
-        has_code = any(r.doc_type == DocType.CODE for r in relevant)
+        fused = search_fn(case.query, k)
+        has_doc = any(r.path in expected for r in fused.docs)
+        has_code = any(r.path in expected for r in fused.code)
         covered = has_doc and has_code
-        hit_at_k = any(r.path in expected for r in top_k)
+        hit_at_k = any(r.path in expected for r in fused.flatten())
         results.append(
             FusionCaseResult(
                 query=case.query,

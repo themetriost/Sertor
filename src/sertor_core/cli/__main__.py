@@ -506,15 +506,17 @@ def _cmd_search(args) -> None:
     engine = build_baseline_engine(settings)
     engine.ensure_index()
     if args.type == "both":
-        # search_combined inherits the fan-out over extra corpora (fix F13).
-        results = build_facade(settings).search_combined(args.query, k=args.k)
-    else:
-        facade = build_facade(settings)
-        results = (
-            facade.search_code(args.query, k=args.k)
-            if args.type == "code"
-            else facade.search_docs(args.query, k=args.k)
-        )
+        # search_combined returns FusedResults (070): two labelled flows, rendered as two sections.
+        # It inherits the fan-out over extra corpora per type (fix F13).
+        fused = build_facade(settings).search_combined(args.query, k=args.k)
+        print(output.format_fused_search_results(fused, settings, json=args.json, full=args.full))
+        return
+    facade = build_facade(settings)
+    results = (
+        facade.search_code(args.query, k=args.k)
+        if args.type == "code"
+        else facade.search_docs(args.query, k=args.k)
+    )
     print(output.format_search_results(results, settings, json=args.json, full=args.full))
 
 

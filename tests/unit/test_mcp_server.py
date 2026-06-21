@@ -58,13 +58,27 @@ def test_three_search_tools_registered():
     assert {"search_code", "search_docs", "search_combined"} <= names
 
 
-def test_tool_returns_formatted_dicts(monkeypatch):
+def test_mono_type_tool_returns_formatted_dicts(monkeypatch):
+    _use(monkeypatch, _populated_facade)
+    try:
+        out = srv.search_code("alpha")
+        assert isinstance(out, list) and out
+        assert set(out[0]) == {"path", "source", "chunk", "score", "preview"}
+        assert out[0]["source"] == "code"
+    finally:
+        srv._facade.cache_clear()
+
+
+def test_combined_returns_two_labelled_flows(monkeypatch):
+    # 070: search_combined returns {"docs":[...],"code":[...]}, each element with the _fmt fields.
     _use(monkeypatch, _populated_facade)
     try:
         out = srv.search_combined("alpha")
-        assert out
-        assert set(out[0]) == {"path", "source", "chunk", "score", "preview"}
-        assert out[0]["source"] in {"code", "doc"}
+        assert set(out) == {"docs", "code"}
+        for item in out["docs"] + out["code"]:
+            assert set(item) == {"path", "source", "chunk", "score", "preview"}
+        assert all(r["source"] == "doc" for r in out["docs"])
+        assert all(r["source"] == "code" for r in out["code"])
     finally:
         srv._facade.cache_clear()
 
@@ -104,7 +118,8 @@ def test_missing_index_returns_empty_without_crash(monkeypatch):
     try:
         assert srv.search_code("x") == []
         assert srv.search_docs("x") == []
-        assert srv.search_combined("x") == []  # server remains callable afterwards
+        # 070: combined returns the labelled object with empty flows (keys always present).
+        assert srv.search_combined("x") == {"docs": [], "code": []}
     finally:
         srv._facade.cache_clear()
 
@@ -195,6 +210,23 @@ def test_tool_error_emits_event_and_reraises(monkeypatch, caplog):
                 srv.search_code("x")
         ops = [getattr(r, "operation", None) for r in caplog.records]
         assert "mcp.search_code.error" in ops
+    finally:
+        srv._facade.cache_clear()
+
+
+def test_combined_tool_error_emits_event_and_reraises(monkeypatch, caplog):
+    """search_combined failing re-raises AND records `mcp.search_combined.error` (070)."""
+    class _Boom:
+        def search_combined(self, *_a, **_k):
+            raise RuntimeError("store non raggiungibile")
+
+    _use(monkeypatch, lambda _s=None: _Boom())
+    try:
+        with caplog.at_level(logging.ERROR, logger="sertor_core"):
+            with pytest.raises(RuntimeError):
+                srv.search_combined("x")
+        ops = [getattr(r, "operation", None) for r in caplog.records]
+        assert "mcp.search_combined.error" in ops
     finally:
         srv._facade.cache_clear()
 

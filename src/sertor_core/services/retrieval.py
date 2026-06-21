@@ -17,7 +17,7 @@ import logging
 import time
 from collections.abc import Mapping
 
-from sertor_core.domain.entities import RetrievalResult
+from sertor_core.domain.entities import FusedResults, RetrievalResult
 from sertor_core.domain.errors import ProviderMismatchError
 from sertor_core.domain.ports import (
     DocTypeFilter,
@@ -163,16 +163,33 @@ class RetrievalFacade:
         """Semantic search over documentation only."""
         return self._search(query, k, "doc")
 
-    def search_combined(self, query: str, k: int | None = None) -> list[RetrievalResult]:
-        """Semantic search over code + documentation together.
+    def search_combined(self, query: str, k: int | None = None) -> FusedResults:
+        """Semantic search over code + documentation together — TWO labelled flows (070).
 
-        With extra corpora configured, fans out across all target collections and merges the
-        top-k results by score (FR-001/002); without them, behaviour is identical to before
-        (FR-006).
+        Returns a `FusedResults(docs, code)`: the doc flow and the code flow, **each with its own
+        top-k** (separate budget, FR-001). There is no cross-type blended ranking — code/doc scores
+        are incommensurable (the root cause of 069's 0.17 fusion coverage); the consumer that wants
+        a single list calls `FusedResults.flatten()`. `docs`/`code` reuse the SAME mono-type paths
+        as `search_docs`/`search_code` (so those remain invariant, FR-003), including the
+        multi-corpus fan-out (feature 010): each list fans out with its own `doc_type` filter and
+        its own top-k. With extra corpora, `ProviderMismatchError` and the `no_index` policy are
+        preserved per type.
+        """
+        docs = self._search_typed(query, k, "doc")
+        code = self._search_typed(query, k, "code")
+        return FusedResults(docs=tuple(docs), code=tuple(code))
+
+    def _search_typed(
+        self, query: str, k: int | None, doc_type: DocTypeFilter
+    ) -> list[RetrievalResult]:
+        """A single-type search that honours the multi-corpus fan-out (feature 010, 070).
+
+        Without extra corpora this is exactly `_search` (the mono-type path used by
+        `search_docs`/`search_code`); with them it fans out per type across the target collections.
         """
         if not self._extra_collections:
-            return self._search(query, k, "both")
-        return self._search_multi(query, k)
+            return self._search(query, k, doc_type)
+        return self._search_multi(query, k, doc_type)
 
     def _available_targets(self) -> list[str]:
         """Queryable target collections; degrades or fails for missing ones.
@@ -205,8 +222,15 @@ class RetrievalFacade:
                       status="no_index", doc_type="both")
         return targets
 
-    def _search_multi(self, query: str, k: int | None) -> list[RetrievalResult]:
-        """Fan-out across target collections + top-k merge by score (FR-001..005)."""
+    def _search_multi(
+        self, query: str, k: int | None, doc_type: DocTypeFilter = "both"
+    ) -> list[RetrievalResult]:
+        """Fan-out across target collections + top-k merge by score (FR-001..005).
+
+        `doc_type` filters each collection's query: `search_combined` (070) calls this once per type
+        (`doc`/`code`) so the budget stays separate; the historical `both` behaviour is preserved
+        for any other caller.
+        """
         k = k or self._default_k
         targets = self._available_targets()
         if not targets:
@@ -215,7 +239,7 @@ class RetrievalFacade:
         vector = self._embedder.embed([query])[0]
         candidates: list[RetrievalResult] = []
         for collection in targets:
-            candidates.extend(self._store.query(collection, vector, k, "both"))
+            candidates.extend(self._store.query(collection, vector, k, doc_type))
         # Total deterministic ordering: descending score, ties broken by chunk_id (FR-003).
         fused = sorted(candidates, key=lambda r: (-r.score, r.chunk_id))[:k]
         fused, low = apply_min_score(fused, self._min_score)
@@ -224,7 +248,7 @@ class RetrievalFacade:
             "retrieve",
             collections=targets,
             provider=self._embedder.name,
-            doc_type="both",
+            doc_type=doc_type,
             k=k,
             results=len(fused),
             elapsed_ms=round((time.perf_counter() - started) * 1000, 2),

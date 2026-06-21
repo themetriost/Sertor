@@ -1,7 +1,9 @@
-"""Test baseline_io for the `[fused_baseline]` section (069, TASK-A05): round-trip + preserve-both.
+"""Test baseline_io for the `[fused_baseline]` section (070, TASK-R07): round-trip + preserve-both.
 
 stdlib only; a tmp baseline file. Verifies the fused section round-trips, that an absent
 file/section returns None, and that the fused write preserves the IR `[baseline]` (preserve-both).
+After 070 the fused baseline carries TWO surfaces (search_code/search_docs); the round-trip is
+agnostic to their count, so it covers the new shape unchanged.
 """
 from __future__ import annotations
 
@@ -24,8 +26,7 @@ def _fused() -> FusedBaseline:
         surfaces=(
             SurfaceBaseline("search_code", {1: 0.5, 3: 0.75, 5: 0.88}, 0.64),
             SurfaceBaseline("search_docs", {1: 0.62, 3: 0.88, 5: 0.88}, 0.73),
-            SurfaceBaseline("search_combined", {1: 0.55, 3: 0.82, 5: 0.91}, 0.69),
-        ),
+        ),  # 070: two surfaces, no search_combined
         fusion_coverage=0.5,
         queries=22,
         provider="hash",

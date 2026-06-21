@@ -48,7 +48,7 @@ def facades(tmp_path_factory):
 def _precision_at_5(facade: RetrievalFacade) -> float:
     hits_ok = 0
     for query, expected, _ in _GT:
-        paths = {h.path for h in facade.search_combined(query, k=5)}
+        paths = {h.path for h in facade.search_combined(query, k=5).flatten()}
         hits_ok += 1 if paths & set(expected) else 0
     return hits_ok / len(_GT)
 
