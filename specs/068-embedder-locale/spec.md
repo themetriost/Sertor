@@ -186,9 +186,11 @@ RNF-1..6; rischi R-1..6). In sintesi (mappatura per gruppo):
 - **A — Selezione del provider (Must):** una **manopola di selezione dedicata** fra almeno **quattro** valori
   — i due nuovi locali (lessicale, vettori statici) e i due esistenti (Ollama, Azure) (REQ-001); **default**
   ai vettori statici (GloVe) quando nulla è configurato (REQ-002); valore non riconosciuto → **errore di
-  configurazione azionabile** che nomina manopola e valori ammessi (REQ-003); selezione **indipendente** dal
-  backend del vector store e da `RAG_BACKEND` (nessun sovraccarico di manopole esistenti) (REQ-004); con un
-  provider locale selezionato, la validazione statica **non riporta campi obbligatori mancanti** (REQ-005).
+  configurazione azionabile** che nomina manopola e valori ammessi (REQ-003); la manopola è l'**unica**
+  superficie di scelta del provider — **`RAG_BACKEND` è rimosso** e non più consultato (REQ-004); lo store ha
+  la **sua** manopola con default sul local store (REQ-006); se `RAG_BACKEND` è ancora presente nell'ambiente,
+  **avviso** che non è più onorato + nomi delle manopole sostitutive (REQ-007); con un provider locale
+  selezionato, la validazione statica **non riporta campi obbligatori mancanti** (REQ-005).
 - **B — Provider lessicale, pavimento zero-download (Must):** vettori prodotti con la **sola libreria
   standard**, senza modello, credenziali o rete (REQ-010); ogni vettore deriva da **char-n-gram** del testo,
   così i token fuori vocabolario (identificatori di codice) **contribuiscono segnale** (REQ-011); dimensione
@@ -248,9 +250,9 @@ RNF-1..6; rischi R-1..6). In sintesi (mappatura per gruppo):
 - **Provider a vettori statici (GloVe)** *(adapter dietro `EmbeddingProvider`, default)* — produce vettori da
   vettori GloVe pre-addestrati (6B, 300d, licenza PDDL/pubblico dominio) aggregando i vettori dei token, senza
   eseguire un modello; dipende dal solo file dati e da dipendenze importate lazily.
-- **Manopola di selezione del provider** — configurazione **dedicata** che sceglie fra i quattro provider
-  (lessicale, vettori statici, Ollama, Azure); indipendente dal backend dello store e da `RAG_BACKEND`;
-  default = vettori statici.
+- **Manopola di selezione del provider** — configurazione **dedicata** e **unica** che sceglie fra i quattro
+  provider (lessicale, vettori statici, Ollama, Azure); `RAG_BACKEND` **rimosso**; lo store ha la propria
+  manopola (default local); default embedder = vettori statici.
 - **File di vettori statici** *(artefatto dati, non versionato)* — il file GloVe ufficiale; conservato in una
   **cache utente condivisa per-macchina**, riusato fra progetti; fornibile da un **percorso esplicito** in
   airgapped.
@@ -300,9 +302,10 @@ RNF-1..6; rischi R-1..6). In sintesi (mappatura per gruppo):
 - **Default = GloVe 300d.** Il nuovo default è il provider a vettori statici GloVe 6B 300d (licenza
   PDDL/pubblico dominio), scelto per semantica NL pulita sul piano licenza/provenienza. *(Decisione utente,
   Requisiti §10.)*
-- **Manopola dedicata.** La selezione del provider usa una manopola **dedicata** (`SERTOR_EMBED_PROVIDER`,
-  valori `glove|hash|ollama|azure`), **distinta** dal backend dello store e da `RAG_BACKEND`. *(REQ-001/004;
-  il nome esatto è confermato nei requisiti, il wiring di dettaglio è del plan.)*
+- **Manopola dedicata e unica.** La selezione del provider usa una manopola **dedicata**
+  (`SERTOR_EMBED_PROVIDER`, valori `glove|hash|ollama|azure`) come **unica** superficie; **`RAG_BACKEND` è
+  rimosso** e lo store si sceglie con la propria manopola (default local). *(REQ-001/004/006/007; decisione
+  utente "una sola configurazione"; il wiring di dettaglio è del plan.)*
 - **«LLM» = agente dell'utente.** Coerente con la terminologia del workspace: nel core/CLI non esiste alcuna
   chiamata a un LLM; i provider locali sono puramente deterministici.
 - **Distinzione da `FakeEmbedder`.** Il provider lessicale di **prodotto** (con segnale lessicale) è distinto
@@ -349,8 +352,8 @@ di scope sono già decise** (vedi riquadro sotto) e **non** sono qui.
 > **Decisioni di scope già risolte (utente) — riportate come vincoli, NON come domande.**
 > **Scope:** due provider locali deterministici dietro la porta esistente. **Default:** `glove` (vettori
 > statici GloVe 6B 300d). **Sorgente/licenza:** GloVe 6B 300d, PDDL/pubblico dominio. **Manopola:**
-> dedicata `SERTOR_EMBED_PROVIDER` (`glove|hash|ollama|azure`), distinta dallo store-backend e da
-> `RAG_BACKEND`. **Distribuzione vettori:** download alla prima indicizzazione + cache utente condivisa
+> dedicata `SERTOR_EMBED_PROVIDER` (`glove|hash|ollama|azure`), **unica** superficie; **`RAG_BACKEND`
+> rimosso**, store via `SERTOR_STORE_BACKEND` (default local). **Distribuzione vettori:** download alla prima indicizzazione + cache utente condivisa
 > per-macchina + override di percorso (airgapped). **Fail-loud:** errore azionabile che nomina override-path
 > e fallback lessicale; mai degrado silenzioso (Principio XII). **Confine D↔N:** core deterministico, nessun
 > LLM nel core; accesso via vehicle (Principio XI).

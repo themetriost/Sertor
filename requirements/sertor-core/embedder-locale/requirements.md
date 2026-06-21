@@ -70,7 +70,11 @@ La feature introduce **due provider locali** che coprono due esigenze distinte:
   - **lessicale** (char-n-gram hashing), solo libreria standard, zero-download;
   - **vettori statici** (GloVe 6B, dimensione 300, licenza **PDDL**/pubblico dominio), **default**.
 - Una **manopola di selezione dedicata** del provider di embeddings, con i valori per i quattro
-  provider (i due nuovi + i due esistenti).
+  provider (i due nuovi + i due esistenti), come **unica** superficie di scelta.
+- **Semplificazione della configurazione:** **rimozione di `RAG_BACKEND`** (master-switch ambiguo che
+  selezionava sia il provider sia, di default, lo store). Restano due manopole **ortogonali**: la
+  selezione dell'embedder (questa feature) e la selezione dello store (già esistente,
+  `SERTOR_STORE_BACKEND`), quest'ultima con un proprio default sul local store.
 - **Acquisizione on-demand** del file di vettori statici alla **prima indicizzazione**, con **cache
   utente condivisa per-macchina** e **override** di un percorso fornito dall'utente (airgapped).
 - **Diagnostica fail-loud** (errori azionabili e avvisi) coerente col Principio XII.
@@ -102,12 +106,18 @@ La feature introduce **due provider locali** che coprono due esigenze distinte:
 - **REQ-003 (Event-driven):** *When the configured provider value is not one of the recognised
   values, the system shall raise an actionable configuration error that names the knob and the allowed
   values.*
-- **REQ-004 (Ubiquitous):** *The system shall keep the embedding-provider selection independent from
-  the vector-store backend selection and from `RAG_BACKEND` (the new knob shall not overload existing
-  knobs).*
+- **REQ-004 (Ubiquitous):** *The system shall make the dedicated embedding-provider knob the SOLE
+  selector of the embedding provider; the legacy `RAG_BACKEND` knob shall be removed and no longer
+  consulted (single, unambiguous configuration surface).*
 - **REQ-005 (Optional feature):** *Where a local provider (lexical or static-vectors) is selected,
   the static configuration validation shall report no required-but-missing fields (a local provider
   never blocks on credentials).*
+- **REQ-006 (Ubiquitous):** *The system shall select the vector-store backend through its own
+  dedicated knob, independent from the embedding provider, defaulting to the local store — so that
+  embeddings provider and store backend remain fully orthogonal.*
+- **REQ-007 (Unwanted):** *If the removed `RAG_BACKEND` variable is still present in the environment,
+  then the system shall emit a warning that it is no longer honoured and name the replacement knobs
+  (the embedding-provider knob and the store-backend knob), without silently changing behaviour.*
 
 ### Gruppo B — Provider lessicale (pavimento zero-download)
 
@@ -184,9 +194,10 @@ La feature introduce **due provider locali** che coprono due esigenze distinte:
 - **REQ-060 (Ubiquitous):** *The installer shall include the new embedding-provider knob (and the
   GloVe path override) in the `.env` template it deposits on the host.*
 - **REQ-061 (Ubiquitous):** *The user-facing documentation shall describe the four providers, the new
-  default, the airgapped path override, and a migration note stating that the default provider has
-  changed (previously local-first implied Ollama; now it is the static-vectors provider; Ollama/Azure
-  must be selected explicitly).*
+  default, the airgapped path override, and a migration note covering BOTH changes: (a) `RAG_BACKEND`
+  is removed — the embedding provider is now selected only by the dedicated knob, and the store
+  backend only by its own knob; (b) the default provider has changed (previously local-first implied
+  Ollama; now it is the static-vectors provider; Ollama/Azure must be selected explicitly).*
 - **REQ-062 (Ubiquitous):** *The evaluation/CI path shall obtain the embedding provider through the
   composition vehicle (`build_embedder`/composition), never by importing adapters directly outside
   tests (Principio XI).*
@@ -213,11 +224,18 @@ La feature introduce **due provider locali** che coprono due esigenze distinte:
   Principio XI (accesso via vehicle), Principio XII (fail-loud), additività (I/III), confine D↔N (il
   core resta deterministico, nessun LLM nel core).
 - **Ancoraggio al codice esistente:** porta `EmbeddingProvider` (`src/sertor_core/domain/ports.py:26`);
-  `build_embedder`/`build_store` (`src/sertor_core/composition.py:63`); `Settings` con `backend`,
-  `embed_provider` (property derivata, `settings.py:211`) e `validate_backend` (`settings.py:215`);
-  namespacing `(corpus, provider)` via `collection_name()`. Precedente: `FakeEmbedder`
+  `build_embedder`/`build_store` (`src/sertor_core/composition.py:63`); `Settings` con `backend`/
+  `embed_provider` (property derivata da `RAG_BACKEND`, `settings.py:211`), `validate_backend`
+  (`settings.py:215`) e `load()` (`settings.py:238`, legge `RAG_BACKEND`/`SERTOR_STORE_BACKEND`);
+  namespacing `(corpus, provider)` via `collection_name()`. **La rimozione di `RAG_BACKEND` tocca
+  questi punti** (campo/property/validazione/load) — è una modifica di config additiva al netto della
+  rimozione, da gestire con la nota di migrazione e l'avviso REQ-007. Precedente: `FakeEmbedder`
   (`tests/fixtures/mocks.py:24`) è un mock di test (hash d'identità), **distinto** dal provider
   lessicale di prodotto (che deve avere segnale lessicale).
+- **Breaking change di config dichiarato:** la rimozione di `RAG_BACKEND` è un cambiamento
+  incompatibile per gli ospiti che lo usano (incl. il dogfood: la `.sertor/.env` va aggiornata a
+  `SERTOR_EMBED_PROVIDER=azure`); mitigato dall'avviso fail-loud (REQ-007) e dalla nota di migrazione
+  (REQ-061).
 - **Assunzione:** la distribuzione ufficiale GloVe 6B (`glove.6B.zip`, ~822 MB, contiene 50/100/200/300d)
   è raggiungibile dalla sorgente PDDL e redistribuibile; in airgapped si usa l'override di path.
 - **Dipendenza a valle:** la CI col gate eval (epica `debito-tecnico` FEAT-003) consuma questa feature.
@@ -226,8 +244,9 @@ La feature introduce **due provider locali** che coprono due esigenze distinte:
 
 - **R-1** Il file GloVe (~822 MB) può rendere la *prima* indicizzazione lenta o, in rete
   vincolata/proxy, fallire → mitigato da cache per-macchina, override di path e fail-loud azionabile.
-- **R-2** Cambiare il **default** può sorprendere ospiti esistenti che si attendevano Ollama →
-  mitigato da nota di migrazione e avviso esplicito.
+- **R-2** Cambiare il **default** e **rimuovere `RAG_BACKEND`** può sorprendere/regredire ospiti
+  esistenti (chi si attendeva Ollama dal local; chi selezionava il provider via `RAG_BACKEND`) →
+  mitigato da nota di migrazione (REQ-061) e avviso fail-loud su `RAG_BACKEND` residuo (REQ-007).
 - **R-3** Qualità NL del provider lessicale bassa per definizione → mitigato da default GloVe e da
   avviso che invita all'upgrade quando attivo il lessicale.
 - **R-4** Determinismo del lessicale rotto da hashing salted di default di Python → mitigato dal
@@ -239,7 +258,8 @@ La feature introduce **due provider locali** che coprono due esigenze distinte:
 
 ## 9. Prioritizzazione (MoSCoW)
 
-- **Must:** REQ-001..005 (selezione), REQ-010..014 (lessicale), REQ-040..042 (fail-loud),
+- **Must:** REQ-001..007 (selezione + rimozione `RAG_BACKEND` + store con default proprio + avviso
+  fail-loud su `RAG_BACKEND` residuo), REQ-010..014 (lessicale), REQ-040..042 (fail-loud),
   REQ-050..053 (determinismo/isolamento/non-regressione), REQ-062 (vehicle).
 - **Must (default & semantica locale):** REQ-020..024 (GloVe provider), REQ-030..035 (acquisizione/
   cache/override) — sono il *nuovo default* e quindi parte del valore minimo.
@@ -253,7 +273,8 @@ La feature introduce **due provider locali** che coprono due esigenze distinte:
 ## 10. Domande aperte
 
 - Nessuna forca di prodotto aperta: scope, default (`glove`), sorgente/licenza (GloVe 6B 300d, PDDL),
-  manopola dedicata (`SERTOR_EMBED_PROVIDER`), distribuzione (download alla prima indicizzazione +
-  cache utente condivisa + override path) e comportamento fail-loud sono **decisi**. I dettagli di
+  manopola dedicata (`SERTOR_EMBED_PROVIDER`) come **unica** superficie con **rimozione di
+  `RAG_BACKEND`** (store via `SERTOR_STORE_BACKEND` con default proprio), distribuzione (download alla
+  prima indicizzazione + cache utente condivisa + override path) e comportamento fail-loud sono **decisi**. I dettagli di
   *come* (nomi esatti delle manopole, dimensione del vettore lessicale, algoritmo di aggregazione
   token→vettore, struttura della cache) sono materia della fase di **plan/design**.
