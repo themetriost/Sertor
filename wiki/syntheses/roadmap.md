@@ -38,7 +38,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 *Dettaglio (PR, date, numeri) nella sezione ✅ DONE in fondo alla pagina.*
 
-> **Governance:** Costituzione **v1.3.0** — nuovo **Principio XII «Fail Loud, Fix the Cause»** (riparare la causa, non disattivare/silenziare per schivare un errore; *early feedback* è un valore). Distribuito agli ospiti via `sertor-flow` (starter neutro + blocco SDLC).
+> **Governance:** Costituzione **v1.4.0** — **Missione & stella polare (North Star)** (differenziatore = **fusione code+doc**; gate «Allineamento alla missione» nel Constitution Check) + **Principio XII «Fail Loud, Fix the Cause»** (v1.3.0: riparare la causa, non disattivare/silenziare per schivare un errore). Distribuita agli ospiti via `sertor-flow` (starter neutro + blocco SDLC).
 
 ### 📋 Le 11 epiche (per stato)
 
