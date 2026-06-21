@@ -16,13 +16,17 @@ class EvalCase:
     """One evaluation case: a query and the path(s) that should be retrieved for it (REQ-001/003).
 
     `expected` paths are POSIX, relative to the indexed root. `kind` (`"symbol"`/`"nl"`/…) is free
-    and optional, preserved and shown in the report. Validation (non-empty query/expected/paths) is
-    done by the loader (`SuiteValidationError` naming the case), not in the constructor.
+    and optional, preserved and shown in the report. `intent` (069) ∈ `{"code","doc","both"}` or
+    `None`: it decides which `search_*` surface measures the case and the expected types (fusion
+    coverage). `intent` is DISTINCT from `kind` (they coexist: e.g. `kind="nl"`, `intent="both"`).
+    Validation (non-empty query/expected/paths, intent in set) is done by the loader
+    (`SuiteValidationError`/`FusedSuiteValidationError` naming the case), not in the constructor.
     """
 
     query: str
     expected: tuple[str, ...]
     kind: str | None = None
+    intent: str | None = None     # 069: "code" | "doc" | "both" | None — surface + expected types
 
 
 @dataclass(frozen=True)
@@ -173,6 +177,14 @@ class EvalSuite:
         """The `kind` of each case, in the same order as `to_ground_truth` (for the report)."""
         return tuple(c.kind for c in self.cases)
 
+    def cases_for_intent(self, intent: str) -> tuple[EvalCase, ...]:
+        """The IR cases whose `intent` matches `intent` (069). Pure, additive — IR proj. intact."""
+        return tuple(c for c in self.cases if c.intent == intent)
+
+    def fusion_cases(self) -> tuple[EvalCase, ...]:
+        """The cases that ARE the fusion category — `intent="both"` (069, REQ-002/020)."""
+        return self.cases_for_intent("both")
+
     def rebased(self, prefix: str) -> EvalSuite:
         """Suite with `expected` paths rebased to an indexing root different from the repo root.
 
@@ -184,7 +196,9 @@ class EvalSuite:
         for c in self.cases:
             rebased = tuple(p[len(norm):] for p in c.expected if p.startswith(norm))
             if rebased:
-                out.append(EvalCase(query=c.query, expected=rebased, kind=c.kind))
+                out.append(
+                    EvalCase(query=c.query, expected=rebased, kind=c.kind, intent=c.intent)
+                )
         return EvalSuite(cases=tuple(out))
 
 
@@ -235,6 +249,108 @@ class ComparisonReport:
     """Side-by-side comparison of ≥2 local configs on the same suite (REQ-034)."""
 
     reports: tuple[tuple[str, EvalReport], ...]  # [(label, report), …]
+
+
+@dataclass(frozen=True)
+class FusionCaseResult:
+    """Outcome of the fused coverage of one `intent="both"` case (069, REQ-020/022).
+
+    `pertinente` = a result whose `path` is in `expected`; `covered` = `has_doc AND has_code` (the
+    top-k carries at least one relevant DOC result AND one relevant CODE result). `hit_at_k` makes
+    REQ-022 visible: a case can be `hit_at_k=True` (a path is retrieved) but `covered=False` (one
+    type drowns the other) — exactly the lacuna the feature renders instead of masking with hit@k.
+    """
+
+    query: str
+    expected: tuple[str, ...]
+    has_doc: bool
+    has_code: bool
+    covered: bool
+    hit_at_k: bool
+
+
+@dataclass(frozen=True)
+class FusionReport:
+    """Aggregate of the fusion coverage on the combined surface (069, REQ-021).
+
+    Reported ACCANTO a hit@k/MRR (not instead). A run without `both`-intent cases → `coverage=0.0`
+    and `cases_count=0` (honest empty report, exit 0). `hit_but_not_covered` is the explicit lacuna
+    (REQ-022): how many cases are retrieved (hit@k) but not covered (a type is missing).
+    """
+
+    cases: tuple[FusionCaseResult, ...]
+    coverage: float        # covered_count / cases_count (0.0 if cases_count == 0)
+    cases_count: int
+    hit_but_not_covered: int
+
+
+@dataclass(frozen=True)
+class SurfaceEvalReport:
+    """The `EvalReport` of ONE surface + its label (069, REQ-010/013).
+
+    `surface` ∈ {`"search_code"`,`"search_docs"`,`"search_combined"`}; `report` is produced by the
+    INVARIANT `evaluate` on the cases pertinent to that surface (riuso, no behaviour change).
+    """
+
+    surface: str
+    report: EvalReport
+
+
+@dataclass(frozen=True)
+class FusedEvalReport:
+    """Complete outcome of a fused run (069): per-surface metrics + fusion coverage.
+
+    Additive: the per-surface `EvalReport`s come from `evaluate` unchanged; `fusion` is the pure
+    extra pass over the combined surface's `doc_type`s.
+    """
+
+    surfaces: tuple[SurfaceEvalReport, ...]
+    fusion: FusionReport
+    provider: str
+
+
+@dataclass(frozen=True)
+class SurfaceBaseline:
+    """Recorded reference metrics for ONE surface (069, REQ-010)."""
+
+    surface: str
+    hit_rate: dict[int, float]
+    mrr: float
+
+
+@dataclass(frozen=True)
+class FusedBaseline:
+    """Per-surface + fusion-coverage baseline of a fused run (069, REQ-010).
+
+    Persisted as the `[fused_baseline]` section of `eval/baseline.toml`, additive to the IR
+    `Baseline` (sezioni distinte; il writer preserva entrambe, preserve-both di FEAT-011). Built
+    from a current `FusedEvalReport` only on an explicit `--record-baseline`. `recorded_at` is
+    informative (ISO-8601 UTC).
+    """
+
+    surfaces: tuple[SurfaceBaseline, ...]
+    fusion_coverage: float
+    queries: int
+    provider: str
+    recorded_at: str
+
+
+@dataclass(frozen=True)
+class FusedRegressionVerdict:
+    """Outcome of the fused non-regression gate (069, REQ-040/R-3).
+
+    `verdict` ∈ {`"pass"`,`"regressed"`,`"no-baseline"`}. ANY per-surface metric below baseline
+    beyond tolerance, OR the fusion coverage below baseline beyond tolerance → `"regressed"`
+    (exit 1). `exit_code` is 0 for pass/no-baseline, 1 when regressed. Reuses `MetricDelta` (IR).
+    Twin of `RegressionVerdict`/`GraphRegressionVerdict`.
+    """
+
+    deltas: tuple[MetricDelta, ...]
+    tolerance: float
+    verdict: str
+
+    def exit_code(self) -> int:
+        return 1 if self.verdict == "regressed" else 0
 
 
 @dataclass(frozen=True)

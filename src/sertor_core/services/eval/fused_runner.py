@@ -1,0 +1,109 @@
+"""Deterministic fused (per-surface + fusion coverage) runner + event (069, data-model §7/§8).
+
+`run_fused_evaluation` measures the three retrieval surfaces (`search_code`/`search_docs`/
+`search_combined`) by wrapping the `RetrievalFacade` in thin `_SurfaceEngine` adapters and reusing
+the INVARIANT `evaluate`; it then computes the pure fusion coverage on the `both`-intent cases via
+`facade.search_combined` (so the `doc_type`s are visible). The observability event `fused_eval` is
+emitted SEPARATELY by `emit_fused_eval_event` (after the comparison, so `regressed`/`tolerance` are
+known): metrics-only, no free text (RNF-3/Principio IX, contract event-fused-eval.md). No
+composition/adapter imports here — the facade is the vehicle (Principio XI).
+"""
+from __future__ import annotations
+
+import logging
+
+from sertor_core.domain.entities import RetrievalResult
+from sertor_core.engines.evaluation import evaluate
+from sertor_core.observability.logging import log_event
+from sertor_core.services.eval.fusion import INTENT_SURFACE, fusion_coverage
+from sertor_core.services.eval.models import (
+    EvalSuite,
+    FusedEvalReport,
+    FusedRegressionVerdict,
+    SurfaceEvalReport,
+)
+from sertor_core.services.retrieval import RetrievalFacade
+
+# The surfaces measured by a fused run, in stable order (code, docs, combined). The combined surface
+# is the integration test (REQ-013): it is where the fusion coverage is computed.
+_SURFACES: tuple[str, ...] = ("search_code", "search_docs", "search_combined")
+
+
+class _SurfaceEngine:
+    """A `QueryableEngine` (structural typing — NO inheritance) routing query → `facade.<surface>`.
+
+    `evaluate` uses only `provider` + `query`; three instances (code/docs/combined) measure the
+    three surfaces with the SAME `evaluate` machine (invariant). `surface` is the name of the facade
+    method (`search_code`/`search_docs`/`search_combined`).
+    """
+
+    def __init__(self, facade: RetrievalFacade, surface: str, provider: str):
+        self._facade = facade
+        self._surface = surface
+        self._provider = provider
+
+    @property
+    def provider(self) -> str:
+        return self._provider
+
+    def query(self, query: str, k: int | None = None) -> list[RetrievalResult]:
+        return getattr(self._facade, self._surface)(query, k)
+
+
+def run_fused_evaluation(
+    facade: RetrievalFacade,
+    suite: EvalSuite,
+    ks: tuple[int, ...],
+    fusion_k: int,
+) -> FusedEvalReport:
+    """Measure the three surfaces + fusion coverage → `FusedEvalReport` (069, REQ-010/013/020).
+
+    For each surface: select the suite cases of the matching `intent` (via `INTENT_SURFACE`), rebase
+    them to a per-surface `EvalSuite`, project to `GroundTruth`, and run the INVARIANT `evaluate`.
+    The fusion coverage is computed on the `both`-intent cases via `facade.search_combined` (which
+    exposes the `doc_type`s). A surface with no cases of its intent yields an empty `EvalReport`
+    (honest, exit 0). A suite with no intent-typed cases → empty surfaces + an empty `FusionReport`
+    (`cases_count=0`); the actionable message comes from the CLI. Deterministic (REQ-041).
+    """
+    provider = facade.provider
+    surface_to_intent = {v: k for k, v in INTENT_SURFACE.items()}
+    surfaces: list[SurfaceEvalReport] = []
+    for surface in _SURFACES:
+        intent = surface_to_intent[surface]
+        engine = _SurfaceEngine(facade, surface, provider)
+        cases = EvalSuite(cases=suite.cases_for_intent(intent))
+        report = evaluate(engine, cases.to_ground_truth(), ks)
+        surfaces.append(SurfaceEvalReport(surface=surface, report=report))
+    fusion = fusion_coverage(suite.fusion_cases(), facade.search_combined, fusion_k)
+    return FusedEvalReport(surfaces=tuple(surfaces), fusion=fusion, provider=provider)
+
+
+def emit_fused_eval_event(
+    report: FusedEvalReport, verdict: FusedRegressionVerdict
+) -> None:
+    """Emit the `fused_eval` event — metrics-only (RNF-3, contract event-fused-eval.md).
+
+    NEVER `query`/`expected`/path/symbol or any free text. `cases` is a closed-card. count per
+    intent; `surface_mrr`/`surface_hit3` are keyed by the closed surface set. `tolerance` is null
+    for `no-baseline`.
+    """
+    by_surface = {s.surface: s.report for s in report.surfaces}
+    cases = {
+        "code": by_surface["search_code"].queries if "search_code" in by_surface else 0,
+        "doc": by_surface["search_docs"].queries if "search_docs" in by_surface else 0,
+        "both": report.fusion.cases_count,
+    }
+    surface_mrr = {s.surface: s.report.mrr for s in report.surfaces}
+    surface_hit3 = {s.surface: s.report.hit_rate.get(3, 0.0) for s in report.surfaces}
+    log_event(
+        logging.INFO,
+        "fused_eval",
+        provider=report.provider,
+        cases=cases,
+        surface_mrr=surface_mrr,
+        surface_hit3=surface_hit3,
+        fusion_coverage=report.fusion.coverage,
+        hit_but_not_covered=report.fusion.hit_but_not_covered,
+        regressed=verdict.verdict == "regressed",
+        tolerance=verdict.tolerance if verdict.verdict != "no-baseline" else None,
+    )

@@ -638,6 +638,57 @@ class _GraphEvalRunner:
         return report, verdict
 
 
+def build_fused_eval_runner(settings: Settings | None = None):
+    """Build the fused (code+doc) eval runner — the vehicle for `sertor-rag eval --fused` (069).
+
+    REUSES `build_facade` to retrieve (Principio XI — the facade is the vehicle; the ONLY place that
+    knows the concrete embedder/store for this path) and the `services/eval/fused_*`/`fusion`
+    modules for the per-surface + fusion-coverage measure. Wires observability like the other
+    consumer entry paths (feature 041). Returns a thin runner exposing `run_fused(suite)`.
+    """
+    settings = settings or Settings.load()
+    _wire_runtime(settings)
+    return _FusedEvalRunner(settings)
+
+
+class _FusedEvalRunner:
+    """Vehicle that runs the fused eval suite against the configured retrieval facade (069).
+
+    Lives in the composition root: the ONLY place that knows how to build the concrete facade for
+    this path (Principio I/XI). The CLI consumes it, never importing the facade/engines directly.
+    """
+
+    def __init__(self, settings: Settings):
+        self._settings = settings
+
+    @property
+    def settings(self) -> Settings:
+        return self._settings
+
+    def run_fused(self, suite, ks: tuple[int, ...] = (1, 3, 5, 10)):
+        """Measure per-surface + fusion coverage and gate → `(FusedEvalReport, verdict)` (069).
+
+        Builds the facade (vehicle), runs the deterministic measure, compares against the
+        `[fused_baseline]` section of `eval/baseline.toml` (absent → `None`, gate passes with
+        `no-baseline`), and emits the metrics-only `fused_eval` event.
+        """
+        from sertor_core.services.eval.baseline_io import load_fused_baseline
+        from sertor_core.services.eval.fused_runner import (
+            emit_fused_eval_event,
+            run_fused_evaluation,
+        )
+        from sertor_core.services.eval.regression import compare_fused_to_baseline
+
+        facade = build_facade(self._settings)
+        report = run_fused_evaluation(facade, suite, ks, self._settings.eval_fusion_k)
+        baseline = load_fused_baseline(self._settings.eval_dir / "baseline.toml")
+        verdict = compare_fused_to_baseline(
+            report, baseline, self._settings.eval_tolerance
+        )
+        emit_fused_eval_event(report, verdict)
+        return report, verdict
+
+
 def build_indexed_docs(settings: Settings | None = None) -> frozenset[str] | None:
     """Indexed document paths from the manifest, or `None` if absent/incompatible (065, DA-e).
 

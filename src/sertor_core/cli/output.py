@@ -21,6 +21,8 @@ from sertor_core.domain.memory import ArchivedSession, SessionSummary
 from sertor_core.engines.evaluation import EvalReport
 from sertor_core.services.episodic_search import EpisodicResults
 from sertor_core.services.eval.models import (
+    FusedEvalReport,
+    FusedRegressionVerdict,
     GraphEvalReport,
     GraphRegressionVerdict,
     PathValidation,
@@ -343,6 +345,130 @@ def format_regression_report(verdict: RegressionVerdict, *, json: bool) -> str:
             }
         )
     return _verdict_line(verdict)
+
+
+def _fused_verdict_line(verdict: FusedRegressionVerdict) -> str:
+    """One-line fused non-regression summary (069): label + per-metric Δ (incl. fusion_coverage)."""
+    label = {"pass": "PASS", "regressed": "REGRESSED", "no-baseline": "no baseline"}[
+        verdict.verdict
+    ]
+    deltas = "  ".join(f"{d.name} Δ={d.delta:+.2f}" for d in verdict.deltas)
+    head = f"non-regression: {label} (tolerance={verdict.tolerance:.2f})"
+    return f"{head}  {deltas}".rstrip()
+
+
+def _fused_verdict_json(verdict: FusedRegressionVerdict) -> dict:
+    return {
+        "verdict": verdict.verdict,
+        "tolerance": verdict.tolerance,
+        "deltas": [
+            {
+                "name": d.name,
+                "current": d.current,
+                "baseline": d.baseline,
+                "delta": d.delta,
+                "regressed": d.regressed,
+            }
+            for d in verdict.deltas
+        ],
+    }
+
+
+def format_fused_eval_report(
+    report: FusedEvalReport, verdict: FusedRegressionVerdict, *, json: bool
+) -> str:
+    """Format a fused run: per-surface metrics + fusion coverage + non-regression (069, REQ-021).
+
+    Human: header (cases per intent + provider) + per-surface hit-rate@k/MRR + the fusion coverage
+    block (one `[covered]`/`[GAP    ]` row per `both`-intent case with the missing type) + a
+    non-regression line. JSON: the informational equivalent. The fusion coverage is reported
+    ACCANTO a hit@k/MRR, never instead (REQ-042/SC-008).
+    """
+    fusion = report.fusion
+    by_surface = {s.surface: s.report for s in report.surfaces}
+    code_n = by_surface["search_code"].queries if "search_code" in by_surface else 0
+    docs_n = by_surface["search_docs"].queries if "search_docs" in by_surface else 0
+    if json:
+        return _json.dumps(
+            {
+                "provider": report.provider,
+                "cases": {"code": code_n, "doc": docs_n, "both": fusion.cases_count},
+                "surfaces": [
+                    {
+                        "surface": s.surface,
+                        "provider": s.report.provider,
+                        "queries": s.report.queries,
+                        "hit_rate": {
+                            str(k): s.report.hit_rate[k] for k in sorted(s.report.hit_rate)
+                        },
+                        "mrr": round(s.report.mrr, 6),
+                    }
+                    for s in report.surfaces
+                ],
+                "fusion": {
+                    "coverage": round(fusion.coverage, 6),
+                    "cases_count": fusion.cases_count,
+                    "hit_but_not_covered": fusion.hit_but_not_covered,
+                    "cases": [
+                        {
+                            "query": c.query,
+                            "expected": list(c.expected),
+                            "has_doc": c.has_doc,
+                            "has_code": c.has_code,
+                            "covered": c.covered,
+                            "hit_at_k": c.hit_at_k,
+                        }
+                        for c in fusion.cases
+                    ],
+                },
+                "non_regression": _fused_verdict_json(verdict),
+            }
+        )
+    covered_count = sum(1 for c in fusion.cases if c.covered)
+    lines = [
+        f"fused eval  cases: code={code_n} docs={docs_n} fusion={fusion.cases_count}  "
+        f"provider={report.provider}",
+        "",
+        "per-surface (hit-rate@k / MRR):",
+    ]
+    for s in report.surfaces:
+        at_k = " ".join(
+            f"@{k}={s.report.hit_rate[k]:.2f}" for k in sorted(s.report.hit_rate)
+        )
+        lines.append(f"  {s.surface:<16} {at_k}  MRR={s.report.mrr:.2f}")
+    lines.append("")
+    head = (
+        f"fusion coverage: {fusion.coverage:.2f}  "
+        f"({covered_count}/{fusion.cases_count} covered;  "
+        f"{fusion.hit_but_not_covered} hit@k but NOT covered "
+        "← one type drowns the other)"
+    )
+    lines.append(head)
+    for c in fusion.cases:
+        if c.covered:
+            lines.append(f"  [covered] {c.query}   doc+code")
+        else:
+            detail = _fusion_gap_detail(c)
+            lines.append(f"  [GAP    ] {c.query}   {detail}")
+    lines.append("")
+    lines.append(_fused_verdict_line(verdict))
+    return "\n".join(lines)
+
+
+def _fusion_gap_detail(case) -> str:
+    """Human detail of why a `both` case is not covered (069, REQ-022)."""
+    if case.has_doc and not case.has_code:
+        return "doc only  (missing CODE)"
+    if case.has_code and not case.has_doc:
+        return "code only (missing DOC)"
+    return "neither doc nor code retrieved"
+
+
+def format_fused_regression(verdict: FusedRegressionVerdict, *, json: bool) -> str:
+    """Format a standalone fused non-regression verdict (069). Reusable."""
+    if json:
+        return _json.dumps(_fused_verdict_json(verdict))
+    return _fused_verdict_line(verdict)
 
 
 def format_path_validation(pv: PathValidation, *, json: bool) -> str:

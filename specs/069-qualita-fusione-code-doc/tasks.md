@@ -46,28 +46,28 @@
 ### TASK-G01 — Aggiungi manopola `eval_fusion_k` in Settings [P]
 **File**: `src/sertor_core/config/settings.py`
 → dipende da: nessuno
-- [ ] Aggiungi campo `eval_fusion_k: int` con default `5`, letto da
+- [x] Aggiungi campo `eval_fusion_k: int` con default `5`, letto da
       `SERTOR_EVAL_FUSION_K` (pattern identico a `eval_tolerance` e `default_k`; es.
       `int(os.getenv("SERTOR_EVAL_FUSION_K", "5"))`).
-- [ ] Il default deve essere definito **solo** qui (Principio VIII); nessun componente fuori
+- [x] Il default deve essere definito **solo** qui (Principio VIII); nessun componente fuori
       da `Settings` hardcoda `5` come top-k per la fusion coverage.
-- [ ] `eval_tolerance` esiste già e viene **riusato** (non aggiungere un `eval_fusion_tolerance`
+- [x] `eval_tolerance` esiste già e viene **riusato** (non aggiungere un `eval_fusion_tolerance`
       separato — la tolleranza è unica, come da `data-model.md` §10). Verificare che il campo
       esista già in `settings.py` prima di toccare (non duplicare).
-- [ ] Verifica: `Settings` resta importabile senza dipendenze esterne; i test esistenti di
+- [x] Verifica: `Settings` resta importabile senza dipendenze esterne; i test esistenti di
       `settings.py` continuano a passare invariati (RNF-5).
 
 ### TASK-G02 — Aggiungi errore di dominio `FusedSuiteValidationError` [P]
 **File**: `src/sertor_core/domain/errors.py`
 → dipende da: nessuno
-- [ ] Aggiungi `FusedSuiteValidationError(SuiteValidationError)` (o `(SertorError)` se la
+- [x] Aggiungi `FusedSuiteValidationError(SuiteValidationError)` (o `(SertorError)` se la
       gerarchia `SuiteValidationError` non è adatta): campo `case_query: str` e `detail: str`,
       messaggio che nomina il caso offendente con l'`intent` invalido (Principio IV, REQ-004).
       Alternativa: verificare se `SuiteValidationError` esistente è già sufficiente per nominare
       il campo `intent`; usare quello se basta (YAGNI — non creare una sottoclasse inutile).
-- [ ] Il messaggio deve contenere il valore di `intent` ricevuto E l'insieme atteso
+- [x] Il messaggio deve contenere il valore di `intent` ricevuto E l'insieme atteso
       `{code,doc,both}`, così l'utente sa esattamente cosa correggere.
-- [ ] Verifica: l'errore è sottoclasse di `SertorError`; `domain/errors.py` non importa
+- [x] Verifica: l'errore è sottoclasse di `SertorError`; `domain/errors.py` non importa
       nessun SDK esterno né adapter (Principio I); i test esistenti continuano a passare (RNF-5).
 
 ---
@@ -80,28 +80,28 @@
 ### TASK-F01 — Estendi `EvalCase` e `EvalSuite` con `intent` e helper puri in `models.py` [P]
 **File**: `src/sertor_core/services/eval/models.py`
 → dipende da: TASK-G02
-- [ ] Aggiungi campo `intent: str | None = None` a `EvalCase` (frozen dataclass, additivo):
+- [x] Aggiungi campo `intent: str | None = None` a `EvalCase` (frozen dataclass, additivo):
       `intent ∈ {"code", "doc", "both"}` o `None` (default retrocompatibile — RNF-5/Principio VI).
       Il campo `intent` è **distinto da `kind`**: coesistono sullo stesso caso (es. `kind="nl"`,
       `intent="both"`). Non rinominare, non unire.
-- [ ] Aggiungi metodi helper **puri** su `EvalSuite` (additivi, non toccano le proiezioni IR):
+- [x] Aggiungi metodi helper **puri** su `EvalSuite` (additivi, non toccano le proiezioni IR):
       - `cases_for_intent(self, intent: str) -> tuple[EvalCase, ...]`: filtra per `intent`.
       - `fusion_cases(self) -> tuple[EvalCase, ...]`: == `cases_for_intent("both")`.
       Verificare che `to_ground_truth()`/`kinds()`/`rebased()` restino **invariati** e che
       `rebased()` propaghi `intent` nel nuovo `EvalCase` ribasato (additivo).
-- [ ] Aggiungi le entità di report per la fusion coverage (frozen dataclasses, pure, zero I/O):
+- [x] Aggiungi le entità di report per la fusion coverage (frozen dataclasses, pure, zero I/O):
       - `FusionCaseResult`: `query: str`, `expected: tuple[str, ...]`, `has_doc: bool`,
         `has_code: bool`, `covered: bool` (= `has_doc and has_code`, REQ-020),
         `hit_at_k: bool` (per rendere visibile REQ-022: hit@k ma non covered).
       - `FusionReport`: `cases: tuple[FusionCaseResult, ...]`, `coverage: float`
         (`covered_count / cases_count`, 0.0 se `cases_count == 0` — report vuoto onesto),
         `cases_count: int`, `hit_but_not_covered: int` (la lacuna esplicita, REQ-022).
-- [ ] Aggiungi entità di report per-superficie e fused (frozen dataclasses, pure, zero I/O):
+- [x] Aggiungi entità di report per-superficie e fused (frozen dataclasses, pure, zero I/O):
       - `SurfaceEvalReport`: `surface: str` (`"search_code"` | `"search_docs"` |
         `"search_combined"`), `report: EvalReport` (riuso invariato).
       - `FusedEvalReport`: `surfaces: tuple[SurfaceEvalReport, ...]`, `fusion: FusionReport`,
         `provider: str`.
-- [ ] Aggiungi entità baseline per-superficie e verdetto di non-regressione fused:
+- [x] Aggiungi entità baseline per-superficie e verdetto di non-regressione fused:
       - `SurfaceBaseline`: `surface: str`, `hit_rate: dict[int, float]`, `mrr: float`.
       - `FusedBaseline`: `surfaces: tuple[SurfaceBaseline, ...]`, `fusion_coverage: float`,
         `queries: int`, `provider: str`, `recorded_at: str` (ISO-8601 UTC).
@@ -109,17 +109,17 @@
         `verdict: str` (`"pass"` | `"regressed"` | `"no-baseline"`).
         Metodo `exit_code() -> int`: 0 se `"pass"`/`"no-baseline"`, 1 se `"regressed"`.
         Riusare `MetricDelta` esistente (additivo, non creare `FusedMetricDelta` separato).
-- [ ] Verifica: nessun import di SDK esterni o adapter; tutte le nuove entità sono `frozen=True`;
+- [x] Verifica: nessun import di SDK esterni o adapter; tutte le nuove entità sono `frozen=True`;
       i test esistenti di `models.py` (inclusi quelli per `GraphCase`/`EvalCase` IR) continuano a
       passare invariati (RNF-5).
 
 ### TASK-F02 — Implementa `fusion.py`: metrica fusion coverage pura + `INTENT_SURFACE` [P]
 **File nuovo**: `src/sertor_core/services/eval/fusion.py`
 → dipende da: TASK-F01, TASK-G01
-- [ ] Aggiungi costante di dominio (Principio VII):
+- [x] Aggiungi costante di dominio (Principio VII):
       `INTENT_SURFACE: dict[str, str] = {"code": "search_code", "doc": "search_docs", "both": "search_combined"}`
       Unica fonte della mappatura intento→superficie; usata da `fused_runner.py` e dalla CLI.
-- [ ] Implementa `fusion_coverage(cases: tuple[EvalCase, ...], search_fn: Callable[[str, int], list[RetrievalResult]], k: int) -> FusionReport`
+- [x] Implementa `fusion_coverage(cases: tuple[EvalCase, ...], search_fn: Callable[[str, int], list[RetrievalResult]], k: int) -> FusionReport`
       come funzione **pura** (accetta una callable di ricerca, zero import di adapter):
       ```
       per ogni caso `both`:
@@ -137,13 +137,13 @@
       - `DocType` importato da `domain/entities.py` (non da adapter).
       - `total_both_cases == 0` → `FusionReport(cases=(), coverage=0.0, cases_count=0,
         hit_but_not_covered=0)` (report vuoto onesto, non un errore — exit 0, messaggio dalla CLI).
-- [ ] Verifica: funzione pura deterministica (stesso input → stesso output, REQ-041); mockabile
+- [x] Verifica: funzione pura deterministica (stesso input → stesso output, REQ-041); mockabile
       con `search_fn=lambda q,k: [...]`; nessun import di composition/adapter.
 
 ### TASK-F03 — Implementa adattatori-superficie `_SurfaceEngine` in `fused_runner.py` [P]
 **File nuovo**: `src/sertor_core/services/eval/fused_runner.py`
 → dipende da: TASK-F01, TASK-F02, TASK-G01
-- [ ] Implementa classe privata `_SurfaceEngine` (implementa `QueryableEngine` per structural
+- [x] Implementa classe privata `_SurfaceEngine` (implementa `QueryableEngine` per structural
       typing — NESSUNA eredità, solo i due attributi/metodi del Protocol):
       ```python
       class _SurfaceEngine:
@@ -155,7 +155,7 @@
       ```
       `surface ∈ {"search_code", "search_docs", "search_combined"}`. L'attributo `self._surface`
       corrisponde al nome del metodo sul `RetrievalFacade` (`data-model.md` §8).
-- [ ] Implementa `run_fused_evaluation(facade: RetrievalFacade, suite: EvalSuite, ks: tuple[int, ...], fusion_k: int) -> FusedEvalReport`
+- [x] Implementa `run_fused_evaluation(facade: RetrievalFacade, suite: EvalSuite, ks: tuple[int, ...], fusion_k: int) -> FusedEvalReport`
       come funzione (non pura — accede al facade — ma deterministica):
       - Per ogni superficie (`"search_code"`, `"search_docs"`, `"search_combined"`): costruisce un
         `_SurfaceEngine`, seleziona i casi della suite con `intent` corrispondente via
@@ -167,7 +167,7 @@
       - Ritorna `FusedEvalReport(surfaces=(...), fusion=fusion_report, provider=facade.provider)`.
       - Suite senza casi `intent` → `FusedEvalReport` con `surfaces` vuote e `fusion` con
         `cases_count=0` (report vuoto onesto — il messaggio azionabile viene dalla CLI).
-- [ ] Implementa `emit_fused_eval_event(report: FusedEvalReport, verdict: FusedRegressionVerdict) -> None`
+- [x] Implementa `emit_fused_eval_event(report: FusedEvalReport, verdict: FusedRegressionVerdict) -> None`
       via `log_event` (contract `event-fused-eval.md`):
       - `operation="fused_eval"`, `provider=report.provider`,
         `cases={"code": n_code, "doc": n_doc, "both": n_both}`,
@@ -179,13 +179,13 @@
         `tolerance=(verdict.tolerance if verdict.verdict != "no-baseline" else None)`.
       - **Mai** emettere query, path, `expected`, nomi di simboli, testo libero (RNF-3,
         Principio IX, contract `event-fused-eval.md`).
-- [ ] Solo import da `services/eval/` e da `RetrievalFacade` (facade = vehicle, Principio XI);
+- [x] Solo import da `services/eval/` e da `RetrievalFacade` (facade = vehicle, Principio XI);
       nessun import di `composition.py` o adapter concreti.
 
 ### TASK-F04 — Estendi `regression.py`: `compare_fused_to_baseline` puro [P]
 **File**: `src/sertor_core/services/eval/regression.py`
 → dipende da: TASK-F01
-- [ ] Implementa `compare_fused_to_baseline(report: FusedEvalReport, baseline: FusedBaseline | None, tolerance: float) -> FusedRegressionVerdict`
+- [x] Implementa `compare_fused_to_baseline(report: FusedEvalReport, baseline: FusedBaseline | None, tolerance: float) -> FusedRegressionVerdict`
       come funzione **pura** (zero I/O):
       - `baseline is None` → `FusedRegressionVerdict(deltas=(), tolerance=tolerance, verdict="no-baseline")`.
       - Per ogni superficie in `report.surfaces`: confronta con il corrispondente `SurfaceBaseline`
@@ -196,37 +196,37 @@
       - Se **qualsiasi** delta ha `regressed=True` → `verdict="regressed"`, altrimenti `"pass"`.
         Questo include sia le superfici sia la fusion coverage (R-3, REQ-040).
       - Riusa `MetricDelta` esistente (non introdurre nuove dataclass se evitabile — YAGNI).
-- [ ] Verifica: funzione deterministica (stesso input → stesso output); nessun import I/O;
+- [x] Verifica: funzione deterministica (stesso input → stesso output); nessun import I/O;
       i test esistenti di `regression.py` (IR) continuano a passare invariati (RNF-5).
 
 ### TASK-F05 — Estendi `suite_io.py`: supporto campo `intent` su `[[case]]` (preserve-both) [P]
 **File**: `src/sertor_core/services/eval/suite_io.py`
 → dipende da: TASK-F01, TASK-G02
-- [ ] Estendi `_parse_case(d: dict) -> EvalCase` per leggere il campo opzionale `intent`:
+- [x] Estendi `_parse_case(d: dict) -> EvalCase` per leggere il campo opzionale `intent`:
       - `intent` assente → `None` (retrocompatibile — RNF-5).
       - `intent` presente ma non in `{"code", "doc", "both"}` → solleva `FusedSuiteValidationError`
         (o `SuiteValidationError` riusato, vedi TASK-G02) che nomina la `query` del caso e il
         valore invalido (Principio IV, REQ-004).
       - Stringa vuota → errore (equivale a campo invalido).
-- [ ] Estendi il **serializzatore TOML a mano** `_serialize_suite` per emettere il campo `intent`
+- [x] Estendi il **serializzatore TOML a mano** `_serialize_suite` per emettere il campo `intent`
       quando non `None`, nell'ordine stabile: `query`, `expected`, `kind` (se presente), `intent`
       (se presente). Non deve cancellare i `[[graph_case]]` (FEAT-011, DA-d — preserve-both
       invariato: riusa il pattern già in place, non riscrivere il serializzatore).
-- [ ] Estendi `add_case(path: Path, case: EvalCase) -> None` per accettare `case.intent`:
+- [x] Estendi `add_case(path: Path, case: EvalCase) -> None` per accettare `case.intent`:
       - Dedup per `query` (idempotente, REQ-002/042).
       - Se un caso con la stessa `query` esiste già e l'`intent` è diverso → errore azionabile
         (non sovrascrivere silenziosamente — Principio IV/XII).
-- [ ] Estendi `amend_case(path: Path, query: str, ...) -> None` per aggiornare `intent`:
+- [x] Estendi `amend_case(path: Path, query: str, ...) -> None` per aggiornare `intent`:
       aggiunge un parametro opzionale `intent: str | None = _UNSET` (sentinella) così che
       `amend_case` senza `intent` non tocchi il campo esistente (idempotenza).
-- [ ] Verifica che `write_suite` + `load_suite` facciano round-trip preservando **entrambe** le
+- [x] Verifica che `write_suite` + `load_suite` facciano round-trip preservando **entrambe** le
       sezioni `[[case]]` (con e senza `intent`) e `[[graph_case]]` (`SuiteWriteError` se fallisce).
-- [ ] Solo stdlib: `tomllib`, `pathlib`; nessun import da `composition.py`.
+- [x] Solo stdlib: `tomllib`, `pathlib`; nessun import da `composition.py`.
 
 ### TASK-F06 — Estendi `baseline_io.py`: sezione `[fused_baseline]` (preserve-both) [P]
 **File**: `src/sertor_core/services/eval/baseline_io.py`
 → dipende da: TASK-F01
-- [ ] Implementa `load_fused_baseline(path: Path) -> FusedBaseline | None`:
+- [x] Implementa `load_fused_baseline(path: Path) -> FusedBaseline | None`:
       - File assente → `None` (assenza legittima, gate passa con `"no-baseline"` — contract
         `artifacts-toml.md`).
       - File presente ma senza sezione `[fused_baseline]` → `None` (il file può contenere solo
@@ -235,7 +235,7 @@
       - Legge con `tomllib.load` la sezione `[fused_baseline]` per
         `fusion_coverage`, `queries`, `provider`, `recorded_at` e `[[fused_baseline.surface]]`
         (schema contract `artifacts-toml.md` §2).
-- [ ] Implementa `write_fused_baseline(path: Path, baseline: FusedBaseline) -> None`:
+- [x] Implementa `write_fused_baseline(path: Path, baseline: FusedBaseline) -> None`:
       - Serializzatore TOML a mano per la sezione `[fused_baseline]` + `[[fused_baseline.surface]]`
         (schema esatto in `contracts/artifacts-toml.md` §2).
       - **Preserve-both**: non deve toccare la sezione `[baseline]` IR esistente. Approccio:
@@ -246,7 +246,7 @@
         `SuiteWriteError` se fallisce — il file deve tornare parsabile).
       - `recorded_at` generato con `datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")`.
       - Scritto **solo** su `--record-baseline` esplicito (controllo nel CLI, non qui).
-- [ ] Solo stdlib: `tomllib`, `pathlib`, `datetime`; nessun import di composition/adapter.
+- [x] Solo stdlib: `tomllib`, `pathlib`, `datetime`; nessun import di composition/adapter.
 
 ---
 
@@ -258,7 +258,7 @@
 ### TASK-A01 — Factory `build_fused_eval_runner` in `composition.py`
 **File**: `src/sertor_core/composition.py`
 → dipende da: TASK-F01, TASK-F02, TASK-F03, TASK-F04, TASK-F05, TASK-F06, TASK-G01, TASK-G02
-- [ ] Implementa classe privata `_FusedEvalRunner`:
+- [x] Implementa classe privata `_FusedEvalRunner`:
       - Costruttore: riceve `settings: Settings`.
       - Metodo `run_fused(suite: EvalSuite) -> tuple[FusedEvalReport, FusedRegressionVerdict]`:
         1. Costruisce il facade via `build_facade(settings)` (vehicle, Principio XI).
@@ -267,20 +267,20 @@
         4. Confronta con `compare_fused_to_baseline(report, baseline, settings.eval_tolerance)`.
         5. Emette evento via `emit_fused_eval_event(report, verdict)`.
         6. Ritorna `(report, verdict)`.
-- [ ] Implementa `build_fused_eval_runner(settings: Settings | None = None) -> _FusedEvalRunner`:
+- [x] Implementa `build_fused_eval_runner(settings: Settings | None = None) -> _FusedEvalRunner`:
       - `settings = settings or Settings()`.
       - Chiama `_wire_runtime(settings)` (auto-wire osservabilità, pattern FEAT-041 — obbligatorio,
         Principio XI / composition.py invariante).
       - Ritorna `_FusedEvalRunner(settings)`.
-- [ ] Riesporta `build_fused_eval_runner` da `__init__.py` coerentemente con le altre factory
+- [x] Riesporta `build_fused_eval_runner` da `__init__.py` coerentemente con le altre factory
       pubbliche (`build_eval_runner`, `build_graph_eval_runner`, ecc.).
-- [ ] Verifica: `build_fused_eval_runner` è l'UNICO punto di composizione per questo percorso
+- [x] Verifica: `build_fused_eval_runner` è l'UNICO punto di composizione per questo percorso
       (Principio I/XI); i test esistenti di `composition.py` continuano a passare (RNF-5).
 
 ### TASK-A02 — Formatter output `eval --fused` in `cli/output.py` [P]
 **File**: `src/sertor_core/cli/output.py`
 → dipende da: TASK-F01, TASK-F04
-- [ ] Aggiungi `format_fused_eval_report(report: FusedEvalReport, verdict: FusedRegressionVerdict, json_mode: bool) -> str`
+- [x] Aggiungi `format_fused_eval_report(report: FusedEvalReport, verdict: FusedRegressionVerdict, json_mode: bool) -> str`
       come funzione **pura** (zero I/O, zero side-effect):
       - Output umano (schema da `contracts/cli-eval-fused.md` §Output umano):
         ```
@@ -303,17 +303,17 @@
         (`doc only (missing CODE)` o `code only (missing DOC)`).
       - Output JSON: equivalente informativo (tutti i campi di `FusedEvalReport` + `verdict`,
         `tolerance`, `deltas`); valido JSON; stessa struttura usata per `--json`.
-- [ ] Aggiungi `format_fused_regression(verdict: FusedRegressionVerdict, json_mode: bool) -> str`:
+- [x] Aggiungi `format_fused_regression(verdict: FusedRegressionVerdict, json_mode: bool) -> str`:
       compatta (`PASS`/`REGRESSED`/`no baseline` + delta per superficie + fusion_coverage).
       Funzione pura riusabile in standalone.
-- [ ] Verifica: nessuna delle funzioni ha side-effect; equivalenza informativa umano↔JSON;
+- [x] Verifica: nessuna delle funzioni ha side-effect; equivalenza informativa umano↔JSON;
       formato `[covered]`/`[GAP    ]` con spaziatura fissa per leggibilità; funzioni pure testabili
       senza dipendenze (Principio I/V).
 
 ### TASK-A03 — Estendi CLI `eval run --fused` e `eval add-case --intent` in `cli/__main__.py`
 **File**: `src/sertor_core/cli/__main__.py`
 → dipende da: TASK-A01, TASK-A02
-- [ ] Estendi il sottocomando `eval run` con il flag `--fused` (booleano, default `False`):
+- [x] Estendi il sottocomando `eval run` con il flag `--fused` (booleano, default `False`):
       - Senza `--fused` → comportamento odierno invariato (additività, SC-009, RNF-1).
       - Con `--fused`:
         1. `_resolve_settings` + `_check_backend` + `enable_observability` (pattern esistente).
@@ -333,7 +333,7 @@
            o crea `FusedRegressionDetected`, a seconda di ciò che `main()` già gestisce) → exit 1.
         8. Stampa con `format_fused_eval_report(report, verdict, args.json)`.
         9. Exit 0 se nessun gate scatta (incluso `no-baseline`).
-- [ ] Estendi il sottocomando `eval add-case` con il flag `--intent`:
+- [x] Estendi il sottocomando `eval add-case` con il flag `--intent`:
       ```
       eval add-case --query Q --expected P[,P…]
                    [--kind K] [--intent code|doc|both] [--confirm] [--corpus C] [--json]
@@ -342,17 +342,17 @@
       - Validazione write-time del path atteso: comportamento invariato (065).
       - Chiama `add_case(settings.eval_dir / "suite.toml", EvalCase(..., intent=args.intent))`.
       - **Preserva** `[[graph_case]]` esistenti (via `write_suite` già invariante, TASK-F05).
-- [ ] Estendi il sottocomando `eval amend-case` con il flag `--intent` (ri-tipizzazione):
+- [x] Estendi il sottocomando `eval amend-case` con il flag `--intent` (ri-tipizzazione):
       - `--intent` opzionale; se assente, non modifica l'`intent` del caso esistente.
       - Chiama `amend_case(path, query, ..., intent=args.intent)`.
-- [ ] Verifica: CLI thin (nessuna logica di metrica nel CLI, Principio I); exit code coerenti
+- [x] Verifica: CLI thin (nessuna logica di metrica nel CLI, Principio I); exit code coerenti
       (0=success/no-baseline, 1=errore/regressione, 2=usage); nessun import diretto di adapter.
       Il gruppo `graph-eval` e il comportamento `eval run` senza `--fused` sono **invariati** (RNF-5).
 
 ### TASK-A04 — Test unitari: fusion.py + fused_runner.py (funzioni pure + facade mock) [P]
 **File nuovi**: `tests/unit/test_fusion.py`, `tests/unit/test_fused_runner.py`
 → dipende da: TASK-F02, TASK-F03
-- [ ] `test_fusion.py` (funzioni pure, zero rete, zero adapter reali):
+- [x] `test_fusion.py` (funzioni pure, zero rete, zero adapter reali):
       - `fusion_coverage([caso_both], search_fn=mock_ritorna_doc_e_code, k=5)`:
         → `covered=True`, `coverage=1.0`, `hit_but_not_covered=0`.
       - `fusion_coverage([caso_both], search_fn=mock_ritorna_solo_doc, k=5)`:
@@ -365,7 +365,7 @@
         → `hit_but_not_covered` non viene incrementato (solo hit@k=True & covered=False conta).
       - Determinismo: stessa `search_fn` mock → stesso `FusionReport` su chiamate multiple (REQ-041).
       - `INTENT_SURFACE` mappa correttamente `{"code": "search_code", "doc": "search_docs", "both": "search_combined"}`.
-- [ ] `test_fused_runner.py` (facade mock a structural typing — nessuna eredità):
+- [x] `test_fused_runner.py` (facade mock a structural typing — nessuna eredità):
       - `run_fused_evaluation(facade_mock, suite_con_casi_intent, ks=(1,3,5), fusion_k=5)`:
         → `FusedEvalReport` con 3 `SurfaceEvalReport` e `FusionReport` coerente.
       - Suite senza casi `intent` → `FusedEvalReport` con `surfaces=()` e `fusion.cases_count=0`.
@@ -376,7 +376,7 @@
 ### TASK-A05 — Test unitari: suite_io intent + baseline_io fused (round-trip) [P]
 **File nuovi**: `tests/unit/test_suite_io_intent.py`, `tests/unit/test_baseline_io_fused.py`
 → dipende da: TASK-F05, TASK-F06
-- [ ] `test_suite_io_intent.py`:
+- [x] `test_suite_io_intent.py`:
       - Round-trip `write_suite`→`load_suite` per una suite con `[[case]]` con `intent` + senza
         `intent` + `[[graph_case]]`: verifica che tutte le sezioni siano preservate (non-distruttività
         — preserve-both, RNF-5).
@@ -390,7 +390,7 @@
       - `amend_case` aggiorna `intent` correttamente.
       - `amend_case` senza `intent` → non tocca l'`intent` esistente (sentinella `_UNSET`).
       - `SuiteWriteError` se round-trip fallisce (mock `tomllib` che solleva).
-- [ ] `test_baseline_io_fused.py`:
+- [x] `test_baseline_io_fused.py`:
       - Round-trip `write_fused_baseline`→`load_fused_baseline` identico (tutte le superfici +
         `fusion_coverage` + `recorded_at`).
       - File assente → `None`.
@@ -402,14 +402,14 @@
 ### TASK-A06 — Test unitari: formatter output + CLI `eval --fused` (core mockato) [P]
 **File nuovi**: `tests/unit/test_output_fused_eval.py`, `tests/unit/test_cli_fused_eval.py`
 → dipende da: TASK-A02, TASK-A03
-- [ ] `test_output_fused_eval.py` (funzioni pure, zero I/O):
+- [x] `test_output_fused_eval.py` (funzioni pure, zero I/O):
       - `format_fused_eval_report` con report completo: output umano contiene `fusion coverage`,
         `[covered]`/`[GAP    ]`, MRR per-superficie, riga non-regression `PASS`/`REGRESSED`.
       - Output `--json` valido JSON con stessi campi informativi (equivalenza).
       - `format_fused_regression` con `"regressed"` → stringa contiene `REGRESSED` + delta per
         superficie + `fusion_coverage`.
       - Report con `cases_count=0` → output vuoto onesto (non crash, non zero ingannevole).
-- [ ] `test_cli_fused_eval.py` (stile `test_cli_eval.py`, argparse + `_FusedEvalRunner` mockato):
+- [x] `test_cli_fused_eval.py` (stile `test_cli_eval.py`, argparse + `_FusedEvalRunner` mockato):
       - `eval run --fused` con suite+facade mock → exit 0, metriche in stdout.
       - `eval run --fused` senza suite (file assente) → exit 1, messaggio azionabile.
       - `eval run --fused` con suite senza casi `intent` → exit 0, messaggio azionabile (non exit 1).
@@ -439,21 +439,21 @@
 ### TASK-B01 — Verifica non-regressione della suite esistente (IR + graph-eval) [P]
 **File**: nessun file nuovo — verifica di regressione sul corpus esistente
 → dipende da: TASK-F01, TASK-F05 (modifica a `models.py` e `suite_io.py`)
-- [ ] Esegui `uv run pytest -m "not cloud" tests/unit/` dopo aver implementato TASK-F01 e TASK-F05:
+- [x] Esegui `uv run pytest -m "not cloud" tests/unit/` dopo aver implementato TASK-F01 e TASK-F05:
       verifica che TUTTA la suite unit esistente passi invariata (inclusi i test IR di `models.py`,
       `suite_io.py`, `baseline_io.py`, `regression.py`, `cli_eval.py` e graph-eval).
-- [ ] In particolare verifica che `EvalSuite` con soli `cases` (senza campo `intent`) costruita
+- [x] In particolare verifica che `EvalSuite` con soli `cases` (senza campo `intent`) costruita
       nei test esistenti continui a funzionare con `intent=None` di default (Principio VI, RNF-5).
-- [ ] Verifica che `load_suite` su `eval/suite.toml` esistente (con soli `[[case]]` senza `intent`
+- [x] Verifica che `load_suite` su `eval/suite.toml` esistente (con soli `[[case]]` senza `intent`
       e `[[graph_case]]`) non sollevi errori e produca `EvalSuite` valida con `intent=None` su tutti
       i casi (retrocompatibilità assoluta).
-- [ ] Documenta eventuali test che richiedono aggiornamento dei fixture per il nuovo campo `intent`;
+- [x] Documenta eventuali test che richiedono aggiornamento dei fixture per il nuovo campo `intent`;
       aggiornali senza modificare la semantica (solo aggiunta del default `intent=None`).
 
 ### TASK-B02 — Test unitari: `compare_fused_to_baseline` (regression fused) [P]
 **File nuovo**: `tests/unit/test_regression_fused.py`
 → dipende da: TASK-F04
-- [ ] `test_regression_fused.py` (funzione pura, zero I/O, zero rete):
+- [x] `test_regression_fused.py` (funzione pura, zero I/O, zero rete):
       - `compare_fused_to_baseline(report, None, 0.0)` → `"no-baseline"`, exit 0 (baseline assente
         = gate passa, contract `artifacts-toml.md`).
       - MRR di una superficie corrente < baseline - tolerance → `"regressed"`, exit 1.
@@ -470,15 +470,15 @@
 **File**: `packages/sertor/src/sertor_installer/assets/rag/env.local.tmpl`
 **File**: `packages/sertor/src/sertor_installer/assets/rag/env.azure.tmpl`
 → dipende da: TASK-G01
-- [ ] Aggiungi in entrambi i template (sezione commentata, accanto alle manopole
+- [x] Aggiungi in entrambi i template (sezione commentata, accanto alle manopole
       `SERTOR_EVAL_TOLERANCE` e `SERTOR_GRAPH_EVAL_*` già presenti — Principio X, REQ-042,
       corollario installabile):
       ```
       # Optional: top-k used to evaluate fusion coverage on "both" intent cases (default 5).
       # SERTOR_EVAL_FUSION_K=5
       ```
-- [ ] Verifica: la riga è commentata di default (additività, RNF-1); nessun segreto nei template.
-- [ ] Controlla che `test_packaging.py` (integration) non fallisca per la nuova riga; aggiorna
+- [x] Verifica: la riga è commentata di default (additività, RNF-1); nessun segreto nei template.
+- [x] Controlla che `test_packaging.py` (integration) non fallisca per la nuova riga; aggiorna
       eventuali riferimenti nel test se necessario.
 
 ---
@@ -489,6 +489,10 @@
 > Natura mista: l'authoring dei casi è **GIUDIZIO** (utente/agente), la registrazione è **meccanica**
 > via CLI. Prerequisiti: Fase 2 completa (CLI `eval add-case --intent` disponibile).
 > ATTENZIONE: questi task richiedono un indice dogfood attivo (corpus `sertor` indicizzato).
+>
+> **STATO (2026-06-21): DIFFERITI.** L'infrastruttura meccanica (Setup+Fondazionale+US1+US2+P01+P02)
+> è completa e verde; C01 (giudizio + corpus reale) e C02 (richiede indice dogfood attivo) sono
+> lasciati al flusso principale dopo il merge dell'MVP meccanico.
 
 ### TASK-C01 — Curazione set NL intent-typed in `eval/suite.toml` (GIUDIZIO)
 **File**: `eval/suite.toml`
@@ -537,6 +541,9 @@
 > valutare è scelta dall'utente in base all'ordine raccomandato (metadata→contextual→query-transform).
 > La query-transform/HyDE NON deve introdurre un LLM nel run deterministico (RNF-3) — se la leva
 > richiede LLM a query-time, si documenta il pattern ma NON si integra nel run.
+>
+> **STATO (2026-06-21): DIFFERITI.** Empirici, dipendono dalle baseline reali (C02); al flusso
+> principale dopo le baseline.
 
 ### TASK-D01 — Valutazione di ≥1 leva opt-in sul set NL (GIUDIZIO + misura)
 → dipende da: TASK-C02 (baseline registrate)
@@ -575,6 +582,9 @@
 > Debito di completamento della capacità host-side (Principio X, REQ-043, spec §US5).
 > Prerequisiti: Fase 2 completa (CLI `eval add-case --intent` disponibile).
 > Nature: GIUDIZIO (skill), nessuna logica LLM nel core/CLI.
+>
+> **STATO (2026-06-21): DIFFERITI.** E01 = scrittura del corpo della skill (giudizio, flusso
+> principale); E02 = test della skill, dipende da E01. Debito di completamento P2.
 
 ### TASK-E01 — Estendi la skill `eval-suite-author` per la genesi di casi NL intent-typed [P]
 **File**: `.claude/skills/eval-suite-author/SKILL.md`
@@ -629,7 +639,7 @@
 ### TASK-P01 — Smoke test end-to-end non-regressione fused (integration, not cloud)
 **File nuovo**: `tests/integration/test_fused_eval_gate.py`
 → dipende da: TASK-A01, TASK-A03, TASK-F05 (suite.toml con casi intent)
-- [ ] Test `@integration` `not cloud` con Chroma locale e facade mock/locale (corpus minimale di
+- [x] Test `@integration` `not cloud` con Chroma locale e facade mock/locale (corpus minimale di
       3-5 file sintetici indicizzati inline, con `doc_type=CODE` e `doc_type=DOC` espliciti):
       - Aggiungi casi NL intent-typed alla suite di test (`intent="code"`, `"doc"`, `"both"`).
       - Esegui `eval run --fused` come subprocess → exit 0, metriche in stdout; output contiene
@@ -642,30 +652,34 @@
       - Due run identici su stesso indice+suite → metriche identiche (determinismo, SC-004).
       - Gate `no-baseline` (baseline assente) → exit 0 (contract `artifacts-toml.md`).
       - `eval run` SENZA `--fused` sul medesimo ambiente → exit 0 invariato (additività, SC-009).
-- [ ] Test `@integration` per `add-case --intent`:
+- [x] Test `@integration` per `add-case --intent`:
       - `eval add-case --query "..." --expected path1,path2 --intent both --kind nl --confirm`
         → exit 0, caso con `intent="both"` appare in `suite.toml`; `[[graph_case]]` invariato.
       - Suite con `intent` invalido → exit 1 (`FusedSuiteValidationError`).
-- [ ] Tutti i test superano con `uv run pytest -m "not cloud" tests/integration/test_fused_eval_gate.py`.
+- [x] Tutti i test superano con `uv run pytest -m "not cloud" tests/integration/test_fused_eval_gate.py`.
 
 ### TASK-P02 — Lint ruff e verifica additività a leve spente
 → dipende da: tutti i task precedenti
-- [ ] Esegui `uv run ruff check .` e correggi eventuali errori nei file nuovi/modificati
+- [x] Esegui `uv run ruff check .` e correggi eventuali errori nei file nuovi/modificati
       (regole E,F,I,UP,B; line-length 100). Zero errori come pre-condizione al merge.
-- [ ] Verifica **additività** (RNF-1/SC-009): senza invocare `eval run --fused`, esegui:
+- [x] Verifica **additività** (RNF-1/SC-009): senza invocare `eval run --fused`, esegui:
       - `uv run sertor-rag index .` → comportamento e costo identici a prima.
       - `uv run sertor-rag search "test"` → output invariato.
       - `uv run sertor-rag eval run` (IR, senza `--fused`) → output invariato (hit@k/MRR, nessun
         campo `fusion_coverage`, nessun overhead).
       - `uv run sertor-rag graph-eval run` → invariato.
-- [ ] Esegui `uv run pytest -m "not cloud" tests/unit/` e verifica che TUTTA la suite unit passi
+- [x] Esegui `uv run pytest -m "not cloud" tests/unit/` e verifica che TUTTA la suite unit passi
       (inclusi i test IR/graph-eval esistenti e tutti i nuovi test fused).
-- [ ] Esegui `uv run pytest -m "not cloud" tests/` (root) e verifica che la suite complessiva
+- [x] Esegui `uv run pytest -m "not cloud" tests/` (root) e verifica che la suite complessiva
       passi (escludendo i test `@cloud`).
 
 ### TASK-P03 — Aggiornamento commenti e header in `eval/suite.toml` e `eval/baseline.toml`
 **File**: `eval/suite.toml`, `eval/baseline.toml`
 → dipende da: TASK-C01, TASK-C02
+> **STATO (2026-06-21): DIFFERITO.** Tocca i file dogfood `eval/suite.toml`/`eval/baseline.toml`
+> che vengono curati in C01/C02 (giudizio + indice attivo); va eseguito insieme a quelli. Il
+> commento-header del serializzatore `suite_io._serialize_suite` (generato a ogni scrittura) è
+> GIÀ aggiornato con la riga `intent` (parte di TASK-F05, fatto).
 - [ ] Aggiorna il commento in testa a `eval/suite.toml` per includere la descrizione dei campi
       `intent` e della categoria di fusione (cross-artefatto):
       ```toml

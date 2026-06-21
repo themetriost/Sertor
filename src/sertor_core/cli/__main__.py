@@ -23,6 +23,7 @@ from sertor_core.composition import (
     build_episodic_search,
     build_eval_runner,
     build_facade,
+    build_fused_eval_runner,
     build_graph_eval_runner,
     build_indexed_docs,
     build_indexer,
@@ -33,6 +34,7 @@ from sertor_core.composition import (
 from sertor_core.config.settings import Settings
 from sertor_core.domain.errors import (
     ConfigError,
+    FusedRegressionDetected,
     GraphRegressionDetected,
     IngestionError,
     RegressionDetected,
@@ -45,6 +47,7 @@ from sertor_core.services.eval.baseline_io import (
     load_baseline,
     now_iso_utc,
     write_baseline,
+    write_fused_baseline,
 )
 from sertor_core.services.eval.graph_baseline_io import (
     now_iso_utc as graph_now_iso_utc,
@@ -53,12 +56,20 @@ from sertor_core.services.eval.graph_baseline_io import (
     write_graph_baseline,
 )
 from sertor_core.services.eval.graph_runner import validate_refs
-from sertor_core.services.eval.models import Baseline, EvalCase, GraphBaseline, GraphCase
+from sertor_core.services.eval.models import (
+    Baseline,
+    EvalCase,
+    FusedBaseline,
+    GraphBaseline,
+    GraphCase,
+    SurfaceBaseline,
+)
 from sertor_core.services.eval.regression import compare_to_baseline
 from sertor_core.services.eval.runner import emit_eval_event, validate_paths
 from sertor_core.services.eval.suite_io import (
     add_case,
     add_graph_case,
+    amend_case,
     amend_graph_case,
     load_suite,
 )
@@ -142,6 +153,9 @@ def _add_eval_parser(sub) -> None:
     p_run.add_argument("--compare", default=None,
                        help="comma-separated config labels to compare on the same suite "
                             "(e.g. baseline,hybrid)")
+    p_run.add_argument("--fused", action="store_true",
+                       help="measure per-surface (search_code/docs/combined) + fusion coverage on "
+                            "intent-typed cases; gate per-surface + fusion (069)")
     p_run.add_argument("--record-baseline", action="store_true",
                        help="record/update eval/baseline.toml with the current metrics")
     p_run.add_argument("--by-kind", action="store_true",
@@ -164,6 +178,8 @@ def _add_eval_parser(sub) -> None:
     p_add.add_argument("--expected", required=True,
                        help="comma-separated expected path(s), POSIX, relative to the indexed root")
     p_add.add_argument("--kind", default=None, help='optional kind (e.g. "symbol"/"nl")')
+    p_add.add_argument("--intent", default=None, choices=["code", "doc", "both"],
+                       help="surface + expected types for fusion (069): code|doc|both")
     p_add.add_argument("--confirm", action="store_true",
                        help="write even if an expected path is not in the index")
     p_add.add_argument("--json", action="store_true", help="report as a JSON object")
@@ -171,6 +187,25 @@ def _add_eval_parser(sub) -> None:
                        help="corpus namespace; overrides SERTOR_CORPUS")
     _add_logging_flags(p_add)
     p_add.set_defaults(handler=_cmd_eval_add)
+
+    p_amend = esub.add_parser(
+        "amend-case", help="re-author an existing IR case (paths / kind / intent)",
+        description="Updates the case identified by --query (expected/kind/intent). Omitting "
+                    "--intent leaves it unchanged; the case must exist (else exit 1).",
+    )
+    p_amend.add_argument("--query", required=True, help="the query that identifies the case")
+    p_amend.add_argument("--expected", default=None,
+                         help="comma-separated expected path(s) to replace the existing ones")
+    p_amend.add_argument("--kind", default=None, help='optional kind (e.g. "symbol"/"nl")')
+    p_amend.add_argument("--intent", default=None, choices=["code", "doc", "both"],
+                         help="re-type the case for fusion (069): code|doc|both")
+    p_amend.add_argument("--confirm", action="store_true",
+                         help="write even if an expected path is not in the index")
+    p_amend.add_argument("--json", action="store_true", help="report as a JSON object")
+    p_amend.add_argument("--corpus", default=None,
+                         help="corpus namespace; overrides SERTOR_CORPUS")
+    _add_logging_flags(p_amend)
+    p_amend.set_defaults(handler=_cmd_eval_amend)
 
     p_val = esub.add_parser(
         "validate-path", help="check path(s) against the indexed documents (primitive for skills)",
@@ -579,6 +614,11 @@ def _cmd_eval_run(args) -> None:
     enable_observability(settings)
     ks = _parse_ks(args.k)
     suite = load_suite(_suite_path(settings))  # absent → SuiteNotFoundError (exit 1, actionable)
+
+    if getattr(args, "fused", False):
+        _run_fused_eval(args, settings, suite, ks)
+        return
+
     runner = build_eval_runner(settings)
 
     if args.compare:
@@ -614,12 +654,64 @@ def _cmd_eval_run(args) -> None:
         raise RegressionDetected(verdict)
 
 
+def _run_fused_eval(args, settings, suite, ks) -> None:
+    """`eval run --fused`: per-surface + fusion coverage measure + gate (069, contract cli-fused).
+
+    Suite with no intent-typed cases → actionable message + honest empty report (exit 0, not a
+    fasullo gate on zero cases). Builds the facade via `build_fused_eval_runner` (vehicle, Principio
+    XI). `--record-baseline` writes the `[fused_baseline]` section (preserve-both, never touches the
+    IR `[baseline]`). A regression beyond tolerance → `FusedRegressionDetected` (exit 1).
+    """
+    intent_cases = sum(1 for c in suite.cases if c.intent in ("code", "doc", "both"))
+    runner = build_fused_eval_runner(settings)
+    report, verdict = runner.run_fused(suite, ks)
+
+    print(output.format_fused_eval_report(report, verdict, json=args.json))
+    if intent_cases == 0:
+        print(
+            "no NL intent-typed case found — add one with "
+            "`sertor-rag eval add-case --intent code|doc|both` "
+            "or use the `eval-suite-author` skill",
+            file=sys.stderr,
+        )
+        return
+
+    if args.record_baseline:
+        write_fused_baseline(_baseline_path(settings), _fused_baseline_from(report))
+        return
+
+    if verdict.verdict == "regressed":
+        raise FusedRegressionDetected(verdict)
+
+
+def _fused_baseline_from(report) -> FusedBaseline:
+    """Build a `FusedBaseline` from a current `FusedEvalReport` (069, --record-baseline)."""
+    surfaces = tuple(
+        SurfaceBaseline(
+            surface=s.surface,
+            hit_rate=dict(s.report.hit_rate),
+            mrr=s.report.mrr,
+        )
+        for s in report.surfaces
+    )
+    queries = sum(s.report.queries for s in report.surfaces) + report.fusion.cases_count
+    return FusedBaseline(
+        surfaces=surfaces,
+        fusion_coverage=report.fusion.coverage,
+        queries=queries,
+        provider=report.provider,
+        recorded_at=now_iso_utc(),
+    )
+
+
 def _cmd_eval_add(args) -> None:
-    """Handler for `eval add-case`: validate path(s) against the index, then persist (065, US1).
+    """Handler for `eval add-case`: validate path(s) against the index, then persist (065/069, US1).
 
     A path absent from the index → warning + requires `--confirm` (or, on a TTY, an interactive
     confirmation) before writing; otherwise exit 1 azionabile, nothing written. The index being
     unavailable (manifest absent) is the same path: persist only with `--confirm` (honest degrado).
+    `--intent` (069) tags the case for the fused measure (surface + expected types); preserves the
+    `[[graph_case]]` via the round-tripping writer.
     """
     setup_logging(args)
     settings = _resolve_settings(args)
@@ -640,8 +732,48 @@ def _cmd_eval_add(args) -> None:
         )
     if blocking:
         print(output.format_path_validation(pv, json=False), file=sys.stderr)
-    add_case(_suite_path(settings), EvalCase(query=args.query, expected=expected, kind=args.kind))
+    add_case(
+        _suite_path(settings),
+        EvalCase(query=args.query, expected=expected, kind=args.kind, intent=args.intent),
+    )
     print(output.format_path_validation(pv, json=args.json))
+
+
+def _cmd_eval_amend(args) -> None:
+    """Handler for `eval amend-case`: re-author an existing IR case (065/069 re-typing path).
+
+    Validates the new expected path(s) against the index (same write-time gate as add-case). The
+    case must exist (else SuiteValidationError, exit 1). Omitting `--intent` leaves the existing
+    intent untouched; passing it re-types the case (069). Preserves the `[[graph_case]]`.
+    """
+    from sertor_core.services.eval.suite_io import _UNSET
+
+    setup_logging(args)
+    settings = _resolve_settings(args)
+    enable_observability(settings)
+    expected = None
+    if args.expected is not None:
+        expected = tuple(p.strip() for p in args.expected.split(",") if p.strip())
+        if not expected:
+            raise ConfigError("no expected path provided")
+        pv = validate_paths(expected, build_indexed_docs(settings))
+        blocking = bool(pv.missing) or not pv.index_available
+        if blocking and not args.confirm and not _confirm_via_tty(pv):
+            print(output.format_path_validation(pv, json=False), file=sys.stderr)
+            raise ConfigError(
+                "expected path(s) not verified against the index; "
+                "re-run with --confirm to amend the case anyway"
+            )
+        if blocking:
+            print(output.format_path_validation(pv, json=False), file=sys.stderr)
+    amend_case(
+        _suite_path(settings),
+        args.query,
+        expected=expected,
+        kind=args.kind,
+        intent=args.intent if args.intent is not None else _UNSET,
+    )
+    print(f"amended case {args.query!r}")
 
 
 def _confirm_via_tty(pv) -> bool:

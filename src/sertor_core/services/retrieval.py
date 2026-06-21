@@ -99,6 +99,15 @@ class RetrievalFacade:
         # path; on the retriever path the hybrid engine applies it (no double filtering).
         self._min_score = min_score
 
+    @property
+    def provider(self) -> str:
+        """The embedding provider name (069): identifies the vector space of the measure.
+
+        Exposed so the fused-eval surface adapters can satisfy `QueryableEngine.provider` and the
+        report/baseline can carry the provider, without reaching into the private embedder.
+        """
+        return self._embedder.name
+
     def _search(self, query: str, k: int | None, doc_type: DocTypeFilter) -> list[RetrievalResult]:
         k = k or self._default_k
         if not self._store.exists(self._collection):
