@@ -10,7 +10,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # forward ref only — avoid importing the services layer into `domain`
-    from sertor_core.services.eval.models import GraphRegressionVerdict, RegressionVerdict
+    from sertor_core.services.eval.models import (
+        FusedRegressionVerdict,
+        GraphRegressionVerdict,
+        RegressionVerdict,
+    )
 
 
 class SertorError(Exception):
@@ -236,6 +240,26 @@ class GraphSuiteValidationError(SertorError):
         super().__init__(f"invalid graph_case [{case_index}]: {detail}")
 
 
+class FusedSuiteValidationError(SuiteValidationError):
+    """A `[[case]]` carries an `intent` outside `{code, doc, both}` (069, REQ-004).
+
+    Subclass of `SuiteValidationError` (so the IR exit-1 handling and `load_suite` callers catch it
+    unchanged), specialised for the fused code+doc feature: a bad `intent` is an authoring bug in
+    the curated suite — fail and NAME the offending case (its `query`) together with the invalid
+    value and the allowed set, so the author knows exactly what to fix (Principio IV). Distinct
+    subclass so the log and the message can tell a fused authoring problem from a generic one.
+    """
+
+    def __init__(self, case_index: int, query: str, intent: str):
+        self.query = query
+        self.intent = intent
+        detail = (
+            f"invalid `intent`: {intent!r} for case {query!r} "
+            "(allowed: both, code, doc)"
+        )
+        super().__init__(case_index, detail)
+
+
 class GraphRegressionDetected(SertorError):
     """A graph-navigation run scored below the recorded baseline beyond tolerance (066, REQ-032).
 
@@ -280,4 +304,29 @@ class RegressionDetected(SertorError):
             f"non-regression gate FAILED (tolerance={verdict.tolerance:.3f}): {degraded} — "
             "fix the retrieval quality or, if this is an accepted new level, "
             "re-record with `sertor-rag eval run --record-baseline`"
+        )
+
+
+class FusedRegressionDetected(SertorError):
+    """A fused (per-surface + fusion coverage) run scored below baseline beyond tolerance (069).
+
+    The non-regression GATE for `eval run --fused`: at least one per-surface metric (mrr / hit@k) OR
+    the fusion coverage dropped by more than the configured tolerance versus the `[fused_baseline]`
+    section of `eval/baseline.toml` (REQ-040, R-3). An explicit failure (exit 1) so CI can block the
+    change; the message names every degraded metric and the tolerance. Carries the full
+    `FusedRegressionVerdict` so a consumer can render the per-metric deltas. Twin of
+    `RegressionDetected`/`GraphRegressionDetected`.
+    """
+
+    def __init__(self, verdict: FusedRegressionVerdict):
+        self.verdict = verdict
+        degraded = ", ".join(
+            f"{d.name} {d.current:.3f}<{d.baseline:.3f} (Δ={d.delta:+.3f})"
+            for d in verdict.deltas
+            if d.regressed
+        )
+        super().__init__(
+            f"fused non-regression gate FAILED (tolerance={verdict.tolerance:.3f}): {degraded} — "
+            "fix the retrieval quality or, if this is an accepted new level, "
+            "re-record with `sertor-rag eval run --fused --record-baseline`"
         )

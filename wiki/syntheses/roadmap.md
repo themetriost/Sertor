@@ -53,7 +53,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **E2** | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | ergonomia installer · Codex · PyPI · `configure --check` (probe live, deferred) *(packaging ✅ + lifecycle ✅ + hardening Copilot FEAT-011 ✅ + wizard config ✅ + Copilot CLI-only ✅ + verifica empirica Copilot LIVE ✅, 2026-06-17)* |
 | **E3** | [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | **export OTel FEAT-005 ✅** + arricchimento span FEAT-013 ✅ + TUI tabella FEAT-014 ✅ + **visibilità RAG/dimostrabilità FEAT-015 ✅** (PR #88) · drift FEAT-012 · metriche aggregate · stima € (Should) · web · CSV/MD |
 | **E4** | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso | ricerca semantica · remember-this · retention · **distribuzione installer (Must)** · multi-assist |
-| **E5** | 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | 🔄 FEAT-001 + FEAT-011 ✅ su master | **eval IR host-side ✅** (`sertor-rag eval`, PR #92) + **eval set-based del grafo ✅** (`graph-eval`, FEAT-011, 2026-06-20). Skill genesi/feedback **provate live ✅** (FEAT-008/009). Restano: FEAT-003 (qualità ibrido su NL, **ora misurabile**), FEAT-002/004/005-007 |
+| **E5** | 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | 🔄 FEAT-001+011 ✅ su master · FEAT-003 infra su branch `069` | **eval IR ✅** (PR #92) + **graph-eval ✅** (FEAT-011) + skill genesi/feedback **live ✅**. **FEAT-003 (fusione code+doc): infrastruttura di misura implementata su branch `069`** (campo `intent`, **fusion coverage**, baseline per-superficie, `eval run --fused`); resta la **fase empirica** (set NL reale + baseline dogfood + valutazione leve). Aperte FEAT-002/004/005-007 |
 | **E6** | 🆕 [`backend-store-scala`](../../requirements/backend-store-scala/epic.md) | 📋 aperta | adapter PGVector (Should) |
 | **E7** | 🆕 [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 📋 aperta | chunking SQL → **sblocca** schema-SQL |
 | **E8** | 🆕 [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | 📋 aperta | bloccata a monte da `ingestione-estesa` |
@@ -65,10 +65,15 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-> Nessuna feature attiva su branch al momento (**FEAT-011 `sertor-core` — embedder locale ✅ mergiata su
-> `master`** `34b599a`, 2026-06-21: `.sertor/.env` migrata a `SERTOR_EMBED_PROVIDER=azure`, re-index
-> dogfood fatto, smoke MCP fresco). **Candidati a valore = i Must aperti** (sotto). **Debito residuo
-> FEAT-011:** TASK-D04 (rinomina flag installer `--backend`→`--provider`, P2 Should).
+> **Attiva su branch:** **FEAT-003 `retrieval-qualita` — qualità del retrieval fuso code+doc** (branch
+> `069-qualita-fusione-code-doc`). *Cosa:* infrastruttura di misura della fusione (campo `intent` code|doc|both
+> sui casi, metrica **fusion coverage**, misura per-superficie, baseline `[fused_baseline]` + gate,
+> `sertor-rag eval run --fused`, evento `fused_eval`). *Stato:* **MVP meccanico implementato e committato**
+> (`70f445c`, core 938 verdi, ruff pulito, Constitution 12/12), non mergiato. *Prossimo passo:* **decisione
+> merge infra** + **fase empirica** (autoraggio set NL intent-typed reale via `eval-suite-author`, baseline
+> sul dogfood, valutazione leve metadata→contextual→query-transform — adozione opt-in solo se lift ≥+0.05).
+> *Debito:* skill `eval-suite-author` estesa (P2). **— FEAT-011 `sertor-core` embedder locale ✅ mergiata
+> `34b599a`** (2026-06-21).
 
 **Candidati a valore = Must aperti** (non ancora iniziati):
 

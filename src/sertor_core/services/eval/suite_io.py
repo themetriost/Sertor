@@ -12,6 +12,7 @@ import tomllib
 from pathlib import Path
 
 from sertor_core.domain.errors import (
+    FusedSuiteValidationError,
     GraphSuiteValidationError,
     SuiteNotFoundError,
     SuiteValidationError,
@@ -19,6 +20,12 @@ from sertor_core.domain.errors import (
 )
 from sertor_core.services.eval.graph_eval import _SUPPORTED_RELATIONS
 from sertor_core.services.eval.models import EvalCase, EvalSuite, GraphCase
+
+# Allowed values of the optional `intent` field on `[[case]]` (069, REQ-003/004).
+_VALID_INTENTS: frozenset[str] = frozenset({"code", "doc", "both"})
+
+# Sentinel so `amend_case(..., intent=...)` can tell "leave unchanged" from "set to None".
+_UNSET: object = object()
 
 
 def load_suite(path: Path) -> EvalSuite:
@@ -62,7 +69,13 @@ def _parse_case(index: int, raw: object) -> EvalCase:
     kind = raw.get("kind")
     if kind is not None and not isinstance(kind, str):
         raise SuiteValidationError(index, "`kind` must be a string when present")
-    return EvalCase(query=query, expected=tuple(expected), kind=kind)
+    intent = raw.get("intent")
+    if intent is not None:
+        # An invalid `intent` (wrong type / empty / outside the set) is an authoring bug that names
+        # the offending case (069, REQ-004) — distinct subclass so the log can tell it apart.
+        if not isinstance(intent, str) or intent not in _VALID_INTENTS:
+            raise FusedSuiteValidationError(index, query, intent if isinstance(intent, str) else "")
+    return EvalCase(query=query, expected=tuple(expected), kind=kind, intent=intent)
 
 
 def _parse_graph_case(index: int, raw: object) -> GraphCase:
@@ -117,8 +130,9 @@ def _serialize_suite(suite: EvalSuite) -> str:
     lines = [
         "# Sertor eval suite. Versioned project data — no secrets.",
         '# [[case]]       = retrieval (IR) — query → expected paths (hit@k/MRR).',
+        '#   intent (069) = "code" | "doc" | "both" — surface measured + expected types (fusion).',
         "# [[graph_case]] = graph navigation — relation + target → expected refs (P/R/F1).",
-        '# kind is optional (e.g. "symbol"/"nl"). Paths are POSIX, relative to the indexed root.',
+        '# kind/intent are optional. Paths are POSIX, relative to the indexed root.',
         "",
     ]
     for c in suite.cases:
@@ -128,6 +142,8 @@ def _serialize_suite(suite: EvalSuite) -> str:
         lines.append(f"expected = [{expected}]")
         if c.kind is not None:
             lines.append(f"kind = {_format_string(c.kind)}")
+        if c.intent is not None:
+            lines.append(f"intent = {_format_string(c.intent)}")
         lines.append("")
     for gc in suite.graph_cases:
         lines.append("[[graph_case]]")
@@ -166,13 +182,26 @@ def write_suite(path: Path, suite: EvalSuite) -> None:
 def add_case(path: Path, case: EvalCase) -> None:
     """Add a case to the suite (create the suite if absent), idempotent on `query` (REQ-010/011).
 
-    Existing cases and their order are preserved; a case with a `query` already present is a no-op
-    (no duplicate). New cases go in coda.
+    Existing cases and their order are preserved; a case with the same `query` AND `intent` already
+    present is a no-op (no duplicate). A case with the same `query` but a DIFFERENT `intent` is an
+    actionable error (069, Principio IV/XII): we never silently overwrite the intent of an existing
+    case (re-author with `amend_case`/`amend-case --intent`). New cases go in coda. Preserves the
+    `[[graph_case]]` (DA-d) since `write_suite` round-trips the whole suite.
     """
     suite = load_suite(path) if path.exists() else EvalSuite(cases=())
-    if any(c.query == case.query for c in suite.cases):
-        return  # idempotent: query already in the suite
-    write_suite(path, EvalSuite(cases=(*suite.cases, case)))
+    for existing in suite.cases:
+        if existing.query == case.query:
+            if existing.intent == case.intent:
+                return  # idempotent: same query + same intent already in the suite
+            raise SuiteValidationError(
+                -1,
+                f"a case with query {case.query!r} already exists with intent "
+                f"{existing.intent!r}; re-author it with `eval amend-case --intent` instead of "
+                "adding a conflicting one",
+            )
+    write_suite(
+        path, EvalSuite(cases=(*suite.cases, case), graph_cases=suite.graph_cases)
+    )
 
 
 def amend_case(
@@ -181,13 +210,19 @@ def amend_case(
     *,
     expected: tuple[str, ...] | None = None,
     kind: str | None = None,
+    intent: str | object = _UNSET,
 ) -> None:
-    """Amend the case identified by `query` (REQ-051 feedback path).
+    """Amend the case identified by `query` (REQ-051 feedback path; 069 re-typing path).
 
     The suite must exist and contain the case (else `SuiteNotFoundError` / `SuiteValidationError`).
-    Only the provided fields are updated (`expected`/`kind`); the rest is preserved. The order of
-    cases is stable. `kind=None` is treated as "leave unchanged" (use `expected` to change paths).
+    Only the provided fields are updated (`expected`/`kind`/`intent`); the rest is preserved. The
+    order of cases is stable. `kind=None` is treated as "leave unchanged" (use `expected` to change
+    paths). `intent` uses the `_UNSET` sentinel: omitting it leaves the existing `intent` untouched
+    (idempotence), while passing a value re-types the case (069); an `intent` outside the set is an
+    actionable error (`FusedSuiteValidationError` naming the case). Preserves the `[[graph_case]]`.
     """
+    if intent is not _UNSET and intent is not None and intent not in _VALID_INTENTS:
+        raise FusedSuiteValidationError(-1, query, intent if isinstance(intent, str) else "")
     suite = load_suite(path)
     found = False
     new_cases: list[EvalCase] = []
@@ -199,6 +234,7 @@ def amend_case(
                     query=c.query,
                     expected=expected if expected is not None else c.expected,
                     kind=kind if kind is not None else c.kind,
+                    intent=c.intent if intent is _UNSET else intent,  # type: ignore[arg-type]
                 )
             )
         else:
