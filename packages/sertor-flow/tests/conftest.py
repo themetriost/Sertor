@@ -12,11 +12,12 @@ import pytest
 
 from sertor_install_kit import CommandResult
 
-# Representative layouts the mocked `specify init` deposits per assistant.
+# Representative layouts the mocked `specify init` deposits per assistant. Claude ships SKILLS
+# (`.claude/skills/speckit-*/SKILL.md`) in spec-kit 0.8.18, not slash-commands — mirror reality so
+# the governance install path (which verifies the skill marker) runs end-to-end like production.
 CLAUDE_LAUNCH_LAYOUT = (
-    ".claude/commands/speckit.specify.md",
-    ".claude/commands/speckit.plan.md",
-    ".claude/agents/speckit-specify.md",
+    ".claude/skills/speckit-specify/SKILL.md",
+    ".claude/skills/speckit-plan/SKILL.md",
     ".specify/templates/plan-template.md",
     ".specify/scripts/bash/check-prerequisites.sh",
     ".specify/scripts/powershell/check-prerequisites.ps1",

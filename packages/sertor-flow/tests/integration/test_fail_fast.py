@@ -32,7 +32,7 @@ def test_fail_fast_stops_and_names_failed_step(tmp_path: Path, monkeypatch):
     assert report.errors == 1
     assert report.failed_step == ig._CONSTITUTION_TARGET
     # No-rollback: artifacts written before the failing step survive on disk.
-    assert (tmp_path / ".claude/commands/speckit.specify.md").exists()  # from launch
+    assert (tmp_path / ".claude/skills/speckit-specify/SKILL.md").exists()  # from launch
     assert (tmp_path / ".specify/templates/plan-template.md").exists()  # from launch
     assert (tmp_path / ".claude/agents/requirements-analyst.md").exists()  # Sertor-authored
     # The failing step and everything after it were NOT applied.

@@ -58,10 +58,14 @@ _SPECKIT_AI_FLAG = {"claude": "claude", "copilot-cli": "copilot"}
 _UTF8_ENV = {"PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
 
 # Per-assistant "marker" files that MUST exist after a successful launch (layout verification).
-# Kept minimal: a SpecKit command for the assistant + the shared `.specify/` machinery.
+# Kept minimal: a SpecKit surface for the assistant + the shared `.specify/` machinery.
+# NOTE (verified empirically against spec-kit v0.8.18): the Claude integration ships SKILLS
+# (`.claude/skills/speckit-*/SKILL.md`), NOT slash-commands (`.claude/commands/speckit.*.md`) —
+# spec-kit migrated Claude to agent skills. Copilot still ships prompts. If a future pinned
+# spec-kit changes a layout again, this is the single point to update.
 _EXPECTED_LAYOUT = {
     "claude": (
-        ".claude/commands/speckit.specify.md",
+        ".claude/skills/speckit-specify/SKILL.md",
         ".specify/templates/plan-template.md",
     ),
     # Keyed by OUR assistant name (`copilot-cli`); the PATHS are the layout spec-kit produces for

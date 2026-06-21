@@ -49,9 +49,9 @@ class FakeRunner:
         return CommandResult(self.returncode, "ok", "" if self.returncode == 0 else "boom")
 
 
-# Minimal layout `specify init --ai claude` is expected to deposit.
+# Minimal layout `specify init --ai claude` is expected to deposit (spec-kit 0.8.18 ships skills).
 _CLAUDE_LAYOUT = [
-    ".claude/commands/speckit.specify.md",
+    ".claude/skills/speckit-specify/SKILL.md",
     ".specify/templates/plan-template.md",
 ]
 _COPILOT_LAYOUT = [

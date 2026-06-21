@@ -51,7 +51,7 @@ def test_governance_install_completes_without_core(core_absent, tmp_path: Path):
     assert report.errors == 0
     assert report.created > 0
     # Spot-check a few host-facing artifacts landed (SpecKit via launch + Sertor-authored).
-    assert (tmp_path / ".claude/commands/speckit.specify.md").exists()
+    assert (tmp_path / ".claude/skills/speckit-specify/SKILL.md").exists()
     assert (tmp_path / ".specify/templates/plan-template.md").exists()
     assert (tmp_path / ".claude/agents/requirements-analyst.md").exists()
     assert (tmp_path / "CLAUDE.md").exists()

@@ -26,8 +26,8 @@ def installed(tmp_path: Path, fake_runner) -> Path:
 
 
 def test_install_deposits_speckit_command_via_launch(installed: Path):
-    """SpecKit commands come from the (mocked) launch, not from a vendored asset."""
-    assert (installed / ".claude/commands/speckit.specify.md").exists()
+    """SpecKit surfaces come from the (mocked) launch, not a vendored asset (Claude = skills)."""
+    assert (installed / ".claude/skills/speckit-specify/SKILL.md").exists()
 
 
 def test_install_deposits_requirements_analyst_agent(installed: Path):
