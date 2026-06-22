@@ -1,10 +1,10 @@
 ---
 title: FEAT-004 — Ricerca semantica sull'archivio episodico (implementazione SpecKit)
 type: experiment
-tags: [feat-004, memoria, ricerca-semantica, embedding, archive, incrementalità, chroma]
+tags: [feat-004, memoria, ricerca-semantica, embedding, archive, incrementalità, chroma, bugfix]
 created: 2026-06-22
-updated: 2026-06-22
-sources: ["requirements/memoria-conversazioni/ricerca-semantica/requirements.md", "specs/072-ricerca-semantica-memoria/**", "src/sertor_core/services/memory_semantic.py"]
+updated: 2026-06-22 (bugfix post-merge metadata Chroma generici + test store reale)
+sources: ["requirements/memoria-conversazioni/ricerca-semantica/requirements.md", "specs/072-ricerca-semantica-memoria/**", "src/sertor_core/services/memory_semantic.py", "src/sertor_core/adapters/vectorstores/chroma.py", "tests/unit/vectorstores/test_vectorstore.py", "tests/unit/services/test_memory_semantic.py"]
 ---
 
 # FEAT-004 — Ricerca semantica sull'archivio episodico
@@ -62,6 +62,14 @@ Aggiungere un **tier semantico** all'archivio: indicizzazione embedding dei turn
 **Debito P2 (corollario installabile):** le manopole `SERTOR_MEMORY_SEMANTIC*` non sono ancora nei template `.env` dell'installer `sertor` (env.local.tmpl, env.azure.tmpl). Follow-up di FEAT-009 (distribuzione memoria via installer).
 
 **Documento:** il requisito esatto in `requirements/memoria-conversazioni/ricerca-semantica/requirements.md` (29 REQ, 8 NFR, 6 DA risolte).
+
+## Bugfix post-merge: metadata generici nello store
+
+**Scoperto in dogfooding (2026-06-22, commit 0f51bf7):** il comando `sertor-rag memory index-semantic` sull'archivio episodico reale falliva su **tutti i 5067 turni** con errore di metadati. **Causa-radice:** la funzione `ChromaStore._clean_metadata` indirizzava una **ALLOW-LIST hardcoded** di chiavi metadata — specifiche del **corpus documentale** (path, doc_type, chunker) — scartando completamente il payload della memoria (session_key, turn_index, captured_at, role). Chroma rifiutava `{}` (nessun metadata) → loss di dati silenzioso.
+
+**Rimedio:** `_clean_metadata` ora **DERIVA i metadata dal payload**, non da una lista fissa. Mantiene ogni scalare e unisce le sequenze con "/", escludendo solo `text` (il documento). Il payload del corpus è un **sottinsieme esatto** dei nuovi metadata → comportamento corpus **preservato**; i metadata della memoria ora round-trippano intatti.
+
+**Lezione critica:** i 46 test della feature passavano silenziosamente perché lo store FINTO (`InMemoryStore`) rispecchiava il lato **lettura** (`_to_results`) ma non il lato **scrittura** (`_clean_metadata`). Un mock fedele a **metà del contratto** nasconde i guasti. Rimedio codificato: 2 **test di regressione sullo store REALE** `ChromaStore` — (1) round-trip metadata in `test_vectorstore.py`; (2) flow end-to-end `index_session + search` in `test_memory_semantic.py`. **Principio:** testare il componente reale, non solo un fake che imita un lato del contratto. Memoria semantica ora completamente operativa; 1000 test non-cloud verdi.
 
 ## Lezioni codificate
 
