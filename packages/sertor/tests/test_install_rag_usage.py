@@ -51,9 +51,10 @@ def test_plan_contains_rag_usage_artifacts(tmp_path: Path):
     assert all(a.strategy is WriteStrategy.CREATE_IF_ABSENT for a in files)
 
     settings = [a for a in plan if a.kind is ArtifactKind.SETTINGS_MERGE]
-    assert len(settings) == 1
-    assert settings[0].target_rel.replace("\\", "/") == _SETTINGS_REL
-    assert settings[0].strategy is WriteStrategy.MERGE_DEDUP
+    # rag-usage (PreToolUse) + memory-capture (SessionEnd, FEAT-009) both merge into settings.json.
+    assert len(settings) >= 1
+    assert all(a.target_rel.replace("\\", "/") == _SETTINGS_REL for a in settings)
+    assert all(a.strategy is WriteStrategy.MERGE_DEDUP for a in settings)
 
 
 def test_plan_order_block_after_gitignore(tmp_path: Path):

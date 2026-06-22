@@ -22,5 +22,17 @@ If a Sertor RAG tool returns an **error** (unreachable backend, missing or stale
 a **signal**, not noise: say so instead of silently falling back to a blind file read. A broken
 retrieval tool is worth surfacing, not burying.
 
+### Conversation memory (optional)
+
+This capability also ships **conversation memory** — a local, opt-in episodic archive of past
+sessions. When it is enabled (`SERTOR_MEMORY=true` in `.sertor/.env`) you can recall earlier work:
+
+- `sertor-rag memory search "<query>"` — full-text search over archived sessions ("did we discuss X?").
+- `sertor-rag memory list` / `sertor-rag memory show <key>` — browse and read an archived session.
+- `sertor-rag memory archive` — capture the current sessions (also runs automatically at session end).
+
+Memory is **off by default** (privacy): the commands and the automatic capture do nothing until you
+set `SERTOR_MEMORY=true`. Content is stored locally and scrubbed of secrets; nothing leaves the machine.
+
 This is a **usage instruction**, not a constraint on your project: your own code and tests are
 unaffected.

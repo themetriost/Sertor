@@ -72,14 +72,18 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 **Candidati a valore = Must aperti** (non ancora iniziati):
 
-- **Memoria → distribuzione via installer (Must, `memoria-conversazioni` FEAT-009)** — la memoria è
-  *accesa* sul dogfood ma **non installabile su un ospite**: chiude il corollario "una feature è completa
-  solo se installabile". **✅ DECOMPOSTA (2026-06-22):** requisiti EARS in
-  `requirements/memoria-conversazioni/distribuzione-installer/requirements.md` (manopole memoria nei
-  template `.env`, hook cattura + voce `SessionEnd` come asset installer, cenno istruzioni agente,
-  lifecycle upgrade/uninstall). Decisioni: cavalca `sertor install rag` (stesso `.sertor/.env`/runtime);
-  hook depositato **anche** su Copilot (inerte finché FEAT-008 non porta l'adapter di cattura). *Prossimo
-  passo:* `/speckit-plan` (riusa il pattern hook rag-usage in `install_rag.py` + `sertor-install-kit`).
+- **Memoria → distribuzione via installer (Must, `memoria-conversazioni` FEAT-009)** — chiude il
+  corollario "una feature è completa solo se installabile". **✅ IMPLEMENTATA sul branch
+  `071-distribuzione-memoria-installer` (2026-06-22), in attesa di merge.** Pipeline SpecKit completa
+  (spec→plan→tasks→implement): `sertor install rag` ora deposita le 8 manopole memoria nei template
+  `.env` (`SERTOR_MEMORY` off, privacy-by-default), l'hook `memory-capture.ps1` + voce `SessionEnd`
+  per-assistente (Claude `.claude/settings.json`, Copilot nativo `.github/hooks/sertor-hooks.json`) e
+  il cenno ai comandi `sertor-rag memory` nel blocco `SERTOR:RAG-USAGE`; lifecycle upgrade/uninstall +
+  `plan ⊆ owned` coperti. Riuso del pattern hook rag-usage (FILE+SETTINGS_MERGE, nessun nuovo
+  `ArtifactKind`); `sertor-core` invariato. **952 test non-cloud verdi**, ruff pulito (src/packages).
+  Decisioni: cavalca `sertor install rag`; hook depositato anche su Copilot (cattura **inerte** finché
+  FEAT-008 non porta l'adapter Copilot — gap dichiarato). *Prossimo passo:* merge su `master` + PR, poi
+  re-index dogfood + smoke MCP.
 - **FEAT-003 → miglioramento per-superficie di `search_docs` (Should, `retrieval-qualita`)** — misura e
   contratto sono fatti (T1+T2 su `master`); la diagnosi ha isolato il vero collo di bottiglia: **`search_docs`
   MRR 0.55** (gli item attesi rankano a 6-8 sulle query NL/concettuali). *Primo passo:* valutare una leva
