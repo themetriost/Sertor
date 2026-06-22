@@ -133,11 +133,33 @@ an already-indexed session shall not create duplicate entries.*
 
 **REQ-007 (Optional feature):** *Where semantic search is opted in on an archive that already
 contains sessions captured before the opt-in, the system shall provide a way to embed the existing
-(backlog) sessions into the semantic index (backfill), without requiring re-archival.*
+(backlog) sessions into the semantic index (backfill), without requiring re-archival; the backfill is
+itself incremental — it shall embed only the units not yet indexed (REQ-030).*
 
 **REQ-008 (Unwanted behaviour):** *If embedding a session at archival time fails (provider error,
 oversized content, etc.), then the system shall keep the raw archival of that session intact, log a
 warning, and continue; the embedding failure shall not abort the capture/archival run.*
+
+### 5.2.1 Incrementalità dell'indicizzazione
+
+> L'archivio di FEAT-001 è **append-only by design** (`INSERT OR IGNORE`, nessun `DELETE`/`REPLACE`:
+> lo storico è conservato e non viene mai mutato). L'incrementalità è quindi **puramente additiva** e
+> più semplice del refresh incrementale di FEAT-009: non serve rilevare unità modificate o cancellate
+> (non possono cambiare) — basta non ri-processare ciò che è già indicizzato.
+
+**REQ-030 (Ubiquitous):** *The semantic indexing shall be incremental: on any indexing run it shall
+embed only the memory units not already present in the semantic index, and shall never re-embed the
+entire archive by default — exploiting the append-only nature of the archive (already-indexed units
+cannot change).*
+
+**REQ-031 (Ubiquitous):** *The system shall durably record which memory units have already been
+embedded (a persisted marker/watermark), so that incremental indexing skips them across process
+restarts and across separate indexing runs.*
+
+**REQ-032 (Optional feature):** *Where the embeddings provider or the indexing logic changes so that
+existing vectors are incompatible (e.g. a different vector dimension or a changed logic version), the
+system shall rebuild the semantic index from the archive; this full rebuild shall be the ONLY
+circumstance that re-embeds already-indexed content, and it shall be explicit and observable.*
 
 ### 5.3 Ricerca semantica
 
@@ -267,6 +289,12 @@ reale.
 **NFR-008 (Osservabilità strutturata):** gli eventi seguono il pattern `log_event` del core, fields
 già redatti, metrics-only; nessuna nuova dipendenza di logging.
 
+**NFR-009 (Costo di indicizzazione a regime = O(nuovo)):** grazie all'incrementalità (REQ-030/031),
+il costo di embedding a regime è proporzionale alle **sole** unità nuove, non all'intero archivio; il
+ri-embedding dell'intero storico avviene solo nel caso eccezionale di REQ-032 (cambio
+provider/dimensione del vettore). Verificabile: una seconda indicizzazione senza nuove sessioni non
+produce nuove chiamate di embedding.
+
 ## 7. Vincoli, assunzioni e dipendenze
 
 ### Vincoli (ereditati dall'epica)
@@ -337,6 +365,8 @@ già redatti, metrics-only; nessuna nuova dipendenza di logging.
 |----|-------------------|----------|
 | REQ-001..003 | Opt-in di privacy a strati (distinto da `SERTOR_MEMORY`) | **Must** |
 | REQ-004..006, REQ-008 | Indicizzazione automatica a fine sessione, idempotente, non-fatale | **Must** |
+| REQ-030..031 | Incrementalità: embedda solo il nuovo + marker durevole di «già indicizzato» | **Must** |
+| REQ-032 | Rebuild totale solo su cambio provider/dimensione vettore (esplicito) | **Should** |
 | REQ-009..011 | Ricerca semantica di base (query, risultati, citazione, limite) | **Must** |
 | REQ-013..015 | Modo separato opt-in; full-text resta default; no fallback silenzioso | **Must** |
 | REQ-016..017 | Riuso del RAG, indice isolato dal corpus | **Must** |
@@ -349,6 +379,7 @@ già redatti, metrics-only; nessuna nuova dipendenza di logging.
 | REQ-007 | Backfill delle sessioni pre-opt-in | **Should** |
 | REQ-020 | Segnalazione esplicita dell'invio off-machine con provider cloud | **Should** |
 | NFR-001, NFR-004..008 | Privacy locale, affidabilità, additività, riuso, testabilità, osservabilità | **Must** |
+| NFR-009 | Costo a regime = O(nuovo) grazie all'incrementalità | **Must** |
 | NFR-002..003 | Costo di indicizzazione documentato; soglia di latenza | **Should** |
 
 ## 10. Domande aperte
@@ -377,11 +408,21 @@ Estendere `sertor-rag memory search` con un'opzione `--semantic` (un solo comand
 un sotto-comando dedicato `memory search-semantic`? Raccomandazione preliminare: opzione su comando
 esistente (coerenza, meno superficie). [Design; la parità MCP è FEAT-010, fuori da qui.]
 
-**DA-SS-4 — Refresh/coerenza incrementale dell'indice semantico [priorità: MEDIA]**
-L'auto-indicizzazione a fine sessione è incrementale per natura (una sessione per volta). Resta da
-decidere come gestire: re-embedding dopo cambio di provider/`logic_version` (le dimensioni del vettore
-cambiano col provider — cfr. `collection_name` namespaced per provider), e il comando di
-rebuild/backfill (REQ-007). [Design; possibile riuso del pattern manifest di FEAT-009.]
+**DA-SS-4 — Meccanismo di incrementalità (marker/watermark) dell'indice semantico [priorità: ALTA]**
+L'incrementalità è ora un **requisito** (REQ-030/031/032), non un'opzione: l'auto-indicizzazione a
+fine sessione embedda solo il nuovo, mai l'intero archivio. Poiché l'archivio è **append-only**, il
+problema è più semplice di FEAT-009 (niente change/delete detection — solo additività). Resta da
+decidere al design **come** si materializza il marker di «già indicizzato» (REQ-031):
+- **Opzione 1 — colonna/flag nell'archivio** `memory.sqlite` (es. un timestamp/booleano per turno):
+  vicino ai dati, una sola sorgente di verità; ma scrive su una tabella di FEAT-001.
+- **Opzione 2 — manifest/watermark separato** (riuso del pattern manifest SQLite di FEAT-009,
+  namespaced per `(corpus-memoria, provider)`): non tocca lo schema di FEAT-001; coerente col
+  precedente del core.
+- **Opzione 3 — derivare il marker dallo stato del vector store** (chiedere allo store quali id
+  esistono già): nessun marker proprio, ma dipende dalle capacità dello store.
+Inoltre: il trigger del **rebuild totale eccezionale** (REQ-032) si lega al namespacing per provider
+(`collection_name` già namespaced per `(corpus, provider)` → cambiare provider cambia collezione, il
+che potrebbe rendere il rebuild *implicito*). [Design; coerente con DA-SS-1 e con il pattern FEAT-009.]
 
 **DA-SS-5 — Nome esatto della manopola di opt-in [priorità: BASSA]**
 Proposta non vincolante `SERTOR_MEMORY_SEMANTIC` (booleana, default off), accanto alle manopole
