@@ -246,6 +246,33 @@ def test_local_provider_no_network_calls() -> None:
     # The fake embedder opens no socket; reaching here without an exception is the offline proof.
 
 
+# --- real ChromaStore (regression for the _clean_metadata allow-list bug, FEAT-004) -------------
+
+
+def test_index_and_search_round_trip_on_real_chroma_store(tmp_path) -> None:
+    """FEAT-004 regression on the REAL store: index_session → search must round-trip the citation
+    fields through ChromaStore. The in-memory fakes mirror `_to_results` (read side) but NOT
+    `_clean_metadata` (write side), which dropped every memory key → empty {} → Chroma ValueError;
+    only a real-store test pins it. Offline: ChromaStore is local, FakeEmbedder opens no socket.
+    """
+    from sertor_core.adapters.vectorstores.chroma import ChromaStore
+
+    store = ChromaStore(persist_dir=tmp_path / "idx")
+    idx = MemorySemanticIndex(FakeEmbedder(), store, "memory__real", Settings())
+
+    report = idx.index_session(_session("s1", n_turns=3, captured_at=1500.0))
+    # Before the fix: upsert raised Chroma ValueError → embedded=0, errors=3.
+    assert report.embedded == 3 and report.errors == 0
+
+    results = idx.search(SemanticMemoryQuery(text="turn 0 of s1", limit=5))
+    assert results.hits
+    hit = results.hits[0]
+    assert hit.session_key == "s1"        # citation fields survived the real store round-trip
+    assert isinstance(hit.turn_index, int)
+    assert hit.captured_at == 1500.0
+    assert hit.role in ("user", "assistant")
+
+
 # --- US6-02: degradation ------------------------------------------------------------------------
 
 

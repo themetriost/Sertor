@@ -96,6 +96,33 @@ def test_contains_ids_absent_collection_or_empty_is_empty(tmp_path):
     assert store.contains_ids("mem", []) == []               # no ids requested -> []
 
 
+def test_upsert_preserves_non_corpus_scalar_metadata(tmp_path):
+    # FEAT-004 regression: the store must NOT hardcode corpus keys. A memory-shaped payload
+    # (session_key/turn_index/captured_at/role) must round-trip. Before the fix `_clean_metadata`
+    # kept only the corpus allow-list → every memory key dropped → empty {} → Chroma ValueError.
+    store = _store(tmp_path)
+    rec = EmbeddedChunk(
+        chunk_id="s1#0",
+        vector=[1.0, 0.0],
+        payload={
+            "text": "alpha turn",
+            "session_key": "s1",
+            "turn_index": 0,
+            "captured_at": 1000.0,
+            "role": "user",
+        },
+    )
+    store.upsert("memory__t", [rec])                 # must NOT raise (regression: ValueError)
+    hits = store.query("memory__t", [1.0, 0.0], k=1)
+    assert hits and hits[0].chunk_id == "s1#0"
+    meta = hits[0].metadata or {}
+    assert meta["session_key"] == "s1"               # arbitrary scalar keys survive
+    assert meta["turn_index"] == 0                   # int 0 kept (not treated as empty)
+    assert meta["role"] == "user"
+    assert meta["captured_at"] == 1000.0
+    assert "text" not in meta                        # the document is not duplicated into metadata
+
+
 def test_upsert_is_idempotent(tmp_path):
     store = _store(tmp_path)
     rec = _rec("a#0", [1.0, 0.0], "code", "a.py", "a")

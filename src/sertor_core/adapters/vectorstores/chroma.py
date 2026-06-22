@@ -15,9 +15,6 @@ from sertor_core.domain.errors import VectorStoreError
 from sertor_core.observability.logging import log_event
 
 _BACKEND = "chroma"
-# Scalar metadata keys accepted by Chroma (no None, no sequences).
-_META_KEYS = ("path", "doc_type", "chunker", "language", "qualname", "node_type",
-              "start_line", "end_line", "heading_path")
 
 
 def _raise_store_error(message: str, exc: Exception) -> None:
@@ -32,12 +29,24 @@ def _raise_store_error(message: str, exc: Exception) -> None:
 
 
 def _clean_metadata(payload: dict) -> dict:
-    meta = {}
-    for k in _META_KEYS:
-        v = payload.get(k)
-        if v is None or v == "" or v == ():
+    """Scalar metadata Chroma accepts, DERIVED from the payload (not a corpus-specific allow-list).
+
+    Keeps every scalar value (str/int/float/bool), joins sequences with "/", and drops `None`/empty,
+    the `text` field (it is the document — not duplicated into metadata) and any non-scalar value.
+    Generic by design: the store must not hardcode one consumer's keys. The corpus payload yields
+    exactly its former keys (path/doc_type/chunker/… — `_payload` carries only `text` + those), so
+    corpus behaviour is unchanged; the conversation-memory payload (session_key/turn_index/
+    captured_at/role) now round-trips too, instead of collapsing to `{}` which Chroma rejects with a
+    `ValueError` (FEAT-004 fix — the old allow-list silently dropped every memory key).
+    """
+    meta: dict = {}
+    for k, v in payload.items():
+        if k == "text" or v is None or v == "" or v == ():
             continue
-        meta[k] = "/".join(v) if isinstance(v, (list, tuple)) else v
+        if isinstance(v, (list, tuple)):
+            meta[k] = "/".join(str(x) for x in v)
+        elif isinstance(v, (str, int, float)):  # bool is an int subclass → accepted
+            meta[k] = v
     return meta
 
 
