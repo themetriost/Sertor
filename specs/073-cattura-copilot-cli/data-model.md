@@ -56,7 +56,7 @@ CopilotCliCaptureAdapter
 | Helper | Firma | Ruolo |
 |---|---|---|
 | `_session_context` | `(events_path: Path) -> tuple[str | None, str | None]` | trova il primo `session.start`, ritorna `(cwd, gitRoot)` o `(None, None)` |
-| `_paths_match` | `(project_id: str, cwd: str | None, git_root: str | None) -> bool` | True se cwd **o** gitRoot è antenato-o-uguale al progetto (normalizzato, case-insensitive) — DA-CM-4 |
+| `_paths_match` | `(project_id: str, cwd: str | None, git_root: str | None) -> bool` | True (regola **asimmetrica**) se cwd è **dentro-o-uguale** al progetto **oppure** gitRoot è **antenato-o-uguale** del progetto (normalizzato, case-insensitive) — DA-CM-4 |
 | `_turn_from_event` | `(event: dict, index: int) -> TranscriptTurn | None` | `user.message`/`assistant.message` → turno (testo = `data.content`); altro → None — DA-CM-1 |
 | `_parse_line` | `(line, session_key, lineno) -> dict | None` | una riga JSONL → dict, o None (vuota silente, non-JSON con warning) — parità Claude |
 | `_parse_timestamp` | `(raw: object) -> float | None` | ISO-8601 → epoch, None se assente/illeggibile — parità Claude |

@@ -20,8 +20,10 @@ read_session(ref: SessionRef) -> TranscriptContent
 - Enumera le **sottocartelle UUID** sotto `copilot_session_dir`
   (default `~/.copilot/session-state`, override `SERTOR_MEMORY_COPILOT_SESSION_DIR`).
 - Per ciascuna sottocartella apre `<uuid>/events.jsonl`, estrae cwd/gitRoot dal **primo** evento
-  `session.start`, e **include** la sessione SOLO se `cwd` **o** `gitRoot` è antenato-o-uguale al
-  progetto corrente (`project_id = str(Path.cwd())`, path-containment normalizzato — DA-CM-4).
+  `session.start`, e **include** la sessione SOLO se il `cwd` è **dentro-o-uguale** al progetto
+  corrente (sessione avviata nel progetto o in una sua sottocartella) **oppure** il `gitRoot` è
+  **antenato-o-uguale** del progetto (il repo della sessione contiene il progetto) — regola
+  **asimmetrica**, path-containment normalizzato, `project_id = str(Path.cwd())` (DA-CM-4).
 - `session_key` = nome cartella **UUID** (id stabile → idempotenza, REQ-005); `source_path` = path
   assoluto di `events.jsonl`; `project_id` = quello iniettato dal composition.
 - **Degradazione non-fatale (REQ-018):**

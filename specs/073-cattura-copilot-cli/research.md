@@ -108,20 +108,27 @@
   senza Copilot installato. La sede sorgente è una sottocartella della struttura host-specifica, perciò
   il campo vive in `Settings` (Principio VIII, default solo qui) e l'adapter lo riceve dal composition.
 
-### DA-CM-4 — Forma del filtro cwd/gitRoot → **path-containment normalizzato (cwd/gitRoot è antenato o uguale al progetto)**
+### DA-CM-4 — Forma del filtro cwd/gitRoot → **path-containment normalizzato, regola asimmetrica**
 
 - **Decisione:** una sessione Copilot appartiene al progetto corrente
-  (`project_id = str(Path.cwd())`) se **almeno uno** tra il `cwd` e il `gitRoot` registrati nel suo
-  `session.start` **contiene** (path-containment) il progetto corrente — cioè il progetto è uguale a, o
-  un discendente di, quel path. Confronto su path **normalizzati**: `Path.resolve()` +
-  case-insensitive su Windows (`os.path.normcase`), separatori normalizzati. Helper puro
-  `_paths_match(project_id, cwd, git_root) -> bool` confinato nell'adapter.
-- **Razionale (perché containment e non match esatto):** un agente Copilot avviato in una **sottocartella**
-  del repo (es. `C:\...\Sertor\packages\sertor`) ha `cwd` = la sottocartella ma `gitRoot` = la radice
-  del repo. Se Sertor è installato sulla radice (`project_id = C:\...\Sertor`), un match esatto su `cwd`
-  perderebbe quella sessione; il `gitRoot` invece **contiene** il progetto → match. Specularmente, una
-  sessione avviata nella radice mentre il progetto è una sottocartella non deve essere catturata: per
-  questo il test è «cwd/gitRoot **è antenato o uguale al progetto**», non il viceversa. La normalizzazione
+  (`project_id = str(Path.cwd())`) se **almeno una** delle due condizioni **asimmetriche** è vera sui
+  path registrati nel suo `session.start`, confrontati **normalizzati** (`os.path.normcase` +
+  `normpath`, case-insensitive su Windows, separatori normalizzati):
+  - il `cwd` è **dentro-o-uguale** al progetto (la sessione è stata avviata nel progetto o in una sua
+    sottocartella); un `cwd` *antenato* del progetto **non** combacia (eviterebbe di attribuire al
+    sotto-progetto le sessioni dell'intero repo);
+  - il `gitRoot` è **antenato-o-uguale** del progetto (il repo della sessione contiene il progetto):
+    così una sessione avviata in una sottocartella combacia comunque via gitRoot.
+
+  Helper puro `_paths_match(project_id, cwd, git_root) -> bool` confinato nell'adapter (oracolo: i test
+  unit `_paths_match`/discovery di TASK-US4-01).
+- **Razionale (perché containment asimmetrico e non match esatto):** un agente Copilot avviato in una
+  **sottocartella** del repo (es. `C:\...\Sertor\packages\sertor`) ha `cwd` = la sottocartella ma
+  `gitRoot` = la radice del repo. Se Sertor gira sulla radice (`project_id = C:\...\Sertor`): il `cwd`
+  (sottocartella) è **dentro** il progetto → match; e anche il `gitRoot` (radice) **è-uguale** al
+  progetto → match. L'asimmetria conta nel caso opposto, progetto = sottocartella e sessione avviata
+  nella radice: il `cwd` (radice) è *antenato* del progetto → **non** combacia via cwd, evitando di
+  attribuire al sotto-progetto una sessione dell'intero repo per il solo cwd. La normalizzazione
   robusta (resolve + case-insensitive) è obbligatoria su Windows (drive-letter case, `/` vs `\`,
   `8.3`/symlink) per non perdere match per differenze cosmetiche.
 - **Robustezza:** se il path normalizzato non è risolvibile (es. su una macchina diversa da quella che

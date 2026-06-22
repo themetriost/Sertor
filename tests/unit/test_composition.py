@@ -155,7 +155,66 @@ def test_memory_unknown_adapter_raises_configerror(monkeypatch, tmp_path):
     from sertor_core.domain.errors import ConfigError
     with pytest.raises(ConfigError) as exc:
         build_memory_archiver(settings)
+    # FEAT-008 (FR-002): the actionable error now names BOTH allowed values.
     assert "claude-code" in str(exc.value)
+    assert "copilot-cli" in str(exc.value)
+
+
+def test_capture_adapter_copilot_cli_selected(monkeypatch, tmp_path):
+    # FEAT-008 (US2-AC1/SC-001): copilot-cli → CopilotCliCaptureAdapter at copilot_session_dir.
+    monkeypatch.setenv("SERTOR_MEMORY", "true")
+    monkeypatch.setenv("SERTOR_MEMORY_ADAPTER", "copilot-cli")
+    monkeypatch.setenv("SERTOR_MEMORY_COPILOT_SESSION_DIR", str(tmp_path / "session-state"))
+    settings = Settings.load(env_file=None)
+    from sertor_core.adapters.capture.copilot_cli import CopilotCliCaptureAdapter
+    from sertor_core.composition import build_capture_adapter
+    adapter = build_capture_adapter(settings)
+    assert isinstance(adapter, CopilotCliCaptureAdapter)
+    assert adapter.kind == "copilot-cli"
+
+
+def test_capture_adapter_claude_code_default(monkeypatch):
+    # FEAT-008 (FR-003/SC-010): default (unset) → claude-code → ClaudeCodeCaptureAdapter.
+    monkeypatch.delenv("SERTOR_MEMORY_ADAPTER", raising=False)
+    settings = Settings.load(env_file=None)
+    assert settings.memory_adapter == "claude-code"
+    from sertor_core.adapters.capture.claude_code import ClaudeCodeCaptureAdapter
+    from sertor_core.composition import build_capture_adapter
+    adapter = build_capture_adapter(settings)
+    assert isinstance(adapter, ClaudeCodeCaptureAdapter)
+
+
+def test_valid_memory_adapters_is_exactly_two():
+    # FEAT-008 (contratto §Selettore): exactly the two known adapters, no more no less.
+    from sertor_core.composition import _VALID_MEMORY_ADAPTERS
+    assert _VALID_MEMORY_ADAPTERS == ("claude-code", "copilot-cli")
+
+
+def test_memory_archiver_copilot_cli_wired(monkeypatch, tmp_path):
+    # FEAT-008 (US7-AC1/SC-007): memory on + copilot-cli → MemoryArchiveService with the Copilot
+    # adapter injected (the hook pipe is connected; we don't capture real sessions here).
+    monkeypatch.setenv("SERTOR_MEMORY", "true")
+    monkeypatch.setenv("SERTOR_MEMORY_ADAPTER", "copilot-cli")
+    monkeypatch.setenv("SERTOR_MEMORY_COPILOT_SESSION_DIR", str(tmp_path / "session-state"))
+    settings = Settings.load(env_file=None)
+    object.__setattr__(settings, "index_dir", tmp_path)
+    from sertor_core.adapters.capture.copilot_cli import CopilotCliCaptureAdapter
+    from sertor_core.composition import build_memory_archiver
+    from sertor_core.services.memory_archive import MemoryArchiveService
+    archiver = build_memory_archiver(settings)
+    assert isinstance(archiver, MemoryArchiveService)
+    assert isinstance(archiver._adapter, CopilotCliCaptureAdapter)
+
+
+def test_memory_off_copilot_adapter_not_built(monkeypatch, tmp_path):
+    # FEAT-008 (US5-AC1/US7-AC2/SC-011/RNF-3): memory off → None even with adapter=copilot-cli;
+    # the new branch / Copilot import never runs (additività a leva spenta).
+    monkeypatch.setenv("SERTOR_MEMORY", "false")
+    monkeypatch.setenv("SERTOR_MEMORY_ADAPTER", "copilot-cli")
+    settings = Settings.load(env_file=None)
+    object.__setattr__(settings, "index_dir", tmp_path)
+    from sertor_core.composition import build_memory_archiver
+    assert build_memory_archiver(settings) is None
 
 
 def test_composition_does_not_import_claude_code_at_module_level():
