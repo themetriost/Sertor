@@ -176,6 +176,28 @@ class SessionNotFoundError(SertorError):
         )
 
 
+class SemanticMemoryUnavailableError(SertorError):
+    """A semantic memory search/backfill was asked while the capability is unavailable (072).
+
+    Raised by the CLI consumer (NOT by the core, which stays non-fatal) when `--semantic` is
+    requested but the feature is off (the factory returned `None`) or the semantic index is absent.
+    A fail-loud, actionable error (Principio IV) — NEVER a silent fallback to the full-text search
+    (REQ-015, SC-005): the message names BOTH opt-in knobs (`SERTOR_MEMORY=true` for capture,
+    `SERTOR_MEMORY_SEMANTIC=true` for embedding) and the backfill command to populate the index.
+    Carries the reason so the cause is visible. Coherent with `SessionNotFoundError`/
+    `InvalidTimeWindowError`.
+    """
+
+    def __init__(self, reason: str):
+        self.reason = reason
+        super().__init__(
+            f"semantic memory search is unavailable: {reason} — "
+            "enable capture with SERTOR_MEMORY=true and semantic search with "
+            "SERTOR_MEMORY_SEMANTIC=true, then populate the index with "
+            "`sertor-rag memory index-semantic`"
+        )
+
+
 class SuiteNotFoundError(SertorError):
     """An evaluation run/amend was asked for a suite that does not exist (065, REQ-032).
 

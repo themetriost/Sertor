@@ -428,12 +428,59 @@ def build_memory_archive(settings: Settings | None = None):
     return MemoryArchive(settings.index_dir)
 
 
-def build_memory_archiver(settings: Settings | None = None):
+def build_memory_semantic_index(settings: Settings | None = None, *, allow_download: bool = False):
+    """Build the optional semantic index over the memory archive, or `None` (072, FEAT-004).
+
+    Two-layer privacy gate (REQ-001/002/003): returns `None` unless BOTH `memory_enabled` AND
+    `memory_semantic_enabled` are on — turning on capture (`SERTOR_MEMORY`) NEVER turns on
+    embedding (`SERTOR_MEMORY_SEMANTIC`). With the gate off it builds NEITHER embedder NOR store and
+    imports no semantic path (additivity, RNF-005/SC-011).
+
+    With the gate on it REUSES ONLY the core primitives (Principio I/III, REQ-016): `build_embedder`
+    (provider from `SERTOR_EMBED_PROVIDER`, no new selector — REQ-018), `build_store`, and
+    `collection_name` over a memory-namespaced `Settings` (`corpus = f"memory__{corpus}"`) so the
+    memory collection NEVER coincides with the project corpus (isolation, REQ-017/SC-009). A
+    provider change → a different `embedder.name` → a different collection → an implicit rebuild
+    (REQ-032).
+
+    `allow_download` mirrors `build_indexer`: only the indexing path passes `True` (GloVe may
+    acquire its data file); query paths pass `False`. When `memory_semantic_enabled` is on but
+    `memory_enabled` is off, a warning names the missing `SERTOR_MEMORY` dependency (REQ-002).
+    """
+    from dataclasses import replace
+
+    from sertor_core.services.memory_semantic import MemorySemanticIndex
+
+    settings = settings or Settings.load()
+    if not settings.memory_semantic_enabled:
+        return None
+    if not settings.memory_enabled:
+        log_event(
+            logging.WARNING, "memory_semantic_unavailable", reason="capture_disabled",
+            note="SERTOR_MEMORY_SEMANTIC=true requires SERTOR_MEMORY=true (capture)",
+        )
+        return None
+    embedder = build_embedder(settings, allow_download=allow_download)
+    store = build_store(settings)
+    memory_settings = replace(settings, corpus=f"memory__{settings.corpus}")
+    collection = collection_name(memory_settings, embedder)
+    return MemorySemanticIndex(embedder, store, collection, settings)
+
+
+def build_memory_archiver(
+    settings: Settings | None = None,
+    semantic_index=None,
+):
     """Build the transcript archiving service, or `None` when capture is off (031, FR-002, D8).
 
     Privacy-by-default gate: with `SERTOR_MEMORY=false` (default) this returns `None` WITHOUT
     importing the host-specific adapter — no adapter, no store, no file opened (SC-003). Only when
     opted in does it wire adapter + store + service.
+
+    `semantic_index` (072, FEAT-004): an optional `MemorySemanticIndex` injected for the auto-index
+    at end-of-session (REQ-004). When `None` (default — leva spenta or simply not passed), the
+    service behaves exactly as FEAT-001 (REQ-005/RNF-005). The injection happens ONLY here
+    (composition is the single place that knows the concrete adapters, Principio I).
     """
     from sertor_core.services.memory_archive import MemoryArchiveService
 
@@ -441,7 +488,8 @@ def build_memory_archiver(settings: Settings | None = None):
     if not settings.memory_enabled:
         return None
     return MemoryArchiveService(
-        build_capture_adapter(settings), build_memory_archive(settings), settings
+        build_capture_adapter(settings), build_memory_archive(settings), settings,
+        semantic_index=semantic_index,
     )
 
 

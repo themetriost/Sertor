@@ -78,6 +78,24 @@ def test_inmemory_list_collections():
     assert store.list_collections() == ["solo"]
 
 
+def test_contains_ids_returns_present_subset(tmp_path):
+    # FEAT-004 incrementality probe (NFR-009): only the ids actually stored come back.
+    store = _store(tmp_path)
+    store.upsert("mem", [
+        _rec("s1#0", [1.0, 0.0], "doc", "s1", "alpha"),
+        _rec("s1#1", [0.0, 1.0], "doc", "s1", "beta"),
+    ])
+    present = store.contains_ids("mem", ["s1#0", "s1#1", "s1#2", "other#0"])
+    assert set(present) == {"s1#0", "s1#1"}        # the two stored, not the absent ones
+
+
+def test_contains_ids_absent_collection_or_empty_is_empty(tmp_path):
+    store = _store(tmp_path)
+    assert store.contains_ids("mai-creata", ["x#0"]) == []   # absent collection -> nothing indexed
+    store.upsert("mem", [_rec("a#0", [1.0, 0.0], "doc", "a", "a")])
+    assert store.contains_ids("mem", []) == []               # no ids requested -> []
+
+
 def test_upsert_is_idempotent(tmp_path):
     store = _store(tmp_path)
     rec = _rec("a#0", [1.0, 0.0], "code", "a.py", "a")

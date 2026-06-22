@@ -178,6 +178,26 @@ class ChromaStore:
         except Exception as exc:
             _raise_store_error("error during vector store delete", exc)
 
+    def contains_ids(self, collection: str, ids: list[str]) -> list[str]:
+        """Return the subset of `ids` already present in `collection` (incrementality probe).
+
+        Optional capability (not on the `VectorStore` port — Principio III) used by the memory
+        semantic index to skip already-embedded turns (FEAT-004, NFR-009/REQ-030). Collection
+        absent or no ids → `[]` (nothing indexed yet, every unit looks new). A real backend failure
+        raises `VectorStoreError` so the caller can count it and degrade non-fatally.
+        """
+        if not ids:
+            return []
+        try:
+            coll = self._client.get_collection(name=collection)
+        except Exception:
+            return []  # collection absent: nothing indexed yet
+        try:
+            res = coll.get(ids=ids)
+        except Exception as exc:
+            _raise_store_error("error during vector store id lookup", exc)
+        return list(res.get("ids") or [])  # Chroma returns only the ids that exist
+
     def reset(self, collection: str) -> None:
         # Rebuild-from-scratch: delete the collection if it exists (idempotent: absent = no-op).
         try:

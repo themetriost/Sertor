@@ -3,7 +3,7 @@ title: Memoria episodica — Cattura delle conversazioni (il tier grezzo)
 type: concept
 tags: [memoria, episodico, conversazioni, hermes, tier-grezzo, archive, host-agnostico, feat-001]
 created: 2026-06-14
-updated: 2026-06-14 (+ FEAT-035 superficie CLI + hook SessionEnd, MVP completo)
+updated: 2026-06-22 (+ FEAT-004 ricerca semantica; aggiunta sezione tier semantico) · 2026-06-14 (+ FEAT-035 superficie CLI + hook SessionEnd, MVP completo)
 sources: ["requirements/memoria-conversazioni/epic.md", "src/sertor_core/domain/memory.py", "https://github.com/nous-research/hermesresearch"]
 ---
 
@@ -33,13 +33,14 @@ Catturare **tutte** le sessioni in un archivio locale persistente (SQLite, per-p
 - **Host-agnostico**: la cattura è dietro un adapter (`TranscriptCaptureAdapter`), swappabile per ospiti diversi. Primo: Claude Code che legge i file di sessione locali.
 - **Non-bloccante**: se il store fallisce, l'operazione principale dell'agente non si interrompe (degradazione onesta).
 
-## Tre livelli di memoria
+## Tre livelli di memoria (+ semantico opzionale)
 
-Il progetto ospite ha adesso **tre tier** di memoria cumulativi (non esclusivi):
+Il progetto ospite ha adesso **tre tier** di memoria cumulativi (non esclusivi), più un **tier semantico** opzionale:
 
 1. **Episodico (grezzo)** — FEAT-001: archivio conservato di sessioni `<index_dir>/memory.sqlite`, catturatrici a grana di turno per ricerca futura.
-2. **Ricerca episodica** — FEAT-002: query full-text locale su (1), senza embedding, per domande-nel-passato.
-3. **Grafo** — wiki + corpus + knowledge-graph: le pagine-entità, il wiki distillato, la base del [[retrieval-core]].
+2. **Ricerca episodica (full-text)** — FEAT-002: query full-text locale su (1) via FTS5 SQLite, senza embedding, per domande-nel-passato («ne avevamo parlato?»). Default.
+3. **Ricerca episodica (semantica)** — FEAT-004: **opt-in separato**, embedding dei turni in store vettoriale dedicato, ricerca per **significato** non per parola esatta. Riuso pure RAG (build_embedder/store), provider locale (FEAT-011). Auto-indexa a fine sessione (idempotente, append-only). Privacy stratificato: `SERTOR_MEMORY_SEMANTIC=true` **and** provider configurato.
+4. **Grafo** — wiki + corpus + knowledge-graph: le pagine-entità, il wiki distillato, la base del [[retrieval-core]].
 
 La [[diary-vs-graph|memoria diaria del wiki]] (log + record datati) entra nel grafo quando la conoscenza si cristallizza; il grezzo dell'episodico non entra mai a meno che (a) la distillazione non lo pompi dentro il wiki, o (b) la ricerca episodica lo faccia emergere per il contesto.
 
@@ -88,17 +89,19 @@ Verificato in test: logica di archivio e contratto di cattura passano con ≥2 a
 ## Stato
 
 - ✅ **FEAT-001 (Cattura & archiviazione)**: implementata (PR #45, 2026-06-14). Store SQLite, adapter Claude-Code, scrub, privacy-by-default, host-agnostico.
-- ✅ **FEAT-002 (Ricerca episodica)**: implementata (PR [oggi], 2026-06-14). Ricerca FTS5 nativa SQLite, turni interrogabili, full-text lessicale, privacy (offline), robustezza.
+- ✅ **FEAT-002 (Ricerca episodica full-text)**: implementata (2026-06-14). Ricerca FTS5 nativa SQLite, turni interrogabili, full-text lessicale, privacy (offline), robustezza. DEFAULT di FEAT-004.
 - ✅ **FEAT-035 (Superficie CLI + hook SessionEnd)**: implementata (2026-06-14). MVP COMPLETO: comandi `sertor-rag memory search` / `archive` (thin-consumer) + hook SessionEnd (cattura automatica a fine sessione). Privacy-by-default (disattivato se `SERTOR_MEMORY` non è configurato); hook non-bloccante.
 - ✅ **FEAT-003 (Aggancio alla distillazione)**: implementata (PR #51, 2026-06-14). Comandi `sertor-rag memory show <key>` (transcript intero) / `memory list` (sessioni recenti) → la modalità «from conversation» di `distill` ([[diary-vs-graph]]) attinge all'archivio invece di un brief a mano: **loop cattura→distillazione chiuso**. Thin consumer additivo (riuso `MemoryArchive.get` + `list_recent`, nessuna nuova porta). **Vincolo FR-013:** sempre sessione mirata su invocazione esplicita, mai automatica/intero archivio.
-- 📋 **FEAT-004/005/006/008**: estensioni (ricerca semantica, remember-this, retention, multi-assistente).
+- ✅ **FEAT-004 (Ricerca episodica semantica)**: implementata (branch 072, 2026-06-22). Opt-in separato via `memory search --semantic`, store vettoriale dedicato, indicizzazione incrementale append-only (marker = collezione ChromaStore). Gap chiuso: aggiunto `contains_ids` per backfill Chroma. Privacy stratificato: `SERTOR_MEMORY_SEMANTIC=true` + provider locale. 998 test verdi, Constitution 12/12. Vedi [[feat-004-ricerca-semantica-memoria]].
+- 📋 **FEAT-005/006/007/008/010**: estensioni (remember-this, retention, second-brain, multi-assistente, MCP).
 
 ---
 
 ## Pagine collegate
 
 - [[feat-001-memoria-cattura-archiviazione]] — record della feature (cattura & archivio).
-- [[feat-002-ricerca-episodica-fulltext]] — record della feature (ricerca episodica).
+- [[feat-002-ricerca-episodica-fulltext]] — record della feature (ricerca episodica full-text).
+- [[feat-004-ricerca-semantica-memoria]] — record della feature (ricerca semantica).
 - [[feat-035-superficie-cli-memoria-hook-sessionend]] — record del completamento MVP (superficie CLI + hook).
 - [[transcript-capture-adapter-e-storage]] — le componenti tecniche (porta + adapter + store).
 - [[ricerca-episodica-fts5]] — il motore FTS5 SQLite.

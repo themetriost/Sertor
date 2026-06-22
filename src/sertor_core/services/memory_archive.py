@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from sertor_core.adapters.memory.archive import MemoryArchive
 from sertor_core.config.settings import Settings
@@ -16,6 +17,9 @@ from sertor_core.domain.memory import ArchivedSession, TranscriptTurn
 from sertor_core.domain.ports import TranscriptCaptureAdapter
 from sertor_core.observability.logging import log_event
 from sertor_core.observability.scrub import scrub_text
+
+if TYPE_CHECKING:  # import only for typing — keeps the semantic path out of the leva-spenta import
+    from sertor_core.services.memory_semantic import MemorySemanticIndex
 
 
 @dataclass
@@ -35,10 +39,14 @@ class MemoryArchiveService:
         adapter: TranscriptCaptureAdapter,
         archive: MemoryArchive,
         settings: Settings,
+        semantic_index: MemorySemanticIndex | None = None,
     ):
         self._adapter = adapter
         self._archive = archive
         self._settings = settings
+        # 072, FEAT-004: optional semantic index for the auto-index at end-of-session. `None` (the
+        # default — leva spenta) → behaviour identical to FEAT-001, zero side-effect (REQ-005).
+        self._semantic_index = semantic_index
 
     def archive_all(self) -> ArchiveRunReport:
         """Discover, scrub, archive sessions. Idempotent; degrades non-fatally (guard clauses)."""
@@ -78,7 +86,23 @@ class MemoryArchiveService:
                       content_size=sum(len(t.text) for t in scrubbed),
                       turn_count=len(scrubbed), is_new=True)
             report.archived += 1
+            self._auto_index(session)
         return report
+
+    def _auto_index(self, session: ArchivedSession) -> None:
+        """Semantically index a JUST-archived session (072, FEAT-004), NON-FATALLY (REQ-008).
+
+        Only runs when a semantic index was injected (leva accesa). The embedding of one session is
+        best-effort: a failure leaves the raw archive intact, logs a warning and lets the capture
+        run continue (REQ-008/SC-010) — never aborts `archive_all`.
+        """
+        if self._semantic_index is None:
+            return
+        try:
+            self._semantic_index.index_session(session)
+        except Exception as exc:  # noqa: BLE001 — auto-index must never abort the capture run.
+            log_event(logging.WARNING, "memory_semantic_index_failed",
+                      session_key=session.session_key, error=type(exc).__name__)
 
     def _scrub_turn(self, turn: TranscriptTurn) -> TranscriptTurn:
         """Scrub a turn's text before persisting; nothing else is ever written (FR-017/027)."""

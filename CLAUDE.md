@@ -521,6 +521,41 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/072-ricerca-semantica-memoria/plan.md` (FEAT-004 epica **memoria-conversazioni** — **ricerca semantica
+opzionale sull'archivio**: percorso **opt-in** che ritrova le conversazioni passate **per significato** (non per
+parola), affiancando — senza sostituire — la full-text FEAT-002. **Additivo**: riusa SOLO le primitive del core
+(`build_embedder`/`build_store`/`collection_name`), **nessun nuovo motore** (DA-SS-1 = store vettoriale
+**dedicato**, NON `IndexingService.index()` né il manifest file-keyed di FEAT-009, che è per file mutabili —
+l'archivio è append-only). A leva spenta costo/comportamento **identici a oggi** (gate `build_*`→`None`).
+**4 forche risolte:** **DA-SS-2** granularità = **TURNO** (`chunk_id=session_key#turn_index`, parità con
+`EpisodicSearch`/FEAT-002; NO chunking sub-turno — i locali `glove`/`hash` non hanno tetto token rigido, turno
+lungo→non-fatale; NFR-003 fissata < 1 s p95 archivio tipico, provider locale); **DA-SS-3** superficie =
+**`memory search --semantic`** (un comando, due modi; + `memory index-semantic` per il backfill REQ-007; parità
+MCP = FEAT-010 fuori ambito); **DA-SS-4** marker watermark = **stato dello store** (Opzione 3, NO registro
+proprio: «già indicizzato» ⇔ i `chunk_id` dei turni esistono nella collezione; `upsert` idempotente + skip
+per-sessione → REQ-006/030/NFR-009; scartate Opzione 1 colonna in `memory.sqlite` = accoppia FEAT-001/può
+divergere, Opzione 2 manifest separato = fonte di verità duplicata; **rebuild REQ-032 IMPLICITO** via
+`collection_name` namespaced per provider → cambio provider/dim = collezione diversa, ripopolata
+incrementalmente); **DA-SS-5** manopola **`SERTOR_MEMORY_SEMANTIC`** (+ `_LIMIT` default 20), distinta da
+`SERTOR_MEMORY`, gate a 2 strati (`memory_enabled AND memory_semantic_enabled` → factory `None`). **Trigger =
+automatico a fine sessione** (`MemoryArchiveService.archive_all` riceve `MemorySemanticIndex | None`, embedda le
+sessioni appena archiviate, **non-fatale** REQ-008); **modo separato, NESSUN fallback silenzioso** (`--semantic`
+a leva spenta/indice assente → nuovo `SemanticMemoryUnavailableError` azionabile, exit 1, REQ-015).
+**Privacy/on-machine:** provider da `SERTOR_EMBED_PROVIDER` esistente (REQ-018, default locale FEAT-011 →
+index+query offline, RNF-1); cloud → invio off-machine (già scrubbed) reso **esplicito** (REQ-020). **Isolamento**
+(REQ-017/SC-009): collezione memoria namespace dedicato ≠ corpus codice/doc. Componente concreto **senza nuova
+porta** (single backend, come `MemoryArchive`/`EmbeddingCache` — YAGNI III); 2 eventi metrics-only
+`memory_semantic_index`/`_search` (query **hashata**, gemelli di `episodic_search`/`embeddings`); degradazione
+**non-fatale** ovunque (indice assente→vuoto+warning, provider giù→errore azionabile, riga invalida→skip,
+REQ-021/022/023). **Consumatori (8 punti):** `settings`, `errors`, `services/memory_semantic.py` (nuovo),
+`services/memory_archive.py`, `composition` (`build_memory_semantic_index` gated + iniezione), `cli/__main__`,
+`cli/output`, test. **Debiti promossi (NON qui):** distribuzione installer manopole/asset = **FEAT-009**
+(DA-SS-6); parità MCP = **FEAT-010** — entrambi nel backlog d'epica. `sertor-core` invariato fuori dai punti
+elencati. Constitution **PASS 12/12 + missione PASS** (pre e post-design) senza deroghe — è la stella polare
+(qualità del contesto reso all'agente nel tempo) servita riusando il motore di retrieval, non un secondo motore.
+**Nota di processo:** `setup-plan.ps1`/`speckit-plan/SKILL.md` ASSENTI → parametri per convenzione dal branch
+(forma da `071`/`070`); nessun hook eseguito; MCP `sertor-rag` interrogato (nessun errore tool). Branch
+`072-ricerca-semantica-memoria`. Storico:
 `specs/070-search-combined-strutturato/plan.md` (FEAT-003 epica **retrieval-qualita** — **`search_combined` a
 contratto strutturato (Tempo 2)**: il Tempo 1 (`069`) ha **misurato** che la superficie fusa **non funziona**
 (fusion coverage **0.17**, 1/6) per il caso-firma requisito→implementazione; questa feature **ripara la causa**
