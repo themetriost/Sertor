@@ -1,10 +1,10 @@
 ---
 title: Memoria episodica — Cattura delle conversazioni (il tier grezzo)
 type: concept
-tags: [memoria, episodico, conversazioni, hermes, tier-grezzo, archive, host-agnostico, feat-001]
+tags: [memoria, episodico, conversazioni, hermes, tier-grezzo, archive, host-agnostico, feat-001, feat-008]
 created: 2026-06-14
-updated: 2026-06-22 (aggiunto backlink copilot-cli-session-storage per FEAT-008) · 2026-06-22 (+ FEAT-004 ricerca semantica; aggiunta sezione tier semantico) · 2026-06-14 (+ FEAT-035 superficie CLI + hook SessionEnd, MVP completo)
-sources: ["requirements/memoria-conversazioni/epic.md", "src/sertor_core/domain/memory.py", "https://github.com/nous-research/hermesresearch"]
+updated: 2026-06-22 (FEAT-008 adapter Copilot CLI implementato, stato aggiornato + backlink) · 2026-06-22 (aggiunto backlink copilot-cli-session-storage per FEAT-008) · 2026-06-22 (+ FEAT-004 ricerca semantica; aggiunta sezione tier semantico) · 2026-06-14 (+ FEAT-035 superficie CLI + hook SessionEnd, MVP completo)
+sources: ["requirements/memoria-conversazioni/epic.md", "requirements/memoria-conversazioni/cattura-copilot-cli/requirements.md", "src/sertor_core/domain/memory.py", "src/sertor_core/adapters/capture/copilot_cli.py", "https://github.com/nous-research/hermesresearch"]
 ---
 
 # Memoria episodica — il tier grezzo delle conversazioni
@@ -93,7 +93,8 @@ Verificato in test: logica di archivio e contratto di cattura passano con ≥2 a
 - ✅ **FEAT-035 (Superficie CLI + hook SessionEnd)**: implementata (2026-06-14). MVP COMPLETO: comandi `sertor-rag memory search` / `archive` (thin-consumer) + hook SessionEnd (cattura automatica a fine sessione). Privacy-by-default (disattivato se `SERTOR_MEMORY` non è configurato); hook non-bloccante.
 - ✅ **FEAT-003 (Aggancio alla distillazione)**: implementata (PR #51, 2026-06-14). Comandi `sertor-rag memory show <key>` (transcript intero) / `memory list` (sessioni recenti) → la modalità «from conversation» di `distill` ([[diary-vs-graph]]) attinge all'archivio invece di un brief a mano: **loop cattura→distillazione chiuso**. Thin consumer additivo (riuso `MemoryArchive.get` + `list_recent`, nessuna nuova porta). **Vincolo FR-013:** sempre sessione mirata su invocazione esplicita, mai automatica/intero archivio.
 - ✅ **FEAT-004 (Ricerca episodica semantica)**: implementata (branch 072, 2026-06-22). Opt-in separato via `memory search --semantic`, store vettoriale dedicato, indicizzazione incrementale append-only (marker = collezione ChromaStore). Gap chiuso: aggiunto `contains_ids` per backfill Chroma. Privacy stratificato: `SERTOR_MEMORY_SEMANTIC=true` + provider locale. 998 test verdi, Constitution 12/12. Vedi [[feat-004-ricerca-semantica-memoria]].
-- 📋 **FEAT-005/006/007/008/010**: estensioni (remember-this, retention, second-brain, multi-assistente, MCP).
+- ✅ **FEAT-008 (Cattura transcript Copilot CLI)**: implementata (branch 073, 2026-06-22). Secondo adapter `CopilotCliTranscriptAdapter` dietro porta `TranscriptCaptureAdapter` — legge `events.jsonl` da `~/.copilot/session-state/`, identico parser Copilot CLI. Associazione progetto via `cwd`/`gitRoot` in session.start. Privacy offline (niente cloud-sync). 1039 test verdi, Constitution 12/12. Gap dichiarato: manopole `SERTOR_MEMORY_ADAPTER=copilot-cli` + `SERTOR_MEMORY_COPILOT_SESSION_DIR` non ancora nei template `.env` installer (FEAT-009 P2). Vedi [[feat-008-cattura-copilot-cli]].
+- 📋 **FEAT-005/006/007/010**: estensioni (remember-this, retention, second-brain, MCP).
 
 ---
 
@@ -102,10 +103,11 @@ Verificato in test: logica di archivio e contratto di cattura passano con ≥2 a
 - [[feat-001-memoria-cattura-archiviazione]] — record della feature (cattura & archivio).
 - [[feat-002-ricerca-episodica-fulltext]] — record della feature (ricerca episodica full-text).
 - [[feat-004-ricerca-semantica-memoria]] — record della feature (ricerca semantica).
+- [[feat-008-cattura-copilot-cli]] — record della feature (adapter Copilot CLI, multi-assistente).
 - [[feat-035-superficie-cli-memoria-hook-sessionend]] — record del completamento MVP (superficie CLI + hook).
 - [[transcript-capture-adapter-e-storage]] — le componenti tecniche (porta + adapter + store).
 - [[ricerca-episodica-fts5]] — il motore FTS5 SQLite.
-- [[copilot-cli-session-storage]] — ricognizione tecnica storage sessioni Copilot CLI (FEAT-008, adapter multi-assistente).
+- [[copilot-cli-session-storage]] — ricognizione tecnica storage sessioni Copilot CLI (FEAT-008).
 - [[diary-vs-graph]] — come la memoria episodica si relaziona al grafo wiki.
 - [[second-brain-cross-progetto]] — visione meta: memoria su più progetti e assistenti.
 - [[constitution]] — Principio X (host-agnosticità) alla base della porta.

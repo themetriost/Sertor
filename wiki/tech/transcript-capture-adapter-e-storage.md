@@ -1,9 +1,9 @@
 ---
 title: Transcript Capture Adapter & Memory Archive (9ª porta + adapter + store)
 type: tech
-tags: [memoria, capture, adapter, storage, sqlite, host-agnostico, principio-x, feat-001, ports-adapters]
+tags: [memoria, capture, adapter, storage, sqlite, host-agnostico, principio-x, feat-001, feat-008, ports-adapters]
 created: 2026-06-14
-updated: 2026-06-14
+updated: 2026-06-22 (aggiunto adapter Copilot CLI FEAT-008; frontmatter + sezione adapter nuova)
 sources: ["src/sertor_core/domain/ports.py", "src/sertor_core/domain/memory.py", "src/sertor_core/adapters/capture/", "src/sertor_core/adapters/memory/", "src/sertor_core/services/memory_archive.py", "src/sertor_core/composition.py"]
 ---
 
@@ -87,6 +87,45 @@ In `adapters/capture/claude_code.py` (165 righe).
 - **Progetto non trovato** (CWD encoded non esiste): warning, `[]`.
 - **File di sessione corrotto**: skip + warning per quella sessione, continua con le altre.
 
+## Secondo Adapter: GitHub Copilot CLI (FEAT-008)
+
+In `adapters/capture/copilot_cli.py` (180 righe, implementato 2026-06-22).
+
+### Come funziona
+
+1. **Enumerazione**: scandisce `~/.copilot/session-state/` cercando directory UUID, poi dentro legge `events.jsonl`.
+
+2. **Parsing JSONL**: identico a Claude Code (stesso formato JSONL, stesso parsing best-effort).
+
+3. **Associazione progetto**: il `session.start` event contiene metadati `cwd` (working directory) e `gitRoot` (antenato git). Una sessione appartiene al progetto se:
+   - `cwd` **è dentro-o-uguale** il progetto (POSIX path normalization, case-sensitive), **OPPURE**
+   - `gitRoot` **è antenato-o-uguale** il progetto.
+   
+   Logica **asimmetrica**: se nessuna condizione è soddisfatta, la sessione è ignorata (no-op, non associata). Evita misattribuzioni quando Copilot è aperto in una cartella diversa dal progetto.
+
+4. **Non-mutativo**: legge i file senza modificarli né cancellarli. Privacy by design — Sertor legge il locale, ignora la sincronizzazione cloud di Copilot.
+
+### Configurazione
+
+- `SERTOR_MEMORY_ADAPTER` = "copilot-cli" (sostituisce default "claude-code").
+- `SERTOR_MEMORY_COPILOT_SESSION_DIR` = path a ~/.copilot/session-state (per testabilità).
+
+### Differenze da Claude-Code
+
+| Aspetto | Claude Code | Copilot CLI |
+|---------|-------------|------------|
+| **Cartella sessioni** | `~/.claude/projects/` (encoded per progetto) | `~/.copilot/session-state/` (UUID globali) |
+| **Filename** | `<session-id>.jsonl` (filename = chiave) | `events.jsonl` in cada UUID (UUID = chiave) |
+| **Associazione progetto** | Nome cartella encoded include CWD | Letta da `session.start` event (cwd/gitRoot) |
+| **Formato JSONL** | Identico | Identico |
+
+### Limitazioni e fallback
+
+- **Cartella assente**: warning, `list_sessions()` ritorna `[]`.
+- **Sessione senza metadati di progetto**: warning, ignorata (associazione fallita).
+- **Associazione fallita** (cwd/gitRoot non corrispondono): no-op, sessione ignorata, continua.
+- **File events.jsonl corrotto**: skip + warning, continua con le altre UUID.
+
 ## Store Concreto: `MemoryArchive`
 
 In `adapters/memory/archive.py` (150 righe).
@@ -169,12 +208,20 @@ Il servizio + il store usano [[scrub-segreti-in-contenuto]] per ripulire il cont
 Cablata in `composition.py`:
 
 ```python
+_VALID_MEMORY_ADAPTERS = ("claude-code", "copilot-cli")
+
 def build_capture_adapter(settings: Settings) -> TranscriptCaptureAdapter | None:
     if not settings.memory_enabled:
         return None
-    if settings.memory_adapter == "claude-code":
-        return ClaudeCodeCaptureAdapter(settings.memory_claude_projects_dir)
-    # futuri adattatori qui
+    match settings.memory_adapter_kind:
+        case "claude-code":
+            return ClaudeCodeCaptureAdapter(settings.memory_claude_projects_dir)
+        case "copilot-cli":
+            return CopilotCliTranscriptAdapter(
+                settings.copilot_session_dir or Path.home() / ".copilot" / "session-state"
+            )
+        case _:
+            raise ConfigError(f"Unknown memory adapter: {settings.memory_adapter_kind}")
 
 def build_memory_archive(index_dir: Path) -> MemoryArchive:
     return MemoryArchive(index_dir / "memory.sqlite")
@@ -191,7 +238,8 @@ Costruiti SOLO se `SERTOR_MEMORY=true` (import lazy).
 
 ## Stato
 
-- ✅ **Port + adapter Claude-Code + store**: implementati in FEAT-001 (PR #45).
+- ✅ **Port + adapter Claude-Code + store**: implementati in FEAT-001 (PR #45, 2026-06-14).
+- ✅ **Adapter Copilot CLI**: implementato in FEAT-008 (branch 073, 2026-06-22). Parsing identico a Claude-Code, associazione progetto via cwd/gitRoot, privacy offline (niente cloud). 1039 test, Constitution 12/12.
 - 📋 **Adapter futuri** (e.g. LangSmith, BedRock, Cline): slot nel composition root, no core changes.
 
 ---
@@ -199,7 +247,9 @@ Costruiti SOLO se `SERTOR_MEMORY=true` (import lazy).
 ## Pagine collegate
 
 - [[memoria-conversazioni]] — concetto (il tier episodico, perché).
-- [[feat-001-memoria-cattura-archiviazione]] — record della feature.
+- [[feat-001-memoria-cattura-archiviazione]] — record della feature (adapter Claude-Code + store).
+- [[feat-008-cattura-copilot-cli]] — record della feature (adapter Copilot CLI, multi-assistente).
+- [[copilot-cli-session-storage]] — ricognizione tecnica storage Copilot CLI.
 - [[scrub-segreti-in-contenuto]] — tecnica di scrub estesa.
 - [[ports-adapters]] — pattern analogo per i retriever.
 - [[thin-consumer]] — composizione e factory pattern.
