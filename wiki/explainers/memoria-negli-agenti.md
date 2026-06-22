@@ -3,8 +3,8 @@ title: La memoria della conversazione (in parole semplici)
 type: explainer
 tags: [non-tecnici, memoria, conversazioni, archivio, privacy, spiegazione]
 created: 2026-06-14
-updated: 2026-06-14 (+ FEAT-003: la distillazione attinge all'archivio — `memory show`/`list`, loop cattura→distill chiuso) · 2026-06-14 (+ FEAT-035: superficie CLI + hook SessionEnd, MVP completo)
-sources: ["wiki/concepts/memoria-conversazioni.md", "wiki/tech/transcript-capture-adapter-e-storage.md", "requirements/memoria-conversazioni/epic.md"]
+updated: 2026-06-22 (+ FEAT-004: ricerca per significato — `memory search --semantic`, opt-in separato, on-machine col motore locale; la ricerca testuale resta il default) · 2026-06-14 (+ FEAT-003: la distillazione attinge all'archivio — `memory show`/`list`, loop cattura→distill chiuso) · 2026-06-14 (+ FEAT-035: superficie CLI + hook SessionEnd, MVP completo)
+sources: ["wiki/concepts/memoria-conversazioni.md", "wiki/tech/transcript-capture-adapter-e-storage.md", "requirements/memoria-conversazioni/epic.md", "requirements/memoria-conversazioni/ricerca-semantica/requirements.md"]
 ---
 
 # La memoria della conversazione — quello che non si dimentica
@@ -45,9 +45,30 @@ L'archivio conserva:
 
 - **Ritornare al contesto** — se dimandi "dove avevamo detto di mettere quella logica", il sistema sa cercare tra le vecchie conversazioni e trovare il turno giusto.
 - **Ricerca nel passato** — FATTO (FEAT-002): puoi dire "trovami una conversazione dove abbiamo discusso di autenticazione" e il sistema esegue una ricerca testuale locale nelle conversazioni passate.
+- **Ricerca per significato** — FATTO (FEAT-004): puoi cercare un *concetto* anche se non ricordi le parole esatte (vedi sotto, "Cercare per parola, o per significato").
 - **Ricerca temporale** — se ricordi vago ("tre settimane fa"), puoi limitare la ricerca a quel periodo.
 - **Fonte grezza per il wiki** — FATTO (FEAT-003): il wiki distilla la conoscenza, ma l'archivio tiene il grezzo. Ora, se una decisione importante non è mai finita nel wiki, puoi **recuperare quella conversazione intera** (`sertor-rag memory show`) e distillarla a posteriori — invece di ricostruirla a memoria. Con una regola precisa: si recupera **una conversazione mirata, quando lo chiedi tu** — mai si rimastica l'intero archivio da solo (sarebbe uno spreco). La scatola è un *backup*, non qualcosa che gira di continuo.
 - **Prova** — se qualcuno chiede "su cosa vi siete decisi?", hai una traccia immutabile.
+
+## Cercare per parola, o per significato
+
+Fino a ieri la ricerca trovava solo le **parole esatte**: cercavi «memoria» e trovavi i turni che contenevano la parola «memoria». Ma se in quella conversazione avevi parlato di «archivio», «storage» o «ricordare le sessioni» — stesso argomento, parole diverse — non li trovavi.
+
+Pensa alla differenza tra **cercare un libro per titolo** e **cercarlo per argomento**:
+- *Per parola* (ricerca testuale, il default): trovi solo i libri il cui titolo contiene esattamente quella parola. Veloce, preciso, ma cieco ai sinonimi.
+- *Per significato* (ricerca semantica, novità FEAT-004): il bibliotecario capisce **di cosa parli** e ti porta anche i libri che trattano l'argomento con altre parole.
+
+Da oggi puoi scegliere il secondo modo aggiungendo `--semantic`:
+```bash
+sertor-rag memory search "come gestiamo i ricordi delle sessioni" --semantic
+```
+e il sistema ti riporta i turni **di significato affine**, anche se non usano le tue stesse parole.
+
+Due cose importanti, entrambe per la tua tranquillità:
+- **La ricerca per parola resta il default.** Quella per significato la chiedi tu, esplicitamente, quando serve. Niente cambia se non lo chiedi.
+- **Resta sul tuo computer.** Per capire il significato, il sistema deve "tradurre" le conversazioni in numeri (gli *embedding*). Con il motore locale (l'impostazione predefinita) questo avviene **interamente sulla tua macchina** — niente lascia il computer. È un interruttore separato e spento di default (`SERTOR_MEMORY_SEMANTIC=true`), proprio perché è un'operazione in più sul contenuto.
+
+E lo fa **senza rifare ogni volta tutto il lavoro**: ogni conversazione viene "tradotta" una sola volta, al momento in cui la chiudi. Le vecchie non vengono ri-elaborate (l'archivio non cambia mai il passato), quindi il costo resta basso e proporzionato solo alle conversazioni nuove.
 
 ## Quello che succede dietro le quinte
 
@@ -69,7 +90,7 @@ L'archivio conserva:
 
 ## Limitazioni attuali
 
-- **Ricerca solo testuale.** Per ora il sistema cerca per parole chiave e frasi (ricerca testuale), non per significato. Una ricerca «memoria» non troverà turni che parlano di «storage» sebbene il significato sia correlato (estensione semantica: FEAT-004).
+- **Ricerca per significato: qualità legata al motore locale.** Ora puoi cercare per significato (FEAT-004), ma con il motore locale (predefinito, privacy-safe) la "comprensione" è più semplice di quella di un grande modello cloud: i risultati per significato sono utili ma non perfetti. È un compromesso voluto tra qualità e privacy — la scelta del motore resta tua.
 - **Segreto dimenticato?** Il sistema riconosce i pattern comuni (chiavi OpenAI, token AWS, password), ma se un segreto è in un formato strano, il sistema potrebbe non riconoscerlo. Se pensi di aver detto qualcosa di sensibile, disattiva la memoria.
 
 ## Come attivarlo
@@ -87,9 +108,19 @@ L'archivio conserva:
    sertor-rag memory search "GraphRAG" --since 2026-06-01  # con filtro temporale opzionale
    ```
 
+4. *(Opzionale)* Per la ricerca **per significato**, aggiungi un secondo interruttore al `.env`:
+   ```
+   SERTOR_MEMORY_SEMANTIC=true
+   ```
+   poi cerca con `--semantic`:
+   ```bash
+   sertor-rag memory search "come gestiamo i ricordi delle sessioni" --semantic
+   ```
+   Le conversazioni già archiviate prima di accendere l'interruttore si recuperano una volta con
+   `sertor-rag memory index-semantic` (backfill).
+
 ## Il futuro
 
-- **Ricerca semantica** (FEAT-004) — estensione: "trovami conversazioni di significato correlato a X" (con embedding, opt-in separato).
 - **Marcare i turni importanti** (FEAT-005) — dire "ricorda questo turno" per segnalarlo come importante.
 - **Retention** (FEAT-006) — governance dell'archivio: decidere quando i turni vanno in scadenza.
 - **Multi-assistente** (FEAT-008) — il registratore funzionerà anche con altri assistenti, non solo Claude Code.
