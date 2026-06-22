@@ -61,15 +61,16 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **E7** | 🆕 [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 📋 aperta | chunking SQL → **sblocca** schema-SQL |
 | **E8** | 🆕 [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | 📋 aperta | bloccata a monte da `ingestione-estesa` |
 | **E9** | 🆕 [`second-brain`](../../requirements/second-brain/epic.md) | 📋 da espandere | decidere bivi §9 prima di decomporre |
-| **E10** | 🆕 [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 🔄 in progress | **CI Linux (FEAT-003, Should)** — unico residuo Should; il resto è Could *(unif. venv ✅ · host-agnosticità asset **FEAT-001 ✅** PR #80 · **FEAT-009 ✅** PR #82 · **FEAT-010 ✅** PR #83 · **disciplina MCP-first agli ospiti ✅** PR #90, 2026-06-19)* |
+| **E10** | 🆕 [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 🔄 in progress | **Should aperti:** CI Linux (FEAT-003) · hook freschezza RAG (FEAT-011) · governance nel corpus (FEAT-012) · **allineamento config dogfood↔ospite (FEAT-013, *user-flagged 2026-06-22*)**; il resto è Could *(unif. venv ✅ · host-agnosticità asset **FEAT-001/009/010 ✅** · disciplina MCP-first agli ospiti ✅, 2026-06-19)* |
 | **E11** | [`multiutente`](../../requirements/multiutente/epic.md) | 📋 differita | finché il caso d'uso team non è concreto |
 
 *Legenda:* ✅ completa · 🔄 nucleo consegnato, residui aperti · 📋 da fare · 🆕 nuova (2026-06-16). *Numerazione `E1`..`E11`: vista standing per epica (E1 nucleo `sertor-core`, E11 `multiutente` differita); E1–E4 storiche, E5–E10 dal backlog audit 2026-06-16.*
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-> Nessuna feature attiva su branch (**FEAT-004 ricerca semantica memoria ✅** consegnata sul branch
-> `072`, in merge su `master`). **Candidato a valore = il miglioramento per-superficie di
+> Nessuna feature attiva su branch (**FEAT-004 ricerca semantica memoria ✅** merged `a63becb`;
+> verificata live su azure: semantica 5 hit vs full-text 0 sulla query concettuale; bugfix store
+> `0f51bf7` + debito P2 chiuso `36bd079`). **Candidato a valore = il miglioramento per-superficie di
 > `search_docs`** (sotto).
 
 **Candidato a valore = Should aperto:**
