@@ -67,12 +67,19 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-> Nessuna feature attiva su branch al momento (**FEAT-009 distribuzione memoria via installer ✅
-> mergiata** `a36ba89`, 2026-06-22; **FEAT-003 T1+T2 ✅** `42aceaf`+`908bd92`; **FEAT-011 embedder
-> locale ✅** `34b599a`). **Candidato a valore = il miglioramento per-superficie di `search_docs`**
-> (sotto).
+> **FEAT-004 «Ricerca semantica opzionale sull'archivio» (E4 `memoria-conversazioni`, Should) —
+> DECOMPOSTA.** *Cosa:* ricerca per significato sull'archivio episodico (oggi solo full-text FTS5),
+> riusando la pipeline RAG come tier dedicato (no nuovo motore). *Dove:*
+> `requirements/memoria-conversazioni/ricerca-semantica/requirements.md` (29 REQ EARS + 6 DA). *Prossimo
+> passo:* `/speckit-plan` (forca centrale DA-SS-1 = corpus/`doc_type` del RAG **vs** store vettoriale
+> dedicato). *Decisioni di scope già prese (utente):* indicizzazione **automatica a fine sessione**
+> (gated dall'opt-in) + **modo separato opt-in** (la full-text resta il default). *Privacy:* opt-in
+> ulteriore distinto da `SERTOR_MEMORY`; on-machine col provider locale di default (FEAT-011).
+>
+> Su `master` (non su branch): **FEAT-009** `a36ba89` · **FEAT-003 T1+T2** `42aceaf`+`908bd92` ·
+> **FEAT-011** `34b599a`.
 
-**Candidato a valore = Should aperto:**
+**Altri candidati a valore (Should aperti, non avviati):**
 
 - **FEAT-003 → miglioramento per-superficie di `search_docs` (Should, `retrieval-qualita`)** — misura e
   contratto sono fatti (T1+T2 su `master`); la diagnosi ha isolato il vero collo di bottiglia: **`search_docs`
