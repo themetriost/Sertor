@@ -521,6 +521,41 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/073-cattura-copilot-cli/plan.md` (FEAT-008 epica **memoria-conversazioni** — **cattura memoria su GitHub
+Copilot CLI**: aggiunge il **secondo adapter di cattura transcript** dietro la porta esistente
+`TranscriptCaptureAdapter` (8ª porta). L'MVP memoria è host-agnostico in tutto il tier (archivio FEAT-001,
+full-text FEAT-002, semantica FEAT-004, distillazione FEAT-003) **tranne la cattura** (oggi un solo adapter
+`claude-code`); l'hook `SessionEnd` già depositato su ospiti Copilot da FEAT-009 è **inerte** perché manca la
+sorgente. Questa feature la fornisce: `CopilotCliCaptureAdapter` (`kind="copilot-cli"`, stdlib-only,
+best-effort non-fatale) che legge `~/.copilot/session-state/<uuid>/events.jsonl`, ne estrae i **soli** turni
+user/assistant e associa ogni sessione al progetto. **Additivo** (nessuna nuova porta/motore, tier a valle
+INVARIATO); a `SERTOR_MEMORY=false` (default) costo/comportamento identici (adapter non costruito, import lazy);
+default adapter invariato (`claude-code`). **Decisioni di scope fissate empiricamente (Copilot CLI 1.0.63,
+2026-06-22):** sorgente = `events.jsonl`; turni = `user.message`/`assistant.message` (testo = `data.content`,
+NON `transformedContent`; `toolRequests` non sono turni); ogni altro `type` scartato; associazione progetto =
+cwd/gitRoot dell'evento `session.start` (JSON puro, no YAML/`session.db`/cloud); nome adapter = `copilot-cli`;
+legacy `history-session-state/` ignorata; cloud-sync = sola documentazione (no avviso runtime). **4 forche
+residue chiuse (research):** **DA-CM-1** testo = `data.content` così com'è (nessuno streaming/delta nel JSONL
+persistito); **DA-CM-2** progetto indeterminabile = **skip** + warning `memory_capture_session_unassociated`
+(NO marcatore «unknown-project» → no stato artificiale, mai misattribuzione); **DA-CM-3** override percorso =
+**`SERTOR_MEMORY_COPILOT_SESSION_DIR`** (mirror esatto di `SERTOR_MEMORY_CLAUDE_PROJECTS_DIR`, nuovo campo
+`Settings.copilot_session_dir` default `~/.copilot/session-state`); **DA-CM-4** filtro = **path-containment
+normalizzato** (cwd **o** gitRoot antenato-o-uguale al progetto `str(Path.cwd())`, `normcase` case-insensitive
+su Windows → cattura le sessioni avviate in sottocartelle del repo via gitRoot; match lessicale se il path
+catturato non esiste sulla macchina, testabilità offline). **Wiring (4 punti):** `settings.py` (1 campo + 1
+lettura env), nuovo `adapters/capture/copilot_cli.py` (adapter + helper puri `_session_context`/`_paths_match`/
+`_turn_from_event`/`_parse_line`/`_parse_timestamp`, eventi metrics-only `memory_capture_*` parità Claude),
+`composition.py` (`_VALID_MEMORY_ADAPTERS += "copilot-cli"` + dispatch su `settings.memory_adapter` in
+`build_capture_adapter`, import lazy), test (`test_copilot_capture.py` su fixture + estensioni
+`test_composition`/`test_settings`). `domain/memory.py`/`domain/ports.py`/`claude_code.py`/tier INVARIATI.
+Local-first (solo file locali, zero rete, no `session-store.db`/cloud-sync), idempotenza ereditata
+(`session_key`=UUID + `INSERT OR IGNORE`), scrub ereditato non bypassabile. **Debito promosso (NON qui):**
+distribuzione `SERTOR_MEMORY_ADAPTER=copilot-cli` (+ override) nel template `.env` installer = **FEAT-009**,
+backlog d'epica — la feature non è *done* finché un ospite Copilot non riceve il valore adapter via install.
+Constitution **PASS 12/12 + missione PASS** (pre e post-design) senza deroghe — host-agnosticità (Principio X)
+resa reale per la memoria sul secondo assistente. **Nota di processo:** `setup-plan.ps1`/`speckit-plan/SKILL.md`
+ASSENTI → parametri per convenzione dal branch (forma da `072`); nessun hook eseguito; MCP `sertor-rag`
+interrogato (`find_symbol`/`search_code`, nessun errore tool). Branch `073-cattura-copilot-cli`. Storico:
 `specs/072-ricerca-semantica-memoria/plan.md` (FEAT-004 epica **memoria-conversazioni** — **ricerca semantica
 opzionale sull'archivio**: percorso **opt-in** che ritrova le conversazioni passate **per significato** (non per
 parola), affiancando — senza sostituire — la full-text FEAT-002. **Additivo**: riusa SOLO le primitive del core
