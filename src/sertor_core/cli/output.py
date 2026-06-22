@@ -30,6 +30,7 @@ from sertor_core.services.eval.models import (
     RegressionVerdict,
 )
 from sertor_core.services.memory_archive import ArchiveRunReport
+from sertor_core.services.memory_semantic import SemanticIndexReport, SemanticMemoryResults
 
 
 def _human_optional(value) -> str:
@@ -222,6 +223,62 @@ def format_memory_results(
             f"    {h.snippet}"
         )
     return "\n".join(blocks)
+
+
+def format_semantic_results(results: SemanticMemoryResults, *, json: bool) -> str:
+    """Formats the results of `memory search --semantic` (072, FEAT-004, REQ-010).
+
+    Same citation style as `format_memory_results`. Each hit exposes the six required fields:
+    `session_key`, `turn_index`, `captured_at`, `role`, `snippet`, `score`. `captured_at` is
+    rendered ISO-8601 UTC in the human view and as the raw epoch float in JSON. Empty `hits` →
+    honest empty state (`(no results)`), never an error. Pure function (no I/O, no side-effect).
+    """
+    hits = results.hits
+    if json:
+        return _json.dumps(
+            [
+                {
+                    "session_key": h.session_key,
+                    "turn_index": h.turn_index,
+                    "captured_at": h.captured_at,
+                    "role": h.role,
+                    "snippet": h.snippet,
+                    "score": round(h.score, 6),
+                }
+                for h in hits
+            ]
+        )
+    if not hits:
+        return "(no results)"
+    blocks: list[str] = []
+    for i, h in enumerate(hits, start=1):
+        blocks.append(
+            f"[{i}] score={h.score:.3f}  role={h.role}  session={h.session_key}  "
+            f"turn={h.turn_index}  @={_iso_utc(h.captured_at)}\n"
+            f"    {h.snippet}"
+        )
+    return "\n".join(blocks)
+
+
+def format_semantic_index_report(report: SemanticIndexReport, *, json: bool) -> str:
+    """Formats the outcome of `memory index-semantic` (072, FEAT-004, REQ-007).
+
+    Counts only, never text/transcript. Human/JSON informational equivalence: both report
+    `embedded`/`skipped`/`errors`. Pure function.
+    """
+    if json:
+        return _json.dumps(
+            {
+                "embedded": report.embedded,
+                "skipped": report.skipped,
+                "errors": report.errors,
+            }
+        )
+    return (
+        f"embedded={report.embedded} "
+        f"skipped={report.skipped} "
+        f"errors={report.errors}"
+    )
 
 
 def format_session_transcript(session: ArchivedSession, *, json: bool) -> str:

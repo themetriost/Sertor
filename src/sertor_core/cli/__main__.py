@@ -27,8 +27,10 @@ from sertor_core.composition import (
     build_graph_eval_runner,
     build_indexed_docs,
     build_indexer,
+    build_memory_archive,
     build_memory_archiver,
     build_memory_reader,
+    build_memory_semantic_index,
     enable_observability,
 )
 from sertor_core.config.settings import Settings
@@ -38,6 +40,7 @@ from sertor_core.domain.errors import (
     GraphRegressionDetected,
     IngestionError,
     RegressionDetected,
+    SemanticMemoryUnavailableError,
     SertorError,
     SessionNotFoundError,
 )
@@ -73,6 +76,7 @@ from sertor_core.services.eval.suite_io import (
     amend_graph_case,
     load_suite,
 )
+from sertor_core.services.memory_semantic import SemanticMemoryQuery
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -358,11 +362,26 @@ def _add_memory_parser(sub) -> None:
                            help="result ordering (default: relevance)")
     p_msearch.add_argument("-k", "--limit", type=int, default=None, dest="k",
                            help="max number of results (default: Settings.episodic_limit)")
+    p_msearch.add_argument("--semantic", action="store_true", default=False,
+                           help="semantic search by meaning (requires SERTOR_MEMORY_SEMANTIC=true; "
+                                "full-text is the default)")
     p_msearch.add_argument("--json", action="store_true", help="results as a JSON array")
     p_msearch.add_argument("--corpus", default=None,
                            help="corpus namespace; overrides SERTOR_CORPUS")
     _add_logging_flags(p_msearch)
     p_msearch.set_defaults(handler=_cmd_memory_search)
+
+    p_isem = msub.add_parser(
+        "index-semantic", help="semantically index backlog sessions (incremental backfill)",
+        description="Delegates to MemorySemanticIndex.index_all(); reports embedded/skipped/"
+                    "errors. Idempotent: a re-run without new sessions embeds nothing. Requires "
+                    "SERTOR_MEMORY_SEMANTIC=true.",
+    )
+    p_isem.add_argument("--json", action="store_true", help="report as a JSON object")
+    p_isem.add_argument("--corpus", default=None,
+                        help="corpus namespace; overrides SERTOR_CORPUS")
+    _add_logging_flags(p_isem)
+    p_isem.set_defaults(handler=_cmd_memory_index_semantic)
 
     p_show = msub.add_parser(
         "show", help="show the full transcript of an archived session",
@@ -455,6 +474,22 @@ def _require_memory_reader(settings: Settings):
     return reader
 
 
+def _require_semantic_index(settings: Settings, *, allow_download: bool = False):
+    """Consume the two-layer privacy gate for the semantic memory index (072, FEAT-004, REQ-015).
+
+    The gate lives in composition (`build_memory_semantic_index` → `None` unless BOTH
+    `SERTOR_MEMORY` and `SERTOR_MEMORY_SEMANTIC` are on). The command consumes the `None` and raises
+    the actionable `SemanticMemoryUnavailableError` (exit 1) — NEVER a silent fallback to full-text
+    (REQ-015, SC-005): the error names both knobs and `memory index-semantic`.
+    """
+    index = build_memory_semantic_index(settings, allow_download=allow_download)
+    if index is None:
+        if not settings.memory_enabled:
+            raise SemanticMemoryUnavailableError("capture is disabled (SERTOR_MEMORY)")
+        raise SemanticMemoryUnavailableError("semantic search is disabled (SERTOR_MEMORY_SEMANTIC)")
+    return index
+
+
 def _parse_time(value: str) -> float:
     """Parse `--since`/`--until`: ISO-8601 (`YYYY-MM-DD[THH:MM:SS]`) or epoch float → epoch UTC.
 
@@ -540,14 +575,27 @@ def _cmd_memory_archive(args) -> None:
 
 
 def _cmd_memory_search(args) -> None:
-    """Handler for `memory search`: gate → EpisodicSearch.search() → results (035, US2).
+    """Handler for `memory search`: routes to full-text (default) or semantic (`--semantic`).
 
-    `since > until` raises `InvalidTimeWindowError` from the core (a `SertorError` → exit 1 via
-    `main()`); the command does NOT re-validate the window (Principio I, no duplication).
+    Without `--semantic` → the FEAT-002 full-text path is UNCHANGED (the default, REQ-013/014).
+    With `--semantic` → the FEAT-004 semantic path (gated by `SERTOR_MEMORY_SEMANTIC`); leva spenta
+    / index absent → `SemanticMemoryUnavailableError` (exit 1), NEVER a silent fallback (REQ-015).
+    `since > until` raises `InvalidTimeWindowError` from the core (Principio I, no re-validation).
     """
     setup_logging(args)
     settings = _resolve_settings(args)
     enable_observability(settings)  # persist events if SERTOR_OBSERVABILITY=true (no-op otherwise)
+    if args.semantic:
+        index = _require_semantic_index(settings)
+        query = SemanticMemoryQuery(
+            text=args.query,
+            since=args.since,
+            until=args.until,
+            limit=args.k if args.k is not None else settings.memory_semantic_limit,
+        )
+        results = index.search(query)
+        print(output.format_semantic_results(results, json=args.json))
+        return
     search = _require_episodic_search(settings)
     query = SearchQuery(
         text=args.query,
@@ -559,6 +607,22 @@ def _cmd_memory_search(args) -> None:
     )
     results = search.search(query)
     print(output.format_memory_results(results, settings, json=args.json))
+
+
+def _cmd_memory_index_semantic(args) -> None:
+    """Handler for `memory index-semantic`: gate → index_all() → report (072, FEAT-004, US6).
+
+    Backfill of the semantic index over the archived sessions. `allow_download=True` mirrors the
+    indexing path (GloVe may acquire its data file). Leva spenta → `SemanticMemoryUnavailableError`
+    (exit 1). Idempotent: a re-run without new sessions reports `embedded=0`.
+    """
+    setup_logging(args)
+    settings = _resolve_settings(args)
+    enable_observability(settings)  # persist events if SERTOR_OBSERVABILITY=true (no-op otherwise)
+    index = _require_semantic_index(settings, allow_download=True)
+    archive = build_memory_archive(settings)
+    report = index.index_all(archive)
+    print(output.format_semantic_index_report(report, json=args.json))
 
 
 def _cmd_memory_show(args) -> None:

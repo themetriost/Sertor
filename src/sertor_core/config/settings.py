@@ -139,6 +139,11 @@ class Settings:
     # (Principio VIII); components hardcode nothing. Gated by `memory_enabled` (same opt-in).
     episodic_limit: int = 20                  # SERTOR_EPISODIC_LIMIT — max results (FR-010)
     episodic_snippet_tokens: int = 12         # SERTOR_EPISODIC_SNIPPET_TOKENS — snippet length
+    # optional semantic search over the memory archive (072, FEAT-004). A SECOND opt-in, distinct
+    # from `memory_enabled`: turning on capture must never turn on embedding (REQ-003). Default only
+    # here (Principio VIII). Gated by `memory_enabled AND memory_semantic_enabled` in composition.
+    memory_semantic_enabled: bool = False     # SERTOR_MEMORY_SEMANTIC — opt-in (default: off)
+    memory_semantic_limit: int = 20           # SERTOR_MEMORY_SEMANTIC_LIMIT — max results (REQ-011)
     # session listing for distillation (036, FEAT-003). Max sessions returned by `memory list`,
     # overridable per-invocation by `-k/--limit`. Default only here (Principio VIII).
     memory_list_limit: int = 20               # SERTOR_MEMORY_LIST_LIMIT — max sessions (FR-002)
@@ -317,6 +322,8 @@ class Settings:
             memory_scrub_patterns=tuple(_split_env("SERTOR_MEMORY_SCRUB_PATTERNS") or ()),
             episodic_limit=int(os.getenv("SERTOR_EPISODIC_LIMIT", "20")),
             episodic_snippet_tokens=int(os.getenv("SERTOR_EPISODIC_SNIPPET_TOKENS", "12")),
+            memory_semantic_enabled=_bool_env("SERTOR_MEMORY_SEMANTIC", False),
+            memory_semantic_limit=int(os.getenv("SERTOR_MEMORY_SEMANTIC_LIMIT", "20")),
             memory_list_limit=int(os.getenv("SERTOR_MEMORY_LIST_LIMIT", "20")),
             claude_projects_dir=(
                 Path(os.environ["SERTOR_MEMORY_CLAUDE_PROJECTS_DIR"])
