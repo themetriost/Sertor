@@ -26,7 +26,7 @@ from sertor_core.domain.ports import (
 from sertor_core.observability.logging import log_event
 
 _VALID_ENGINES = ("baseline", "hybrid")
-_VALID_MEMORY_ADAPTERS = ("claude-code",)
+_VALID_MEMORY_ADAPTERS = ("claude-code", "copilot-cli")
 
 
 def _validated_engine(settings: Settings) -> str:
@@ -399,9 +399,10 @@ def build_baseline_engine(settings: Settings | None = None):
 def build_capture_adapter(settings: Settings | None = None) -> TranscriptCaptureAdapter:
     """Build the transcript capture adapter selected by `Settings.memory_adapter` (031, FR-005).
 
-    Single selection point (Principio I/X): `claude-code` → `ClaudeCodeCaptureAdapter`; unknown
-    value → `ConfigError` with the allowed values (like `_validated_engine`). The import of the
-    host-specific adapter is LAZY (inside this function), so it never runs at flag off (FR-002).
+    Single selection point (Principio I/X): `claude-code` → `ClaudeCodeCaptureAdapter`,
+    `copilot-cli` → `CopilotCliCaptureAdapter` (FEAT-008); unknown value → `ConfigError` with values
+    (like `_validated_engine`). The import of each host-specific adapter is LAZY (inside this
+    function), so it never runs at flag off / for the unselected adapter (FR-002, RNF-3).
     """
     settings = settings or Settings.load()
     if settings.memory_adapter not in _VALID_MEMORY_ADAPTERS:
@@ -410,14 +411,20 @@ def build_capture_adapter(settings: Settings | None = None) -> TranscriptCapture
             f"(allowed: {', '.join(_VALID_MEMORY_ADAPTERS)})",
             key="SERTOR_MEMORY_ADAPTER",
         )
-    from sertor_core.adapters.capture.claude_code import (
-        ClaudeCodeCaptureAdapter,
-        encode_project_path,
-    )
-
     project_id = str(Path.cwd())
-    project_source_dir = settings.claude_projects_dir / encode_project_path(project_id)
-    return ClaudeCodeCaptureAdapter(project_source_dir, project_id=project_id)
+    if settings.memory_adapter == "claude-code":
+        from sertor_core.adapters.capture.claude_code import (
+            ClaudeCodeCaptureAdapter,
+            encode_project_path,
+        )
+
+        project_source_dir = settings.claude_projects_dir / encode_project_path(project_id)
+        return ClaudeCodeCaptureAdapter(project_source_dir, project_id=project_id)
+
+    # settings.memory_adapter == "copilot-cli"
+    from sertor_core.adapters.capture.copilot_cli import CopilotCliCaptureAdapter  # LAZY (RNF-3)
+
+    return CopilotCliCaptureAdapter(settings.copilot_session_dir, project_id=project_id)
 
 
 def build_memory_archive(settings: Settings | None = None):

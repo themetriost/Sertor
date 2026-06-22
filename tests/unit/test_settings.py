@@ -207,6 +207,40 @@ def test_memory_knobs_from_env(monkeypatch, tmp_path):
     assert s.claude_projects_dir == tmp_path / "projects"
 
 
+def test_copilot_session_dir_default(monkeypatch):
+    # FEAT-008 (DA-CM-3): default source of Copilot CLI sessions, mirror of claude_projects_dir.
+    monkeypatch.delenv("SERTOR_MEMORY_COPILOT_SESSION_DIR", raising=False)
+    s = Settings.load(env_file=None)
+    from pathlib import Path
+    assert s.copilot_session_dir == Path.home() / ".copilot" / "session-state"
+
+
+def test_copilot_session_dir_from_env(monkeypatch, tmp_path):
+    # FEAT-008: override the Copilot session source via SERTOR_MEMORY_COPILOT_SESSION_DIR.
+    from pathlib import Path
+    monkeypatch.setenv("SERTOR_MEMORY_COPILOT_SESSION_DIR", str(tmp_path / "fake"))
+    s = Settings.load(env_file=None)
+    assert s.copilot_session_dir == Path(str(tmp_path / "fake"))
+
+
+def test_copilot_session_dir_independent_from_claude(monkeypatch, tmp_path):
+    # FEAT-008: the two source knobs are distinct — overriding one never affects the other.
+    monkeypatch.setenv("SERTOR_MEMORY_COPILOT_SESSION_DIR", str(tmp_path / "copilot"))
+    monkeypatch.delenv("SERTOR_MEMORY_CLAUDE_PROJECTS_DIR", raising=False)
+    s = Settings.load(env_file=None)
+    assert s.copilot_session_dir == tmp_path / "copilot"
+    assert s.claude_projects_dir.name == "projects"  # untouched default
+
+
+def test_memory_adapter_copilot_cli_from_env(monkeypatch):
+    # FEAT-008 (FR-001): Settings accepts copilot-cli; the value is NOT validated here (validation
+    # happens in build_capture_adapter), so an unknown value loads as-is (FR-002 triggers at build).
+    monkeypatch.setenv("SERTOR_MEMORY_ADAPTER", "copilot-cli")
+    assert Settings.load(env_file=None).memory_adapter == "copilot-cli"
+    monkeypatch.setenv("SERTOR_MEMORY_ADAPTER", "sconosciuto")
+    assert Settings.load(env_file=None).memory_adapter == "sconosciuto"
+
+
 def test_memory_retention_blank_is_none(monkeypatch):
     # Blank env var = unset = no retention hint (twin of _float_or_none_env semantics, FR-021).
     monkeypatch.setenv("SERTOR_MEMORY_RETENTION_DAYS", "   ")

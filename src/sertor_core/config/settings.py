@@ -152,6 +152,12 @@ class Settings:
     claude_projects_dir: Path = field(
         default_factory=lambda: Path.home() / ".claude" / "projects"
     )
+    # Source directory of the GitHub Copilot CLI session-state (host-agnostic, testable): default
+    # `~/.copilot/session-state`. The copilot-cli adapter enumerates the per-session UUID subfolders
+    # from here (FEAT-008, mirror of `claude_projects_dir`).
+    copilot_session_dir: Path = field(
+        default_factory=lambda: Path.home() / ".copilot" / "session-state"
+    )
 
     # vector store
     index_dir: Path = field(default_factory=lambda: Path(".index"))
@@ -329,6 +335,11 @@ class Settings:
                 Path(os.environ["SERTOR_MEMORY_CLAUDE_PROJECTS_DIR"])
                 if os.getenv("SERTOR_MEMORY_CLAUDE_PROJECTS_DIR")
                 else Path.home() / ".claude" / "projects"
+            ),
+            copilot_session_dir=(
+                Path(os.environ["SERTOR_MEMORY_COPILOT_SESSION_DIR"])
+                if os.getenv("SERTOR_MEMORY_COPILOT_SESSION_DIR")
+                else Path.home() / ".copilot" / "session-state"
             ),
             index_dir=resolved_index_dir,
             azure_search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT", ""),
