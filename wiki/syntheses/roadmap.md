@@ -33,6 +33,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | Igiene radice host · tema lingua (tutto il prodotto in EN) | `sertor-cli` |
 | MVP osservabilità F1–F4 (**accesa** sul dogfood) · **export OTel + visibilità RAG nella TUI** (FEAT-005/013/014/015, 2026-06-19) | `osservabilita` |
 | MVP memoria: cattura→ricerca→CLI/hook→distillazione (**acceso**) | `memoria-conversazioni` |
+| **Distribuzione della memoria via installer** (FEAT-009, merge `a36ba89`, 2026-06-22) — `sertor install rag` deposita manopole memoria `.env` (off di default) + hook cattura/`SessionEnd` per-assistente + cenno comandi `sertor-rag memory`; lifecycle completo | `memoria-conversazioni` |
 | **Valutazione del retrieval & non-regressione** — `sertor-rag eval` (hit@k/MRR + gate baseline + `--by-kind` symbol→grafo) + skill genesi/feedback (FEAT-001, PR #92, 2026-06-20) | `retrieval-qualita` |
 | **Valutazione set-based della navigazione del grafo** — `sertor-rag graph-eval` (precision/recall/F1, `who_calls`/`defines`, baseline separata) (FEAT-011, 2026-06-20) | `retrieval-qualita` |
 | **Fusione code+doc misurata + `search_combined` strutturato** (FEAT-003 T1+T2, 2026-06-21) — set NL intent-typed + misura **per-superficie** + `eval run --fused`; **`search_combined` → tupla `(docs, code)`** (l'agente usa entrambi i flussi); metrica **OR/unione** *(la prima ipotesi «fusion coverage AND» = artefatto, corretta)* | `retrieval-qualita` |
@@ -53,7 +54,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **E1** | [`sertor-core`](../../requirements/sertor-core/epic.md) | ✅ completa (FEAT-011 ✅ merge `34b599a`) | **Nessun residuo Should aperto** — FEAT-011 embedder locale consegnata (2026-06-21). Resta solo il debito P2 **TASK-D04** (rinomina flag installer `--backend`→`--provider`). *(agenzia incorporata ❌ abbandonata by design)* |
 | **E2** | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | ergonomia installer · Codex · PyPI · `configure --check` (probe live, deferred) *(packaging ✅ + lifecycle ✅ + hardening Copilot FEAT-011 ✅ + wizard config ✅ + Copilot CLI-only ✅ + verifica empirica Copilot LIVE ✅, 2026-06-17)* |
 | **E3** | [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | **export OTel FEAT-005 ✅** + arricchimento span FEAT-013 ✅ + TUI tabella FEAT-014 ✅ + **visibilità RAG/dimostrabilità FEAT-015 ✅** (PR #88) · drift FEAT-012 · metriche aggregate · stima € (Should) · web · CSV/MD |
-| **E4** | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso | ricerca semantica · remember-this · retention · **distribuzione installer (Must)** · multi-assist |
+| **E4** | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso + **distribuibile** | ricerca semantica · remember-this · retention · multi-assist *(distribuzione installer FEAT-009 ✅ 2026-06-22)* |
 | **E5** | 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | 🔄 FEAT-001+011 ✅ · FEAT-003 T1+T2 ✅ su master | **eval IR ✅** (PR #92) + **graph-eval ✅** (FEAT-011) + skill live ✅ + **FEAT-003 misura fusione + `search_combined` strutturato (tupla, metrica OR) ✅** (merge `42aceaf`+`908bd92`). **Scoperta:** lo «0.17» era artefatto dell'AND; a OR union=1.00, il vero debole è **`search_docs` MRR 0.55** (leva futura). Restano FEAT-002/004/005-007 |
 | **E6** | 🆕 [`backend-store-scala`](../../requirements/backend-store-scala/epic.md) | 📋 aperta | adapter PGVector (Should) |
 | **E7** | 🆕 [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 📋 aperta | chunking SQL → **sblocca** schema-SQL |
@@ -66,24 +67,13 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-> Nessuna feature attiva su branch al momento (**FEAT-003 T1 misura + T2 `search_combined` strutturato ✅
-> mergiati** `42aceaf`+`908bd92`, 2026-06-21; **FEAT-011 embedder locale ✅** `34b599a`). **Candidati a
-> valore = i Must aperti + il miglioramento per-superficie di `search_docs`** (sotto).
+> Nessuna feature attiva su branch al momento (**FEAT-009 distribuzione memoria via installer ✅
+> mergiata** `a36ba89`, 2026-06-22; **FEAT-003 T1+T2 ✅** `42aceaf`+`908bd92`; **FEAT-011 embedder
+> locale ✅** `34b599a`). **Candidato a valore = il miglioramento per-superficie di `search_docs`**
+> (sotto).
 
-**Candidati a valore = Must aperti** (non ancora iniziati):
+**Candidato a valore = Should aperto:**
 
-- **Memoria → distribuzione via installer (Must, `memoria-conversazioni` FEAT-009)** — chiude il
-  corollario "una feature è completa solo se installabile". **✅ IMPLEMENTATA sul branch
-  `071-distribuzione-memoria-installer` (2026-06-22), in attesa di merge.** Pipeline SpecKit completa
-  (spec→plan→tasks→implement): `sertor install rag` ora deposita le 8 manopole memoria nei template
-  `.env` (`SERTOR_MEMORY` off, privacy-by-default), l'hook `memory-capture.ps1` + voce `SessionEnd`
-  per-assistente (Claude `.claude/settings.json`, Copilot nativo `.github/hooks/sertor-hooks.json`) e
-  il cenno ai comandi `sertor-rag memory` nel blocco `SERTOR:RAG-USAGE`; lifecycle upgrade/uninstall +
-  `plan ⊆ owned` coperti. Riuso del pattern hook rag-usage (FILE+SETTINGS_MERGE, nessun nuovo
-  `ArtifactKind`); `sertor-core` invariato. **952 test non-cloud verdi**, ruff pulito (src/packages).
-  Decisioni: cavalca `sertor install rag`; hook depositato anche su Copilot (cattura **inerte** finché
-  FEAT-008 non porta l'adapter Copilot — gap dichiarato). *Prossimo passo:* merge su `master` + PR, poi
-  re-index dogfood + smoke MCP.
 - **FEAT-003 → miglioramento per-superficie di `search_docs` (Should, `retrieval-qualita`)** — misura e
   contratto sono fatti (T1+T2 su `master`); la diagnosi ha isolato il vero collo di bottiglia: **`search_docs`
   MRR 0.55** (gli item attesi rankano a 6-8 sulle query NL/concettuali). *Primo passo:* valutare una leva
