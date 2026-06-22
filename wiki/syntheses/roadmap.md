@@ -14,7 +14,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > `requirements → spec → plan → tasks → implement`.
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-06-21)
+## ⚡ Executive summary (stato al 2026-06-22)
 
 ### ✅ Capacità consegnate (feature su `master`)
 
@@ -72,9 +72,14 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 **Candidati a valore = Must aperti** (non ancora iniziati):
 
-- **Memoria → distribuzione via installer (Must, `memoria-conversazioni`)** — la memoria è *accesa* sul
-  dogfood ma **non installabile su un ospite**: chiude il corollario "una feature è completa solo se
-  installabile". *Primo passo:* decomporre la feature installer (riusa `sertor-install-kit`).
+- **Memoria → distribuzione via installer (Must, `memoria-conversazioni` FEAT-009)** — la memoria è
+  *accesa* sul dogfood ma **non installabile su un ospite**: chiude il corollario "una feature è completa
+  solo se installabile". **✅ DECOMPOSTA (2026-06-22):** requisiti EARS in
+  `requirements/memoria-conversazioni/distribuzione-installer/requirements.md` (manopole memoria nei
+  template `.env`, hook cattura + voce `SessionEnd` come asset installer, cenno istruzioni agente,
+  lifecycle upgrade/uninstall). Decisioni: cavalca `sertor install rag` (stesso `.sertor/.env`/runtime);
+  hook depositato **anche** su Copilot (inerte finché FEAT-008 non porta l'adapter di cattura). *Prossimo
+  passo:* `/speckit-plan` (riusa il pattern hook rag-usage in `install_rag.py` + `sertor-install-kit`).
 - **FEAT-003 → miglioramento per-superficie di `search_docs` (Should, `retrieval-qualita`)** — misura e
   contratto sono fatti (T1+T2 su `master`); la diagnosi ha isolato il vero collo di bottiglia: **`search_docs`
   MRR 0.55** (gli item attesi rankano a 6-8 sulle query NL/concettuali). *Primo passo:* valutare una leva
