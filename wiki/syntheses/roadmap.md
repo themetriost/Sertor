@@ -55,7 +55,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **E1** | [`sertor-core`](../../requirements/sertor-core/epic.md) | ✅ completa (FEAT-011 ✅ merge `34b599a`) | **Nessun residuo Should aperto** — FEAT-011 embedder locale consegnata (2026-06-21). Resta solo il debito P2 **TASK-D04** (rinomina flag installer `--backend`→`--provider`). *(agenzia incorporata ❌ abbandonata by design)* |
 | **E2** | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | ergonomia installer · Codex · PyPI · `configure --check` (probe live, deferred) *(packaging ✅ + lifecycle ✅ + hardening Copilot FEAT-011 ✅ + wizard config ✅ + Copilot CLI-only ✅ + verifica empirica Copilot LIVE ✅, 2026-06-17)* |
 | **E3** | [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | **export OTel FEAT-005 ✅** + arricchimento span FEAT-013 ✅ + TUI tabella FEAT-014 ✅ + **visibilità RAG/dimostrabilità FEAT-015 ✅** (PR #88) · drift FEAT-012 · metriche aggregate · stima € (Should) · web · CSV/MD |
-| **E4** | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso + **distribuibile** + **semantico** | remember-this · retention · multi-assist (Could) *(ricerca semantica FEAT-004 ✅ + distribuzione installer FEAT-009 ✅, 2026-06-22)* |
+| **E4** | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso + **distribuibile** + **semantico** | **cattura Copilot CLI (FEAT-008, Should, decomposta — rende vivo l'hook già distribuito)** · remember-this · retention (Could) *(ricerca semantica FEAT-004 ✅ + distribuzione installer FEAT-009 ✅, 2026-06-22)* |
 | **E5** | 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | 🔄 FEAT-001+011 ✅ · FEAT-003 T1+T2 ✅ su master | **eval IR ✅** (PR #92) + **graph-eval ✅** (FEAT-011) + skill live ✅ + **FEAT-003 misura fusione + `search_combined` strutturato (tupla, metrica OR) ✅** (merge `42aceaf`+`908bd92`). **Scoperta:** lo «0.17» era artefatto dell'AND; a OR union=1.00, il vero debole è **`search_docs` MRR 0.55** (leva futura). Restano FEAT-002/004/005-007 |
 | **E6** | 🆕 [`backend-store-scala`](../../requirements/backend-store-scala/epic.md) | 📋 aperta | adapter PGVector (Should) |
 | **E7** | 🆕 [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 📋 aperta | chunking SQL → **sblocca** schema-SQL |
@@ -73,8 +73,16 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > `0f51bf7` + debito P2 chiuso `36bd079`). **Candidato a valore = il miglioramento per-superficie di
 > `search_docs`** (sotto).
 
-**Candidato a valore = Should aperto:**
+**Candidati a valore = Should aperti:**
 
+- **FEAT-008 → cattura memoria su Copilot CLI (Should, `memoria-conversazioni`) — DECOMPOSTA, *tema
+  prioritario utente*.** *Cosa:* adapter di cattura per Copilot dietro la porta `TranscriptCaptureAdapter`,
+  che rende **vivo** l'hook `SessionEnd` già distribuito su Copilot (FEAT-009, oggi inerte); il resto del
+  tier (archivio · full-text · semantica · distillazione) è host-agnostico e resta invariato. *Dove:*
+  `requirements/memoria-conversazioni/cattura-multi-assistente/requirements.md` (20 REQ + 7 DA). *Ricognizione
+  fatta:* transcript = `~/.copilot/session-state/<uuid>/events.jsonl` (JSONL di eventi); cartelle UUID →
+  associazione al progetto da metadata interna; Copilot cloud-synca di default (Sertor legge il locale).
+  *Prossimo passo:* `/speckit-plan` (forche DA-CM-1 mapping eventi→turni, DA-CM-2 associazione progetto).
 - **FEAT-003 → miglioramento per-superficie di `search_docs` (Should, `retrieval-qualita`)** — misura e
   contratto sono fatti (T1+T2 su `master`); la diagnosi ha isolato il vero collo di bottiglia: **`search_docs`
   MRR 0.55** (gli item attesi rankano a 6-8 sulle query NL/concettuali). *Primo passo:* valutare una leva
