@@ -129,6 +129,34 @@ def _copilot_rag_hook_specs() -> list[HookEntrySpec]:
     ]
 
 
+# Conversation-memory capture (FEAT-009, feature 071): the capture hook + SessionEnd wiring travel
+# WITH the rag capability (shared runtime `.sertor/`, CLI `sertor-rag`, `.env`). The script body is
+# REUSED IDENTICALLY across assistants (no `-Assistant`: it is already a silent, exit-0 SessionEnd
+# wrapper); only the container/wiring is translated per assistant. Same FILE + SETTINGS_MERGE
+# pattern as the rag-usage hook above (no new ArtifactKind). On Copilot the wiring is deposited but
+# capture is INERT until a Copilot capture adapter exists (FEAT-008); the only adapter today is
+# `claude-code`.
+_MEMORY_HOOK_ASSET = "rag/hooks/memory-capture.ps1"
+_MEMORY_HOOK_TARGET = ".claude/hooks/memory-capture.ps1"
+_MEMORY_HOOK_TARGET_COPILOT = ".github/hooks/memory-capture.ps1"
+_MEMORY_CAPTURE_SETTINGS = "rag/settings.memory-capture.json"
+_COPILOT_MEMORY_WIRING_SENTINEL = "(generated: copilot memory-capture hooks)"
+
+
+def _copilot_memory_hook_specs() -> list[HookEntrySpec]:
+    """Logical SessionEnd entry for the Copilot memory-capture wiring (FEAT-009, FR-014).
+
+    Non-blocking by design: the script is privacy-gated (no-op unless SERTOR_MEMORY is on) and
+    always exits 0. The wiring just invokes it at session end (no matcher, native `sessionEnd`).
+    """
+    return [
+        HookEntrySpec(
+            "SessionEnd", "command",
+            f"{_PWSH} {_MEMORY_HOOK_TARGET_COPILOT}", 15,
+        )
+    ]
+
+
 def _eval_skill_artifacts(is_copilot: bool) -> list[Artifact]:
     """FILE artifacts for the eval skills, routed to each assistant's skill container (065)."""
     base = _COPILOT_SKILLS_BASE if is_copilot else _CLAUDE_SKILLS_BASE
@@ -233,6 +261,30 @@ def build_rag_plan(
     )
     # Ground-truth eval skills (065): native skill bodies, byte-copied per-assistant (FILE).
     plan.extend(_eval_skill_artifacts(is_copilot))
+    # Conversation-memory capture (FEAT-009): hook script (FILE) + SessionEnd wiring
+    # (SETTINGS_MERGE), routed per-assistant — mirrors the rag-usage hook. Copilot wiring generated
+    # (sentinel source); the Claude wiring is the static JSON asset.
+    memory_hook_target = _MEMORY_HOOK_TARGET_COPILOT if is_copilot else _MEMORY_HOOK_TARGET
+    memory_settings_source = (
+        _COPILOT_MEMORY_WIRING_SENTINEL if is_copilot else _MEMORY_CAPTURE_SETTINGS
+    )
+    memory_settings_target = _COPILOT_HOOK_WIRING if is_copilot else _SETTINGS_TARGET
+    plan.append(
+        Artifact(
+            ArtifactKind.FILE,
+            _MEMORY_HOOK_ASSET,
+            memory_hook_target,
+            WriteStrategy.CREATE_IF_ABSENT,
+        )
+    )
+    plan.append(
+        Artifact(
+            ArtifactKind.SETTINGS_MERGE,
+            memory_settings_source,
+            memory_settings_target,
+            WriteStrategy.MERGE_DEDUP,
+        )
+    )
     return plan
 
 
@@ -315,10 +367,13 @@ def _rag_hook_fragment(art: Artifact) -> dict:
     """The PreToolUse hook fragment for the settings merge/remove (single source).
 
     FEAT-011: the Copilot wiring is GENERATED natively via `render_copilot_hooks` (sentinel source);
-    the Claude wiring is read from the static `settings.rag-usage.json` asset (unchanged).
+    the Claude wiring is read from the static JSON asset. Art-aware: it serves BOTH the rag-usage
+    (PreToolUse) and the memory-capture (SessionEnd, FEAT-009) wirings from the same dispatch.
     """
     if art.source == _COPILOT_RAG_WIRING_SENTINEL:
         return render_copilot_hooks(_copilot_rag_hook_specs())
+    if art.source == _COPILOT_MEMORY_WIRING_SENTINEL:
+        return render_copilot_hooks(_copilot_memory_hook_specs())
     assert art.source is not None
     return json.loads(read_asset_text(art.source))
 
@@ -407,6 +462,10 @@ def sertor_owned_paths(assistant: AssistantId = AssistantProfile.DEFAULT) -> Ser
     is_copilot = assistant is AssistantId.COPILOT_CLI
 
     hook_target = _RAG_HOOK_TARGET_COPILOT if is_copilot else _RAG_HOOK_TARGET
+    # Memory-capture hook (FEAT-009): standalone owned FILE, per-assistant. The SessionEnd wiring
+    # lands in the SAME settings file as the rag-usage hook → already covered by the shared edit
+    # below (no second shared_edit needed).
+    memory_hook_target = _MEMORY_HOOK_TARGET_COPILOT if is_copilot else _MEMORY_HOOK_TARGET
     settings_target = _COPILOT_HOOK_WIRING if is_copilot else _SETTINGS_TARGET
     instruction_target = aprofile.target_for(Surface.INSTRUCTION_BLOCK).target_rel
     mcp_target = aprofile.target_for(Surface.MCP_SERVER)
@@ -418,7 +477,7 @@ def sertor_owned_paths(assistant: AssistantId = AssistantProfile.DEFAULT) -> Ser
 
     return SertorOwnedPaths(
         owned_dirs=(".sertor", *eval_skill_dirs),
-        owned_files=(hook_target,),
+        owned_files=(hook_target, memory_hook_target),
         shared_edits=(
             SharedEdit(instruction_target, SharedEditKind.MARKER, "SERTOR:RAG-USAGE"),
             SharedEdit(settings_target, SharedEditKind.SETTINGS, _RAG_USAGE_SETTINGS),
@@ -426,16 +485,6 @@ def sertor_owned_paths(assistant: AssistantId = AssistantProfile.DEFAULT) -> Ser
             SharedEdit(mcp_target.target_rel, SharedEditKind.MCP_ENTRY, mcp_root_key),
         ),
     )
-
-
-def _rag_settings_fragment(art: Artifact, is_copilot: bool) -> dict:
-    """The Sertor hook fragment for the settings merge/remove (same source as install).
-
-    FEAT-011: Copilot wiring is generated natively; Claude wiring is the static asset.
-    """
-    if is_copilot:
-        return render_copilot_hooks(_copilot_rag_hook_specs())
-    return json.loads(read_asset_text(_RAG_USAGE_SETTINGS))
 
 
 def _apply_rag_uninstall(
@@ -469,7 +518,9 @@ def _apply_rag_uninstall(
         dest = root / art.target_rel
         if dry_run:
             return ArtifactOutcome(art.target_rel, project_removal(dest), "hook entries")
-        fragment = _rag_settings_fragment(art, is_copilot)
+        # Art-aware fragment (FEAT-009): same source dispatch as install → removes exactly the
+        # entries this artifact added (rag-usage PreToolUse OR memory SessionEnd), not another's.
+        fragment = _rag_hook_fragment(art)
         # Copilot dedicated hooks file (`sertor-hooks.json`): delete if left empty after removal;
         # the shared Claude `.claude/settings.json` is preserved (never delete-if-empty).
         outcome, detail = remove_settings_entries(
