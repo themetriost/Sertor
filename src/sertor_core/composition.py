@@ -761,3 +761,92 @@ def build_indexed_docs(settings: Settings | None = None) -> frozenset[str] | Non
     if state is None:
         return None
     return frozenset(state.files.keys())
+
+
+# --------------------------------------------------------------------------------------------------
+# `doctor` helpers (074, E12-FEAT-001): thin side-effect wrappers consumed by the `doctor` handler.
+# The pure decision lives in `services/doctor.py`; these only READ signals via the public surface
+# (Principio XI — vehicle, never a private shortcut). Sola lettura, non-fatal on absence (Principio
+# IV: a legitimate absence is a False/empty/None, not a raised exception).
+# --------------------------------------------------------------------------------------------------
+
+
+def load_manifest_state(settings: Settings | None = None):
+    """Loaded `ManifestState` for the current `(corpus, provider)`, or `None` (074).
+
+    Same resolution as `build_indexed_docs` (`build_embedder` → `collection_name` →
+    `IndexManifest.load`) but returns the full state (the handler needs the recorded file mtimes for
+    freshness, not only the path set). A missing/incompatible manifest → `None` (honest degradation,
+    Principio IV). Read-only.
+    """
+    from sertor_core.services.index_manifest import IndexManifest
+
+    settings = settings or Settings.load()
+    embedder = build_embedder(settings)
+    collection = collection_name(settings, embedder)
+    return IndexManifest(settings.index_dir).load(collection)
+
+
+def build_provider_probe(settings: Settings | None = None):
+    """Probe the embedding provider for reachability (074, DA-D5a). Opt-in (gated on --online).
+
+    Builds the embedder via the factory (`allow_download=False` — NEVER fetches GloVe, R-2/SC-008)
+    and embeds a single sentinel string (non-indexing, no upsert, SC-008). Any exception →
+    `ProviderProbe(UNREACHABLE, reason=scrub_text(str(e)))` (offline-safe, motive scrubbed,
+    FR-013/SC-006). Tests the REAL path through the vehicle without coupling to a provider SDK.
+    """
+    from sertor_core.observability.scrub import scrub_text
+    from sertor_core.services.doctor import ProbeStatus, ProviderProbe
+
+    settings = settings or Settings.load()
+    try:
+        embedder = build_embedder(settings, allow_download=False)
+        embedder.embed(["__sertor_doctor_probe__"])
+    except Exception as exc:  # noqa: BLE001 — any provider/SDK failure → honest unreachable
+        return ProviderProbe(status=ProbeStatus.unreachable, reason=scrub_text(str(exc)))
+    return ProviderProbe(status=ProbeStatus.reachable, reason="")
+
+
+def read_mcp_registration(root: Path) -> bool:
+    """Whether the `sertor-rag` MCP server is registered in `<root>/.mcp.json` (074, FR-009).
+
+    Reads the project-scope `.mcp.json` (stdlib `json`), looking for a `"sertor-rag"` entry under
+    `"mcpServers"` or `"servers"`. Absent file / invalid JSON / any error → `False` non-fatal
+    (FR-009/SC-009), never raises. Sola lettura: never starts the server (A-003).
+    """
+    import json
+
+    try:
+        data = json.loads((root / ".mcp.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    if not isinstance(data, dict):
+        return False
+    for key in ("mcpServers", "servers"):
+        section = data.get(key)
+        if isinstance(section, dict) and "sertor-rag" in section:
+            return True
+    return False
+
+
+def current_source_stats(manifest_state, root: Path) -> list[tuple[Path, float]]:
+    """Current mtime of each file recorded in the manifest (074, FR-006). NO repo re-scan.
+
+    Operates ONLY on the paths the `manifest_state` already records (POSIX, relative to the indexing
+    root): for each, `os.stat(root/path).st_mtime`; a vanished file / `OSError` → mtime `0.0` (a
+    deleted-or-unreadable file marks the index stale, never a crash, SC-007). `manifest_state is
+    None` → `[]`. Never globs/walks the tree (SC-007).
+    """
+    import os
+
+    if manifest_state is None:
+        return []
+    stats: list[tuple[Path, float]] = []
+    for rel in manifest_state.files:
+        path = Path(rel)
+        try:
+            mtime = os.stat(root / path).st_mtime
+        except OSError:
+            mtime = 0.0
+        stats.append((path, mtime))
+    return stats

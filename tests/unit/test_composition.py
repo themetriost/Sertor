@@ -229,3 +229,165 @@ def test_composition_does_not_import_claude_code_at_module_level():
         and not ln.startswith((" ", "\t"))  # exclude the in-function (indented) lazy import
     ]
     assert module_lines == []  # only the in-function lazy import exists
+
+
+# --- 074: doctor helpers (build_provider_probe / read_mcp_registration / current_source_stats) ----
+
+
+class _RaisingEmbedder:
+    name = "fake"
+
+    def embed(self, texts):
+        raise RuntimeError("boom sk-secretkey1234")
+
+
+class _OkEmbedder:
+    name = "fake"
+
+    def __init__(self):
+        self.embedded: list[str] = []
+
+    def embed(self, texts):
+        self.embedded.extend(texts)
+        return [[0.0] for _ in texts]
+
+
+def test_build_provider_probe_reachable(monkeypatch):
+    import sertor_core.composition as comp
+    from sertor_core.composition import build_provider_probe
+    from sertor_core.services.doctor import ProbeStatus
+
+    monkeypatch.setattr(comp, "build_embedder", lambda s, allow_download=False: _OkEmbedder())
+    probe = build_provider_probe(Settings(embed_provider="hash"))
+    assert probe.status is ProbeStatus.reachable
+    assert probe.reason == ""
+
+
+def test_build_provider_probe_unreachable_on_exception(monkeypatch):
+    import sertor_core.composition as comp
+    from sertor_core.composition import build_provider_probe
+    from sertor_core.services.doctor import ProbeStatus
+
+    monkeypatch.setattr(comp, "build_embedder", lambda s, allow_download=False: _RaisingEmbedder())
+    probe = build_provider_probe(Settings(embed_provider="hash"))
+    assert probe.status is ProbeStatus.unreachable
+    assert "sk-secretkey1234" not in probe.reason  # scrubbed (FR-013/SC-006)
+
+
+def test_build_provider_probe_allow_download_false(monkeypatch):
+    import sertor_core.composition as comp
+    from sertor_core.composition import build_provider_probe
+
+    seen = {}
+
+    def _fake(s, allow_download=True):
+        seen["allow_download"] = allow_download
+        return _OkEmbedder()
+
+    monkeypatch.setattr(comp, "build_embedder", _fake)
+    build_provider_probe(Settings(embed_provider="hash"))
+    assert seen["allow_download"] is False  # never downloads GloVe (DA-D5/R-2/SC-008)
+
+
+def test_build_provider_probe_no_upsert(monkeypatch):
+    import sertor_core.composition as comp
+    from sertor_core.composition import build_provider_probe
+
+    emb = _OkEmbedder()
+    monkeypatch.setattr(comp, "build_embedder", lambda s, allow_download=False: emb)
+    build_provider_probe(Settings(embed_provider="hash"))
+    # only ONE sentinel embedded, no store/upsert touched (non-indexing, SC-008)
+    assert len(emb.embedded) == 1
+
+
+def test_read_mcp_registration_true(tmp_path):
+    from sertor_core.composition import read_mcp_registration
+
+    (tmp_path / ".mcp.json").write_text(
+        '{"mcpServers": {"sertor-rag": {"command": "x"}}}', encoding="utf-8"
+    )
+    assert read_mcp_registration(tmp_path) is True
+
+
+def test_read_mcp_registration_false_absent(tmp_path):
+    from sertor_core.composition import read_mcp_registration
+
+    assert read_mcp_registration(tmp_path) is False
+
+
+def test_read_mcp_registration_false_no_sertor_key(tmp_path):
+    from sertor_core.composition import read_mcp_registration
+
+    (tmp_path / ".mcp.json").write_text('{"mcpServers": {"other": {}}}', encoding="utf-8")
+    assert read_mcp_registration(tmp_path) is False
+
+
+def test_read_mcp_registration_invalid_json(tmp_path):
+    from sertor_core.composition import read_mcp_registration
+
+    (tmp_path / ".mcp.json").write_text("{not json", encoding="utf-8")
+    assert read_mcp_registration(tmp_path) is False
+
+
+def test_read_mcp_registration_servers_key(tmp_path):
+    from sertor_core.composition import read_mcp_registration
+
+    (tmp_path / ".mcp.json").write_text(
+        '{"servers": {"sertor-rag": {}}}', encoding="utf-8"
+    )
+    assert read_mcp_registration(tmp_path) is True
+
+
+def test_read_mcp_registration_readonly(tmp_path):
+    from sertor_core.composition import read_mcp_registration
+
+    path = tmp_path / ".mcp.json"
+    path.write_text('{"mcpServers": {"sertor-rag": {}}}', encoding="utf-8")
+    before = path.read_bytes()
+    read_mcp_registration(tmp_path)
+    assert path.read_bytes() == before  # no write
+    assert sorted(p.name for p in tmp_path.iterdir()) == [".mcp.json"]
+
+
+def test_current_source_stats_returns_mtime_for_known_files(tmp_path):
+    from sertor_core.composition import current_source_stats
+
+    (tmp_path / "a.py").write_text("x", encoding="utf-8")
+    (tmp_path / "b.md").write_text("y", encoding="utf-8")
+
+    class _S:
+        files = {"a.py": (0.0, "h", "v"), "b.md": (0.0, "h", "v")}
+
+    stats = dict(current_source_stats(_S(), tmp_path))
+    assert all(m > 0.0 for m in stats.values())
+    assert {p.as_posix() for p in stats} == {"a.py", "b.md"}
+
+
+def test_current_source_stats_deleted_file_returns_zero_mtime(tmp_path):
+    from sertor_core.composition import current_source_stats
+
+    class _S:
+        files = {"gone.py": (0.0, "h", "v")}
+
+    stats = current_source_stats(_S(), tmp_path)
+    assert stats == [(Path("gone.py"), 0.0)]
+
+
+def test_current_source_stats_none_state(tmp_path):
+    from sertor_core.composition import current_source_stats
+
+    assert current_source_stats(None, tmp_path) == []
+
+
+def test_current_source_stats_no_rescan(tmp_path, monkeypatch):
+    # Only the manifest files are stat-ed; extra files on disk are NOT discovered (no glob/walk).
+    from sertor_core.composition import current_source_stats
+
+    (tmp_path / "known.py").write_text("x", encoding="utf-8")
+    (tmp_path / "extra.py").write_text("z", encoding="utf-8")
+
+    class _S:
+        files = {"known.py": (0.0, "h", "v")}
+
+    stats = current_source_stats(_S(), tmp_path)
+    assert [p.as_posix() for p, _ in stats] == ["known.py"]  # extra.py never seen

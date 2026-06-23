@@ -306,6 +306,18 @@ class GraphRegressionDetected(SertorError):
         )
 
 
+class DoctorCheckFailed(SertorError):
+    """A `sertor-rag doctor` run found at least one CRITICAL problem (074, E12-FEAT-001).
+
+    The non-zero EXIT gate for the health check: raised by the `doctor` handler **after** it has
+    already printed the report (human or JSON), so `main()` maps it to exit 1 without suppressing
+    the output. It is NOT a crash — the report is already emitted; the error is only the signal to
+    the exit-code gate (DA-D4: CRITICAL = env missing OR index absent/incompatible). The message is
+    a scrubbed summary of the failed critical areas (FR-013/SC-006): never a secret. Twin of
+    `RegressionDetected`/`GraphRegressionDetected` (`cli/__main__.py` exit pattern).
+    """
+
+
 class RegressionDetected(SertorError):
     """The evaluation run scored below the recorded baseline beyond tolerance (065, REQ-043).
 
