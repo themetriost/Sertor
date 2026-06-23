@@ -44,10 +44,10 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 > **Governance:** Costituzione **v1.4.0** — **Missione & stella polare (North Star)** (differenziatore = **fusione code+doc**; gate «Allineamento alla missione» nel Constitution Check) + **Principio XII «Fail Loud, Fix the Cause»** (v1.3.0: riparare la causa, non disattivare/silenziare per schivare un errore). Distribuita agli ospiti via `sertor-flow` (starter neutro + blocco SDLC).
 
-### 📋 Le 11 epiche (per stato)
+### 📋 Le 12 epiche (per stato)
 
 > **⚠️ Nessuna epica è "finita" finché TUTTE le sue feature non sono consegnate.** Le 4 storiche hanno
-> il **nucleo su `master`** ma residui aperti (tranne `sertor-core`, ormai completa); le altre 7 sono
+> il **nucleo su `master`** ma residui aperti (tranne `sertor-core`, ormai completa); le altre 8 sono
 > **da fare**. Una *feature* (`FEAT-NNN`) vive **dentro** un'epica — le capacità già consegnate stanno
 > nella tabella sopra, qui c'è il quadro a livello di epica.
 
@@ -64,8 +64,9 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **E9** | 🆕 [`second-brain`](../../requirements/second-brain/epic.md) | 📋 da espandere | decidere bivi §9 prima di decomporre |
 | **E10** | 🆕 [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 🔄 in progress | **Should aperto:** hook freschezza RAG (FEAT-011); il resto è Could *(**FEAT-003 CI GitHub Actions ✅ 2026-06-23** — Windows + Linux verdi su PR #96, prima CI del progetto · **FEAT-013 allineamento config dogfood↔ospite ✅ 2026-06-23** — dogfood su `.sertor/.env`+`.sertor/.index`, resolver host-agnostico · **FEAT-012 governance nel corpus ✅ 2026-06-23** — costituzione+plan-template indicizzati · unif. venv ✅ · host-agnosticità asset **FEAT-001/009/010 ✅** · disciplina MCP-first agli ospiti ✅, 2026-06-19)* |
 | **E11** | [`multiutente`](../../requirements/multiutente/epic.md) | 📋 differita | finché il caso d'uso team non è concreto |
+| **E12** | 🆕 [`usabilità`](../../requirements/usabilita/epic.md) | 📋 nuova (2026-06-23) | **owner del layer UX** (skill agentiche + agente *concierge* + poche primitive deterministiche, D↔N). MVP = `sertor-rag doctor` + guided-setup (Must). Assorbe gli item UX-facing da E2/E3/E10 (i *meccanismi* restano lì, cross-ref). 1° passo: decomporre FEAT-001/002 |
 
-*Legenda:* ✅ completa · 🔄 nucleo consegnato, residui aperti · 📋 da fare · 🆕 nuova (2026-06-16). *Numerazione `E1`..`E11`: vista standing per epica (E1 nucleo `sertor-core`, E11 `multiutente` differita); E1–E4 storiche, E5–E10 dal backlog audit 2026-06-16.*
+*Legenda:* ✅ completa · 🔄 nucleo consegnato, residui aperti · 📋 da fare · 🆕 nuova. *Numerazione `E1`..`E12`: vista standing per epica (E1 nucleo `sertor-core`, E11 `multiutente` differita, E12 `usabilità` nuova 2026-06-23); E1–E4 storiche, E5–E10 dal backlog audit 2026-06-16, E12 dall'esplorazione UX 2026-06-23.*
 
 ### 🔄 IN PROGRESS (dettaglio)
 
