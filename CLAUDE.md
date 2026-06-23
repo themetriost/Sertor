@@ -521,6 +521,49 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/074-doctor-salute/plan.md` (FEAT-001 epica **usabilità** (E12) — **`sertor-rag doctor` — verifica di
+salute deterministica**: la primitiva «ha funzionato?» che oggi manca. In un comando-vehicle (Principio XI)
+fotografa la salute di **quattro aree** — config/env · provider embeddings · indice · server MCP — con esito
+per-area pass/warn/fail, causa + rimedio per ogni problema, output umano e `--json` a **schema stabile**
+(`doctor.report/1`), ed exit code non-zero se un check critico fallisce. **Sola lettura, nessun LLM** (confine
+D↔N, FR-014/015): l'intelligenza/spiegazione vive nelle skill dell'ospite, il core è puramente deterministico.
+**Scope esteso a 2 pacchetti** (deciso con l'utente): `sertor-core` (comando `doctor`, owner E12) + `sertor`
+(wizard `configure --check`, owner E2/FEAT-003) — chiude il debito *deferred* US5: `_probe_live`
+(`configure.py:369`) cambia il comando invocato da `sertor-rag check` (inesistente) a `sertor-rag doctor
+--area config --json` (sottoinsieme config, DA-D3), degrado onesto preservato; `configure` senza `--check`
+byte-identico. **Architettura:** comando thin in `cli/__main__.py` (`_add_doctor_parser`/`_cmd_doctor`) →
+servizio **puro** nuovo `services/doctor.py` (entità di esito `HealthReport`/`AreaReport`/`Problem`/`ProviderProbe`
++ funzioni pure `check_config`/`check_provider`/`freshness_from_manifest`/`check_mcp`/`assemble`) → formatter
+puro `format_health_report` in `cli/output.py`; gate exit via nuovo `DoctorCheckFailed(SertorError)` (gemello
+`RegressionDetected`); helper side-effect sottili in `composition.py` (`build_provider_probe`/`read_mcp_registration`/
+`current_source_stats`). **Riusa i segnali GIÀ esistenti, nessuna nuova porta/dipendenza** (SC-012): env =
+`Settings.validate_backend()` (`settings.py:238`, fonte unica — l'area provider statica eredita le chiavi
+provider, no lista duplicata); indice presenza+freschezza = `IndexManifest.load(collection_name(...))`
+(`index_manifest.py:122`, `composition.py:168`) — presenza ⇔ `load()→None`?, freschezza = `os.stat` sui **soli
+file noti** vs mtime registrato (cheap pre-filtro del refresh incrementale, **niente re-scan/re-hash**); MCP =
+lettura `.mcp.json` (`mcpServers.sertor-rag`, radice host); probe = `build_embedder()`+`embed(sentinel)`.
+**DA-D4 (criteri critico/warn, codificata deterministica):** CRITICO (exit≠0) = env mancante **o** indice
+assente/incompatibile; WARN (exit 0) = indice stantio · MCP non registrato · provider irraggiungibile col probe;
+exit 1 ⇔ ≥1 `Problem` `CRITICAL`. **DA-D5 risolta:** **(D5a probe provider)** = `build_embedder(settings,
+allow_download=False)` + `embed([sentinel])` su stringa minima costante → reachable/unreachable+motivo
+(scrubbed); **non-indicizzante** (nessun upsert, SC-008), **offline-safe** (saltato senza `--online`), **mai
+scarica GloVe**, testa il path reale via vehicle/factory senza accoppiare il comando a SDK/URL per-provider
+(Principio I/II); scartato un «ping» per-provider (riporterebbe dettagli provider nel core, non testa il path
+reale). **(D5b stantio-dopo-reindex MCP)** = best-effort derivato dai segnali già disponibili (indice stantio
+**e** MCP registrato → warn «riavvia il server»); la rilevazione *forte* cross-processo **non esiste oggi** →
+riportata `unknown`, **non finta** (Principio XII), debito promosso a osservabilità/server MCP. **Flag rete =
+`--online`** (DA-D1: comando unico, offline-safe by default); `--area {config|provider|index|mcp|all}` realizza
+il sottoinsieme config senza un secondo comando. **Privacy:** ogni stringa (umano+JSON) da `scrub_text`
+(`observability/scrub.py:36`, FR-013/SC-006); evento osserv. `doctor` **metrics-only** (gemello `eval`,
+`runner.py:34`) — mai chiavi/valori/sentinella/motivi/path. **Knob env:** il probe è un **flag CLI, nessun
+nuovo env** → template `.env` installer invariato (SC-012); se mai diventasse env va promosso (owner E2). File
+toccati: `sertor-core` (`services/doctor.py` nuovo, `cli/__main__.py`, `cli/output.py`, `domain/errors.py`,
+`composition.py`, `tests/unit/test_doctor.py`+`test_cli_doctor.py` nuovi) · `sertor` (`configure.py::_probe_live`
++ test). Constitution **PASS 12/12 + missione PASS** (pre e post-design) senza deroghe — `doctor` rende **reale**
+la host-agnosticità (Principio X): un agente verifica da solo la salute su un ospite qualunque, prerequisito del
+retrieval fuso fruibile. **Nota di processo:** `setup-plan.ps1`/`speckit-plan/SKILL.md` ASSENTI → parametri per
+convenzione dal branch (forma da `073`); nessun hook eseguito; MCP `sertor-rag` interrogato
+(`find_symbol`/`search_code`, nessun errore tool). Branch `074-doctor-salute`. Storico:
 `specs/073-cattura-copilot-cli/plan.md` (FEAT-008 epica **memoria-conversazioni** — **cattura memoria su GitHub
 Copilot CLI**: aggiunge il **secondo adapter di cattura transcript** dietro la porta esistente
 `TranscriptCaptureAdapter` (8ª porta). L'MVP memoria è host-agnostico in tutto il tier (archivio FEAT-001,
