@@ -16,10 +16,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # FEAT-003 (epica debito-tecnico): enable CI on Windows first; Linux (ubuntu-latest) is
-        # added in the next phase, once the Windows run is green. The matrix shape keeps that a
-        # one-line change ("prima Windows, poi Linux").
-        os: [windows-latest]
+        # FEAT-003 (epica debito-tecnico): Windows enabled first (green 2026-06-23), then Linux —
+        # the suite must pass on both ("prima Windows, poi Linux"). fail-fast: false so a failure
+        # on one OS does not cancel the other (we want to see both).
+        os: [windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
