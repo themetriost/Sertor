@@ -829,24 +829,43 @@ def read_mcp_registration(root: Path) -> bool:
     return False
 
 
-def current_source_stats(manifest_state, root: Path) -> list[tuple[Path, float]]:
-    """Current mtime of each file recorded in the manifest (074, FR-006). NO repo re-scan.
+def current_source_stats(manifest_state, root: Path) -> list[tuple[Path, float, str | None]]:
+    """Current mtime (+ confirming content-hash) of each manifest file (074/076, FR-006). No rescan.
 
-    Operates ONLY on the paths the `manifest_state` already records (POSIX, relative to the indexing
-    root): for each, `os.stat(root/path).st_mtime`; a vanished file / `OSError` → mtime `0.0` (a
-    deleted-or-unreadable file marks the index stale, never a crash, SC-007). `manifest_state is
-    None` → `[]`. Never globs/walks the tree (SC-007).
+    Operates ONLY on the paths the `manifest_state` already records (POSIX, relative to the root).
+    For each: `os.stat(root/path).st_mtime`; a vanished file / `OSError` → `(path, 0.0, None)`
+    (deleted/unreadable → genuinely stale, never a crash). When the current mtime DIFFERS from the
+    recorded one, the file is a freshness *candidate*: read+hash it with the SAME pipeline the
+    indexer used to record the hash (`read_source` → `content_hash`), so `doctor` can confirm
+    whether content changed — mirroring the incremental indexer, which treats a touched-but-
+    unchanged file (bumped mtime, same content, e.g. after a `git checkout`) as UNCHANGED (076 fix
+    for the false `index_stale`). mtime unchanged → hash `None` (no read needed). Bounded to the
+    manifest's own mtime-changed files; never globs/walks the tree (SC-007).
+    `manifest_state is None` → `[]`.
     """
     import os
 
+    from sertor_core.services.index_manifest import content_hash
+    from sertor_core.services.ingestion import SourceFile, _language_for, read_source
+
     if manifest_state is None:
         return []
-    stats: list[tuple[Path, float]] = []
-    for rel in manifest_state.files:
+    stats: list[tuple[Path, float, str | None]] = []
+    for rel, (rec_mtime, _rec_hash, _lv) in manifest_state.files.items():
         path = Path(rel)
+        abs_path = root / path
         try:
-            mtime = os.stat(root / path).st_mtime
+            mtime = os.stat(abs_path).st_mtime
         except OSError:
-            mtime = 0.0
-        stats.append((path, mtime))
+            stats.append((path, 0.0, None))
+            continue
+        cur_hash: str | None = None
+        if mtime != rec_mtime:
+            # mtime changed → confirm via the recorded hash pipeline (read_source + content_hash).
+            source = SourceFile(
+                path=abs_path, rel=rel, language=_language_for(abs_path) or "", mtime=mtime
+            )
+            doc = read_source(source)
+            cur_hash = content_hash(doc.text) if doc is not None else None
+        stats.append((path, mtime, cur_hash))
     return stats

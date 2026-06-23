@@ -163,7 +163,8 @@ def test_cmd_doctor_mcp_registered_pass(wired, capsys):
 def test_cmd_doctor_mcp_stale_after_reindex_warn(wired, capsys):
     monkeypatch, _ = wired
     monkeypatch.setattr(
-        cli, "current_source_stats", lambda st, root: [(Path("a.py"), 999.0)]
+        # mtime ≠ recorded (100.0) AND hash ≠ recorded ("h") → index stale → mcp stale-after-reindex
+        cli, "current_source_stats", lambda st, root: [(Path("a.py"), 999.0, "h2")]
     )
     _run(["doctor", "--json"])
     obj = json.loads(capsys.readouterr().out)
