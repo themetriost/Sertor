@@ -144,6 +144,10 @@ Il valore dell'epica è duplice e ricalca due strati:
 ## 8. Backlog di feature
 
 > Due strati: **A. Osservabilità nel core** (la memoria + i report) · **B. Il pannello** (la superficie).
+>
+> **Cross-ref `usabilità` (E12):** la **diagnosi user-facing** («spiega perché non trova / risultati
+> deboli») è ownership dell'epica [`usabilità`](../usabilita/epic.md). Qui restano i **meccanismi**:
+> store eventi, aggregazione/report e motore TUI (E12 li consuma come dipendenza).
 
 | ID | Feature | Valore / obiettivo | Priorità (MoSCoW) | Stato |
 |----|---------|--------------------|-------------------|-------|
