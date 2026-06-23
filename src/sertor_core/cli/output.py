@@ -19,6 +19,8 @@ from sertor_core.config.settings import Settings
 from sertor_core.domain.entities import IndexReport, RetrievalResult
 from sertor_core.domain.memory import ArchivedSession, SessionSummary
 from sertor_core.engines.evaluation import EvalReport
+from sertor_core.observability.scrub import scrub_text
+from sertor_core.services.doctor import HealthReport
 from sertor_core.services.episodic_search import EpisodicResults
 from sertor_core.services.eval.models import (
     FusedEvalReport,
@@ -759,3 +761,70 @@ def format_session_list(summaries: Sequence[SessionSummary], *, json: bool) -> s
             f"[{i}] session={s.session_key}  @={_iso_utc(s.captured_at)}  turns={s.turn_count}"
         )
     return "\n".join(blocks)
+
+
+def _scrub(value: str | bool | None) -> str | bool | None:
+    """Scrub a detail/string value (074, FR-013): strings through `scrub_text`, others as-is."""
+    return scrub_text(value) if isinstance(value, str) else value
+
+
+def format_health_report(report: HealthReport, *, json_out: bool = False) -> str:
+    """Render a `sertor-rag doctor` health report (074, FR-010/013, SC-003/SC-006).
+
+    Pure view (Principio I): no I/O, no side-effect. Every emitted string passes through
+    `scrub_text` so no secret leaks (FR-013/SC-006), in BOTH human and JSON. Human and JSON carry
+    the same data (informational equivalence). JSON is the stable contract `doctor.report/1` with
+    fixed top-level keys (`schema`/`overall`/`online`/`exit_code`/`areas`); `exit_code` is
+    redundant in the JSON for skills that do not inspect `$?`.
+    """
+    if json_out:
+        return _json.dumps(
+            {
+                "schema": "doctor.report/1",
+                "overall": report.overall.value,
+                "online": report.online,
+                "exit_code": report.exit_code(),
+                "areas": [
+                    {
+                        "name": area.name.value,
+                        "status": area.status.value,
+                        "detail": {k: _scrub(v) for k, v in area.detail.items()},
+                        "problems": [
+                            {
+                                "severity": p.severity.value,
+                                "code": p.code,
+                                "message": scrub_text(p.message),
+                                "remedy": scrub_text(p.remedy),
+                                "fields": list(p.fields),
+                            }
+                            for p in area.problems
+                        ],
+                    }
+                    for area in report.areas
+                ],
+            }
+        )
+
+    headline = {"pass": "PASS", "warn": "WARN", "fail": "FAIL"}[report.overall.value]
+    lines = [f"doctor: {headline}"]
+    for area in report.areas:
+        status_label = "FAIL" if area.status.value == "fail" else area.status.value
+        detail = _format_area_detail(area.detail)
+        lines.append(f"  {area.name.value:<9} {status_label:<5}{detail}")
+        for p in area.problems:
+            msg = scrub_text(p.message)
+            remedy = scrub_text(p.remedy)
+            lines.append(f"             {msg} → {remedy}")
+    if report.exit_code() == 1:
+        lines.append("exit: 1")
+    return "\n".join(lines)
+
+
+def _format_area_detail(detail: dict[str, str | bool | None]) -> str:
+    """Render the non-secret area detail as a compact ` (k=v, ...)` suffix (074), scrubbed."""
+    parts = [
+        f"{k}={_scrub(v)}"
+        for k, v in detail.items()
+        if v is not None
+    ]
+    return f"  ({', '.join(parts)})" if parts else ""

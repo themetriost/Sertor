@@ -31,11 +31,16 @@ from sertor_core.composition import (
     build_memory_archiver,
     build_memory_reader,
     build_memory_semantic_index,
+    build_provider_probe,
+    current_source_stats,
     enable_observability,
+    load_manifest_state,
+    read_mcp_registration,
 )
 from sertor_core.config.settings import Settings
 from sertor_core.domain.errors import (
     ConfigError,
+    DoctorCheckFailed,
     FusedRegressionDetected,
     GraphRegressionDetected,
     IngestionError,
@@ -45,6 +50,16 @@ from sertor_core.domain.errors import (
     SessionNotFoundError,
 )
 from sertor_core.observability.logging import log_event
+from sertor_core.services.doctor import (
+    AreaName,
+    ProbeStatus,
+    ProviderProbe,
+    assemble,
+    check_config,
+    check_mcp,
+    check_provider,
+    freshness_from_manifest,
+)
 from sertor_core.services.episodic_search import SearchQuery
 from sertor_core.services.eval.baseline_io import (
     load_baseline,
@@ -128,6 +143,7 @@ def _build_parser() -> argparse.ArgumentParser:
                            help="corpus namespace; overrides SERTOR_CORPUS")
     p_observe.set_defaults(handler=_cmd_observe)
 
+    _add_doctor_parser(sub)
     _add_memory_parser(sub)
     _add_eval_parser(sub)
     _add_graph_eval_parser(sub)
@@ -509,6 +525,120 @@ def _parse_time(value: str) -> float:
         return calendar.timegm(parsed)
     raise ValueError(
         f"invalid time '{value}': expected ISO-8601 (YYYY-MM-DD[THH:MM:SS]) or an epoch number"
+    )
+
+
+def _add_doctor_parser(sub) -> None:
+    """`doctor` command: deterministic health check of the four areas (074, contract cli-doctor.md).
+
+    Sola lettura, never an LLM (Principio XI vehicle). `--online` opts into the provider probe (zero
+    network without it, FR-007/012); `--area` restricts the executed areas (`config` is the subset
+    used by `configure --check`, DA-D3); `--json` emits the stable `doctor.report/1`.
+    """
+    p_doctor = sub.add_parser(
+        "doctor", help="deterministic health check (config/provider/index/MCP) — «did it work?»",
+        description="Reports the health of config/env, embedding provider, index and MCP "
+                    "registration with pass/warn/fail, cause + remedy, and a non-zero exit on a "
+                    "critical problem. Read-only, no LLM.",
+    )
+    p_doctor.add_argument("--online", action="store_true",
+                          help="probe the provider for reachability (network); off → static only")
+    p_doctor.add_argument("--area", choices=["config", "provider", "index", "mcp", "all"],
+                          default="all",
+                          help="restrict the checked areas (default: all)")
+    p_doctor.add_argument("--json", action="store_true",
+                          help="emit the stable doctor.report/1 JSON on stdout")
+    p_doctor.add_argument("--corpus", default=None,
+                          help="corpus namespace; overrides SERTOR_CORPUS")
+    _add_logging_flags(p_doctor)
+    p_doctor.set_defaults(handler=_cmd_doctor)
+
+
+def _cmd_doctor(args) -> None:
+    """Handler for `doctor`: collect signals, assemble the report, print, then gate exit (074).
+
+    Thin (Principio I/XI): reads the signals via factory/`Settings`/composition helpers, delegates
+    the verdict to the pure `services/doctor.py`, formats via `format_health_report`, emits the
+    metrics-only `doctor` event, and raises `DoctorCheckFailed` (exit 1) AFTER printing when a
+    critical problem exists. Sola lettura: never writes config/index (SC-009).
+    """
+    setup_logging(args)
+    settings = _resolve_settings(args)
+    enable_observability(settings)  # persist events if SERTOR_OBSERVABILITY=true (no-op otherwise)
+
+    wanted = (
+        (AreaName.config, AreaName.provider, AreaName.index, AreaName.mcp)
+        if args.area == "all"
+        else (AreaName(args.area),)
+    )
+    root = Path.cwd()
+    areas: list = []
+
+    # The config/provider areas share the SINGLE source `validate_backend()` (no duplicated list).
+    missing_all = settings.validate_backend() if (
+        AreaName.config in wanted or AreaName.provider in wanted
+    ) else []
+    missing_provider = [k for k in missing_all if k in _PROVIDER_ENV_KEYS]
+
+    # Index freshness is needed both for the `index` area and the best-effort MCP staleness (DA-D5).
+    index_area = None
+    index_stale = False
+    if AreaName.index in wanted or AreaName.mcp in wanted:
+        manifest_state = load_manifest_state(settings)
+        stats = current_source_stats(manifest_state, root)
+        index_area = freshness_from_manifest(manifest_state, stats)
+        index_stale = any(p.code == "index_stale" for p in index_area.problems)
+
+    if AreaName.config in wanted:
+        areas.append(check_config(missing_all))
+    if AreaName.provider in wanted:
+        probe = build_provider_probe(settings) if args.online else ProviderProbe(
+            ProbeStatus.skipped, ""
+        )
+        areas.append(check_provider(missing_provider, probe))
+    if AreaName.index in wanted and index_area is not None:
+        areas.append(index_area)
+    if AreaName.mcp in wanted:
+        registered = read_mcp_registration(root)
+        areas.append(check_mcp(registered, index_stale))
+
+    report = assemble(tuple(areas), online=bool(args.online))
+    _emit_doctor_event(report)
+    print(output.format_health_report(report, json_out=args.json))
+    if report.exit_code() == 1:
+        critical = [
+            a.name.value for a in report.areas
+            if any(p.severity.value == "critical" for p in a.problems)
+        ]
+        raise DoctorCheckFailed(f"critical problems in: {', '.join(critical)}")
+
+
+# Env keys that belong to the PROVIDER area (subset of `validate_backend()`): the provider area
+# inherits the criticality of these missing keys (DA-D4). Store keys (AZURE_SEARCH_*) stay config.
+_PROVIDER_ENV_KEYS = frozenset(
+    {"AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_API_KEY", "AZURE_OPENAI_EMBED_DEPLOYMENT"}
+)
+
+
+def _emit_doctor_event(report) -> None:
+    """Emit the `doctor` observability event — metrics-only (contract event-doctor.md, Princ. IX).
+
+    NEVER any env key/value, probe sentinel, error reason, index path or corpus: only counts and
+    closed-cardinality area→status labels.
+    """
+    n_fail = sum(1 for a in report.areas if a.status.value == "fail")
+    n_warn = sum(1 for a in report.areas if a.status.value == "warn")
+    n_pass = sum(1 for a in report.areas if a.status.value == "pass")
+    labels = ",".join(f"{a.name.value}={a.status.value}" for a in report.areas)
+    log_event(
+        logging.INFO,
+        "doctor",
+        overall=report.overall.value,
+        online=report.online,
+        n_fail=n_fail,
+        n_warn=n_warn,
+        n_pass=n_pass,
+        areas=labels,
     )
 
 

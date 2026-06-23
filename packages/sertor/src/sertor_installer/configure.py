@@ -367,14 +367,16 @@ def _emit_event(report: ConfigureReport) -> None:
 
 
 def _probe_live(target_root: Path, runner: CommandRunner | None) -> LiveCheckOutcome:
-    """Live probe via the vehicle `sertor-rag check` in subprocess (Princ. XI — NOT build_embedder).
+    """Live config probe via the vehicle `sertor-rag doctor` in subprocess (074, Princ. XI).
 
-    US5 is Should/DEFERRED: `sertor-rag check` is not yet in `sertor-core`. The extension point is
-    in place and degrades HONESTLY:
-    - subcommand absent / "unknown command" (exit 2) → ok=None, "probe live non disponibile ...".
-    - exit 0 → ok=True.
-    - exit non-0 with an actionable message → ok=False, detail = the subprocess message.
-    When `sertor-rag check` lands, this works unchanged (only the degradation branch becomes dead).
+    Invokes `sertor-rag doctor --area config --json` (config subset, DA-D3 — NOT the whole doctor):
+    `--check` reports config readiness and points to `doctor` for provider/index/MCP. Maps the exit
+    to `LiveCheckOutcome`, degrading HONESTLY when `doctor`/`sertor-rag` is not on the runtime
+    (never imports `build_embedder`/`build_*`). Replaces the deferred `sertor-rag check`
+    (E2/FEAT-003 US5).
+    - vehicle absent / "unknown command" / exit 2 → ok=None (honest degradation).
+    - exit 0 → ok=True, detail points to `sertor-rag doctor` for the full picture.
+    - exit ≠ 0 (config incomplete) → ok=False, detail = the config message from the JSON (scrubbed).
     """
     if runner is None:
         from sertor_installer.command_runner import SubprocessRunner
@@ -390,20 +392,53 @@ def _probe_live(target_root: Path, runner: CommandRunner | None) -> LiveCheckOut
                 "(sertor-rag non trovato sul PATH)"
             ),
         )
-    res = runner.run([_SERTOR_RAG, "check"], cwd=target_root)
+    res = runner.run([_SERTOR_RAG, "doctor", "--area", "config", "--json"], cwd=target_root)
     if res.returncode == 2 or "unknown command" in (res.stderr or "").lower():
         return LiveCheckOutcome(
             requested=True,
             ok=None,
             detail=(
                 "probe live non disponibile in questa versione del runtime "
-                "(sertor-rag check non trovato)"
+                "(sertor-rag doctor non trovato)"
             ),
         )
     if res.ok:
-        return LiveCheckOutcome(requested=True, ok=True, detail="")
-    detail = (res.stderr or res.stdout or "").strip() or f"exit {res.returncode}"
+        return LiveCheckOutcome(
+            requested=True,
+            ok=True,
+            detail=(
+                "config ok — esegui `sertor-rag doctor` per il quadro completo "
+                "(provider/indice/MCP)"
+            ),
+        )
+    detail = _config_message_from_json(res.stdout) or (
+        (res.stderr or res.stdout or "").strip() or f"exit {res.returncode}"
+    )
     return LiveCheckOutcome(requested=True, ok=False, detail=mask_secret_free(detail))
+
+
+def _config_message_from_json(stdout: str) -> str:
+    """Extract a readable config message from the `doctor.report/1` JSON (074), or "" if absent.
+
+    Best-effort: parses the JSON, joins the `config` area problem messages (already scrubbed by
+    `doctor`). Any parse failure → "" so the caller falls back to the raw stderr/stdout.
+    """
+    import json
+
+    try:
+        data = json.loads(stdout)
+        areas = data.get("areas", [])
+    except (ValueError, AttributeError):
+        return ""
+    for area in areas:
+        if isinstance(area, dict) and area.get("name") == "config":
+            messages = [
+                p.get("message", "")
+                for p in area.get("problems", [])
+                if isinstance(p, dict)
+            ]
+            return "; ".join(m for m in messages if m)
+    return ""
 
 
 def mask_secret_free(text: str) -> str:
