@@ -96,6 +96,12 @@ da solo la creazione/ingestione del RAG: serve sempre un **comando esplicito** s
 
 ## 8. Backlog di feature
 
+> **Cross-ref `usabilità` (E12):** l'esperienza *UX-facing* di setup/configurazione/diagnosi è
+> ownership dell'epica [`usabilità`](../usabilita/epic.md) — in particolare il probe `--check` si
+> concretizza lì come `sertor-rag doctor`, e l'ergonomia UX-facing (progress del download, hint
+> `--refresh`, messaggi di primo-uso) è di E12. Qui restano i **meccanismi**: packaging, lifecycle,
+> install-kit, wizard `configure`.
+
 | ID | Feature | Valore / obiettivo | Priorità (MoSCoW) | Stato |
 |----|---------|--------------------|-------------------|-------|
 | FEAT-001 | **CLI installabile** (pacchetto `uv`/`pip`, entry-point `sertor`, struttura comandi, principio install≠run) | Spina dorsale: senza il CLI nessuna capacità è raggiungibile | **Must** | parz. (rev. DA-8): la parte **eseguibile** è **CONSEGNATA** come `sertor-rag` (feature `esecuzione`, PR #21, 2026-06-11), accanto a `sertor-wiki-tools`; `sertor` resta il veicolo di **install** (→ FEAT-002/005). **Parte packaging/distribuzione DECOMPOSTA (2026-06-16)** → [`packaging-distribuibile/requirements.md`](packaging-distribuibile/requirements.md) (ambito: formalizzare la distribuzione interim `git+url` — LICENSE MIT + metadati + validazione `uv build`/install pulito uv&pip; PyPI resta FEAT-006). Decisioni utente: MIT+file LICENSE, interim git+url non PyPI. **DA-P1..P4 risolte (2026-06-17)**: versione unica allineata · `uv` primario + `pip` best-effort documentato · `sertor-core`/`sertor-install-kit` solo dipendenze interne · install-kit build-validato ma esonerato dai metadati user-facing. → ✅ **CONSEGNATO su master (PR #68, 2026-06-17)**: pipeline SpecKit completa specify→implement (`specs/047-packaging-distribuibile/`), LICENSE MIT + versione `/VERSION` + metadati + suite `tests/integration/test_packaging.py` (build/install pulito `uv` validato live), Constitution 11/11. **Unico Must residuo dell'epica `sertor-cli` chiuso.** (PyPI pubblico resta FEAT-006/Won't.) |

@@ -87,6 +87,10 @@ resta davvero portabile e lo sviluppo resta veloce.
 
 ## 8. Backlog di feature
 
+> **Cross-ref `usabilità` (E12):** l'aspetto *user-facing* della freschezza RAG («indice stantio →
+> fai X», reconnect MCP) è ownership dell'epica [`usabilità`](../usabilita/epic.md); qui resta il
+> **meccanismo** d'enforcement deterministico (hook `SessionEnd`, FEAT-011).
+
 | ID | Feature | Valore / obiettivo | Priorità (MoSCoW) | Stato |
 |----|---------|--------------------|-------------------|-------|
 | FEAT-001 | **Host-agnosticità degli asset residui** (skill wiki / playbook / rituale ancora Sertor-coupled) | Onora il Principio X anche sugli asset interni | **Should** | ✅ **DONE (2026-06-19)** — feature 056, PR #80 (`97c91f5`): parità wiki Copilot CLI via **agent-skills NATIVE** (`.github/skills/wiki-author/`, SKILL.md dispatcher che assorbe `/wiki` + payload byte-copiato co-locato), body host-agnostici, guardia di parità con closure; verificata LIVE su Copilot CLI reale (Spike). *(Eventuali altri asset host-coupled scoperti in futuro → nuove voci.)* |
