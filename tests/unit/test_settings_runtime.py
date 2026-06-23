@@ -45,6 +45,30 @@ def test_runtime_dotenv_loaded_from_any_cwd(monkeypatch, tmp_path):
     assert s.index_dir == sertor_dir / ".index"       # anchored to .sertor/, not to cwd
 
 
+def test_cwd_sertor_dotenv_resolved_when_venv_not_nested(monkeypatch, tmp_path):
+    """cwd has `.sertor/.env` but the venv is NOT nested under it (the dogfood layout, FEAT-013).
+
+    Resolution must find `./.sertor/.env` and anchor the index at `./.sertor/.index`, so the
+    dogfood exercises the SAME `.sertor/` layout it ships to hosts even though its venv is
+    `./.venv` (not nested under `.sertor/`).
+    """
+    sertor_dir = tmp_path / ".sertor"
+    sertor_dir.mkdir()
+    (sertor_dir / ".env").write_text(
+        "SERTOR_EMBED_PROVIDER=hash\nSERTOR_CORPUS=dogfood\n", encoding="utf-8"
+    )
+    monkeypatch.chdir(tmp_path)                            # cwd has .sertor/.env but no ./.env
+    monkeypatch.setattr(os, "environ", dict(os.environ))
+    monkeypatch.delenv("SERTOR_EMBED_PROVIDER", raising=False)
+    # venv NOT under .sertor/ → runtime branch misses it; the cwd `.sertor/.env` branch catches it.
+    monkeypatch.setattr("sertor_core.config.settings.sys.prefix", str(tmp_path / ".venv"))
+
+    s = Settings.load()
+    assert s.embed_provider == "hash"
+    assert s.corpus == "dogfood"
+    assert s.index_dir == sertor_dir / ".index"           # anchored next to `.sertor/.env`
+
+
 def test_cwd_dotenv_takes_precedence(monkeypatch, tmp_path):
     """If the cwd has a `.env`, it wins over the runtime one (explicit > runtime)."""
     (tmp_path / ".env").write_text("SERTOR_EMBED_PROVIDER=hash\n", encoding="utf-8")
