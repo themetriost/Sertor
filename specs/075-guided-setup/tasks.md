@@ -1,5 +1,12 @@
 # Tasks — guided-setup (E12-FEAT-002)
 
+> **STATO IMPLEMENTAZIONE (2026-06-23): tutte le 8 fasi COMPLETATE (offline).** Asset creati (skill
+> `guided-setup/SKILL.md` + agente `concierge.md`), wiring W1-W7 in `install_rag.py`, guardia di
+> parità render-aware (G1-G3), test di deposito + lifecycle + contenuto skill, tracciamento scope in
+> `epic.md`. Suite: `sertor` 363 · kit 131 · sertor-flow 134 verdi; ruff pulito; `sertor-core`/
+> `sertor-install-kit` invariati. **Unico residuo:** prova LIVE su ospite Claude/Copilot reale (R-4,
+> follow-up non-bloccante, NON parte del done automatico).
+
 **Branch**: `075-guided-setup` · **Generato**: 2026-06-23
 **Spec**: [`spec.md`](spec.md) · **Piano**: [`plan.md`](plan.md) · **Dati**: [`data-model.md`](data-model.md)
 **Contratti**: [`contracts/skill-guided-setup.md`](contracts/skill-guided-setup.md) ·

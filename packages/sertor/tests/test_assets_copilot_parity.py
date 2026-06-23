@@ -29,6 +29,7 @@ from sertor_installer.install_rag import build_rag_plan
 from sertor_installer.install_wiki import _render_for_target, build_install_plan
 from sertor_installer.rag_profile import RagHostProfile, RagInstallOptions
 from sertor_installer.resources import read_asset_text
+from sertor_installer.surfaces import render_custom_agent
 
 # A slash-command used as an *invocation*: a leading `/` + a known command word, NOT a POSIX path
 # (`wiki/log`), a URL (`https://...`) nor a closing tag. Matched after a boundary that is the
@@ -65,9 +66,16 @@ def _render_wiki(art: Artifact) -> str:
 
 
 def _render_rag(art: Artifact) -> str:
-    # RAG FILE bodies are byte-copies of the asset; the MARKER_BLOCK is the usage block.
+    # G1 (E12, R-1 CRITICAL): mirror the REAL render of the plan (`install_rag._render_rag_file`).
+    # A Copilot custom-agent (`.agent.md`, e.g. `concierge`) is rendered via `render_custom_agent`
+    # (frontmatter translated, `model:` omitted); every other FILE/MARKER_BLOCK body is byte-copy.
+    # If this byte-copied the `.agent.md` source instead, the Claude `model: sonnet` frontmatter
+    # would slip past the no-leak checks (a/b/c) on Copilot.
     assert art.source is not None
-    return read_asset_text(art.source)
+    text = read_asset_text(art.source)
+    if art.target_rel.endswith(".agent.md"):
+        return render_custom_agent(text)
+    return text
 
 
 def _wiki_plan(assistant: AssistantId) -> list[Artifact]:
@@ -322,3 +330,60 @@ def test_claude_path_check_catches_reintroduced_leak():
     """(a) negative: a body that reintroduces `.claude/` is caught (guard is not vacuous)."""
     leaked = "Read `.claude/skills/wiki-author/wiki-playbook.md` and follow it."
     assert ".claude/" in leaked  # sanity: the substring the guard searches for
+
+
+# ===================================================== (d) E12: usability asset closure (R-2)
+
+# Usability assets the concierge agent / guided-setup skill may reference BY NAME (not as a `.md`
+# file path, so the file-based `_BACKTICK_REF` closure does not catch them). The concierge cites
+# `guided-setup` by name → the skill MUST be deposited on that target, else routing points at
+# nothing (the FEAT-001 bug shape for agentic assets).
+_USABILITY_ASSET_NAME = re.compile(r"\b(guided-setup|concierge)\b")
+
+
+def _usability_target_names(plan) -> set[str]:
+    """Names of usability assets the rag plan deposits on a target (by basename, hyphenated id)."""
+    names: set[str] = set()
+    for target in _plan_targets(plan):
+        base = Path(target).name
+        if base == "SKILL.md":
+            # skills live at `<base>/<name>/SKILL.md` → the name is the parent dir
+            names.add(Path(target).parent.name)
+        elif base.endswith((".md", ".agent.md")):
+            # agents live at `agents/<name>.md` or `<name>.agent.md`
+            names.add(base.split(".", 1)[0])
+    return names
+
+
+def _usability_closure_offenders(plan, render) -> list[str]:
+    """Usability names cited by a body that the plan does NOT deposit on the same target."""
+    deposited = _usability_target_names(plan)
+    offenders: list[str] = []
+    for target_rel, _source, body in _rendered_bodies(plan, render):
+        for m in _USABILITY_ASSET_NAME.finditer(body):
+            name = m.group(1)
+            if name not in deposited:
+                offenders.append(f"{target_rel} → {name}")
+    return offenders
+
+
+def test_rag_usability_asset_closure_copilot(tmp_path: Path):
+    """(d) E12: every usability asset the Copilot rag bodies cite by name is deposited (R-2)."""
+    offenders = _usability_closure_offenders(
+        _rag_plan(AssistantId.COPILOT_CLI, tmp_path), _render_rag
+    )
+    assert not offenders, f"dangling usability references in Copilot rag bodies: {offenders}"
+
+
+def test_rag_usability_asset_closure_claude(tmp_path: Path):
+    """(d) E12: every usability asset the Claude rag bodies cite by name is deposited (R-2)."""
+    offenders = _usability_closure_offenders(_rag_plan(AssistantId.CLAUDE, tmp_path), _render_rag)
+    assert not offenders, f"dangling usability references in Claude rag bodies: {offenders}"
+
+
+def test_usability_closure_names_a_dangling_reference(tmp_path: Path):
+    """(d) negative: a concierge that routes to an undeposited skill fails closure (sanity)."""
+    full = _rag_plan(AssistantId.CLAUDE, tmp_path)
+    plan = [a for a in full if "guided-setup" not in a.target_rel]
+    offenders = _usability_closure_offenders(plan, _render_rag)
+    assert any("guided-setup" in o for o in offenders), offenders
