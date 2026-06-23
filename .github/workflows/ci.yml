@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+# Cancel superseded runs on the same ref to save runner minutes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        # FEAT-003 (epica debito-tecnico): enable CI on Windows first; Linux (ubuntu-latest) is
+        # added in the next phase, once the Windows run is green. The matrix shape keeps that a
+        # one-line change ("prima Windows, poi Linux").
+        os: [windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Pin Python 3.12
+        run: uv python install 3.12
+
+      - name: Sync (all workspace packages + dev extras)
+        run: uv sync --all-packages --extra dev --python 3.12
+
+      - name: Lint (ruff)
+        run: uv run ruff check .
+
+      # The `cloud` tests need Azure credentials/services and are excluded by design (CLAUDE.md):
+      # the suite must pass with the local providers (glove/hash + Chroma), no network. The
+      # `integration` tests (packaging install from git+url) are also skipped for now — they need
+      # the ref published and network; enable them in a later phase once stable.
+      - name: Tests — core (root)
+        run: uv run pytest -m "not cloud and not integration"
+
+      - name: Tests — sertor (wiki/rag installer)
+        run: uv run pytest packages/sertor/tests -m "not cloud and not integration"
+
+      - name: Tests — sertor-install-kit
+        run: uv run pytest packages/sertor-install-kit/tests -m "not cloud and not integration"
+
+      - name: Tests — sertor-flow (governance installer)
+        run: uv run pytest packages/sertor-flow/tests -m "not cloud and not integration"

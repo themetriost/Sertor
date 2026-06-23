@@ -105,6 +105,9 @@ packages = ["src/sertor_core", "src/sertor_mcp"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+# The exploration prototype is FROZEN/read-only by design (see CLAUDE.md): out of lint scope, so
+# `ruff check .` (the documented lint command, and CI) stays green on the maintained code.
+extend-exclude = ["prototype"]
 src = [
     "src", "tests",
     "packages/sertor/src", "packages/sertor/tests",

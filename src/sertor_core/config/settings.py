@@ -30,17 +30,25 @@ _DEFAULT_EXCLUDES: tuple[str, ...] = (
 def _resolve_env_path(env_file: str | os.PathLike[str] | None) -> Path | None:
     """Which `.env` to load — self-locating runtime (host-agnostic).
 
-    `None` → no loading (test isolation). Otherwise, in order: the given file if it exists
-    (default `./.env`, relative to cwd); then `.env` in the folder of the **project that owns
-    the current venv** (`Path(sys.prefix).parent`) — for an installed runtime this is `.sertor/`,
-    in development it is the repo root. This way the CLI loads `.sertor/.env` (and anchors the
-    index there) from **any** cwd, not only when launched from inside `.sertor/`.
+    `None` → no loading (test isolation). Otherwise, in order:
+    1. the given file if it exists (default `./.env`, relative to cwd);
+    2. `.sertor/.env` under the cwd — the host install layout, found from the project root even
+       when the venv is **not** nested under `.sertor/` (e.g. the Sertor dogfood, whose venv is
+       `./.venv`). This keeps development and host on the SAME `.sertor/` config+index layout
+       (FEAT-013), instead of dev reading `./.env` while hosts read `.sertor/.env`;
+    3. `.env` in the folder of the **project that owns the current venv**
+       (`Path(sys.prefix).parent`) — for an installed runtime whose venv lives at `.sertor/.venv`
+       this is `.sertor/`. This still loads `.sertor/.env` (and anchors the index there) from
+       **any** cwd, not only when launched from inside `.sertor/`.
     """
     if env_file is None:
         return None
     explicit = Path(env_file)
     if explicit.exists():
         return explicit
+    cwd_sertor_env = Path.cwd() / ".sertor" / ".env"
+    if cwd_sertor_env.exists():
+        return cwd_sertor_env
     runtime_env = Path(sys.prefix).parent / ".env"
     if runtime_env.exists():
         return runtime_env
