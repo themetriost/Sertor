@@ -2,7 +2,9 @@
 
 The choice lives ONLY in `composition.py`: `build_engine` from `Settings.engine` (default hybrid),
 invalid value → `ConfigError`; facade and indexer wired accordingly. Store on tmp_path
-(local Chroma), local embedder constructed but never invoked: no network.
+(local Chroma), local embedder constructed but never invoked: no network. The `hash` provider is
+used (zero-download, stdlib) so construction stays hermetic — the `glove` default (FEAT-011)
+resolves its cache at construction time, which fails in a clean CI checkout with no GloVe cache.
 """
 from __future__ import annotations
 
@@ -18,7 +20,7 @@ from sertor_core.engines.hybrid import HybridEngine
 
 
 def _settings(tmp_path, **overrides) -> Settings:
-    base = Settings(index_dir=tmp_path / ".index", corpus="sel-test")
+    base = Settings(index_dir=tmp_path / ".index", corpus="sel-test", embed_provider="hash")
     return replace(base, **overrides) if overrides else base
 
 
