@@ -349,18 +349,57 @@ def test_read_mcp_registration_readonly(tmp_path):
     assert sorted(p.name for p in tmp_path.iterdir()) == [".mcp.json"]
 
 
-def test_current_source_stats_returns_mtime_for_known_files(tmp_path):
+def test_current_source_stats_returns_mtime_and_hash_for_changed_files(tmp_path):
     from sertor_core.composition import current_source_stats
 
     (tmp_path / "a.py").write_text("x", encoding="utf-8")
     (tmp_path / "b.md").write_text("y", encoding="utf-8")
 
     class _S:
+        # recorded mtime 0.0 ≠ current → both are candidates
         files = {"a.py": (0.0, "h", "v"), "b.md": (0.0, "h", "v")}
 
-    stats = dict(current_source_stats(_S(), tmp_path))
-    assert all(m > 0.0 for m in stats.values())
-    assert {p.as_posix() for p in stats} == {"a.py", "b.md"}
+    stats = current_source_stats(_S(), tmp_path)
+    by_path = {p.as_posix(): (m, h) for p, m, h in stats}
+    assert set(by_path) == {"a.py", "b.md"}
+    assert all(m > 0.0 for m, _h in by_path.values())
+    # mtime differs from the recorded 0.0 → candidate → current content-hash computed (not None).
+    assert all(h is not None for _m, h in by_path.values())
+
+
+def test_current_source_stats_unchanged_mtime_skips_hash(tmp_path):
+    # When the current mtime equals the recorded one, the file is NOT a candidate → hash None,
+    # no read (the cheap path that keeps `doctor` fast on a fresh index).
+    import os
+
+    from sertor_core.composition import current_source_stats
+
+    f = tmp_path / "a.py"
+    f.write_text("x", encoding="utf-8")
+    mtime = os.stat(f).st_mtime
+
+    class _S:
+        files = {"a.py": (mtime, "h", "v")}
+
+    assert current_source_stats(_S(), tmp_path) == [(Path("a.py"), mtime, None)]
+
+
+def test_current_source_stats_candidate_hash_matches_indexer(tmp_path):
+    # The hash the helper computes for a changed candidate equals the indexer's recorded scheme
+    # (read_source → content_hash) — so doctor can confirm touched-but-unchanged correctly.
+    from sertor_core.composition import current_source_stats
+    from sertor_core.services.index_manifest import content_hash
+    from sertor_core.services.ingestion import SourceFile, _language_for, read_source
+
+    f = tmp_path / "a.py"
+    f.write_text("hello world", encoding="utf-8")
+    expected = content_hash(read_source(SourceFile(f, "a.py", _language_for(f) or "", 1.0)).text)
+
+    class _S:
+        files = {"a.py": (1.0, "old-hash", "v")}  # recorded mtime 1.0 != current → candidate
+
+    stats = current_source_stats(_S(), tmp_path)
+    assert stats[0][2] == expected
 
 
 def test_current_source_stats_deleted_file_returns_zero_mtime(tmp_path):
@@ -370,7 +409,7 @@ def test_current_source_stats_deleted_file_returns_zero_mtime(tmp_path):
         files = {"gone.py": (0.0, "h", "v")}
 
     stats = current_source_stats(_S(), tmp_path)
-    assert stats == [(Path("gone.py"), 0.0)]
+    assert stats == [(Path("gone.py"), 0.0, None)]
 
 
 def test_current_source_stats_none_state(tmp_path):
@@ -390,4 +429,4 @@ def test_current_source_stats_no_rescan(tmp_path, monkeypatch):
         files = {"known.py": (0.0, "h", "v")}
 
     stats = current_source_stats(_S(), tmp_path)
-    assert [p.as_posix() for p, _ in stats] == ["known.py"]  # extra.py never seen
+    assert [p.as_posix() for p, _m, _h in stats] == ["known.py"]  # extra.py never seen

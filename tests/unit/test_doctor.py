@@ -124,24 +124,41 @@ def test_freshness_absent_manifest():
 
 def test_freshness_fresh_index():
     state = _State({"a.py": (100.0, "h", "v"), "b.md": (200.0, "h", "v")})
-    stats = [(Path("a.py"), 100.0), (Path("b.md"), 200.0)]
+    stats = [(Path("a.py"), 100.0, None), (Path("b.md"), 200.0, None)]
     area = freshness_from_manifest(state, stats)
     assert area.status is AreaStatus.pass_
     assert area.detail["last_index"] is not None
 
 
 def test_freshness_stale_index():
+    # mtime changed AND content-hash differs → genuinely stale.
     state = _State({"a.py": (100.0, "h", "v")})
-    stats = [(Path("a.py"), 150.0)]  # modified after last index
+    stats = [(Path("a.py"), 150.0, "h2")]
     area = freshness_from_manifest(state, stats)
     assert area.status is AreaStatus.warn
     assert area.problems[0].code == "index_stale"
     assert area.problems[0].remedy
 
 
+def test_freshness_touched_but_unchanged_not_stale():
+    # 076 regression: mtime bumped (e.g. a `git checkout`) but content-hash UNCHANGED → NOT stale.
+    # This is the exact false positive the mtime-only check produced after every checkout/merge.
+    state = _State({"a.py": (100.0, "h", "v")})
+    stats = [(Path("a.py"), 999.0, "h")]  # mtime advanced, hash still matches the recorded "h"
+    area = freshness_from_manifest(state, stats)
+    assert area.status is AreaStatus.pass_
+
+
+def test_freshness_mtime_changed_unreadable_is_stale():
+    # mtime changed but the candidate couldn't be hashed (None) → conservatively stale.
+    state = _State({"a.py": (100.0, "h", "v")})
+    area = freshness_from_manifest(state, [(Path("a.py"), 150.0, None)])
+    assert area.status is AreaStatus.warn
+
+
 def test_freshness_deleted_file_triggers_stale():
     state = _State({"a.py": (100.0, "h", "v")})
-    stats = [(Path("a.py"), 0.0)]  # 0.0 = deleted/unreadable fallback
+    stats = [(Path("a.py"), 0.0, None)]  # 0.0 = deleted/unreadable fallback
     area = freshness_from_manifest(state, stats)
     assert area.status is AreaStatus.warn
 
@@ -154,7 +171,7 @@ def test_freshness_no_files_in_manifest():
 
 def test_freshness_last_index_in_detail():
     state = _State({"a.py": (100.0, "h", "v")})
-    area = freshness_from_manifest(state, [(Path("a.py"), 100.0)])
+    area = freshness_from_manifest(state, [(Path("a.py"), 100.0, None)])
     val = area.detail["last_index"]
     assert isinstance(val, str)
     assert val.endswith("Z")
@@ -162,14 +179,8 @@ def test_freshness_last_index_in_detail():
 
 def test_freshness_stale_remedy_mentions_reindex():
     state = _State({"a.py": (100.0, "h", "v")})
-    area = freshness_from_manifest(state, [(Path("a.py"), 500.0)])
+    area = freshness_from_manifest(state, [(Path("a.py"), 500.0, "changed")])
     assert "sertor-rag index ." in area.problems[0].remedy
-
-
-def test_freshness_no_false_positive_on_unchanged():
-    state = _State({"a.py": (100.0, "h", "v")})
-    area = freshness_from_manifest(state, [(Path("a.py"), 100.0)])
-    assert area.status is AreaStatus.pass_
 
 
 # --- check_mcp -----------------------------------------------------------------------------------

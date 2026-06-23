@@ -4,6 +4,7 @@ type: experiment
 tags: [usabilita, diagnostica, sertor-rag, deterministic, vehicle, principio-x, principio-xi]
 created: 2026-06-23
 updated: 2026-06-23
+branch: ["074-doctor-salute", "076-doctor-freshness-hash"]
 sources: ["specs/074-doctor-salute/plan.md", "src/sertor_core/services/doctor.py", "src/sertor_core/cli/__main__.py"]
 ---
 
@@ -137,6 +138,19 @@ Modificati:
 
 - **Collegamento wizard configure:** `sertor configure --check` odierno fa call subprocess a `sertor-rag doctor --json`. Flusso: wizard → conferm config → `doctor` run online → exit 0/1.
 - **Integrazione ospite:** ospiti che ricevono l'installer (FEAT-009 fase 2) avranno `sertor-rag doctor` disponibile subito (vehicle CLI di distribuzione).
+
+## Fix (branch 076 — 2026-06-23)
+
+**Difetto:** il rilevamento della freschezza dell'indice in `freshness_from_manifest` usava solo l'mtime per marcare lo stato; dopo operazioni git (checkout, merge, pull) gli mtime dei file si ribumpavano a contenuto identico, causando **falsi positivi cronici** (`index_stale` riportato erroneamente).
+
+**Allineamento:** l'indicizzatore incrementale FEAT-009 usa mtime come pre-filtro + conferma col content-hash (un file toccato ma invariato rimane UNCHANGED); il doctor non applicava questa logica, divergendo da DA-D2 («coerente col refresh incrementale»).
+
+**Implementazione:**
+- `current_source_stats` in `composition.py` estesa: calcola il content-hash **solo per i file con mtime cambiato**, riusando lo stesso pipeline dell'indicizzatore (`read_source` + `content_hash`). Non riscansiona disco, ridotto ai soli percorsi nel manifest (SC-007).
+- `freshness_from_manifest` in `services/doctor.py` raffinata: marca `stale` **solo** se *mtime cambiato AND content-hash diverso* (o file sparito); se il hash corrisponde al registrato → rimane `pass` anche con mtime avanzato.
+- Test di regressione: `test_freshness_touched_but_unchanged_not_stale` (il caso esatto di mtime avanzato/hash invariato che falsava positivi).
+
+**Verifica:** bump manuale dell'mtime di un file indicizzato a contenuto invariato (via shell `touch`) → doctor rimane `index pass` (prima riportava `warn index_stale`).
 
 ## Note
 

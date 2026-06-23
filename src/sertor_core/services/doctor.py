@@ -196,15 +196,20 @@ def check_provider(
 
 
 def freshness_from_manifest(
-    state, current_stats: list[tuple[Path, float]]
+    state, current_stats: list[tuple[Path, float, str | None]]
 ) -> AreaReport:
     """Diagnose the index area: presence + freshness from the manifest, no re-scan (FR-005/006).
 
     `state is None` (manifest absent/incompatible) → CRITICAL fail `index_absent`, remedy
-    `sertor-rag index .` (FR-005). With a state: compare the current file mtimes (`current_stats`)
-    against the mtimes recorded in the manifest; any file modified (mtime greater) or deleted
-    (mtime `0.0`) → WARN `index_stale`; otherwise `pass` with `detail["last_index"]` (the most
-    recent recorded mtime, ISO-8601). No heuristic, no repo re-scan (SC-007).
+    `sertor-rag index .` (FR-005). With a state, each `current_stats` triple is `(path, mtime,
+    content_hash | None)`: `content_hash` is the file's current content-hash, computed by the caller
+    ONLY when the mtime differs from the recorded one (the freshness *candidates*). A file is stale
+    only if it vanished (`mtime == 0.0`) or its mtime changed AND its content-hash no longer matches
+    the recorded one — mirroring the incremental indexer, which treats a touched-but-unchanged file
+    (same content, bumped mtime, e.g. after a `git checkout`) as UNCHANGED. This is the 076 fix for
+    the false `index_stale` that mtime-only comparison produced after every checkout/merge.
+    Otherwise `pass` with `detail["last_index"]` (the most recent recorded mtime, ISO-8601). No
+    repo re-scan (SC-007): the caller hashes only the manifest's own mtime-changed files.
     """
     if state is None:
         problem = Problem(
@@ -215,18 +220,22 @@ def freshness_from_manifest(
         )
         return AreaReport.of(AreaName.index, (problem,))
 
-    recorded: dict[str, float] = {p: m for p, (m, _h, _lv) in state.files.items()}
-    last_index = max(recorded.values()) if recorded else None
+    recorded: dict[str, tuple[float, str, str]] = dict(state.files)
+    last_index = max((m for m, _h, _lv in recorded.values()), default=None)
     detail: dict[str, str | bool | None] = {"last_index": _iso(last_index)}
 
     stale = False
-    for path, mtime in current_stats:
+    for path, mtime, cur_hash in current_stats:
         key = path.as_posix() if isinstance(path, Path) else str(path)
-        prev = recorded.get(key)
-        if prev is None:
+        rec = recorded.get(key)
+        if rec is None:
             continue  # a path not in the manifest does not make the index stale (additive only)
-        if mtime == 0.0 or mtime > prev:
-            stale = True
+        rec_mtime, rec_hash, _lv = rec
+        if mtime == 0.0:
+            stale = True  # vanished / unreadable → genuinely stale
+            break
+        if mtime != rec_mtime and cur_hash != rec_hash:
+            stale = True  # mtime changed AND content actually changed (hash confirms)
             break
 
     if stale:
