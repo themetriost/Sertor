@@ -521,6 +521,54 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/075-guided-setup/plan.md` (FEAT-002 epica **usabilità** (E12) — **guided-setup — guida agentica
+install→configure→verify**: la prima feature **agentica** dell'epica. Distribuisce **ENTRAMBI** (decisione
+utente, pattern `sertor-flow` = agenti + skill): una **skill** `guided-setup` (il **«come»**: le istruzioni del
+flusso) **E** un **agente vero** `concierge` (la **persona/orchestratore**, dispatcher sottile a un ramo che
+instrada le richieste di setup verso `guided-setup`, con **model pin** `model: sonnet` su Claude). L'**agente
+frontier dell'ospite** esegue per condurre l'utente da «repo non configurato» a «**RAG verificato**» (un
+`sertor-rag doctor` verde), orchestrando **solo** i vehicle deterministici (`sertor install`, `sertor configure
+--set`, `sertor-rag doctor`/`index`). Confine **D↔N**: l'intelligenza vive nell'agente ospite, **il core non
+chiama mai un LLM**; la skill **usa** i comandi, non li reimplementa. **Natura ADDITIVO + scope di
+distribuzione:** nessun codice runtime del core, nessun motore/porta/comando nuovo — 2 asset (1 skill + 1
+agente markdown) + wiring di distribuzione dual-target + estensione della guardia di parità. `sertor-core` e
+`sertor-install-kit` **INVARIATI** (riuso del seam, no estensione). **DA-G1/G2/G3 risolte con l'utente** (esegue
+su conferma: check sola-lettura liberi, install/configure/index/download su conferma esplicita, segreti mai a
+schermo; skill + agente; euristica provider minima + conferma). **DA-D-r1/D-r2 risolte (research D-1..D-7,
+RIVISTE per «agente vero»):** **(D-1)** concierge = **AGENTE vero** `concierge` (contenitori
+`.claude/agents/` ↔ `.github/agents/`, `model: sonnet`) + **skill `guided-setup`** (`.claude/skills/` ↔
+`.github/skills/`); lo stub-skill `concierge-setup` è RIMOSSO. **(D-2)** body `guided-setup` single-file EN a
+10 sezioni (hard boundary vehicle-only · consenso/gate mutazioni · 6 step detect→provider→install→configure→index→verify
+· what-NOT), riferimento-per-nome agli asset (mai `.claude/`/slash-command/nomi Claude — lezione FEAT-001/056).
+**(D-3)** euristica = 3 segnali via vehicle/file (creds cloud da `doctor --json`/`.env` read-only · airgapped
+conversazionale/`--online` · semantica NL conversazionale) → proposta+conferma; provider in `.env` via
+`configure --set SERTOR_EMBED_PROVIDER=…`. **(D-4)** wiring in `install_rag.py`: **skill** via
+`_skill_artifacts(_USABILITY_SKILL_NAMES, is_copilot)` (pattern eval 065, byte-copia); **agente** via il pattern
+`sertor-flow` (`install_governance.py`) — `_concierge_artifact(assistant)` con
+`AssistantProfile.render_path(Surface.AGENT, name)` + helper di render **locale** `_render_rag_file(art)` (se
+`.agent.md` → `render_custom_agent`, altrimenti byte-copy). Claude: `.claude/agents/concierge.md` byte-copy
+(**`model: sonnet` preservato**); Copilot: `.github/agents/concierge.agent.md` (`render_custom_agent`, **`model:`
+OMESSO** — invalido su Copilot, FEAT-011/049). **Nessuna nuova `ArtifactKind`/`Surface`/`WriteStrategy`**,
+**nessun nuovo seam nel kit** (`render_custom_agent`/`Surface.AGENT`/`render_path` già esportati e usati da
+`sertor-flow`); lifecycle: skill=`owned_dir`, agente=`owned_file`, upgrade render-aware. Asset bundled in
+`packages/sertor/.../assets/rag/{skills/guided-setup/SKILL.md, agents/concierge.md}`. **(D-5)** guardia di
+parità: **punto critico** = `_render_rag` del test allineato al render reale (traduce `.agent.md`) così
+(a)(b)(c) no-`.claude/`/no-slash/no-nomi-Claude coprono **anche l'agente** e il `model: sonnet` Claude **non
+sfugge** su Copilot; closure (d) **mirata** «ogni asset citato per nome è depositato» (`concierge →
+guided-setup`); `test_no_wiki_artifacts_created` **ristretto** da «no agente» a «no agente **wiki**» (il rag
+plan ora deposita l'agente `concierge`). Agent-discovery: l'agente vive nei contenitori `agents/` nativi
+(attivazione governata dal `description` mirato al setup, non auto-attivazione indebita; la cautela 056
+«agente-fantasma» riguardava un payload di skill, caso diverso). **(D-6)** test di deposito offline per skill +
+agente (incl. `model: sonnet` presente su Claude / assente su Copilot · routing a un ramo no-FEAT-004/007 ·
+byte-parità body). **(D-7)** tracciamento durevole: FEAT-009 → «parzialmente avviata (stub agente `concierge` a
+un ramo)», FEAT-002 → in progress nel backlog d'epica. **Feature completa** solo quando Claude E Copilot ricevono
+**skill E agente** via `sertor install` (FR-010/011 in ambito); prova LIVE su ospite reale = follow-up, non done
+automatico (il done è deposito+parità offline). 9 US/13 FR/5 CS. Constitution **PASS 12/12 + missione PASS** (pre
+e post-design) senza deroghe — usabilità periferica al differenziatore ma serve adozione/portabilità (Principio
+X: un agente che sa installare/configurare/verificare Sertor da solo È host-agnosticità reale). **Nota di
+processo:** `setup-plan.ps1`/`speckit-plan/SKILL.md` ASSENTI → parametri per convenzione dal branch (forma da
+`074`); nessun hook eseguito; MCP `sertor-rag` interrogato (`find_symbol build_governance_plan`/`AssistantProfile`,
+`search_code`, nessun errore tool). Branch `075-guided-setup`. Storico:
 `specs/074-doctor-salute/plan.md` (FEAT-001 epica **usabilità** (E12) — **`sertor-rag doctor` — verifica di
 salute deterministica**: la primitiva «ha funzionato?» che oggi manca. In un comando-vehicle (Principio XI)
 fotografa la salute di **quattro aree** — config/env · provider embeddings · indice · server MCP — con esito

@@ -9,15 +9,23 @@ from pathlib import Path
 import pytest
 
 from sertor_core.domain.errors import ConfigError
-from sertor_installer.install_rag import build_rag_plan, execute_rag_plan
+from sertor_install_kit.artifacts import LifecycleOp
+from sertor_install_kit.assistant import AssistantId
+from sertor_installer.install_rag import (
+    build_rag_plan,
+    execute_rag_lifecycle,
+    execute_rag_plan,
+)
 from sertor_installer.rag_profile import RagHostProfile, RagInstallOptions
 
 
-def _run(target: Path, runner, **opts):
+def _run(target: Path, runner, *, assistant: AssistantId = AssistantId.CLAUDE, **opts):
     options = RagInstallOptions(target_root=target, **opts)
     profile = RagHostProfile.from_options(options)
-    plan = build_rag_plan(profile, with_deps=options.with_deps, mcp_scope=options.mcp_scope)
-    return execute_rag_plan(plan, profile, runner), profile
+    plan = build_rag_plan(
+        profile, with_deps=options.with_deps, mcp_scope=options.mcp_scope, assistant=assistant
+    )
+    return execute_rag_plan(plan, profile, runner, assistant=assistant), profile
 
 
 def _uv_calls(runner) -> list[list[str]]:
@@ -60,18 +68,23 @@ def test_env_excludes_dot_sertor(tmp_path: Path, make_runner):  # L1 / FR-020
     assert ".sertor" in line
 
 
-def test_no_wiki_artifacts_created(tmp_path: Path, make_runner):  # L1 / FR-021
+def test_no_wiki_artifacts_created(tmp_path: Path, make_runner):  # L1 / FR-021 / E12 (R-3)
     runner = make_runner()
     _run(tmp_path, runner, backend="azure")
-    # `install rag` deposits the RAG-usage hook + eval skills under `.claude/` but NEVER the wiki
-    # scaffold (the wiki-author skill, commands/agents, wiki structure, wiki config).
+    # `install rag` deposits the RAG-usage hook + eval/usability skills + the concierge agent under
+    # `.claude/` but NEVER the wiki scaffold (the wiki-author skill, the `/wiki` command, the wiki
+    # structure/config, the `wiki-curator` agent). The assertion is "no WIKI artifact", not "no
+    # agent" — the rag plan now legitimately deposits the `concierge` agent (E12).
     assert not (tmp_path / "wiki").exists()
     assert not (tmp_path / ".claude" / "skills" / "wiki-author").exists()
     assert not (tmp_path / ".claude" / "commands").exists()
-    assert not (tmp_path / ".claude" / "agents").exists()
-    # The eval skills (065) ARE part of the RAG capability, by contrast.
+    assert not (tmp_path / ".claude" / "agents" / "wiki-curator.md").exists()
+    # The eval skills (065) and the usability skill + concierge agent (E12) ARE part of the RAG
+    # capability, by contrast.
     assert (tmp_path / ".claude" / "skills" / "eval-suite-author" / "SKILL.md").exists()
     assert (tmp_path / ".claude" / "skills" / "eval-feedback" / "SKILL.md").exists()
+    assert (tmp_path / ".claude" / "skills" / "guided-setup" / "SKILL.md").exists()
+    assert (tmp_path / ".claude" / "agents" / "concierge.md").exists()
 
 
 def test_corpus_in_env_and_mcp(tmp_path: Path, make_runner):
@@ -227,3 +240,266 @@ def test_non_python_host_sources_untouched(tmp_path: Path, make_runner):
     # new files are only in .sertor/ + .mcp.json/.gitignore in root
     assert (tmp_path / ".sertor").is_dir()
     assert (tmp_path / ".mcp.json").is_file()
+
+
+# ============================================================ E12 guided-setup: deposit (US8)
+
+from sertor_installer.resources import read_asset_text  # noqa: E402
+
+_SKILL_SRC = "rag/skills/guided-setup/SKILL.md"
+_AGENT_SRC = "rag/agents/concierge.md"
+
+
+def _skill_body() -> str:
+    return read_asset_text(_SKILL_SRC)
+
+
+def _agent_body() -> str:
+    return read_asset_text(_AGENT_SRC)
+
+
+def _frontmatter(text: str) -> str:
+    """Leading `---`-fenced frontmatter block of a markdown asset (empty if absent)."""
+    if not text.startswith("---"):
+        return ""
+    return text.split("---", 2)[1]
+
+
+def test_guided_setup_skill_deposited_claude(tmp_path: Path, make_runner):  # US8-AC1
+    runner = make_runner()
+    _run(tmp_path, runner, backend="azure", assistant=AssistantId.CLAUDE)
+    assert (tmp_path / ".claude" / "skills" / "guided-setup" / "SKILL.md").is_file()
+
+
+def test_guided_setup_skill_deposited_copilot(tmp_path: Path, make_runner):  # US8-AC1
+    runner = make_runner()
+    _run(tmp_path, runner, backend="azure", assistant=AssistantId.COPILOT_CLI)
+    assert (tmp_path / ".github" / "skills" / "guided-setup" / "SKILL.md").is_file()
+
+
+def test_guided_setup_body_byte_identical(tmp_path: Path, make_runner):  # US8-AC2 parity
+    rc = make_runner()
+    rco = make_runner()
+    claude_root = tmp_path / "claude"
+    copilot_root = tmp_path / "copilot"
+    claude_root.mkdir()
+    copilot_root.mkdir()
+    _run(claude_root, rc, backend="azure", assistant=AssistantId.CLAUDE)
+    _run(copilot_root, rco, backend="azure", assistant=AssistantId.COPILOT_CLI)
+    claude_skill = (claude_root / ".claude" / "skills" / "guided-setup" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
+    copilot_skill = (copilot_root / ".github" / "skills" / "guided-setup" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
+    assert claude_skill == copilot_skill  # skills are byte-copied (no `.agent.md` render)
+
+
+def test_concierge_agent_deposited_claude(tmp_path: Path, make_runner):  # US8-AC1
+    runner = make_runner()
+    _run(tmp_path, runner, backend="azure", assistant=AssistantId.CLAUDE)
+    dest = tmp_path / ".claude" / "agents" / "concierge.md"
+    assert dest.is_file()
+    # Claude byte-copy → the `model: sonnet` pin is preserved.
+    assert "model: sonnet" in _frontmatter(dest.read_text(encoding="utf-8"))
+
+
+def test_concierge_agent_deposited_copilot(tmp_path: Path, make_runner):  # US8-AC1 / R-1
+    runner = make_runner()
+    _run(tmp_path, runner, backend="azure", assistant=AssistantId.COPILOT_CLI)
+    dest = tmp_path / ".github" / "agents" / "concierge.agent.md"
+    assert dest.is_file()
+    # Copilot custom-agent → `render_custom_agent` OMITS `model:` (FEAT-011/049).
+    assert "model:" not in _frontmatter(dest.read_text(encoding="utf-8"))
+
+
+def test_concierge_copilot_frontmatter_no_claude_names(tmp_path: Path, make_runner):  # US8-AC3
+    runner = make_runner()
+    _run(tmp_path, runner, backend="azure", assistant=AssistantId.COPILOT_CLI)
+    fm = _frontmatter(
+        (tmp_path / ".github" / "agents" / "concierge.agent.md").read_text(encoding="utf-8")
+    )
+    for name in ("Claude", "Opus", "Haiku", "claude"):
+        assert name not in fm, f"Claude product/model name {name!r} leaked into Copilot frontmatter"
+
+
+def test_concierge_lifecycle_uninstall_claude(tmp_path: Path, make_runner):  # W6
+    runner = make_runner()
+    _run(tmp_path, runner, backend="azure", with_deps=False, assistant=AssistantId.CLAUDE)
+    dest = tmp_path / ".claude" / "agents" / "concierge.md"
+    assert dest.is_file()
+    profile = RagHostProfile.from_options(
+        RagInstallOptions(target_root=tmp_path, backend="azure", with_deps=False)
+    )
+    plan = build_rag_plan(profile, with_deps=False, assistant=AssistantId.CLAUDE)
+    execute_rag_lifecycle(
+        plan, profile, runner, LifecycleOp.UNINSTALL, assistant=AssistantId.CLAUDE
+    )
+    assert not dest.exists()  # concierge is an owned_file → removed on uninstall
+
+
+def test_concierge_lifecycle_uninstall_copilot(tmp_path: Path, make_runner):  # W6
+    runner = make_runner()
+    _run(tmp_path, runner, backend="azure", with_deps=False, assistant=AssistantId.COPILOT_CLI)
+    dest = tmp_path / ".github" / "agents" / "concierge.agent.md"
+    assert dest.is_file()
+    profile = RagHostProfile.from_options(
+        RagInstallOptions(target_root=tmp_path, backend="azure", with_deps=False)
+    )
+    plan = build_rag_plan(profile, with_deps=False, assistant=AssistantId.COPILOT_CLI)
+    execute_rag_lifecycle(
+        plan, profile, runner, LifecycleOp.UNINSTALL, assistant=AssistantId.COPILOT_CLI
+    )
+    assert not dest.exists()
+
+
+def test_concierge_upgrade_copilot_render_aware(tmp_path: Path, make_runner):  # W7
+    runner = make_runner()
+    profile = RagHostProfile.from_options(
+        RagInstallOptions(target_root=tmp_path, backend="azure", with_deps=False)
+    )
+    plan = build_rag_plan(profile, with_deps=False, assistant=AssistantId.COPILOT_CLI)
+    # simulate a stale Copilot agent (raw Claude source with the `model:` pin) to force an upgrade
+    dest = tmp_path / ".github" / "agents" / "concierge.agent.md"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text("---\nname: concierge\nmodel: sonnet\n---\nold body\n", encoding="utf-8")
+    execute_rag_lifecycle(
+        plan, profile, runner, LifecycleOp.UPGRADE, assistant=AssistantId.COPILOT_CLI
+    )
+    fm = _frontmatter(dest.read_text(encoding="utf-8"))
+    assert "model:" not in fm  # upgrade re-rendered the agent (translated frontmatter)
+
+
+# ===================================================== E12 guided-setup: concierge routing (US9)
+
+def test_concierge_routes_to_guided_setup():  # US9-AC1
+    assert "guided-setup" in _agent_body()
+
+
+def test_concierge_has_single_branch():  # US9-AC2 anti scope-creep
+    body = _agent_body()
+    for forbidden in ("config-recommender", "search-diagnose", "FEAT-004", "FEAT-007"):
+        assert forbidden not in body, f"concierge stub must not reference {forbidden!r}"
+
+
+def test_concierge_body_host_agnostic():  # RNF-2 / lesson 056
+    # Body only (the `model:` pin lives in the frontmatter, by-target).
+    body = _agent_body().split("---", 2)[2]
+    assert ".claude/" not in body
+    assert "/wiki" not in body and "/requirements" not in body
+    for name in ("Claude", "Opus", "Haiku", "CLAUDE.md"):
+        assert name not in body
+
+
+def test_concierge_model_pin_in_frontmatter_only():  # agent-concierge contract §Vincoli
+    text = _agent_body()
+    assert "model: sonnet" in _frontmatter(text)
+    body = text.split("---", 2)[2]
+    assert "model:" not in body  # the pin is not in the body
+
+
+# ============================================ E12 guided-setup: skill content (US1-US7, static)
+
+_VEHICLES = ("sertor install", "sertor configure --set", "sertor-rag doctor", "sertor-rag index")
+
+
+def test_skill_flow_six_steps_in_order():  # US1-AC1
+    body = _skill_body()
+    # Match the section HEADINGS (`## Step N`), not bare "Step N" (which a step may cite in prose).
+    markers = [f"## Step {n}" for n in range(1, 7)]
+    positions = [body.find(m) for m in markers]
+    assert all(p >= 0 for p in positions), "all six steps must be present as headings"
+    assert positions == sorted(positions), "steps must appear in order"
+
+
+def test_skill_cites_all_vehicles_by_command_name():  # US1-AC1
+    body = _skill_body()
+    for vehicle in _VEHICLES:
+        assert vehicle in body, f"vehicle {vehicle!r} not cited by command name"
+
+
+def test_skill_no_core_import_no_reimplementation():  # US1 / FR-001/FR-013
+    body = _skill_body()
+    assert "import sertor_core" not in body
+    assert "build_facade" not in body and "build_indexer" not in body
+    # the hard boundary is stated explicitly
+    assert "build_*" in body or "build_" in body  # names the forbidden factories
+
+
+def test_skill_verify_via_doctor_gate():  # US1-AC2 / US5-AC1
+    body = _skill_body()
+    assert "Step 6" in body
+    verify_section = body[body.find("Step 6"):]
+    assert "sertor-rag doctor" in verify_section
+
+
+def test_skill_provider_three_signals():  # US2-AC1 / FR-004 / D-3
+    body = _skill_body().lower()
+    assert "credential" in body  # cloud creds signal
+    assert "airgapped" in body  # airgapped signal
+    assert "semantic" in body or "natural-language" in body or "nl" in body  # NL signal
+
+
+def test_skill_provider_local_options_and_confirm():  # US2-AC1/AC3
+    body = _skill_body()
+    assert "glove" in body and "hash" in body  # local options
+    assert "confirm" in body.lower()  # propose + confirm
+    assert "automatic" in body.lower() or "never select" in body.lower()
+
+
+def test_skill_secrets_secure_path_no_print():  # US3-AC1/AC2 / FR-006
+    body = _skill_body()
+    assert "sertor configure --set" in body
+    low = body.lower()
+    assert "never print" in low or "not print" in low or "never printed" in low
+    assert "getpass" in low or "secure" in low  # secure prompt
+
+
+def test_skill_secret_already_present_not_reasked():  # US3-AC3
+    low = _skill_body().lower()
+    assert "already present" in low and ("re-ask" in low or "not re-ask" in low)
+
+
+def test_skill_glove_download_announced_before_index():  # US4-AC1/AC2 / FR-007
+    body = _skill_body()
+    assert "822" in body  # one-time GloVe download size announced
+    low = body.lower()
+    assert "before" in low and "cache" in low  # announce before index; cache → no announce
+
+
+def test_skill_verify_fail_loud():  # US5-AC2 / FR-003 / Principle XII
+    body = _skill_body()
+    low = body.lower().replace("*", "")  # strip markdown emphasis (`**not**` → `not`)
+    assert "area" in low and "remedy" in low  # area + remedy on failure
+    assert "not declare success" in low  # honest failure (never assume "done")
+
+
+def test_skill_what_not_section_forbids_done_without_doctor():  # RNF-4
+    body = _skill_body()
+    assert "What NOT to do" in body
+    what_not = body[body.find("What NOT to do"):].lower()
+    assert "doctor" in what_not  # forbids declaring done without doctor
+
+
+def test_skill_consent_gate_read_only_vs_mutation():  # US6-AC1/AC2 / FR-008
+    body = _skill_body()
+    assert "Consent gate" in body
+    low = body.lower()
+    assert "read-only" in low and "confirmation" in low
+    assert "do not confirm" in low or "not confirm" in low  # stop if no confirmation
+
+
+def test_skill_idempotence_detect_via_doctor_json():  # US7-AC1/AC2 / FR-009
+    body = _skill_body()
+    assert "sertor-rag doctor --json" in body
+    low = body.lower()
+    assert "already configured" in low or "already verified" in low
+    assert "re-scaffold" in low or "do not re-scaffold" in low or "only the missing" in low
+
+
+def test_skill_no_claude_container_leak():  # RNF-2 / R-1
+    body = _skill_body()
+    assert ".claude/" not in body
+    assert "/wiki" not in body
+    for name in ("Claude Code", "Opus", "Haiku", "$ARGUMENTS"):
+        assert name not in body

@@ -57,7 +57,7 @@ from sertor_installer.artifacts import (
 from sertor_installer.rag_profile import RagHostProfile
 from sertor_installer.report import InstallReport
 from sertor_installer.resources import read_asset_text
-from sertor_installer.surfaces import HookEntrySpec, render_copilot_hooks
+from sertor_installer.surfaces import HookEntrySpec, render_copilot_hooks, render_custom_agent
 
 _UV = "uv"
 # `uv init` uses the folder name as the package name: `.sertor` is INVALID (starts with a dot) →
@@ -92,8 +92,18 @@ _SETTINGS_TARGET = ".claude/settings.json"
 # `.github/skills/` for the Copilot CLI). Single-file skills (no cross-references → closure
 # trivially satisfied). Source asset tree under `rag/skills/<name>/SKILL.md`.
 _EVAL_SKILL_NAMES = ("eval-suite-author", "eval-feedback")
+# Usability skills (E12): the guided-setup skill travels with the RAG capability so a host can be
+# walked from "nothing configured" to "RAG verified" via the deterministic vehicles. Same byte-copy,
+# host-agnostic native-skill mechanism as the eval skills (single-file, no cross-references).
+_USABILITY_SKILL_NAMES = ("guided-setup",)
 _CLAUDE_SKILLS_BASE = ".claude/skills"
 _COPILOT_SKILLS_BASE = ".github/skills"
+
+# Concierge agent (E12, anticipates FEAT-009): a real agent (model-pinned on Claude), distributed
+# dual-target like sertor-flow's agents (`requirements-analyst`/`configuration-manager`). A thin
+# single-branch dispatcher routing setup requests to the `guided-setup` skill. The body is host-
+# agnostic; the `model:` pin is preserved on Claude and OMITTED on Copilot by `render_custom_agent`.
+_CONCIERGE_AGENT_SRC = "rag/agents/concierge.md"
 
 
 class DependencyError(InstallerError):
@@ -157,8 +167,13 @@ def _copilot_memory_hook_specs() -> list[HookEntrySpec]:
     ]
 
 
-def _eval_skill_artifacts(is_copilot: bool) -> list[Artifact]:
-    """FILE artifacts for the eval skills, routed to each assistant's skill container (065)."""
+def _skill_artifacts(names: tuple[str, ...], is_copilot: bool) -> list[Artifact]:
+    """FILE artifacts for native skills, routed to each assistant's skill container (065, E12).
+
+    Generalized from `_eval_skill_artifacts` (DRY, Principio III): the eval and usability skills
+    share the byte-copy mechanism (single-file, host-agnostic native-skill bodies). `names` is the
+    tuple of skill names to deposit under `{base}/<name>/SKILL.md`.
+    """
     base = _COPILOT_SKILLS_BASE if is_copilot else _CLAUDE_SKILLS_BASE
     return [
         Artifact(
@@ -167,8 +182,42 @@ def _eval_skill_artifacts(is_copilot: bool) -> list[Artifact]:
             f"{base}/{name}/SKILL.md",
             WriteStrategy.CREATE_IF_ABSENT,
         )
-        for name in _EVAL_SKILL_NAMES
+        for name in names
     ]
+
+
+def _concierge_artifact(assistant: AssistantId) -> Artifact:
+    """FILE artifact for the `concierge` agent, routed per-assistant (E12, sertor-flow pattern).
+
+    Replicates `install_governance.py`'s AGENT routing for a single surface: Claude keeps the
+    `.claude/agents/concierge.md` byte-copy layout (the `model: sonnet` pin is preserved); Copilot
+    renders `.github/agents/concierge.agent.md` via `render_custom_agent` (the `model:` field is
+    OMITTED on Copilot — FEAT-011/049). Container resolved by `AssistantProfile.render_path`.
+    """
+    aprofile = AssistantProfile.for_assistant(assistant)
+    name = "agents/concierge.md" if assistant is AssistantId.CLAUDE else "concierge"
+    target_rel = aprofile.render_path(Surface.AGENT, name)
+    return Artifact(
+        ArtifactKind.FILE,
+        _CONCIERGE_AGENT_SRC,
+        target_rel,
+        WriteStrategy.CREATE_IF_ABSENT,
+    )
+
+
+def _render_rag_file(art: Artifact) -> str:
+    """Content for a rag FILE artifact: rendered for a Copilot custom-agent, byte-copy otherwise.
+
+    Local render-aware helper (a `_render_for_target` twin of `install_wiki`/`install_governance`),
+    NOT a new kit seam (`render_custom_agent` is already exported). The `.agent.md` branch maps the
+    Claude frontmatter to the Copilot custom-agent shape (`model:` omitted). Every other FILE
+    (native skill `.md`, hook `.ps1`) is reused verbatim (byte-copy) — the body never drifts.
+    """
+    assert art.source is not None
+    text = read_asset_text(art.source)
+    if art.target_rel.endswith(".agent.md"):
+        return render_custom_agent(text)
+    return text
 
 
 def build_rag_plan(
@@ -260,7 +309,11 @@ def build_rag_plan(
         )
     )
     # Ground-truth eval skills (065): native skill bodies, byte-copied per-assistant (FILE).
-    plan.extend(_eval_skill_artifacts(is_copilot))
+    plan.extend(_skill_artifacts(_EVAL_SKILL_NAMES, is_copilot))
+    # Usability skills + concierge agent (E12): the guided-setup skill (byte-copy) and the concierge
+    # agent (model-pinned on Claude, rendered for Copilot). Order: eval → usability → agent.
+    plan.extend(_skill_artifacts(_USABILITY_SKILL_NAMES, is_copilot))
+    plan.append(_concierge_artifact(assistant))
     # Conversation-memory capture (FEAT-009): hook script (FILE) + SessionEnd wiring
     # (SETTINGS_MERGE), routed per-assistant — mirrors the rag-usage hook. Copilot wiring generated
     # (sentinel source); the Claude wiring is the static JSON asset.
@@ -352,14 +405,19 @@ def _apply_rag_usage_block(profile: RagHostProfile, art: Artifact) -> ArtifactOu
     return ArtifactOutcome(art.target_rel, outcome, detail)
 
 
-def _apply_rag_hook_file(profile: RagHostProfile, art: Artifact) -> ArtifactOutcome:
-    """`CREATE_IF_ABSENT` (042, group C): byte-for-byte copy of the hook script; exists → skip."""
+def _apply_rag_file(profile: RagHostProfile, art: Artifact) -> ArtifactOutcome:
+    """`CREATE_IF_ABSENT`: render-aware copy of a FILE asset; exists → skip.
+
+    Render-aware (W4, E12): a Copilot custom-agent (`.agent.md`) is rendered via `_render_rag_file`
+    (frontmatter translated, `model:` omitted); every other FILE (hook `.ps1`, native skill `.md`,
+    Claude agent `.md`) is byte-copied. The `.ps1`/`.md` targets never end in `.agent.md` → no
+    regression on the hook scripts or the eval skills.
+    """
     dest = profile.target_root / art.target_rel
     if dest.exists():
         return ArtifactOutcome(art.target_rel, Outcome.SKIPPED, "already present")
     dest.parent.mkdir(parents=True, exist_ok=True)
-    assert art.source is not None
-    dest.write_text(read_asset_text(art.source), encoding="utf-8")
+    dest.write_text(_render_rag_file(art), encoding="utf-8")
     return ArtifactOutcome(art.target_rel, Outcome.CREATED)
 
 
@@ -471,13 +529,19 @@ def sertor_owned_paths(assistant: AssistantId = AssistantProfile.DEFAULT) -> Ser
     mcp_target = aprofile.target_for(Surface.MCP_SERVER)
     mcp_root_key = mcp_target.root_key or "mcpServers"
 
-    # Eval skill folders (065): each skill is a Sertor-owned dir (removed/upgraded in block).
+    # Eval + usability skill folders (065, E12): each skill is a Sertor-owned dir (removed/upgraded
+    # in block). The concierge agent (E12) is a single owned FILE in the shared `agents/` container
+    # (sertor-flow lifecycle pattern: a per-file agent is owned_files, not owned_dir).
     skills_base = _COPILOT_SKILLS_BASE if is_copilot else _CLAUDE_SKILLS_BASE
-    eval_skill_dirs = tuple(f"{skills_base}/{name}" for name in _EVAL_SKILL_NAMES)
+    skill_dirs = tuple(
+        f"{skills_base}/{name}" for name in (*_EVAL_SKILL_NAMES, *_USABILITY_SKILL_NAMES)
+    )
+    concierge_name = "agents/concierge.md" if not is_copilot else "concierge"
+    concierge_target = aprofile.render_path(Surface.AGENT, concierge_name)
 
     return SertorOwnedPaths(
-        owned_dirs=(".sertor", *eval_skill_dirs),
-        owned_files=(hook_target, memory_hook_target),
+        owned_dirs=(".sertor", *skill_dirs),
+        owned_files=(hook_target, memory_hook_target, concierge_target),
         shared_edits=(
             SharedEdit(instruction_target, SharedEditKind.MARKER, "SERTOR:RAG-USAGE"),
             SharedEdit(settings_target, SharedEditKind.SETTINGS, _RAG_USAGE_SETTINGS),
@@ -556,14 +620,15 @@ def _apply_rag_upgrade(
     """
     root = profile.target_root
     if art.kind is ArtifactKind.FILE:
-        assert art.source is not None
-        content = read_asset_text(art.source)
+        # Render-aware (W7, E12): a Copilot concierge `.agent.md` is upgraded with the translated
+        # frontmatter (not the raw Claude source); hooks/skills stay byte-copy (no `.agent.md`).
+        content = _render_rag_file(art)
         dest = root / art.target_rel
         outcome = (
             project_update(dest, content) if dry_run
             else update_file_if_changed(dest, content)
         )
-        return ArtifactOutcome(art.target_rel, outcome, "standalone hook")
+        return ArtifactOutcome(art.target_rel, outcome, "rag asset")
     if art.kind is ArtifactKind.MARKER_BLOCK:
         content = read_asset_text(_RAG_USAGE_BLOCK)
         dest = root / art.target_rel
@@ -639,7 +704,7 @@ def make_rag_apply(
         if art.kind is ArtifactKind.MARKER_BLOCK:
             return _apply_rag_usage_block(profile, art)
         if art.kind is ArtifactKind.FILE:
-            return _apply_rag_hook_file(profile, art)
+            return _apply_rag_file(profile, art)
         if art.kind is ArtifactKind.SETTINGS_MERGE:
             return _apply_rag_settings(profile, art)
         raise ConfigError(f"unhandled artifact kind: {art.kind}")  # pragma: no cover
