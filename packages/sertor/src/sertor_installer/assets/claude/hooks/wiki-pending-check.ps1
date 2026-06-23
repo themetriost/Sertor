@@ -39,6 +39,9 @@ if ($Mode -eq 'Stop' -and $hook -and $hook.stop_hook_active) { exit 0 }
 $root = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR }
         elseif ($hook -and $hook.cwd) { $hook.cwd }
         else { '.' }
+# Resolve to an absolute path so `--config`/`--root` survive `uv run --directory .sertor` (which
+# changes the working directory). FEAT-010: the CLI is invoked PATH-independently below.
+try { $root = (Resolve-Path -LiteralPath $root -ErrorAction Stop).Path } catch {}
 
 # feature 016: config lives in wiki/; fallback to the old root path for hosts in transition.
 $config = Join-Path $root 'wiki/wiki.config.toml'
@@ -48,10 +51,19 @@ if (-not (Test-Path $config)) {
 }
 
 # --- delegate to the deterministic core: scan --json → wiki.scan/1 contract ---
+# FEAT-010: resolve the CLI robustly. Once the RAG runtime is installed it lives in `.sertor/.venv`
+# and is NOT on PATH; prefer `uv run --directory .sertor` (PATH-independent, the same form the MCP
+# server uses), and fall back to a bare `sertor-wiki-tools` only if there is no `.sertor` (e.g. a
+# global install). Any failure → silent exit 0 (below): the hook never breaks the session.
 $scan = $null
 try {
     Push-Location $root
-    $out = sertor-wiki-tools scan --config $config --root $root --json 2>$null
+    $runtimeDir = Join-Path $root '.sertor'
+    if (Test-Path $runtimeDir) {
+        $out = uv run --directory $runtimeDir sertor-wiki-tools scan --config $config --root $root --json 2>$null
+    } else {
+        $out = sertor-wiki-tools scan --config $config --root $root --json 2>$null
+    }
     Pop-Location
     if ($out) { $scan = ($out | Select-Object -Last 1 | ConvertFrom-Json) }
 } catch {

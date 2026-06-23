@@ -27,7 +27,7 @@ recommended if you correct).
 | `spec` | no | like `requirements` + consistency with code **if** state declares "implemented" | report |
 | `tracker` | no | **status tables/checkboxes** ("DONE/to do", `[x]`/`[ ]`) contradicted by reality = **direct drift** | report |
 
-**A) Structural lint — 100% mechanical (CLI).** Run `sertor-wiki-tools lint --json` **and**
+**A) Structural lint — 100% mechanical (CLI).** Run `uv run --directory .sertor sertor-wiki-tools lint --json` **and**
 `… validate --json`; interpret the `wiki.lint/1` contracts (broken wikilinks, orphans, missing frontmatter,
 naming). **Do not** redo Glob/Grep manually. It is authoritative on links: if the CLI says 0 broken, the links are fine.
 Note on **forward-links**: a `[[…]]` toward a node yet to be created **must not** be left dangling (it would be `broken`,

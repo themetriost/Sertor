@@ -16,8 +16,9 @@ Distillation is the **dual** of `record`: where `record` captures the **dated ev
 - **from backlog**, on request: an old fat record to be slimmed down;
 - **from conversation**: a **targeted past session** retrieved from the episodic archive, condensed, then
   poured into the graph. Instead of demanding a brief written from scratch, **recover the session from the
-  archive** (feature 036): `sertor-rag memory list` (or `memory search <query>`) to find the right
-  `session_key`, then `sertor-rag memory show <session_key>` to bring its full transcript into context. The
+  archive** (feature 036): `uv run --directory .sertor sertor-rag memory list` (or `… memory search <query>`)
+  to find the right `session_key`, then `uv run --directory .sertor sertor-rag memory show <session_key>`
+  to bring its full transcript into context. The
   **raw transcript still never enters the graph**: the main flow condenses it first (judgment), then distils
   the durable knowledge. This is the *safety net* for when the ritual was absent. If the session also contains
   **events** not in the diary (completed work never recorded), a contextual `record` captures them: `distill`
@@ -31,7 +32,7 @@ Distillation is the **dual** of `record`: where `record` captures the **dated ev
 
 1. **Source material.** The work just completed (touched code + the `experiment` record just written), or — in
    backlog mode — an existing fat page to distill, or — in conversation mode — a targeted session recovered
-   from the archive via `sertor-rag memory show <session_key>` (decisions, concepts, outcomes), then condensed.
+   from the archive via `uv run --directory .sertor sertor-rag memory show <session_key>` (decisions, concepts, outcomes), then condensed.
    `collect --json` to find out which entities already have a page (anti-duplication).
 2. **Enumerate entity candidates.** From the material, list constructs with **their own identity**: domain
    entities, ports/contracts, adapters, services, architectural decisions, technologies (the *product lens*

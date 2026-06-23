@@ -20,7 +20,7 @@ CLI `sertor-wiki-tools` instead of Glob/Grep by hand (see playbook).
 ## Specific to this skill (operation `record` from the repo)
 
 1. **Read the playbook first**, then the wiki index (catalog) to know what already exists; run
-   `sertor-wiki-tools collect --json` for the mechanical inventory of pages.
+   `uv run --directory .sertor sertor-wiki-tools collect --json` for the mechanical inventory of pages.
 2. Determine the **scope**:
    - if the user specifies an area/feature, **limit yourself to that**;
    - otherwise cover the relevant parts of the repo starting from the **`source_dirs`** in the config (code and

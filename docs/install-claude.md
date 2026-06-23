@@ -38,6 +38,11 @@ Then **reload Claude Code** and approve the **`sertor-rag`** MCP server (added t
 `search_code` / `search_docs` / `search_combined` tools now answer over your code and docs. Quick
 check from the terminal: `uv run --directory .sertor sertor-rag search "how does X work?"`.
 
+> **Invoking the CLIs.** After `install rag` the runtime CLIs (`sertor-rag`, `sertor-wiki-tools`) live
+> in `.sertor/.venv` and are **NOT on `PATH`**. Always invoke them with
+> **`uv run --directory .sertor <cli> …`** (works from any cwd; the same form the MCP server uses). A
+> bare `sertor-rag …` (or `which sertor-rag`) failing means "not on `PATH`", **not** "not installed".
+
 ## 2. Wiki — the project's living knowledge base
 
 Install the **LLM Wiki** system: a cumulative, local knowledge base the assistant maintains as you
@@ -64,6 +69,16 @@ uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sert
 Adds the SpecKit commands/agents (launched from the pinned upstream installer — needs network at
 install time), the `requirements` skill + `requirements-analyst`/`configuration-manager` agents, the
 constitution starter, and a `SERTOR:SDLC-RITUAL` block in `CLAUDE.md` (coexists with the wiki block).
+
+---
+
+## Known environment notes
+
+- **Windows + system Python 3.14 / `pywin32`.** A stale `pywin32` on the *system* interpreter may print
+  `ModuleNotFoundError: No module named 'pywin32_bootstrap'` on `pip`/`python -m`. This is noise from the
+  system Python, **not a Sertor error** — Sertor's CLIs and MCP server run inside `.sertor/.venv` via
+  `uv run`, unaffected. Do not use the system `pip show sertor-rag` to check the install; use
+  `uv run --directory .sertor sertor-rag doctor`.
 
 ---
 

@@ -27,17 +27,26 @@ usage.
 - Vehicle only. Every write goes through the CLI subcommand `sertor-rag eval add-case`. Never access the
   core library directly.
 
+> **How to invoke `sertor-rag`.** The runtime CLI is installed into the project's `.sertor/.venv` and
+> is NOT on `PATH`. Invoke it via **`uv run`** from any cwd in the host repo:
+> `uv run --directory .sertor sertor-rag <args>` (e.g. `uv run --directory .sertor sertor-rag eval add-case …`).
+> A bare `sertor-rag …` (or `which sertor-rag`) failing means "not on PATH", NOT "not installed". If
+> `uv` is unavailable, fall back to `.sertor/.venv/Scripts/sertor-rag.exe` (Windows) /
+> `.sertor/.venv/bin/sertor-rag` (POSIX); if neither resolves, STOP and report that the runtime is not
+> installed.
+
 ## Procedure
 
 1. Observe the results. Consider the query and the results the retrieval returned (e.g. from
-   `sertor-rag search`). Show them to the user readably (path + why it might or might not be relevant).
+   `uv run --directory .sertor sertor-rag search`). Show them to the user readably (path + why it might
+   or might not be relevant).
 
 2. Collect the explicit verdict. Ask the user, for the query, which file(s) is the truly expected
    (relevant) result. The verdict is the user's, not yours: do not assign it yourself.
 
 3. Verify the paths. Check that the indicated paths exist in the index with
-   `sertor-rag eval validate-path <path>` (it always exits 0; it reports the missing paths). An expected
-   path outside the index can never be a hit: flag it.
+   `uv run --directory .sertor sertor-rag eval validate-path <path>` (it always exits 0; it reports the
+   missing paths). An expected path outside the index can never be a hit: flag it.
 
 4. Update the suite, on confirmation.
    - Case already in the suite - if a case for that query exists, propose to update its `expected` with
@@ -48,7 +57,7 @@ usage.
    In both cases the write goes through the vehicle:
 
    ```powershell
-   sertor-rag eval add-case --query "<the query>" `
+   uv run --directory .sertor sertor-rag eval add-case --query "<the query>" `
        --expected "<approved/path.ext>[,<another>]" --kind nl
    ```
 
@@ -57,8 +66,8 @@ usage.
    it.
 
 5. Close. Summarise what was updated and remind the user that the suite is versioned project data (it
-   must be committed) and that the measure (`sertor-rag eval run`) stays deterministic and independent
-   of this skill.
+   must be committed) and that the measure (`uv run --directory .sertor sertor-rag eval run`) stays
+   deterministic and independent of this skill.
 
 ## What NOT to do
 
