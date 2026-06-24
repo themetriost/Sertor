@@ -10,7 +10,7 @@
 > here — they are extracted into dedicated pages with [`distill.md`](distill.md) (step ritual, point 2). The record
 > stays lean and *points to* them.
 
-1. Mechanical inventory: `sertor-wiki-tools collect --json` (what already exists) + read the wiki
+1. Mechanical inventory: `uv run --project .sertor sertor-wiki-tools collect --json` (what already exists) + read the wiki
    index (`index.md`).
 2. **Write/update the page(s) — content judgment.** Decide *new-vs-update* (the `collect` from
    step 1 serves to avoid duplicating a concept already present); for *whether* it deserves its own page apply the

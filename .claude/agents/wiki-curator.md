@@ -23,11 +23,14 @@ Everything that varies across projects (wiki root, taxonomy, frontmatter fields,
 names, or agent names: read them from the profile. The playbook tells you how.
 
 ## Rely on the deterministic core (do not redo mechanical work by hand)
-The *mechanical* bookkeeping is already host-agnostic code: the **`sertor-wiki-tools`** CLI. Use it
-via `Bash` instead of manual Glob/Grep/parsing:
-- `sertor-wiki-tools collect --json` → page inventory (what already exists).
-- `sertor-wiki-tools lint --json` + `… validate --json` → broken/orphan links, frontmatter, naming.
-- `sertor-wiki-tools scan --json` → pending work (anchored on mtime).
+The *mechanical* bookkeeping is already host-agnostic code: the **`sertor-wiki-tools`** CLI. It is
+installed into the project's `.sertor/.venv` and is NOT on `PATH` — invoke it via `Bash` with
+**`uv run`** (`uv run --project .sertor sertor-wiki-tools <args>`, works from any cwd) instead of
+manual Glob/Grep/parsing. A bare `sertor-wiki-tools …` failing means "not on PATH", NOT "not installed".
+- `uv run --project .sertor sertor-wiki-tools collect --json` → page inventory (what already exists).
+- `uv run --project .sertor sertor-wiki-tools lint --json` + `… validate --json` → broken/orphan
+  links, frontmatter, naming.
+- `uv run --project .sertor sertor-wiki-tools scan --json` → pending work (anchored on mtime).
 What remains for you is **judgment**: what to write, the *why*, whether a page is new or needs updating, which
 backlinks make sense, whether there is a contradiction. The *where/how* (format, paths) comes from the deterministic core.
 
