@@ -72,19 +72,23 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-> **Attiva su branch `075-guided-setup`: E12-FEAT-002 `guided-setup` ✅** — SpecKit completo
-> specify→plan→tasks→implement, Constitution 12/12 + missione, sertor 363 / kit 131 / sertor-flow 134 /
-> core 1043 verdi, ruff clean. *Cosa:* prima feature **agentica** dell'usabilità — **skill `guided-setup`**
-> (il "come": conduce install→configure→verify orchestrando i soli vehicle deterministici, scelta provider
-> euristica+conferma, segreti sicuri, verify fail-loud via `doctor`, consenso/idempotenza) + **agente vero
-> `concierge`** (`model: sonnet` su Claude, dispatcher a un ramo), entrambi distribuiti **dual-target**
-> (Claude/Copilot) riusando il meccanismo agenti del kit (come `sertor-flow`), guardia di parità
-> render-aware. Additivo: `sertor-core`/`install-kit` invariati. *Dove:* branch `075`, commit `ab2463a`.
-> *Prossimo passo concreto:* **merge su `master`** → re-index dogfood + smoke MCP. *Blocco/decisione
-> aperta:* nessuno (DA-G1/G2/G3 risolte; anticipa FEAT-009 come stub a un ramo, tracciato). *Follow-up
-> non-bloccante:* prova LIVE su ospite Claude/Copilot reale (R-4).
+> **⏯️ Attiva su branch `076-enforcement-freschezza-rag`: E10-FEAT-011 enforcement freschezza RAG ✅
+> implementata, IN ATTESA DI CONSEGNA.** SpecKit completo specify→plan→tasks→implement, Constitution
+> **12/12 + missione**, ruff clean; test: sertor **395** · kit **131** · root non-cloud **1128** (3 skip
+> packaging noti); `sertor-core` **INVARIATO** (Principio XI). *Cosa:* due hook host-facing distribuiti via
+> `sertor install rag`, parità Claude/Copilot — `rag-freshness.ps1` (SessionEnd: re-index incondizionato via
+> vehicle + `doctor` + persiste `.sertor/.rag-health.json` `rag.health/1`; exit 0 sempre, no LLM) +
+> `rag-freshness-start.ps1` (SessionStart Claude: ripesca lo stato e **induce** la correzione se `degraded`;
+> Copilot = prompt statico). + reclass `CLAUDE.md` step 5/8 «enforced via hook» + `RUNTIME_IGNORES` esteso.
+> *Dove:* branch `076`, commit spec `e89dcf6` · plan `abf507f` · tasks `f7b05ca` · impl `5f06cbd` · +FEAT-014
+> `913a824`. *Test funzionale (dogfooding) ✅:* hook eseguito a mano → re-index reale (indice riscritto) +
+> `rag-health.json` `verdict: healthy` 4/4 aree pass. *Prossimo passo concreto (DECISIONE UTENTE):* **scegliere
+> push+PR vs merge diretto** su `master`; poi smoke MCP + `gh run list` (CI Win/Linux) + distill entità wiki.
+> *Blocco/decisione aperta:* solo la consegna (nessun blocco tecnico). *Follow-up non-bloccante:* prova LIVE
+> su ospite reale (quickstart §6); **FEAT-014 (Could, tracciata)** = fix stdin-hang dell'hook in invocazione
+> manuale (`IsInputRedirected` guard) — emerso in dogfooding, non si manifesta in produzione.
 >
-> *(E12-FEAT-001 `sertor-rag doctor` ✅ già su `master`, merge `171f43b` — vedi ✅ Capacità consegnate.)*
+> *(E12-FEAT-002 `guided-setup` ✅ e E12-FEAT-001 `doctor` ✅ già su `master` — vedi ✅ Capacità consegnate.)*
 
 **Candidati a valore = Should aperti:**
 
