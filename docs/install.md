@@ -330,16 +330,17 @@ fail-fast: `uv` absent or `uv add` failed)/`2` (wrong usage). Re-running is safe
 After installation (explicit separate step — fill in the secrets in `.sertor/.env` first):
 
 ```bash
-uv run --directory .sertor sertor-rag index ..   # index host sources, excluding `.sertor/`
+uv run --project .sertor sertor-rag index .   # index host sources (keeps cwd; `.sertor/` is index/.env only)
 # then reload the MCP client: approve the `sertor-rag` server → search_code/docs/combined (+ graph)
 ```
 
 > **Self-locating runtime.** `sertor-rag`/`sertor-wiki-tools` load `.sertor/.env` and keep the
 > index and graph inside `.sertor/` **from any cwd**: if there is no `.env` in the cwd, the CLI
-> uses the one next to its own venv (`.sertor/`). The `uv run --directory .sertor …` form remains
-> recommended (the MCP server uses it), but you are no longer forced to launch from inside
-> `.sertor/`. If no `.env` is found, it warns instead of silently falling back to the defaults
-> (provider `glove`, store `local`).
+> uses the one next to its own venv (`.sertor/`). The recommended form is **`uv run --project .sertor …`**
+> — it runs the `.sertor` runtime but keeps your current directory, so relative paths like `index .`
+> resolve from the project root (use `--project`, NOT `--directory`: `--directory` would change the cwd
+> to `.sertor`, making `index .` index `.sertor` itself). If no `.env` is found, it warns instead of
+> silently falling back to the defaults (provider `glove`, store `local`).
 > **Uninstall** ≈ delete `.sertor/` and the `sertor-rag` entry from `.mcp.json`.
 
 > **Distribution note (interim).** Standalone execution via `uvx --from "git+…#subdirectory=packages/sertor"`
@@ -350,13 +351,16 @@ uv run --directory .sertor sertor-rag index ..   # index host sources, excluding
 ### Invoking the CLIs (the rule)
 
 After `install rag` the runtime CLIs (`sertor-rag`, `sertor-wiki-tools`) live in the project's
-`.sertor/.venv` — they are **NOT on `PATH`**. The canonical, cwd-independent way to run them is
-**`uv run --directory .sertor <cli> …`** (the same form the MCP server uses):
+`.sertor/.venv` — they are **NOT on `PATH`**. The canonical way to run them is
+**`uv run --project .sertor <cli> …`** — it runs the `.sertor` runtime but keeps your current
+directory, so relative paths like `index .` resolve from the project root. Use `--project`, NOT
+`--directory`: `--directory` changes the cwd to `.sertor`, so `sertor-rag index .` would index
+`.sertor` itself instead of your project.
 
 ```powershell
-uv run --directory .sertor sertor-rag doctor          # health check (config/provider/index/mcp)
-uv run --directory .sertor sertor-rag index ..         # index host sources, excluding `.sertor/`
-uv run --directory .sertor sertor-wiki-tools lint --json
+uv run --project .sertor sertor-rag doctor          # health check (config/provider/index/mcp)
+uv run --project .sertor sertor-rag index .          # index host sources from the project root
+uv run --project .sertor sertor-wiki-tools lint --json
 ```
 
 A bare `sertor-rag …` (or `which sertor-rag`) failing means **"not on `PATH`", not "not installed"** —
@@ -371,7 +375,7 @@ do not conclude the tool is missing. If `uv` is unavailable, call the venv execu
   `ModuleNotFoundError: No module named 'pywin32_bootstrap'` on `pip`/`python -m`. This is noise from the
   system Python, **not a Sertor error** — Sertor's CLIs and MCP server run inside `.sertor/.venv` via
   `uv run`, unaffected. Do **not** use the system `pip show sertor-rag` to check the install (it cannot
-  see the project venv); use `uv run --directory .sertor sertor-rag doctor` instead.
+  see the project venv); use `uv run --project .sertor sertor-rag doctor` instead.
 
 ## 7. Host root hygiene: what stays and why
 
@@ -539,7 +543,7 @@ Then refresh the **index** (the runtime package itself is updated inside `.serto
 the install, which does `uv add` again):
 
 ```powershell
-uv run --directory .sertor sertor-rag index ..   # rebuild the corpus with the new code
+uv run --project .sertor sertor-rag index .   # rebuild the corpus with the new code
 ```
 
 > `sertor install` is **idempotent and non-destructive**: re-running never overwrites your edits and

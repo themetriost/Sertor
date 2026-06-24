@@ -31,17 +31,20 @@ uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sert
 #    AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY (skip for --backend local)
 
 # 3. index the repo (explicit step — install never indexes)
-uv run --directory .sertor sertor-rag index ..
+uv run --project .sertor sertor-rag index .
 ```
 
 Then **reload Claude Code** and approve the **`sertor-rag`** MCP server (added to `.mcp.json`): the
 `search_code` / `search_docs` / `search_combined` tools now answer over your code and docs. Quick
-check from the terminal: `uv run --directory .sertor sertor-rag search "how does X work?"`.
+check from the terminal: `uv run --project .sertor sertor-rag search "how does X work?"`.
 
 > **Invoking the CLIs.** After `install rag` the runtime CLIs (`sertor-rag`, `sertor-wiki-tools`) live
 > in `.sertor/.venv` and are **NOT on `PATH`**. Always invoke them with
-> **`uv run --directory .sertor <cli> …`** (works from any cwd; the same form the MCP server uses). A
-> bare `sertor-rag …` (or `which sertor-rag`) failing means "not on `PATH`", **not** "not installed".
+> **`uv run --project .sertor <cli> …`** — it runs the `.sertor` runtime but keeps your current
+> directory, so relative paths like `index .` resolve from the project root (use `--project`, NOT
+> `--directory`: `--directory` would change the cwd to `.sertor`, making `index .` index `.sertor`
+> itself). A bare `sertor-rag …` (or `which sertor-rag`) failing means "not on `PATH`", **not** "not
+> installed".
 
 ## 2. Wiki — the project's living knowledge base
 
@@ -78,7 +81,7 @@ constitution starter, and a `SERTOR:SDLC-RITUAL` block in `CLAUDE.md` (coexists 
   `ModuleNotFoundError: No module named 'pywin32_bootstrap'` on `pip`/`python -m`. This is noise from the
   system Python, **not a Sertor error** — Sertor's CLIs and MCP server run inside `.sertor/.venv` via
   `uv run`, unaffected. Do not use the system `pip show sertor-rag` to check the install; use
-  `uv run --directory .sertor sertor-rag doctor`.
+  `uv run --project .sertor sertor-rag doctor`.
 
 ---
 

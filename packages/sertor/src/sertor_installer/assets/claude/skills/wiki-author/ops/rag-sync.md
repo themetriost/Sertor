@@ -6,7 +6,7 @@
 
 Makes the wiki queryable via RAG (the wiki's "corpus" role).
 
-1. Run `uv run --directory .sertor sertor-wiki-tools index --config wiki/wiki.config.toml --root .`. The CLI reads `[rag]` (isolated corpus,
+1. Run `uv run --project .sertor sertor-wiki-tools index --config wiki/wiki.config.toml --root .`. The CLI reads `[rag]` (isolated corpus,
    default `wiki`) and performs an idempotent rebuild-from-scratch; the embedding provider and the vector
    store are read from `.env` (see the env knobs documented in the install guide). **Do not** launch
    Python interpreters manually.

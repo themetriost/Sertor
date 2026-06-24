@@ -39,12 +39,12 @@ uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sert
 #    AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY (skip for --backend local)
 
 # 3. index the repo (explicit step — install never indexes)
-uv run --directory .sertor sertor-rag index ..
+uv run --project .sertor sertor-rag index .
 ```
 
 Then load the MCP server: in the **Copilot CLI** run `/mcp reload` (or restart) and verify with
 `/mcp show`. The `search_code` / `search_docs` / `search_combined` tools now answer over your code
-and docs. Quick check: `uv run --directory .sertor sertor-rag search "how does X work?"`.
+and docs. Quick check: `uv run --project .sertor sertor-rag search "how does X work?"`.
 
 ## 2. Wiki — the project's living knowledge base
 
