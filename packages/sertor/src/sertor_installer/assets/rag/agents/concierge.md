@@ -29,7 +29,7 @@ check.
 - You orchestrate Sertor only through its vehicles (the deterministic CLI commands and MCP). Never
   import the core library, never reimplement a command.
 - **Invocation convention:** the runtime CLIs are NOT on `PATH` after install — they live in the
-  project's `.sertor/.venv`. Invoke them via `uv run --directory .sertor sertor-rag <args>` (the
+  project's `.sertor/.venv`. Invoke them via `uv run --project .sertor sertor-rag <args>` (the
   `guided-setup` skill documents this and the `uvx --from … sertor <verb>` form for the installer). A
   bare `sertor-rag …` failing means "not on PATH", NOT "not installed".
 - Read-only checks run freely; every host mutation or download happens only after the user's explicit

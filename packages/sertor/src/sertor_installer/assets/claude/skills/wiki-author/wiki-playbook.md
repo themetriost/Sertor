@@ -85,23 +85,25 @@ session.
 | `migrate` | retroactively splits the monolithic log into daily partitions | `wiki.migrate/1` |
 | `upsert-index` | inserts/updates the `- [[page]] — summary` line in the index (LLM-authored summary) | `wiki.upsert_index/1` |
 
-Invocation: `uv run --directory .sertor sertor-wiki-tools <op> --config wiki/wiki.config.toml --root .
-[--json]` (or, from the host root, just `uv run --directory .sertor sertor-wiki-tools <op>`: the CLI
+Invocation: `uv run --project .sertor sertor-wiki-tools <op> --config wiki/wiki.config.toml --root .
+[--json]` (or, from the host root, just `uv run --project .sertor sertor-wiki-tools <op>`: the CLI
 auto-discovers `wiki/wiki.config.toml`). With `--json` you get the versioned contract; without it, a
 human-readable summary.
 
 ### How to invoke the runtime CLIs
 
 The runtime CLIs `sertor-rag` and `sertor-wiki-tools` are installed into the project's `.sertor/.venv`
-and are **NOT on `PATH`**. Invoke them through that venv with **`uv run`** — it works from any cwd in
-the host repo and does NOT depend on `PATH` (it is the same form the MCP server uses):
-`uv run --directory .sertor sertor-wiki-tools <args>` (e.g. `uv run --directory .sertor
-sertor-wiki-tools lint --json`). Do NOT call the bare command (`sertor-wiki-tools …`): after install it
-lives in `.sertor/.venv`, not on `PATH`, so a bare call (or `which sertor-wiki-tools`) failing means
-"not on `PATH`", NOT "not installed". If `uv` is unavailable, fall back to the venv executable directly
-— `.sertor/.venv/Scripts/<cli>.exe` (Windows) or `.sertor/.venv/bin/<cli>` (POSIX). If neither
-resolves, STOP and report that the runtime is not installed — never silently fall back to doing the
-mechanical work by hand.
+and are **NOT on `PATH`**. Invoke them through that venv with **`uv run --project .sertor`** — it runs
+the `.sertor` runtime but **keeps your current directory**, so a relative path like `--root .` is the
+project root as expected (the index and `.env` stay anchored inside `.sertor/` regardless of cwd):
+`uv run --project .sertor sertor-wiki-tools <args>` (e.g. `uv run --project .sertor
+sertor-wiki-tools lint --json`). Use `--project`, NOT `--directory`: `--directory` changes the working
+directory, so a relative path like `--root .` would resolve to `.sertor` itself instead of your project.
+Do NOT call the bare command (`sertor-wiki-tools …`): after install it lives in `.sertor/.venv`, not on
+`PATH`, so a bare call (or `which sertor-wiki-tools`) failing means "not on `PATH`", NOT "not installed".
+If `uv` is unavailable, fall back to the venv executable directly — `.sertor/.venv/Scripts/<cli>.exe`
+(Windows) or `.sertor/.venv/bin/<cli>` (POSIX), run from the project root. If neither resolves, STOP and
+report that the runtime is not installed — never silently fall back to doing the mechanical work by hand.
 
 > **Windows note.** With the *system* Python 3.14 a stale `pywin32` may print
 > `ModuleNotFoundError: No module named 'pywin32_bootstrap'` on `pip`/`python -m`. That is noise from
@@ -130,7 +132,7 @@ The areas are those in `[[taxonomy]]`. Example profile:
 - The **only** areas are those in the config. Ingested external sources go in **`sources/`** (see
   `ingest`); do not invent folders not declared in the config.
 - Folders may not exist yet: **create them on-demand** for the first page in that category (or
-  all at once with `uv run --directory .sertor sertor-wiki-tools structure init`). Do not create empty
+  all at once with `uv run --project .sertor sertor-wiki-tools structure init`). Do not create empty
   folders or placeholders.
 - Any **frozen/do-not-touch wikis** (e.g. an archived historical wiki) are **outside** the `root`
   and excluded via `exclude`: they are not modified; they can be consulted via RAG if needed.

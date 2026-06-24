@@ -30,7 +30,7 @@ DATA (the suite), not the run.
 
 > **How to invoke `sertor-rag`.** The runtime CLI is installed into the project's `.sertor/.venv` and
 > is NOT on `PATH`. Invoke it via **`uv run`** from any cwd in the host repo:
-> `uv run --directory .sertor sertor-rag <args>` (e.g. `uv run --directory .sertor sertor-rag eval add-case …`).
+> `uv run --project .sertor sertor-rag <args>` (e.g. `uv run --project .sertor sertor-rag eval add-case …`).
 > A bare `sertor-rag …` (or `which sertor-rag`) failing means "not on PATH", NOT "not installed". If
 > `uv` is unavailable, fall back to `.sertor/.venv/Scripts/sertor-rag.exe` (Windows) /
 > `.sertor/.venv/bin/sertor-rag` (POSIX); if neither resolves, STOP and report that the runtime is not
@@ -42,10 +42,10 @@ Derivation reads the corpus through the RAG/MCP tools (code/doc search, symbol s
 is not indexed those tools return empty or error: in that case STOP with an actionable message -
 
 > "The corpus does not appear to be indexed. Index it first with
-> `uv run --directory .sertor sertor-rag index .`, then re-run."
+> `uv run --project .sertor sertor-rag index .`, then re-run."
 
 To deterministically check that a candidate path really exists in the index, use the vehicle:
-`uv run --directory .sertor sertor-rag eval validate-path <path> [...]` (it always exits 0; it reports
+`uv run --project .sertor sertor-rag eval validate-path <path> [...]` (it always exits 0; it reports
 the missing/checked paths).
 
 ## Procedure
@@ -62,7 +62,7 @@ the missing/checked paths).
      search.
 
 3. Verify the candidate paths. For each `expected`, check that it is present in the index with
-   `uv run --directory .sertor sertor-rag eval validate-path <path>`. If it is missing, fix the path or
+   `uv run --project .sertor sertor-rag eval validate-path <path>`. If it is missing, fix the path or
    flag it to the user (a path outside the index can never be a hit).
 
 4. Propose to the user. Present the candidates as a clear `query -> expected (kind)` list and ask which
@@ -71,7 +71,7 @@ the missing/checked paths).
 5. Persist the approved ones only. For each approved case, invoke the vehicle:
 
    ```powershell
-   uv run --directory .sertor sertor-rag eval add-case --query "<the query>" `
+   uv run --project .sertor sertor-rag eval add-case --query "<the query>" `
        --expected "<path/to/expected.ext>" --kind symbol
    ```
 
@@ -80,7 +80,7 @@ the missing/checked paths).
    already present is not duplicated) and non-destructive.
 
 6. Close. Summarise which cases were added and remind the user that the suite is versioned project data:
-   it must be committed. The evaluation is launched with `uv run --directory .sertor sertor-rag eval run`
+   it must be committed. The evaluation is launched with `uv run --project .sertor sertor-rag eval run`
    (deterministic, independent).
 
 ## Authoring code-graph navigation cases (`[[graph_case]]`)
@@ -95,7 +95,7 @@ approved cases are written.
    the candidate set of refs by invoking the deterministic vehicle:
 
    ```powershell
-   uv run --directory .sertor sertor-rag graph-eval validate-ref --relation who_calls --target build_facade --json
+   uv run --project .sertor sertor-rag graph-eval validate-ref --relation who_calls --target build_facade --json
    ```
 
    The JSON output reports `checked`/`unverifiable`/`graph_available`. To DISCOVER the current set
@@ -110,7 +110,7 @@ approved cases are written.
 3. Persist only after explicit approval. For each approved case:
 
    ```powershell
-   uv run --directory .sertor sertor-rag graph-eval add-case --relation who_calls --target build_facade `
+   uv run --project .sertor sertor-rag graph-eval add-case --relation who_calls --target build_facade `
        --expected "path/to/a.py#A,path/to/b.py#B" --confirm
    ```
 
@@ -122,15 +122,15 @@ approved cases are written.
    - A case with an EMPTY expected set is legitimate (expected "no callers"): use `--expected ""`.
 
 4. Re-authoring an existing snapshot. If the correct set changed and the user approves it, update the
-   case with `uv run --directory .sertor sertor-rag graph-eval amend-case --relation R --target T --expected "..."`.
+   case with `uv run --project .sertor sertor-rag graph-eval amend-case --relation R --target T --expected "..."`.
    It is the deterministic path to re-freeze the snapshot; the decision stays the user's.
 
 5. If the graph is not built (`graph_available=false`): STOP with an actionable message - "The code
    graph does not appear to be built. Index the project first with
-   `uv run --directory .sertor sertor-rag index .`, then re-run."
+   `uv run --project .sertor sertor-rag index .`, then re-run."
 
 Hard boundary (deterministic vs judgment, here too). The deterministic run
-(`uv run --directory .sertor sertor-rag graph-eval run`) DOES NOT depend on this skill or on any LLM:
+(`uv run --project .sertor sertor-rag graph-eval run`) DOES NOT depend on this skill or on any LLM:
 the skill is the judgment surface (propose/approve
 the sets), the run is the deterministic measure in the core. Every access to the graph goes ONLY
 through the `graph-eval validate-ref`/`add-case`/`amend-case` subcommands (vehicle): the skill never

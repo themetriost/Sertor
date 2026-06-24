@@ -31,10 +31,10 @@ invocable on its own; the `concierge` agent routes setup requests to it.
     — deposits the RAG assets and scaffolds `.sertor/.env` (the installer runs ephemerally via `uvx`).
   - `uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor configure --set KEY=VALUE`
     — fills `.sertor/.env` (CI-safe wizard; secrets via a secure prompt).
-  - `uv run --directory .sertor sertor-rag doctor` (and `… sertor-rag doctor --json`) — the
+  - `uv run --project .sertor sertor-rag doctor` (and `… sertor-rag doctor --json`) — the
     deterministic health check (the four areas `config`/`provider`/`index`/`mcp` with pass/warn/fail,
     stable JSON schema, exit-code gate).
-  - `uv run --directory .sertor sertor-rag index .` — the first index (may trigger the one-time GloVe
+  - `uv run --project .sertor sertor-rag index .` — the first index (may trigger the one-time GloVe
     download).
 - You **orchestrate** these commands; you do not alter or replace their behaviour. Do NOT paste inline
   shell/Python that replicates what `install`/`configure`/`doctor`/`index` already do.
@@ -44,14 +44,18 @@ invocable on its own; the `concierge` agent routes setup requests to it.
 Sertor ships at two levels — invoke each the right way:
 
 - **The runtime CLIs `sertor-rag` and `sertor-wiki-tools`** are installed into the project's
-  `.sertor/.venv` by `sertor install rag`. Invoke them through that venv with **`uv run`** — it works
-  from any cwd in the host repo and does NOT depend on `PATH` (it is the same form the MCP server
-  uses): `uv run --directory .sertor sertor-rag <args>` (e.g. `uv run --directory .sertor sertor-rag doctor`).
-  Do NOT call the bare command (`sertor-rag …`): after install it is in `.sertor/.venv`, not on `PATH`,
-  so a bare call (or `which sertor-rag`) failing means "not on PATH", NOT "not installed". If `uv` is
-  unavailable, fall back to the venv executable directly — `.sertor/.venv/Scripts/<cli>.exe` (Windows)
-  or `.sertor/.venv/bin/<cli>` (POSIX). If neither resolves, STOP and report that the runtime is not
-  installed (run `sertor install rag`) — never silently fall back to reading files by hand.
+  `.sertor/.venv` by `sertor install rag`. Invoke them through that venv with **`uv run --project .sertor`** —
+  it runs the `.sertor` runtime but **keeps your current directory**, so a relative path like `.` is the
+  project root as expected (the index and `.env` stay anchored inside `.sertor/` regardless of cwd):
+  `uv run --project .sertor sertor-rag <args>` (e.g. `uv run --project .sertor sertor-rag doctor`, or
+  `uv run --project .sertor sertor-rag index .`). Use `--project`, NOT `--directory`: `--directory`
+  changes the working directory, so `sertor-rag index .` would index `.sertor` itself instead of your
+  project. Do NOT call the bare command (`sertor-rag …`) either: after install it is in `.sertor/.venv`,
+  not on `PATH`, so a bare call (or `which sertor-rag`) failing means "not on PATH", NOT "not installed".
+  If `uv` is unavailable, fall back to the venv executable directly — `.sertor/.venv/Scripts/<cli>.exe`
+  (Windows) or `.sertor/.venv/bin/<cli>` (POSIX), run from the project root. If neither resolves, STOP and
+  report that the runtime is not installed (run `sertor install rag`) — never silently fall back to
+  reading files by hand.
 - **The installer `sertor`** is NOT a persistent command: run it ephemerally through `uvx` —
   `uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor <verb>`
   (e.g. `… sertor install rag`; add `--refresh` to force the latest build).
@@ -60,22 +64,22 @@ Sertor ships at two levels — invoke each the right way:
 > `ModuleNotFoundError: No module named 'pywin32_bootstrap'` on `pip`/`python -m`. That is noise from
 > the system interpreter, not a Sertor error — Sertor's CLIs and MCP server run inside `.sertor/.venv`
 > via `uv run`, unaffected. Do not use the system `pip show sertor-rag` to check the install (it cannot
-> see the project venv); use `uv run --directory .sertor sertor-rag doctor`.
+> see the project venv); use `uv run --project .sertor sertor-rag doctor`.
 
 ## Consent gate (read-only is free; mutation needs an explicit "yes")
 
-- **Read-only checks run freely, no confirmation:** running `uv run --directory .sertor sertor-rag
+- **Read-only checks run freely, no confirmation:** running `uv run --project .sertor sertor-rag
   doctor`, inspecting whether `.sertor/.env` exists, reading which keys are present. These never mutate
   the host.
 - **Every step that mutates the host or downloads runs ONLY after explicit confirmation:**
   `sertor install rag`, `sertor configure --set`, and the first
-  `uv run --directory .sertor sertor-rag index .` (including the GloVe download). Propose the step,
+  `uv run --project .sertor sertor-rag index .` (including the GloVe download). Propose the step,
   explain what it will do, and wait for an explicit "yes" before running it.
 - If the user does not confirm, do NOT run the step. Never auto-mutate or auto-download.
 
 ## Step 1 — Detect state (read-only)
 
-Run `uv run --directory .sertor sertor-rag doctor --json` and read the four areas
+Run `uv run --project .sertor sertor-rag doctor --json` and read the four areas
 (`config`/`provider`/`index`/`mcp`) of the `doctor` report. Also inspect read-only whether
 `.sertor/.env` exists and which keys it already holds. Determine what is missing.
 
@@ -89,11 +93,11 @@ Run `uv run --directory .sertor sertor-rag doctor --json` and read the four area
 Read three signals via vehicle/file (never the core), then **propose** a provider with a rationale and
 let the user decide — never select one automatically:
 
-1. **Cloud credentials present?** — from `uv run --directory .sertor sertor-rag doctor --json`
+1. **Cloud credentials present?** — from `uv run --project .sertor sertor-rag doctor --json`
    (`config`/`provider` areas: missing `AZURE_OPENAI_*` keys mean no cloud creds), or by a read-only
    look at `.sertor/.env` / the environment for `AZURE_OPENAI_ENDPOINT` / `AZURE_OPENAI_API_KEY`.
 2. **Host airgapped / offline?** — a conversational signal (the user states it), or
-   `uv run --directory .sertor sertor-rag doctor --online` reporting the provider `unreachable`. Do NOT
+   `uv run --project .sertor sertor-rag doctor --online` reporting the provider `unreachable`. Do NOT
    probe the network yourself.
 3. **Is natural-language semantics over the docs needed?** — ask the user (is the corpus rich in
    documentation / NL?).
@@ -132,7 +136,7 @@ Fill `.sertor/.env` **only** via
 
 If the chosen provider is `glove` and the model is **not** in cache, **announce** the one-time download
 (~822 MB) **before** running the index, so the wait is expected and not a silent block. Then, on
-confirmation, run `uv run --directory .sertor sertor-rag index .`.
+confirmation, run `uv run --project .sertor sertor-rag index .`.
 
 - If the GloVe model is already in cache, do NOT announce any download.
 - When a download progress/ETA becomes available (a future deterministic capability), lean on it;
@@ -140,7 +144,7 @@ confirmation, run `uv run --directory .sertor sertor-rag index .`.
 
 ## Step 6 — Verify (fail-loud)
 
-Run `uv run --directory .sertor sertor-rag doctor` as the obligatory gate before declaring success:
+Run `uv run --project .sertor sertor-rag doctor` as the obligatory gate before declaring success:
 
 - `doctor: PASS` (exit 0) → declare the setup **verified**, reporting the supporting outcome.
 - **Not green** → expose the failing **area + remedy** taken from the report lines (e.g.

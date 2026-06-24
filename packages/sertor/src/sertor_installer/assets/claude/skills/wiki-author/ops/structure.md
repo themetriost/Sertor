@@ -3,7 +3,7 @@
 > **Operation module.** Executor: **curator/CLI** (purely mechanical, no judgment).
 > For the **shared substrate** (taxonomy §3) see the playbook `wiki-playbook.md`. Only the procedure is described here.
 
-On a new host (or to repair missing special folders/files): `uv run --directory .sertor
+On a new host (or to repair missing special folders/files): `uv run --project .sertor
 sertor-wiki-tools structure init`. Creates the taxonomy folders + index + log with a minimal seed;
 **does not overwrite** what already exists
 (contract `wiki.structure/1`: `created` / `skipped_existing`). No judgment: purely mechanical.
