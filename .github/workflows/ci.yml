@@ -55,24 +55,29 @@ jobs:
       - name: Tests — sertor-flow (governance installer)
         run: uv run pytest packages/sertor-flow/tests -m "not cloud and not integration"
 
-  # End-to-end host smoke (FEAT-003 epica debito-tecnico): installs the RAG capability from
-  # git+url@master exactly as a third-party host would, then drives index→doctor→search to green.
-  # It pulls `master` (the real distribution channel), so it is a POST-MERGE / on-demand guardian —
-  # NOT a per-PR gate (it does not test the PR's own diff). Runs only on push to master and on
-  # manual dispatch. The host runs OUTSIDE the checkout with a scrubbed env (provider = hash).
+  # End-to-end host smoke (FEAT-003 epica debito-tecnico): installs Sertor capabilities from
+  # git+url@master exactly as a third-party host would. The matrix is {os} x {assistant}; EACH job
+  # runs all three capabilities for its assistant: rag (install→index→doctor→search), wiki (deposit)
+  # and flow/governance (deposit; `specify init` needs network). It pulls `master` (the real
+  # distribution channel), so it is a POST-MERGE / on-demand guardian — NOT a per-PR gate (it does
+  # not test the PR's own diff). Runs only on push to master and on manual dispatch. The host runs
+  # OUTSIDE the checkout with a scrubbed env (rag provider = hash).
   #
-  # Target = the DEDICATED real-world repo `themetriost/PgnToFen` (a C#/.NET project), cloned shallow
-  # into the runner temp and passed via SERTOR_SMOKE_TARGET. This exercises indexing of real .cs +
-  # README content, not just the synthetic fixture (which stays the local/default when the env var is
-  # unset). Hardening option (not used): pin the clone to a fixed commit (`git checkout <sha>`)
-  # instead of the default branch, for fully reproducible smoke content.
+  # Per-assistant selection: pytest `-k <assistant>` picks the (assistant, capability) params for
+  # this job's assistant (rag+wiki+flow). The capabilities × assistants matrix lives in the test.
+  #
+  # rag target = the DEDICATED real-world repo `themetriost/PgnToFen` (a C#/.NET project), cloned
+  # shallow into the runner temp and passed via SERTOR_SMOKE_TARGET (the wrapper forwards it for
+  # `rag` only; wiki/flow always use the synthetic fixture). This exercises indexing of real .cs +
+  # README content. Hardening option (not used): pin the clone to a fixed commit for reproducibility.
   smoke:
-    name: smoke (${{ matrix.os }})
+    name: smoke (${{ matrix.os }} / ${{ matrix.assistant }})
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     strategy:
       fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest]
+        assistant: [claude, copilot-cli]
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read
@@ -90,7 +95,8 @@ jobs:
       # Sertor is a PRIVATE repo: the `uvx --from git+https://…/Sertor` install (and the nested
       # `uv add sertor-core @ git+…`) clone it anonymously, which fails on a runner with no creds.
       # Rewrite that one URL to carry the workflow GITHUB_TOKEN (read access to its own repo) so the
-      # clone authenticates. Scoped to Sertor only — the public PgnToFen clone stays anonymous.
+      # clone authenticates. Covers both packages/sertor and packages/sertor-flow (same repo).
+      # Scoped to Sertor only — the public PgnToFen and spec-kit clones stay anonymous.
       - name: Authenticate git for the private Sertor repo (uvx/uv clone)
         shell: bash
         run: >
@@ -104,12 +110,14 @@ jobs:
       - name: Sync (all workspace packages + dev extras)
         run: uv sync --all-packages --extra dev --python 3.12
 
-      # Clone the dedicated real-world smoke target (shallow) into the runner temp, OUTSIDE the
+      # Clone the dedicated real-world rag smoke target (shallow) into the runner temp, OUTSIDE the
       # Sertor checkout (the smoke requires the host to live outside the workspace for isolation).
       - name: Clone smoke target (PgnToFen)
         run: git clone --depth 1 https://github.com/themetriost/PgnToFen "${{ runner.temp }}/pgntofen"
 
-      - name: Host smoke (install→index→doctor→search from git+url@master)
+      # Run all three capabilities (rag/wiki/flow) for this job's assistant. SERTOR_SMOKE_TARGET is
+      # honoured by the wrapper for `rag` only; wiki/flow use the synthetic fixture regardless.
+      - name: Host smoke (${{ matrix.assistant }} × rag/wiki/flow from git+url@master)
         env:
           SERTOR_SMOKE_TARGET: ${{ runner.temp }}/pgntofen
-        run: uv run pytest -m integration tests/integration/test_host_smoke.py -v
+        run: uv run pytest -m integration tests/integration/test_host_smoke.py -k "${{ matrix.assistant }}" -v
