@@ -55,7 +55,15 @@ else
     HOST="$(cd "$TARGET" && pwd)"
 fi
 
-cleanup() { [ "$CREATED_HOST" -eq 1 ] && [ -n "${HOST:-}" ] && [ -d "$HOST" ] && rm -rf "$HOST"; }
+# NB: must return 0. As an EXIT trap its final status becomes the script's exit code, so a
+# short-circuited `&&` chain (e.g. when CREATED_HOST=0 for a --target run) would make a fully
+# successful smoke exit 1. Use if/fi (returns 0 when the guard is false) + an explicit `return 0`.
+cleanup() {
+    if [ "$CREATED_HOST" -eq 1 ] && [ -n "${HOST:-}" ] && [ -d "$HOST" ]; then
+        rm -rf "$HOST"
+    fi
+    return 0
+}
 trap cleanup EXIT
 
 # Guard: never run inside the Sertor checkout (would let uv resolve sertor-core from the workspace).
@@ -68,6 +76,9 @@ echo "[smoke] source = $SOURCE"
 
 # Scrub inherited SERTOR_* (and UV workspace discovery) so the developer dogfood env does not leak.
 for v in $(env | grep -oE '^SERTOR_[A-Z0-9_]+' || true); do unset "$v"; done
+# Also drop an inherited active venv (e.g. CI's `uv sync` exports VIRTUAL_ENV=<checkout>/.venv):
+# `uv run --project .sertor` would warn it is ignored. Unset it so the smoke env stays clean.
+unset VIRTUAL_ENV || true
 export UV_NO_WORKSPACE=1
 
 # 1. Neutral synthetic project (generic — never Sertor files) -------------------------------------
@@ -175,3 +186,4 @@ echo "[smoke] search OK (results=$RESULTS)"
 
 echo ""
 echo "SMOKE_OK doctor=$OVERALL documents=$DOCUMENTS results=$RESULTS"
+exit 0   # explicit success (the EXIT trap's cleanup returns 0, see above)
