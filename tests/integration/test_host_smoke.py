@@ -1,24 +1,32 @@
-"""End-to-end host smoke test (@integration) — install→index→doctor→search from git+url@master.
+"""End-to-end host smoke test (@integration) — install (+runtime for rag) from git+url@master.
 
 This is the CI-facing wrapper around the platform smoke script (`scripts/smoke.ps1` on Windows,
-`scripts/smoke.sh` on POSIX). The script is the SINGLE SOURCE OF TRUTH for the flow (no logic is
-duplicated here); the test merely invokes it and asserts on its contract:
+`scripts/smoke.sh` on POSIX). The script is the SINGLE SOURCE OF TRUTH for each flow (no logic is
+duplicated here); the test merely invokes it for an `(assistant, capability)` pair and asserts on
+its contract:
 
   * exit code 0,
-  * a final ``SMOKE_OK doctor=<pass|warn> documents=<N> results=<M>`` marker with N>0 and M>0.
+  * a final ``SMOKE_OK assistant=<a> capability=<c> ...`` marker; for ``rag`` the marker also
+    carries ``documents=<N> results=<M>`` with N>0 and M>0 (the cwd/anchor regression yields N=0).
+
+MATRIX: {claude, copilot-cli} x {rag, wiki, flow}.
+  * rag   — installs the RAG capability, then drives index→doctor→search (CLI runtime).
+  * wiki  — installs the wiki system (deposit-only: skill/agent/hooks/config/scaffold/ritual block).
+  * flow  — installs the governance/SDLC bundle via ``sertor-flow`` (deposit-only; ``specify init``
+            needs NETWORK + the pinned spec-kit).
 
 Why a wrapper instead of re-implementing the flow in Python: the same script a developer runs by
-hand is what CI runs, so they cannot drift. The script already drives the real installed
-entry-points (`uvx --from git+url … sertor install rag`, then `uv run --project .sertor sertor-rag
-…`), which is exactly what catches the integration bugs the offline suite misses (CLI
-discoverability, cwd/index anchoring). It pulls ``master`` — the real distribution channel — so this
-is a POST-MERGE / on-demand guardian, not a per-PR gate (it does not test the PR's own diff).
+hand is what CI runs, so they cannot drift. The script drives the real installed entry-points
+(``uvx --from git+url … sertor install <cap>`` / ``sertor-flow install``), which is exactly what
+catches the integration bugs the offline suite misses (CLI discoverability, cwd/index anchoring,
+per-assistant asset routing). It pulls ``master`` — the real distribution channel — so this is a
+POST-MERGE / on-demand guardian, not a per-PR gate (it does not test the PR's own diff).
 
 Target selection: by default the script runs on a NEUTRAL synthetic fixture it creates in a temp
-dir. Set the optional env var ``SERTOR_SMOKE_TARGET`` to a path to an already-cloned repo and the
-test forwards it to the script via ``-Target``/``--target`` — CI uses this to run on the dedicated
-real-world target ``https://github.com/themetriost/PgnToFen`` (a C#/.NET project). The assertions
-are identical for both modes.
+dir. For ``rag`` ONLY, set the optional env var ``SERTOR_SMOKE_TARGET`` to a path to an
+already-cloned repo and the test forwards it to the script — CI uses this to run rag on the
+dedicated real-world target ``https://github.com/themetriost/PgnToFen`` (a C#/.NET project).
+``wiki`` and ``flow`` always use the synthetic fixture (deposit-only, target-agnostic).
 
 Precondition (``uv``/``uvx`` in PATH + network) absent → ``pytest.skip`` (actionable, never a false
 green). No ``sertor_core`` import (Principio XI): it exercises the artefacts, not the library.
@@ -39,12 +47,26 @@ pytestmark = pytest.mark.integration
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS_DIR = REPO_ROOT / "scripts"
 
-# Final marker the script prints on success (see scripts/smoke.{ps1,sh}).
-_MARKER = re.compile(r"^SMOKE_OK doctor=(pass|warn) documents=(\d+) results=(\d+)", re.MULTILINE)
+ASSISTANTS = ("claude", "copilot-cli")
+CAPABILITIES = ("rag", "wiki", "flow")
+
+# Final marker the script prints on success (see scripts/smoke.{ps1,sh}). The trailing fields are
+# capability-specific (rag carries documents/results), so the common prefix is matched here.
+_MARKER = re.compile(
+    r"^SMOKE_OK assistant=(?P<assistant>\S+) capability=(?P<capability>\S+)(?P<rest>.*)$",
+    re.MULTILINE,
+)
+_RAG_FIELDS = re.compile(r"documents=(?P<documents>\d+) results=(?P<results>\d+)")
 
 
-def _smoke_target() -> str | None:
-    """Real-repo target from ``SERTOR_SMOKE_TARGET`` (CI: PgnToFen); None → synthetic fixture."""
+def _smoke_target(capability: str) -> str | None:
+    """Real-repo target from ``SERTOR_SMOKE_TARGET`` (CI: PgnToFen) — rag only; else synthetic.
+
+    Only the ``rag`` capability indexes content, so the real target is meaningful only there. The
+    deposit-only capabilities (``wiki``/``flow``) always use the synthetic fixture.
+    """
+    if capability != "rag":
+        return None
     raw = os.environ.get("SERTOR_SMOKE_TARGET", "").strip()
     if not raw:
         return None
@@ -54,12 +76,12 @@ def _smoke_target() -> str | None:
     return str(target.resolve())
 
 
-def _smoke_command(target: str | None) -> list[str]:
+def _smoke_command(assistant: str, capability: str, target: str | None) -> list[str]:
     """Platform-specific invocation of the smoke script (ps1 on Windows, sh elsewhere).
 
-    When ``target`` is set it is forwarded so the script runs on that real repo: ``-Target <path>``
-    on Windows, ``master <path>`` (REF then TARGET positional) on POSIX. Without it the script falls
-    back to its neutral synthetic fixture.
+    The assistant/capability are passed as flags; ``target`` (rag only) is forwarded so the script
+    runs on that real repo. On POSIX the positional contract is ``REF [TARGET]`` followed by the
+    flags (the script parses positionals and flags independently).
     """
     if sys.platform == "win32":
         script = SCRIPTS_DIR / "smoke.ps1"
@@ -67,13 +89,15 @@ def _smoke_command(target: str | None) -> list[str]:
         if pwsh is None:
             pytest.skip("no PowerShell (pwsh/powershell) in PATH — Windows smoke not runnable")
         cmd = [pwsh, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script)]
+        cmd += ["-Assistant", assistant, "-Capability", capability]
         if target is not None:
             cmd += ["-Target", target]
         return cmd
     script = SCRIPTS_DIR / "smoke.sh"
-    cmd = ["bash", str(script)]
+    cmd = ["bash", str(script), "master"]  # positional REF
     if target is not None:
-        cmd += ["master", target]  # positional: REF then TARGET (see scripts/smoke.sh usage)
+        cmd += [target]  # positional TARGET (REF then TARGET — see scripts/smoke.sh usage)
+    cmd += ["--assistant", assistant, "--capability", capability]
     return cmd
 
 
@@ -84,24 +108,27 @@ def _preconditions_or_skip() -> None:
         pytest.skip("bash not in PATH — POSIX smoke not runnable")
 
 
-def test_host_smoke_install_index_doctor_search():
-    """The smoke script installs from git+url@master and drives index→doctor→search to green.
+@pytest.mark.parametrize("assistant", ASSISTANTS)
+@pytest.mark.parametrize("capability", CAPABILITIES)
+def test_host_smoke(assistant: str, capability: str):
+    """The smoke script installs from git+url@master for (assistant, capability) and asserts green.
 
-    Asserts exit 0 and the SMOKE_OK marker with documents>0 (the cwd/anchor regression would yield
-    documents=0) and results>0. On failure, the captured output is surfaced for diagnosis. Runs on
-    ``SERTOR_SMOKE_TARGET`` if set (CI: PgnToFen), else on the neutral synthetic fixture.
+    For ``rag`` it also drives index→doctor→search and asserts documents>0 (the cwd/anchor
+    regression would yield documents=0) and results>0. For ``wiki``/``flow`` it asserts the deposit
+    marker. On failure the captured output is surfaced for diagnosis.
     """
     _preconditions_or_skip()
-    target = _smoke_target()
+    target = _smoke_target(capability)
     script = (SCRIPTS_DIR / "smoke.ps1") if sys.platform == "win32" else (SCRIPTS_DIR / "smoke.sh")
     assert script.is_file(), f"smoke script missing: {script}"
 
     proc = subprocess.run(
-        _smoke_command(target),
+        _smoke_command(assistant, capability, target),
         cwd=str(REPO_ROOT),
         capture_output=True,
         text=True,
-        timeout=900,  # git+url install + isolated venv sync + index/doctor/search (~1-2 min)
+        # git+url install + isolated venv sync; flow additionally pulls spec-kit via specify init.
+        timeout=1200,
     )
     combined = proc.stdout + "\n" + proc.stderr
     assert proc.returncode == 0, (
@@ -109,10 +136,16 @@ def test_host_smoke_install_index_doctor_search():
     )
     match = _MARKER.search(combined)
     assert match, f"no SMOKE_OK marker in output\n--- stdout/stderr ---\n{combined[-4000:]}"
-    documents = int(match.group(2))
-    results = int(match.group(3))
-    assert documents > 0, f"documents={documents} (expected > 0; cwd/anchor bug gives 0)"
-    assert results > 0, f"results={results} (expected > 0)"
+    assert match.group("assistant") == assistant, "marker assistant mismatch"
+    assert match.group("capability") == capability, "marker capability mismatch"
+
+    if capability == "rag":
+        fields = _RAG_FIELDS.search(match.group("rest"))
+        assert fields, f"rag marker missing documents/results\n{combined[-2000:]}"
+        documents = int(fields.group("documents"))
+        results = int(fields.group("results"))
+        assert documents > 0, f"documents={documents} (expected > 0; cwd/anchor bug gives 0)"
+        assert results > 0, f"results={results} (expected > 0)"
 
 
 def test_no_sertor_core_import():
