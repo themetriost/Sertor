@@ -108,6 +108,13 @@ def build_specify_command(profile: GovernanceProfile) -> list[str]:
         script_value,
         "--no-git",
         "--force",
+        # install != run: do NOT require the assistant's CLI at install time. spec-kit's `init`
+        # aborts (exit 1) when the selected agent has `requires_cli=True` and its binary is absent
+        # (true for `--ai claude`, not `--ai copilot`), so `sertor-flow install --assistant claude`
+        # failed on a bare host (e.g. CI) while copilot succeeded. `--ignore-agent-tools` skips that
+        # check (verified vs spec-kit v0.8.18) -> deposit is host-agnostic and consistent across
+        # assistants. The assets land regardless; the agent runs them later.
+        "--ignore-agent-tools",
     ]
 
 

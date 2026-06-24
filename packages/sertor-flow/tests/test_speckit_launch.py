@@ -73,6 +73,18 @@ def test_launch_claude_runs_specify_with_ai_claude(tmp_path: Path):
     assert cwd == tmp_path
 
 
+def test_specify_command_ignores_agent_tools_for_install_not_run(tmp_path: Path):
+    """install != run: the launch passes `--ignore-agent-tools` so `specify init` does NOT require
+    the assistant's CLI at install time. Without it spec-kit aborts (exit 1) when the agent has
+    `requires_cli=True` (true for `--ai claude`, not `--ai copilot`) and its binary is absent,
+    breaking `sertor-flow install --assistant claude` on a bare host (e.g. CI). The flag makes the
+    deposit host-agnostic and consistent across assistants."""
+    for assistant in ("claude", "copilot-cli"):
+        profile = build_governance_profile(tmp_path, assistant=assistant, script="sh")
+        cmd = build_specify_command(profile)
+        assert "--ignore-agent-tools" in cmd, f"{assistant}: init must skip the agent-tool check"
+
+
 def test_launch_copilot_cli_runs_specify_with_ai_copilot(tmp_path: Path):
     """FEAT-012: assistant=copilot-cli → command carries `--ai copilot` (mapped); layout created."""
     profile = build_governance_profile(tmp_path, assistant="copilot-cli", script="bash")
