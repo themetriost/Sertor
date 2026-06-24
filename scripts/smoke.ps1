@@ -89,6 +89,9 @@ Write-Host "[smoke] source = $Source"
 Get-ChildItem Env: | Where-Object { $_.Name -like "SERTOR_*" } | ForEach-Object {
     Remove-Item "Env:$($_.Name)" -ErrorAction SilentlyContinue
 }
+# Also drop an inherited active venv (e.g. CI's `uv sync` sets VIRTUAL_ENV=<checkout>\.venv); `uv run
+# --project .sertor` would warn it is ignored. Unset it so the smoke env stays clean (parity with .sh).
+Remove-Item Env:VIRTUAL_ENV -ErrorAction SilentlyContinue
 $env:UV_NO_WORKSPACE = "1"   # prevent uv from discovering the local Sertor workspace
 
 try {
