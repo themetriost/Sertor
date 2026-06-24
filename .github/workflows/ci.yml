@@ -4,6 +4,7 @@ on:
   push:
     branches: [master]
   pull_request:
+  workflow_dispatch:
 
 # Cancel superseded runs on the same ref to save runner minutes.
 concurrency:
@@ -53,3 +54,49 @@ jobs:
 
       - name: Tests — sertor-flow (governance installer)
         run: uv run pytest packages/sertor-flow/tests -m "not cloud and not integration"
+
+  # End-to-end host smoke (FEAT-003 epica debito-tecnico): installs the RAG capability from
+  # git+url@master exactly as a third-party host would, then drives index→doctor→search to green.
+  # It pulls `master` (the real distribution channel), so it is a POST-MERGE / on-demand guardian —
+  # NOT a per-PR gate (it does not test the PR's own diff). Runs only on push to master and on
+  # manual dispatch. The host runs OUTSIDE the checkout with a scrubbed env (provider = hash).
+  #
+  # Target = the DEDICATED real-world repo `themetriost/PgnToFen` (a C#/.NET project), cloned shallow
+  # into the runner temp and passed via SERTOR_SMOKE_TARGET. This exercises indexing of real .cs +
+  # README content, not just the synthetic fixture (which stays the local/default when the env var is
+  # unset). Hardening option (not used): pin the clone to a fixed commit (`git checkout <sha>`)
+  # instead of the default branch, for fully reproducible smoke content.
+  smoke:
+    name: smoke (${{ matrix.os }})
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Pin Python 3.12
+        run: uv python install 3.12
+
+      # Sync the workspace so pytest can collect (the root tests/conftest.py imports sertor_core).
+      # The smoke TEST itself imports only stdlib + pytest and drives the platform smoke script;
+      # the sync is only to satisfy collection, not the smoke flow (which installs from git+url).
+      - name: Sync (all workspace packages + dev extras)
+        run: uv sync --all-packages --extra dev --python 3.12
+
+      # Clone the dedicated real-world smoke target (shallow) into the runner temp, OUTSIDE the
+      # Sertor checkout (the smoke requires the host to live outside the workspace for isolation).
+      - name: Clone smoke target (PgnToFen)
+        run: git clone --depth 1 https://github.com/themetriost/PgnToFen "${{ runner.temp }}/pgntofen"
+
+      - name: Host smoke (install→index→doctor→search from git+url@master)
+        env:
+          SERTOR_SMOKE_TARGET: ${{ runner.temp }}/pgntofen
+        run: uv run pytest -m integration tests/integration/test_host_smoke.py -v
