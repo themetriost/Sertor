@@ -19,8 +19,10 @@ It writes the MCP server to `.mcp.json` (`mcpServers` root, where the CLI looks)
 
 - **Python ≥ 3.11** and **[`uv`](https://github.com/astral-sh/uv)** (the supported install path).
 - Network access to GitHub (Sertor ships via `git+url`, not PyPI yet).
-- An **embeddings provider** for the RAG: **Azure OpenAI** (`text-embedding-3-*`) *or* local
-  **[Ollama](https://ollama.com)** (`ollama pull nomic-embed-text`).
+- An **embeddings provider** for the RAG. The **default is `glove`** — local static word vectors,
+  **no credentials**, downloaded once per machine (~822 MB) on the first index. Alternatives:
+  **Azure OpenAI** (`text-embedding-3-*`, cloud, billable), local **[Ollama](https://ollama.com)**
+  (`ollama pull nomic-embed-text`), or **`hash`** (zero-download lexical floor, for airgapped/CI).
 
 Run each command **in the root of the target repository**.
 
@@ -32,19 +34,39 @@ Bring the full retrieval capability (index + search + MCP server) into an isolat
 runtime. Your sources are never touched; works even on non-Python repos.
 
 ```powershell
-# 1. install (Azure embeddings; use --backend local for Ollama)
-uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install rag --assistant copilot-cli --backend azure
+# 1. install — default local embeddings (provider `glove`, no credentials needed)
+uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install rag --assistant copilot-cli --backend local
 
-# 2. edit .sertor/.env and fill the empty secrets:
-#    AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY (skip for --backend local)
-
-# 3. index the repo (explicit step — install never indexes)
+# 2. index the repo (explicit step — install never indexes).
+#    The first index downloads the GloVe vectors once (~822 MB, cached per machine).
 uv run --project .sertor sertor-rag index .
 ```
+
+> **Cloud embeddings instead?** Add `--backend azure` to step 1, then fill `AZURE_OPENAI_ENDPOINT`
+> and `AZURE_OPENAI_API_KEY` in `.sertor/.env` **before** indexing. For another local engine set
+> `SERTOR_EMBED_PROVIDER=ollama` (or `hash`) in `.sertor/.env`. The default `glove` needs no `.env` editing.
 
 Then load the MCP server: in the **Copilot CLI** run `/mcp reload` (or restart) and verify with
 `/mcp show`. The `search_code` / `search_docs` / `search_combined` tools now answer over your code
 and docs. Quick check: `uv run --project .sertor sertor-rag search "how does X work?"`.
+
+### Refreshing to the latest Sertor
+
+`uvx` caches the built installer **per git revision**, so a plain re-run can reuse a **stale build**
+after Sertor's `master` moves. Force a fresh build with **`--refresh`**, then re-run the install
+(idempotent — it never overwrites your `.env` edits and updates the `.sertor/` runtime via `uv add`):
+
+```powershell
+# pull the latest Sertor and refresh the install (assets + runtime)
+uvx --refresh --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install rag --assistant copilot-cli --backend local
+
+# re-index with the updated runtime
+uv run --project .sertor sertor-rag index .
+```
+
+The same `--refresh` applies to `install wiki` and `sertor-flow install`. To also **remove** assets a
+new version dropped (not just refresh changed ones), use the `upgrade` verb — see
+[install.md §10](install.md#10-refresh-and-clean-uninstall).
 
 ## 2. Wiki — the project's living knowledge base
 
@@ -106,7 +128,7 @@ That target has been **consolidated into `copilot-cli`** — `copilot` is no lon
 1. **Re-install with the CLI target** on the same repo — non-destructive and idempotent:
 
    ```powershell
-   uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install rag --assistant copilot-cli --backend azure
+   uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install rag --assistant copilot-cli --backend local
    uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install wiki --assistant copilot-cli
    uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor-flow" sertor-flow install --assistant copilot-cli
    ```
