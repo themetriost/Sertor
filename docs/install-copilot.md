@@ -50,6 +50,24 @@ Then load the MCP server: in the **Copilot CLI** run `/mcp reload` (or restart) 
 `/mcp show`. The `search_code` / `search_docs` / `search_combined` tools now answer over your code
 and docs. Quick check: `uv run --project .sertor sertor-rag search "how does X work?"`.
 
+### Refreshing to the latest Sertor
+
+`uvx` caches the built installer **per git revision**, so a plain re-run can reuse a **stale build**
+after Sertor's `master` moves. Force a fresh build with **`--refresh`**, then re-run the install
+(idempotent — it never overwrites your `.env` edits and updates the `.sertor/` runtime via `uv add`):
+
+```powershell
+# pull the latest Sertor and refresh the install (assets + runtime)
+uvx --refresh --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install rag --assistant copilot-cli --backend local
+
+# re-index with the updated runtime
+uv run --project .sertor sertor-rag index .
+```
+
+The same `--refresh` applies to `install wiki` and `sertor-flow install`. To also **remove** assets a
+new version dropped (not just refresh changed ones), use the `upgrade` verb — see
+[install.md §10](install.md#10-refresh-and-clean-uninstall).
+
 ## 2. Wiki — the project's living knowledge base
 
 Install the **LLM Wiki** system: a cumulative, local knowledge base the assistant maintains as you
