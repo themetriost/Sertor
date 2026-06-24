@@ -44,8 +44,8 @@ wiki** — never in the executor's wiki.
    dependencies, media), `[rag] enabled=false` if the host has no RAG infrastructure, `[roles]` only if
    the host has agents. *This step is the judgment placeholder for the bootstrap of the config: when an
    install command generates it, the mechanical part becomes its responsibility.*
-1. **Structure (D).** `sertor-wiki-tools structure init --config <config> --json` — idempotent: creates
-   taxonomy folders + index + log, overwrites nothing.
+1. **Structure (D).** `uv run --project .sertor sertor-wiki-tools structure init --config <config> --json`
+   — idempotent: creates taxonomy folders + index + log, overwrites nothing.
 2. **Source reconnaissance (D+N).** `collect --json` for the inventory (at bootstrap it is empty; on the
    second run it is the anti-duplication check). Reading order for input sources: **README** → **dedicated doc** →
    **specs/requirements** if they exist → **code structure** (tree, entry points, public contracts —
@@ -76,7 +76,7 @@ wiki** — never in the executor's wiki.
 Avoids re-reading the entire repo: updates only what changed. Trigger = manually invoking the wiki
 capability; scope = changeset of the last commit. Lint/freshness here are **non-blocking**.
 
-1. Anchor the starting point with `sertor-wiki-tools scan --json` (pending files via mtime) and/or
+1. Anchor the starting point with `uv run --project .sertor sertor-wiki-tools scan --json` (pending files via mtime) and/or
    **delegate to the VCS role** (`[roles].vcs`) a read-only brief "`git log` + `git diff` from point X".
    X = date of the last log entry (or the last commit that touches the wiki). *(Git operations are
    delegated; if the host has no VCS role configured, ask the user how to obtain the diff.)*

@@ -16,7 +16,7 @@ increment at a time**. It is **judgment** (what to move/where/whether to split) 
    **update all incoming wikilinks** (from the backlinks computed in lint C) because area/slug change; update
    the index (line `- **[[slug]]** — summary` in the correct section). If splitting or rewriting, the resulting page
    must comply with [`../page-craft.md`](../page-craft.md) (atomicity, self-containment, links).
-3. **Verify hygiene after the move:** `sertor-wiki-tools lint --json` **and** `… validate --json` →
+3. **Verify hygiene after the move:** `uv run --project .sertor sertor-wiki-tools lint --json` **and** `… validate --json` →
    expected **0 broken links / 0 orphans / 0 naming**. If not, fix before continuing.
 4. Append a log entry `reorg` (pages moved from→to, corrected `type` values).
 
