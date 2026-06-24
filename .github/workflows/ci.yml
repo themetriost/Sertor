@@ -74,6 +74,8 @@ jobs:
       matrix:
         os: [windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -84,6 +86,17 @@ jobs:
 
       - name: Pin Python 3.12
         run: uv python install 3.12
+
+      # Sertor is a PRIVATE repo: the `uvx --from git+https://…/Sertor` install (and the nested
+      # `uv add sertor-core @ git+…`) clone it anonymously, which fails on a runner with no creds.
+      # Rewrite that one URL to carry the workflow GITHUB_TOKEN (read access to its own repo) so the
+      # clone authenticates. Scoped to Sertor only — the public PgnToFen clone stays anonymous.
+      - name: Authenticate git for the private Sertor repo (uvx/uv clone)
+        shell: bash
+        run: >
+          git config --global
+          url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/themetriost/Sertor".insteadOf
+          "https://github.com/themetriost/Sertor"
 
       # Sync the workspace so pytest can collect (the root tests/conftest.py imports sertor_core).
       # The smoke TEST itself imports only stdlib + pytest and drives the platform smoke script;
