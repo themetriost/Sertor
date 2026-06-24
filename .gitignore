@@ -27,6 +27,8 @@ build/
 # Manifest + lockfile dell'indicizzazione incrementale (046, FEAT-009): rigenerabili.
 **/index_manifest.sqlite
 **/.index.lock
+# Stato di salute RAG (076, E10-FEAT-011): rigenerabile a ogni SessionEnd, mai versionato.
+**/.sertor/.rag-health.json
 
 # Log rigenerabili (re-index, ecc.)
 **/*.log

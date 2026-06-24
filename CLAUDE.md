@@ -357,7 +357,14 @@ chi dovrebbe?* Corollari operativi:
    file di `wiki/log/`) — l'output del `Read` entra **intero** nel contesto, nessun cap — e poi a **mostrare
    all'utente l'executive summary** della roadmap. L'hook *innesca*, il `Read` *trasporta*, il rituale tiene
    il *contenuto* vero.
-5. **Re-index del corpus toccato** — se lo step ha modificato **file indicizzati nel corpus RAG**,
+5. **Re-index del corpus toccato** —
+   > **ENFORCED VIA HOOK (E10-FEAT-011):** il re-index a fine sessione è ora un hook deterministico
+   > (`rag-freshness.ps1`, `SessionEnd`). Confine D↔N: l'hook re-indicizza e verifica (meccanico);
+   > l'agente esegue la correzione indotta all'avvio se lo stato è degradato (giudizio). Il testo
+   > seguente descrive ancora la rete agente (valida finché il buco filtro-metadata `where` non è
+   > chiuso da E12 e finché l'hook non è su tutti gli ospiti).
+
+   se lo step ha modificato **file indicizzati nel corpus RAG**,
    ricostruisci l'indice, così il RAG di dogfooding non serve mai contesto stantio (è l'essenza:
    contesto dell'agente sempre reale). **Modello a corpus unico (decisione 2026-06-10):** il wiki vive
    **dentro** il progetto ospite *by design* (lo crea così l'install della futura CLI) → è parte del
@@ -397,7 +404,13 @@ chi dovrebbe?* Corollari operativi:
    marca lo stato). Fa parte dell'**asset installabile** (`claude-md-block.md`): gli ospiti ricevono
    questa pratica con il sistema-wiki. Vedi [[step-ritual]] e la panoramica [[sertor-in-parole-semplici]].
 
-8. **Smoke test del RAG di dogfooding** — **allo stesso momento del commit** dello step (specie dopo
+8. **Smoke test del RAG di dogfooding** —
+   > **ENFORCED VIA HOOK (E10-FEAT-011):** la verifica di salute (`sertor-rag doctor`) è ora parte
+   > dell'hook `rag-freshness.ps1` (`SessionEnd`). Il buco del filtro metadata `where` (guasto storico
+   > 2026-06-19) **non** è coperto dall'hook (promosso a E12-FEAT-011 usabilità) → il rituale punto 8
+   > dell'agente resta la rete per quel buco specifico.
+
+   **allo stesso momento del commit** dello step (specie dopo
    un re-index), il flusso principale **esercita il server MCP `sertor-rag`** per verificare che sia
    *vivo e fresco*, non solo che l'indice su disco esista. Il test DEVE colpire il **path del filtro
    metadata**: `search_code` **e** `search_docs` — **non basta `search_combined`** (la query con `where`

@@ -68,7 +68,7 @@
 **File**: `packages/sertor/src/sertor_installer/assets/rag/settings.rag-freshness.json` (NUOVO)
 → dipende da: nessuno
 
-- [ ] Crea il file `packages/sertor/src/sertor_installer/assets/rag/settings.rag-freshness.json`
+- [x] Crea il file `packages/sertor/src/sertor_installer/assets/rag/settings.rag-freshness.json`
       con il payload di merge della voce `SessionEnd` per Claude nel **formato annidato nativo**
       (contratto `contracts/freshness-hook-wiring.md` §1):
       ```json
@@ -77,11 +77,11 @@
         "command": "$d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; & (Join-Path $d '.claude/hooks/rag-freshness.ps1')"
       } ] } ] } }
       ```
-- [ ] Verifica che il formato sia **annidato** (forma `{hooks:{SessionEnd:[{hooks:[...]}]}}`) — lo
+- [x] Verifica che il formato sia **annidato** (forma `{hooks:{SessionEnd:[{hooks:[...]}]}}`) — lo
       stesso usato da `settings.rag-usage.json` e `settings.memory-capture.json` (gemello).
-- [ ] Verifica che il campo `timeout` (non `timeoutSec`) sia usato per Claude (il `timeoutSec` è
+- [x] Verifica che il campo `timeout` (non `timeoutSec`) sia usato per Claude (il `timeoutSec` è
       il formato Copilot — W1 del contratto).
-- [ ] Verifica che il `command` costruisca il path in modo **host-agnostico**: `$env:CLAUDE_PROJECT_DIR`
+- [x] Verifica che il `command` costruisca il path in modo **host-agnostico**: `$env:CLAUDE_PROJECT_DIR`
       → fallback `'.'` (pattern `memory-capture.ps1` — research D-0a).
 
 ### TASK-S02 [P] — Crea `assets/rag/settings.rag-freshness-start.json` (voce SessionStart Claude)
@@ -89,7 +89,7 @@
 **File**: `packages/sertor/src/sertor_installer/assets/rag/settings.rag-freshness-start.json` (NUOVO)
 → dipende da: nessuno
 
-- [ ] Crea il file `packages/sertor/src/sertor_installer/assets/rag/settings.rag-freshness-start.json`
+- [x] Crea il file `packages/sertor/src/sertor_installer/assets/rag/settings.rag-freshness-start.json`
       con il payload di merge della voce `SessionStart` per Claude (contratto §1):
       ```json
       { "hooks": { "SessionStart": [ { "hooks": [ {
@@ -98,11 +98,11 @@
         "command": "$d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; & (Join-Path $d '.claude/hooks/rag-freshness-start.ps1') -Assistant claude"
       } ] } ] } }
       ```
-- [ ] Verifica che `statusMessage` sia presente (feedback user-visible all'avvio, coerente con il
+- [x] Verifica che `statusMessage` sia presente (feedback user-visible all'avvio, coerente con il
       pattern Claude per gli hook informativi).
-- [ ] Verifica il timeout 10 (s) — inferiore a quello SessionEnd (15 s) perché il SessionStart è
+- [x] Verifica il timeout 10 (s) — inferiore a quello SessionEnd (15 s) perché il SessionStart è
       solo lettura del file di stato, non re-index (NFR-2).
-- [ ] Verifica che il `command` passi `-Assistant claude` esplicitamente allo script (lo script usa
+- [x] Verifica che il `command` passi `-Assistant claude` esplicitamente allo script (lo script usa
       il parametro per adattare il messaggio emesso — data-model §2b).
 
 ---
@@ -117,11 +117,11 @@
 **File**: `packages/sertor/src/sertor_installer/assets/rag/hooks/rag-freshness.ps1` (NUOVO)
 → dipende da: nessuno
 
-- [ ] Crea il file `packages/sertor/src/sertor_installer/assets/rag/hooks/rag-freshness.ps1`
+- [x] Crea il file `packages/sertor/src/sertor_installer/assets/rag/hooks/rag-freshness.ps1`
       seguendo la **disciplina di `memory-capture.ps1`** (research D-0a): wrapper `SessionEnd` thin,
       `try/catch` globale, exit 0 **sempre** (FR-017, R-2), payload JSON tollerante da stdin,
       root da `$env:CLAUDE_PROJECT_DIR` → `hook.cwd` → `'.'`.
-- [ ] Implementa la **logica di orchestrazione** (NON change-detection — FR-002):
+- [x] Implementa la **logica di orchestrazione** (NON change-detection — FR-002):
       1. `uv run sertor-rag index .` **incondizionato** (skip-quando-nulla-cambia delegato al core,
          FR-001/002/003; Principio XI — mai importare `sertor_core`).
       2. `uv run sertor-rag doctor --json` → cattura stdout e exit code (FR-005).
@@ -133,13 +133,13 @@
            messaggio prominente su stdout/stderr (FR-009).
          - `healthy`: riscrive il file con `verdict: "healthy"` e campi minimali (INV-1, FR-010 —
            **non cancella** il file, così il segnale d'avvio legge `healthy` e fa no-op).
-- [ ] Verifica che **nessun LLM sia invocato** (Principio D↔N, NFR-5): l'hook chiama solo
+- [x] Verifica che **nessun LLM sia invocato** (Principio D↔N, NFR-5): l'hook chiama solo
       `sertor-rag` via `uv run`, mai `openai`/`anthropic`/modelli.
-- [ ] Verifica che lo script sia **host-agnostico** (NFR-4): nessun path hardcodato a `Sertor`;
+- [x] Verifica che lo script sia **host-agnostico** (NFR-4): nessun path hardcodato a `Sertor`;
       funziona su un ospite qualsiasi con la capacità `rag` installata.
-- [ ] Verifica che nessun segreto finisca nel file di stato (NFR-3/INV-2): `reason` proviene da
+- [x] Verifica che nessun segreto finisca nel file di stato (NFR-3/INV-2): `reason` proviene da
       `doctor --json` (già scrubbed dai vehicle), mai dal contenuto di `.sertor/.env`.
-- [ ] Verifica `exit 0` **anche se `sertor-rag index`/`doctor` falliscono** (R-2/FR-017):
+- [x] Verifica `exit 0` **anche se `sertor-rag index`/`doctor` falliscono** (R-2/FR-017):
       il `try/catch` assorbe ogni eccezione PowerShell; il file di stato NON viene scritto in caso
       di errore interno catastrofico (silenzio onesto > dati corrotti).
 
@@ -148,9 +148,9 @@
 **File**: `packages/sertor/src/sertor_installer/assets/rag/hooks/rag-freshness-start.ps1` (NUOVO)
 → dipende da: nessuno
 
-- [ ] Crea il file `packages/sertor/src/sertor_installer/assets/rag/hooks/rag-freshness-start.ps1`
+- [x] Crea il file `packages/sertor/src/sertor_installer/assets/rag/hooks/rag-freshness-start.ps1`
       con parametro `-Assistant` (valore atteso: `claude`; estendibile al futuro senza breaking change).
-- [ ] Implementa la **logica di lettura e induzione** (research D-2 — D↔N):
+- [x] Implementa la **logica di lettura e induzione** (research D-2 — D↔N):
       1. Legge `.sertor/.rag-health.json` nel path dell'host (`$env:CLAUDE_PROJECT_DIR` → `'.'`).
       2. Se il file **non esiste** o `verdict == "healthy"` → **no-op** (exit 0, nessun output):
          NFR-6 idempotenza; nessun inducement perpetuo (FR-015, INV-1).
@@ -158,19 +158,19 @@
          che Claude riceve come contesto SessionStart — FR-013): include `reason` e l'istruzione
          «esegui `sertor-rag index .` e/o riconnetti il server MCP prima di procedere col lavoro»
          (FR-013, US3-AC1).
-- [ ] Verifica il **confine D↔N** (FR-014): lo script **NON** lancia `sertor-rag index` da sé
+- [x] Verifica il **confine D↔N** (FR-014): lo script **NON** lancia `sertor-rag index` da sé
       (sarebbe giudizio + costo bloccante all'avvio) — emette solo la direttiva, l'agente decide
       ed esegue. Nessun LLM invocato (NFR-5).
-- [ ] Verifica che exit sia **sempre 0** (FR-017): il `try/catch` assorbe file mancante, JSON
+- [x] Verifica che exit sia **sempre 0** (FR-017): il `try/catch` assorbe file mancante, JSON
       malformato, qualsiasi errore di lettura.
-- [ ] Verifica che lo script sia **host-agnostico** (NFR-4): nessun path hardcodato a `Sertor`.
+- [x] Verifica che lo script sia **host-agnostico** (NFR-4): nessun path hardcodato a `Sertor`.
 
 ### TASK-F03 [P] — Estendi `RUNTIME_IGNORES` nel kit con `.sertor/.rag-health.json`
 
 **File**: `packages/sertor-install-kit/src/sertor_install_kit/gitignore_append.py` (MODIFICA)
 → dipende da: nessuno
 
-- [ ] Aggiungi `".sertor/.rag-health.json"` alla tupla `RUNTIME_IGNORES` (riga 14):
+- [x] Aggiungi `".sertor/.rag-health.json"` alla tupla `RUNTIME_IGNORES` (riga 14):
       ```python
       RUNTIME_IGNORES = (
           ".sertor/.venv/",
@@ -181,12 +181,12 @@
       ```
       (additivo, non-breaking — research D-1 / data-model §1 INV-3; unica fonte di verità per il
       `.gitignore` dell'ospite).
-- [ ] Verifica che il test esistente `packages/sertor-install-kit/tests/unit/test_gitignore_append.py`
+- [x] Verifica che il test esistente `packages/sertor-install-kit/tests/unit/test_gitignore_append.py`
       (riga `:19` circa: `assert all(entry in text for entry in RUNTIME_IGNORES)`) sia ancora verde
       dopo l'aggiunta (la nuova voce appare nel `.gitignore` generato).
-- [ ] Verifica che `append_gitignore` (con default `RUNTIME_IGNORES`) scriva la nuova riga nel
+- [x] Verifica che `append_gitignore` (con default `RUNTIME_IGNORES`) scriva la nuova riga nel
       `.gitignore` host quando chiamato dall'installer.
-- [ ] Verifica che `remove_gitignore_lines` rimuova anche la nuova voce su uninstall (la funzione
+- [x] Verifica che `remove_gitignore_lines` rimuova anche la nuova voce su uninstall (la funzione
       itera su `RUNTIME_IGNORES` — comportamento ereditato, nessuna modifica aggiuntiva richiesta).
 
 ### TASK-F04 — Aggiorna dogfood `.claude/`: copia script + voci settings
@@ -195,21 +195,21 @@
          `.claude/settings.json` (MODIFICA)
 → dipende da: TASK-F01, TASK-F02 (script sorgente devono esistere)
 
-- [ ] Copia `packages/sertor/src/sertor_installer/assets/rag/hooks/rag-freshness.ps1` →
+- [x] Copia `packages/sertor/src/sertor_installer/assets/rag/hooks/rag-freshness.ps1` →
       `.claude/hooks/rag-freshness.ps1` (**byte-identico** — la guardia di sync TASK-US9-01 la
       verifica; FR-024).
-- [ ] Copia `packages/sertor/src/sertor_installer/assets/rag/hooks/rag-freshness-start.ps1` →
+- [x] Copia `packages/sertor/src/sertor_installer/assets/rag/hooks/rag-freshness-start.ps1` →
       `.claude/hooks/rag-freshness-start.ps1` (**byte-identico**; FR-024).
-- [ ] Aggiungi la voce `SessionEnd` per `rag-freshness` in `.claude/settings.json` via **merge
+- [x] Aggiungi la voce `SessionEnd` per `rag-freshness` in `.claude/settings.json` via **merge
       dedup** (lo stesso payload di `assets/rag/settings.rag-freshness.json`): la nuova voce va
       accanto a quella di `memory-capture` e `sertor-rag-usage-check` **senza toccarle** (FR-016/018,
       research D-3).
-- [ ] Aggiungi la voce `SessionStart` per `rag-freshness-start` in `.claude/settings.json` (payload
+- [x] Aggiungi la voce `SessionStart` per `rag-freshness-start` in `.claude/settings.json` (payload
       di `assets/rag/settings.rag-freshness-start.json`): va accanto alla voce `wiki-session-start`
       esistente, **senza toccarla** (FR-016).
-- [ ] Verifica che `.claude/settings.json` contenga **entrambe** le nuove voci dopo il merge e che
+- [x] Verifica che `.claude/settings.json` contenga **entrambe** le nuove voci dopo il merge e che
       le voci pre-esistenti (`wiki`, `memory-capture`, `sertor-rag-usage-check`) siano **intatte**.
-- [ ] Verifica che `.sertor/.rag-health.json` sia presente in `.gitignore` (propagato da TASK-F03 +
+- [x] Verifica che `.sertor/.rag-health.json` sia presente in `.gitignore` (propagato da TASK-F03 +
       `append_gitignore` — oppure aggiunto manualmente se il `.gitignore` dogfood non è gestito
       dall'installer su questo host).
 
@@ -228,7 +228,7 @@
 
 **Mappa FR**: FR-001/002/004/016/017/020/021/022 · US1/US2/US4/US6/US8
 
-- [ ] Aggiungi le costanti per l'hook `SessionEnd` rag-freshness, **dopo** il blocco
+- [x] Aggiungi le costanti per l'hook `SessionEnd` rag-freshness, **dopo** il blocco
       `_COPILOT_MEMORY_WIRING_SENTINEL` (research D-0b, data-model §3):
       ```python
       # RAG freshness hook – SessionEnd (E10-FEAT-011)
@@ -238,7 +238,7 @@
       _FRESHNESS_SETTINGS     = "rag/settings.rag-freshness.json"
       _COPILOT_FRESHNESS_END_WIRING_SENTINEL = "(generated: copilot freshness-end hooks)"
       ```
-- [ ] Aggiungi la factory `_copilot_freshness_end_specs() -> list[HookEntrySpec]` (gemella di
+- [x] Aggiungi la factory `_copilot_freshness_end_specs() -> list[HookEntrySpec]` (gemella di
       `_copilot_memory_hook_specs`) che genera la voce SessionEnd **nativa Copilot** (formato piatto
       `version:1`/`timeoutSec` — contratto §2, R-1):
       ```python
@@ -248,9 +248,9 @@
               f"{_PWSH} {_FRESHNESS_HOOK_TARGET_COPILOT}", 15,
           )]
       ```
-- [ ] Verifica che `HookEntrySpec` sia già importato (riga `:60` circa di `install_rag.py`) —
+- [x] Verifica che `HookEntrySpec` sia già importato (riga `:60` circa di `install_rag.py`) —
       nessun import aggiuntivo richiesto.
-- [ ] Verifica (su carta) che `render_copilot_hooks([HookEntrySpec("SessionEnd","command",…,15)])` →
+- [x] Verifica (su carta) che `render_copilot_hooks([HookEntrySpec("SessionEnd","command",…,15)])` →
       formato `{"version":1,"hooks":{"SessionEnd":[{"type":"command","command":"…","timeoutSec":15}]}}`
       (piatto, mai `shell`/`statusMessage`/`timeout` — W1 del contratto, R-1).
 
@@ -261,7 +261,7 @@
 
 **Mappa FR**: FR-012/013/014/016/020/021/022 · US3/US8
 
-- [ ] Aggiungi le costanti per il segnale `SessionStart` rag-freshness, **dopo** le costanti W1:
+- [x] Aggiungi le costanti per il segnale `SessionStart` rag-freshness, **dopo** le costanti W1:
       ```python
       # RAG freshness signal – SessionStart (E10-FEAT-011)
       _FRESHNESS_START_ASSET  = "rag/hooks/rag-freshness-start.ps1"
@@ -269,7 +269,7 @@
       _FRESHNESS_START_SETTINGS = "rag/settings.rag-freshness-start.json"
       _COPILOT_FRESHNESS_START_WIRING_SENTINEL = "(generated: copilot freshness-start hooks)"
       ```
-- [ ] Aggiungi la factory `_copilot_freshness_start_specs() -> list[HookEntrySpec]` che genera la
+- [x] Aggiungi la factory `_copilot_freshness_start_specs() -> list[HookEntrySpec]` che genera la
       voce SessionStart **nativa Copilot** come **prompt statico** (nessuno script — A-005, research
       D-2, contratto §2, W5):
       ```python
@@ -283,10 +283,10 @@
               10,
           )]
       ```
-- [ ] Verifica che la factory **non depositi** uno script `rag-freshness-start.ps1` su Copilot
+- [x] Verifica che la factory **non depositi** uno script `rag-freshness-start.ps1` su Copilot
       (W5 del contratto: SessionStart Copilot = prompt statico). Lo script `.ps1` è un artefatto
       **solo Claude** (data-model §4 nota artefatto (b)).
-- [ ] Verifica (su carta) che `render_copilot_hooks([HookEntrySpec("SessionStart","prompt",…,10)])` →
+- [x] Verifica (su carta) che `render_copilot_hooks([HookEntrySpec("SessionStart","prompt",…,10)])` →
       `{"version":1,"hooks":{"SessionStart":[{"type":"prompt","prompt":"…","timeoutSec":10}]}}`.
 
 ### TASK-US3-01 — W3: estendi `build_rag_plan` con i 4 nuovi artefatti
@@ -296,9 +296,9 @@
 
 **Mappa FR**: FR-020/021/022 · US8-AC1
 
-- [ ] Individua la sezione di `build_rag_plan` che emette gli artefatti hook esistenti (blocco
+- [x] Individua la sezione di `build_rag_plan` che emette gli artefatti hook esistenti (blocco
       `memory-capture` FILE + SETTINGS_MERGE, circa righe `:317-340`).
-- [ ] Aggiungi **in coda** al blocco hook i 4 nuovi artefatti rag-freshness (data-model §4):
+- [x] Aggiungi **in coda** al blocco hook i 4 nuovi artefatti rag-freshness (data-model §4):
       ```python
       # RAG freshness hook – SessionEnd (E10-FEAT-011)
       plan.append(Artifact(
@@ -328,11 +328,11 @@
           WriteStrategy.MERGE_DEDUP,
       ))
       ```
-- [ ] Verifica che lo script `rag-freshness-start.ps1` sia emesso **solo per Claude** (`not is_copilot`),
+- [x] Verifica che lo script `rag-freshness-start.ps1` sia emesso **solo per Claude** (`not is_copilot`),
       in coerenza con W5 del contratto e data-model §4 nota artefatto (b).
-- [ ] Verifica che i target siano coerenti con i path di `sertor_owned_paths` (da aggiornare in
+- [x] Verifica che i target siano coerenti con i path di `sertor_owned_paths` (da aggiornare in
       TASK-US4-01) — `plan ⊆ owned` (test di copertura esistente).
-- [ ] Verifica additività: gli artefatti pre-esistenti (`memory-capture`, `rag-usage`, skill, agente)
+- [x] Verifica additività: gli artefatti pre-esistenti (`memory-capture`, `rag-usage`, skill, agente)
       **non** sono rimossi o spostati; i nuovi vengono aggiunti in coda (non-regressione SC-010).
 
 ### TASK-US4-01 — W4: estendi `_rag_hook_fragment` con i 2 nuovi sentinel Copilot
@@ -342,23 +342,23 @@
 
 **Mappa FR**: FR-021 · US8-AC2
 
-- [ ] Individua la funzione `_rag_hook_fragment` (circa riga `:424`) che fa dispatch sui sentinel
+- [x] Individua la funzione `_rag_hook_fragment` (circa riga `:424`) che fa dispatch sui sentinel
       Copilot generati. Oggi gestisce `_COPILOT_RAG_WIRING_SENTINEL` e
       `_COPILOT_MEMORY_WIRING_SENTINEL`.
-- [ ] Estendi il dispatch con i 2 nuovi sentinel (art-aware, riuso `render_copilot_hooks`):
+- [x] Estendi il dispatch con i 2 nuovi sentinel (art-aware, riuso `render_copilot_hooks`):
       ```python
       elif art.source == _COPILOT_FRESHNESS_END_WIRING_SENTINEL:
           return render_copilot_hooks(_copilot_freshness_end_specs())
       elif art.source == _COPILOT_FRESHNESS_START_WIRING_SENTINEL:
           return render_copilot_hooks(_copilot_freshness_start_specs())
       ```
-- [ ] Verifica che `render_copilot_hooks` sia già importato in `install_rag.py` (riga `:60`):
+- [x] Verifica che `render_copilot_hooks` sia già importato in `install_rag.py` (riga `:60`):
       `from sertor_installer.surfaces import HookEntrySpec, render_copilot_hooks, render_custom_agent`.
       Nessun import aggiuntivo richiesto.
-- [ ] Verifica (su carta) che il risultante JSON Copilot per `SessionEnd` sia nel formato piatto
+- [x] Verifica (su carta) che il risultante JSON Copilot per `SessionEnd` sia nel formato piatto
       nativo (R-1/W1): `{"version":1,"hooks":{"SessionEnd":[{"type":"command","command":"…",
       "timeoutSec":15}]}}` — mai il formato Claude annidato.
-- [ ] Verifica (su carta) che il risultante JSON Copilot per `SessionStart` sia un prompt statico
+- [x] Verifica (su carta) che il risultante JSON Copilot per `SessionStart` sia un prompt statico
       (W5): `{"version":1,"hooks":{"SessionStart":[{"type":"prompt","prompt":"…","timeoutSec":10}]}}`.
 
 ### TASK-US5-01 — W5: estendi `sertor_owned_paths` + lifecycle uninstall/upgrade
@@ -368,25 +368,25 @@
 
 **Mappa FR**: FR-022/023 · US9-AC1
 
-- [ ] Individua `sertor_owned_paths` (circa riga `:510`). Oggi gestisce `owned_files` per
+- [x] Individua `sertor_owned_paths` (circa riga `:510`). Oggi gestisce `owned_files` per
       `memory-capture.ps1` (Claude: `_MEMORY_HOOK_TARGET`, Copilot: `_MEMORY_HOOK_TARGET_COPILOT`)
       e per `sertor-rag-usage-check.ps1`.
-- [ ] Aggiungi ai **`owned_files`** i nuovi path (da rimuovere su uninstall / da aggiornare su
+- [x] Aggiungi ai **`owned_files`** i nuovi path (da rimuovere su uninstall / da aggiornare su
       upgrade — FR-023):
       - Claude: `_FRESHNESS_HOOK_TARGET` + `_FRESHNESS_START_TARGET`.
       - Copilot: `_FRESHNESS_HOOK_TARGET_COPILOT` (solo SessionEnd script — il SessionStart Copilot
         è un prompt generato, nessun file `.ps1` depositato — W5 del contratto).
-- [ ] Verifica che i `shared_edits` coprano le voci `SessionEnd`/`SessionStart` rag-freshness nello
+- [x] Verifica che i `shared_edits` coprano le voci `SessionEnd`/`SessionStart` rag-freshness nello
       stesso settings file degli altri hook (`_SETTINGS_TARGET` per Claude,
       `_COPILOT_HOOK_WIRING` per Copilot): le voci atterrano nel file già dichiarato come
       `SharedEdit` — già coperte dallo `SharedEdit(settings_target, SETTINGS, …)` esistente.
-- [ ] Verifica che l'**uninstall** sia già art-aware (FILE→`remove_path`; SETTINGS_MERGE→
+- [x] Verifica che l'**uninstall** sia già art-aware (FILE→`remove_path`; SETTINGS_MERGE→
       `remove_settings_entries` con `delete_if_empty` per `sertor-hooks.json` Copilot):
       il dispatch esistente `_apply_rag_lifecycle` gestisce i nuovi artefatti senza logica aggiuntiva.
       Conferma guardando circa riga `:554-607`.
-- [ ] Verifica che l'**upgrade** aggiorna i nuovi script FILE via `update_file_if_changed`
+- [x] Verifica che l'**upgrade** aggiorna i nuovi script FILE via `update_file_if_changed`
       (già gestito dal dispatch art-aware) e aggiorna le voci SETTINGS_MERGE.
-- [ ] Verifica che il test di copertura `plan ⊆ owned` resti verde: ogni nuovo `target_rel`
+- [x] Verifica che il test di copertura `plan ⊆ owned` resti verde: ogni nuovo `target_rel`
       degli artefatti aggiunti in TASK-US3-01 compare negli `owned_files` o `shared_edits`.
 
 ---
@@ -403,7 +403,7 @@
 
 **Mappa FR**: FR-019 · US7-AC1/AC2/AC3
 
-- [ ] Individua lo **step 5** del *Rituale di step* nel `CLAUDE.md` (sezione «Re-index del corpus
+- [x] Individua lo **step 5** del *Rituale di step* nel `CLAUDE.md` (sezione «Re-index del corpus
       toccato» — circa riga `:360` a partire dal confine di sessione). Aggiungi all'inizio del
       paragrafo l'annotazione:
       ```
@@ -413,7 +413,7 @@
       > (giudizio). Il testo seguente descrive ancora la rete agente (valida finché il buco
       > filtro-metadata `where` non è chiuso da E12 e finché l'hook non è su tutti gli ospiti).
       ```
-- [ ] Individua lo **step 8** del rituale (sezione «Smoke test del RAG di dogfooding» — circa
+- [x] Individua lo **step 8** del rituale (sezione «Smoke test del RAG di dogfooding» — circa
       riga `:400`). Aggiungi analoga annotazione:
       ```
       > **ENFORCED VIA HOOK (E10-FEAT-011):** la verifica di salute (`sertor-rag doctor`) è ora
@@ -421,12 +421,12 @@
       > (guasto storico 2026-06-19) non è coperto dall'hook (promosso a E12-FEAT-011 usabilità)
       > → il rituale punto 8 dell'agente resta la rete per quel buco specifico.
       ```
-- [ ] Verifica che le annotazioni documentino la **sfumatura D↔N** (FR-019, research D-4):
+- [x] Verifica che le annotazioni documentino la **sfumatura D↔N** (FR-019, research D-4):
       l'hook re-indicizza e verifica (meccanico), l'agente esegue la correzione indotta (giudizio).
-- [ ] Verifica che i due passi **non vengano rimossi** dal `CLAUDE.md` (research D-4: si
+- [x] Verifica che i due passi **non vengano rimossi** dal `CLAUDE.md` (research D-4: si
       riclassificano, non si eliminano — restano la rete per il buco `where` e per ospiti non ancora
       aggiornati).
-- [ ] Verifica che `CLAUDE.md` sia ancora well-formed dopo la modifica (nessun heading rotto,
+- [x] Verifica che `CLAUDE.md` sia ancora well-formed dopo la modifica (nessun heading rotto,
       nessun markdown malformato).
 
 ---
@@ -444,26 +444,26 @@
 
 **Mappa FR**: FR-016/020/022/023 · US8-AC1/US9-AC1 · CS-4
 
-- [ ] Crea il file `packages/sertor/tests/test_install_rag_freshness.py` (gemello di
+- [x] Crea il file `packages/sertor/tests/test_install_rag_freshness.py` (gemello di
       `test_install_rag_memory.py` — stessa struttura con `FakeCommandRunner`).
-- [ ] `test_freshness_hook_deposited_claude`: via plan-builder offline (`build_rag_plan` con
+- [x] `test_freshness_hook_deposited_claude`: via plan-builder offline (`build_rag_plan` con
       `assistant=CLAUDE`), verifica che `.claude/hooks/rag-freshness.ps1` sia un target FILE del
       piano (FR-020/US8-AC1).
-- [ ] `test_freshness_start_deposited_claude`: verifica che `.claude/hooks/rag-freshness-start.ps1`
+- [x] `test_freshness_start_deposited_claude`: verifica che `.claude/hooks/rag-freshness-start.ps1`
       sia un target FILE del piano Claude (FR-020/US8-AC1; solo Claude, non Copilot — W5).
-- [ ] `test_freshness_session_end_settings_claude`: verifica che `.claude/settings.json` sia un
+- [x] `test_freshness_session_end_settings_claude`: verifica che `.claude/settings.json` sia un
       target SETTINGS_MERGE del piano Claude con la voce `SessionEnd` rag-freshness (FR-020/US8-AC1).
-- [ ] `test_freshness_session_start_settings_claude`: verifica che `.claude/settings.json` sia un
+- [x] `test_freshness_session_start_settings_claude`: verifica che `.claude/settings.json` sia un
       target SETTINGS_MERGE del piano Claude con la voce `SessionStart` rag-freshness (FR-020/US8-AC1).
-- [ ] `test_freshness_isolated_from_memory_capture`: verifica che il piano contenga ENTRAMBE le
+- [x] `test_freshness_isolated_from_memory_capture`: verifica che il piano contenga ENTRAMBE le
       voci hook `memory-capture` E `rag-freshness` su `SessionEnd` come **artefatti distinti**
       (FR-016 — non fusi in uno script unico).
-- [ ] Test lifecycle — uninstall: dopo `build_rag_plan(op=UNINSTALL, assistant=CLAUDE)`, i path
+- [x] Test lifecycle — uninstall: dopo `build_rag_plan(op=UNINSTALL, assistant=CLAUDE)`, i path
       `_FRESHNESS_HOOK_TARGET` e `_FRESHNESS_START_TARGET` compaiono negli `owned_files` di
       `sertor_owned_paths` (verifica che siano rimossi su uninstall — FR-023/US9-AC1).
-- [ ] Test lifecycle — upgrade: lo script `rag-freshness.ps1` è aggiornato su upgrade
+- [x] Test lifecycle — upgrade: lo script `rag-freshness.ps1` è aggiornato su upgrade
       (`update_file_if_changed` nel dispatch lifecycle — FR-023).
-- [ ] Tutti `not cloud`, offline (nessun `uv`/ospite reale — NFR-1).
+- [x] Tutti `not cloud`, offline (nessun `uv`/ospite reale — NFR-1).
 
 ### TASK-US8-02 [P] — Test deposito Copilot: formato nativo + parità (US8, P1 Must)
 
@@ -472,21 +472,21 @@
 
 **Mappa FR**: FR-021 · US8-AC2 · CS-4
 
-- [ ] `test_freshness_hook_deposited_copilot`: via `build_rag_plan(assistant=COPILOT_CLI)`, verifica
+- [x] `test_freshness_hook_deposited_copilot`: via `build_rag_plan(assistant=COPILOT_CLI)`, verifica
       che `.github/hooks/rag-freshness.ps1` sia un target FILE del piano (FR-021/US8-AC2).
-- [ ] `test_freshness_start_NOT_deposited_copilot`: verifica che `.github/hooks/rag-freshness-start.ps1`
+- [x] `test_freshness_start_NOT_deposited_copilot`: verifica che `.github/hooks/rag-freshness-start.ps1`
       **NON** sia un target del piano Copilot (W5 — il SessionStart Copilot è un prompt statico,
       mai uno script depositato; US8-AC2).
-- [ ] `test_freshness_end_wiring_copilot_native_format`: il contenuto del SETTINGS_MERGE per
+- [x] `test_freshness_end_wiring_copilot_native_format`: il contenuto del SETTINGS_MERGE per
       `SessionEnd` Copilot (da `render_copilot_hooks`) ha formato piatto nativo:
       `{"version":1,"hooks":{"SessionEnd":[{"type":"command","command":"…","timeoutSec":15}]}}` —
       mai `shell`/`statusMessage`/`timeout` (R-1/W1 contratto).
-- [ ] `test_freshness_start_wiring_copilot_native_format`: il contenuto SETTINGS_MERGE per
+- [x] `test_freshness_start_wiring_copilot_native_format`: il contenuto SETTINGS_MERGE per
       `SessionStart` Copilot ha `{"type":"prompt","prompt":"…","timeoutSec":10}` (W5/R-1).
-- [ ] `test_freshness_no_claude_format_on_copilot`: verifica che nessun artefatto Copilot contenga
+- [x] `test_freshness_no_claude_format_on_copilot`: verifica che nessun artefatto Copilot contenga
       i campi Claude (`shell`, `statusMessage`, `timeout` senza `Sec`) nel suo contenuto serializzato
       (parità — lezione FEAT-011/049, FR-021).
-- [ ] Tutti `not cloud`, offline.
+- [x] Tutti `not cloud`, offline.
 
 ### TASK-US8-03 — Guardia di sync bundlato↔dogfood (US9, P2 Should) (R-3)
 
@@ -496,12 +496,12 @@
 
 **Mappa FR**: FR-024 · US9-AC2/AC3 · CS-4
 
-- [ ] Aggiungi `test_rag_freshness_dogfood_sync` che confronta **byte-per-byte**:
+- [x] Aggiungi `test_rag_freshness_dogfood_sync` che confronta **byte-per-byte**:
       - `packages/sertor/src/sertor_installer/assets/rag/hooks/rag-freshness.ps1` vs
         `.claude/hooks/rag-freshness.ps1` → identici (R-3/FR-024).
       - `packages/sertor/src/sertor_installer/assets/rag/hooks/rag-freshness-start.ps1` vs
         `.claude/hooks/rag-freshness-start.ps1` → identici (R-3/FR-024).
-- [ ] Modellare il test su `test_assets_sync.py:31-41` (forma della guardia esistente):
+- [x] Modellare il test su `test_assets_sync.py:31-41` (forma della guardia esistente):
       ```python
       def test_rag_freshness_dogfood_sync(repo_root):
           for name in ("rag-freshness.ps1", "rag-freshness-start.ps1"):
@@ -510,9 +510,9 @@
               assert bundled.read_bytes() == dogfood.read_bytes(), \
                   f"Drift: {name} bundlato ≠ dogfood .claude/hooks/{name}"
       ```
-- [ ] Verifica che il test **fallisca** se si introduce un drift manuale in uno dei due file
+- [x] Verifica che il test **fallisca** se si introduce un drift manuale in uno dei due file
       (controllo di sanity della guardia — US9-AC3).
-- [ ] Verifica che `test_assets_sync.py` (guardia `claude/` esistente) **non** copra già gli hook
+- [x] Verifica che `test_assets_sync.py` (guardia `claude/` esistente) **non** copra già gli hook
       rag (research D-0e: il subtree `claude/` non include `assets/rag/hooks/`) — nessuna
       duplicazione.
 
@@ -523,20 +523,20 @@
 
 **Mappa FR**: FR-007 · US5-AC2 · spec §Tracciamento dello scope
 
-- [ ] Apri `requirements/usabilita/epic.md` e individua la sezione §8 del backlog (o la fine della
+- [x] Apri `requirements/usabilita/epic.md` e individua la sezione §8 del backlog (o la fine della
       lista FEAT esistente — la spec indica FEAT-001..FEAT-010 già presenti).
-- [ ] Aggiungi la **nuova voce FEAT-011** dell'epica usabilità (E12):
+- [x] Aggiungi la **nuova voce FEAT-011** dell'epica usabilità (E12):
       ```
       | FEAT-011 | Estensione `doctor` con check-query metadata-filtered (`where`) | Should | da decomporre |
       ```
       Descrizione: estende `sertor-rag doctor` con un *check-query* che esercita il path del filtro
       metadata (`search_code`/`search_docs` con `where`) — il buco storico del 2026-06-19 non coperto
       dall'hook di freschezza; buco dichiarato in E10-FEAT-011 spec §Fuori ambito.
-- [ ] Verifica che la voce sia marcata `Should` (non `Must`) e `da decomporre` (non è in progress —
+- [x] Verifica che la voce sia marcata `Should` (non `Must`) e `da decomporre` (non è in progress —
       è una promozione, non una feature attiva).
-- [ ] Verifica che **nessun'altra voce** venga rimossa o spostata (additivo — non toccare
+- [x] Verifica che **nessun'altra voce** venga rimossa o spostata (additivo — non toccare
       FEAT-001..010 dell'epica usabilità).
-- [ ] Verifica che `requirements/usabilita/epic.md` sia still-parseable (nessuna tabella rotta).
+- [x] Verifica che `requirements/usabilita/epic.md` sia still-parseable (nessuna tabella rotta).
 
 ---
 
@@ -549,29 +549,29 @@
 
 → dipende da: tutti i task delle Fasi 0–4
 
-- [ ] Esegui `uv run pytest packages/sertor/tests/ -m "not cloud" -v` → verde (tutti i nuovi e
+- [x] Esegui `uv run pytest packages/sertor/tests/ -m "not cloud" -v` → verde (tutti i nuovi e
       modificati test: `test_install_rag_freshness.py`, aggiornamenti `test_assets_sync.py`).
-- [ ] Verifica **non-regressione**: i test pre-esistenti di `test_install_rag.py`,
+- [x] Verifica **non-regressione**: i test pre-esistenti di `test_install_rag.py`,
       `test_install_rag_memory.py`, `test_install_rag_usage.py`, `test_install_rag_copilot_cli.py`
       restano verdi (i nuovi artefatti sono **additivi** — nessun piano pre-esistente cambia).
-- [ ] Esegui `uv run pytest packages/sertor-install-kit/tests/ -m "not cloud" -v` → verde
+- [x] Esegui `uv run pytest packages/sertor-install-kit/tests/ -m "not cloud" -v` → verde
       (il kit ha solo TASK-F03 modificato: `gitignore_append.py`, test `test_gitignore_append.py`).
-- [ ] Esegui `uv run pytest tests/unit/ -m "not cloud" -v` → verde (guardia sync rag-freshness
+- [x] Esegui `uv run pytest tests/unit/ -m "not cloud" -v` → verde (guardia sync rag-freshness
       + guardia `test_assets_sync.py` pre-esistente).
-- [ ] Esegui `uv run ruff check packages/sertor/` → zero errori (regole E,F,I,UP,B; line-length 100).
-- [ ] Esegui `uv run ruff check packages/sertor-install-kit/` → zero errori.
+- [x] Esegui `uv run ruff check packages/sertor/` → zero errori (regole E,F,I,UP,B; line-length 100).
+- [x] Esegui `uv run ruff check packages/sertor-install-kit/` → zero errori.
 
 ### TASK-P02 [P] — Verifica additività: core, kit e comandi runtime invariati
 
 → dipende da: tutti i task delle Fasi 0–4
 
-- [ ] Verifica che **nessuno** dei seguenti file sia stato modificato (Principio XI / D-6):
+- [x] Verifica che **nessuno** dei seguenti file sia stato modificato (Principio XI / D-6):
       - `src/sertor_core/` — INVARIATO (porte/adapter/composition/engine/services/CLI).
       - `packages/sertor-install-kit/src/sertor_install_kit/` salvo `gitignore_append.py`
         (unica modifica al kit: riga `RUNTIME_IGNORES` — additiva, non-breaking, D-6).
       - `packages/sertor/src/sertor_installer/install_wiki.py` — INVARIATO.
       - `packages/sertor/src/sertor_installer/install_governance.py` — INVARIATO.
-- [ ] Esegui il sync dell'asset bundlato (meccanismo `sertor_installer.sync`) dopo aver creato i
+- [x] Esegui il sync dell'asset bundlato (meccanismo `sertor_installer.sync`) dopo aver creato i
       nuovi file in `assets/rag/hooks/`:
       ```powershell
       uv run python -m sertor_installer.sync
@@ -580,38 +580,38 @@
       diverso da quello appena copiato in TASK-F04 (se il sync copre il subtree `rag/hooks/`,
       allinearli preventivamente; research D-0e: il sync attuale è su `claude/` — verificare
       l'effettiva copertura del subtree rag).
-- [ ] Spot check comandi runtime invariati:
+- [x] Spot check comandi runtime invariati:
       - `sertor install rag --assistant claude` produce gli stessi artefatti pre-esistenti **più** i
         4 nuovi rag-freshness (additivo — nessun artefatto pre-esistente rimosso).
       - `sertor-rag doctor`, `sertor-rag index`, `sertor configure` invariati (non toccati).
       - `sertor install rag --assistant copilot-cli` deposita lo script SessionEnd Copilot ma **non**
         lo script SessionStart (solo prompt statico — W5).
-- [ ] Verifica che la suite root `tests/unit/test_assets_sync.py` sia verde (guardia sync `claude/`
+- [x] Verifica che la suite root `tests/unit/test_assets_sync.py` sia verde (guardia sync `claude/`
       pre-esistente non regredita).
 
 ### TASK-P03 — Verifica CS-1..5 e criteri di accettazione trasversali
 
 → dipende da: TASK-P01, TASK-P02
 
-- [ ] **CS-1 (freschezza enforced senza azione manuale):** TASK-F01 implementa il re-index
+- [x] **CS-1 (freschezza enforced senza azione manuale):** TASK-F01 implementa il re-index
       incondizionato; TASK-US1-01..US3-01 lo verificano nel plan-builder. Confermato. ✓
-- [ ] **CS-2 (degrado evidente e indotto tra sessioni):** TASK-F01 persiste lo stato; TASK-F02
+- [x] **CS-2 (degrado evidente e indotto tra sessioni):** TASK-F01 persiste lo stato; TASK-F02
       legge e induce; TASK-US8-01 verifica le voci SessionEnd/SessionStart nel piano. Confermato. ✓
-- [ ] **CS-3 (non-fatale sempre):** TASK-F01/F02 hanno `try/catch` → exit 0 (R-2); TASK-US8-01
+- [x] **CS-3 (non-fatale sempre):** TASK-F01/F02 hanno `try/catch` → exit 0 (R-2); TASK-US8-01
       verifica isolamento da `memory-capture`. Confermato. ✓
-- [ ] **CS-4 (installabile con parità e isolamento):** TASK-US8-01/02 verificano deposito Claude e
+- [x] **CS-4 (installabile con parità e isolamento):** TASK-US8-01/02 verificano deposito Claude e
       Copilot; TASK-US8-02 verifica formato nativo Copilot (R-1); TASK-US8-03 verifica sync
       bundlato↔dogfood (R-3). Confermato. ✓
-- [ ] **CS-5 (zero costo a corpus invariato):** delegato all'incrementale del core (FEAT-009 su
+- [x] **CS-5 (zero costo a corpus invariato):** delegato all'incrementale del core (FEAT-009 su
       `master`, A-001) — l'hook non implementa change-detection propria (FR-002). Non testabile
       offline (richiederebbe un re-index reale); documentato come verifica manuale (quickstart §1). ✓
-- [ ] Verifica che il contratto `contracts/rag-health-state.md` (C1..C6) sia rispettato
+- [x] Verifica che il contratto `contracts/rag-health-state.md` (C1..C6) sia rispettato
       dall'implementazione in TASK-F01 (schema `rag.health/1`, campi obbligatori, nessun segreto,
       riscrittura a `healthy`).
-- [ ] Verifica che il contratto `contracts/freshness-hook-wiring.md` (W1..W5) sia rispettato:
+- [x] Verifica che il contratto `contracts/freshness-hook-wiring.md` (W1..W5) sia rispettato:
       W1 parità formato → TASK-US8-02; W2 non-bloccante → TASK-F01/F02; W3 isolamento → TASK-US8-01;
       W4 D↔N → TASK-F02; W5 Copilot SessionStart prompt → TASK-US2-01/US8-02.
-- [ ] Segnala come **follow-up non-bloccante**: prova LIVE su ospite Claude e Copilot reale
+- [x] Segnala come **follow-up non-bloccante**: prova LIVE su ospite Claude e Copilot reale
       (quickstart §6) — il done offline è raggiunto con i task precedenti; la verifica su host reale
       è post-merge.
 
