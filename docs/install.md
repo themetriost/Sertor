@@ -347,6 +347,32 @@ uv run --directory .sertor sertor-rag index ..   # index host sources, excluding
 > (it builds it from the same repo, not from PyPI). When developing from the Sertor repo, use
 > `uv run sertor install rag`.
 
+### Invoking the CLIs (the rule)
+
+After `install rag` the runtime CLIs (`sertor-rag`, `sertor-wiki-tools`) live in the project's
+`.sertor/.venv` — they are **NOT on `PATH`**. The canonical, cwd-independent way to run them is
+**`uv run --directory .sertor <cli> …`** (the same form the MCP server uses):
+
+```powershell
+uv run --directory .sertor sertor-rag doctor          # health check (config/provider/index/mcp)
+uv run --directory .sertor sertor-rag index ..         # index host sources, excluding `.sertor/`
+uv run --directory .sertor sertor-wiki-tools lint --json
+```
+
+A bare `sertor-rag …` (or `which sertor-rag`) failing means **"not on `PATH`", not "not installed"** —
+do not conclude the tool is missing. If `uv` is unavailable, call the venv executable directly:
+`.sertor/.venv/Scripts/<cli>.exe` (Windows) or `.sertor/.venv/bin/<cli>` (POSIX). The **installer**
+`sertor` itself is not a persistent command: run it ephemerally with
+`uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor <verb>`.
+
+### Known environment notes
+
+- **Windows + system Python 3.14 / `pywin32`.** A stale `pywin32` on the *system* interpreter may print
+  `ModuleNotFoundError: No module named 'pywin32_bootstrap'` on `pip`/`python -m`. This is noise from the
+  system Python, **not a Sertor error** — Sertor's CLIs and MCP server run inside `.sertor/.venv` via
+  `uv run`, unaffected. Do **not** use the system `pip show sertor-rag` to check the install (it cannot
+  see the project venv); use `uv run --directory .sertor sertor-rag doctor` instead.
+
 ## 7. Host root hygiene: what stays and why
 
 The installer keeps the **host root minimal and predictable**. After `install wiki`/`install rag`,

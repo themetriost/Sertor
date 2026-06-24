@@ -18,7 +18,8 @@ call it via Bash instead of manual Glob/Grep. **Judgment** (what to write, contr
 Proceed as follows:
 
 1. Read the **playbook** (index), then the wiki index and the tail of the log (file names from config) for current
-   state; use `sertor-wiki-tools collect --json` for the mechanical page inventory.
+   state; use `uv run --directory .sertor sertor-wiki-tools collect --json` for the mechanical page
+   inventory.
 2. **Determine the operation** from the request or from the session work, among:
    `record` · `distill` (durable entities from a step, backlog, or **brief of a full conversation**, even
    old/external — never the raw transcript: condense it first) · `ingest` · `query` · `lint` (levels A
@@ -30,10 +31,11 @@ Proceed as follows:
 3. **Execute the corresponding procedure** from the module (input → steps → output), respecting its constraints —
    in particular: the main flow has **Bash** for heavy operations; `generate` from-diff delegates
    `git log/diff` to the VCS role (`[roles].vcs`), from-scratch does not require git; `rag-sync` launches
-   `sertor-wiki-tools index`.
+   `uv run --directory .sertor sertor-wiki-tools index`.
 4. Update cross-references and the index, and append the log entry
    `## [YYYY-MM-DD] <operation> | <title>` (today's date).
-5. Explicitly flag contradictions or orphan pages (`sertor-wiki-tools lint` finds orphans).
+5. Explicitly flag contradictions or orphan pages (`uv run --directory .sertor sertor-wiki-tools lint`
+   finds orphans).
 
 Keep pages concise and interlinked. Do not touch original sources or wikis excluded via `exclude`.
 When done, summarize in 2-3 lines what you updated.
