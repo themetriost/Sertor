@@ -167,6 +167,57 @@ def _copilot_memory_hook_specs() -> list[HookEntrySpec]:
     ]
 
 
+# RAG freshness hook – SessionEnd (E10-FEAT-011): re-index + doctor + persist health state. Travels
+# WITH the rag capability (shared runtime `.sertor/`, CLI `sertor-rag`). Same FILE + SETTINGS_MERGE
+# pattern as memory-capture (no new ArtifactKind). The script body is host-agnostic, exits 0 always,
+# and NEVER imports `sertor_core` (Principio XI) — it consumes the `sertor-rag` vehicles only.
+_FRESHNESS_HOOK_ASSET = "rag/hooks/rag-freshness.ps1"
+_FRESHNESS_HOOK_TARGET = ".claude/hooks/rag-freshness.ps1"
+_FRESHNESS_HOOK_TARGET_COPILOT = ".github/hooks/rag-freshness.ps1"
+_FRESHNESS_SETTINGS = "rag/settings.rag-freshness.json"
+_COPILOT_FRESHNESS_END_WIRING_SENTINEL = "(generated: copilot freshness-end hooks)"
+
+# RAG freshness signal – SessionStart (E10-FEAT-011): re-read the persisted state and INDUCE a fix
+# when degraded. On Claude this is a dedicated script (`rag-freshness-start.ps1`); on Copilot CLI it
+# is a NATIVE static prompt (no script deposited — W5 of the wiring contract).
+_FRESHNESS_START_ASSET = "rag/hooks/rag-freshness-start.ps1"
+_FRESHNESS_START_TARGET = ".claude/hooks/rag-freshness-start.ps1"
+_FRESHNESS_START_SETTINGS = "rag/settings.rag-freshness-start.json"
+_COPILOT_FRESHNESS_START_WIRING_SENTINEL = "(generated: copilot freshness-start hooks)"
+
+
+def _copilot_freshness_end_specs() -> list[HookEntrySpec]:
+    """Logical SessionEnd entry for the Copilot RAG-freshness wiring (E10-FEAT-011, W1).
+
+    Native flat format (`version:1`/`timeoutSec`) via `render_copilot_hooks` — never the Claude
+    nested form (lezione FEAT-011/049). Non-blocking: the script exits 0 always.
+    """
+    return [
+        HookEntrySpec(
+            "SessionEnd", "command",
+            f"{_PWSH} {_FRESHNESS_HOOK_TARGET_COPILOT}", 15,
+        )
+    ]
+
+
+def _copilot_freshness_start_specs() -> list[HookEntrySpec]:
+    """Logical SessionStart entry for the Copilot RAG-freshness signal (E10-FEAT-011, W5).
+
+    A STATIC PROMPT (no script on Copilot CLI — A-005): the agent reads the persisted state and
+    induces the fix. D<->N: the prompt induces, the agent executes the vehicles.
+    """
+    return [
+        HookEntrySpec(
+            "SessionStart", "prompt",
+            "At startup: read .sertor/.rag-health.json. "
+            "If verdict=degraded, surface the degradation (reason) and induce the fix "
+            "— run `sertor-rag index .` and/or reconnect the MCP server — "
+            "BEFORE starting work. If healthy/absent, proceed.",
+            10,
+        )
+    ]
+
+
 def _skill_artifacts(names: tuple[str, ...], is_copilot: bool) -> list[Artifact]:
     """FILE artifacts for native skills, routed to each assistant's skill container (065, E12).
 
@@ -338,6 +389,55 @@ def build_rag_plan(
             WriteStrategy.MERGE_DEDUP,
         )
     )
+    # RAG freshness hook (E10-FEAT-011): SessionEnd script (FILE) + SessionEnd wiring + a
+    # SessionStart signal. Mirrors the memory-capture pattern; the SessionStart Claude script is a
+    # dedicated FILE, while on Copilot the SessionStart is a static prompt (no script — W5). All
+    # artifacts are additive (appended in canonical order, pre-existing untouched — SC-010).
+    freshness_hook_target = (
+        _FRESHNESS_HOOK_TARGET_COPILOT if is_copilot else _FRESHNESS_HOOK_TARGET
+    )
+    freshness_end_source = (
+        _COPILOT_FRESHNESS_END_WIRING_SENTINEL if is_copilot else _FRESHNESS_SETTINGS
+    )
+    freshness_settings_target = _COPILOT_HOOK_WIRING if is_copilot else _SETTINGS_TARGET
+    plan.append(
+        Artifact(
+            ArtifactKind.FILE,
+            _FRESHNESS_HOOK_ASSET,
+            freshness_hook_target,
+            WriteStrategy.CREATE_IF_ABSENT,
+        )
+    )
+    plan.append(
+        Artifact(
+            ArtifactKind.SETTINGS_MERGE,
+            freshness_end_source,
+            freshness_settings_target,
+            WriteStrategy.MERGE_DEDUP,
+        )
+    )
+    # SessionStart signal: Claude deposits a dedicated script; Copilot deposits only the static
+    # prompt wiring (no `.ps1` — W5 of the wiring contract, data-model §4 note (b)).
+    if not is_copilot:
+        plan.append(
+            Artifact(
+                ArtifactKind.FILE,
+                _FRESHNESS_START_ASSET,
+                _FRESHNESS_START_TARGET,
+                WriteStrategy.CREATE_IF_ABSENT,
+            )
+        )
+    freshness_start_source = (
+        _COPILOT_FRESHNESS_START_WIRING_SENTINEL if is_copilot else _FRESHNESS_START_SETTINGS
+    )
+    plan.append(
+        Artifact(
+            ArtifactKind.SETTINGS_MERGE,
+            freshness_start_source,
+            freshness_settings_target,
+            WriteStrategy.MERGE_DEDUP,
+        )
+    )
     return plan
 
 
@@ -432,6 +532,10 @@ def _rag_hook_fragment(art: Artifact) -> dict:
         return render_copilot_hooks(_copilot_rag_hook_specs())
     if art.source == _COPILOT_MEMORY_WIRING_SENTINEL:
         return render_copilot_hooks(_copilot_memory_hook_specs())
+    if art.source == _COPILOT_FRESHNESS_END_WIRING_SENTINEL:
+        return render_copilot_hooks(_copilot_freshness_end_specs())
+    if art.source == _COPILOT_FRESHNESS_START_WIRING_SENTINEL:
+        return render_copilot_hooks(_copilot_freshness_start_specs())
     assert art.source is not None
     return json.loads(read_asset_text(art.source))
 
@@ -524,6 +628,13 @@ def sertor_owned_paths(assistant: AssistantId = AssistantProfile.DEFAULT) -> Ser
     # lands in the SAME settings file as the rag-usage hook → already covered by the shared edit
     # below (no second shared_edit needed).
     memory_hook_target = _MEMORY_HOOK_TARGET_COPILOT if is_copilot else _MEMORY_HOOK_TARGET
+    # RAG freshness hooks (E10-FEAT-011): SessionEnd script (both assistants) + SessionStart script
+    # (Claude only — the Copilot SessionStart is a generated static prompt, no `.ps1`, W5). Owned
+    # FILEs: removed on uninstall, updated on upgrade (FR-023). Their SessionEnd/SessionStart wiring
+    # lands in the SAME settings file as the other hooks → covered by the shared edit below.
+    freshness_hook_target = (
+        _FRESHNESS_HOOK_TARGET_COPILOT if is_copilot else _FRESHNESS_HOOK_TARGET
+    )
     settings_target = _COPILOT_HOOK_WIRING if is_copilot else _SETTINGS_TARGET
     instruction_target = aprofile.target_for(Surface.INSTRUCTION_BLOCK).target_rel
     mcp_target = aprofile.target_for(Surface.MCP_SERVER)
@@ -539,9 +650,16 @@ def sertor_owned_paths(assistant: AssistantId = AssistantProfile.DEFAULT) -> Ser
     concierge_name = "agents/concierge.md" if not is_copilot else "concierge"
     concierge_target = aprofile.render_path(Surface.AGENT, concierge_name)
 
+    # RAG freshness owned scripts: SessionEnd for both; SessionStart only for Claude (W5).
+    freshness_files = (
+        (freshness_hook_target,)
+        if is_copilot
+        else (freshness_hook_target, _FRESHNESS_START_TARGET)
+    )
+
     return SertorOwnedPaths(
         owned_dirs=(".sertor", *skill_dirs),
-        owned_files=(hook_target, memory_hook_target, concierge_target),
+        owned_files=(hook_target, memory_hook_target, concierge_target, *freshness_files),
         shared_edits=(
             SharedEdit(instruction_target, SharedEditKind.MARKER, "SERTOR:RAG-USAGE"),
             SharedEdit(settings_target, SharedEditKind.SETTINGS, _RAG_USAGE_SETTINGS),

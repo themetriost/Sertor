@@ -1,8 +1,8 @@
 """Dedup-append of lines to the host `.gitignore` (FR-019, REQ-240/241).
 
 Ensures that regenerable runtime artifacts (`.sertor/.venv/`, `.sertor/.index*`,
-`.sertor/.env`) are ignored. Absent → create with header + lines; present → append only
-missing lines (dedup), without duplicates and without touching user lines.
+`.sertor/.env`, `.sertor/.rag-health.json`) are ignored. Absent → create with header + lines;
+present → append only missing lines (dedup), without duplicates and without touching user lines.
 """
 from __future__ import annotations
 
@@ -11,7 +11,12 @@ from pathlib import Path
 from sertor_install_kit.artifacts import Outcome
 
 # Lines to guarantee (regenerable / secrets of the `.sertor/` runtime).
-RUNTIME_IGNORES = (".sertor/.venv/", ".sertor/.index*", ".sertor/.env")
+RUNTIME_IGNORES = (
+    ".sertor/.venv/",
+    ".sertor/.index*",
+    ".sertor/.env",
+    ".sertor/.rag-health.json",  # E10-FEAT-011: RAG health state (regenerable, never versioned)
+)
 _HEADER = "# Sertor RAG runtime (sertor install rag)"
 
 

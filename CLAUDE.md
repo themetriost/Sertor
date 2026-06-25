@@ -357,7 +357,14 @@ chi dovrebbe?* Corollari operativi:
    file di `wiki/log/`) — l'output del `Read` entra **intero** nel contesto, nessun cap — e poi a **mostrare
    all'utente l'executive summary** della roadmap. L'hook *innesca*, il `Read` *trasporta*, il rituale tiene
    il *contenuto* vero.
-5. **Re-index del corpus toccato** — se lo step ha modificato **file indicizzati nel corpus RAG**,
+5. **Re-index del corpus toccato** —
+   > **ENFORCED VIA HOOK (E10-FEAT-011):** il re-index a fine sessione è ora un hook deterministico
+   > (`rag-freshness.ps1`, `SessionEnd`). Confine D↔N: l'hook re-indicizza e verifica (meccanico);
+   > l'agente esegue la correzione indotta all'avvio se lo stato è degradato (giudizio). Il testo
+   > seguente descrive ancora la rete agente (valida finché il buco filtro-metadata `where` non è
+   > chiuso da E12 e finché l'hook non è su tutti gli ospiti).
+
+   se lo step ha modificato **file indicizzati nel corpus RAG**,
    ricostruisci l'indice, così il RAG di dogfooding non serve mai contesto stantio (è l'essenza:
    contesto dell'agente sempre reale). **Modello a corpus unico (decisione 2026-06-10):** il wiki vive
    **dentro** il progetto ospite *by design* (lo crea così l'install della futura CLI) → è parte del
@@ -397,7 +404,13 @@ chi dovrebbe?* Corollari operativi:
    marca lo stato). Fa parte dell'**asset installabile** (`claude-md-block.md`): gli ospiti ricevono
    questa pratica con il sistema-wiki. Vedi [[step-ritual]] e la panoramica [[sertor-in-parole-semplici]].
 
-8. **Smoke test del RAG di dogfooding** — **allo stesso momento del commit** dello step (specie dopo
+8. **Smoke test del RAG di dogfooding** —
+   > **ENFORCED VIA HOOK (E10-FEAT-011):** la verifica di salute (`sertor-rag doctor`) è ora parte
+   > dell'hook `rag-freshness.ps1` (`SessionEnd`). Il buco del filtro metadata `where` (guasto storico
+   > 2026-06-19) **non** è coperto dall'hook (promosso a E12-FEAT-011 usabilità) → il rituale punto 8
+   > dell'agente resta la rete per quel buco specifico.
+
+   **allo stesso momento del commit** dello step (specie dopo
    un re-index), il flusso principale **esercita il server MCP `sertor-rag`** per verificare che sia
    *vivo e fresco*, non solo che l'indice su disco esista. Il test DEVE colpire il **path del filtro
    metadata**: `search_code` **e** `search_docs` — **non basta `search_combined`** (la query con `where`
@@ -521,6 +534,53 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/076-enforcement-freschezza-rag/plan.md` (FEAT-011 epica **debito-tecnico** (E10) —
+**enforcement deterministico della freschezza RAG (hook)**: sposta i due passi **meccanici** del
+*rituale di step* — punto 5 (re-index del corpus) e punto 8 (smoke del RAG) — dalla **discrezione
+dell'agente** a un **harness deterministico** (hook del client agente), applicando il confine **D↔N**:
+la parte meccanica diventa *enforced*, all'agente resta il giudizio. **ADDITIVA + host-facing, ZERO
+codice di core** (Principio XI): l'hook **consuma** i vehicle `sertor-rag index .` (incrementale,
+FEAT-009 + cache FEAT-019 → zero-embedding a corpus invariato) e `sertor-rag doctor` (E12-FEAT-001, 4
+aree), **mai** importa `sertor_core`. **Due tempi fail-loud:** **(SessionEnd)** `rag-freshness.ps1`
+re-indicizza **incondizionatamente** (skip delegato all'incrementale del core, **nessun delta-check
+nell'hook** — DA-1) + `doctor` → deriva un **verdetto** sano/degradato → se degradato **persiste** lo
+stato + messaggio prominente; **(SessionStart)** ripesca lo stato e, se degradato, **induce** la
+correzione (re-index/reconnect MCP) **prima** del lavoro agente — l'hook **segnala/induce**, l'agente
+**esegue** (FR-014, no LLM nell'hook — DA-2). **Smoke = SOLO `doctor`** (DA-3): NON esercita il filtro
+metadata `where` di `search_code`/`search_docs` (guasto 2026-06-19) → **buco dichiarato e promosso** a
+**nuova FEAT-011 dell'epica usabilità E12** (owner di `doctor`), non sepolto; il rituale punto 8
+dell'agente resta la rete. **Hook separato/indipendente** (script + voce `SessionEnd` propri, accanto
+a `memory-capture`, NON fusi), **non-fatale** (exit 0 sempre, `try/catch` gemello memory-capture),
+**per-capacità `rag`**, lifecycle install/upgrade/uninstall, parità Claude / Copilot CLI (formato hook
+nativo — generato via `render_copilot_hooks` su Copilot, mai formato Claude — DA-4). **DA-D-r1 risolta
+(research D-1):** file di stato = **`.sertor/.rag-health.json`** (sotto la radice runtime `.sertor/`,
+igiene radice feature 016), formato **JSON** schema `rag.health/1` (`verdict`/`timestamp`/`reason`
+minimi + `areas`/`exit_code` additivi da `doctor --json`); a `healthy` **riscritto** (non cancellato)
+→ no-op all'avvio, **niente loop** (INV-1/NFR-6); **azione necessaria**: estendere `RUNTIME_IGNORES`
+(kit) con `.sertor/.rag-health.json` (oggi non coperto da `.index*`/`.env`/`.venv`). **DA-D-r2 risolta
+(research D-2):** aggancio SessionStart = **voce/script dedicato** `rag-freshness-start.ps1` (Claude) +
+voce `SessionStart` propria, **NON** riuso di `wiki-session-start.ps1` (isolamento FR-016 + lifecycle
+granulare); su **Copilot CLI** il SessionStart è un **prompt nativo statico** (nessuno script — A-005)
+che istruisce l'agente a leggere lo stato e indurre. **Ancoraggio (verificato MCP `search_code` +
+`Read`):** pattern hook riusato byte-per-byte da `memory-capture.ps1`
+(`.claude/hooks/memory-capture.ps1:54-63`); wiring per-assistente da `install_rag.py` (FILE
+`CREATE_IF_ABSENT` + `SETTINGS_MERGE` `MERGE_DEDUP`, `:317-340`; dispatch art-aware `_rag_hook_fragment`
+`:424-446`; uninstall `delete_if_empty` per `sertor-hooks.json` `:590`; `sertor_owned_paths` `:510`);
+render Copilot nativo `HookEntrySpec`/`render_copilot_hooks`
+(`sertor-install-kit/.../surfaces.py:145-190`, formato `version:1`/`timeoutSec`/entry piatte, lezione
+FEAT-011/049). **Guardia di sync** bundlato↔dogfood **mirata agli hook rag** (FR-024): la guardia
+esistente `tests/unit/test_assets_sync.py` copre solo `assets/claude/**`, gli hook rag vivono in
+`assets/rag/hooks/` → guardia dedicata nuova. **Nessun nuovo** `ArtifactKind`/`Surface`/`WriteStrategy`/
+seam del kit (riuso). **Reclassificazione governance** (FR-019): step 5/8 del `CLAUDE.md` annotati
+«enforced via hook» con nota D↔N (riclassificati, **non** rimossi — restano la rete fino a
+distribuzione completa + chiusura buco `where`). **Out-of-Scope promossi** (research D-5): smoke-`where`
+→ E12; staleness forte server MCP → osservabilita (cross-ref); drift-detection → osservabilita FEAT-012
+(cross-ref). `sertor-core` **INVARIATO**; unica modifica al kit = `RUNTIME_IGNORES` (additiva). 9 US/24
+FR/5 CS. Constitution **PASS 12/12 + missione PASS** (pre e post-design) senza deroghe (Complexity
+Tracking vuoto) — è la stella polare resa enforced (contesto reso all'agente sempre fresco/reale).
+**Nota di processo:** `setup-plan.ps1`/`speckit-plan/SKILL.md` ASSENTI → parametri per convenzione dal
+branch (forma da `075`); nessun hook eseguito; MCP `sertor-rag` interrogato (`search_code` sul wiring
+installer hook, nessun errore tool). Branch `076-enforcement-freschezza-rag`. Storico:
 `specs/075-guided-setup/plan.md` (FEAT-002 epica **usabilità** (E12) — **guided-setup — guida agentica
 install→configure→verify**: la prima feature **agentica** dell'epica. Distribuisce **ENTRAMBI** (decisione
 utente, pattern `sertor-flow` = agenti + skill): una **skill** `guided-setup` (il **«come»**: le istruzioni del
