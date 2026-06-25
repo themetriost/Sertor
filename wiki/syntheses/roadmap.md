@@ -40,6 +40,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **Valutazione set-based della navigazione del grafo** — `sertor-rag graph-eval` (precision/recall/F1, `who_calls`/`defines`, baseline separata) (FEAT-011, 2026-06-20) | `retrieval-qualita` |
 | **Fusione code+doc misurata + `search_combined` strutturato** (FEAT-003 T1+T2, 2026-06-21) — set NL intent-typed + misura **per-superficie** + `eval run --fused`; **`search_combined` → tupla `(docs, code)`** (l'agente usa entrambi i flussi); metrica **OR/unione** *(la prima ipotesi «fusion coverage AND» = artefatto, corretta)* | `retrieval-qualita` |
 | **`sertor-rag doctor` — verifica di salute deterministica** (FEAT-001, merge `171f43b`, 2026-06-23) — «ha funzionato?» in un comando: 4 aree (env/provider/indice/MCP), pass/warn/fail + causa/rimedio, `--json` schema `doctor.report/1`, exit-code gate, offline-safe (probe provider opt-in `--online`); chiude il `--check` *deferred* di E2/FEAT-003. Additivo, deterministico, zero LLM | `usabilità` |
+| **Enforcement deterministico della freschezza RAG (hook)** (FEAT-011, merge `29dd30e`, 2026-06-25) — due hook host-facing via `sertor install rag` (parità Claude/Copilot): `rag-freshness.ps1` (SessionEnd: re-index incondizionato via vehicle + `doctor` + persiste `.sertor/.rag-health.json`) + `rag-freshness-start.ps1` (SessionStart: induce la correzione se `degraded`). Sposta i passi meccanici del rituale (re-index/smoke) dalla discrezione dell'agente a un harness deterministico (confine D↔N). `sertor-core` invariato | `debito-tecnico` |
 
 *Dettaglio (PR, date, numeri) nella sezione ✅ DONE in fondo alla pagina.*
 
@@ -63,7 +64,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **E7** | 🆕 [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 📋 aperta | chunking SQL → **sblocca** schema-SQL |
 | **E8** | 🆕 [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | 📋 aperta | bloccata a monte da `ingestione-estesa` |
 | **E9** | 🆕 [`second-brain`](../../requirements/second-brain/epic.md) | 📋 da espandere | decidere bivi §9 prima di decomporre |
-| **E10** | 🆕 [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 🔄 in progress | **Should aperto:** hook freschezza RAG (FEAT-011, **decomposta 2026-06-24** → `enforcement-freschezza-rag/requirements.md`, 24 REQ EARS, prossimo `/speckit-specify`); il resto è Could *(**FEAT-009 distribuzione costituzione neutra ✅ 2026-06-19** — PR #82 · **FEAT-003 CI GitHub Actions ✅ 2026-06-23** — Windows + Linux verdi su PR #96, prima CI del progetto · **FEAT-013 allineamento config dogfood↔ospite ✅ 2026-06-23** — dogfood su `.sertor/.env`+`.sertor/.index`, resolver host-agnostico · **FEAT-012 governance nel corpus ✅ 2026-06-23** — costituzione+plan-template indicizzati · unif. venv ✅ · host-agnosticità asset **FEAT-001/009/010 ✅** · disciplina MCP-first agli ospiti ✅, 2026-06-19)* |
+| **E10** | 🆕 [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 🔄 in progress | **FEAT-011 hook freschezza RAG ✅ consegnata (merge `29dd30e`, 2026-06-25)**; resta solo Could (FEAT-014 stdin guard + FEAT-004/005/006/007/008) *(**FEAT-009 distribuzione costituzione neutra ✅ 2026-06-19** — PR #82 · **FEAT-003 CI GitHub Actions ✅ 2026-06-23** — Windows + Linux verdi su PR #96, prima CI del progetto · **FEAT-013 allineamento config dogfood↔ospite ✅ 2026-06-23** — dogfood su `.sertor/.env`+`.sertor/.index`, resolver host-agnostico · **FEAT-012 governance nel corpus ✅ 2026-06-23** — costituzione+plan-template indicizzati · unif. venv ✅ · host-agnosticità asset **FEAT-001/009/010 ✅** · disciplina MCP-first agli ospiti ✅, 2026-06-19)* |
 | **E11** | [`multiutente`](../../requirements/multiutente/epic.md) | 📋 differita | finché il caso d'uso team non è concreto |
 | **E12** | 🆕 [`usabilità`](../../requirements/usabilita/epic.md) | 🔄 **MVP completo** (FEAT-001/002/010 ✅ su `master`) | **owner del layer UX** (skill agentiche + agente *concierge* + poche primitive deterministiche, D↔N). **FEAT-001 `doctor` ✅** (PR #100, fix freschezza #102) + **FEAT-002 guided-setup ✅** (skill + agente `concierge` model-pinned, PR #101) + **FEAT-010 discoverability CLI ✅** (`uv run --project .sertor`, PR #103/#104). MVP (doctor + guida + invocazione robusta) coperto. Restano Should: config-recommender (FEAT-004), explain (FEAT-005), search-diagnose (FEAT-007), concierge pieno (FEAT-009, **stub avviato**), progress GloVe (FEAT-003). Assorbe item UX-facing da E2/E3/E10 (cross-ref) |
 | **E13** | 🆕 [`documentazione-marketing`](../../requirements/documentazione-marketing/epic.md) | 📋 nuova (2026-06-24) | **owner della documentazione ESTERNA + marketing** (confine netto: E12 = UX in-product · `wiki/` = doc interna · meccanismi nelle epiche d'origine — E13 li *racconta*, cross-ref). Due fasi: **Fase 1 — doc utente** (getting-started unico, README di valore, pagina «cos'è/perché» imperniata sulla fusione code+doc — MVP Must/Should) · **Fase 2 — marketing pubblico** (posizionamento, demo/screencast, landing/sito) **gated sul go-public** (apertura repo/PyPI, oggi E2/FEAT-006 = Won't). 1° passo: FEAT-001/002/003 (Fase 1) |
@@ -72,8 +73,8 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-> **⏯️ Attiva su branch `076-enforcement-freschezza-rag`: E10-FEAT-011 enforcement freschezza RAG ✅
-> implementata, IN ATTESA DI CONSEGNA.** SpecKit completo specify→plan→tasks→implement, Constitution
+> **✅ CONSEGNATA (2026-06-25, merge `29dd30e` su `master`): E10-FEAT-011 enforcement freschezza RAG.**
+> SpecKit completo specify→plan→tasks→implement, Constitution
 > **12/12 + missione**, ruff clean; test: sertor **395** · kit **131** · root non-cloud **1128** (3 skip
 > packaging noti); `sertor-core` **INVARIATO** (Principio XI). *Cosa:* due hook host-facing distribuiti via
 > `sertor install rag`, parità Claude/Copilot — `rag-freshness.ps1` (SessionEnd: re-index incondizionato via
@@ -82,13 +83,22 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > Copilot = prompt statico). + reclass `CLAUDE.md` step 5/8 «enforced via hook» + `RUNTIME_IGNORES` esteso.
 > *Dove:* branch `076`, commit spec `e89dcf6` · plan `abf507f` · tasks `f7b05ca` · impl `5f06cbd` · +FEAT-014
 > `913a824`. *Test funzionale (dogfooding) ✅:* hook eseguito a mano → re-index reale (indice riscritto) +
-> `rag-health.json` `verdict: healthy` 4/4 aree pass. *Prossimo passo concreto (DECISIONE UTENTE):* **scegliere
-> push+PR vs merge diretto** su `master`; poi smoke MCP + `gh run list` (CI Win/Linux) + distill entità wiki.
-> *Blocco/decisione aperta:* solo la consegna (nessun blocco tecnico). *Follow-up non-bloccante:* prova LIVE
-> su ospite reale (quickstart §6); **FEAT-014 (Could, tracciata)** = fix stdin-hang dell'hook in invocazione
-> manuale (`IsInputRedirected` guard) — emerso in dogfooding, non si manifesta in produzione.
+> `rag-health.json` `verdict: healthy` 4/4 aree pass. *Prossimo passo concreto:* smoke MCP + `gh run list`
+> (CI Win/Linux sul merge) + distill entità wiki. *Follow-up non-bloccante:* prova LIVE su ospite reale
+> (quickstart §6); **FEAT-014 (Could, tracciata)** = fix stdin-hang dell'hook in invocazione manuale
+> (`IsInputRedirected` guard) — emerso in dogfooding, non si manifesta in produzione.
 >
 > *(E12-FEAT-002 `guided-setup` ✅ e E12-FEAT-001 `doctor` ✅ già su `master` — vedi ✅ Capacità consegnate.)*
+>
+> **🔎 Verifica backlog 2026-06-25 (feature-per-feature, 13 epiche, via RAG+grafo+git).** Stato dichiarato
+> accurato **~96%**, le ✅ tutte con evidenza concreta (file:symbol + commit/merge), le 📋 assenze pulite.
+> Drift corretto nelle fonti durevoli: **E5-FEAT-008/009** (genesi/feedback eval) erano dati 📋 ma sono ✅
+> skill bundlate (`eval-suite-author`/`eval-feedback`, vehicle presenti); **E12-FEAT-001/002/010**
+> (doctor/guided-setup/discoverability) marcate in-corso negli `epic.md` ma ✅ su `master` (gli `epic.md`
+> **lag** dietro l'EXEC); ripulito il residuo inerte `.venv-core/`. Sfumature: E11-FEAT-M01 ha bozza EARS
+> congelata; E13-FEAT-001/002 parzialmente pre-coperte da README/`docs/` (delta = consolidamento). Finding
+> collaterale (non roadmap): `.env` dogfood ha `SERTOR_OBSERVABILITY_OTEL` attivo senza collector su
+> `localhost:4318` → rumore di connessione a ogni comando.
 
 **Candidati a valore = Should aperti:**
 
