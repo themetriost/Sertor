@@ -27,8 +27,12 @@ invocable on its own; the `concierge` agent routes setup requests to it.
   commands (or MCP). Never import the library, never call the `build_*` factories. Access Sertor
   through a vehicle only.
 - **The vehicles you orchestrate** (by command name, host-agnostic):
-  - `uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install rag`
+  - `uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install rag --assistant <host>`
     — deposits the RAG assets and scaffolds `.sertor/.env` (the installer runs ephemerally via `uvx`).
+  - `uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install wiki --assistant <host>`
+    — deposits the wiki tooling/assets (same ephemeral `uvx` installer).
+  - `uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor-flow" sertor-flow install --assistant <host>`
+    — deposits the governance / SDLC apparatus (a separate package; same ephemeral `uvx` form).
   - `uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor configure --set KEY=VALUE`
     — fills `.sertor/.env` (CI-safe wizard; secrets via a secure prompt).
   - `uv run --project .sertor sertor-rag doctor` (and `… sertor-rag doctor --json`) — the
@@ -38,6 +42,10 @@ invocable on its own; the `concierge` agent routes setup requests to it.
     download).
 - You **orchestrate** these commands; you do not alter or replace their behaviour. Do NOT paste inline
   shell/Python that replicates what `install`/`configure`/`doctor`/`index` already do.
+- **`--assistant <host>` is MANDATORY on every install.** `<host>` is the assistant you are running
+  as — see "Step 0 — Detect the host" below. Always pass it **explicitly** to `sertor install rag`,
+  `sertor install wiki` and `sertor-flow install`; **never** rely on the installer's default (the
+  default lays down the wrong host layout when you are not that default host).
 
 ## How to invoke Sertor's commands
 
@@ -77,6 +85,27 @@ Sertor ships at two levels — invoke each the right way:
   explain what it will do, and wait for an explicit "yes" before running it.
 - If the user does not confirm, do NOT run the step. Never auto-mutate or auto-download.
 
+## Step 0 — Detect the host (read-only) — pick `--assistant <host>`
+
+Before any install, determine which assistant you are running as: that value is the `<host>` you pass
+to **every** install command (`sertor install rag`, `sertor install wiki`, `sertor-flow install`). The
+supported values are `claude` and `copilot-cli`.
+
+- **Primary signal:** you ARE the host agent running this skill — pick the value that names the
+  assistant you are executing inside. If you run on the GitHub Copilot CLI host, use `copilot-cli`;
+  otherwise use `claude`.
+- **Deterministic fallback (read-only, from the repo's files)** when the primary signal is unclear:
+  - a GitHub-Copilot host-instruction file is present (`.github/copilot-instructions.md`) ⇒
+    `copilot-cli`;
+  - otherwise, a host project-instruction file / per-host config directory is present (the
+    capitalized project-instruction markdown at the repo root, or the per-host config folder) ⇒
+    `claude`.
+- If neither the primary signal nor the fallback resolves the host, **ask the user** which assistant
+  this is before installing — do NOT guess and do NOT fall back to the installer default.
+
+Carry the resolved `<host>` through the whole flow: substitute it into the `--assistant <host>`
+placeholder in Steps 3 and (for wiki/flow) below.
+
 ## Step 1 — Detect state (read-only)
 
 Run `uv run --project .sertor sertor-rag doctor --json` and read the four areas
@@ -114,12 +143,26 @@ Recommendation rules (propose with rationale, never impose):
 The chosen provider is written to `.sertor/.env` in Step 4 via
 `uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor configure --set SERTOR_EMBED_PROVIDER=<glove|hash|azure|ollama>`.
 
-## Step 3 — Install (on confirm)
+## Step 3 — Install (on confirm; always with `--assistant <host>`)
 
-If the RAG capability is missing (the `mcp`/`config` areas signal it is not installed), propose
-`uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install rag`
-(optionally add `--assistant <host>`). On explicit confirmation, run it. If the install is already
-present, skip this step.
+Use the `<host>` resolved in Step 0 and pass `--assistant <host>` **explicitly** on every install
+command below — never rely on the default.
+
+- **RAG** (the core capability of this flow): if the RAG capability is missing (the `mcp`/`config`
+  areas signal it is not installed), propose
+  `uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install rag --assistant <host>`.
+  On explicit confirmation, run it. If the install is already present, skip this step.
+- **Wiki** (optional, on the user's request): the wiki tooling/assets install via
+  `uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install wiki --assistant <host>`.
+  Propose it only if the user wants the wiki; confirm before running; skip if already present.
+- **Governance / flow** (optional, on the user's request): the SDLC apparatus ships in a separate
+  package and installs via
+  `uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor-flow" sertor-flow install --assistant <host>`.
+  Propose it only if the user wants the governance/SDLC layer; confirm before running; skip if
+  already present.
+
+For all three: install ≠ run (they only deposit assets), and each mutates the host — so each runs
+**only after explicit confirmation** (the consent gate above).
 
 ## Step 4 — Configure (on confirm; secrets via the secure path)
 
@@ -159,3 +202,5 @@ Run `uv run --project .sertor sertor-rag doctor` as the obligatory gate before d
 - Do NOT import the core or call the `build_*` factories; orchestrate the vehicles only.
 - Do NOT select a provider automatically; always propose and let the user confirm.
 - Do NOT declare the setup "done" without a green `sertor-rag doctor`.
+- Do NOT run any install (`rag`/`wiki`/`flow`) WITHOUT an explicit `--assistant <host>`; never rely on
+  the installer default (it would lay down the wrong host layout).
