@@ -218,6 +218,84 @@ def _copilot_freshness_start_specs() -> list[HookEntrySpec]:
     ]
 
 
+# Version-update check hook – SessionEnd (E2-FEAT-013): GET the remote `/VERSION`, compare with the
+# install-time stamp, persist the verdict to `.sertor/.version-check.json`. Travels WITH the rag
+# capability (shared runtime `.sertor/`). Same FILE + SETTINGS_MERGE pattern as rag-freshness (no
+# new ArtifactKind). The script body is host-agnostic, exits 0 always, and NEVER imports
+# `sertor_core` nor runs Python (Principio XI) — it does only HTTP+file (FR-014). Twin of
+# rag-freshness but the check is HTTP+file, not a CLI vehicle.
+_VERSION_CHECK_HOOK_ASSET = "rag/hooks/version-check.ps1"
+_VERSION_CHECK_HOOK_TARGET = ".claude/hooks/version-check.ps1"
+_VERSION_CHECK_HOOK_TARGET_COPILOT = ".github/hooks/version-check.ps1"
+_VERSION_CHECK_SETTINGS = "rag/settings.version-check.json"
+_COPILOT_VERSION_CHECK_END_WIRING_SENTINEL = "(generated: copilot version-check-end hooks)"
+
+# Version-update check signal – SessionStart (E2-FEAT-013): read the persisted state and warn if
+# behind. On Claude this is a dedicated script (`version-check-start.ps1`); on Copilot CLI it is a
+# NATIVE static prompt (no script deposited — W5 of the wiring contract).
+_VERSION_CHECK_START_ASSET = "rag/hooks/version-check-start.ps1"
+_VERSION_CHECK_START_TARGET = ".claude/hooks/version-check-start.ps1"
+_VERSION_CHECK_START_SETTINGS = "rag/settings.version-check-start.json"
+_COPILOT_VERSION_CHECK_START_WIRING_SENTINEL = "(generated: copilot version-check-start hooks)"
+
+# Install-time version stamp (E2-FEAT-013, D-3): the installer writes the installed version of the
+# `sertor` package into `.sertor/.sertor-version` so the hook compares it WITHOUT running Python in
+# the hot path. Rewritten on upgrade (closes the loop — INV-5/FR-013), removed with `.sertor/`.
+_VERSION_STAMP_TARGET = ".sertor/.sertor-version"
+
+
+def _copilot_version_check_end_specs() -> list[HookEntrySpec]:
+    """Logical SessionEnd entry for the Copilot version-check wiring (E2-FEAT-013, W1).
+
+    Native flat format (`version:1`/`timeoutSec`) via `render_copilot_hooks` — never the Claude
+    nested form (lezione FEAT-011/049). Non-blocking: the script exits 0 always.
+    """
+    return [
+        HookEntrySpec(
+            "SessionEnd", "command",
+            f"{_PWSH} {_VERSION_CHECK_HOOK_TARGET_COPILOT}", 15,
+        )
+    ]
+
+
+def _copilot_version_check_start_specs() -> list[HookEntrySpec]:
+    """Logical SessionStart entry for the Copilot version-check signal (E2-FEAT-013, W5).
+
+    A STATIC PROMPT (no script on Copilot CLI — A-005): the agent reads the persisted state and
+    relays the notice if behind. D<->N: the prompt induces, the agent only warns (never updates).
+    """
+    return [
+        HookEntrySpec(
+            "SessionStart", "prompt",
+            "At startup: read .sertor/.version-check.json. "
+            "If verdict=behind, surface the update notice (installed version, latest version, "
+            "the update command `sertor upgrade` / `uvx --refresh ...`); "
+            "if dimensions are present, name which dimensions are behind. "
+            "Do not apply any update yourself. "
+            "If up-to-date/ahead/unknown/absent, proceed without a notice.",
+            10,
+        )
+    ]
+
+
+def _write_version_stamp(profile: RagHostProfile) -> None:
+    """Write the install-time version stamp `.sertor/.sertor-version` (E2-FEAT-013, D-3/R-4).
+
+    The version is read IN-PROCESS at install/upgrade time via `importlib.metadata.version`
+    — NEVER by the hook at runtime (Principio XI: no Python in the hot path). Non-fatal: a failure
+    to resolve the version must not break the install (the hook degrades to `verdict: unknown`).
+    """
+    try:
+        import importlib.metadata as _imeta
+
+        version = _imeta.version("sertor")
+    except Exception:  # pragma: no cover - version unresolvable (e.g. editable without metadata)
+        return
+    sertor_dir = profile.sertor_dir
+    sertor_dir.mkdir(parents=True, exist_ok=True)
+    (sertor_dir / ".sertor-version").write_text(version + "\n", encoding="utf-8")
+
+
 def _skill_artifacts(names: tuple[str, ...], is_copilot: bool) -> list[Artifact]:
     """FILE artifacts for native skills, routed to each assistant's skill container (065, E12).
 
@@ -438,6 +516,56 @@ def build_rag_plan(
             WriteStrategy.MERGE_DEDUP,
         )
     )
+    # Version-update check hook (E2-FEAT-013): SessionEnd script (FILE) + SessionEnd wiring + a
+    # SessionStart signal (Claude script / Copilot static prompt). Twin of rag-freshness but the
+    # check is HTTP+file, never a vehicle. Additive (appended in canonical order — SC-010).
+    version_check_target = (
+        _VERSION_CHECK_HOOK_TARGET_COPILOT if is_copilot else _VERSION_CHECK_HOOK_TARGET
+    )
+    version_check_end_source = (
+        _COPILOT_VERSION_CHECK_END_WIRING_SENTINEL if is_copilot else _VERSION_CHECK_SETTINGS
+    )
+    version_check_settings_target = _COPILOT_HOOK_WIRING if is_copilot else _SETTINGS_TARGET
+    plan.append(
+        Artifact(
+            ArtifactKind.FILE,
+            _VERSION_CHECK_HOOK_ASSET,
+            version_check_target,
+            WriteStrategy.CREATE_IF_ABSENT,
+        )
+    )
+    plan.append(
+        Artifact(
+            ArtifactKind.SETTINGS_MERGE,
+            version_check_end_source,
+            version_check_settings_target,
+            WriteStrategy.MERGE_DEDUP,
+        )
+    )
+    # SessionStart signal: Claude deposits a dedicated script; Copilot deposits only the static
+    # prompt wiring (no `.ps1` — W5 of the wiring contract, data-model §5 note (a)).
+    if not is_copilot:
+        plan.append(
+            Artifact(
+                ArtifactKind.FILE,
+                _VERSION_CHECK_START_ASSET,
+                _VERSION_CHECK_START_TARGET,
+                WriteStrategy.CREATE_IF_ABSENT,
+            )
+        )
+    version_check_start_source = (
+        _COPILOT_VERSION_CHECK_START_WIRING_SENTINEL
+        if is_copilot
+        else _VERSION_CHECK_START_SETTINGS
+    )
+    plan.append(
+        Artifact(
+            ArtifactKind.SETTINGS_MERGE,
+            version_check_start_source,
+            version_check_settings_target,
+            WriteStrategy.MERGE_DEDUP,
+        )
+    )
     return plan
 
 
@@ -466,9 +594,15 @@ def _apply_deps(profile: RagHostProfile, runner: CommandRunner) -> ArtifactOutco
 
 
 def _apply_env(profile: RagHostProfile) -> ArtifactOutcome:
-    """`MERGE_ENV`: `.sertor/.env` from the backend template (empty secrets), additive merge."""
+    """`MERGE_ENV`: `.sertor/.env` from the backend template (empty secrets), additive merge.
+
+    Also writes the install-time version stamp `.sertor/.sertor-version` (E2-FEAT-013, D-3): this
+    step always runs (with or without DEPENDENCIES), so it is the reliable anchor for the stamp.
+    Writing the stamp is non-fatal and does not alter the env outcome.
+    """
     rendered = read_asset_text(f"rag/env.{profile.backend}.tmpl").format(corpus=profile.corpus)
     outcome, detail = merge_env(profile.sertor_dir / ".env", rendered)
+    _write_version_stamp(profile)  # E2-FEAT-013: install-time stamp (in-process, never the hook)
     return ArtifactOutcome(".sertor/.env", outcome, detail)
 
 
@@ -536,6 +670,10 @@ def _rag_hook_fragment(art: Artifact) -> dict:
         return render_copilot_hooks(_copilot_freshness_end_specs())
     if art.source == _COPILOT_FRESHNESS_START_WIRING_SENTINEL:
         return render_copilot_hooks(_copilot_freshness_start_specs())
+    if art.source == _COPILOT_VERSION_CHECK_END_WIRING_SENTINEL:
+        return render_copilot_hooks(_copilot_version_check_end_specs())
+    if art.source == _COPILOT_VERSION_CHECK_START_WIRING_SENTINEL:
+        return render_copilot_hooks(_copilot_version_check_start_specs())
     assert art.source is not None
     return json.loads(read_asset_text(art.source))
 
@@ -656,10 +794,24 @@ def sertor_owned_paths(assistant: AssistantId = AssistantProfile.DEFAULT) -> Ser
         if is_copilot
         else (freshness_hook_target, _FRESHNESS_START_TARGET)
     )
+    # Version-update check owned scripts (E2-FEAT-013): SessionEnd for both; SessionStart only for
+    # Claude (W5 — the Copilot SessionStart is a generated static prompt, no `.ps1`). The stamp
+    # `.sertor/.sertor-version` is removed with `.sertor/` (owned_dir), so it needs no entry here.
+    version_check_hook_target = (
+        _VERSION_CHECK_HOOK_TARGET_COPILOT if is_copilot else _VERSION_CHECK_HOOK_TARGET
+    )
+    version_check_files = (
+        (version_check_hook_target,)
+        if is_copilot
+        else (version_check_hook_target, _VERSION_CHECK_START_TARGET)
+    )
 
     return SertorOwnedPaths(
         owned_dirs=(".sertor", *skill_dirs),
-        owned_files=(hook_target, memory_hook_target, concierge_target, *freshness_files),
+        owned_files=(
+            hook_target, memory_hook_target, concierge_target,
+            *freshness_files, *version_check_files,
+        ),
         shared_edits=(
             SharedEdit(instruction_target, SharedEditKind.MARKER, "SERTOR:RAG-USAGE"),
             SharedEdit(settings_target, SharedEditKind.SETTINGS, _RAG_USAGE_SETTINGS),

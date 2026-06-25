@@ -29,6 +29,10 @@ build/
 **/.index.lock
 # Stato di salute RAG (076, E10-FEAT-011): rigenerabile a ogni SessionEnd, mai versionato.
 **/.sertor/.rag-health.json
+# Version-update check (077, E2-FEAT-013): stato + stamp installato, rigenerabili, mai versionati.
+**/.sertor/.version-check.json
+**/.sertor/.sertor-version
+**/.sertor/.sertor-flow-version
 
 # Log rigenerabili (re-index, ecc.)
 **/*.log

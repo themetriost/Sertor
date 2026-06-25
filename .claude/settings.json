@@ -17,6 +17,13 @@
             "timeout": 10,
             "statusMessage": "Checking RAG freshness",
             "command": "$d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; & (Join-Path $d '.claude/hooks/rag-freshness-start.ps1') -Assistant claude"
+          },
+          {
+            "type": "command",
+            "shell": "powershell",
+            "timeout": 10,
+            "statusMessage": "Verifico la disponibilità di aggiornamenti Sertor",
+            "command": "$d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; & (Join-Path $d '.claude/hooks/version-check-start.ps1') -Assistant claude"
           }
         ]
       }
@@ -54,6 +61,12 @@
             "shell": "powershell",
             "timeout": 15,
             "command": "$d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; & (Join-Path $d '.claude/hooks/rag-freshness.ps1')"
+          },
+          {
+            "type": "command",
+            "shell": "powershell",
+            "timeout": 15,
+            "command": "$d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; & (Join-Path $d '.claude/hooks/version-check.ps1')"
           }
         ]
       }
