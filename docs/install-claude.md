@@ -46,6 +46,15 @@ check from the terminal: `uv run --project .sertor sertor-rag search "how does X
 > itself). A bare `sertor-rag …` (or `which sertor-rag`) failing means "not on `PATH`", **not** "not
 > installed".
 
+> **Stays fresh automatically (E10-FEAT-011).** `install rag` also wires two hooks so you don't have to
+> remember to re-index: a **SessionEnd** hook (`.claude/hooks/rag-freshness.ps1`) that re-indexes
+> (incremental — near-free when nothing changed) and runs `doctor` at the end of each session, writing
+> the verdict to `.sertor/.rag-health.json`; and a **SessionStart** hook
+> (`.claude/hooks/rag-freshness-start.ps1`) that, if that verdict was `degraded`, nudges Claude to
+> re-index / reconnect the MCP server before working. Needs `pwsh`; the hooks invoke no LLM and never
+> block the session. You can still re-index manually with
+> `uv run --project .sertor sertor-rag index .`. Details: [install.md §10.1](install.md#101-refresh).
+
 ## 2. Wiki — the project's living knowledge base
 
 Install the **LLM Wiki** system: a cumulative, local knowledge base the assistant maintains as you

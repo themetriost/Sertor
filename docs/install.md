@@ -321,7 +321,8 @@ What it does (all **without** indexing — install ≠ run):
 | `.env` (backend template, **empty secrets** to fill in) | `<target>/.sertor/.env` | additive per-key merge (never overwrites your values) |
 | `.mcp.json` (`sertor-rag` server via `uv run --directory .sertor`) — scope `project` (default) | **host root** | additive merge (preserves other MCP servers) |
 | MCP registration in the client (`claude mcp add-json … --scope local`) — scope `local` | **outside the repo** (`~/.claude.json`) | idempotent (skip if already registered); fail-fast if `claude` is missing |
-| `.gitignore` (`.sertor/.venv/`, `.sertor/.index*`, `.sertor/.env`) | **host root** | append dedup |
+| **RAG-freshness hooks** (E10-FEAT-011): `rag-freshness.ps1` (**SessionEnd**: re-index + `doctor` → writes `.sertor/.rag-health.json`) + `rag-freshness-start.ps1` (**SessionStart**, Claude: induces a fix if the last verdict was `degraded`) + their wiring | `.claude/hooks/**` + `.claude/settings.json` (Claude) · `.github/hooks/**` + `.github/hooks/sertor-hooks.json` (Copilot CLI) | per-file skip; wiring is an additive dedup merge |
+| `.gitignore` (`.sertor/.venv/`, `.sertor/.index*`, `.sertor/.env`, `.sertor/.rag-health.json`) | **host root** | append dedup |
 
 Default: `azure` backend, all extras (`mcp`+`graph`+`rerank`) plus the backend's own; `--no-graph`
 /`--no-rerank` to reduce scope, `--no-deps` for scaffold only. Exit `0`/`1` (domain error,
@@ -333,6 +334,13 @@ After installation (explicit separate step — fill in the secrets in `.sertor/.
 uv run --project .sertor sertor-rag index .   # index host sources (keeps cwd; `.sertor/` is index/.env only)
 # then reload the MCP client: approve the `sertor-rag` server → search_code/docs/combined (+ graph)
 ```
+
+> **Staying fresh is automatic from now on (E10-FEAT-011).** Besides the one-off index above, the
+> installer wires a **RAG-freshness** hook: at the end of each agent session it re-indexes
+> (incremental — near-free when nothing changed) and runs `doctor`, recording the verdict in
+> `.sertor/.rag-health.json`; at the next session start, if that verdict was `degraded`, the agent is
+> prompted to re-index / reconnect the MCP server before working on possibly stale context. You can
+> still re-index manually any time. Details in **§10.1**.
 
 > **Self-locating runtime.** `sertor-rag`/`sertor-wiki-tools` load `.sertor/.env` and keep the
 > index and graph inside `.sertor/` **from any cwd**: if there is no `.env` in the cwd, the CLI
@@ -525,7 +533,38 @@ written (the `.env` template ships with empty values).
 
 ## 10. Refresh and clean uninstall
 
-### 10.1 Refresh (pull the latest Sertor onto a host)
+### 10.1 Refresh
+
+There are **two** independent kinds of "refresh": keeping the **index** in sync with your sources
+(now largely **automatic**), and pulling the latest **Sertor build** onto the host.
+
+#### Keeping the index fresh — automatic (E10-FEAT-011)
+
+Since FEAT-011, `sertor install rag` wires two host hooks so the corpus stays fresh **without relying
+on anyone remembering to re-index**:
+
+- **SessionEnd — `rag-freshness.ps1`**: at the end of every agent session it runs, through the CLI
+  vehicles only (it never imports the library), an **unconditional** `sertor-rag index .` followed by
+  `sertor-rag doctor`. The re-index is incremental (FEAT-009 manifest + embedding cache), so when
+  nothing changed it is **near-free** — there is deliberately no change-detection inside the hook. It
+  then writes the verdict to **`.sertor/.rag-health.json`** (schema `rag.health/1`): `healthy` when
+  `doctor` passes, otherwise `degraded` with the reason. The hook is **non-fatal** (always exits 0,
+  never blocks the session close) and **invokes no LLM**.
+- **SessionStart — `rag-freshness-start.ps1`** (Claude; on the Copilot CLI it is a static startup
+  prompt instead of a script): it re-reads `.sertor/.rag-health.json` and, **only if the last verdict
+  was `degraded`**, tells the agent to run `sertor-rag index .` and/or reconnect the MCP server
+  **before** working — so it never reasons on stale context. A `healthy` verdict is a silent no-op.
+
+This moves the mechanical "re-index + health check" steps from the agent's discretion to a
+deterministic harness (the agent keeps the judgment; the hook does the mechanics). Prerequisite:
+PowerShell (`pwsh`) on the host. The state file `.sertor/.rag-health.json` is **git-ignored**
+(regenerable, never versioned).
+
+> **Manual re-index is still available** any time — right after a large change, or if `pwsh` is
+> absent: `uv run --project .sertor sertor-rag index .`, and `uv run --project .sertor sertor-rag
+> doctor` to check health on demand.
+
+#### Pulling the latest Sertor build onto a host
 
 The interim distribution is an **unpinned `git+url`**, and `uvx` **caches** the built tool per
 resolved revision. After Sertor's `master` moves, a plain `uvx … sertor install …` may reuse a

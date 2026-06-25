@@ -50,7 +50,17 @@ Then load the MCP server: in the **Copilot CLI** run `/mcp reload` (or restart) 
 `/mcp show`. The `search_code` / `search_docs` / `search_combined` tools now answer over your code
 and docs. Quick check: `uv run --project .sertor sertor-rag search "how does X work?"`.
 
-### Refreshing to the latest Sertor
+### Staying fresh automatically (E10-FEAT-011)
+
+`install rag` wires the corpus to stay fresh on its own. A **SessionEnd** hook
+(`.github/hooks/rag-freshness.ps1`) re-indexes (incremental — near-free when nothing changed) and runs
+`doctor` at the end of each session, recording the verdict in `.sertor/.rag-health.json`. On the
+Copilot CLI the **SessionStart** signal is a **static startup prompt** (not a script) that, if the last
+verdict was `degraded`, asks the agent to re-index / reconnect the MCP server before working. Needs
+`pwsh`; no LLM is invoked by the hook and it never blocks the session. Manual re-index any time:
+`uv run --project .sertor sertor-rag index .`. Details: [install.md §10.1](install.md#101-refresh).
+
+### Refreshing to the latest Sertor build
 
 `uvx` caches the built installer **per git revision**, so a plain re-run can reuse a **stale build**
 after Sertor's `master` moves. Force a fresh build with **`--refresh`**, then re-run the install
