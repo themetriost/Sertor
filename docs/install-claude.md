@@ -55,6 +55,14 @@ check from the terminal: `uv run --project .sertor sertor-rag search "how does X
 > block the session. You can still re-index manually with
 > `uv run --project .sertor sertor-rag index .`. Details: [install.md §10.1](install.md#101-refresh).
 
+> **Update notice too (E2-FEAT-013).** `install rag` also wires a pair of hooks that **tell you when a
+> newer Sertor is available**: a **SessionEnd** hook (`.claude/hooks/version-check.ps1`) checks the
+> remote `/VERSION` at most ~once a day, and a **SessionStart** hook
+> (`.claude/hooks/version-check-start.ps1`) **warns** you at startup if you're behind — pointing to
+> `sertor upgrade` / `uvx --refresh`. It is **only a notice, never an auto-upgrade** (you decide when
+> to update); it invokes no LLM and skips silently offline. Details:
+> [install.md §10.1](install.md#101-refresh).
+
 ## 2. Wiki — the project's living knowledge base
 
 Install the **LLM Wiki** system: a cumulative, local knowledge base the assistant maintains as you

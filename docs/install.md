@@ -322,7 +322,8 @@ What it does (all **without** indexing — install ≠ run):
 | `.mcp.json` (`sertor-rag` server via `uv run --directory .sertor`) — scope `project` (default) | **host root** | additive merge (preserves other MCP servers) |
 | MCP registration in the client (`claude mcp add-json … --scope local`) — scope `local` | **outside the repo** (`~/.claude.json`) | idempotent (skip if already registered); fail-fast if `claude` is missing |
 | **RAG-freshness hooks** (E10-FEAT-011): `rag-freshness.ps1` (**SessionEnd**: re-index + `doctor` → writes `.sertor/.rag-health.json`) + `rag-freshness-start.ps1` (**SessionStart**, Claude: induces a fix if the last verdict was `degraded`) + their wiring | `.claude/hooks/**` + `.claude/settings.json` (Claude) · `.github/hooks/**` + `.github/hooks/sertor-hooks.json` (Copilot CLI) | per-file skip; wiring is an additive dedup merge |
-| `.gitignore` (`.sertor/.venv/`, `.sertor/.index*`, `.sertor/.env`, `.sertor/.rag-health.json`) | **host root** | append dedup |
+| **Version-check hooks** (E2-FEAT-013): `version-check.ps1` (**SessionEnd**: GET `/VERSION` ~1/day → writes `.sertor/.version-check.json`) + `version-check-start.ps1` (**SessionStart**, Claude; static startup prompt on Copilot CLI: warns if behind — never auto-upgrades) + their wiring; plus the install-time stamp `.sertor/.sertor-version` | `.claude/hooks/**` + `.claude/settings.json` (Claude) · `.github/hooks/**` + `.github/hooks/sertor-hooks.json` (Copilot CLI) | per-file skip; wiring is an additive dedup merge |
+| `.gitignore` (`.sertor/.venv/`, `.sertor/.index*`, `.sertor/.env`, `.sertor/.rag-health.json`, `.sertor/.version-check.json`, `.sertor/.sertor-version`) | **host root** | append dedup |
 
 Default: `azure` backend, all extras (`mcp`+`graph`+`rerank`) plus the backend's own; `--no-graph`
 /`--no-rerank` to reduce scope, `--no-deps` for scaffold only. Exit `0`/`1` (domain error,
@@ -535,8 +536,10 @@ written (the `.env` template ships with empty values).
 
 ### 10.1 Refresh
 
-There are **two** independent kinds of "refresh": keeping the **index** in sync with your sources
-(now largely **automatic**), and pulling the latest **Sertor build** onto the host.
+There are **three** independent kinds of "refresh": keeping the **index** in sync with your sources
+(now largely **automatic**), being **notified** when a newer **Sertor version** is available (also
+automatic — but only a notice), and pulling the latest **Sertor build** onto the host (the action you
+take).
 
 #### Keeping the index fresh — automatic (E10-FEAT-011)
 
@@ -563,6 +566,30 @@ PowerShell (`pwsh`) on the host. The state file `.sertor/.rag-health.json` is **
 > **Manual re-index is still available** any time — right after a large change, or if `pwsh` is
 > absent: `uv run --project .sertor sertor-rag index .`, and `uv run --project .sertor sertor-rag
 > doctor` to check health on demand.
+
+#### Update notice — you're on an old Sertor (E2-FEAT-013)
+
+This is a **third**, distinct kind of "refresh": being **told** when a newer Sertor build is
+available. It is **not** the index freshness above (that keeps the *corpus* in sync with your
+sources) and **not** the manual *Pulling the latest Sertor build* below (the action you take) — it is
+just the **notice about the Sertor version**. Like the index-freshness hooks, `sertor install rag`
+wires it as two host hooks (parity Claude / Copilot CLI):
+
+- **SessionEnd — `version-check.ps1`**: at most **~once per day** (cached) it does a single `GET` of
+  the `/VERSION` file on `master` (the public raw URL; override with the env var
+  **`SERTOR_VERSION_CHECK_URL`**) and compares it to the version that was stamped **at install time**
+  into `.sertor/.sertor-version`. It writes the result to **`.sertor/.version-check.json`** (schema
+  `version.check/1`). It is **non-fatal** (always exits 0), **invokes no LLM** and runs **no Python**
+  (it reads the install-time stamp, never `importlib.metadata`). **Offline → silent skip.** Privacy:
+  the only network egress is the `GET` of the public `/VERSION`; no project content or secret is sent,
+  and the state file holds only public version numbers.
+- **SessionStart — `version-check-start.ps1`** (Claude; on the Copilot CLI it is a **static startup
+  prompt** instead of a script): if the installed version is **behind**, it **warns** you and points
+  to the update command (`sertor upgrade`, or `uvx --refresh …` — see *Pulling the latest Sertor build*
+  below). It is **only a notice — never an auto-upgrade**: you decide when to update.
+
+Prerequisite: PowerShell (`pwsh`) on the host. The state file `.sertor/.version-check.json` and the
+stamp `.sertor/.sertor-version` are **git-ignored** (regenerable, never versioned).
 
 #### Pulling the latest Sertor build onto a host
 

@@ -60,6 +60,12 @@ verdict was `degraded`, asks the agent to re-index / reconnect the MCP server be
 `pwsh`; no LLM is invoked by the hook and it never blocks the session. Manual re-index any time:
 `uv run --project .sertor sertor-rag index .`. Details: [install.md §10.1](install.md#101-refresh).
 
+There is also an **update notice** (E2-FEAT-013): a **SessionEnd** hook
+(`.github/hooks/version-check.ps1`) checks the remote `/VERSION` at most ~once a day, and on the
+Copilot CLI the **SessionStart** signal is a **static startup prompt** that **warns** you if you're
+behind, pointing to `sertor upgrade` / `uvx --refresh`. It is **only a notice, never an auto-upgrade**
+(you decide when to update). Details: [install.md §10.1](install.md#101-refresh).
+
 ### Refreshing to the latest Sertor build
 
 `uvx` caches the built installer **per git revision**, so a plain re-run can reuse a **stale build**

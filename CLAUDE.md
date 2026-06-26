@@ -246,8 +246,8 @@ SpecKit (`clarify`, `specify`, ecc.).
 
 ## Feature completa & tracciamento dello scope (regola SEMPRE attiva)
 
-Due regole gemelle che impediscono di **perdere pezzi di una feature** — il valore consegnato e lo
-scope rinviato.
+Tre regole che impediscono di **perdere pezzi di una feature** — il valore consegnato, lo scope
+rinviato e la sua **comprensibilità per l'utente**.
 
 ### 1. Una feature è completa SOLO se è installabile su un ospite
 
@@ -282,6 +282,27 @@ a una casa **durevole**:
 Mai lasciare un rinvio reale a vivere **solo** dentro `specs/<feat>/`. I due livelli durevoli (backlog
 epica + roadmap) sono le **uniche** fonti di verità per "cosa manca"; l'Out-of-Scope di spec è solo il
 confine locale.
+
+### 3. Una modifica al setup non è "done" finché la documentazione UTENTE non è aggiornata
+
+**Vale SEMPRE.** Ogni modifica **host-facing al setup** — installer (`sertor install`/`upgrade`/
+`uninstall`), asset distribuiti (skill/agenti/hook/comandi), voci `settings.json`, manopole/template
+`.env`, blocchi `claude-md-block`, comandi d'installazione/esecuzione, layout `.sertor/` — **non è
+completa finché la documentazione UTENTE non riflette il cambiamento, nello stesso step**. È il
+complemento della regola 1: una capacità non solo dev'essere *installabile*, ma anche *comprensibile*
+da chi la installa/usa.
+
+La **documentazione utente** è `docs/` (riferimento completo `install.md` + quick-start per-assistente
+`install-claude.md`/`install-copilot.md`), `README.md` e la tabella capability di
+`packages/sertor/docs/install.md` — **distinta** dalla *documentazione interna* (il wiki in `wiki/`,
+vedi la distinzione standing). Concretamente: una nuova capacità/hook/manopola/comando che l'utente
+installa o vede DEVE comparire nel punto giusto di `docs/install.md` (e nei quick-start se cambia il
+flusso percepito) + tabella capability dove pertinente. Se la doc non è aggiornabile nello stesso
+step, è un **debito di completamento tracciato** (regola 2), non uno stato "done".
+
+**Doppio cappello:** è **usabilità** (E12 — l'utente capisce cosa succede al setup) **e**
+**documentazione** (E13). *Origine (2026-06-26):* l'auto-updater (E2-FEAT-013) era implementato e
+installabile ma **non documentato** in `docs/` — gap colto solo a posteriori; questa regola lo previene.
 
 ## Rituale di step / Definition of Done (regola SEMPRE attiva)
 
