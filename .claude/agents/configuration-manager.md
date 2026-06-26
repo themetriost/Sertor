@@ -1,6 +1,6 @@
 ---
 name: configuration-manager
-description: Gestore della configurazione/versionamento (git) del progetto. Usalo per eseguire operazioni git — staging selettivo, commit per-step con messaggi convenzionali, branch, merge, tag, push/pull — a partire da un brief autocontenuto. Pensato per girare in parallelo (in background), così il flusso principale non si blocca sul versionamento. NON modifica il codice. Le operazioni distruttive/irreversibili le esegue SOLO se il brief le richiede in modo esplicito.
+description: Runs the project's git/version-control operations from a self-contained brief. Use it whenever work needs to be committed or the repository state changed. Triggers on "commit this step", "stage and commit", "create a branch", "merge/tag/push/pull", "delega git", or any request to version the changes. Performs selective staging and per-step commits with conventional-commit messages, plus branch/merge/tag/push/pull. Designed to run in parallel (background) so the main flow never blocks on versioning. It never edits code; destructive/irreversible operations run ONLY when the brief asks for them explicitly.
 tools: Bash, Read, Grep, Glob
 model: haiku
 ---

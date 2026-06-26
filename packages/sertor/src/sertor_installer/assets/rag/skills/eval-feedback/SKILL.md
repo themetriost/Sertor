@@ -1,6 +1,6 @@
 ---
 name: eval-feedback
-description: "Explicit relevance feedback: the agent observes the results of a search, receives the user's verdict (relevant / not relevant), and refines the evaluation suite accordingly by updating the `expected` of the matching case - always through the CLI vehicle `sertor-rag eval add-case`. No verdict is ever inferred or persisted without an explicit user action. It never imports the core library."
+description: "Explicit relevance feedback that turns a user's verdict on search results into a refinement of the evaluation suite. Use it whenever someone judges retrieval quality. Triggers on 'this result is wrong/right', 'mark this as relevant', 'the expected file for this query should be X', 'tune the eval suite from these results', or reviewing what a search returned. The agent observes the results, receives the user's verdict (relevant / not relevant), and updates the `expected` of the matching case - always through the CLI vehicle `sertor-rag eval add-case`. No verdict is ever inferred or persisted without an explicit user action. It never imports the core library."
 argument-hint: "The query whose results you are judging (or leave empty and start from a search you just ran)"
 user-invocable: true
 disable-model-invocation: false

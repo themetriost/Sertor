@@ -1,6 +1,6 @@
 ---
 name: eval-suite-author
-description: "Assisted authoring of the evaluation suite (ground-truth): retrieval cases (query -> expected path) and code-graph navigation cases (relation + symbol -> expected set of refs). Using the project's RAG/MCP tools over the indexed corpus, the agent DERIVES candidates, proposes them for approval, and persists ONLY the approved ones by invoking the CLI subcommands `eval add-case` / `graph-eval add-case`. It never runs the evaluation (that is deterministic and does not depend on this skill); it never imports the core library."
+description: "Assisted authoring of the evaluation suite (ground-truth). Use it whenever evaluation cases need to be created or grown. Triggers on 'create eval cases', 'build the ground-truth suite', 'add a retrieval test case', 'add a graph navigation case', or wanting to measure retrieval/graph quality on this corpus. Authors retrieval cases (query -> expected path) and code-graph navigation cases (relation + symbol -> expected set of refs): using the project's RAG/MCP tools over the indexed corpus, the agent DERIVES candidates, proposes them for approval, and persists ONLY the approved ones by invoking the CLI subcommands `eval add-case` / `graph-eval add-case`. It never runs the evaluation (that is deterministic and does not depend on this skill); it never imports the core library."
 argument-hint: "Describe the corpus area/capability you want evaluation cases for (e.g. 'retrieval over the domain symbols')"
 user-invocable: true
 disable-model-invocation: false

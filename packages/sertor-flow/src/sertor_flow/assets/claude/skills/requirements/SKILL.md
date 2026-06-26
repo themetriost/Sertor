@@ -1,6 +1,6 @@
 ---
 name: requirements
-description: "Fase di gestione ed elicitazione dei requisiti, su due livelli. Livello epica: produce requirements/<epica>/epic.md con visione, ambito, criteri di successo e un backlog di feature (MoSCoW). Livello feature: produce requirements/<epica>/<feature>/requirements.md con requisiti funzionali in notazione EARS. Include la decomposizione dal backlog alle feature. È la fase a monte del design."
+description: "Requirements management and elicitation, the upstream phase before design, on two levels. Use it whenever requirements need to be created, refined, or decomposed. Triggers on 'write the requirements', 'define the epic', 'put this feature into requirements', 'break the epic into features', or starting a new capability before any design. Epic level: produces requirements/<epic>/epic.md with vision, scope, success criteria, and a MoSCoW feature backlog. Feature level: produces requirements/<epic>/<feature>/requirements.md with functional requirements in EARS notation. Includes decomposing the backlog into features."
 argument-hint: "Descrivi l'epica (requisito di alto livello) o la singola feature da mettere a requisiti"
 user-invocable: true
 disable-model-invocation: false

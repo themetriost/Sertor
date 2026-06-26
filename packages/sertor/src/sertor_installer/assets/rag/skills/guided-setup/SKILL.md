@@ -1,12 +1,14 @@
 ---
 name: guided-setup
-description: "Guide the user from an unconfigured repo to a verified Sertor RAG (a green
-  `sertor-rag doctor`), conversing and orchestrating ONLY the deterministic vehicles
-  (`sertor install`, `sertor configure --set`, `sertor-rag doctor`/`index`). Detects current state,
+description: "Guides the user from an unconfigured repo to a verified Sertor RAG (a green
+  `sertor-rag doctor`). Use it whenever someone wants to get Sertor working. Triggers on
+  'set up Sertor', 'install Sertor', 'configure the RAG', 'get the RAG running', 'why is the
+  RAG not working', or any first-time setup/onboarding request. Detects current state,
   recommends an embedding provider from context (with confirmation), fills `.env` securely (never
-  printing secrets), announces the one-time GloVe download, and verifies fail-loud via `doctor`.
-  Read-only checks run freely; every host mutation/download runs only after explicit confirmation.
-  It never reimplements a command and never imports the core."
+  printing secrets), announces the one-time GloVe download, and verifies fail-loud via `doctor`,
+  orchestrating ONLY the deterministic vehicles (`sertor install`, `sertor configure --set`,
+  `sertor-rag doctor`/`index`). Read-only checks run freely; every host mutation/download runs only
+  after explicit confirmation. It never reimplements a command and never imports the core."
 user-invocable: true
 disable-model-invocation: false
 ---
