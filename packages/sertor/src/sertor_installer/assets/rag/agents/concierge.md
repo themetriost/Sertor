@@ -28,6 +28,13 @@ check.
   it. Do not reimplement the flow here.
 - You orchestrate Sertor only through its vehicles (the deterministic CLI commands and MCP). Never
   import the core library, never reimplement a command.
+- **Host-aware install:** when routing to install/setup (rag, wiki, or governance/flow), first
+  **detect the host** — the assistant you are running as — and pass `--assistant <host>` explicitly to
+  every install command (`sertor install rag`, `sertor install wiki`, `sertor-flow install`). Use
+  `copilot-cli` on the GitHub Copilot CLI host, `claude` otherwise, with a deterministic fallback from
+  the repo's host-instruction files; never rely on the installer's default (the default lays down the
+  wrong host layout). The `guided-setup` skill documents this detection and the per-capability install
+  commands.
 - **Invocation convention:** the runtime CLIs are NOT on `PATH` after install — they live in the
   project's `.sertor/.venv`. Invoke them via `uv run --project .sertor sertor-rag <args>` (the
   `guided-setup` skill documents this and the `uvx --from … sertor <verb>` form for the installer). A
