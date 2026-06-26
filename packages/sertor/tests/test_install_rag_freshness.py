@@ -130,6 +130,59 @@ def test_freshness_hook_content(tmp_path: Path, make_runner):
     assert "exit 0" in text             # non-fatal
 
 
+def test_freshness_hook_non_blocking_design(tmp_path: Path, make_runner):
+    """E10-FEAT-016 refinement: the FOREGROUND only RELAUNCHES this same script DETACHED in worker
+    mode (Start-Process pwsh -Worker), so the session close returns immediately — doctor AND index
+    run off the critical path. The CLI is invoked via `uv run --project <root>/.sertor`
+    (PATH-independent), never bare `uv run sertor-rag`."""
+    _run(tmp_path, make_runner(), backend="azure", with_deps=False)
+    text = (tmp_path / _FRESHNESS_HOOK_REL).read_text(encoding="utf-8")
+    # The foreground spawns a detached worker process.
+    assert "Start-Process" in text
+    assert "-Worker" in text                 # relaunches itself in worker mode
+    # Vehicle invocations use the project-pinned form (PATH-independent), not bare `uv run`.
+    assert "uv run --project" in text
+    assert "uv run sertor-rag" not in text   # the old bare form must be gone
+
+
+def _script_body(text: str) -> str:
+    """Strip the leading `<# ... #>` comment-help block so positional asserts look only at CODE,
+    not at marker strings that also appear in the documentation."""
+    end = text.find("#>")
+    return text[end + 2 :] if end != -1 else text
+
+
+def test_freshness_foreground_does_not_run_doctor_or_index_synchronously(
+    tmp_path: Path, make_runner
+):
+    """E10-FEAT-016 refinement: the FOREGROUND branch must NOT run doctor + index synchronously —
+    it only spawns the worker. The synchronous doctor/index calls live in the WORKER function
+    (defined before the `if ($Worker)` dispatch); the foreground only does the `Start-Process`
+    relaunch (after the dispatch), so they are never executed on the session-close path."""
+    _run(tmp_path, make_runner(), backend="azure", with_deps=False)
+    body = _script_body((tmp_path / _FRESHNESS_HOOK_REL).read_text(encoding="utf-8"))
+    worker_func = body.index("function Invoke-RagFreshnessWorker")
+    worker_dispatch = body.index("if ($Worker)")
+    spawn_pos = body.index("Start-Process")
+    # Worker function defined first, then the dispatch, then the foreground detached spawn.
+    assert worker_func < worker_dispatch < spawn_pos
+    # The synchronous vehicle calls (uv run) live inside the worker function, i.e. BEFORE the
+    # dispatch — the foreground path (after the dispatch) never calls a vehicle directly.
+    first_vehicle = body.index("uv run --project")
+    assert worker_func < first_vehicle < worker_dispatch
+
+
+def test_freshness_worker_doctor_before_state_before_index(tmp_path: Path, make_runner):
+    """E10-FEAT-016 (REQ-004/005, DA-6): inside the WORKER, the verdict is computed and the state
+    written BEFORE the re-index, so `.rag-health.json` is never torn/absent."""
+    _run(tmp_path, make_runner(), backend="azure", with_deps=False)
+    body = _script_body((tmp_path / _FRESHNESS_HOOK_REL).read_text(encoding="utf-8"))
+    doctor_pos = body.index("sertor-rag doctor")
+    state_write_pos = body.index("Move-Item")          # the atomic state write
+    index_pos = body.index("sertor-rag index")
+    assert doctor_pos < state_write_pos < index_pos
+
+
 def test_freshness_start_content(tmp_path: Path, make_runner):
     _run(tmp_path, make_runner(), backend="azure", with_deps=False)
     start = tmp_path / _FRESHNESS_START_REL
