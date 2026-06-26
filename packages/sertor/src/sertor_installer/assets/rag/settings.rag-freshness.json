@@ -6,7 +6,7 @@
           {
             "type": "command",
             "shell": "powershell",
-            "timeout": 30,
+            "timeout": 15,
             "command": "$d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; & (Join-Path $d '.claude/hooks/rag-freshness.ps1')"
           }
         ]
