@@ -194,8 +194,10 @@ def _copilot_freshness_end_specs() -> list[HookEntrySpec]:
     """
     return [
         HookEntrySpec(
+            # E10-FEAT-016: timeout covers `doctor` + the detached index spawn, NOT the re-index
+            # itself (which runs fire-and-forget). Parity with Claude `settings.rag-freshness.json`.
             "SessionEnd", "command",
-            f"{_PWSH} {_FRESHNESS_HOOK_TARGET_COPILOT}", 15,
+            f"{_PWSH} {_FRESHNESS_HOOK_TARGET_COPILOT}", 30,
         )
     ]
 

@@ -130,6 +130,30 @@ def test_freshness_hook_content(tmp_path: Path, make_runner):
     assert "exit 0" in text             # non-fatal
 
 
+def test_freshness_hook_non_blocking_design(tmp_path: Path, make_runner):
+    """E10-FEAT-016: the re-index runs DETACHED (Start-Process), so the session close returns
+    immediately; and the CLI is invoked via `uv run --project <root>/.sertor` (FEAT-017 overlap),
+    never bare `uv run`."""
+    _run(tmp_path, make_runner(), backend="azure", with_deps=False)
+    text = (tmp_path / _FRESHNESS_HOOK_REL).read_text(encoding="utf-8")
+    # The re-index is fire-and-forget via a detached process.
+    assert "Start-Process" in text
+    # Vehicle invocations use the project-pinned form (PATH-independent), not bare `uv run`.
+    assert "uv run --project" in text
+    assert "uv run sertor-rag" not in text   # the old bare form must be gone
+
+
+def test_freshness_hook_doctor_before_index(tmp_path: Path, make_runner):
+    """E10-FEAT-016 (REQ-004/005, DA-6): the verdict is computed and the state written BEFORE the
+    re-index, so `.rag-health.json` is never stale/absent on a long re-index."""
+    _run(tmp_path, make_runner(), backend="azure", with_deps=False)
+    text = (tmp_path / _FRESHNESS_HOOK_REL).read_text(encoding="utf-8")
+    doctor_pos = text.index("sertor-rag doctor")
+    state_write_pos = text.index(".rag-health.json")
+    index_pos = text.index("Start-Process")
+    assert doctor_pos < state_write_pos < index_pos
+
+
 def test_freshness_start_content(tmp_path: Path, make_runner):
     _run(tmp_path, make_runner(), backend="azure", with_deps=False)
     start = tmp_path / _FRESHNESS_START_REL
