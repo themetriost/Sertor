@@ -7,7 +7,7 @@ non-destructive, idempotent way (install ≠ run: nothing is indexed automatical
 
 | Capability | Command | What it installs |
 |---|---|---|
-| RAG | `sertor install rag` | `.sertor/` runtime + MCP server config + RAG-usage instruction block + anti-bypass hook + **RAG-freshness hooks** (SessionEnd re-index + `doctor` → `.sertor/.rag-health.json`; SessionStart induces a fix if degraded — E10-FEAT-011) |
+| RAG | `sertor install rag` | `.sertor/` runtime + MCP server config + RAG-usage instruction block + anti-bypass hook + **RAG-freshness hooks** (SessionEnd re-index + `doctor` → `.sertor/.rag-health.json`; SessionStart induces a fix if degraded — E10-FEAT-011) + **version-check hooks** (SessionEnd GET `/VERSION` ~1/day → `.sertor/.version-check.json`; SessionStart warns if behind, never auto-upgrades — E2-FEAT-013) |
 | wiki | `sertor install wiki` | wiki commands/skill, agent, hooks, instruction block + `wiki/` scaffold |
 | governance | `sertor install governance` | pointer to the separate `sertor-flow` package |
 
