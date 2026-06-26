@@ -1,7 +1,7 @@
 ---
 name: requirements-analyst
-description: Turns a raw idea or need into a structured requirements document, the upstream phase before any design. Use it whenever requirements must be elicited or written. Triggers on "write the requirements", "elicit requirements", "what should this feature do", "turn this idea into requirements", or starting a new feature/epic. Produces a `requirements.md` with EARS-notation functional requirements, measurable success criteria, scope, constraints, assumptions, risks, and MoSCoW prioritization. As a subagent it does not interrogate the user live: it completes what it can and returns open questions in the report. If the project exposes code-search/retrieval tools (e.g. an MCP server), it uses them to anchor requirements to the real code. It never runs git.
-tools: Read, Write, Edit, Glob, Grep, Bash
+description: Turns a raw idea or need into a structured requirements document, the upstream phase before any design. Use it whenever requirements must be elicited or written. Triggers on "write the requirements", "elicit requirements", "what should this feature do", "turn this idea into requirements", or starting a new feature/epic. Produces a `requirements.md` with EARS-notation functional requirements, measurable success criteria, scope, constraints, assumptions, risks, and MoSCoW prioritization. As a subagent it does not interrogate the user live — it completes what it can and returns open questions in the report. If the project exposes code-search/retrieval tools (e.g. an MCP server), it uses them to anchor requirements to the real code. It never runs git.
+tools: Read, Write, Edit, Glob, Grep
 model: sonnet
 ---
 
