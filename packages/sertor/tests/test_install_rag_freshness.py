@@ -320,7 +320,10 @@ def test_rag_freshness_dogfood_sync():
         repo_root / "packages/sertor/src/sertor_installer/assets/rag/hooks"
     )
     dogfood_base = repo_root / ".claude/hooks"
-    for name in ("rag-freshness.ps1", "rag-freshness-start.ps1"):
+    for name in (
+        "rag-freshness.ps1", "rag-freshness-start.ps1",
+        "version-check.ps1", "version-check-start.ps1",   # E2-FEAT-013
+    ):
         bundled = bundled_base / name
         dogfood = dogfood_base / name
         assert dogfood.is_file(), f"dogfood .claude/hooks/{name} mancante"
