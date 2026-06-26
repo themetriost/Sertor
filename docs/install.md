@@ -546,13 +546,15 @@ take).
 Since FEAT-011, `sertor install rag` wires two host hooks so the corpus stays fresh **without relying
 on anyone remembering to re-index**:
 
-- **SessionEnd — `rag-freshness.ps1`**: at the end of every agent session it runs, through the CLI
-  vehicles only (it never imports the library), an **unconditional** `sertor-rag index .` followed by
-  `sertor-rag doctor`. The re-index is incremental (FEAT-009 manifest + embedding cache), so when
-  nothing changed it is **near-free** — there is deliberately no change-detection inside the hook. It
-  then writes the verdict to **`.sertor/.rag-health.json`** (schema `rag.health/1`): `healthy` when
-  `doctor` passes, otherwise `degraded` with the reason. The hook is **non-fatal** (always exits 0,
-  never blocks the session close) and **invokes no LLM**.
+- **SessionEnd — `rag-freshness.ps1`**: at the end of every agent session it returns **immediately**
+  (it does **not** stall the session close, even on a large repo — E10-FEAT-016) by launching a
+  **detached background worker**. The worker, through the CLI vehicles only (it never imports the
+  library), runs `sertor-rag doctor` → writes the verdict to **`.sertor/.rag-health.json`** (schema
+  `rag.health/1`; `healthy` when `doctor` passes, otherwise `degraded` with the reason) → then an
+  **unconditional** `sertor-rag index .`. The re-index is incremental (FEAT-009 manifest + embedding
+  cache), so when nothing changed it is **near-free**; there is deliberately no change-detection
+  inside the hook. Because the work runs in the background, the recorded verdict can be **at most one
+  session behind**. The hook is **non-fatal** (always exits 0) and **invokes no LLM**.
 - **SessionStart — `rag-freshness-start.ps1`** (Claude; on the Copilot CLI it is a static startup
   prompt instead of a script): it re-reads `.sertor/.rag-health.json` and, **only if the last verdict
   was `degraded`**, tells the agent to run `sertor-rag index .` and/or reconnect the MCP server
