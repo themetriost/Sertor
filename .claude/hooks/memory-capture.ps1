@@ -50,14 +50,44 @@ if ($raw -and $raw.Trim()) { try { $hook = $raw | ConvertFrom-Json } catch { $ho
 $root = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR }
         elseif ($hook -and $hook.cwd) { $hook.cwd }
         else { '.' }
+# Resolve to an absolute path so `--project` is cwd-independent (audit ISSUE-03: a bare `uv run`
+# resolves the project/venv from the CURRENT directory, which may NOT be the project root when the
+# host fires the hook from elsewhere; pin the runtime explicitly below). Best-effort.
+try { $root = (Resolve-Path -LiteralPath $root -ErrorAction Stop).Path } catch {}
 
 # --- delegate to the host-agnostic command; absorb any outcome, always exit 0 (FR-013) ---
+# E10-FEAT-017 (audit ISSUE-03): resolve the CLI robustly, never a cwd-fragile bare `uv run`.
+# Once the RAG runtime is installed the CLI lives in `.sertor/.venv` and is NOT on PATH; prefer
+# `uv run --project <root>/.sertor` (PATH- and cwd-independent: it pins the runtime regardless of the
+# working directory), and fall back to the `sertor-rag` executable inside that venv only if `uv` is
+# unavailable. Mirror of wiki-pending-check.ps1 / rag-freshness.ps1. Any failure → silent exit 0.
 try {
     Push-Location $root
-    uv run sertor-rag memory archive 2>$null
+    $runtimeDir = Join-Path $root '.sertor'
+    if (Test-Path $runtimeDir) {
+        uv run --project $runtimeDir sertor-rag memory archive 2>$null
+    } else {
+        # No `.sertor` runtime: try a global `sertor-rag` on PATH (e.g. a global install).
+        sertor-rag memory archive 2>$null
+    }
     Pop-Location
 } catch {
-    try { Pop-Location } catch {}   # CLI unavailable / error: silent, non-fatal
+    try { Pop-Location } catch {}
+    # `uv` itself missing: fall back to the CLI executable inside the project venv (PATH-independent),
+    # Windows (`Scripts/sertor-rag.exe`) or POSIX (`bin/sertor-rag`). Still silent, still non-fatal.
+    try {
+        $venvCli = Join-Path $root '.sertor/.venv/Scripts/sertor-rag.exe'   # Windows
+        if (-not (Test-Path $venvCli)) {
+            $venvCli = Join-Path $root '.sertor/.venv/bin/sertor-rag'       # POSIX
+        }
+        if (Test-Path $venvCli) {
+            Push-Location $root
+            & $venvCli memory archive 2>$null
+            Pop-Location
+        }
+    } catch {
+        try { Pop-Location } catch {}   # CLI unavailable / error: silent, non-fatal
+    }
 }
 
 exit 0   # ALWAYS — any failure of the command must never break the session close (SC-005)
