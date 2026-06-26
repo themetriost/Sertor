@@ -1,6 +1,6 @@
 ---
 name: wiki-author
-description: Generates/updates the project LLM Wiki by reading the repo and writing pages. Use it when the user says "generate the wiki", "update the wiki", "document the project in the wiki". Karpathy pattern: the agent reads the sources and writes the .md files.
+description: Generates/updates the project LLM Wiki by reading the repo and writing pages. Use it when the user says "generate the wiki", "update the wiki", "document the project in the wiki". Karpathy pattern — the agent reads the sources and writes the .md files.
 ---
 
 # Generate the LLM Wiki (author)
