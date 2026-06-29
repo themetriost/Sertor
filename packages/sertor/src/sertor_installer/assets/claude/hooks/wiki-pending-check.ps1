@@ -26,6 +26,35 @@ param(
 
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 
+function Write-HookBreadcrumb {
+    <#
+      Best-effort breadcrumb of the LAST hook failure (E10-FEAT-019), twin of `.rag-health.json`.
+      Writes a single, OVERWRITTEN `.sertor/.last-hook-error` (schema `hook.error/1`) so a silently
+      swallowed degradation leaves an inspectable trace. EVERYTHING runs inside try/catch: a write
+      failure NEVER makes the hook fatal (it still exits 0). `Reason` is a FIXED hook-local string
+      (secret-free): never `$_.Exception.Message` nor raw vehicle output (REQ-008).
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$Root,
+        [Parameter(Mandatory = $true)][string]$Hook,
+        [Parameter(Mandatory = $true)][string]$Reason
+    )
+    try {
+        $runtimeDir = Join-Path $Root '.sertor'
+        if (-not (Test-Path $runtimeDir)) { New-Item -ItemType Directory -Path $runtimeDir -Force | Out-Null }
+        $statePath = Join-Path $runtimeDir '.last-hook-error'
+        $timestamp = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+        $state = [ordered]@{
+            schema = 'hook.error/1'
+            hook   = $Hook
+            ts     = $timestamp
+            reason = $Reason
+        }
+        ($state | ConvertTo-Json -Depth 4) | Set-Content -Path $statePath -Encoding UTF8
+        [Console]::Error.WriteLine("hook '$Hook' degraded: $Reason (see .sertor/.last-hook-error)")
+    } catch { }
+}
+
 # --- hook input (JSON on stdin) ---
 $raw = ''
 try { $raw = [Console]::In.ReadToEnd() } catch {}
@@ -69,7 +98,12 @@ try {
     if ($out) { $scan = ($out | Select-Object -Last 1 | ConvertFrom-Json) }
 } catch {
     try { Pop-Location } catch {}
-    exit 0   # CLI unavailable / error: silent hook, no noise
+    # E10-FEAT-019: `sertor-wiki-tools scan` not resolvable or in error → a path that was silently
+    # swallowed; leave an inspectable breadcrumb (fixed string, no `$_` — R-3) then exit 0 (non-fatal).
+    # NB: a no-config or `pending <= 0` outcome is a DEFINED no-op (handled above/below), not a
+    # failure → no breadcrumb there.
+    Write-HookBreadcrumb -Root $root -Hook 'wiki-pending-check' -Reason "sertor-wiki-tools scan unavailable or failed"
+    exit 0   # CLI unavailable / error: non-fatal hook, breadcrumb left, no noise
 }
 
 if (-not $scan -or $scan.schema -ne 'wiki.scan/1' -or [int]$scan.pending -le 0) { exit 0 }

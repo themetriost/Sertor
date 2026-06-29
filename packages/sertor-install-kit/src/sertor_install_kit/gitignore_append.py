@@ -2,7 +2,8 @@
 
 Ensures that regenerable runtime artifacts (`.sertor/.venv/`, `.sertor/.index*`,
 `.sertor/.env`, `.sertor/.rag-health.json`, `.sertor/.version-check.json`,
-`.sertor/.sertor-version`, `.sertor/.sertor-flow-version`) are ignored. Absent → create with
+`.sertor/.sertor-version`, `.sertor/.sertor-flow-version`, `.sertor/.last-hook-error`) are
+ignored. Absent → create with
 header + lines; present → append only missing lines (dedup), without duplicates and without
 touching user lines.
 """
@@ -21,6 +22,7 @@ RUNTIME_IGNORES = (
     ".sertor/.version-check.json",   # E2-FEAT-013: version-check state (regenerable)
     ".sertor/.sertor-version",        # E2-FEAT-013: installed version stamp (written by installer)
     ".sertor/.sertor-flow-version",   # E2-FEAT-013: governance stamp (sertor-flow install)
+    ".sertor/.last-hook-error",       # E10-FEAT-019: hook error breadcrumb (runtime, not versioned)
 )
 _HEADER = "# Sertor RAG runtime (sertor install rag)"
 

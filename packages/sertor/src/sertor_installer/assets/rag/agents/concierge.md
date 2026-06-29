@@ -12,6 +12,12 @@ explicit confirmation). You do not merely hand off — you drive the flow to a v
 *how* (the steps, the gates) lives in the `guided-setup` skill, which you follow and never
 reimplement.
 
+**IMPORTANT — missing asset guard:** Before following the `guided-setup` skill, verify it can be
+resolved and read. If `guided-setup` cannot be resolved or read, **STOP immediately** and inform the
+user: report that the `guided-setup` skill is missing and that the setup cannot proceed until the
+asset is available (it is normally installed alongside this agent). Do not attempt to drive the setup
+or reinvent its steps without it.
+
 ## When to act
 
 When the user asks to **set up / configure / install Sertor**, or to **get the RAG working** on this

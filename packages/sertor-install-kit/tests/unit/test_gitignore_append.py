@@ -19,6 +19,12 @@ def test_create(tmp_path: Path):
     assert all(entry in text for entry in RUNTIME_IGNORES)
 
 
+def test_last_hook_error_in_runtime_ignores():
+    """E10-FEAT-019: the hook breadcrumb is a runtime artifact, never versioned (twin of
+    `.rag-health.json` / `.version-check.json`)."""
+    assert ".sertor/.last-hook-error" in RUNTIME_IGNORES
+
+
 def test_idempotent_skip(tmp_path: Path):
     gi = tmp_path / ".gitignore"
     append_gitignore(gi)
