@@ -105,11 +105,21 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 **🔄 In pipeline ora (branch `077-fail-loud-hook-agent`):**
 
 - **E10-FEAT-019 — fail-loud breadcrumb negli hook + fallback «asset mancante → STOP» negli agent**
-  (Should P1, audit ISSUE-05). *Stato:* requirements **decomposti** (2026-06-29,
-  `requirements/debito-tecnico/fail-loud-hook-agent/requirements.md`, 17 REQ/6 CS). *Decisioni utente:*
-  scope hook **ampio** (tutti gli hook che inghiottono errori, non solo i 2 segnalati) + fallback agent
-  **uniforme** (STOP+segnala per concierge/wiki-curator/requirements-analyst). *Prossimo passo:* `specify`.
-  *Forche aperte (plan):* meccanismo del breadcrumb (file `.sertor/.last-hook-error` vs stderr vs append-log).
+  (Should P1, audit ISSUE-05). *Stato:* **IMPLEMENTATA su branch** (2026-06-29) — SpecKit completo
+  specify→plan→tasks→implement, Constitution **12/12 + missione**, ruff clean; test: sertor **443** ·
+  sertor-flow **137** · kit **132** · root **1131 passed** (3 skip packaging `git+url`); `sertor-core`
+  **INVARIATO** (Principio XI). *Cosa:* 4 hook (`memory-capture`/`rag-freshness`/`wiki-pending-check`/
+  `version-check`) scrivono un breadcrumb ispezionabile **`.sertor/.last-hook-error`** (schema
+  `hook.error/1`, sovrascritto, secret-free, `try/catch` interno mai fatale, `exit 0` sempre) via funzione
+  inline byte-identica `Write-HookBreadcrumb`, sui soli path muti; i 3 agent (`concierge`/`wiki-curator`/
+  `requirements-analyst`) ricevono il fallback uniforme «asset mancante → STOP», testo host-agnostico
+  byte-identico Claude↔Copilot. + 4 guardie anti-regressione (A lint breadcrumb · B fallback agent · C
+  sync dogfood hook rag — buco **D-5** scoperto · D RUNTIME_IGNORES) + `RUNTIME_IGNORES += .sertor/.last-hook-error`.
+  *Decisioni utente:* scope hook **ampio** + fallback agent **uniforme** + breadcrumb = **file singolo
+  `.sertor/.last-hook-error`** «ultimo errore» (gemello di `.rag-health.json`). *Prossimo passo concreto:*
+  PR + `gh run list` (CI Win/Linux) + merge su `master`; poi re-index dogfood + smoke MCP + distill wiki.
+  *Follow-up non-bloccante:* prova LIVE su ospite Claude/Copilot reale (quickstart, comportamento runtime
+  del fallback agent = giudizio LLM, verificabile solo live — confine D↔N dichiarato).
 
 **Candidati a valore = Should aperti:**
 
