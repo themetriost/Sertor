@@ -555,6 +555,54 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/077-fail-loud-hook-agent/plan.md` (FEAT-019 epica **debito-tecnico** (E10) — **fail-loud
+breadcrumb negli hook + fallback «asset mancante → STOP» negli agent**: realizza il **Principio XII
+«Fail Loud, Fix the Cause»** su due classi di asset first-party distribuiti agli ospiti, **ADDITIVA +
+host-facing, ZERO codice di core** (gli hook continuano a NON importare `sertor_core` e a NON chiamare
+un LLM — Principio XI). **(1) Hook fail-loud:** i 4 hook PowerShell in scope (`memory-capture`,
+`rag-freshness` sui **soli path catastrofici**, `wiki-pending-check`, `version-check`) smettono di
+inghiottire i fallimenti con `catch` vuoti/`2>$null`/`exit 0` muti: sui path degradati scrivono un
+**breadcrumb ispezionabile** `.sertor/.last-hook-error` (JSON schema `hook.error/1`, campi
+`hook`/`ts` UTC/`reason`, **sovrascritto** = semantica «ultimo errore», + nota minima su stderr),
+**gemello esatto** di `.sertor/.rag-health.json` (stesso pattern, ignore/uninstall di runtime),
+restando **non-fatali** (`exit 0` sempre, scrittura **best-effort** mai un nuovo path fatale). **(2)
+Fallback agent:** i 3 body (`concierge`→`guided-setup`, `wiki-curator`→`wiki-playbook.md`/`ops/`,
+`requirements-analyst`→skill `requirements`) ricevono la regola **uniforme** «asset di cui sono guscio
+non risolvibile/leggibile → **STOP** e segnala», in testo **host-agnostico byte-identico
+Claude↔Copilot** (no `.claude/` path, no slash-command, no nome-modello Claude). **DA-3 FISSATA in
+spec** (breadcrumb = file singolo `.sertor/.last-hook-error`). **DA-D-r1 risolta (research D-2/D-3):**
+convenzione = funzione PowerShell **inline `Write-HookBreadcrumb`** byte-identica nei 4 hook (NON un
+file dot-sourced — i 4 hook sono asset installati indipendentemente su capacità diverse rag/wiki; la
+«convenzione condivisa» REQ-009 è la funzione identica + lo schema), best-effort/secret-free; punti di
+scrittura precisi: **memory-capture** = invocazione `memory archive` fallita (catch + `$LASTEXITCODE`,
+nativo-PS non solleva su exit non-zero), **no-op gated** `SERTOR_MEMORY` off → niente breadcrumb
+**by-construction** (il gate `exit 0` precede ogni risoluzione di root, REQ-004); **rag-freshness** =
+3 path muti che **bypassano** il verdetto (spawn worker fallito · re-index fallito post-health-write ·
+worker crash), MENTRE la degradazione `doctor` resta governata da `.rag-health.json` (già fail-loud,
+no doppio segnale); **wiki-pending-check** = `scan` non risolvibile (catch `:70-73`); **version-check**
+= catch catastrofico `:166-168` (copre anche REQ-006 lettura cieca stato proprio). Gli hook `*-start`
+read-only restano **fuori scope** (fallback definito, non nascondono problemi). **DA-D-r2 risolta
+(research D-4):** guardie statiche/offline modellate su `test_assets_hook_cli_invocation.py` —
+**Guardia A** lint breadcrumb (ogni hook in scope definisce+invoca `Write-HookBreadcrumb`; nessun
+`catch` vuoto/`exit 0`-solo eccetto il sink interno della funzione), **Guardia B** assert fallback sui
+3 body (token stabili `STOP` + nome-asset + «cannot be resolved or read»), **parità host-agnostica
+RIUSATA** (`test_assets_copilot_parity.py` copre già i 3 agent → fallback coperto gratis, REQ-013), +
+**Guardia C** (scoperta **D-5**): i 3 hook **rag** dogfood `.claude/hooks/` sono git-tracked ma **NON**
+coperti da alcuna guardia di sync (la root `test_assets_sync.py` copre solo `assets/claude/**`) → nuova
+guardia byte-identità dedicata; + **Guardia D** `".sertor/.last-hook-error" in RUNTIME_IGNORES`
+(gemella `test_version_check_runtime_ignores`). **Lifecycle:** unica modifica al kit = **una riga** in
+`RUNTIME_IGNORES` (`gitignore_append.py`); uninstall già rimuove `.sertor/` runtime + righe
+`.gitignore`; **nessun nuovo** `ArtifactKind`/`WriteStrategy`/`Surface`/seam. Cross-pacchetto: `sertor`
+(4 hook + `concierge` + `wiki-curator`) e `sertor-flow` (`requirements-analyst`, senza dipendenza da
+`sertor-core`). **Out-of-Scope promossi** (non sepolti): consumo attivo della traccia all'avvio →
+**Could** debito-tecnico; portabilità OS hook + onestà surface Copilot → **FEAT-018**; pulizia
+stile/altitude body + `CLAUDE.md` → **FEAT-021/FEAT-022**. 9 US/17 FR/6 CS. Constitution **PASS 12/12 +
+missione PASS** (pre e post-design) senza deroghe (Complexity Tracking vuoto) — è il Principio XII reso
+enforced (ogni rottura del macchinario host-facing si **vede** invece di marcire, anti dogfooding
+cieco). **Nota di processo:** `setup-plan.ps1`/`speckit-plan/SKILL.md` ASSENTI → parametri per
+convenzione dal branch (forma da `076`); nessun hook eseguito; MCP `sertor-rag` interrogato
+(`search_code` su wiring rag-health/RUNTIME_IGNORES, **nessun errore tool**); scoperta D-5 da
+`Read`/`git ls-files`. Branch `077-fail-loud-hook-agent`. Storico:
 `specs/076-enforcement-freschezza-rag/plan.md` (FEAT-011 epica **debito-tecnico** (E10) —
 **enforcement deterministico della freschezza RAG (hook)**: sposta i due passi **meccanici** del
 *rituale di step* — punto 5 (re-index del corpus) e punto 8 (smoke del RAG) — dalla **discrezione
