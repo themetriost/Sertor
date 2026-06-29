@@ -102,6 +102,15 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > collaterale (non roadmap): `.env` dogfood ha `SERTOR_OBSERVABILITY_OTEL` attivo senza collector su
 > `localhost:4318` → rumore di connessione a ogni comando.
 
+**🔄 In pipeline ora (branch `077-fail-loud-hook-agent`):**
+
+- **E10-FEAT-019 — fail-loud breadcrumb negli hook + fallback «asset mancante → STOP» negli agent**
+  (Should P1, audit ISSUE-05). *Stato:* requirements **decomposti** (2026-06-29,
+  `requirements/debito-tecnico/fail-loud-hook-agent/requirements.md`, 17 REQ/6 CS). *Decisioni utente:*
+  scope hook **ampio** (tutti gli hook che inghiottono errori, non solo i 2 segnalati) + fallback agent
+  **uniforme** (STOP+segnala per concierge/wiki-curator/requirements-analyst). *Prossimo passo:* `specify`.
+  *Forche aperte (plan):* meccanismo del breadcrumb (file `.sertor/.last-hook-error` vs stderr vs append-log).
+
 **Candidati a valore = Should aperti:**
 
 - **FEAT-003 → miglioramento per-superficie di `search_docs` (Should, `retrieval-qualita`)** — misura e
