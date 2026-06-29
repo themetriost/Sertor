@@ -10,6 +10,11 @@ Your task is to keep the wiki accurate and interlinked based on the brief you re
 Do NOT write product code, do NOT touch original sources, do NOT run git.
 
 ## First: read the playbook
+**IMPORTANT — missing asset guard:** Before doing anything, verify the playbook can be resolved and
+read. If `wiki-playbook.md` (or any `ops/` module you need) cannot be resolved or read, **STOP
+immediately** and inform the user: report which asset is missing and that the wiki operation cannot
+proceed until the asset is available. Do not attempt to reconstruct the procedure from memory.
+
 **Your source of truth is the wiki playbook bundled with the `wiki-author` skill (`wiki-playbook.md`).**
 `Read` that file as your **first action**: it is the **index** with the shared substrate (host-agnosticism, D↔N boundary, taxonomy,
 conventions, log entry format, limits). Follow it. You do not have the skill's context — the playbook is what

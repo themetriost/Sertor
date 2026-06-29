@@ -50,6 +50,35 @@ param(
 
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 
+function Write-HookBreadcrumb {
+    <#
+      Best-effort breadcrumb of the LAST hook failure (E10-FEAT-019), twin of `.rag-health.json`.
+      Writes a single, OVERWRITTEN `.sertor/.last-hook-error` (schema `hook.error/1`) so a silently
+      swallowed degradation leaves an inspectable trace. EVERYTHING runs inside try/catch: a write
+      failure NEVER makes the hook fatal (it still exits 0). `Reason` is a FIXED hook-local string
+      (secret-free): never `$_.Exception.Message` nor raw vehicle output (REQ-008).
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$Root,
+        [Parameter(Mandatory = $true)][string]$Hook,
+        [Parameter(Mandatory = $true)][string]$Reason
+    )
+    try {
+        $runtimeDir = Join-Path $Root '.sertor'
+        if (-not (Test-Path $runtimeDir)) { New-Item -ItemType Directory -Path $runtimeDir -Force | Out-Null }
+        $statePath = Join-Path $runtimeDir '.last-hook-error'
+        $timestamp = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+        $state = [ordered]@{
+            schema = 'hook.error/1'
+            hook   = $Hook
+            ts     = $timestamp
+            reason = $Reason
+        }
+        ($state | ConvertTo-Json -Depth 4) | Set-Content -Path $statePath -Encoding UTF8
+        [Console]::Error.WriteLine("hook '$Hook' degraded: $Reason (see .sertor/.last-hook-error)")
+    } catch { }
+}
+
 # --- default remote /VERSION (raw on master), overridable per-host via env (research D-2) ---
 $DefaultUrl = 'https://raw.githubusercontent.com/themetriost/Sertor/master/VERSION'
 
@@ -164,7 +193,10 @@ try {
     if ($dimensions.Count -gt 0) { $state['dimensions'] = $dimensions }
     ($state | ConvertTo-Json -Depth 6) | Set-Content -Path $statePath -Encoding UTF8
 } catch {
-    # Catastrophic internal error: silent, non-fatal; the state file is left as-is.
+    # E10-FEAT-019: catastrophic internal error — this also covers a BLIND read of our own runtime
+    # state (`.version-check.json` / stamp corrupt that hides a problem, REQ-006). The verdict was
+    # NOT persisted, so leave an inspectable breadcrumb (fixed string, no `$_` — R-3) then exit 0.
+    Write-HookBreadcrumb -Root $root -Hook 'version-check' -Reason "version-check internal error"
 }
 
 exit 0   # ALWAYS — any failure must never break the session close (FR-009, R-2)

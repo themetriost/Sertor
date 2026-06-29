@@ -76,6 +76,35 @@ param(
 
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 
+function Write-HookBreadcrumb {
+    <#
+      Best-effort breadcrumb of the LAST hook failure (E10-FEAT-019), twin of `.rag-health.json`.
+      Writes a single, OVERWRITTEN `.sertor/.last-hook-error` (schema `hook.error/1`) so a silently
+      swallowed degradation leaves an inspectable trace. EVERYTHING runs inside try/catch: a write
+      failure NEVER makes the hook fatal (it still exits 0). `Reason` is a FIXED hook-local string
+      (secret-free): never `$_.Exception.Message` nor raw vehicle output (REQ-008).
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$Root,
+        [Parameter(Mandatory = $true)][string]$Hook,
+        [Parameter(Mandatory = $true)][string]$Reason
+    )
+    try {
+        $runtimeDir = Join-Path $Root '.sertor'
+        if (-not (Test-Path $runtimeDir)) { New-Item -ItemType Directory -Path $runtimeDir -Force | Out-Null }
+        $statePath = Join-Path $runtimeDir '.last-hook-error'
+        $timestamp = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+        $state = [ordered]@{
+            schema = 'hook.error/1'
+            hook   = $Hook
+            ts     = $timestamp
+            reason = $Reason
+        }
+        ($state | ConvertTo-Json -Depth 4) | Set-Content -Path $statePath -Encoding UTF8
+        [Console]::Error.WriteLine("hook '$Hook' degraded: $Reason (see .sertor/.last-hook-error)")
+    } catch { }
+}
+
 
 function Invoke-RagFreshnessWorker {
     <#
@@ -84,6 +113,7 @@ function Invoke-RagFreshnessWorker {
     #>
     param([Parameter(Mandatory = $true)][string]$Root)
 
+    $reason = $null
     try {
         Push-Location $Root
         try {
@@ -163,14 +193,24 @@ function Invoke-RagFreshnessWorker {
             # Overlapping runs are serialized by the core's single-writer lock (REQ-006/R-2).
             try {
                 uv run --project $runtimeDir sertor-rag index . 2>$null | Out-Null
+                # R-1: a non-zero exit of the vehicle does NOT throw — inspect $LASTEXITCODE so a
+                # "ran but failed" re-index is fail-loud too.
+                if ($LASTEXITCODE -ne 0) { $reason = "re-index failed after health write" }
             } catch {
                 # Non-fatal: the state verdict is already written; skip the re-index this time.
+                $reason = "re-index failed after health write"
             }
+
+            # E10-FEAT-019: the re-index can fail mutely AFTER the health verdict was written; this
+            # path is NOT covered by the health state (doctor) → leave an inspectable breadcrumb.
+            if ($reason) { Write-HookBreadcrumb -Root $Root -Hook 'rag-freshness' -Reason $reason }
         } finally {
             Pop-Location
         }
     } catch {
-        # Catastrophic internal error in the worker: silent, non-fatal.
+        # Catastrophic internal error in the worker: NO health state was written (silence > corrupt
+        # data), so this path bypasses the verdict entirely → leave an inspectable breadcrumb.
+        Write-HookBreadcrumb -Root $Root -Hook 'rag-freshness' -Reason "freshness worker crashed"
         try { Pop-Location } catch {}
     }
 }
@@ -209,6 +249,9 @@ try {
 } catch {
     # No usable detached-process facility (REQ-016, honest degrade): rather than block the session
     # close with a synchronous doctor + index, we skip the freshness work this time. Never fatal.
+    # E10-FEAT-019: the worker never starts → no doctor, no verdict, no re-index → a fully MUTE path
+    # that bypasses `.rag-health.json`; leave an inspectable breadcrumb (fixed string, no `$_` — R-3).
+    Write-HookBreadcrumb -Root $root -Hook 'rag-freshness' -Reason "failed to spawn freshness worker"
 }
 
 exit 0   # ALWAYS — any failure must never break the session close (FR-017, R-2)

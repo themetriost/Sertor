@@ -33,6 +33,35 @@ param(
 
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 
+function Write-HookBreadcrumb {
+    <#
+      Best-effort breadcrumb of the LAST hook failure (E10-FEAT-019), twin of `.rag-health.json`.
+      Writes a single, OVERWRITTEN `.sertor/.last-hook-error` (schema `hook.error/1`) so a silently
+      swallowed degradation leaves an inspectable trace. EVERYTHING runs inside try/catch: a write
+      failure NEVER makes the hook fatal (it still exits 0). `Reason` is a FIXED hook-local string
+      (secret-free): never `$_.Exception.Message` nor raw vehicle output (REQ-008).
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$Root,
+        [Parameter(Mandatory = $true)][string]$Hook,
+        [Parameter(Mandatory = $true)][string]$Reason
+    )
+    try {
+        $runtimeDir = Join-Path $Root '.sertor'
+        if (-not (Test-Path $runtimeDir)) { New-Item -ItemType Directory -Path $runtimeDir -Force | Out-Null }
+        $statePath = Join-Path $runtimeDir '.last-hook-error'
+        $timestamp = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+        $state = [ordered]@{
+            schema = 'hook.error/1'
+            hook   = $Hook
+            ts     = $timestamp
+            reason = $Reason
+        }
+        ($state | ConvertTo-Json -Depth 4) | Set-Content -Path $statePath -Encoding UTF8
+        [Console]::Error.WriteLine("hook '$Hook' degraded: $Reason (see .sertor/.last-hook-error)")
+    } catch { }
+}
+
 # --- privacy gate: no-op exit 0 unless memory is explicitly enabled (match _bool_env of the core) ---
 $enabled = $false
 if ($env:SERTOR_MEMORY) {
@@ -61,6 +90,7 @@ try { $root = (Resolve-Path -LiteralPath $root -ErrorAction Stop).Path } catch {
 # `uv run --project <root>/.sertor` (PATH- and cwd-independent: it pins the runtime regardless of the
 # working directory), and fall back to the `sertor-rag` executable inside that venv only if `uv` is
 # unavailable. Mirror of wiki-pending-check.ps1 / rag-freshness.ps1. Any failure → silent exit 0.
+$reason = $null
 try {
     Push-Location $root
     $runtimeDir = Join-Path $root '.sertor'
@@ -70,11 +100,14 @@ try {
         # No `.sertor` runtime: try a global `sertor-rag` on PATH (e.g. a global install).
         sertor-rag memory archive 2>$null
     }
+    # R-1: a non-zero exit of the vehicle does NOT throw in PowerShell — inspect $LASTEXITCODE so a
+    # "ran but failed" archive is fail-loud too, not only a missing `uv` (caught below).
+    if ($LASTEXITCODE -ne 0) { $reason = "sertor-rag memory archive exited $LASTEXITCODE" }
     Pop-Location
 } catch {
     try { Pop-Location } catch {}
     # `uv` itself missing: fall back to the CLI executable inside the project venv (PATH-independent),
-    # Windows (`Scripts/sertor-rag.exe`) or POSIX (`bin/sertor-rag`). Still silent, still non-fatal.
+    # Windows (`Scripts/sertor-rag.exe`) or POSIX (`bin/sertor-rag`). Still non-fatal.
     try {
         $venvCli = Join-Path $root '.sertor/.venv/Scripts/sertor-rag.exe'   # Windows
         if (-not (Test-Path $venvCli)) {
@@ -83,11 +116,18 @@ try {
         if (Test-Path $venvCli) {
             Push-Location $root
             & $venvCli memory archive 2>$null
+            if ($LASTEXITCODE -ne 0) { $reason = "venv sertor-rag exited $LASTEXITCODE" }
             Pop-Location
+        } else {
+            $reason = "uv and venv sertor-rag both unavailable"
         }
     } catch {
-        try { Pop-Location } catch {}   # CLI unavailable / error: silent, non-fatal
+        try { Pop-Location } catch {}   # CLI unavailable / error: non-fatal
+        if (-not $reason) { $reason = "uv and venv sertor-rag both unavailable" }
     }
 }
+
+# E10-FEAT-019: a silently swallowed failure leaves an inspectable breadcrumb (never fatal).
+if ($reason) { Write-HookBreadcrumb -Root $root -Hook 'memory-capture' -Reason $reason }
 
 exit 0   # ALWAYS — any failure of the command must never break the session close (SC-005)
