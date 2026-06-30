@@ -90,25 +90,11 @@ Invocation: `uv run --project .sertor sertor-wiki-tools <op> --config wiki/wiki.
 auto-discovers `wiki/wiki.config.toml`). With `--json` you get the versioned contract; without it, a
 human-readable summary.
 
-### How to invoke the runtime CLIs
-
-The runtime CLIs `sertor-rag` and `sertor-wiki-tools` are installed into the project's `.sertor/.venv`
-and are **NOT on `PATH`**. Invoke them through that venv with **`uv run --project .sertor`** — it runs
-the `.sertor` runtime but **keeps your current directory**, so a relative path like `--root .` is the
-project root as expected (the index and `.env` stay anchored inside `.sertor/` regardless of cwd):
-`uv run --project .sertor sertor-wiki-tools <args>` (e.g. `uv run --project .sertor
-sertor-wiki-tools lint --json`). Use `--project`, NOT `--directory`: `--directory` changes the working
-directory, so a relative path like `--root .` would resolve to `.sertor` itself instead of your project.
-Do NOT call the bare command (`sertor-wiki-tools …`): after install it lives in `.sertor/.venv`, not on
-`PATH`, so a bare call (or `which sertor-wiki-tools`) failing means "not on `PATH`", NOT "not installed".
-If `uv` is unavailable, fall back to the venv executable directly — `.sertor/.venv/Scripts/<cli>.exe`
-(Windows) or `.sertor/.venv/bin/<cli>` (POSIX), run from the project root. If neither resolves, STOP and
-report that the runtime is not installed — never silently fall back to doing the mechanical work by hand.
-
-> **Windows note.** With the *system* Python 3.14 a stale `pywin32` may print
-> `ModuleNotFoundError: No module named 'pywin32_bootstrap'` on `pip`/`python -m`. That is noise from
-> the system interpreter, not a runtime error — the CLIs and MCP server run inside `.sertor/.venv` via
-> `uv run`, unaffected.
+The CLIs are installed in the project's `.sertor/.venv` and are **NOT on `PATH`**: route every call
+through `uv run --project .sertor` (it keeps your current directory, so `--root .` resolves to the
+project), and a bare call failing means "not on `PATH`", NOT "not installed". When the RAG capability
+is also installed, a fuller CLI reference document ships with it, covering installer-level invocation
+and platform-specific setup notes.
 
 **JUDGMENT is left to you (LLM)**, which the CLI does not provide: *what* to write and *why*, whether a page is new
 or needs updating, *which* backlinks make sense, whether two claims **contradict** each other, whether a claim is outdated.

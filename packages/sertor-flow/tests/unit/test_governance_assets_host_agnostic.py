@@ -47,3 +47,34 @@ def test_requirements_analyst_tools_are_universal_only():
     front = read_asset_text(_ANCHOR, "claude/agents/requirements-analyst.md").split("---", 2)[1]
     tools_line = next(ln for ln in front.splitlines() if ln.startswith("tools:"))
     assert "mcp__" not in tools_line, f"requirements-analyst hardcodes MCP tools: {tools_line}"
+
+
+# --- E10-FEAT-021: the SDLC block stays standing-only (no 'How to invoke', DA-D-r3) --------------
+
+_SDLC_BLOCK = "claude-md-block-sdlc.md"
+
+
+def test_sdlc_block_has_no_invoke_section():
+    """G1 twin: the SDLC block carries no 'How to invoke' section (it never did — DA-D-r3).
+
+    The block is standing-directive only (SpecKit phases, constitution gate, error discipline,
+    version control). This guard prevents the inline invocation section from creeping back in.
+    """
+    sdlc_body = read_asset_text(_ANCHOR, _SDLC_BLOCK)
+    assert "How to invoke" not in sdlc_body, (
+        "claude-md-block-sdlc.md contains 'How to invoke': it must not be present"
+    )
+    assert "pywin32_bootstrap" not in sdlc_body, (
+        "claude-md-block-sdlc.md contains the Windows note: it must not be present"
+    )
+
+
+def test_sdlc_block_preserves_standing_content():
+    """C3: the SDLC block keeps its minimal standing content (REQ-016, invariant)."""
+    sdlc_body = read_asset_text(_ANCHOR, _SDLC_BLOCK)
+    assert "SpecKit" in sdlc_body, "SpecKit phases missing from the SDLC block"
+    assert "Constitution Check" in sdlc_body, "Constitution Check missing from the SDLC block"
+    assert "fix, don't suppress" in sdlc_body, "Error discipline missing from the SDLC block"
+    assert "Version control discipline" in sdlc_body, (
+        "Version control discipline missing from the SDLC block"
+    )

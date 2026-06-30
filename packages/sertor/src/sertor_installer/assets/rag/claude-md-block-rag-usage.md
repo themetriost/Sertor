@@ -4,37 +4,15 @@ This project has the **Sertor RAG** capability installed. When you need to searc
 the indexed corpus (code and documentation), use one of the provided **vehicles**:
 
 - **CLI** — run `uv run --project .sertor sertor-rag` (e.g.
-  `uv run --project .sertor sertor-rag search "<query>"`). It is the supported entry point — see
-  "How to invoke Sertor's commands" below for why the bare command is NOT on `PATH`.
+  `uv run --project .sertor sertor-rag search "<query>"`). It is the supported entry point: the bare
+  command is NOT on `PATH` (it lives in `.sertor/.venv`), so always route it through `uv run --project
+  .sertor`.
 - **MCP tools** — the `sertor-rag` MCP server exposes search/navigation tools (`search_code`,
   `search_docs`, `search_combined`, `find_symbol`, `who_calls`, `get_context`).
 
-## How to invoke Sertor's commands
-
-Sertor ships at two levels — invoke each the right way:
-
-- **The runtime CLIs `sertor-rag` and `sertor-wiki-tools`** are installed into the project's
-  `.sertor/.venv` by `sertor install rag`. Invoke them through that venv with **`uv run --project .sertor`** —
-  it runs the `.sertor` runtime but **keeps your current directory**, so a relative path like `.` is the
-  project root as expected (the index and `.env` stay anchored inside `.sertor/` regardless of cwd):
-  `uv run --project .sertor sertor-rag <args>` (e.g. `uv run --project .sertor sertor-rag doctor`, or
-  `uv run --project .sertor sertor-rag index .`). Use `--project`, NOT `--directory`: `--directory`
-  changes the working directory, so `sertor-rag index .` would index `.sertor` itself instead of your
-  project. Do NOT call the bare command (`sertor-rag …`) either: after install it is in `.sertor/.venv`,
-  not on `PATH`, so a bare call (or `which sertor-rag`) failing means "not on PATH", NOT "not installed".
-  If `uv` is unavailable, fall back to the venv executable directly — `.sertor/.venv/Scripts/<cli>.exe`
-  (Windows) or `.sertor/.venv/bin/<cli>` (POSIX), run from the project root. If neither resolves, STOP and
-  report that the runtime is not installed (run `sertor install rag`) — never silently fall back to
-  reading files by hand.
-- **The installer `sertor`** is NOT a persistent command: run it ephemerally through `uvx` —
-  `uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor <verb>`
-  (e.g. `… sertor install rag`; add `--refresh` to force the latest build).
-
-> **Windows note.** With the *system* Python 3.14 a stale `pywin32` may print
-> `ModuleNotFoundError: No module named 'pywin32_bootstrap'` on `pip`/`python -m`. That is noise from
-> the system interpreter, not a Sertor error — Sertor's CLIs and MCP server run inside `.sertor/.venv`
-> via `uv run`, unaffected. Do not use the system `pip show sertor-rag` to check the install (it cannot
-> see the project venv); use `uv run --project .sertor sertor-rag doctor`.
+For the full invocation reference — the two levels (runtime CLIs via `uv run`, installer via `uvx`),
+the venv fallback, and the Windows setup notes — see `sertor-cli-reference.md` (deposited under
+`.sertor/` by `sertor install rag`).
 
 **Do NOT import `sertor_core` directly in your own scripts.** The library is meant to be consumed
 through its vehicles (CLI / MCP), which wire in the cross-cutting concerns — configuration,
