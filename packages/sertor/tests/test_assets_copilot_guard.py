@@ -92,3 +92,17 @@ def test_no_hand_maintained_copilot_prompt_bodies():
 
     assert hasattr(surfaces, "render_prompt_file")
     assert hasattr(surfaces, "render_custom_agent")
+
+
+def test_no_copilot_asset_directory():
+    """E10-FEAT-023: no static Copilot asset tree exists under `assets/`.
+
+    All Copilot-facing payloads are GENERATED at runtime from `assets/claude/**` and
+    `assets/rag/**` via render_copilot_hooks / render_custom_agent / render_prompt_file
+    (sertor_install_kit.surfaces). A `copilot/` asset directory is a MISLEADING stub
+    (suggests static assets that do not exist); this guard fails loud if it reappears
+    (e.g. a `.gitkeep` re-added "to hold the place").
+    """
+    from sertor_installer.resources import asset_path
+
+    assert not asset_path("copilot").is_dir()
