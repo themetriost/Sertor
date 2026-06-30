@@ -555,6 +555,60 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/078-portabilita-os-hook/plan.md` (FEAT-018 epica **debito-tecnico** (E10) — **portabilità OS
+degli hook (guardia `pwsh` + gap dichiarato) + onestà sui surface inerti**: realizza i **Principi XII
+«Fail Loud, Fix the Cause»** e **X (portabilità reale)** rendendo onesti due claim impliciti
+dell'installer, **ADDITIVA + host-facing, ZERO codice di core** (Principio XI: nessun import di
+`sertor_core`, nessun LLM). **Causa-radice (verificata):** gli hook sono tutti `.ps1`; il wiring Claude
+li invoca con `"shell": "powershell"` (= `powershell.exe`, Windows PowerShell 5.1 — inesistente su
+mac/Linux → hook mai eseguito, nessun messaggio, **exit 0**); il wiring Copilot usa già `pwsh -File`
+(portabile **se** `pwsh` in PATH). **Strategia FISSATA (non riaperta):** guardia `pwsh` + **gap
+dichiarato**, hook **PowerShell-only** (nessun gemello `.sh`, convenzione «solo PowerShell»). Onestà via
+il meccanismo **esistente** `InstallReport.notes` (`sertor-install-kit/report.py:44/74`, finora
+inutilizzato in produzione → **prima emissione reale**). **(1) Guardia `pwsh`:** su host non-Windows
+senza `pwsh`, un `install rag`/`wiki` che deposita hook aggiunge una **nota azionabile** (surface `.ps1`
+affetti + URL PowerShell Core + frase «installati ma non-operativi») in resa **umana e JSON**;
+**non-fatale** (exit 0, tutti i surface non-hook installati); **nessuna** nota su Windows (FR-006) o con
+`pwsh` presente (FR-004); Claude+Windows resta `report.notes == []` (non-regressione
+`test_claude_report_has_no_gap_note`). **(2) Onestà Copilot:** ogni `install rag --assistant copilot-cli`
+emette una nota che dichiara `memory-capture` richiedente `SERTOR_MEMORY=true` + `SERTOR_MEMORY_ADAPTER`
+adapter Copilot esplicito (col default scatta ma non cattura) + **cross-ref** alla capacità pianificata
+(distribuzione valore adapter nel template `.env` → **FEAT-009 epica memoria-conversazioni**, qui solo la
+nota). **DA-D-r1 risolta (research D-1):** logica `pwsh` in **helper condiviso del kit** (NUOVO modulo
+puro `host_env.py`: `is_windows`/`pwsh_available`/`pwsh_unavailability_note`/`maybe_note_pwsh` +
+`PWSH_INSTALL_URL`, stdlib `os`/`shutil`, mockabile) — DRY (rag+wiki oggi, `sertor-flow` domani), seam
+di mock unico; la nota `memory-capture` resta in `install_rag.py` (rag-specifica, single consumer). Hook
+surfaces **derivate dal piano** (`[a.target_rel for a in plan if a.endswith('.ps1')]`, dichiarativo, no
+hardcode). Emissione al seam `execute_rag_plan`/`execute_plan` (wiki), **dopo** `_kit_execute_plan`; CLI
+thin invariata. **DA-D-r2 risolta (research D-2):** nota `memory-capture` **sempre** su install rag
+Copilot CLI (anticipatoria — chi abiliterà la memoria deve saperlo ora; install-time non conosce il
+`SERTOR_MEMORY` runtime), indipendente da `SERTOR_MEMORY`; + **sì** aggiornare la tabella capability
+`packages/sertor/docs/install.md` (nota operatività per target). **Quesito wiring (research D-3): la
+guardia RILEVA+SEGNALA, NON riscrive il wiring** — cambiare `"shell": "powershell"`→`pwsh` romperebbe
+gli utenti Windows con la sola PS 5.1 (target primario, NFR-5); Copilot è già portabile (`pwsh -File`).
+**Limite tecnico aperto dichiarato (non inventato):** se Claude Code non mappa `shell:"powershell"`→`pwsh`
+su non-Windows, installare `pwsh` da solo potrebbe non bastare lì → la nota resta **narrow** su «`pwsh`
+non trovato», i doc dichiarano l'operatività completa per-target, e «wiring hook Claude portabile su
+non-Windows» è **promosso a candidata follow-up** (roadmap → *Nuove funzionalità da discutere*). **(3)
+Doc utente** (DoD «setup→doc utente»): `docs/install.md` (prerequisito `pwsh` su mac/Linux + URL +
+surface + sezione operatività-per-target), `docs/install-copilot.md` (hook richiedono `pwsh` +
+`memory-capture` richiede config adapter), tabella capability `packages/sertor/docs/install.md`. **(4)
+Guard tests** deterministici (OS mocking via `monkeypatch.setattr(host_env, …)` — CI su Windows, R-6):
+nota pwsh presente/assente/Claude+Windows`==[]`, nota `memory-capture` su rag Copilot/assente su Claude;
+sync dogfood↔bundle `test_assets_sync.py` **verde per costruzione** (la feature non tocca alcun asset).
+**Additivo:** `sertor-core` INVARIATO; **nessun nuovo** `ArtifactKind`/`Surface`/`WriteStrategy`/porta/
+seam/schema/env/dipendenza; schema `install.report/1` invariato (`notes[]` nel JSON solo se non-vuoto);
+breadcrumb runtime FEAT-019 complementare (quella = «lo script gira ma fallisce dentro», questa = «lo
+script non parte perché manca `pwsh`»). **Out-of-Scope promossi** (non sepolti): distribuzione adapter
+`.env` → FEAT-009 memorie; visibilità SessionStart Copilot → E10-FEAT-008; wiring Claude portabile
+non-Windows → candidata follow-up; nota su `upgrade` → estensione triviale futura (non FEAT); stile body
+→ FEAT-021/022; gemello `.sh` + guardia `pwsh` runtime → Won't. 7 US/15 FR/6 CS. Constitution **PASS
+12/12 + missione PASS** (pre e post-design) senza deroghe (Complexity Tracking vuoto) — portabilità resa
+**onesta** protegge la stella polare (l'ospite non opera credendo di avere protezioni che non ha).
+**Nota di processo:** `setup-plan.ps1`/`speckit-plan/SKILL.md` ASSENTI → parametri per convenzione dal
+branch (forma da `077`); nessun hook eseguito; MCP `sertor-rag` interrogato (`search_code` su
+`InstallReport.notes` + wiring hook per-assistente, **nessun errore tool**). Branch
+`078-portabilita-os-hook`. Storico:
 `specs/077-fail-loud-hook-agent/plan.md` (FEAT-019 epica **debito-tecnico** (E10) — **fail-loud
 breadcrumb negli hook + fallback «asset mancante → STOP» negli agent**: realizza il **Principio XII
 «Fail Loud, Fix the Cause»** su due classi di asset first-party distribuiti agli ospiti, **ADDITIVA +
