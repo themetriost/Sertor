@@ -45,6 +45,20 @@ only the container (path/frontmatter). A guard test fails on divergence (anti-dr
 The report declares the **target assistant** and the outcome of every surface in scope; a surface
 without a rendering on the chosen assistant is reported as an explicit **gap**, never omitted.
 
+### Operability / notes (per surface)
+
+| Surface | Operability / notes |
+|---|---|
+| MCP server, instruction block, skill, agent | Operational on **all OSes and targets** — do not depend on `pwsh`. |
+| Hook scripts (`.ps1`) | **Require `pwsh` (PowerShell Core) on macOS/Linux.** On Windows: operational via `powershell` (Claude) or `pwsh` (Copilot CLI). Without `pwsh` on macOS/Linux they are installed but **non-operational**; the install report says so in a note (E10-FEAT-018). |
+| `memory-capture` (Copilot CLI) | Wired and deposited, but requires **`SERTOR_MEMORY=true` + `SERTOR_MEMORY_ADAPTER=copilot-cli`** to capture Copilot CLI sessions; with defaults it fires but captures nothing useful. The install report declares this; out-of-the-box completion is planned (FEAT-009). |
+
+> The table above states **operability**, not parity: where a surface is operational only with extra
+> configuration it is marked as such. For the `pwsh` prerequisite and the per-target operability
+> matrix see [`docs/install.md` Prerequisites](../../docs/install.md#prerequisites); for the
+> `memory-capture` adapter configuration see
+> [`docs/install-copilot.md`](../../docs/install-copilot.md).
+
 ## Verifying the install
 
 ### RAG (MCP) — Copilot CLI

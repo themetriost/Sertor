@@ -23,8 +23,26 @@ It writes the MCP server to `.mcp.json` (`mcpServers` root, where the CLI looks)
   **no credentials**, downloaded once per machine (~822 MB) on the first index. Alternatives:
   **Azure OpenAI** (`text-embedding-3-*`, cloud, billable), local **[Ollama](https://ollama.com)**
   (`ollama pull nomic-embed-text`), or **`hash`** (zero-download lexical floor, for airgapped/CI).
+- **`pwsh` (PowerShell Core) — required on macOS/Linux for the lifecycle hooks** distributed by
+  `sertor install rag`/`wiki` on the Copilot CLI (the hooks are PowerShell-only `.ps1`). On Windows it
+  is already present; on **macOS/Linux without `pwsh` the hooks are installed but never run**. Install
+  it from <https://learn.microsoft.com/powershell/scripting/install/installing-powershell>. The
+  installer declares this gap in an actionable note (it never fails the install for it).
 
 Run each command **in the root of the target repository**.
+
+> **`memory-capture` — configuration required to capture Copilot CLI sessions.** `install rag` wires
+> and deposits the `memory-capture` hook, but capturing Copilot CLI sessions requires you to set
+> **both** knobs explicitly in `.sertor/.env`:
+>
+> ```
+> SERTOR_MEMORY=true
+> SERTOR_MEMORY_ADAPTER=copilot-cli
+> ```
+>
+> With the default values the hook fires but **captures nothing useful**. Out-of-the-box completion
+> (automatic distribution of `copilot-cli` in the `.env` template) is **planned** in the
+> memory-conversations epic. `install rag --assistant copilot-cli` prints a note saying exactly this.
 
 ---
 

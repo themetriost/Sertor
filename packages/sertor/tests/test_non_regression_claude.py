@@ -48,3 +48,6 @@ def test_claude_rag_artifacts_unchanged(tmp_path: Path, make_runner):
     assert (tmp_path / ".claude/hooks/sertor-rag-usage-check.ps1").is_file()
     assert not (tmp_path / ".github").exists()
     assert not (tmp_path / ".vscode").exists()
+    # E10-FEAT-018: on the real Windows CI `is_windows()` is True → the pwsh guard is a no-op and no
+    # Copilot memory note is emitted on Claude → report.notes stays empty (NR made explicit, CS-3).
+    assert report.notes == []
