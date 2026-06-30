@@ -555,6 +555,56 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/079-altitude-claude-md/plan.md` (FEAT-021 epica **debito-tecnico** (E10) — **ridurre l'altitude
+dei blocchi CLAUDE.md distribuiti + fonte unica «How to invoke»**: Sertor inietta **tre blocchi
+always-on** (~208 righe) nel file di istruzione di ogni ospite — wiki-ritual (`SERTOR:WIKI-RITUAL`, 71),
+SDLC-ritual (`SERTOR:SDLC-RITUAL`, 65), RAG-usage (`SERTOR:RAG-USAGE`, 72) — che mescolano **direttive
+comportamentali standing** (cosa usare, cosa non importare, fail-loud MCP, flusso SpecKit) con
+**dettaglio operativo lookup-on-demand** (sintassi di invocazione, troubleshooting `pywin32`/Python
+3.14, enumerazioni CLI) che spreca budget di contesto a ogni sessione; la sezione «How to invoke
+Sertor's commands» + Windows note è **triplicata** (RAG block `:12-38` · `guided-setup/SKILL.md:52-78`
+· `wiki-playbook.md:93-112`). La feature **riduce ogni blocco a direttiva standing + pointer** ed
+**estrae «How to invoke» in una fonte unica** host-agnostica citata per nome. **ADDITIVA / igiene
+host-facing, ZERO `sertor_core`** (Principio XI): tocca solo asset `.md`, **un** `Artifact` FILE nel
+`build_rag_plan` (`install_rag.py`, installer non-core), le copie dogfood `.claude/` e le guardie di
+test; **nessun nuovo** `ArtifactKind`/`WriteStrategy`/`Surface`/seam del kit. **DA-D-r1 (dove vive il
+reference) → Opzione A:** nuovo asset `rag/sertor-cli-reference.md` depositato da `sertor install rag`
+in **`.sertor/sertor-cli-reference.md`** (target host-agnostico, identico Claude/Copilot; coperto
+dall'owned_dir `.sertor`, aggiornato su upgrade, rimosso in blocco su uninstall). **Riframe decisivo:**
+tra i tre blocchi always-on **solo il RAG block** cita il reference (il blocco wiki cita il **wiki
+playbook**, REQ-014; SDLC non cita) → REQ-007 («no pointer morto su install solo-wiki/solo-governance»)
+soddisfatto **per costruzione**; la tensione cross-capacità resta solo per il `wiki-playbook` (payload
+di skill, dedup = REQ-009 **Should**). **Risoluzione closure-safe del `wiki-playbook`:** rimuove la
+sottosezione duplicata «How to invoke the runtime CLIs» + Windows note, **tiene** la forma minima §2
+(`uv run --project .sertor sertor-wiki-tools`) per l'auto-contenimento wiki-only, e usa una **frase
+condizionale SENZA token di file** verso il reference RAG (`_BACKTICK_REF` non la matcha → niente
+pointer morto sul piano wiki, REQ-007/NFR-5); la **sezione completa + Windows note vive in UN asset** →
+**CS-2**. **DA-D-r2:** criterio qualitativo «standing inline, lookup a pointer» (NO soglia numerica = è
+**FEAT-024**); contenuto minimo per blocco in `contracts/reduced-blocks.md` (RAG: vehicle-only/no-import
+`sertor_core` + search-first + MCP-error + memory-gate + pointer reference; wiki: golden rule + outline
+rituale + delega + D↔N + pointer `wiki-playbook.md`, estratte operazioni/convenzioni; **SDLC INVARIATO**).
+**DA-D-r3:** confermato per lettura — il blocco SDLC NON contiene «How to invoke» (solo fasi SpecKit,
+constitution gate, error discipline, git policy) → **nessuna modifica di contenuto** al blocco
+`sertor-flow`. **DA-D-r4:** guardia di non-reintroduzione = **assert testuale** (heading «How to invoke
+Sertor's commands» / `pywin32_bootstrap` / `uvx --from` assenti dai due blocchi `sertor` + assert
+gemello SDLC via `kit_read("sertor_flow", …)`) + **closure del reference** (estensione di
+`test_assets_copilot_parity.py`, gemella di `_usability_closure_offenders`: il basename
+`sertor-cli-reference.md` citato nei body RAG è target del piano RAG per Claude **e** Copilot); **rework**
+di `test_assets_cli_invocation.py` (`test_canonical_guide_present_where_first_invoked` → guida nel
+reference, pointer nelle altre sedi; `test_wiki_playbook_ships_runtime_invocation_guide` → forma minima
++ assenza sottosezione; `test_rag_usage_block_uv_run_replaces_bare_search` **resta verde**; reference
+aggiunto al footgun-check). **Stima CS-1:** 208 → ~166 righe always-on (RAG −24, wiki −18, SDLC 0); il
+dettaglio estratto vive nel reference on-demand (~30 righe) + nel playbook. **Sync dogfood (CS-6):** solo
+`wiki-playbook.md` è sotto `assets/claude/**` → `python -m sertor_installer.sync` riallinea
+`.claude/skills/wiki-author/wiki-playbook.md`; gli altri asset (sotto `assets/`/`assets/rag/`) non sono
+sincronizzati. **Residui promossi:** mini-note eval «How to invoke `sertor-rag`» (3 righe, fuori
+triplicazione) → **FEAT-022**; budget altitude CI → **FEAT-024**; stub `assets/copilot/**` →
+**FEAT-023**. **CLAUDE.md di radice Sertor FUORI ambito** (DA-1, documento autonomo non sincronizzato).
+Constitution **PASS 12/12 + missione PASS** (pre e post-design) senza deroghe (Complexity Tracking
+vuoto) — meno rumore always-on = più budget per il contesto fuso code+doc + una fonte unica senza
+deriva. **Nota di processo:** `setup-plan.ps1`/`speckit-plan/SKILL.md` ASSENTI → parametri per
+convenzione dal branch (forma da `078`); nessun hook eseguito; MCP `sertor-rag` interrogato
+(`search_code` sul wiring SDLC, nessun errore tool). Branch `079-altitude-claude-md`. Storico:
 `specs/078-portabilita-os-hook/plan.md` (FEAT-018 epica **debito-tecnico** (E10) — **portabilità OS
 degli hook (guardia `pwsh` + gap dichiarato) + onestà sui surface inerti**: realizza i **Principi XII
 «Fail Loud, Fix the Cause»** e **X (portabilità reale)** rendendo onesti due claim impliciti
