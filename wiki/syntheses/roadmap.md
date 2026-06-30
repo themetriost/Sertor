@@ -14,7 +14,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > `requirements → spec → plan → tasks → implement`.
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-06-29)
+## ⚡ Executive summary (stato al 2026-06-30)
 
 ### ✅ Capacità consegnate (feature su `master`)
 
@@ -44,6 +44,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **Auto-update version check** (E2-FEAT-013, merge `8d951cd`, 2026-06-26) — avviso a inizio sessione: `version-check.ps1` (SessionEnd) confronta lo stamp `.sertor/.sertor-version` col `/VERSION` su master (GET cachata ~24h) → `.sertor/.version-check.json`; SessionStart avvisa se behind (script Claude / prompt statico Copilot). Solo avviso, **mai auto-upgrade**; non-fatale, no LLM. Gemello di E10-FEAT-011 | `sertor-cli` |
 | **Guida d'install host-assistant-aware + NRT** (E12-FEAT-012, merge `030c695`, 2026-06-26) — `guided-setup`/`concierge` rilevano l'host e passano sempre `--assistant <host>` a rag/wiki/flow (prima default `claude` su host Copilot → layout sbagliato); + NRT anti-regressione per-PR. Fix di un bug reale emerso in dogfooding | `usabilità` |
 | **Fail-loud breadcrumb negli hook + fallback «asset mancante → STOP» negli agent** (E10-FEAT-019, merge `629481b`/PR #125, 2026-06-29) — Principio XII reso reale sugli asset distribuiti: 4 hook (`memory-capture`/`rag-freshness`/`wiki-pending-check`/`version-check`) scrivono un breadcrumb ispezionabile `.sertor/.last-hook-error` (schema `hook.error/1`, sovrascritto, secret-free, `exit 0` sempre) sui path prima muti; 3 agent (`concierge`/`wiki-curator`/`requirements-analyst`) si fermano su asset mancante invece di procedere a vuoto. 4 guardie anti-regressione (incl. il buco sync dogfood D-5). Additivo, `sertor-core` invariato | `debito-tecnico` |
+| **Portabilità OS degli hook (guardia pwsh) + onestà sui surface inerti** (E10-FEAT-018, merge `8257fd3`/PR #127, 2026-06-30) — Principio XII + X: gli hook `.ps1` cablati con `"shell": "powershell"` fallivano in silenzio su mac/Linux (`powershell` assente). Nuovo modulo puro `host_env.py` nel kit: su host non-Windows senza `pwsh` l'installer emette una **nota azionabile** (installa PowerShell Core) via `InstallReport.notes` (primo uso reale) invece del silent fail — **detect-only, wiring invariato**. + nota onestà `memory-capture` inerte su Copilot. Doc utente col limite tecnico dichiarato. Additivo, `sertor-core` invariato, schema `install.report/1` invariato | `debito-tecnico` |
 
 *Dettaglio (PR, date, numeri) nella sezione ✅ DONE in fondo alla pagina.*
 
@@ -67,7 +68,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **E7** | 🆕 [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 📋 aperta | chunking SQL → **sblocca** schema-SQL |
 | **E8** | 🆕 [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | 📋 aperta | bloccata a monte da `ingestione-estesa` |
 | **E9** | 🆕 [`second-brain`](../../requirements/second-brain/epic.md) | 📋 da espandere | decidere bivi §9 prima di decomporre |
-| **E10** | 🆕 [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 🔄 in progress | **FEAT-011 hook freschezza RAG ✅ (merge `29dd30e`, 2026-06-25)** + **FEAT-019 fail-loud breadcrumb hook + fallback STOP agent ✅ (merge `629481b`/PR #125, 2026-06-29)**; resta Could (FEAT-014 stdin guard + **FEAT-015 refresh non disinstalla bene** + FEAT-004/005/006/007/008/018/020/021/022) *(**FEAT-009 distribuzione costituzione neutra ✅ 2026-06-19** — PR #82 · **FEAT-003 CI GitHub Actions ✅ 2026-06-23** — Windows + Linux verdi su PR #96, prima CI del progetto · **FEAT-013 allineamento config dogfood↔ospite ✅ 2026-06-23** — dogfood su `.sertor/.env`+`.sertor/.index`, resolver host-agnostico · **FEAT-012 governance nel corpus ✅ 2026-06-23** — costituzione+plan-template indicizzati · unif. venv ✅ · host-agnosticità asset **FEAT-001/009/010 ✅** · disciplina MCP-first agli ospiti ✅, 2026-06-19)* · **audit asset first-party 2026-06-26** ([[sertor-strumenti-audit]]) → FEAT-016..024 (P0 ✅ tutti mergiati; P1 FEAT-019 ✅) |
+| **E10** | 🆕 [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 🔄 in progress | **FEAT-011 hook freschezza RAG ✅ (merge `29dd30e`, 2026-06-25)** + **FEAT-019 fail-loud breadcrumb hook + fallback STOP agent ✅ (merge `629481b`/PR #125, 2026-06-29)** + **FEAT-018 portabilità OS hook (guardia pwsh) + onestà surface ✅ (merge `8257fd3`/PR #127, 2026-06-30)**; resta Could (FEAT-014 stdin guard + **FEAT-015 refresh non disinstalla bene** + FEAT-004/005/006/007/008/021/022) *(**FEAT-009 distribuzione costituzione neutra ✅ 2026-06-19** — PR #82 · **FEAT-003 CI GitHub Actions ✅ 2026-06-23** — Windows + Linux verdi su PR #96, prima CI del progetto · **FEAT-013 allineamento config dogfood↔ospite ✅ 2026-06-23** — dogfood su `.sertor/.env`+`.sertor/.index`, resolver host-agnostico · **FEAT-012 governance nel corpus ✅ 2026-06-23** — costituzione+plan-template indicizzati · unif. venv ✅ · host-agnosticità asset **FEAT-001/009/010 ✅** · disciplina MCP-first agli ospiti ✅, 2026-06-19)* · **audit asset first-party 2026-06-26** ([[sertor-strumenti-audit]]) → FEAT-016..024 (P0 ✅ tutti mergiati; P1 FEAT-019 ✅) |
 | **E11** | [`multiutente`](../../requirements/multiutente/epic.md) | 📋 differita | finché il caso d'uso team non è concreto |
 | **E12** | 🆕 [`usabilità`](../../requirements/usabilita/epic.md) | 🔄 **MVP completo** (FEAT-001/002/010 ✅ su `master`) | **owner del layer UX** (skill agentiche + agente *concierge* + poche primitive deterministiche, D↔N). **FEAT-001 `doctor` ✅** (PR #100, fix freschezza #102) + **FEAT-002 guided-setup ✅** (skill + agente `concierge` model-pinned, PR #101) + **FEAT-010 discoverability CLI ✅** (`uv run --project .sertor`, PR #103/#104) + **FEAT-012 install host-aware ✅** (PR #115, fix dogfooding + NRT, 2026-06-26). MVP (doctor + guida + invocazione robusta) coperto. Restano Should: config-recommender (FEAT-004), explain (FEAT-005), search-diagnose (FEAT-007), concierge pieno (FEAT-009, **stub avviato**), progress GloVe (FEAT-003). Assorbe item UX-facing da E2/E3/E10 (cross-ref) · **FEAT-013 description trigger-rich EN** (da audit, P0) |
 | **E13** | 🆕 [`documentazione-marketing`](../../requirements/documentazione-marketing/epic.md) | 📋 nuova (2026-06-24) | **owner della documentazione ESTERNA + marketing** (confine netto: E12 = UX in-product · `wiki/` = doc interna · meccanismi nelle epiche d'origine — E13 li *racconta*, cross-ref). Due fasi: **Fase 1 — doc utente** (getting-started unico, README di valore, pagina «cos'è/perché» imperniata sulla fusione code+doc — MVP Must/Should) · **Fase 2 — marketing pubblico** (posizionamento, demo/screencast, landing/sito) **gated sul go-public** (apertura repo/PyPI, oggi E2/FEAT-006 = Won't). 1° passo: FEAT-001/002/003 (Fase 1) |
@@ -112,8 +113,13 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   verde (filtro `where` sano, indice fresco). *Follow-up non-bloccante:* prova LIVE su ospite Claude/Copilot
   reale (comportamento runtime del fallback agent = giudizio LLM, verificabile solo live — confine D↔N
   dichiarato). Dettaglio in ✅ Capacità consegnate sopra.
+- **E10-FEAT-018 ✅ CONSEGNATA (merge `8257fd3`/PR #127, 2026-06-30) su `master`.** Portabilità OS degli
+  hook (guardia `pwsh` + gap dichiarato, no gemello bash) + onestà sui surface inerti via `InstallReport.notes`;
+  modulo puro `host_env.py` nel kit; detect-only (wiring invariato). Constitution **12/12 + missione**; test
+  sertor **451** · kit **139** · root **1131 passed**; `sertor-core` invariato, schema `install.report/1`
+  invariato. *Follow-up non-bloccante:* prova LIVE su ospite mac/Linux senza `pwsh`; fix wiring Claude portabile.
 - **Prossimo passo aperto:** scegliere il candidato a valore qui sotto (E5-FEAT-003 `search_docs`) o un
-  altro item di backlog.
+  altro item di backlog (E10 restano solo Could).
 
 **Candidati a valore = Should aperti:**
 
