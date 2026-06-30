@@ -57,11 +57,11 @@
 
 **Mappa FR**: FR-005/006/007 · CS-2 · US2 · data-model §E2 · contracts/reduced-blocks.md C4
 
-- [ ] Crea il file `packages/sertor/src/sertor_installer/assets/rag/sertor-cli-reference.md`.
+- [x] Crea il file `packages/sertor/src/sertor_installer/assets/rag/sertor-cli-reference.md`.
       È l'**unica sede** che ospiterà la sezione «How to invoke Sertor's commands» + Windows note.
-- [ ] Scrivi il contenuto con heading principale: `# How to invoke Sertor's commands` (o equivalente
+- [x] Scrivi il contenuto con heading principale: `# How to invoke Sertor's commands` (o equivalente
       di secondo livello `## How to invoke Sertor's commands` coerente con lo stile delle skill).
-- [ ] Includi il **livello runtime** (contratto C4):
+- [x] Includi il **livello runtime** (contratto C4):
       - Spiegazione che le CLI non sono su `PATH` dopo install (`not on PATH` ≠ not installed).
       - Forma robusta obbligatoria: `uv run --project .sertor sertor-rag <cmd>` e
         `uv run --project .sertor sertor-wiki-tools <op>`.
@@ -69,21 +69,21 @@
         `sertor-rag index .` indicizzerebbe `.sertor` invece del progetto host).
       - Fallback al venv per chi preferisce l'invocazione diretta:
         `.sertor/.venv/Scripts/` (Windows) / `.sertor/.venv/bin/` (macOS/Linux).
-- [ ] Includi il **livello installer** (contratto C4):
+- [x] Includi il **livello installer** (contratto C4):
       - `uvx --from "git+https://github.com/themetriost/Sertor` …` per installare/aggiornare.
-- [ ] Includi la **Windows note** (contratto C4):
+- [x] Includi la **Windows note** (contratto C4):
       - Sezione che menziona `pywin32_bootstrap`; impatto/azione sulla dipendenza di sistema Python
         3.14+; conclusione che il runtime Sertor è `unaffected`.
-- [ ] Verifica gli **invarianti host-agnostici** (contratto C4, REQ-006, VR-2):
+- [x] Verifica gli **invarianti host-agnostici** (contratto C4, REQ-006, VR-2):
       - NON contiene `.claude/` (percorso assistente-specifico).
       - NON contiene uno slash-command come invocazione (`/wiki`, `/requirements`).
       - NON contiene nomi modello/prodotto Claude (`Claude Code`, `Opus`, `Haiku`, `CLAUDE.md`,
         `$ARGUMENTS`).
       - NON contiene `uv run --directory .sertor` (footgun — vive solo nel template MCP).
-- [ ] Verifica che l'heading `How to invoke Sertor's commands` sia presente in forma testuale.
-- [ ] Verifica che `pywin32_bootstrap` appaia nel corpo (necessario per G2: fonte unica Windows note).
-- [ ] Verifica che `uvx --from` appaia nel corpo (livello installer — espresso solo qui).
-- [ ] Verifica che la forma robusta `uv run --project .sertor` appaia almeno una volta
+- [x] Verifica che l'heading `How to invoke Sertor's commands` sia presente in forma testuale.
+- [x] Verifica che `pywin32_bootstrap` appaia nel corpo (necessario per G2: fonte unica Windows note).
+- [x] Verifica che `uvx --from` appaia nel corpo (livello installer — espresso solo qui).
+- [x] Verifica che la forma robusta `uv run --project .sertor` appaia almeno una volta
       (necessario per `test_invoking_assets_carry_robust_form` dopo che l'asset entra in `_INVOKING_ASSETS`).
 
 ---
@@ -95,16 +95,16 @@
 
 **Mappa FR**: FR-007/013 · CS-3 · US2/US3 · data-model §E2/VR-3 · plan.md §Sequenza 2
 
-- [ ] Apri `packages/sertor/src/sertor_installer/install_rag.py`.
+- [x] Apri `packages/sertor/src/sertor_installer/install_rag.py`.
       Individua la funzione `build_rag_plan` (riga ~370). Verifica la struttura attuale.
-- [ ] Definisci una costante a livello di modulo per il percorso sorgente e il target host:
+- [x] Definisci una costante a livello di modulo per il percorso sorgente e il target host:
       ```python
       _CLI_REFERENCE_ASSET = "rag/sertor-cli-reference.md"
       _CLI_REFERENCE_TARGET = ".sertor/sertor-cli-reference.md"
       ```
       (Oppure usa stringhe inline nel `Artifact` se la convenzione del file non usa costanti per ogni
       FILE asset — verifica come sono definite le costanti per hook e skill simili nel file.)
-- [ ] Aggiungi il seguente `Artifact` FILE nella lista `plan` di `build_rag_plan`, nel punto
+- [x] Aggiungi il seguente `Artifact` FILE nella lista `plan` di `build_rag_plan`, nel punto
       logicamente coerente con gli altri FILE assets (dopo il MARKER_BLOCK del RAG usage block e
       prima o subito dopo i skill artifacts — verifica la convenzione d'ordine):
       ```python
@@ -120,13 +120,13 @@
       Il target `.sertor/sertor-cli-reference.md` è coperto dall'`owned_dir` `.sertor` esistente
       (riga ~835 di `install_rag.py`) → rimosso in blocco su uninstall, aggiornato su upgrade
       come gli altri owned-file di `.sertor/` (VR-3: lifecycle corretto, FR-013).
-- [ ] Verifica che il target **non sia assistente-specifico** (`.sertor/` è identico su Claude e
+- [x] Verifica che il target **non sia assistente-specifico** (`.sertor/` è identico su Claude e
       Copilot CLI — il piano viene costruito per entrambi gli assistenti tramite `build_rag_plan`,
       e la FILE di byte-copy è già la strategia degli hook e delle skill, VR-2/Principio X).
-- [ ] Verifica che non siano stati aggiunti nuovi `ArtifactKind`, `WriteStrategy`, `Surface`
+- [x] Verifica che non siano stati aggiunti nuovi `ArtifactKind`, `WriteStrategy`, `Surface`
       o seam del kit (riuso puro del meccanismo esistente FILE + CREATE_IF_ABSENT, VR-1).
-- [ ] Verifica che nessun import di `sertor_core` sia aggiunto (VR-1/Principio XI).
-- [ ] Spot check: il piano RAG per `AssistantId.CLAUDE` ora include un `Artifact` con
+- [x] Verifica che nessun import di `sertor_core` sia aggiunto (VR-1/Principio XI).
+- [x] Spot check: il piano RAG per `AssistantId.CLAUDE` ora include un `Artifact` con
       `target_rel == ".sertor/sertor-cli-reference.md"` e `source == "rag/sertor-cli-reference.md"`.
       Questo sarà verificato offline dalla guardia G4 (TASK-US7-02) tramite
       `{Path(t.target_rel).name for t in plan}`.
@@ -153,32 +153,32 @@
 
 **Mappa FR**: FR-001/002/004/015 · CS-1/CS-4 · US1/US4 · contracts/reduced-blocks.md C1
 
-- [ ] Apri `packages/sertor/src/sertor_installer/assets/rag/claude-md-block-rag-usage.md`.
+- [x] Apri `packages/sertor/src/sertor_installer/assets/rag/claude-md-block-rag-usage.md`.
       Il file ha 72 righe before feature; le righe 12-38 contengono la sezione «How to invoke».
-- [ ] **Rimuovi** la sezione «How to invoke Sertor's commands» (righe ~12–38, con la Windows note
+- [x] **Rimuovi** la sezione «How to invoke Sertor's commands» (righe ~12–38, con la Windows note
       `pywin32_bootstrap`): questo è il lookup-on-demand da centralizzare in `sertor-cli-reference.md`.
-- [ ] **Sostituisci** la sezione rimossa con un **pointer per nome** (REQ-002, C1), es.:
+- [x] **Sostituisci** la sezione rimossa con un **pointer per nome** (REQ-002, C1), es.:
       `For detailed CLI invocation syntax, fallback options, and Windows setup notes, see` `` `sertor-cli-reference.md` `` `(available after` `sertor install rag`).`
       Il pointer deve contenere il token di file ``sertor-cli-reference.md`` (necessario per G3).
       **Non usare un percorso filesystem** (es. `.sertor/sertor-cli-reference.md`): solo il basename.
-- [ ] Verifica le **presenze obbligatorie** (contratto C1, REQ-015):
-      - [ ] `sertor_core` + `vehicles` (CLI/MCP) → direttiva vehicle-only / no-import.
-      - [ ] `Search first` o `search`…`before reading files` → search-first, read-second.
-      - [ ] `uv run --project .sertor sertor-rag search` → forma robusta conservata (DEVE restare
+- [x] Verifica le **presenze obbligatorie** (contratto C1, REQ-015):
+      - [x] `sertor_core` + `vehicles` (CLI/MCP) → direttiva vehicle-only / no-import.
+      - [x] `Search first` o `search`…`before reading files` → search-first, read-second.
+      - [x] `uv run --project .sertor sertor-rag search` → forma robusta conservata (DEVE restare
             inline per `test_rag_usage_block_uv_run_replaces_bare_search`).
-      - [ ] `error` + `signal` → regola «errore MCP = segnale, non rumore».
-      - [ ] `SERTOR_MEMORY` → gate privacy memoria conservato.
-      - [ ] ``sertor-cli-reference.md`` → pointer per nome al reference unico (REQ-002/015).
-- [ ] Verifica le **assenze obbligatorie** (contratto C1, REQ-001/012):
-      - [ ] `How to invoke Sertor's commands` **NON** presente (heading rimosso, G1).
-      - [ ] `pywin32_bootstrap` **NON** presente (Windows note estratta, G1).
-      - [ ] `uvx --from` **NON** presente (livello installer estratto, G1).
-      - [ ] `--directory .sertor` **NON** presente nella forma di invocazione (footgun estratto; la
+      - [x] `error` + `signal` → regola «errore MCP = segnale, non rumore».
+      - [x] `SERTOR_MEMORY` → gate privacy memoria conservato.
+      - [x] ``sertor-cli-reference.md`` → pointer per nome al reference unico (REQ-002/015).
+- [x] Verifica le **assenze obbligatorie** (contratto C1, REQ-001/012):
+      - [x] `How to invoke Sertor's commands` **NON** presente (heading rimosso, G1).
+      - [x] `pywin32_bootstrap` **NON** presente (Windows note estratta, G1).
+      - [x] `uvx --from` **NON** presente (livello installer estratto, G1).
+      - [x] `--directory .sertor` **NON** presente nella forma di invocazione (footgun estratto; la
             menzione nella frase cautionary del footgun va gestita con `_is_robust_context` — lascia
             la sola forma `--project`).
-- [ ] Verifica che il blocco sia **host-agnostico** (VR-2): zero `.claude/`, zero slash-command,
+- [x] Verifica che il blocco sia **host-agnostico** (VR-2): zero `.claude/`, zero slash-command,
       zero nomi prodotto/modello Claude.
-- [ ] Misura le righe dopo la modifica (CS-1): il blocco deve essere < 72 righe (~48 atteso).
+- [x] Misura le righe dopo la modifica (CS-1): il blocco deve essere < 72 righe (~48 atteso).
 
 ---
 
@@ -189,31 +189,31 @@
 
 **Mappa FR**: FR-001/002/004/014 · CS-1/CS-4 · US1/US4 · contracts/reduced-blocks.md C2
 
-- [ ] Apri `packages/sertor/src/sertor_installer/assets/claude-md-block.md`.
+- [x] Apri `packages/sertor/src/sertor_installer/assets/claude-md-block.md`.
       Il file ha 71 righe before feature.
-- [ ] **Rimuovi** la sezione `### Wiki operations` con l'elenco delle operazioni
+- [x] **Rimuovi** la sezione `### Wiki operations` con l'elenco delle operazioni
       (`ingest`/`query`/`reorg`/`generate`/`rag-sync`/`structure` in forma bullet/elenco): è
       lookup-on-demand già presente nel wiki playbook; non serve always-on.
-- [ ] **Rimuovi** la sezione `### Conventions` (o equivalente) con i dettagli di frontmatter YAML,
+- [x] **Rimuovi** la sezione `### Conventions` (o equivalente) con i dettagli di frontmatter YAML,
       backlink stile wikilink, naming kebab-case, formato voce di log: anche queste sono
       lookup-on-demand, già nel playbook.
-- [ ] **Aggiungi** un **riferimento per nome** al wiki playbook (REQ-014, C2), es.:
+- [x] **Aggiungi** un **riferimento per nome** al wiki playbook (REQ-014, C2), es.:
       `For the full list of wiki operations, conventions, and log format, see` `` `wiki-playbook.md` ``.
       Il token ``wiki-playbook.md`` deve essere presente (necessario per G3).
-- [ ] Verifica le **presenze obbligatorie** (contratto C2, REQ-014):
-      - [ ] `Golden rule` → golden rule della documentazione (documentare ogni cosa di rilievo).
-      - [ ] `Step` + `Record` + `Distill` + `lint` → outline del rituale di step.
-      - [ ] `wiki-curator` + `main flow` → regole di delega (record→curator; distill/lint→main flow).
-      - [ ] `judgment` o `D↔N` → confine meccanico vs giudizio.
-      - [ ] ``wiki-playbook.md`` → riferimento per nome al wiki playbook (REQ-014).
-- [ ] Verifica le **assenze obbligatorie** (contratto C2):
-      - [ ] La sezione `### Wiki operations` con l'elenco bullet completo **NON** presente (o ridotta
+- [x] Verifica le **presenze obbligatorie** (contratto C2, REQ-014):
+      - [x] `Golden rule` → golden rule della documentazione (documentare ogni cosa di rilievo).
+      - [x] `Step` + `Record` + `Distill` + `lint` → outline del rituale di step.
+      - [x] `wiki-curator` + `main flow` → regole di delega (record→curator; distill/lint→main flow).
+      - [x] `judgment` o `D↔N` → confine meccanico vs giudizio.
+      - [x] ``wiki-playbook.md`` → riferimento per nome al wiki playbook (REQ-014).
+- [x] Verifica le **assenze obbligatorie** (contratto C2):
+      - [x] La sezione `### Wiki operations` con l'elenco bullet completo **NON** presente (o ridotta
             a sola menzione senza l'enumerazione estesa di 8 operazioni).
-      - [ ] La sezione `### Conventions` con YAML frontmatter/kebab-case/formato voce di log
+      - [x] La sezione `### Conventions` con YAML frontmatter/kebab-case/formato voce di log
             **NON** presente inline (spostata al playbook).
-- [ ] Verifica che il blocco sia **host-agnostico** (VR-2): zero `.claude/`, zero slash-command,
+- [x] Verifica che il blocco sia **host-agnostico** (VR-2): zero `.claude/`, zero slash-command,
       zero nomi prodotto/modello Claude.
-- [ ] Misura le righe dopo la modifica (CS-1): il blocco deve essere < 71 righe (~53 atteso).
+- [x] Misura le righe dopo la modifica (CS-1): il blocco deve essere < 71 righe (~53 atteso).
 
 ---
 
@@ -231,22 +231,22 @@
 
 **Mappa FR**: FR-008 · CS-2 · US2 · contracts/reduced-blocks.md C5
 
-- [ ] Apri `packages/sertor/src/sertor_installer/assets/rag/skills/guided-setup/SKILL.md`.
+- [x] Apri `packages/sertor/src/sertor_installer/assets/rag/skills/guided-setup/SKILL.md`.
       Le righe 52–78 contengono la sezione «## How to invoke Sertor's commands» (copia inline 2).
-- [ ] **Rimuovi** la sezione «## How to invoke Sertor's commands» (righe ~52–78) — tutta la
+- [x] **Rimuovi** la sezione «## How to invoke Sertor's commands» (righe ~52–78) — tutta la
       sottosezione con i dettagli runtime CLI, installer, fallback venv e Windows note.
-- [ ] **Sostituisci** la sezione rimossa con un **pointer per nome** (C5, REQ-008), es.:
+- [x] **Sostituisci** la sezione rimossa con un **pointer per nome** (C5, REQ-008), es.:
       `For CLI invocation details, see` `` `sertor-cli-reference.md` `` `(the reference ships with this capability).`
       Il token di file ``sertor-cli-reference.md`` deve essere presente (necessario per G3/G4).
-- [ ] Verifica le **presenze obbligatorie** (contratto C5):
-      - [ ] ``sertor-cli-reference.md`` → pointer per nome (REQ-008).
-      - [ ] Il resto della logica della skill (Step 0–6, consent gate, ecc.) è **intatto**.
-      - [ ] Almeno una forma robusta `uv run --project .sertor` nei passi della skill (il passo
+- [x] Verifica le **presenze obbligatorie** (contratto C5):
+      - [x] ``sertor-cli-reference.md`` → pointer per nome (REQ-008).
+      - [x] Il resto della logica della skill (Step 0–6, consent gate, ecc.) è **intatto**.
+      - [x] Almeno una forma robusta `uv run --project .sertor` nei passi della skill (il passo
             che invoca `sertor-rag index .` o simile deve usare la forma robusta — necessario
             per `test_invoking_assets_carry_robust_form` che copre `_GUIDED_SETUP`).
-- [ ] Verifica le **assenze obbligatorie** (contratto C5):
-      - [ ] `## How to invoke Sertor's commands` **NON** presente (heading rimosso, G1).
-- [ ] Verifica che l'asset sia **host-agnostico** (VR-2): zero `.claude/`, zero slash-command,
+- [x] Verifica le **assenze obbligatorie** (contratto C5):
+      - [x] `## How to invoke Sertor's commands` **NON** presente (heading rimosso, G1).
+- [x] Verifica che l'asset sia **host-agnostico** (VR-2): zero `.claude/`, zero slash-command,
       zero nomi prodotto/modello Claude.
 
 ---
@@ -258,15 +258,15 @@
 
 **Mappa FR**: FR-009 · CS-2 · US2 · contracts/reduced-blocks.md C6 · research.md §DA-D-r1
 
-- [ ] Apri `packages/sertor/src/sertor_installer/assets/claude/skills/wiki-author/wiki-playbook.md`.
+- [x] Apri `packages/sertor/src/sertor_installer/assets/claude/skills/wiki-author/wiki-playbook.md`.
       Le righe 93–112 contengono la sottosezione «### How to invoke the runtime CLIs» + Windows note
       (copia inline 3, runtime-only variant — senza livello installer o URL GitHub).
-- [ ] **Rimuovi** la sottosezione «### How to invoke the runtime CLIs» (righe ~93–112):
+- [x] **Rimuovi** la sottosezione «### How to invoke the runtime CLIs» (righe ~93–112):
       l'heading e il corpo con la Windows note (`pywin32_bootstrap`).
-- [ ] **Conserva** la forma minima di invocazione al §2 del playbook (righe ~88–91):
+- [x] **Conserva** la forma minima di invocazione al §2 del playbook (righe ~88–91):
       `uv run --project .sertor sertor-wiki-tools <op>` + chiarimento PATH (`not on PATH`).
       Questa forma è l'auto-contenimento wiki-only; NON va rimossa (REQ-014 minimo, C6).
-- [ ] **Aggiungi** (dopo la forma minima conservata o in punto logico) una **frase condizionale
+- [x] **Aggiungi** (dopo la forma minima conservata o in punto logico) una **frase condizionale
       senza token di file** sul reference RAG (C6, closure-safe), es.:
       `When the Sertor RAG capability is also installed, a fuller CLI reference document ships with it,
       covering installer-level invocation and platform-specific notes.`
@@ -274,18 +274,18 @@
       reference (la regex `_BACKTICK_REF` di closure matcha ``*.md``): se il wiki-playbook lo citasse,
       la guardia G4 richiederebbe che il piano WIKI lo depositi — ma non lo fa (pointer morto su install
       solo-wiki, REQ-007/NFR-5). Usa la frase descrittiva senza il filename.
-- [ ] Verifica le **presenze obbligatorie** (contratto C6):
-      - [ ] Forma minima `uv run --project .sertor sertor-wiki-tools` al §2 → presente.
-      - [ ] Chiarimento PATH (`not on` `PATH` o equivalente) → presente.
-      - [ ] Frase condizionale senza filename sul reference RAG → presente.
-- [ ] Verifica le **assenze obbligatorie** (contratto C6):
-      - [ ] `### How to invoke the runtime CLIs` **NON** presente (heading rimosso, G5).
-      - [ ] `pywin32_bootstrap` **NON** presente (Windows note estratta, G5).
-      - [ ] ``sertor-cli-reference.md`` (backtick-reference con estensione `.md`) **NON** presente
+- [x] Verifica le **presenze obbligatorie** (contratto C6):
+      - [x] Forma minima `uv run --project .sertor sertor-wiki-tools` al §2 → presente.
+      - [x] Chiarimento PATH (`not on` `PATH` o equivalente) → presente.
+      - [x] Frase condizionale senza filename sul reference RAG → presente.
+- [x] Verifica le **assenze obbligatorie** (contratto C6):
+      - [x] `### How to invoke the runtime CLIs` **NON** presente (heading rimosso, G5).
+      - [x] `pywin32_bootstrap` **NON** presente (Windows note estratta, G5).
+      - [x] ``sertor-cli-reference.md`` (backtick-reference con estensione `.md`) **NON** presente
             (evita pointer morto su piano wiki, NFR-5/REQ-007).
-      - [ ] `uvx --from` **NON** presente (livello installer non nel playbook, host-agnostico wiki).
-      - [ ] `github.com/themetriost/Sertor` **NON** presente (URL non nel playbook).
-- [ ] Verifica che l'asset sia **host-agnostico** (VR-2): zero `.claude/`, zero slash-command,
+      - [x] `uvx --from` **NON** presente (livello installer non nel playbook, host-agnostico wiki).
+      - [x] `github.com/themetriost/Sertor` **NON** presente (URL non nel playbook).
+- [x] Verifica che l'asset sia **host-agnostico** (VR-2): zero `.claude/`, zero slash-command,
       zero nomi prodotto/modello Claude.
 
 ---
@@ -303,26 +303,26 @@
 
 **Mappa FR**: FR-011 · CS-6 · US6 · data-model §E6 · contracts/guard.md G7
 
-- [ ] Dopo aver completato TASK-US2-02, esegui il comando di sync:
+- [x] Dopo aver completato TASK-US2-02, esegui il comando di sync:
       ```powershell
       uv run python -m sertor_installer.sync
       ```
       Questo riallinea `.claude/skills/wiki-author/wiki-playbook.md` (copia dogfood) con
       `packages/sertor/src/sertor_installer/assets/claude/skills/wiki-author/wiki-playbook.md`
       (sorgente canonica modificata).
-- [ ] Verifica byte-parità: le due copie devono essere identiche dopo il sync.
+- [x] Verifica byte-parità: le due copie devono essere identiche dopo il sync.
       ```powershell
       # Verifica manuale: se il sync ha prodotto modifiche allo stato git, le diff devono essere
       # solo a .claude/skills/wiki-author/wiki-playbook.md e riflettere esattamente le stesse
       # modifiche applicate alla sorgente canonica.
       ```
-- [ ] Esegui la guardia di sync (G7) per verifica immediata:
+- [x] Esegui la guardia di sync (G7) per verifica immediata:
       ```powershell
       uv run pytest tests/unit/test_assets_sync.py -q
       ```
       Deve essere verde. La guardia verifica byte-parità di tutti gli asset sotto `assets/claude/**`
       nelle copie dogfood `.claude/` — quindi copre il wiki-playbook.
-- [ ] Verifica che gli altri asset toccati (RAG block, wiki block, `guided-setup`, reference)
+- [x] Verifica che gli altri asset toccati (RAG block, wiki block, `guided-setup`, reference)
       NON abbiano generato copie dogfood non volute sotto `.claude/`: questi file stanno sotto
       `assets/` top-level o `assets/rag/`, non sotto `assets/claude/**`, quindi il sync non li tocca.
 
@@ -346,11 +346,11 @@
 
 **Mappa FR**: FR-005/012/015 · CS-1/CS-2/CS-4 · US2/US7 · contracts/guard.md G1/G2/G3/G5
 
-- [ ] Apri `packages/sertor/tests/test_assets_cli_invocation.py`.
+- [x] Apri `packages/sertor/tests/test_assets_cli_invocation.py`.
       Leggi l'intero file per capire le costanti e la struttura corrente.
 
 **1. Aggiorna `_CANONICAL_GUIDE_ASSETS` (G5 rework test_canonical_guide):**
-- [ ] Cambia `_CANONICAL_GUIDE_ASSETS` da `(_RAG_USAGE, _GUIDED_SETUP)` a una tupla che contiene
+- [x] Cambia `_CANONICAL_GUIDE_ASSETS` da `(_RAG_USAGE, _GUIDED_SETUP)` a una tupla che contiene
       solo il reference canonico:
       ```python
       _CLI_REFERENCE = "rag/sertor-cli-reference.md"
@@ -359,7 +359,7 @@
       (La costante `_CLI_REFERENCE` è usata anche da G2/G3/G4.)
 
 **2. Aggiungi `_CLI_REFERENCE` a `_INVOKING_ASSETS` (footgun check):**
-- [ ] Aggiungi `_CLI_REFERENCE` alla tupla `_INVOKING_ASSETS` (il reference deve usare la forma
+- [x] Aggiungi `_CLI_REFERENCE` alla tupla `_INVOKING_ASSETS` (il reference deve usare la forma
       robusta `uv run --project .sertor` e non avere bare invocations):
       ```python
       _INVOKING_ASSETS = (
@@ -377,7 +377,7 @@
       coprano automaticamente il nuovo asset (nessuna modifica ai test stessi).
 
 **3. Rework `test_canonical_guide_present_where_first_invoked` (G5):**
-- [ ] Modifica il test: la guida completa deve essere in `sertor-cli-reference.md` (non più in
+- [x] Modifica il test: la guida completa deve essere in `sertor-cli-reference.md` (non più in
       `_RAG_USAGE` e `_GUIDED_SETUP`); queste ultime sedi devono contenere il pointer, non la copia:
       ```python
       def test_canonical_guide_present_where_first_invoked():
@@ -399,7 +399,7 @@
       ```
 
 **4. Rework `test_wiki_playbook_ships_runtime_invocation_guide` (G5):**
-- [ ] Modifica il test: verifica la forma minima §2 + assenza della sottosezione + Windows note:
+- [x] Modifica il test: verifica la forma minima §2 + assenza della sottosezione + Windows note:
       ```python
       def test_wiki_playbook_ships_runtime_invocation_guide():
           """Il wiki playbook porta solo la forma minima; la sottosezione completa è rimossa (CS-2)."""
@@ -421,7 +421,7 @@
       ```
 
 **5. Aggiungi test G1 (non-reintroduzione nei blocchi):**
-- [ ] Aggiungi un nuovo test che verifica che i blocchi always-on NON contengano la sezione inline:
+- [x] Aggiungi un nuovo test che verifica che i blocchi always-on NON contengano la sezione inline:
       ```python
       _WIKI_BLOCK = "claude-md-block.md"
 
@@ -441,7 +441,7 @@
       ```
 
 **6. Aggiungi test G2 (fonte unica):**
-- [ ] Aggiungi un nuovo test che verifica che la sezione completa esista in esattamente un asset:
+- [x] Aggiungi un nuovo test che verifica che la sezione completa esista in esattamente un asset:
       ```python
       def test_invoke_section_exists_in_exactly_one_asset():
           """G2: 'How to invoke Sertor's commands' + Windows note in ESATTAMENTE un asset (CS-2)."""
@@ -474,7 +474,7 @@
       `_CANDIDATE_ASSETS` sopra che copre tutti gli asset agent-facing rilevanti.
 
 **7. Aggiungi test G3 (pointer presenti):**
-- [ ] Aggiungi un nuovo test che verifica che i pointer siano nei body che ne hanno bisogno:
+- [x] Aggiungi un nuovo test che verifica che i pointer siano nei body che ne hanno bisogno:
       ```python
       def test_pointers_present_in_reduced_bodies():
           """G3: i body ridotti contengono i pointer attesi (REQ-014/015)."""
@@ -492,11 +492,11 @@
           )
       ```
 
-- [ ] Verifica che `test_rag_usage_block_uv_run_replaces_bare_search` sia ancora verde
+- [x] Verifica che `test_rag_usage_block_uv_run_replaces_bare_search` sia ancora verde
       (la forma `uv run --project .sertor sertor-rag search` è conservata nel RAG block, C1).
-- [ ] Verifica che `test_invoking_assets_carry_robust_form` sia ancora verde su tutti gli asset
+- [x] Verifica che `test_invoking_assets_carry_robust_form` sia ancora verde su tutti gli asset
       incluso il nuovo `_CLI_REFERENCE` (necessita che F01 abbia incluso la forma robusta, C4).
-- [ ] Esegui localmente tutti i test del file per conferma verde:
+- [x] Esegui localmente tutti i test del file per conferma verde:
       ```powershell
       uv run pytest packages/sertor/tests/test_assets_cli_invocation.py -v
       ```
@@ -510,14 +510,14 @@
 
 **Mappa FR**: FR-003/004/006/010 · CS-3/CS-5 · US3/US5/US7 · contracts/guard.md G4/G6
 
-- [ ] Apri `packages/sertor/tests/test_assets_copilot_parity.py`. Leggi la struttura esistente
+- [x] Apri `packages/sertor/tests/test_assets_copilot_parity.py`. Leggi la struttura esistente
       (in particolare le funzioni `_rag_plan`, `_render_rag`, `_rendered_bodies`, e il pattern
       delle closure `_usability_closure_offenders`).
-- [ ] Aggiungi la costante per il basename del reference (necessaria per la closure check):
+- [x] Aggiungi la costante per il basename del reference (necessaria per la closure check):
       ```python
       _CLI_REFERENCE_BASENAME = "sertor-cli-reference.md"
       ```
-- [ ] Aggiungi la funzione helper di closure per il reference (G4):
+- [x] Aggiungi la funzione helper di closure per il reference (G4):
       ```python
       def _reference_closure_offenders(plan: list, render) -> list[str]:
           """G4: ogni body RAG che cita `sertor-cli-reference.md` deve trovarlo depositato nel piano.
@@ -536,7 +536,7 @@
       ```
       Nota: `_rendered_bodies` e `_rag_plan` (helper per costruire il piano con `tmp_path`) devono
       essere già presenti nel file — riusali; adatta i nomi alla loro firma reale.
-- [ ] Aggiungi un test che verifica la closure per entrambi gli assistenti (G4):
+- [x] Aggiungi un test che verifica la closure per entrambi gli assistenti (G4):
       ```python
       def test_cli_reference_closure_in_rag_plan(tmp_path):
           """G4: il reference sertor-cli-reference.md è depositato dal piano RAG
@@ -550,7 +550,7 @@
               "Copilot RAG plan: sertor-cli-reference.md citato ma non depositato"
           )
       ```
-- [ ] Aggiungi un test negativo (non-vacuità della guardia G4):
+- [x] Aggiungi un test negativo (non-vacuità della guardia G4):
       ```python
       def test_cli_reference_closure_fails_if_not_deposited(tmp_path):
           """G4 negativo: un piano che non deposita il reference fa fallire la closure."""
@@ -566,12 +566,12 @@
           offenders = _reference_closure_offenders(plan_without_ref, _render_rag)
           assert offenders != [], "Il piano senza il reference avrebbe dovuto fallire la closure"
       ```
-- [ ] Verifica che i test di parità esistenti (G6) coprano il nuovo asset `sertor-cli-reference.md`
+- [x] Verifica che i test di parità esistenti (G6) coprano il nuovo asset `sertor-cli-reference.md`
       **automaticamente**: le guardie (a) no `.claude/`, (b) no slash-command, (c) no nomi-Claude
       girano su tutti i body renderizzati del piano RAG, incluso il FILE del reference — se il
       reference viola VR-2, le guardie esistenti lo rileveranno senza modifiche. Verifica che
       non sia necessaria una modifica esplicita.
-- [ ] Esegui i test del file (G4 + non-regressione G6):
+- [x] Esegui i test del file (G4 + non-regressione G6):
       ```powershell
       uv run pytest packages/sertor/tests/test_assets_copilot_parity.py -v
       ```
@@ -585,12 +585,12 @@
 
 **Mappa FR**: FR-012 · CS-2 · US7 · contracts/guard.md G1 · data-model §E5
 
-- [ ] Apri `packages/sertor-flow/tests/unit/test_governance_assets_host_agnostic.py`.
+- [x] Apri `packages/sertor-flow/tests/unit/test_governance_assets_host_agnostic.py`.
       Verifica il pattern di lettura asset già usato: `read_asset_text("sertor_flow", rel)` tramite
       `from sertor_install_kit import read_asset_text` con il parametro anchor.
       (Alternativa secondo contratto guard.md: `kit_read("sertor_flow", "claude-md-block-sdlc.md")`
       — usa la firma corretta che vedi nel file.)
-- [ ] Aggiungi un test di non-reintroduzione «How to invoke» nel blocco SDLC (G1 gemello):
+- [x] Aggiungi un test di non-reintroduzione «How to invoke» nel blocco SDLC (G1 gemello):
       ```python
       def test_sdlc_block_has_no_invoke_section():
           """G1 gemello: il blocco SDLC non contiene 'How to invoke' (invariato, DA-D-r3).
@@ -609,7 +609,7 @@
       ```
       Adatta la chiamata di lettura alla firma effettiva che vedi nel file (potrebbe essere
       `read_asset_text("sertor_flow", "claude-md-block-sdlc.md")` oppure un helper diverso).
-- [ ] Aggiungi (opzionale ma consigliato) la verifica delle presenze obbligatorie del blocco SDLC
+- [x] Aggiungi (opzionale ma consigliato) la verifica delle presenze obbligatorie del blocco SDLC
       per pin-regressione (contratto C3):
       ```python
       def test_sdlc_block_preserves_standing_content():
@@ -625,7 +625,7 @@
               "Error discipline assente dal blocco SDLC"
           )
       ```
-- [ ] Esegui i test del file:
+- [x] Esegui i test del file:
       ```powershell
       uv run pytest packages/sertor-flow/tests/unit/test_governance_assets_host_agnostic.py -v
       ```
@@ -643,43 +643,43 @@
 
 **Mappa FR**: RNF-1/2/3 · CS-1..6
 
-- [ ] **Guardie nuove/rework (CS-2/CS-3/CS-4):**
+- [x] **Guardie nuove/rework (CS-2/CS-3/CS-4):**
       ```powershell
       uv run pytest packages/sertor/tests/test_assets_cli_invocation.py -v
       uv run pytest packages/sertor/tests/test_assets_copilot_parity.py -v
       uv run pytest packages/sertor-flow/tests/unit/test_governance_assets_host_agnostic.py -v
       ```
       Tutti devono essere verdi (G1/G2/G3/G4/G5/G6/G7 test).
-- [ ] **Sync dogfood (CS-6, G7):**
+- [x] **Sync dogfood (CS-6, G7):**
       ```powershell
       uv run pytest tests/unit/test_assets_sync.py -v
       ```
       Deve essere verde dopo il sync di TASK-US6-01 (wiki-playbook dogfood in byte-parità).
-- [ ] **Quickstart altitude (CS-1):**
+- [x] **Quickstart altitude (CS-1):**
       ```powershell
       (Get-Content packages/sertor/src/sertor_installer/assets/claude-md-block.md).Count
       (Get-Content packages/sertor/src/sertor_installer/assets/rag/claude-md-block-rag-usage.md).Count
       (Get-Content packages/sertor-flow/src/sertor_flow/assets/claude-md-block-sdlc.md).Count
       ```
       Totale deve essere misurabilmente < 208 righe (~166 atteso; SDLC invariato a 65).
-- [ ] **Non-regressione suite completa sertor (RNF-3):**
+- [x] **Non-regressione suite completa sertor (RNF-3):**
       ```powershell
       uv run pytest packages/sertor/tests/ -m "not cloud" -q
       ```
       Verifica che `test_assets_copilot_parity.py` e `test_surface_parity.py` restino verdi.
-- [ ] **Non-regressione suite completa kit (RNF-3):**
+- [x] **Non-regressione suite completa kit (RNF-3):**
       ```powershell
       uv run pytest packages/sertor-install-kit/tests/ -m "not cloud" -q
       ```
-- [ ] **Non-regressione suite completa sertor-flow (RNF-3):**
+- [x] **Non-regressione suite completa sertor-flow (RNF-3):**
       ```powershell
       uv run pytest packages/sertor-flow/tests/ -m "not cloud" -q
       ```
-- [ ] **Suite root completa (RNF-3):**
+- [x] **Suite root completa (RNF-3):**
       ```powershell
       uv run pytest -m "not cloud" -q
       ```
-- [ ] **Lint ruff sui file toccati:**
+- [x] **Lint ruff sui file toccati:**
       ```powershell
       uv run ruff check `
           packages/sertor/src/sertor_installer/install_rag.py `
@@ -688,7 +688,7 @@
           packages/sertor-flow/tests/unit/test_governance_assets_host_agnostic.py
       ```
       Zero errori (regole E,F,I,UP,B; line-length 100).
-- [ ] **Quickstart fonte unica (CS-2, verifica manuale):**
+- [x] **Quickstart fonte unica (CS-2, verifica manuale):**
       ```powershell
       Select-String -Path packages/sertor/src/sertor_installer/assets/**/*.md `
           -Pattern "How to invoke Sertor's commands"
@@ -703,36 +703,36 @@
 
 → dipende da: TASK-P01
 
-- [ ] **CS-1 (altitude ridotta):** totale righe dei 3 blocchi always-on < 208 (stima ~166);
+- [x] **CS-1 (altitude ridotta):** totale righe dei 3 blocchi always-on < 208 (stima ~166);
       nessun dettaglio operativo lookup-on-demand inline nei blocchi RAG e wiki. ✓
-- [ ] **CS-2 (fonte unica «How to invoke»):** `How to invoke Sertor's commands` in esattamente
+- [x] **CS-2 (fonte unica «How to invoke»):** `How to invoke Sertor's commands` in esattamente
       1 asset (`sertor-cli-reference.md`); `pywin32_bootstrap` idem; blocco RAG, `guided-setup` e
       `wiki-playbook` contengono pointer/frase condizionale, non la copia inline. Test G2 verde. ✓
-- [ ] **CS-3 (nessun pointer rotto):** test G4 verde per Claude e Copilot CLI; il reference è
+- [x] **CS-3 (nessun pointer rotto):** test G4 verde per Claude e Copilot CLI; il reference è
       depositato dal piano RAG (`build_rag_plan`) in `.sertor/sertor-cli-reference.md`; il
       `wiki-playbook` non cita il basename del reference (no pointer morto su install solo-wiki). ✓
-- [ ] **CS-4 (contenuto load-bearing preservato):**
+- [x] **CS-4 (contenuto load-bearing preservato):**
       - Blocco RAG: vehicle-only + search-first + `uv run --project .sertor sertor-rag search` +
         MCP-error + memory-gate + pointer `sertor-cli-reference.md`. Test G3 verde. ✓
       - Blocco wiki: golden rule + step outline + delegation + D↔N + pointer `wiki-playbook.md`.
         Test G3 verde. ✓
       - Blocco SDLC: fasi SpecKit + constitution gate + error discipline + version-control. Invariato. ✓
-- [ ] **CS-5 (parità host-agnostica):** test `test_assets_copilot_parity.py` verde su tutti gli
+- [x] **CS-5 (parità host-agnostica):** test `test_assets_copilot_parity.py` verde su tutti gli
       asset modificati e sul nuovo reference (zero `.claude/`, zero slash-command, zero nomi-Claude).
       Test G6 verde (guardia già esistente, nessuna modifica). ✓
-- [ ] **CS-6 (sync dogfood):** `tests/unit/test_assets_sync.py` verde dopo il sync; copia
+- [x] **CS-6 (sync dogfood):** `tests/unit/test_assets_sync.py` verde dopo il sync; copia
       `.claude/skills/wiki-author/wiki-playbook.md` in byte-parità con la sorgente canonica. ✓
-- [ ] **Additività core — invarianza `sertor_core`:** verifica che nessun file in `src/sertor_core/`
+- [x] **Additività core — invarianza `sertor_core`:** verifica che nessun file in `src/sertor_core/`
       sia stato modificato. Zero import di `sertor_core` in `install_rag.py` (unica modifica di codice). ✓
-- [ ] **Additività installer — nessun nuovo seam:** verifica che non siano stati introdotti nuovi
+- [x] **Additività installer — nessun nuovo seam:** verifica che non siano stati introdotti nuovi
       `ArtifactKind`, `WriteStrategy`, `Surface`, porte o dipendenze esterne. Solo il nuovo asset
       `.md` e 1 riga di `Artifact(FILE, …)` in `install_rag.py`. ✓
-- [ ] **Blocco SDLC invariato:** verifica che `packages/sertor-flow/src/sertor_flow/assets/claude-md-block-sdlc.md`
+- [x] **Blocco SDLC invariato:** verifica che `packages/sertor-flow/src/sertor_flow/assets/claude-md-block-sdlc.md`
       non sia stato modificato (DA-D-r3). Test G1 gemello (US7-03) verde. ✓
-- [ ] **Non-regressione installabilità (RNF-4):** verifica che `sertor install rag` (o il
+- [x] **Non-regressione installabilità (RNF-4):** verifica che `sertor install rag` (o il
       test di piano equivalente in `test_non_regression_claude.py`) includa il nuovo Artifact del
       reference e che il piano owned-check (`plan ⊆ owned`) resti verde (`.sertor` owned_dir). ✓
-- [ ] Segnala come **follow-up non-bloccante** (già a casa durevole):
+- [x] Segnala come **follow-up non-bloccante** (già a casa durevole):
       - Dedup mini-note eval (`eval-suite-author`/`eval-feedback`) → FEAT-022.
       - Budget altitude in CI (freno deterministico) → FEAT-024.
       - Stub `assets/copilot/**` → FEAT-023.

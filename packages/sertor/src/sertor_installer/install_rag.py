@@ -79,6 +79,14 @@ _RAG_USAGE_BLOCK = "rag/claude-md-block-rag-usage.md"
 MARKER_START_RAG = "<!-- SERTOR:RAG-USAGE START -->"
 MARKER_END_RAG = "<!-- SERTOR:RAG-USAGE END -->"
 
+# E10-FEAT-021: the single source of truth for "How to invoke Sertor's commands" (the two-level CLI
+# guidance + Windows note). The reduced RAG usage block and the guided-setup skill POINT here by
+# name instead of repeating the section inline (one canonical copy → no drift). Deposited as a FILE
+# in the shared runtime `.sertor/` (host-agnostic, identical on Claude and Copilot CLI), owned via
+# the `.sertor` owned_dir (removed in block on uninstall, updated on upgrade). No new ArtifactKind.
+_CLI_REFERENCE_ASSET = "rag/sertor-cli-reference.md"
+_CLI_REFERENCE_TARGET = ".sertor/sertor-cli-reference.md"
+
 # Group C (Principio XI, feature 042): host-specific PreToolUse hook (adapter of the trigger).
 # Its absence MUST NOT break the RAG capability (Principio X).
 _RAG_HOOK_ASSET = "rag/hooks/sertor-rag-usage-check.ps1"
@@ -453,6 +461,17 @@ def build_rag_plan(
             settings_source,
             settings_target,
             WriteStrategy.MERGE_DEDUP,
+        )
+    )
+    # E10-FEAT-021: the canonical "How to invoke" reference (`.sertor/sertor-cli-reference.md`),
+    # pointed to by name from the reduced RAG usage block and the guided-setup skill. Assistant-
+    # agnostic FILE byte-copy (same mechanism as the hooks/skills); owned via `.sertor` owned_dir.
+    plan.append(
+        Artifact(
+            ArtifactKind.FILE,
+            _CLI_REFERENCE_ASSET,
+            _CLI_REFERENCE_TARGET,
+            WriteStrategy.CREATE_IF_ABSENT,
         )
     )
     # Ground-truth eval skills (065): native skill bodies, byte-copied per-assistant (FILE).

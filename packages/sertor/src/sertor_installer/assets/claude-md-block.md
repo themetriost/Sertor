@@ -46,25 +46,7 @@ the body must stay host-agnostic (no literal assistant paths, no slash-command i
 referenced by name) so the SAME body works on every assistant. A step that edits such an asset is not
 done until that parity holds (a parity guard enforces it where available).
 
-### Wiki operations
-
-- **record** — records work/decisions: pages + backlinks + `index.md` + log entry.
-- **distill** — extracts durable entities surfaced by a piece of work into dedicated pages.
-- **ingest** — acquires an external source (file/PDF/URL) → summary in `sources/`, integrates into
-  linked pages, flags contradictions.
-- **query** — answers by citing pages; archives a valuable exploration as a new page.
-- **lint** — consistency at three levels: A structural (frontmatter/broken wikilinks/orphans/naming), B
-  semantic (claims vs. repo reality), C organizational (placement/atomicity/links).
-- **reorg** — applies the organizational refactoring surfaced by lint C, on confirmation.
-- **generate** — generates/updates the wiki from the repo (from-scratch or from-diff).
-- **rag-sync** — re-indexes the wiki into the RAG (if enabled in `wiki.config.toml`).
-- **structure** — idempotent bootstrap of the wiki structure.
-
-### Conventions
-
-- **YAML frontmatter** on every page: `title`, `type`, `tags`, `created`, `updated`, `sources`.
-- **Backlinks** in wikilink style `[[page-name]]` (Obsidian-compatible).
-- **File naming**: descriptive kebab-case (e.g. `azure-ai-search.md`).
-- **Log entry format:** `## [YYYY-MM-DD] <operation> | <title>`.
-- Create a new page for a new concept/entity; update the existing one otherwise.
-- When a new source contradicts a page, explicitly flag the contradiction.
+For the full list of wiki operations (`record`/`distill`/`ingest`/`query`/`lint`/`reorg`/`generate`/
+`rag-sync`/`structure`), the page conventions (frontmatter, wikilink backlinks, kebab-case naming) and
+the log-entry format, see `wiki-playbook.md` — the single source of truth bundled with the wiki
+capability, read on demand.

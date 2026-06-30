@@ -387,3 +387,49 @@ def test_usability_closure_names_a_dangling_reference(tmp_path: Path):
     plan = [a for a in full if "guided-setup" not in a.target_rel]
     offenders = _usability_closure_offenders(plan, _render_rag)
     assert any("guided-setup" in o for o in offenders), offenders
+
+
+# ============================================= (d) E10-FEAT-021: CLI reference closure (G4)
+
+# The canonical CLI reference cited by name (`` `sertor-cli-reference.md` ``) from the RAG usage
+# block and the guided-setup skill MUST be a deposited target of the SAME (rag) plan — otherwise the
+# pointer is dead on the host (the FEAT-001 bug shape). Twin of `_usability_closure_offenders`, but
+# keyed on a `.md` basename rather than a hyphenated asset id.
+_CLI_REFERENCE_BASENAME = "sertor-cli-reference.md"
+
+
+def _reference_closure_offenders(plan, render) -> list[str]:
+    """Bodies that cite `sertor-cli-reference.md` by name without the plan depositing it."""
+    deposited = {Path(t.target_rel).name for t in plan}
+    out: list[str] = []
+    for target_rel, _src, body in _rendered_bodies(plan, render):
+        if f"`{_CLI_REFERENCE_BASENAME}`" in body and _CLI_REFERENCE_BASENAME not in deposited:
+            out.append(target_rel)
+    return out
+
+
+def test_cli_reference_closure_in_rag_plan(tmp_path: Path):
+    """G4: the CLI reference is deposited by the rag plan (Claude + Copilot) wherever cited."""
+    claude_plan = _rag_plan(AssistantId.CLAUDE, tmp_path)
+    copilot_plan = _rag_plan(AssistantId.COPILOT_CLI, tmp_path)
+    assert _reference_closure_offenders(claude_plan, _render_rag) == [], (
+        "Claude rag plan: sertor-cli-reference.md cited but not deposited"
+    )
+    assert _reference_closure_offenders(copilot_plan, _render_rag) == [], (
+        "Copilot rag plan: sertor-cli-reference.md cited but not deposited"
+    )
+
+
+def test_cli_reference_closure_fails_if_not_deposited(tmp_path: Path):
+    """G4 negative: a plan that cites the reference but never deposits it fails closure (sanity)."""
+    from sertor_installer.artifacts import WriteStrategy
+
+    fake_body_art = Artifact(
+        ArtifactKind.MARKER_BLOCK,
+        "rag/claude-md-block-rag-usage.md",  # body cites `sertor-cli-reference.md`
+        ".claude/CLAUDE.md",
+        WriteStrategy.APPEND_BLOCK,
+    )
+    plan_without_ref = [fake_body_art]  # the FILE for the reference is missing
+    offenders = _reference_closure_offenders(plan_without_ref, _render_rag)
+    assert offenders != [], "a plan without the reference should have failed closure"
