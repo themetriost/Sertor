@@ -69,6 +69,32 @@ pip install "git+https://github.com/themetriost/Sertor#subdirectory=packages/ser
   - **local** — [Ollama](https://ollama.com) running (`ollama serve`) with an embedding model:
     `ollama pull nomic-embed-text`;
   - **cloud** — an **Azure OpenAI** deployment of `text-embedding-3-*`.
+- **`pwsh` (PowerShell Core) — required on macOS/Linux** for the lifecycle hooks distributed by
+  `sertor install`. The hooks are PowerShell-only (`.ps1`). On **Windows** they run via the bundled
+  PowerShell 5.1, so nothing extra is needed; on **macOS/Linux** install PowerShell Core separately:
+  <https://learn.microsoft.com/powershell/scripting/install/installing-powershell>. The affected
+  hook surfaces are `rag-freshness.ps1`, `rag-freshness-start.ps1`, `version-check.ps1`,
+  `version-check-start.ps1`, `memory-capture.ps1`, `sertor-rag-usage-check.ps1` and
+  `wiki-pending-check.ps1`. **Without `pwsh`, these surfaces are installed but non-operational** —
+  `sertor install` will say so in an actionable note (it never fails the install for this).
+
+### Operatività per target (which surfaces are operational after `sertor install`)
+
+The MCP server, instruction block (`CLAUDE.md`/`.github/copilot-instructions.md`), skills and agents
+work on **every OS and target** — they do not depend on `pwsh`. The `.ps1` lifecycle hooks are the
+only OS-conditional surface:
+
+| Target | Fully operational after install | Needs extra configuration |
+|---|---|---|
+| Claude on Windows | MCP, `CLAUDE.md` block, `.ps1` hooks (via `powershell`), skills, agents | — |
+| Copilot CLI on any OS | MCP, instruction block, skills, agents | Hooks: require `pwsh` on macOS/Linux. `memory-capture`: requires `SERTOR_MEMORY=true` + `SERTOR_MEMORY_ADAPTER=copilot-cli` to capture Copilot CLI sessions |
+| Claude on macOS/Linux | MCP, `CLAUDE.md` block, skills, agents | Hooks: require `pwsh`. The Claude hook wiring uses `"shell": "powershell"`, so operability of the `.ps1` hooks on Claude/non-Windows may also depend on the client's `shell` semantics (verification in progress — see below) |
+
+> **Technical limit (honest).** The Claude hook wiring is `"shell": "powershell"` and the Copilot CLI
+> wiring is `pwsh -File`. Installing `pwsh` is necessary on macOS/Linux, but on **Claude/non-Windows**
+> it may not be sufficient on its own: whether the Claude client resolves `"shell": "powershell"` to
+> PowerShell Core is not yet confirmed. We do **not** rewrite the wiring to `pwsh` because that would
+> break Windows PowerShell 5.1 hosts. A portable Claude hook wiring is tracked as a follow-up.
 
 ## 1. Package installation
 
@@ -561,9 +587,11 @@ on anyone remembering to re-index**:
   **before** working — so it never reasons on stale context. A `healthy` verdict is a silent no-op.
 
 This moves the mechanical "re-index + health check" steps from the agent's discretion to a
-deterministic harness (the agent keeps the judgment; the hook does the mechanics). Prerequisite:
-PowerShell (`pwsh`) on the host. The state file `.sertor/.rag-health.json` is **git-ignored**
-(regenerable, never versioned).
+deterministic harness (the agent keeps the judgment; the hook does the mechanics). **Prerequisite:
+PowerShell on the host** — Windows ships it (5.1); on macOS/Linux install PowerShell Core (`pwsh`,
+see [Prerequisites](#prerequisites)). Without it these lifecycle hooks are installed but never run,
+and `sertor install` declares the gap in an actionable note. The state file `.sertor/.rag-health.json`
+is **git-ignored** (regenerable, never versioned).
 
 > **Manual re-index is still available** any time — right after a large change, or if `pwsh` is
 > absent: `uv run --project .sertor sertor-rag index .`, and `uv run --project .sertor sertor-rag

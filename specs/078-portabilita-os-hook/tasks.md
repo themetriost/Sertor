@@ -64,16 +64,16 @@
 
 **Mappa FR**: FR-001/002/003/004/005/006 · US1/US2/US3/US4 · data-model §1 · contracts/pwsh-guard.md
 
-- [ ] Crea il file `packages/sertor-install-kit/src/sertor_install_kit/host_env.py`.
+- [x] Crea il file `packages/sertor-install-kit/src/sertor_install_kit/host_env.py`.
       Docstring modulo: "Host OS environment helpers for install-time guard checks (E10-FEAT-018).
       All functions are pure stdlib, deterministic, mockable — zero imports of sertor_core or LLMs."
-- [ ] Definisci la costante:
+- [x] Definisci la costante:
       ```python
       PWSH_INSTALL_URL = (
           "https://learn.microsoft.com/powershell/scripting/install/installing-powershell"
       )
       ```
-- [ ] Implementa `is_windows() -> bool`:
+- [x] Implementa `is_windows() -> bool`:
       ```python
       import os
       def is_windows() -> bool:
@@ -81,7 +81,7 @@
           return os.name == "nt"
       ```
       (INV-5: gate primario; mockabile con `monkeypatch.setattr(host_env, "is_windows", ...)`.)
-- [ ] Implementa `pwsh_available() -> bool`:
+- [x] Implementa `pwsh_available() -> bool`:
       ```python
       import shutil
       def pwsh_available() -> bool:
@@ -89,7 +89,7 @@
           return shutil.which("pwsh") is not None
       ```
       (INV-4: check binario, nessun hardcoding di distro; mockabile.)
-- [ ] Implementa `pwsh_unavailability_note(hook_surfaces: Sequence[str]) -> str` (builder **puro**):
+- [x] Implementa `pwsh_unavailability_note(hook_surfaces: Sequence[str]) -> str` (builder **puro**):
       - Firma: `from collections.abc import Sequence` (stdlib);
       - Corpo: costruisce una stringa che (A1) menziona `pwsh` e PowerShell Core; (A2) include
         `PWSH_INSTALL_URL`; (A3) elenca le `hook_surfaces` affette (almeno un path `.ps1`);
@@ -98,18 +98,18 @@
         `"pwsh (PowerShell Core) was not found on this non-Windows host: the deposited hooks
         (<surfaces>) are installed but non-operational until you install it — <URL>"`.
       - Nessun side-effect; non chiama `is_windows` né `pwsh_available`.
-- [ ] Implementa `maybe_note_pwsh(report: InstallReport, hook_surfaces: Sequence[str]) -> None`:
+- [x] Implementa `maybe_note_pwsh(report: InstallReport, hook_surfaces: Sequence[str]) -> None`:
       - Import: `from sertor_install_kit.report import InstallReport` (dipendenza interna kit, ok).
       - Corpo: gating triplo `(not is_windows()) and (not pwsh_available()) and hook_surfaces`:
         se vero → `report.note(pwsh_unavailability_note(hook_surfaces))`; altrimenti **no-op**.
       - La funzione **mai solleva** (INV-1): il `report.note()` è già idempotente e non-fatale.
       - È l'unico entry-point chiamato dai consumatori (`execute_rag_plan`, `execute_plan` wiki).
-- [ ] Esporta le funzioni e la costante in `__init__.py` del kit (se la convenzione del kit
+- [x] Esporta le funzioni e la costante in `__init__.py` del kit (se la convenzione del kit
       esporta tutto dal top-level); oppure lascia come modulo esplicito `host_env` — verifica la
       convenzione guardando `packages/sertor-install-kit/src/sertor_install_kit/__init__.py`.
-- [ ] Verifica che il file non importi nulla di `sertor_core` (RNF-2/Principio XI): solo
+- [x] Verifica che il file non importi nulla di `sertor_core` (RNF-2/Principio XI): solo
       `os`, `shutil`, `collections.abc.Sequence` e `sertor_install_kit.report.InstallReport`.
-- [ ] Verifica che `maybe_note_pwsh` invochi `is_windows()` e `pwsh_available()` come **globali
+- [x] Verifica che `maybe_note_pwsh` invochi `is_windows()` e `pwsh_available()` come **globali
       del modulo** (non parametri) → i test patchano `host_env.is_windows`/`host_env.pwsh_available`
       direttamente (R-6/INV-7 — CI Windows simula il ramo non-Windows).
 
@@ -139,7 +139,7 @@
 
 **Mappa FR**: FR-001/002/003/004/005/006 · CS-1/CS-2/CS-3 · US1/US2/US3/US4
 
-- [ ] Apri `packages/sertor/src/sertor_installer/install_rag.py`.
+- [x] Apri `packages/sertor/src/sertor_installer/install_rag.py`.
       Individua la funzione `execute_rag_plan` (riga ~735). Verifica che la struttura corrente sia:
       ```python
       def execute_rag_plan(plan, profile, runner, assistant=...) -> InstallReport:
@@ -147,24 +147,24 @@
           report = _kit_execute_plan(plan, apply, target=..., capability="rag", assistant=...)
           return report
       ```
-- [ ] Aggiungi l'import (se non già presente): `from sertor_install_kit import host_env`
+- [x] Aggiungi l'import (se non già presente): `from sertor_install_kit import host_env`
       (oppure `from sertor_install_kit.host_env import maybe_note_pwsh` — verifica la convenzione
       del progetto guardando gli import esistenti in `install_rag.py`).
-- [ ] Dopo `report = _kit_execute_plan(...)` e **prima** di `return report`, inserisci:
+- [x] Dopo `report = _kit_execute_plan(...)` e **prima** di `return report`, inserisci:
       ```python
       hook_surfaces = [a.target_rel for a in plan if a.target_rel.endswith(".ps1")]
       host_env.maybe_note_pwsh(report, hook_surfaces)
       ```
       (Il piano è già costruito e passato a `execute_rag_plan`; la derivazione è dichiarativa.)
-- [ ] Aggiorna il commento stale che descrive lo stato della nota `memory-capture` (piano §Phase 1,
+- [x] Aggiorna il commento stale che descrive lo stato della nota `memory-capture` (piano §Phase 1,
       punto 2): la riga a `:146-148` che dice `«INERT until adapter exists»` va corretta —
       l'adapter Copilot esiste (E5-FEAT-008, 2026-06-22) ma l'installer non distribuisce il valore
       (`SERTOR_MEMORY_ADAPTER=copilot-cli`), che è FEAT-009 memorie. Aggiorna il commento di conseguenza.
-- [ ] Verifica che `maybe_note_pwsh` sia chiamata **dopo** `_kit_execute_plan` e **prima** di
+- [x] Verifica che `maybe_note_pwsh` sia chiamata **dopo** `_kit_execute_plan` e **prima** di
       `return report` (seam corretto — research §Ancoraggio).
-- [ ] Spot check manuale: su Windows CI, `is_windows()` reale ritorna `True` → `maybe_note_pwsh` è
+- [x] Spot check manuale: su Windows CI, `is_windows()` reale ritorna `True` → `maybe_note_pwsh` è
       no-op → `report.notes` non accumula la nota pwsh → comportamento invariato (US3/CS-3).
-- [ ] Verifica che nessun import di `sertor_core` sia aggiunto (RNF-2/Principio XI).
+- [x] Verifica che nessun import di `sertor_core` sia aggiunto (RNF-2/Principio XI).
 
 ### TASK-US1-02 [P] — Wiring guardia `pwsh` in `install_wiki.py::execute_plan`
 
@@ -173,7 +173,7 @@
 
 **Mappa FR**: FR-001/002/003/004/005/006 · CS-1/CS-2/CS-3 · US1/US2/US3/US4
 
-- [ ] Apri `packages/sertor/src/sertor_installer/install_wiki.py`.
+- [x] Apri `packages/sertor/src/sertor_installer/install_wiki.py`.
       Individua la funzione `execute_plan` (riga ~380). Verifica la struttura corrente:
       ```python
       def execute_plan(plan, profile, assistant=...) -> InstallReport:
@@ -182,22 +182,22 @@
           report = _kit_execute_plan(plan, apply, target=str(root), capability="wiki", ...)
           return report
       ```
-- [ ] Aggiungi l'import (se non già presente): `from sertor_install_kit import host_env`
+- [x] Aggiungi l'import (se non già presente): `from sertor_install_kit import host_env`
       (o la forma equivalente usata in `install_rag.py` — uniforma lo stile).
-- [ ] Dopo `report = _kit_execute_plan(...)` e **prima** di `return report`, inserisci:
+- [x] Dopo `report = _kit_execute_plan(...)` e **prima** di `return report`, inserisci:
       ```python
       hook_surfaces = [a.target_rel for a in plan if a.target_rel.endswith(".ps1")]
       host_env.maybe_note_pwsh(report, hook_surfaces)
       ```
-- [ ] Verifica che su un piano wiki `AssistantId.CLAUDE` la lista `hook_surfaces` contenga
+- [x] Verifica che su un piano wiki `AssistantId.CLAUDE` la lista `hook_surfaces` contenga
       almeno `.claude/hooks/wiki-pending-check.ps1` (il plan deposita quell'hook — data-model §2).
       Se nessun piano wiki deposita hook (edge: piano vuoto), `hook_surfaces == []` → `maybe_note_pwsh`
       è no-op per costruzione (guard clause in `maybe_note_pwsh`).
-- [ ] Verifica che `test_claude_report_has_no_gap_note` in
+- [x] Verifica che `test_claude_report_has_no_gap_note` in
       `packages/sertor/tests/test_install_wiki_copilot_cli.py:192` resti verde senza modifiche:
       su CI Windows `is_windows()` reale è `True` → la guardia è no-op → `report.notes == []`.
       Non modificare quel test (è la non-regressione naturale su CI Windows).
-- [ ] Verifica che nessun import di `sertor_core` sia aggiunto (RNF-2/Principio XI).
+- [x] Verifica che nessun import di `sertor_core` sia aggiunto (RNF-2/Principio XI).
 
 ---
 
@@ -217,9 +217,9 @@
 
 **Mappa FR**: FR-007/008/009 · CS-4 · US5 · contracts/install-notes.md §Nota B
 
-- [ ] Apri `packages/sertor/src/sertor_installer/install_rag.py`.
+- [x] Apri `packages/sertor/src/sertor_installer/install_rag.py`.
       Verifica che TASK-US1-01 sia già stato applicato (la guardia pwsh è nel seam).
-- [ ] Definisci una costante a livello di modulo per il testo della nota `memory-capture`
+- [x] Definisci una costante a livello di modulo per il testo della nota `memory-capture`
       (stabile, substringhe B1/B2/B3/B4 dal contratto `contracts/install-notes.md §Nota B`):
       ```python
       _COPILOT_MEMORY_NOTE = (
@@ -233,25 +233,25 @@
       La costante deve contenere tutte e 4 le substringhe stabili: (B1) `"memory-capture"`,
       (B2) `"SERTOR_MEMORY"` e `"SERTOR_MEMORY_ADAPTER"`, (B3) la dichiarazione esplicita di
       «captures nothing useful», (B4) il riferimento alla capacità pianificata (FEAT-009).
-- [ ] In `execute_rag_plan`, **dopo** `host_env.maybe_note_pwsh(report, hook_surfaces)` e
+- [x] In `execute_rag_plan`, **dopo** `host_env.maybe_note_pwsh(report, hook_surfaces)` e
       **prima** di `return report`, aggiungi:
       ```python
       if assistant is AssistantId.COPILOT_CLI:
           report.note(_COPILOT_MEMORY_NOTE)
       ```
       (Verifica che `AssistantId` sia già importato nel file — è usato nella firma della funzione.)
-- [ ] Verifica che la nota **non** sia emessa su `AssistantId.CLAUDE` (FR-009/CS-3):
+- [x] Verifica che la nota **non** sia emessa su `AssistantId.CLAUDE` (FR-009/CS-3):
       la condizione `if assistant is AssistantId.COPILOT_CLI` garantisce l'isolamento.
-- [ ] Verifica che la nota **non** sia emessa su install wiki (questa modifica è solo in
+- [x] Verifica che la nota **non** sia emessa su install wiki (questa modifica è solo in
       `install_rag.py` — `install_wiki.py` non ha la nota Copilot, corretto).
-- [ ] Verifica che la nota sia emessa **sempre** su Copilot CLI rag, indipendente dal valore
+- [x] Verifica che la nota sia emessa **sempre** su Copilot CLI rag, indipendente dal valore
       runtime di `SERTOR_MEMORY` (decisione D-2 — la costante non legge env a runtime).
-- [ ] Spot check substringhe stabili nella costante `_COPILOT_MEMORY_NOTE`:
-      - [ ] `"memory-capture"` presente (B1)
-      - [ ] `"SERTOR_MEMORY"` presente (B2a)
-      - [ ] `"SERTOR_MEMORY_ADAPTER"` presente (B2b)
-      - [ ] `"captures nothing useful"` o equivalente esplicito presente (B3)
-      - [ ] riferimento a FEAT-009 / capacità pianificata presente (B4)
+- [x] Spot check substringhe stabili nella costante `_COPILOT_MEMORY_NOTE`:
+      - [x] `"memory-capture"` presente (B1)
+      - [x] `"SERTOR_MEMORY"` presente (B2a)
+      - [x] `"SERTOR_MEMORY_ADAPTER"` presente (B2b)
+      - [x] `"captures nothing useful"` o equivalente esplicito presente (B3)
+      - [x] riferimento a FEAT-009 / capacità pianificata presente (B4)
 
 ---
 
@@ -273,9 +273,9 @@
 
 **Mappa FR**: FR-010/012 · CS-5 · US6-AC1/AC3
 
-- [ ] Apri `docs/install.md`. Individua la sezione Prerequisiti (§5 o §6 del documento,
+- [x] Apri `docs/install.md`. Individua la sezione Prerequisiti (§5 o §6 del documento,
       dipende dalla struttura attuale — cerca la sezione che elenca i requisiti di sistema).
-- [ ] Aggiungi **`pwsh` come prerequisito su macOS/Linux** per il funzionamento dei surface hook:
+- [x] Aggiungi **`pwsh` come prerequisito su macOS/Linux** per il funzionamento dei surface hook:
       - Voce da aggiungere ai prerequisiti: «`pwsh` (PowerShell Core) — richiesto su macOS/Linux
         per il funzionamento degli hook di lifecycle distribuiti da `sertor install`. Su Windows è
         già presente tramite PowerShell 5.1; su macOS/Linux va installato separatamente.»
@@ -285,9 +285,9 @@
         `memory-capture.ps1`, `sertor-rag-usage-check.ps1`, `wiki-pending-check.ps1`).
       - Frase esplicita: «Senza `pwsh`, questi surface sono installati ma non-operativi.»
         (substringa A4 del contratto).
-- [ ] Aggiungi (o aggiorna) la sezione §10.1 (o sezione esistente sull'upgrade/setup) con un
+- [x] Aggiungi (o aggiorna) la sezione §10.1 (o sezione esistente sull'upgrade/setup) con un
       riferimento al prerequisito `pwsh` per gli host non-Windows.
-- [ ] Aggiungi una **sezione (o tabella) «Operatività per target»** che dichiari, per ogni
+- [x] Aggiungi una **sezione (o tabella) «Operatività per target»** che dichiari, per ogni
       target supportato, quali surface sono pienamente operativi dopo `sertor install` e quali
       richiedono configurazione manuale aggiuntiva (FR-012):
 
@@ -298,7 +298,7 @@
       | Claude su macOS/Linux | MCP, blocco CLAUDE.md, skill, agent | Hook: richiedono `pwsh`; operatività hook Claude/non-Windows può dipendere dalla semantica `shell` del client (verifica in corso) |
 
       (Adatta la tabella alla struttura esistente del documento; mantieni tono onesto su Claude/non-Windows.)
-- [ ] Verifica che il documento dichiari esplicitamente che senza `pwsh` i surface hook
+- [x] Verifica che il documento dichiari esplicitamente che senza `pwsh` i surface hook
       sono **installati ma non-operativi** (substringa A4 — verificabile in test manuale US6).
 
 ### TASK-US6-02 [P] — `docs/install-copilot.md` — prerequisito `pwsh` + adapter `memory-capture`
@@ -308,14 +308,14 @@
 
 **Mappa FR**: FR-011 · CS-5 · US6-AC2
 
-- [ ] Apri `docs/install-copilot.md`. Individua la sezione §1 o la sezione di prerequisiti
+- [x] Apri `docs/install-copilot.md`. Individua la sezione §1 o la sezione di prerequisiti
       del percorso Copilot CLI.
-- [ ] Aggiungi la dichiarazione **`pwsh` richiesto per gli hook su macOS/Linux** (FR-011a):
+- [x] Aggiungi la dichiarazione **`pwsh` richiesto per gli hook su macOS/Linux** (FR-011a):
       - Voce: «`pwsh` (PowerShell Core) è richiesto su macOS/Linux per il funzionamento degli
         hook di lifecycle distribuiti da `sertor install rag`/`wiki` su Copilot CLI. Su macOS/Linux
         senza `pwsh`, gli hook sono installati ma non vengono eseguiti.»
       - URL: `https://learn.microsoft.com/powershell/scripting/install/installing-powershell`.
-- [ ] Aggiungi la dichiarazione **`memory-capture` richiede configurazione adapter** (FR-011b):
+- [x] Aggiungi la dichiarazione **`memory-capture` richiede configurazione adapter** (FR-011b):
       - Sezione dedicata (o nota prominente): «`memory-capture` — configurazione richiesta per
         catturare sessioni Copilot CLI. L'hook viene distribuito e cablato, ma per catturare
         le sessioni Copilot CLI è necessario impostare esplicitamente:
@@ -326,7 +326,7 @@
         Con i valori di default, l'hook scatta ma non cattura nulla di utile. Il completamento
         out-of-the-box (distribuzione automatica di `copilot-cli` nel template `.env`) è
         pianificato nell'epica memoria-conversazioni.»
-- [ ] Verifica che il documento dichiari entrambe le condizioni: (a) pwsh richiesto su mac/Linux
+- [x] Verifica che il documento dichiari entrambe le condizioni: (a) pwsh richiesto su mac/Linux
       + (b) configurazione adapter esplicita per `memory-capture` (US6-AC2).
 
 ### TASK-US6-03 [P] — `packages/sertor/docs/install.md` — tabella capability + note operatività
@@ -336,9 +336,9 @@
 
 **Mappa FR**: FR-012 · CS-5 · research D-2 (tabella capability)
 
-- [ ] Apri `packages/sertor/docs/install.md`. Individua la tabella capability (quella che elenca
+- [x] Apri `packages/sertor/docs/install.md`. Individua la tabella capability (quella che elenca
       le surface distribuite da `sertor install rag`/`wiki`).
-- [ ] Aggiungi una **colonna «Operatività / Note»** alla tabella (o una sezione di note sotto),
+- [x] Aggiungi una **colonna «Operatività / Note»** alla tabella (o una sezione di note sotto),
       che annoti per ogni surface rilevante:
       - Hook (`.ps1`): «Richiedono `pwsh` su macOS/Linux. Su Windows: operativi via
         `powershell` (Claude) o `pwsh` (Copilot CLI).»
@@ -346,9 +346,9 @@
         `SERTOR_MEMORY_ADAPTER=copilot-cli` per catturare sessioni Copilot CLI.»
       - MCP, blocco istruzioni, skill, agent: «Operativi su tutti gli OS e target
         (non dipendono da `pwsh`).»
-- [ ] Aggiungi (o aggiorna) una nota a piè di tabella con il link a `docs/install.md` §pwsh
+- [x] Aggiungi (o aggiorna) una nota a piè di tabella con il link a `docs/install.md` §pwsh
       e `docs/install-copilot.md` per i dettagli di configurazione.
-- [ ] Verifica che la tabella non affermi «parità piena» per target/OS in cui l'operatività
+- [x] Verifica che la tabella non affermi «parità piena» per target/OS in cui l'operatività
       è condizionale — usa frasi come «operativo con `pwsh`» o «richiede configurazione».
 
 ---
@@ -374,10 +374,10 @@
 
 **Mappa FR**: FR-001/004/006 · CS-6 · US7-AC1/AC3 · data-model §1 · contracts/pwsh-guard.md
 
-- [ ] Crea `packages/sertor-install-kit/tests/unit/test_host_env.py`.
-- [ ] Verifica che la directory `packages/sertor-install-kit/tests/unit/` esista (analoga a
+- [x] Crea `packages/sertor-install-kit/tests/unit/test_host_env.py`.
+- [x] Verifica che la directory `packages/sertor-install-kit/tests/unit/` esista (analoga a
       `packages/sertor/tests/unit/`); creala se assente.
-- [ ] **Test T1 — `pwsh_unavailability_note` (builder puro, substringhe stabili):**
+- [x] **Test T1 — `pwsh_unavailability_note` (builder puro, substringhe stabili):**
       ```python
       from sertor_install_kit import host_env
 
@@ -389,7 +389,7 @@
           assert ".ps1" in note                             # A3: surface affetti
           assert "non-operational" in note or "not-operational" in note  # A4: stato esplicito
       ```
-- [ ] **Test T2 — `maybe_note_pwsh` tabella di verità (4 righe di contracts/pwsh-guard.md):**
+- [x] **Test T2 — `maybe_note_pwsh` tabella di verità (4 righe di contracts/pwsh-guard.md):**
       Usa un report mock (o `InstallReport` reale con `tmp_path`).
       ```python
       from sertor_install_kit.report import InstallReport
@@ -430,7 +430,7 @@
           host_env.maybe_note_pwsh(report, [])  # nessun hook
           assert report.notes == []
       ```
-- [ ] **Test T3 — `maybe_note_pwsh` non-fatale (INV-1):**
+- [x] **Test T3 — `maybe_note_pwsh` non-fatale (INV-1):**
       ```python
       def test_maybe_note_pwsh_does_not_raise(monkeypatch, tmp_path):
           monkeypatch.setattr(host_env, "is_windows", lambda: False)
@@ -439,7 +439,7 @@
           host_env.maybe_note_pwsh(report, [".github/hooks/rag-freshness.ps1"])
           assert report.exit_code() == 0  # INV-1: non-fatale, exit_code invariato
       ```
-- [ ] **Test T4 — idempotenza (`.note()` deduplica):**
+- [x] **Test T4 — idempotenza (`.note()` deduplica):**
       ```python
       def test_maybe_note_pwsh_idempotent(monkeypatch, tmp_path):
           monkeypatch.setattr(host_env, "is_windows", lambda: False)
@@ -450,7 +450,7 @@
           host_env.maybe_note_pwsh(report, surfaces)  # seconda chiamata → no-op
           assert len(report.notes) == 1  # nessun duplicato
       ```
-- [ ] Verifica che tutti i test siano offline (nessun subprocess, nessuna rete).
+- [x] Verifica che tutti i test siano offline (nessun subprocess, nessuna rete).
 
 ### TASK-US7-02 [P] — `test_install_pwsh_guard.py`: guardia nota pwsh su rag e wiki (+ NR Claude)
 
@@ -463,7 +463,7 @@ contracts/install-notes.md §Nota A · contracts/pwsh-guard.md
 > Modello: `test_non_regression_claude.py` (struttura fixture, `build_rag_plan`/`execute_rag_plan`,
 > `FakeCommandRunner` via `make_runner` conftest). Usa i conftest esistenti.
 
-- [ ] Crea `packages/sertor/tests/test_install_pwsh_guard.py`.
+- [x] Crea `packages/sertor/tests/test_install_pwsh_guard.py`.
       Import necessari:
       ```python
       import json
@@ -475,7 +475,7 @@ contracts/install-notes.md §Nota A · contracts/pwsh-guard.md
       from sertor_installer.install_wiki import build_install_plan, execute_plan
       from sertor_installer.rag_profile import RagHostProfile, RagInstallOptions
       ```
-- [ ] **Test G1 — nota A presente: non-Windows senza pwsh, install rag Claude (US1/CS-1):**
+- [x] **Test G1 — nota A presente: non-Windows senza pwsh, install rag Claude (US1/CS-1):**
       ```python
       def test_rag_install_emits_pwsh_note_on_non_windows_no_pwsh(
               monkeypatch, tmp_path, make_runner):
@@ -494,7 +494,7 @@ contracts/install-notes.md §Nota A · contracts/pwsh-guard.md
           assert "notes" in payload
           assert any("pwsh" in n for n in payload["notes"])
       ```
-- [ ] **Test G2 — nota A assente: non-Windows con pwsh (US2/CS-2), install rag:**
+- [x] **Test G2 — nota A assente: non-Windows con pwsh (US2/CS-2), install rag:**
       ```python
       def test_rag_install_no_pwsh_note_when_pwsh_present(monkeypatch, tmp_path, make_runner):
           monkeypatch.setattr(host_env, "is_windows", lambda: False)
@@ -505,7 +505,7 @@ contracts/install-notes.md §Nota A · contracts/pwsh-guard.md
           report = execute_rag_plan(plan, profile, make_runner(), AssistantId.CLAUDE)
           assert not any("pwsh" in n and "non-operational" in n for n in report.notes)
       ```
-- [ ] **Test G3 — nota A presente: non-Windows senza pwsh, install wiki Claude (US1/CS-1):**
+- [x] **Test G3 — nota A presente: non-Windows senza pwsh, install wiki Claude (US1/CS-1):**
       ```python
       def test_wiki_install_emits_pwsh_note_on_non_windows_no_pwsh(monkeypatch, tmp_path):
           monkeypatch.setattr(host_env, "is_windows", lambda: False)
@@ -516,7 +516,7 @@ contracts/install-notes.md §Nota A · contracts/pwsh-guard.md
           assert any("pwsh" in n for n in report.notes)   # A1
           assert report.exit_code() == 0                   # non-fatale (FR-005)
       ```
-- [ ] **Test G4 — non-regressione Claude+Windows (US3/CS-3), install rag (estende NR esistente):**
+- [x] **Test G4 — non-regressione Claude+Windows (US3/CS-3), install rag (estende NR esistente):**
       ```python
       def test_rag_claude_windows_no_notes(monkeypatch, tmp_path, make_runner):
           """NR: report.notes == [] su Windows + Claude (INV-5)."""
@@ -530,7 +530,7 @@ contracts/install-notes.md §Nota A · contracts/pwsh-guard.md
       ```
       Nota: se TASK-US5-01 è già applicato, verifica anche `assert not any("memory-capture" in n
       for n in report.notes)` (FR-009 — nessuna nota Copilot su Claude).
-- [ ] **Test G5 — non-regressione Claude+Windows (US3/CS-3), install wiki (preserva esistente):**
+- [x] **Test G5 — non-regressione Claude+Windows (US3/CS-3), install wiki (preserva esistente):**
       ```python
       def test_wiki_claude_windows_no_notes(monkeypatch, tmp_path):
           """NR: test_claude_report_has_no_gap_note (test_install_wiki_copilot_cli.py:192)."""
@@ -543,11 +543,11 @@ contracts/install-notes.md §Nota A · contracts/pwsh-guard.md
       Verificare che il test esistente `test_claude_report_has_no_gap_note` (test_install_wiki_copilot_cli.py:192)
       resti ancora verde (non toccarlo — il nuovo test G5 è la versione con OS mocking esplicito,
       che è più robusta; entrambi devono passare).
-- [ ] Aggiunge `assert report.notes == []` al test `test_claude_rag_artifacts_unchanged` in
+- [x] Aggiunge `assert report.notes == []` al test `test_claude_rag_artifacts_unchanged` in
       `packages/sertor/tests/test_non_regression_claude.py` (estensione della NR esistente):
       questo test gira su CI Windows reale → `is_windows()` è `True` → la guardia è no-op →
       `report.notes == []` naturalmente. Aggiungere l'assert rende la NR esplicita.
-- [ ] Verifica che tutti i test siano offline (no subprocess, no cloud), deterministici (INV-7).
+- [x] Verifica che tutti i test siano offline (no subprocess, no cloud), deterministici (INV-7).
 
 ### TASK-US7-03 [P] — `test_install_rag_copilot_memory_note.py`: guardia nota Copilot (US5)
 
@@ -556,7 +556,7 @@ contracts/install-notes.md §Nota A · contracts/pwsh-guard.md
 
 **Mappa FR**: FR-007/008/009 · CS-4/CS-6 · US5/US7 · contracts/install-notes.md §Nota B
 
-- [ ] Crea `packages/sertor/tests/test_install_rag_copilot_memory_note.py`.
+- [x] Crea `packages/sertor/tests/test_install_rag_copilot_memory_note.py`.
       Import necessari (analoghi a TASK-US7-02):
       ```python
       import sertor_install_kit.host_env as host_env
@@ -565,7 +565,7 @@ contracts/install-notes.md §Nota A · contracts/pwsh-guard.md
       from sertor_installer.install_rag import build_rag_plan, execute_rag_plan
       from sertor_installer.rag_profile import RagHostProfile, RagInstallOptions
       ```
-- [ ] **Test M1 — nota B presente su install rag Copilot CLI (US5/CS-4):**
+- [x] **Test M1 — nota B presente su install rag Copilot CLI (US5/CS-4):**
       ```python
       def test_rag_copilot_cli_emits_memory_note(monkeypatch, tmp_path, make_runner):
           """Nota B presente sempre su Copilot CLI, indipendente da OS e SERTOR_MEMORY."""
@@ -584,7 +584,7 @@ contracts/install-notes.md §Nota A · contracts/pwsh-guard.md
           assert any("FEAT-009" in n or "planned" in n or "memory-conversations" in n
                      for n in report.notes)
       ```
-- [ ] **Test M2 — nota B assente su install rag Claude+Windows (FR-009/CS-3):**
+- [x] **Test M2 — nota B assente su install rag Claude+Windows (FR-009/CS-3):**
       ```python
       def test_rag_claude_no_memory_note(monkeypatch, tmp_path, make_runner):
           monkeypatch.setattr(host_env, "is_windows", lambda: True)
@@ -594,7 +594,7 @@ contracts/install-notes.md §Nota A · contracts/pwsh-guard.md
           report = execute_rag_plan(plan, profile, make_runner(), AssistantId.CLAUDE)
           assert not any("memory-capture" in n for n in report.notes)  # FR-009
       ```
-- [ ] **Test M3 — nota B presente anche con non-Windows senza pwsh (indipendenza, D-2):**
+- [x] **Test M3 — nota B presente anche con non-Windows senza pwsh (indipendenza, D-2):**
       ```python
       def test_rag_copilot_cli_memory_note_independent_of_os(monkeypatch, tmp_path, make_runner):
           """La nota Copilot è emessa anche con pwsh assente (le due note coesistono)."""
@@ -609,7 +609,7 @@ contracts/install-notes.md §Nota A · contracts/pwsh-guard.md
           assert any("memory-capture" in n for n in report.notes)   # Nota B
           assert report.exit_code() == 0                             # non-fatale
       ```
-- [ ] Verifica che tutti i test siano offline, deterministici, nessun cloud.
+- [x] Verifica che tutti i test siano offline, deterministici, nessun cloud.
 
 ---
 
@@ -622,35 +622,35 @@ contracts/install-notes.md §Nota A · contracts/pwsh-guard.md
 
 → dipende da: tutte le Fasi 0-4
 
-- [ ] **Guardie nuove (FR-013/014):**
+- [x] **Guardie nuove (FR-013/014):**
       ```powershell
       uv run pytest packages/sertor-install-kit/tests/unit/test_host_env.py -v
       uv run pytest packages/sertor/tests/test_install_pwsh_guard.py -v
       uv run pytest packages/sertor/tests/test_install_rag_copilot_memory_note.py -v
       ```
       Tutti devono essere verdi (T1-T4, G1-G5, M1-M3 e tutte le estensioni NR).
-- [ ] **Non-regressione Claude (FR-009/CS-3):**
+- [x] **Non-regressione Claude (FR-009/CS-3):**
       ```powershell
       uv run pytest packages/sertor/tests/test_non_regression_claude.py -v
       uv run pytest packages/sertor/tests/test_install_wiki_copilot_cli.py -v
       ```
       Il test `test_claude_report_has_no_gap_note` deve restare verde (NR su CI Windows).
-- [ ] **Sync dogfood (FR-015/CS-6):** verifica che `test_assets_sync.py` resti verde
+- [x] **Sync dogfood (FR-015/CS-6):** verifica che `test_assets_sync.py` resti verde
       per costruzione (la feature non tocca alcun asset `.ps1`/JSON sotto `assets/`):
       ```powershell
       uv run pytest tests/unit/test_assets_sync.py -v
       ```
-- [ ] **Suite completa del kit (non-regressione kit):**
+- [x] **Suite completa del kit (non-regressione kit):**
       ```powershell
       uv run pytest packages/sertor-install-kit/tests/ -m "not cloud" -v
       ```
-- [ ] **Suite completa sertor (non-regressione installer):**
+- [x] **Suite completa sertor (non-regressione installer):**
       ```powershell
       uv run pytest packages/sertor/tests/ -m "not cloud" -v
       ```
       Verifica che i test di parità Copilot (`test_assets_copilot_parity.py`,
       `test_surface_parity.py`) restino verdi (la feature non tocca asset body).
-- [ ] **Lint ruff sui nuovi file Python:**
+- [x] **Lint ruff sui nuovi file Python:**
       ```powershell
       uv run ruff check `
           packages/sertor-install-kit/src/sertor_install_kit/host_env.py `
@@ -661,7 +661,7 @@ contracts/install-notes.md §Nota A · contracts/pwsh-guard.md
           packages/sertor/tests/test_install_rag_copilot_memory_note.py
       ```
       Zero errori (regole E,F,I,UP,B; line-length 100).
-- [ ] **Quickstart rapido (verifica manuale CS-1..CS-4):**
+- [x] **Quickstart rapido (verifica manuale CS-1..CS-4):**
       ```powershell
       # CS-1: nota A su non-Windows senza pwsh (richiede monkeypatch — vedi quickstart §1)
       # CS-4: nota B su Copilot CLI (richiede monkeypatch — vedi quickstart §4)
@@ -672,36 +672,36 @@ contracts/install-notes.md §Nota A · contracts/pwsh-guard.md
 
 → dipende da: TASK-P01
 
-- [ ] **CS-1 (gap `pwsh` dichiarato, non nascosto):** test G1 (rag, non-Windows, no pwsh → nota A)
+- [x] **CS-1 (gap `pwsh` dichiarato, non nascosto):** test G1 (rag, non-Windows, no pwsh → nota A)
       e test G3 (wiki, non-Windows, no pwsh → nota A) verdi; nota contiene substringhe A1/A2/A3/A4;
       exit_code == 0 (non-fatale). ✓
-- [ ] **CS-2 (nessun falso allarme con `pwsh`):** test G2 (rag con pwsh) verde; nessuna nota A
+- [x] **CS-2 (nessun falso allarme con `pwsh`):** test G2 (rag con pwsh) verde; nessuna nota A
       emessa. ✓
-- [ ] **CS-3 (non-regressione Claude+Windows):** test G4/G5 (OS mocking Windows, Claude) e
+- [x] **CS-3 (non-regressione Claude+Windows):** test G4/G5 (OS mocking Windows, Claude) e
       test `test_claude_report_has_no_gap_note` (NR esistente) verdi; `report.notes == []`
       sia per rag che per wiki. Nessun nuovo artefatto, nessun cambio di wiring. ✓
-- [ ] **CS-4 (onestà `memory-capture` Copilot):** test M1 verde; nota B contiene B1/B2/B3/B4;
+- [x] **CS-4 (onestà `memory-capture` Copilot):** test M1 verde; nota B contiene B1/B2/B3/B4;
       test M2 verde (nota B assente su Claude). ✓
-- [ ] **CS-5 (documentazione utente onesta):** verifica manuale `docs/install.md` (pwsh prerequisito
+- [x] **CS-5 (documentazione utente onesta):** verifica manuale `docs/install.md` (pwsh prerequisito
       + URL + elenco surface + «installati ma non-operativi» + tabella operatività-per-target) e
       `docs/install-copilot.md` (pwsh richiesto per hook + configurazione adapter `memory-capture`).
       `packages/sertor/docs/install.md`: colonna operatività/note aggiornata in tabella capability. ✓
-- [ ] **CS-6 (guardie deterministiche):** test T1-T4 (host_env puro), G1-G5 (nota pwsh rag+wiki),
+- [x] **CS-6 (guardie deterministiche):** test T1-T4 (host_env puro), G1-G5 (nota pwsh rag+wiki),
       M1-M3 (nota Copilot), `test_assets_sync.py` (sync invariato) tutti verdi; tutti usano OS
       mocking, nessuna dipendenza dall'OS reale di CI. ✓
-- [ ] **Additività core — invarianza `sertor_core`:** verifica che nessun file in `src/sertor_core/`
+- [x] **Additività core — invarianza `sertor_core`:** verifica che nessun file in `src/sertor_core/`
       sia stato modificato. Nessun import di `sertor_core` in `host_env.py`, `install_rag.py` (nuovo
       import) né `install_wiki.py` (nuovo import). ✓
-- [ ] **Additività installer — schema invariato:** verifica che `install.report/1` non sia stato
+- [x] **Additività installer — schema invariato:** verifica che `install.report/1` non sia stato
       modificato (schema ancora in `sertor-install-kit/report.py:24`); il campo `notes` era già
       presente; il JSON è byte-identico a prima della feature quando `notes == []`. ✓
-- [ ] **Additività installer — nessun nuovo seam:** verifica che non siano stati introdotti nuovi
+- [x] **Additività installer — nessun nuovo seam:** verifica che non siano stati introdotti nuovi
       `ArtifactKind`, `Surface`, `WriteStrategy`, porte o dipendenze esterne. Solo `host_env.py`
       (modulo interno stdlib) è nuovo; nessun extra PyPI aggiunto. ✓
-- [ ] **Nessun asset toccato (FR-015):** verifica che i file in `assets/rag/hooks/`,
+- [x] **Nessun asset toccato (FR-015):** verifica che i file in `assets/rag/hooks/`,
       `assets/claude/hooks/`, `assets/rag/agents/`, `assets/claude/agents/` siano inalterati.
       `test_assets_sync.py` verde per costruzione — conferma. ✓
-- [ ] Segnala come **follow-up non-bloccante**: prova LIVE su ospite macOS/Linux senza `pwsh`
+- [x] Segnala come **follow-up non-bloccante**: prova LIVE su ospite macOS/Linux senza `pwsh`
       (verifica che il messaggio sia visibile in output umano e JSON dopo `sertor install rag`).
       Il done offline è raggiunto con i task precedenti (quickstart §1-6 verificati offline
       con OS mocking).

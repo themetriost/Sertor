@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import logging
 
+from sertor_install_kit import host_env
 from sertor_install_kit.artifacts import LifecycleOp
 from sertor_install_kit.assistant import AssistantId, AssistantProfile, Surface
 from sertor_install_kit.claude_md import (
@@ -143,14 +144,28 @@ def _copilot_rag_hook_specs() -> list[HookEntrySpec]:
 # WITH the rag capability (shared runtime `.sertor/`, CLI `sertor-rag`, `.env`). The script body is
 # REUSED IDENTICALLY across assistants (no `-Assistant`: it is already a silent, exit-0 SessionEnd
 # wrapper); only the container/wiring is translated per assistant. Same FILE + SETTINGS_MERGE
-# pattern as the rag-usage hook above (no new ArtifactKind). On Copilot the wiring is deposited but
-# capture is INERT until a Copilot capture adapter exists (FEAT-008); the only adapter today is
-# `claude-code`.
+# pattern as the rag-usage hook above (no new ArtifactKind). On Copilot the wiring is deposited and
+# the Copilot capture adapter exists (E5-FEAT-008, 2026-06-22), but the installer does NOT yet
+# distribute the adapter VALUE (`SERTOR_MEMORY_ADAPTER=copilot-cli`) in the `.env` template — that
+# is FEAT-009 (memory-conversations epic). So out of the box the Copilot wiring fires with the
+# default adapter and captures nothing useful; `execute_rag_plan` surfaces an honest note (018).
 _MEMORY_HOOK_ASSET = "rag/hooks/memory-capture.ps1"
 _MEMORY_HOOK_TARGET = ".claude/hooks/memory-capture.ps1"
 _MEMORY_HOOK_TARGET_COPILOT = ".github/hooks/memory-capture.ps1"
 _MEMORY_CAPTURE_SETTINGS = "rag/settings.memory-capture.json"
 _COPILOT_MEMORY_WIRING_SENTINEL = "(generated: copilot memory-capture hooks)"
+
+# E10-FEAT-018 (Nota B, contracts/install-notes.md): honest caveat emitted on every
+# `install rag --assistant copilot-cli`, independent of the runtime `SERTOR_MEMORY` value
+# (install-time does not know it — decision D-2). The memory-capture hook is wired but inert with
+# the default adapter; capturing Copilot CLI sessions needs both env knobs set explicitly.
+_COPILOT_MEMORY_NOTE = (
+    "memory-capture is wired but requires SERTOR_MEMORY=true and an explicit Copilot adapter "
+    "value for SERTOR_MEMORY_ADAPTER (=copilot-cli) to capture Copilot CLI sessions — with the "
+    "default the hook fires but captures nothing useful. Out-of-the-box completion is planned "
+    "(distribution of the adapter value in the .env template, tracked in the memory-conversations "
+    "epic / FEAT-009)."
+)
 
 
 def _copilot_memory_hook_specs() -> list[HookEntrySpec]:
@@ -746,6 +761,13 @@ def execute_rag_plan(
     report = _kit_execute_plan(
         plan, apply, target=str(profile.target_root), capability="rag", assistant=assistant.value
     )
+    # E10-FEAT-018: honest, non-fatal install-time notes (Principio XII). The pwsh guard surfaces
+    # the non-Windows-without-`pwsh` gap for the deposited `.ps1` hooks; the Copilot note declares
+    # the `memory-capture` adapter caveat. Both detect+report only — no wiring is rewritten (D-3).
+    hook_surfaces = [a.target_rel for a in plan if a.target_rel.endswith(".ps1")]
+    host_env.maybe_note_pwsh(report, hook_surfaces)
+    if assistant is AssistantId.COPILOT_CLI:
+        report.note(_COPILOT_MEMORY_NOTE)
     return report
 
 

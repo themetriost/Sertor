@@ -18,6 +18,7 @@ from pathlib import Path
 from sertor_core.domain.errors import SertorError
 from sertor_core.wiki_tools.profile import load_profile
 from sertor_core.wiki_tools.structure import init_structure
+from sertor_install_kit import host_env
 from sertor_install_kit.artifacts import LifecycleOp
 from sertor_install_kit.assistant import AssistantId, AssistantProfile, Surface
 from sertor_install_kit.claude_md import remove_marker_block, update_marker_block
@@ -393,6 +394,10 @@ def execute_plan(
     report = _kit_execute_plan(
         plan, apply, target=str(root), capability="wiki", assistant=assistant.value
     )
+    # E10-FEAT-018: honest, non-fatal pwsh guard for the deposited `.ps1` lifecycle hooks on
+    # non-Windows hosts without PowerShell Core. Detect+report only; no wiring is rewritten (D-3).
+    hook_surfaces = [a.target_rel for a in plan if a.target_rel.endswith(".ps1")]
+    host_env.maybe_note_pwsh(report, hook_surfaces)
     return report
 
 
