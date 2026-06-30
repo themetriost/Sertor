@@ -10,7 +10,7 @@ disable-model-invocation: false
 
 The request that invoked this capability **is** the idea/requirement to work on.
 
-Considera SEMPRE l'input dell'utente prima di procedere (se non vuoto). Il testo passato a questa
+Considera sempre l'input dell'utente prima di procedere (se non vuoto). Il testo passato a questa
 capacità **è** la descrizione dell'idea/esigenza. Se è vuoto, chiedi all'utente di descriverla.
 
 ## Scopo

@@ -474,11 +474,14 @@ def test_skill_verify_fail_loud():  # US5-AC2 / FR-003 / Principle XII
     assert "not declare success" in low  # honest failure (never assume "done")
 
 
-def test_skill_what_not_section_forbids_done_without_doctor():  # RNF-4
+def test_skill_forbids_done_without_doctor():  # RNF-4 (E10-FEAT-022: rule lives inline in Step 6)
+    # The redundant "What NOT to do" section was removed (E10-FEAT-022, FR-004/006); the rule
+    # "no 'done' without a green doctor" survives inline in Step 6 — Verify.
     body = _skill_body()
-    assert "What NOT to do" in body
-    what_not = body[body.find("What NOT to do"):].lower()
-    assert "doctor" in what_not  # forbids declaring done without doctor
+    assert "What NOT to do" not in body  # the duplicated trailing section is gone
+    verify = body[body.find("## Step 6"):].lower()
+    assert "green" in verify and "doctor" in verify  # forbids declaring done without a green doctor
+    assert "not declare success" in verify.replace("*", "")
 
 
 def test_skill_consent_gate_read_only_vs_mutation():  # US6-AC1/AC2 / FR-008

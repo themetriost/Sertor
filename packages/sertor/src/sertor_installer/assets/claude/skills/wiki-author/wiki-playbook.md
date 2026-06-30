@@ -13,6 +13,17 @@
 >
 > It is **tooling**, not wiki content: it lives alongside your assistant's skill files, it should not be indexed or recorded in the wiki.
 
+## Contents
+
+- [§0 — Host-agnostic: the host is configured, not assumed](#0-host-agnostic-the-host-is-configured-not-assumed)
+- [§1 — Identity & philosophy](#1-identity--philosophy)
+- [§2 — Deterministic core vs judgment (the boundary)](#2-deterministic-core-vs-judgment-the-boundary)
+- [§3 — Taxonomy (from the config)](#3-taxonomy-from-the-config)
+- [§4 — Conventions](#4-conventions)
+- [§5 — Operations — index (on-demand loading)](#5-operations--index-on-demand-loading)
+- [§6 — Log entry](#6-log-entry)
+- [§7 — Limits & delegations](#7-limits--delegations)
+
 ## 0. Host-agnostic: the host is configured, not assumed
 
 The wiki capability is **decoupled from the host project** (Principle X of the constitution). Everything that
@@ -35,7 +46,7 @@ project only the config file changes.
 ### Host-agnostic authoring (this file and its sibling assets)
 
 This playbook and the skill/agent/command bodies that read it are **distributed to multiple
-assistants**. The SAME body must work on each, so when you edit these assets keep them host-agnostic:
+assistants**. The **same** body must work on each, so when you edit these assets keep them host-agnostic:
 
 - **No literal assistant paths.** Do not hard-code an assistant-specific directory in a body: the
   payload lives in a different place on each host. Reference a bundled support file **by name**
@@ -49,7 +60,7 @@ assistants**. The SAME body must work on each, so when you edit these assets kee
 
 These rules are enforced by a **parity guard** (renders the distributable plans for every assistant
 and fails on a leaked assistant path, a slash-command, an assistant name, or a payload file referenced
-but not deposited — *reference closure*). See [[assistant-targeting]] for the targeting mechanism.
+but not deposited — *reference closure*).
 
 ## 1. Identity & philosophy
 
@@ -96,7 +107,7 @@ project), and a bare call failing means "not on `PATH`", NOT "not installed". Wh
 is also installed, a fuller CLI reference document ships with it, covering installer-level invocation
 and platform-specific setup notes.
 
-**JUDGMENT is left to you (LLM)**, which the CLI does not provide: *what* to write and *why*, whether a page is new
+**Judgment is left to you (LLM)**, which the CLI does not provide: *what* to write and *why*, whether a page is new
 or needs updating, *which* backlinks make sense, whether two claims **contradict** each other, whether a claim is outdated.
 The *where/how* (paths, formats, mechanical detection) comes from the deterministic core.
 
@@ -276,6 +287,6 @@ an entry (`record`, `ingest`, `lint`, `reorg`, …).
   from-diff) are **delegated to the VCS role** (`[roles].vcs`). The `curator` does not run git.
 - **Sources & frozen wikis:** never touch the original sources given to `ingest`, nor the wikis excluded via
   `exclude`.
-- **When NOT to document:** purely mechanical or minor changes do not deserve an entry.
+- **When not to document:** purely mechanical or minor changes do not deserve an entry.
 - **Versioning:** when the user wants to version, delegate to the VCS role a commit `docs(wiki):
   <summary>` with selective staging of the wiki root.
