@@ -555,6 +555,45 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/082-parity-guard-budget/plan.md` (FEAT-024 epica **debito-tecnico** (E10) — **parity guard esteso
+(.ps1/.json) + budget di altitude dei blocchi CLAUDE.md in CI**: chiude due falle nei guard-rail offline
+(audit ISSUE-10) con **tre guardie ADDITIVE solo-test, ZERO `sertor_core`, zero codice runtime**
+(comportamento installer byte-identico). **(A, Must)** *shape-guard di presenza* del wiring Copilot rag:
+eseguito `build_rag_plan`+`execute_rag_plan` per `COPILOT_CLI` in `tmp_path`, asserisce che
+`sertor-hooks.json` contiene ≥1 entry sotto `SessionEnd`/`SessionStart`/`PreToolUse` (quest'ultimo con
+`matcher` non vuoto) — chiude il drift silenzioso ISSUE-10 (FEAT-049: wiring in formato Claude scartato →
+0 hook); **complementa, non sostituisce** `assert_valid_copilot_hook_file` (schema ≠ presenza).
+**(B, Must)** *budget altitude* dei 3 `claude-md-block*.md` always-on con **soglie per-blocco costanti
+DIFFERENZIATE** (decisione fissata): **wiki=60** (attuale 52) · **RAG=58** (49) · **SDLC=70** (64) — sotto
+i valori pre-FEAT-021 (wiki 71/RAG 72) così la riduzione non si erode; coverage **esaustiva** (un 4° blocco
+non registrato → rosso). **(C, Should)** *source-level guard* offline: i 3 script rag SessionEnd
+(`rag-freshness`/`memory-capture`/`version-check.ps1`) non emettono un payload Copilot `decision` su
+stdout. **3 forche di *come* risolte (research):** **DA-D-1** Gruppo A = **file nuovo**
+`test_copilot_hook_presence.py` + funzione pura `assert_events_present(data, expected)` (anti-pattern via
+rimozione del solo evento `PreToolUse` = unico frammento; **limite per-evento dichiarato**: `SessionEnd`
+ha 3 frammenti, la guardia cattura la rimozione dell'ultimo frammento di un evento; costante
+`_EXPECTED_RAG_EVENTS` con commento solidale dei 6 frammenti, pattern `_RAG_HOOKS`); riusa `_rag_wiring`
+(`tmp_path`, `make_runner`) di `test_schema_copilot_hooks.py`, **non** lo importa → indipendente
+(FR-004). **DA-D-2** Gruppo B = **suite root** `tests/unit/test_claude_md_block_budget.py` (cross-package
+sertor+sertor-flow, precedente `test_assets_sync.py`); registro costante `_BUDGETS{(anchor,rel):soglia}`,
+conteggio `len(read_asset_text(anchor,rel).splitlines())` (±1-safe), discovery esaustiva via
+**walk-`Traversable`** dei due pacchetti (legge solo i `claude-md-block*.md`, evita asset binari). **DA-D-3**
+Gruppo C = **file nuovo** `test_hooks_rag_no_stdout_payload.py` (offline, **nessun `pytestmark` pwsh** —
+`test_hooks_script_copilot.py` ha skipif-pwsh di modulo → non vi si mette il guard offline); vieta la
+**chiave `decision`** (`re` `["']?decision["']?\s*[:=]`, JSON/hashtable), **non** `reason`/`-Reason`
+(false-positive sul breadcrumb FEAT-019, `Write-HookBreadcrumb -Reason`); strip `<# … #>`+`#` riusato da
+`test_assets_hook_cli_invocation.py`. **Ancoraggio (MCP `search_code`, nessun errore tool; conteggi/righe
+via `Read`):** `install_rag.py:695-715` (6 frammenti `_rag_hook_fragment`/`render_copilot_hooks`),
+`surfaces.py:162-190` (`HookEntrySpec`/`render_copilot_hooks`), `test_schema_copilot_hooks.py:25-64`
+(`assert_valid_copilot_hook_file`, `_rag_wiring`), `resources.py` (reader parametrico per-anchor). Stato
+verificato wiki **52**/RAG **49**/SDLC **64**. **Ogni guardia ha anti-pattern** (non-vacuità). Guardie
+esistenti **invariate** (`test_schema_copilot_hooks`/`test_assets_copilot_parity`/`test_hooks_script_copilot`/
+`test_assets_sync`). Out-of-Scope: sync `assets/rag/**`↔`.claude/` + fork IT eval-skill → **FEAT-025**;
+invarianti di contenuto sui `.ps1`/`.json` → Won't. Constitution **PASS 12/12 + missione PASS** (pre e
+post-design) senza deroghe (Complexity Tracking vuoto) — Fail Loud (Principio XII) reso CI: ciò che
+degradava in silenzio diventa rosso. **Nota di processo:** `setup-plan.ps1`/`speckit-plan/SKILL.md`
+ASSENTI → parametri per convenzione dal branch (forma da `081`); nessun hook eseguito; MCP `sertor-rag`
+interrogato (nessun errore tool). Branch `082-parity-guard-budget`. Storico:
 `specs/081-stub-copilot/plan.md` (FEAT-023 epica **debito-tecnico** (E10) — **rimozione stub fuorviante
 `assets/copilot/`**: igiene host-facing **sottrattiva**. Rimuove il tree
 `packages/sertor/src/sertor_installer/assets/copilot/**` (4 `.gitkeep` + 4 dir vuote
