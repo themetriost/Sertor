@@ -555,6 +555,45 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/080-pulizia-stile-skill/plan.md` (FEAT-022 epica **debito-tecnico** (E10) — **pulizia stile delle
+skill distribuite**: igiene host-facing degli asset **skill** che Sertor deposita via `sertor install rag` e
+`sertor-flow install`. Quattro sintomi (audit ISSUE-08): ALL-CAPS enfatico pervasivo, sezioni «What NOT to
+do»/«Hard boundary» ridondanti, `wiki-playbook.md` (281) senza ToC, wikilink orfano `[[assistant-targeting]]`
+che sull'ospite punta al nulla. **ADDITIVA, solo forma/leggibilità, ZERO `sertor_core`** (Principio XI):
+tocca **5 asset `.md`** (`guided-setup`/`eval-suite-author`/`eval-feedback`/`wiki-playbook` di `sertor`;
+`requirements/SKILL.md` di `sertor-flow`) + 2 guardie nuove + 1 estensione; **nessun** cambiamento di
+comportamento/semantica (pin load-bearing). **Decisioni di scope FISSATE (spec):** **(DA-1)** callout «How to
+invoke» delle 2 eval-skill → **pointer** a `sertor-cli-reference.md` (FEAT-021), closure-safe by construction
+(le eval-skill sono nel piano RAG che deposita il reference); **(DA-2)** ALL-CAPS normalizzato **anche** in
+`requirements/SKILL.md` (`SEMPRE`→`sempre`), **lingua IT invariata** (IT→EN è E12); **(DA-3)** `[[assistant-targeting]]`
+→ **rimozione della frase intera** (non load-bearing). **Forche di *come* risolte (research):** **(DA-D-1)**
+regola operativa ALL-CAPS = parola A–Z ≥2 in prosa (corpo + `description:`), escluse code span/fenced/output
+CLI + **allowlist** `RAG CLI MCP API JSON JSONL YAML TOML URL NL POSIX HTTP SDLC MRR STOP PASS FAIL PATH`
+(+`EARS FEAT REQ` per A5); la **guardia** enforce il sottoinsieme `[A-Z]{4,}` post-strip, gli ≤3 (`NOT`/`DO`/`WAS`)
+restano giudizio. **Inventario reale misurato** (post-strip): guided-setup `ONLY`×3/`MANDATORY`/`EVERY`/`WITHOUT`;
+eval-suite `DERIVES`/`ONLY`×2/`BUILD`/`ASSISTED`/`DETERMINISTIC`×2/`DOES`×2/`DATA`/`NAVIGATION`/`DISCOVER`/`EMPTY`/`SHOULD`;
+eval-feedback `OFFER`; playbook `SAME`/`JUDGMENT`; requirements `SEMPRE`. **(DA-D-2)** ToC = solo §0–§7 (8 voci,
+più stabile delle subsection) sotto `## Contents` dopo il blockquote introduttivo, **anchor GitHub** della
+heading reale (8 anchor esatti in `data-model.md`; il `## [YYYY-MM-DD]` è dentro un fenced block → escluso).
+**(DA-D-3)** rimozione frase wikilink (il parentetico precedente copre già la parity guard). **(DA-D-4)** guardia
+anti-regressione **nuova** `test_assets_skill_style.py` (per `sertor` e per `sertor-flow`): ALL-CAPS=0 post-strip
+meno allowlist · zero `[[` bare · pointer eval presente/callout assente · **pin semantici** load-bearing (no
+perdita regole) · meta non-vacui; + estensione `test_assets_cli_invocation.py` (`test_eval_skills_point_to_reference`);
+**closure** del reference già coperta da `test_cli_reference_closure_in_rag_plan`. **(DA-D-5)** condensazione
+«What NOT to do»: guided-setup **rimossa** (tutti e 7 gli item duplicano regole inline — Step 2/4/6 + Consent
+gate + Hard boundary, verificati uno a uno); eval-suite tiene 2 item unici (secrets, no-invent-paths) e rimuove
+il duplicato eval-run; eval-feedback **piega** l'unico item unico (secrets) nella Hard boundary. **Sync reale:**
+`wiki-playbook.md` via `python -m sertor_installer.sync` (guardia `tests/unit/test_assets_sync.py`),
+`requirements/SKILL.md` via `python -m sertor_flow.sync` (guardia sertor-flow). **⚠️ FINDING promosso:** i dogfood
+`.claude/skills/eval-*` sono un **fork ITALIANO stantio non guardato** (drift pre-esistente su `master`, non
+introdotto qui) → **fuori ambito stile**, da promuovere a debito E10 (riconciliazione lingua/sync + guardia
+rag-skill dogfood). **Cross-ref durevoli:** budget altitude CI → **FEAT-024**, stub `assets/copilot/` →
+**FEAT-023**, traduzione IT→EN → **E12**. `sertor-core` **INVARIATO**; installer/lifecycle invariati. Constitution
+**PASS 12/12 + missione PASS** (pre e post-design) senza deroghe (Complexity Tracking vuoto) — è la stella polare
+resa pulita (contesto agente più leggibile e veritiero, niente link al nulla). **Nota di processo:**
+`setup-plan.ps1`/`speckit-plan/SKILL.md` ASSENTI → parametri per convenzione dal branch (forma da `079`); nessun
+hook eseguito; MCP `sertor-rag` interrogato in apertura (nessun errore tool), conteggi/inventario via
+`Read`/`Grep`/script. Branch `080-pulizia-stile-skill`. Storico:
 `specs/079-altitude-claude-md/plan.md` (FEAT-021 epica **debito-tecnico** (E10) — **ridurre l'altitude
 dei blocchi CLAUDE.md distribuiti + fonte unica «How to invoke»**: Sertor inietta **tre blocchi
 always-on** (~208 righe) nel file di istruzione di ogni ospite — wiki-ritual (`SERTOR:WIKI-RITUAL`, 71),

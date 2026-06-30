@@ -289,3 +289,19 @@ def test_bare_invocation_regex_passes_robust_and_namecitation():
     # a name-citation of a subcommand (no execution arg after it) → no match
     assert _BARE_INVOCATION.search("the subcommand `sertor-rag eval add-case` writes cases") is None
     assert _BARE_INVOCATION.search("declaring success without a green `sertor-rag doctor`") is None
+
+
+# --- E10-FEAT-022: the eval skills point to the single CLI reference ---------------------------
+
+
+def test_eval_skills_point_to_reference():
+    """G3: the eval skills cite `sertor-cli-reference.md` (FR-010/CS-2).
+
+    The reference closure (the target is deposited by the RAG plan where cited) is already
+    guaranteed by `test_cli_reference_closure_in_rag_plan` in `test_assets_copilot_parity.py`.
+    """
+    for asset in (_EVAL_SUITE, _EVAL_FEEDBACK):
+        body = read_asset_text(asset)
+        assert "`sertor-cli-reference.md`" in body, (
+            f"{asset}: missing the pointer to sertor-cli-reference.md"
+        )

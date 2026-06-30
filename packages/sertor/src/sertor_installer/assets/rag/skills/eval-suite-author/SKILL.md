@@ -1,6 +1,6 @@
 ---
 name: eval-suite-author
-description: "Assisted authoring of the evaluation suite (ground-truth). Use it whenever evaluation cases need to be created or grown. Triggers on 'create eval cases', 'build the ground-truth suite', 'add a retrieval test case', 'add a graph navigation case', or wanting to measure retrieval/graph quality on this corpus. Authors retrieval cases (query -> expected path) and code-graph navigation cases (relation + symbol -> expected set of refs): using the project's RAG/MCP tools over the indexed corpus, the agent DERIVES candidates, proposes them for approval, and persists ONLY the approved ones by invoking the CLI subcommands `eval add-case` / `graph-eval add-case`. It never runs the evaluation (that is deterministic and does not depend on this skill); it never imports the core library."
+description: "Assisted authoring of the evaluation suite (ground-truth). Use it whenever evaluation cases need to be created or grown. Triggers on 'create eval cases', 'build the ground-truth suite', 'add a retrieval test case', 'add a graph navigation case', or wanting to measure retrieval/graph quality on this corpus. Authors retrieval cases (query -> expected path) and code-graph navigation cases (relation + symbol -> expected set of refs): using the project's RAG/MCP tools over the indexed corpus, the agent derives candidates, proposes them for approval, and persists only the approved ones by invoking the CLI subcommands `eval add-case` / `graph-eval add-case`. It never runs the evaluation (that is deterministic and does not depend on this skill); it never imports the core library."
 argument-hint: "Describe the corpus area/capability you want evaluation cases for (e.g. 'retrieval over the domain symbols')"
 user-invocable: true
 disable-model-invocation: false
@@ -14,27 +14,24 @@ user to describe the area or the goal of the suite.
 
 ## Purpose
 
-This skill helps BUILD the evaluation suite (`eval/suite.toml`) - the set of (query -> expected paths)
-pairs used to measure retrieval relevance (hit-rate@k / MRR). It is ASSISTED authoring: the agent
+This skill helps build the evaluation suite (`eval/suite.toml`) - the set of (query -> expected paths)
+pairs used to measure retrieval relevance (hit-rate@k / MRR). It is **assisted** authoring: the agent
 proposes, the user approves, and only the approved cases are written. The measurement itself
-(`eval run`) is DETERMINISTIC and DOES NOT depend on this skill or on any LLM: here you only curate the
-DATA (the suite), not the run.
+(`eval run`) is **deterministic** and does not depend on this skill or on any LLM: here you only curate
+the data (the suite), not the run.
 
 ## Hard boundary (deterministic vs judgment)
 
-- No execution, no library import. This skill does NOT evaluate and does NOT import the core. Every
+- No execution, no library import. This skill does not evaluate and does not import the core. Every
   write goes through the CLI vehicle only: `sertor-rag eval add-case`. Never access the library
   directly nor the `build_*` factories. Access Sertor through a vehicle (CLI or MCP).
 - Approved cases only. No candidate is persisted without an explicit approval from the user. The agent
   proposes; the user decides; the agent writes the accepted ones.
 
-> **How to invoke `sertor-rag`.** The runtime CLI is installed into the project's `.sertor/.venv` and
-> is NOT on `PATH`. Invoke it via **`uv run`** from any cwd in the host repo:
-> `uv run --project .sertor sertor-rag <args>` (e.g. `uv run --project .sertor sertor-rag eval add-case …`).
-> A bare `sertor-rag …` (or `which sertor-rag`) failing means "not on PATH", NOT "not installed". If
-> `uv` is unavailable, fall back to `.sertor/.venv/Scripts/sertor-rag.exe` (Windows) /
-> `.sertor/.venv/bin/sertor-rag` (POSIX); if neither resolves, STOP and report that the runtime is not
-> installed.
+> **How to invoke `sertor-rag`.** The runtime CLI lives in the project's `.sertor/.venv` (not on
+> `PATH`); route every call through `uv run --project .sertor sertor-rag <args>`. For the two
+> invocation levels, the venv fallback and the Windows notes, see `sertor-cli-reference.md` (it ships
+> with the RAG capability).
 
 ## Prerequisite: the corpus must be indexed
 
@@ -54,7 +51,7 @@ the missing/checked paths).
    symbols, architectural files, behaviours).
 
 2. Derive candidates with the RAG/MCP tools. For each candidate, write a realistic query (as a user or
-   agent would write it) and identify the expected path - the file that SHOULD appear among the
+   agent would write it) and identify the expected path - the file that should appear among the
    results. Mix two types (the optional but recommended `kind` field):
    - `symbol` - exact-symbol query (a class/function/error name). Use the graph symbol search to find
      where it is defined.
@@ -85,10 +82,10 @@ the missing/checked paths).
 
 ## Authoring code-graph navigation cases (`[[graph_case]]`)
 
-Beyond retrieval cases, the suite can hold code-graph NAVIGATION cases: a case = relation + target
-symbol -> expected SET of `ref` (`path#qualname`). The metric is set-based (precision/recall/F1), not
+Beyond retrieval cases, the suite can hold code-graph navigation cases: a case = relation + target
+symbol -> expected set of `ref` (`path#qualname`). The metric is set-based (precision/recall/F1), not
 rank. MVP relations: `who_calls` (callers of the symbol) and `defines` (where it is defined). Here too
-authoring is assisted: the agent proposes a DETERMINISTIC snapshot, the user approves, and only the
+authoring is assisted: the agent proposes a **deterministic** snapshot, the user approves, and only the
 approved cases are written.
 
 1. Navigate the current graph state (deterministic snapshot). For the requested relation+symbol, get
@@ -98,10 +95,10 @@ approved cases are written.
    uv run --project .sertor sertor-rag graph-eval validate-ref --relation who_calls --target build_facade --json
    ```
 
-   The JSON output reports `checked`/`unverifiable`/`graph_available`. To DISCOVER the current set
+   The JSON output reports `checked`/`unverifiable`/`graph_available`. To discover the current set
    (snapshot), pass the refs you expect and read which are `unverifiable`, or derive the real refs from
    the RAG/MCP tools (symbol / who-calls search) and compare. The candidate set is what the graph
-   returns NOW, not the agent's autonomous judgment.
+   returns now, not the agent's autonomous judgment.
 
 2. Propose the set to the user. Present the candidate set of refs as a proposal to approve (it is a
    snapshot: "these are the callers of `X` today"). Explain that the set becomes the case's expected
@@ -119,7 +116,7 @@ approved cases are written.
      or proceed with `--confirm`. Do not force `--confirm` yourself.
    - `add-case` is idempotent on `(relation, target)` and non-destructive (it preserves the retrieval
      `[[case]]` and the other `[[graph_case]]`).
-   - A case with an EMPTY expected set is legitimate (expected "no callers"): use `--expected ""`.
+   - A case with an empty expected set is legitimate (expected "no callers"): use `--expected ""`.
 
 4. Re-authoring an existing snapshot. If the correct set changed and the user approves it, update the
    case with `uv run --project .sertor sertor-rag graph-eval amend-case --relation R --target T --expected "..."`.
@@ -130,9 +127,9 @@ approved cases are written.
    `uv run --project .sertor sertor-rag index .`, then re-run."
 
 Hard boundary (deterministic vs judgment, here too). The deterministic run
-(`uv run --project .sertor sertor-rag graph-eval run`) DOES NOT depend on this skill or on any LLM:
+(`uv run --project .sertor sertor-rag graph-eval run`) does not depend on this skill or on any LLM:
 the skill is the judgment surface (propose/approve
-the sets), the run is the deterministic measure in the core. Every access to the graph goes ONLY
+the sets), the run is the deterministic measure in the core. Every access to the graph goes only
 through the `graph-eval validate-ref`/`add-case`/`amend-case` subcommands (vehicle): the skill never
 imports the core library.
 
@@ -141,5 +138,3 @@ imports the core library.
 - Never write secrets into the suite (it is versioned data, diffable by hand).
 - Do not invent paths/refs: every `expected` must be real (verified with `validate-path` for retrieval
   cases, with `graph-eval validate-ref` for navigation cases).
-- Do not run the evaluation on the user's behalf as if it were part of authoring: they are separate
-  phases (authoring = assisted judgment; run = deterministic measure).

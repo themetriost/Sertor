@@ -6,7 +6,7 @@ description: "Guides the user from an unconfigured repo to a verified Sertor RAG
   RAG not working', or any first-time setup/onboarding request. Detects current state,
   recommends an embedding provider from context (with confirmation), fills `.env` securely (never
   printing secrets), announces the one-time GloVe download, and verifies fail-loud via `doctor`,
-  orchestrating ONLY the deterministic vehicles (`sertor install`, `sertor configure --set`,
+  orchestrating only the deterministic vehicles (`sertor install`, `sertor configure --set`,
   `sertor-rag doctor`/`index`). Read-only checks run freely; every host mutation/download runs only
   after explicit confirmation. It never reimplements a command and never imports the core."
 user-invocable: true
@@ -24,8 +24,8 @@ invocable on its own; the `concierge` agent routes setup requests to it.
 
 ## Hard boundary (orchestrate, never reimplement)
 
-- **No execution of core logic, no library import.** This skill does NOT reimplement any command and
-  does NOT import the core. Every access to Sertor goes through a vehicle — the deterministic CLI
+- **No execution of core logic, no library import.** This skill does not reimplement any command and
+  does not import the core. Every access to Sertor goes through a vehicle — the deterministic CLI
   commands (or MCP). Never import the library, never call the `build_*` factories. Access Sertor
   through a vehicle only.
 - **The vehicles you orchestrate** (by command name, host-agnostic):
@@ -42,9 +42,9 @@ invocable on its own; the `concierge` agent routes setup requests to it.
     stable JSON schema, exit-code gate).
   - `uv run --project .sertor sertor-rag index .` — the first index (may trigger the one-time GloVe
     download).
-- You **orchestrate** these commands; you do not alter or replace their behaviour. Do NOT paste inline
+- You **orchestrate** these commands; you do not alter or replace their behaviour. Do not paste inline
   shell/Python that replicates what `install`/`configure`/`doctor`/`index` already do.
-- **`--assistant <host>` is MANDATORY on every install.** `<host>` is the assistant you are running
+- **`--assistant <host>` is required on every install.** `<host>` is the assistant you are running
   as — see "Step 0 — Detect the host" below. Always pass it **explicitly** to `sertor install rag`,
   `sertor install wiki` and `sertor-flow install`; **never** rely on the installer's default (the
   default lays down the wrong host layout when you are not that default host).
@@ -52,7 +52,7 @@ invocable on its own; the `concierge` agent routes setup requests to it.
 ## How to invoke
 
 The runtime CLIs you orchestrate (`sertor-rag`, `sertor-wiki-tools`) live in the project's
-`.sertor/.venv` and are NOT on `PATH`, so the steps below route every call through
+`.sertor/.venv` and are not on `PATH`, so the steps below route every call through
 `uv run --project .sertor`. For the full invocation details — the two levels (runtime via `uv run`,
 installer via `uvx`), the venv fallback, and the Windows setup notes — see `sertor-cli-reference.md`
 (the reference ships with this capability under `.sertor/`).
@@ -62,11 +62,11 @@ installer via `uvx`), the venv fallback, and the Windows setup notes — see `se
 - **Read-only checks run freely, no confirmation:** running `uv run --project .sertor sertor-rag
   doctor`, inspecting whether `.sertor/.env` exists, reading which keys are present. These never mutate
   the host.
-- **Every step that mutates the host or downloads runs ONLY after explicit confirmation:**
+- **Every step that mutates the host or downloads runs only after explicit confirmation:**
   `sertor install rag`, `sertor configure --set`, and the first
   `uv run --project .sertor sertor-rag index .` (including the GloVe download). Propose the step,
   explain what it will do, and wait for an explicit "yes" before running it.
-- If the user does not confirm, do NOT run the step. Never auto-mutate or auto-download.
+- If the user does not confirm, do not run the step. Never auto-mutate or auto-download.
 
 ## Step 0 — Detect the host (read-only) — pick `--assistant <host>`
 
@@ -84,7 +84,7 @@ supported values are `claude` and `copilot-cli`.
     capitalized project-instruction markdown at the repo root, or the per-host config folder) ⇒
     `claude`.
 - If neither the primary signal nor the fallback resolves the host, **ask the user** which assistant
-  this is before installing — do NOT guess and do NOT fall back to the installer default.
+  this is before installing — do not guess and do not fall back to the installer default.
 
 Carry the resolved `<host>` through the whole flow: substitute it into the `--assistant <host>`
 placeholder in Steps 3 and (for wiki/flow) below.
@@ -95,9 +95,9 @@ Run `uv run --project .sertor sertor-rag doctor --json` and read the four areas
 (`config`/`provider`/`index`/`mcp`) of the `doctor` report. Also inspect read-only whether
 `.sertor/.env` exists and which keys it already holds. Determine what is missing.
 
-- **All four areas green** → the RAG is already configured and verified: say so, do NOT re-scaffold,
+- **All four areas green** → the RAG is already configured and verified: say so, do not re-scaffold,
   and stop (idempotence — re-running on a healthy host detects and verifies, it does not rebuild).
-- **Partial** → conduct ONLY the missing steps below; do not repeat steps already complete, and do not
+- **Partial** → conduct only the missing steps below; do not repeat steps already complete, and do not
   duplicate artifacts already present.
 
 ## Step 2 — Choose provider (minimal heuristic + confirm)
@@ -109,7 +109,7 @@ let the user decide — never select one automatically:
    (`config`/`provider` areas: missing `AZURE_OPENAI_*` keys mean no cloud creds), or by a read-only
    look at `.sertor/.env` / the environment for `AZURE_OPENAI_ENDPOINT` / `AZURE_OPENAI_API_KEY`.
 2. **Host airgapped / offline?** — a conversational signal (the user states it), or
-   `uv run --project .sertor sertor-rag doctor --online` reporting the provider `unreachable`. Do NOT
+   `uv run --project .sertor sertor-rag doctor --online` reporting the provider `unreachable`. Do not
    probe the network yourself.
 3. **Is natural-language semantics over the docs needed?** — ask the user (is the corpus rich in
    documentation / NL?).
@@ -120,7 +120,7 @@ Recommendation rules (propose with rationale, never impose):
   core's local default), `hash` for the deterministic / strict-airgapped floor.
 - cloud creds **present** + NL semantics needed → may propose **cloud** (Azure) with the rationale
   (semantic quality), or `glove` locally if the user prefers on-machine.
-- in EVERY case you propose with a rationale and the **user confirms**; there is no automatic
+- in every case you propose with a rationale and the **user confirms**; there is no automatic
   selection.
 
 The chosen provider is written to `.sertor/.env` in Step 4 via
@@ -155,7 +155,7 @@ Fill `.sertor/.env` **only** via
 
 - For **secrets** (e.g. a cloud API key), use the wizard's secure `getpass` prompt and **never print
   the value** — not to the screen, not into the conversation log.
-- If a secret is **already present** in `.sertor/.env`, do NOT re-ask for it and do NOT expose it.
+- If a secret is **already present** in `.sertor/.env`, do not re-ask for it and do not expose it.
 - Never hand-edit `.sertor/.env` directly; always go through `sertor configure --set`.
 
 ## Step 5 — Index (on confirm; announce the GloVe download)
@@ -164,7 +164,7 @@ If the chosen provider is `glove` and the model is **not** in cache, **announce*
 (~822 MB) **before** running the index, so the wait is expected and not a silent block. Then, on
 confirmation, run `uv run --project .sertor sertor-rag index .`.
 
-- If the GloVe model is already in cache, do NOT announce any download.
+- If the GloVe model is already in cache, do not announce any download.
 - When a download progress/ETA becomes available (a future deterministic capability), lean on it;
   until then the textual announcement is enough (honest degradation).
 
@@ -174,16 +174,5 @@ Run `uv run --project .sertor sertor-rag doctor` as the obligatory gate before d
 
 - `doctor: PASS` (exit 0) → declare the setup **verified**, reporting the supporting outcome.
 - **Not green** → expose the failing **area + remedy** taken from the report lines (e.g.
-  `provider FAIL provider config incomplete (AZURE_OPENAI_API_KEY)`) and do **NOT** declare success.
+  `provider FAIL provider config incomplete (AZURE_OPENAI_API_KEY)`) and do **not** declare success.
   Never assume "done": the reported state is the one `doctor` verified, never a presumed one.
-
-## What NOT to do
-
-- Do NOT print any secret value (screen or conversation log).
-- Do NOT hand-fill `.sertor/.env`; always go through `sertor configure --set`.
-- Do NOT run any mutating/download step without explicit confirmation.
-- Do NOT import the core or call the `build_*` factories; orchestrate the vehicles only.
-- Do NOT select a provider automatically; always propose and let the user confirm.
-- Do NOT declare the setup "done" without a green `sertor-rag doctor`.
-- Do NOT run any install (`rag`/`wiki`/`flow`) WITHOUT an explicit `--assistant <host>`; never rely on
-  the installer default (it would lay down the wrong host layout).
