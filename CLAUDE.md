@@ -555,6 +555,32 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/081-stub-copilot/plan.md` (FEAT-023 epica **debito-tecnico** (E10) — **rimozione stub fuorviante
+`assets/copilot/`**: igiene host-facing **sottrattiva**. Rimuove il tree
+`packages/sertor/src/sertor_installer/assets/copilot/**` (4 `.gitkeep` + 4 dir vuote
+`agents/`/`hooks/`/`instructions/`/`prompts/` + `copilot/` stessa), creato in FEAT-044 ipotizzando asset
+Copilot statici e svuotato in FEAT-049 quando i JSON furono sostituiti dalla **generazione a runtime nativa**
+(`render_copilot_hooks`/`render_custom_agent`/`render_prompt_file` in `sertor_install_kit.surfaces`). Lo stub
+vuoto è **fuorviante** (suggerisce asset statici che non esistono); i payload Copilot sono generati
+**interamente** da `assets/claude/**`+`assets/rag/**`, **zero consumatori** leggono `assets/copilot/`
+(verificato grep). **ZERO `sertor_core`** (Principio XI) e **ZERO modifiche a `install_rag.py`/`surfaces.py`/
+`pyproject.toml`**: generazione Copilot byte-identica (hatchling glob ricorsivo → nessun cambio packaging).
+**Decisione di scope FISSATA (Opzione A):** rimozione, **nessun README di rimpiazzo** (sarebbe un body asset
+in contraddizione col guard `test_no_hand_maintained_copilot_prompt_bodies`). **2 forche di *come* risolte:**
+**DA-D-1** guardia anti-ricomparsa = **estensione** di `test_assets_copilot_guard.py`
+(`test_no_copilot_asset_directory`, asserisce assenza dir via `asset_path("copilot").is_dir()` — riuso API
+esistente, offline/deterministico, fail-loud sul ritorno dello stub) **non** un file nuovo (coesione con la
+famiglia di guardie Copilot); **DA-D-2** commento esplicativo in `install_rag.py` = **NO** (violerebbe
+l'out-of-scope «install_rag.py invariato» + un commento può divergere; l'intento vive nella **docstring del
+test**, enforced — Principio XII). File: rimozione 4 `.gitkeep` + estensione 1 test; nessuna modifica ai test
+esistenti (`test_assets_copilot_parity.py`/`test_install_rag_copilot_cli.py`/`test_packaging.py` restano
+verdi). Out-of-Scope promossi: budget altitude / parity-guard `.ps1`/`.json` → **FEAT-024**; fork IT eval-skill
+→ **FEAT-025**; doc editoriale architettura generativa → intervento autonomo. Constitution **PASS 12/12 +
+missione PASS** (pre e post-design) senza deroghe (Complexity Tracking vuoto) — la stella polare è la realtà
+del contesto reso al lettore del repo: rimuovere uno stub che comunica un'architettura inesistente. **Nota di
+processo:** `setup-plan.ps1`/`speckit-plan/SKILL.md` ASSENTI → parametri per convenzione dal branch (forma da
+`080`); nessun hook eseguito; MCP `sertor-rag` non interrogato (posizioni note, eccezione «fatto puntuale») →
+nessun errore MCP. Branch `081-stub-copilot`. Storico:
 `specs/080-pulizia-stile-skill/plan.md` (FEAT-022 epica **debito-tecnico** (E10) — **pulizia stile delle
 skill distribuite**: igiene host-facing degli asset **skill** che Sertor deposita via `sertor install rag` e
 `sertor-flow install`. Quattro sintomi (audit ISSUE-08): ALL-CAPS enfatico pervasivo, sezioni «What NOT to
