@@ -55,29 +55,29 @@ cd C:\Workspace\Git\Sertor
 uv sync --all-packages --extra dev
 ```
 
-- [ ] Verifica che `uv sync --all-packages --extra dev` completi senza errori.
-- [ ] Verifica che la suite colleghi senza crash di import:
+- [x] Verifica che `uv sync --all-packages --extra dev` completi senza errori.
+- [x] Verifica che la suite colleghi senza crash di import:
       ```powershell
       uv run pytest --co -q -m "not cloud" 2>&1 | Select-String "ERROR"
       ```
       Nessun `ERROR` di import atteso.
-- [ ] Verifica che i file da creare **non** esistano già (devono essere nuovi):
+- [x] Verifica che i file da creare **non** esistano già (devono essere nuovi):
   - `packages/sertor/tests/test_copilot_hook_presence.py`
   - `packages/sertor/tests/test_hooks_rag_no_stdout_payload.py`
   - `tests/unit/test_claude_md_block_budget.py`
-- [ ] Verifica che i file di riferimento (da cui riusare i pattern) esistano:
+- [x] Verifica che i file di riferimento (da cui riusare i pattern) esistano:
   - `packages/sertor/tests/test_schema_copilot_hooks.py`
   - `packages/sertor/tests/test_assets_hook_cli_invocation.py`
   - `packages/sertor/tests/conftest.py` (fixture `make_runner`)
   - `tests/unit/test_assets_sync.py`
-- [ ] Verifica che gli asset in scope esistano:
+- [x] Verifica che gli asset in scope esistano:
   - `packages/sertor/src/sertor_installer/assets/claude-md-block.md` (wiki, blocco 1/3)
   - `packages/sertor/src/sertor_installer/assets/rag/claude-md-block-rag-usage.md` (RAG, blocco 2/3)
   - `packages/sertor-flow/src/sertor_flow/assets/claude-md-block-sdlc.md` (SDLC, blocco 3/3)
   - `packages/sertor/src/sertor_installer/assets/rag/hooks/rag-freshness.ps1`
   - `packages/sertor/src/sertor_installer/assets/rag/hooks/memory-capture.ps1`
   - `packages/sertor/src/sertor_installer/assets/rag/hooks/version-check.ps1`
-- [ ] Verifica la baseline suite verde (zero fallimenti pre-modifica):
+- [x] Verifica la baseline suite verde (zero fallimenti pre-modifica):
       ```powershell
       uv run pytest packages/sertor/tests/test_schema_copilot_hooks.py `
                     tests/unit/test_assets_sync.py -q
@@ -111,7 +111,7 @@ importarlo (zero accoppiamento, FR-013). Import minimi: `json`, `pytest`, `pathl
 `sertor_install_kit.assistant.AssistantId`, `sertor_installer.install_rag.{build_rag_plan,
 execute_rag_plan}`, `sertor_installer.rag_profile.{RagHostProfile, RagInstallOptions}`.
 
-- [ ] Dichiara la costante commentata degli eventi attesi (REQ-005, data-model §1.1):
+- [x] Dichiara la costante commentata degli eventi attesi (REQ-005, data-model §1.1):
       ```python
       # 6 hook fragments: PreToolUse×1 (usage-check), SessionEnd×3 (memory-capture,
       # rag-freshness, version-check), SessionStart×2 (static prompts).
@@ -119,7 +119,7 @@ execute_rag_plan}`, `sertor_installer.rag_profile.{RagHostProfile, RagInstallOpt
       _EXPECTED_RAG_EVENTS = ("SessionEnd", "SessionStart", "PreToolUse")
       ```
 
-- [ ] Implementa la funzione pura `assert_events_present(data, expected)` (contratto C-A1..C-A4):
+- [x] Implementa la funzione pura `assert_events_present(data, expected)` (contratto C-A1..C-A4):
       ```python
       def assert_events_present(data: dict, expected: tuple[str, ...]) -> None:
           """Assert that each expected event has ≥1 entry in the Copilot hook wiring.
@@ -139,7 +139,7 @@ execute_rag_plan}`, `sertor_installer.rag_profile.{RagHostProfile, RagInstallOpt
           )
       ```
 
-- [ ] Replica il pattern `_rag_wiring` (NON importarlo, ridefinirlo localmente):
+- [x] Replica il pattern `_rag_wiring` (NON importarlo, ridefinirlo localmente):
       ```python
       def _rag_wiring(tmp_path: Path, make_runner, assistant: AssistantId) -> dict:
           """Build and execute the rag install plan for COPILOT_CLI; return the parsed hook JSON."""
@@ -152,7 +152,7 @@ execute_rag_plan}`, `sertor_installer.rag_profile.{RagHostProfile, RagInstallOpt
           )
       ```
 
-- [ ] Scrivi il test del piano reale (contratto C-A1/C-A2/C-A3):
+- [x] Scrivi il test del piano reale (contratto C-A1/C-A2/C-A3):
       ```python
       def test_real_rag_wiring_has_all_events(tmp_path: Path, make_runner):
           """The rendered sertor-hooks.json for COPILOT_CLI contains all expected events."""
@@ -160,7 +160,7 @@ execute_rag_plan}`, `sertor_installer.rag_profile.{RagHostProfile, RagInstallOpt
           assert_events_present(data, _EXPECTED_RAG_EVENTS)
       ```
 
-- [ ] Scrivi il test anti-pattern che rimuove `PreToolUse` (contratto C-A6; FR-003/REQ-005):
+- [x] Scrivi il test anti-pattern che rimuove `PreToolUse` (contratto C-A6; FR-003/REQ-005):
       ```python
       def test_missing_pretooluse_fails_naming_event(tmp_path: Path, make_runner):
           """Anti-pattern: removing PreToolUse from the rendered JSON makes the guard fail,
@@ -173,7 +173,7 @@ execute_rag_plan}`, `sertor_installer.rag_profile.{RagHostProfile, RagInstallOpt
               assert_events_present(data, _EXPECTED_RAG_EVENTS)
       ```
 
-- [ ] Scrivi il meta-test di non-vacuità su dict sintetico (complementa l'anti-pattern):
+- [x] Scrivi il meta-test di non-vacuità su dict sintetico (complementa l'anti-pattern):
       ```python
       def test_missing_sessionend_fails_naming_event():
           """Meta-guard on a synthetic dict: missing SessionEnd → AssertionError naming it."""
@@ -184,25 +184,25 @@ execute_rag_plan}`, `sertor_installer.rag_profile.{RagHostProfile, RagInstallOpt
 
 **B. Verifica immediata:**
 
-- [ ] Esegui il solo file nuovo — deve essere **verde**:
+- [x] Esegui il solo file nuovo — deve essere **verde**:
       ```powershell
       uv run pytest packages/sertor/tests/test_copilot_hook_presence.py -v
       ```
       Atteso: 3 `PASSED` (test reale + anti-pattern PreToolUse + meta SessionEnd).
 
-- [ ] Verifica che il test reale giri offline (nessun processo figlio `uv`/`pwsh`/rete):
+- [x] Verifica che il test reale giri offline (nessun processo figlio `uv`/`pwsh`/rete):
       il `FakeCommandRunner` di `conftest.py` intercetta ogni subprocess; la fixture `make_runner`
       non apre processi reali. Se il test richiede rete → errore di import o connessione esplicita,
       non una risposta 200. Atteso: nessuna richiesta di rete registrata.
 
-- [ ] Verifica che `test_schema_copilot_hooks.py` resti verde e **indipendente**
+- [x] Verifica che `test_schema_copilot_hooks.py` resti verde e **indipendente**
       (la guardia di presenza non importa e non duplica `assert_valid_copilot_hook_file`):
       ```powershell
       uv run pytest packages/sertor/tests/test_schema_copilot_hooks.py -v
       ```
       Tutti `PASSED`; nessun import da `test_copilot_hook_presence.py`.
 
-- [ ] Lint sul nuovo file:
+- [x] Lint sul nuovo file:
       ```powershell
       uv run ruff check packages/sertor/tests/test_copilot_hook_presence.py
       ```
@@ -234,7 +234,7 @@ e installato nel `.venv` dal `uv sync --all-packages`).
 
 Import: `pytest`, `re`, `sertor_install_kit.resources as _kit`.
 
-- [ ] Dichiara il registro costante `_BUDGETS` (soglie esplicite, non calcolate — REQ-012;
+- [x] Dichiara il registro costante `_BUDGETS` (soglie esplicite, non calcolate — REQ-012;
       data-model §1.2):
       ```python
       # Soglie per-blocco (costanti esplicite). Un aumento richiede una modifica deliberata
@@ -248,7 +248,7 @@ Import: `pytest`, `re`, `sertor_install_kit.resources as _kit`.
       }
       ```
 
-- [ ] Implementa `_discover_blocks()` per la coverage esaustiva (FR-006/REQ-011;
+- [x] Implementa `_discover_blocks()` per la coverage esaustiva (FR-006/REQ-011;
       data-model §2.2):
       ```python
       def _discover_blocks() -> set[tuple[str, str]]:
@@ -272,7 +272,7 @@ Import: `pytest`, `re`, `sertor_install_kit.resources as _kit`.
           return found
       ```
 
-- [ ] Scrivi `test_blocks_within_budget` (contratto C-B1/C-B2; FR-005/007):
+- [x] Scrivi `test_blocks_within_budget` (contratto C-B1/C-B2; FR-005/007):
       ```python
       def test_blocks_within_budget():
           """Each registered claude-md-block*.md is within its declared line budget.
@@ -288,7 +288,7 @@ Import: `pytest`, `re`, `sertor_install_kit.resources as _kit`.
               )
       ```
 
-- [ ] Scrivi `test_budget_coverage_exhaustive` (contratto C-B3/C-B4; FR-006/REQ-011):
+- [x] Scrivi `test_budget_coverage_exhaustive` (contratto C-B3/C-B4; FR-006/REQ-011):
       ```python
       def test_budget_coverage_exhaustive():
           """Every claude-md-block*.md discovered in both packages is registered in _BUDGETS.
@@ -305,7 +305,7 @@ Import: `pytest`, `re`, `sertor_install_kit.resources as _kit`.
           )
       ```
 
-- [ ] Scrivi `test_budget_guard_not_vacuous` (contratto C-B5; FR-008/REQ-013):
+- [x] Scrivi `test_budget_guard_not_vacuous` (contratto C-B5; FR-008/REQ-013):
       ```python
       def test_budget_guard_not_vacuous():
           """Anti-pattern: a synthetic body over the budget causes an assertion failure.
@@ -326,18 +326,18 @@ Import: `pytest`, `re`, `sertor_install_kit.resources as _kit`.
 
 **B. Verifica immediata:**
 
-- [ ] Esegui il solo file nuovo — deve essere **verde**:
+- [x] Esegui il solo file nuovo — deve essere **verde**:
       ```powershell
       uv run pytest tests/unit/test_claude_md_block_budget.py -v
       ```
       Atteso: 3 `PASSED` (within-budget + coverage-exhaustive + not-vacuous).
       In particolare `test_blocks_within_budget` passa perché 52 ≤ 60, 49 ≤ 58, 64 ≤ 70.
 
-- [ ] Verifica offline: il test non invoca subprocess, non apre rete.
+- [x] Verifica offline: il test non invoca subprocess, non apre rete.
       `_kit.read_asset_text` usa `importlib.resources.files` (no disco diretto via `pathlib`):
       verifica che le letture avvengano senza errori di import/percorso nel venv corrente.
 
-- [ ] Lint sul nuovo file:
+- [x] Lint sul nuovo file:
       ```powershell
       uv run ruff check tests/unit/test_claude_md_block_budget.py
       ```
@@ -370,7 +370,7 @@ questa guardia deve girare **sempre, offline** (FR-012/CS-5). Strip-commenti riu
 
 Import: `re`, `sertor_installer.resources.iter_asset_dir`. Nessun `pytestmark` pwsh.
 
-- [ ] Dichiara le costanti (data-model §1.3):
+- [x] Dichiara le costanti (data-model §1.3):
       ```python
       import re
       from sertor_installer.resources import iter_asset_dir
@@ -389,7 +389,7 @@ Import: `re`, `sertor_installer.resources.iter_asset_dir`. Nessun `pytestmark` p
       })
       ```
 
-- [ ] Implementa `_code_lines(body)` (contratto C-C1; FR-010/REQ-016;
+- [x] Implementa `_code_lines(body)` (contratto C-C1; FR-010/REQ-016;
       pattern da `test_assets_hook_cli_invocation.py:40-44`):
       ```python
       def _code_lines(body: str) -> list[str]:
@@ -402,7 +402,7 @@ Import: `re`, `sertor_installer.resources.iter_asset_dir`. Nessun `pytestmark` p
           return [ln for ln in without_block.splitlines() if not ln.strip().startswith("#")]
       ```
 
-- [ ] Implementa il loader degli script:
+- [x] Implementa il loader degli script:
       ```python
       def _rag_session_end_bodies() -> dict[str, str]:
           """Load the three rag SessionEnd scripts by name from the bundled assets."""
@@ -412,7 +412,7 @@ Import: `re`, `sertor_installer.resources.iter_asset_dir`. Nessun `pytestmark` p
           return {name: all_hooks[name] for name in _RAG_SESSION_END_SCRIPTS}
       ```
 
-- [ ] Scrivi `test_rag_sessionend_scripts_emit_no_decision_payload` (contratto C-C2; FR-009):
+- [x] Scrivi `test_rag_sessionend_scripts_emit_no_decision_payload` (contratto C-C2; FR-009):
       ```python
       def test_rag_sessionend_scripts_emit_no_decision_payload():
           """No rag SessionEnd script emits a Copilot 'decision' payload key on stdout.
@@ -433,7 +433,7 @@ Import: `re`, `sertor_installer.resources.iter_asset_dir`. Nessun `pytestmark` p
               )
       ```
 
-- [ ] Scrivi `test_rag_payload_guard_not_vacuous` (contratto C-C3; FR-011/REQ-017):
+- [x] Scrivi `test_rag_payload_guard_not_vacuous` (contratto C-C3; FR-011/REQ-017):
       ```python
       def test_rag_payload_guard_not_vacuous():
           """Anti-pattern: a snippet emitting a 'decision' key is flagged by the guard."""
@@ -447,7 +447,7 @@ Import: `re`, `sertor_installer.resources.iter_asset_dir`. Nessun `pytestmark` p
           )
       ```
 
-- [ ] Scrivi `test_rag_payload_guard_ignores_comment` (contratto C-C4; FR-010):
+- [x] Scrivi `test_rag_payload_guard_ignores_comment` (contratto C-C4; FR-010):
       ```python
       def test_rag_payload_guard_ignores_comment():
           """Comment lines mentioning 'decision'/'reason' are stripped and not flagged (FR-010)."""
@@ -463,24 +463,24 @@ Import: `re`, `sertor_installer.resources.iter_asset_dir`. Nessun `pytestmark` p
 
 **B. Verifica immediata:**
 
-- [ ] Esegui il solo file nuovo — deve essere **verde**:
+- [x] Esegui il solo file nuovo — deve essere **verde**:
       ```powershell
       uv run pytest packages/sertor/tests/test_hooks_rag_no_stdout_payload.py -v
       ```
       Atteso: 4 `PASSED` (no-decision-payload + not-vacuous PS + not-vacuous JSON +
       ignores-comment).
 
-- [ ] Verifica che il file **non** abbia `pytestmark = skipif(_PWSH is None)` — la guardia deve
+- [x] Verifica che il file **non** abbia `pytestmark = skipif(_PWSH is None)` — la guardia deve
       girare senza PowerShell installato (CS-5). Se il file venisse eseguito su una macchina
       senza `pwsh`, tutti i test devono risultare `PASSED`, non `SKIPPED`.
 
-- [ ] Verifica che `test_hooks_script_copilot.py` resti **invariato** (FR-013):
+- [x] Verifica che `test_hooks_script_copilot.py` resti **invariato** (FR-013):
       ```powershell
       uv run pytest packages/sertor/tests/test_hooks_script_copilot.py -v
       ```
       Deve restare verde (o skip-for-pwsh com'era prima). Il nuovo file è indipendente.
 
-- [ ] Lint:
+- [x] Lint:
       ```powershell
       uv run ruff check packages/sertor/tests/test_hooks_rag_no_stdout_payload.py
       ```
@@ -501,7 +501,7 @@ Import: `re`, `sertor_installer.resources.iter_asset_dir`. Nessun `pytestmark` p
 
 **A. Suite nuove guardie (quickstart §1):**
 
-- [ ] Esegui le tre nuove guardie insieme — devono essere tutte **verdi**:
+- [x] Esegui le tre nuove guardie insieme — devono essere tutte **verdi**:
       ```powershell
       uv run pytest `
           packages/sertor/tests/test_copilot_hook_presence.py `
@@ -514,13 +514,13 @@ Import: `re`, `sertor_installer.resources.iter_asset_dir`. Nessun `pytestmark` p
 
 **B. Guardie esistenti invariate (FR-013, additività):**
 
-- [ ] Verifica che le guardie di schema esistenti restino verdi e indipendenti (CS-3/US4):
+- [x] Verifica che le guardie di schema esistenti restino verdi e indipendenti (CS-3/US4):
       ```powershell
       uv run pytest packages/sertor/tests/test_schema_copilot_hooks.py -v
       ```
       Tutti `PASSED`. Nessun import dai nuovi file.
 
-- [ ] Verifica che la parity guard e i test hook pwsh esistenti restino invariati:
+- [x] Verifica che la parity guard e i test hook pwsh esistenti restino invariati:
       ```powershell
       uv run pytest `
           packages/sertor/tests/test_assets_copilot_parity.py `
@@ -532,7 +532,7 @@ Import: `re`, `sertor_installer.resources.iter_asset_dir`. Nessun `pytestmark` p
 
 **C. Non-regressione suite pacchetto `sertor` (RNF-4):**
 
-- [ ] Suite `packages/sertor/tests/` completa:
+- [x] Suite `packages/sertor/tests/` completa:
       ```powershell
       uv run pytest packages/sertor/tests/ -m "not cloud" -q
       ```
@@ -540,7 +540,7 @@ Import: `re`, `sertor_installer.resources.iter_asset_dir`. Nessun `pytestmark` p
 
 **D. Non-regressione suite root (RNF-4):**
 
-- [ ] Suite root completa:
+- [x] Suite root completa:
       ```powershell
       uv run pytest -m "not cloud" -q
       ```
@@ -548,7 +548,7 @@ Import: `re`, `sertor_installer.resources.iter_asset_dir`. Nessun `pytestmark` p
 
 **E. Lint ruff su tutti i nuovi file (RNF-5):**
 
-- [ ] Lint complessivo:
+- [x] Lint complessivo:
       ```powershell
       uv run ruff check `
           packages/sertor/tests/test_copilot_hook_presence.py `
@@ -559,7 +559,7 @@ Import: `re`, `sertor_installer.resources.iter_asset_dir`. Nessun `pytestmark` p
 
 **F. Verifica che nessun file di produzione sia stato modificato (RNF-1/RNF-2):**
 
-- [ ] Controlla che i file di produzione siano invariati:
+- [x] Controlla che i file di produzione siano invariati:
       ```powershell
       git diff --name-only
       ```
@@ -575,32 +575,32 @@ Import: `re`, `sertor_installer.resources.iter_asset_dir`. Nessun `pytestmark` p
 
 **Mappa**: CS-1..5 · RNF-1/2/3/4/5 · US1..6 · tutti i FR
 
-- [ ] **CS-1 (event-presence guard attiva):** `test_copilot_hook_presence.py::test_real_rag_wiring_has_all_events`
+- [x] **CS-1 (event-presence guard attiva):** `test_copilot_hook_presence.py::test_real_rag_wiring_has_all_events`
       verde; `test_missing_pretooluse_fails_naming_event` verde (l'anti-pattern dimostra che la
       rimozione del frammento PreToolUse rende la guardia rossa nominando `PreToolUse`). ✓
 
-- [ ] **CS-2 (budget guard attiva):** `test_blocks_within_budget` verde (52 ≤ 60, 49 ≤ 58, 64 ≤ 70);
+- [x] **CS-2 (budget guard attiva):** `test_blocks_within_budget` verde (52 ≤ 60, 49 ≤ 58, 64 ≤ 70);
       `test_budget_coverage_exhaustive` verde (3 blocchi registrati = 3 blocchi scoperti);
       `test_budget_guard_not_vacuous` verde (80 righe > 60 → fallimento corretto). ✓
 
-- [ ] **CS-3 (difetto storico FEAT-049 coperto):** `test_schema_copilot_hooks.py` verde e invariato;
+- [x] **CS-3 (difetto storico FEAT-049 coperto):** `test_schema_copilot_hooks.py` verde e invariato;
       la shape-guard di presenza non lo importa né lo duplica (file separati, responsabilità distinte:
       schema ≠ presenza). ✓
 
-- [ ] **CS-4 (non-regressione suite):** suite `packages/sertor`, `packages/sertor-flow`, root —
+- [x] **CS-4 (non-regressione suite):** suite `packages/sertor`, `packages/sertor-flow`, root —
       zero nuovi fallimenti. ✓
 
-- [ ] **CS-5 (offline-safe):** Gruppi A e B girano senza rete/pwsh/uv-subprocess (fixture
+- [x] **CS-5 (offline-safe):** Gruppi A e B girano senza rete/pwsh/uv-subprocess (fixture
       `FakeCommandRunner` + `importlib.resources`); Gruppo C gira senza `pytestmark` skipif-pwsh.
       Verifica su una shell senza `pwsh` installato: i test restano `PASSED` (non `SKIPPED`). ✓
 
-- [ ] **Invarianza `sertor_core` (RNF-1):** nessun file in `src/sertor_core/` modificato;
+- [x] **Invarianza `sertor_core` (RNF-1):** nessun file in `src/sertor_core/` modificato;
       zero import di `sertor_core` nei tre nuovi test. ✓
 
-- [ ] **Invarianza codice di produzione (RNF-2):** `install_rag.py`, `surfaces.py`, hook `.ps1`,
+- [x] **Invarianza codice di produzione (RNF-2):** `install_rag.py`, `surfaces.py`, hook `.ps1`,
       blocchi `claude-md-block*.md` **byte-identici** prima e dopo. ✓
 
-- [ ] **Impatto minimale (RNF-5):** esattamente 3 nuovi file creati; 0 file di produzione toccati.
+- [x] **Impatto minimale (RNF-5):** esattamente 3 nuovi file creati; 0 file di produzione toccati.
       Verifica:
       ```powershell
       git diff --name-only --diff-filter=A  # file aggiunti
@@ -608,7 +608,7 @@ Import: `re`, `sertor_installer.resources.iter_asset_dir`. Nessun `pytestmark` p
       Atteso: 3 file (`test_copilot_hook_presence.py`, `test_claude_md_block_budget.py`,
       `test_hooks_rag_no_stdout_payload.py` + `tasks.md`) e nessun altro.
 
-- [ ] Segnala follow-up già a casa durevole (non-bloccanti):
+- [x] Segnala follow-up già a casa durevole (non-bloccanti):
   - Sincronizzazione `assets/rag/**` ↔ `.claude/` (buco noto) + riconciliazione fork IT eval-skill
     → **FEAT-025** (backlog debito-tecnico).
   - Guard automatico che aggiorna la soglia budget → **escluso** per disegno (renderebbe il freno
