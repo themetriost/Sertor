@@ -445,7 +445,15 @@ chi dovrebbe?* Corollari operativi:
    corpus possono saltarlo; **obbligatorio dopo un re-index / merge su `master`**. *(Mitigazione manuale
    in attesa del fix di prodotto: il server che rileva lo store riscritto e re-inizializza il client.)*
 
-9. **\<altre azioni\>** — questa lista è **estendibile**: ogni azione che l'utente chiede di rendere
+9. **Archivia le richieste da altri agenti processate** — quando una richiesta arrivata nel canale
+   `wiki/sources/input-other-agents/` (handoff/feedback/reply da un altro agente o progetto) è stata
+   **elaborata** — cioè letta e portata a una casa durevole (backlog/requirements/implementazione) o a
+   una decisione — **spostala** in `wiki/sources/input-other-agents/processed/`, così **non la si
+   rielabora** in una sessione futura (gemella della convenzione `usersfeedback/ → processed/`).
+   Aggiorna i riferimenti relativi che la citano; le nostre analisi derivate (recon, note di risposta
+   in uscita) possono restare o seguirla, a giudizio. **Regola *locale* di Sertor: NON va nei blocchi
+   `claude-md-block` distribuiti agli ospiti** (è dogfood/governance interna, non una pratica dell'ospite).
+10. **\<altre azioni\>** — questa lista è **estendibile**: ogni azione che l'utente chiede di rendere
    *standing* va aggiunta qui, e da quel momento fa parte del rituale a ogni step.
 
 **Responsabilità & delega.** Che queste azioni **avvengano** a ogni step è responsabilità del flusso
