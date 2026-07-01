@@ -51,6 +51,28 @@ def test_custom_agent_drops_injected_model():
     assert "tools: z" in front
 
 
+def _model_value(front: str) -> str | None:
+    """Parsed value of a `model:` line (not a substring check — `claude-haiku-4.5` legitimately
+    contains `haiku`; research DA-D-3)."""
+    for line in front.splitlines():
+        if line.strip().startswith("model:"):
+            return line.split(":", 1)[1].strip()
+    return None
+
+
+def test_custom_agent_substitutes_policy_model_never_echoes_claude_alias():
+    """E2-FEAT-015: an asset with `model: haiku` (Claude alias) + a policy model-id →
+    the rendered file carries the POLICY id, never the Claude alias, even though the
+    policy id may contain it as a substring (e.g. `claude-haiku-4.5`)."""
+    asset = "---\nname: x\ndescription: y\ntools: z\nmodel: haiku\n---\n\nbody\n"
+    front = split_frontmatter(render_custom_agent(asset, model="claude-haiku-4.5"))[0]
+    assert _model_value(front) == "claude-haiku-4.5"
+    assert _model_value(front) not in {"haiku", "sonnet", "opus"}
+    assert "name: x" in front
+    assert "description: y" in front
+    assert "tools: z" in front
+
+
 def test_prompt_body_equals_canonical_skill_body():
     canonical = read_asset_text("claude/skills/wiki-author/SKILL.md")
     rendered = render_prompt_file(canonical)

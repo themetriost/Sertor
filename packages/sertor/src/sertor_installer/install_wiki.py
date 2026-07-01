@@ -36,6 +36,7 @@ from sertor_install_kit.lifecycle import (
 from sertor_install_kit.lifecycle import (
     execute_lifecycle as _kit_execute_lifecycle,
 )
+from sertor_install_kit.model_policy import resolve_model
 from sertor_install_kit.settings_merge import remove_settings_entries
 from sertor_installer import claude_md, config_gen, settings_merge
 from sertor_installer.artifacts import (
@@ -213,12 +214,17 @@ def _build_copilot_wiki_plan(assistant: AssistantId) -> list[Artifact]:
         is the DISPATCHER rendered from the canonical command body (it absorbs the `/wiki` command,
         which has no native vehicle on the CLI), and the support payload (playbook/ops/craft) is
         byte-copied. Copilot auto-discovers the whole folder; bodies use relative co-located refs.
-      - AGENT (`wiki-curator`): `.github/agents/wiki-curator.agent.md` (custom-agent, no `model:`).
+      - AGENT (`wiki-curator`): `.github/agents/wiki-curator.agent.md` (custom-agent with the
+        policy `model:`, E2-FEAT-015).
       - HOOK: reuse `wiki-pending-check.ps1` byte-for-byte + GENERATED native wiring
         (`render_copilot_hooks`); SessionStart is a native prompt (no script).
       - INSTRUCTION_BLOCK → `.github/copilot-instructions.md`.
       - CONFIG/STRUCTURE: assistant-agnostic (the wiki scaffold lives in `wiki/`).
     """
+    # Fail-loud BEFORE any artifact is written (FR-008/009, DA-D-4): this plan deposits a
+    # single Copilot agent (`wiki-curator`) — validate the policy covers it up front.
+    resolve_model("wiki-curator")
+
     plan: list[Artifact] = []
 
     # SKILL (native): the dispatcher SKILL.md (rendered from the command) + the byte-copied support
@@ -238,7 +244,7 @@ def _build_copilot_wiki_plan(assistant: AssistantId) -> list[Artifact]:
                 WriteStrategy.CREATE_IF_ABSENT,
             )
         )
-    # AGENT: render the persona into a custom-agent file (no model:).
+    # AGENT: render the persona into a custom-agent file (policy model:, E2-FEAT-015).
     plan.append(
         Artifact(ArtifactKind.FILE, _WIKI_AGENT_SRC, _WIKI_AGENT_DST,
                  WriteStrategy.CREATE_IF_ABSENT)
@@ -292,7 +298,8 @@ def _render_for_target(art: Artifact) -> str:
     if art.target_rel.endswith(_RENDER_PROMPT_SUFFIX):
         return render_prompt_file(canonical)
     if art.target_rel.endswith(_RENDER_AGENT_SUFFIX):
-        return render_custom_agent(canonical)
+        name = art.target_rel.rsplit("/", 1)[-1].removesuffix(_RENDER_AGENT_SUFFIX)
+        return render_custom_agent(canonical, model=resolve_model(name))
     return canonical
 
 

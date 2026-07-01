@@ -21,6 +21,15 @@ _PROMPT_ASSET = "---\nmode: agent\n---\n\nthe body\n"
 _AGENT_ASSET = "---\nname: x\ndescription: y\ntools: a, b\nmodel: haiku\n---\n\npersona\n"
 
 
+def _model_value(front: str) -> str | None:
+    """Parsed value of a `model:` line (not a substring check — `claude-haiku-4.5` legitimately
+    contains `haiku`; research DA-D-3)."""
+    for line in front.splitlines():
+        if line.strip().startswith("model:"):
+            return line.split(":", 1)[1].strip()
+    return None
+
+
 # --- prompt-file: agent: not mode: (F1 / SC-006) ----------------------------------------------
 
 
@@ -64,9 +73,14 @@ def test_custom_agent_preserves_identity():
 
 
 def test_custom_agent_include_model_opt_in_for_completeness():
-    """The omission is a caller decision: `include_model=True` would keep it (Claude path n/a)."""
-    front = split_frontmatter(render_custom_agent(_AGENT_ASSET, include_model=True))[0]
-    assert "model: haiku" in front
+    """E2-FEAT-015 (was: `include_model=True` echo): the model is caller-supplied POLICY,
+    never an echo of the canonical value — passing `model=<policy-id>` emits exactly that
+    value, never the Claude alias (`haiku`) the canonical asset carries."""
+    front = split_frontmatter(
+        render_custom_agent(_AGENT_ASSET, model="claude-haiku-4.5")
+    )[0]
+    assert _model_value(front) == "claude-haiku-4.5"
+    assert _model_value(front) not in {"haiku", "sonnet", "opus"}
 
 
 # --- custom-agent: a description with a colon must be YAML-quoted (regression 2026-06-17) -------

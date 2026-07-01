@@ -104,7 +104,22 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > collaterale (non roadmap): `.env` dogfood ha `SERTOR_OBSERVABILITY_OTEL` attivo senza collector su
 > `localhost:4318` → rumore di connessione a ogni comando.
 
-**🔄 In pipeline ora:** *(nulla di attivo — `077` consegnato)*
+**🔄 In pipeline ora:**
+
+- **E2-FEAT-015 — default model-policy subagent Copilot CLI — 🔄 PR APERTA, CI VERDE, attesa merge.**
+  *Cosa:* i 5 agenti Sertor-authored resi come `.agent.md` su Copilot CLI ricevono un `model:` di default
+  esplicito da una **fonte unica versionata** nel kit (`sertor_install_kit/model_policy.py`), con fail-loud
+  install-time se il profilo non copre un agente in ambito; path Claude byte-identico, `sertor-core`
+  invariato (Principio XI). *Finding di verifica:* la config `subagents.agents.<name>.model` proposta
+  dall'utente **non è un meccanismo di repo** → il default vive nel frontmatter `.agent.md` (doc ufficiale);
+  l'override utente via `/subagents` (in `~/.copilot/settings.json`) resta al sicuro e vince a runtime.
+  *Dove:* branch `083-default-model-policy-copilot`, [PR #135](https://github.com/themetriost/Sertor/pull/135);
+  SpecKit completo (spec 18/18 · plan Constitution **12/12 + missione** · 21 task). *Test:* kit **151** ·
+  sertor **487** · sertor-flow **140** · root **1134 pass / 3 skip**, ruff clean; CI Win+Linux verde.
+  *Prossimo passo concreto:* merge (utente) → poi re-index dogfood + smoke MCP. *Follow-up non-bloccante
+  (giudizio LLM, solo LIVE):* verificare su ospite Copilot reale che (a) l'override `/subagents` sopravviva
+  a `upgrade` e (b) i model-ID (`claude-haiku-4.5`/`claude-sonnet-4.6`) siano abilitati nel tenant.
+  *Scope out promosso:* modello per gli `speckit.*` → **E2-FEAT-016** (Could, previa spike).
 
 - **E10-FEAT-019 ✅ CONSEGNATA (merge `629481b`/PR #125, 2026-06-29) su `master`.** SpecKit completo
   specify→plan→tasks→implement, Constitution **12/12 + missione**, ruff clean; test: sertor **443** ·

@@ -29,7 +29,7 @@ from sertor_install_kit.claude_md import (
 )
 from sertor_install_kit.command_runner import CommandResult, CommandRunner, SubprocessRunner
 from sertor_install_kit.env_merge import merge_env
-from sertor_install_kit.errors import ConfigError, InstallerError
+from sertor_install_kit.errors import ConfigError, InstallerError, ModelPolicyError
 from sertor_install_kit.executor import execute_plan
 from sertor_install_kit.gitignore_append import (
     RUNTIME_IGNORES,
@@ -49,6 +49,7 @@ from sertor_install_kit.lifecycle import (
     update_file_if_changed,
 )
 from sertor_install_kit.mcp_merge import merge_mcp, remove_mcp_server
+from sertor_install_kit.model_policy import IN_SCOPE_AGENTS, MODEL_POLICY_VERSION, resolve_model
 from sertor_install_kit.observability import log_event
 from sertor_install_kit.report import InstallReport
 from sertor_install_kit.resources import asset_path, iter_asset_dir, read_asset_text
@@ -79,6 +80,7 @@ __all__ = [
     # errors
     "InstallerError",
     "ConfigError",
+    "ModelPolicyError",
     "McpRegistrationError",
     # report
     "InstallReport",
@@ -126,4 +128,8 @@ __all__ = [
     # sync
     "sync_assets",
     "sync_subtree",
+    # model policy (E2-FEAT-015)
+    "resolve_model",
+    "MODEL_POLICY_VERSION",
+    "IN_SCOPE_AGENTS",
 ]

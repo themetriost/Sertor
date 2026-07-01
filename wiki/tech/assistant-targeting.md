@@ -3,7 +3,7 @@ title: Targeting per-assistente (AssistantProfile / Surface)
 type: tech
 tags: [installer, sertor-install-kit, copilot, copilot-cli, claude, host-agnostico, principio-x, feat-007]
 created: 2026-06-15
-updated: 2026-06-19 (sezione «Parità by construction» FEAT-001/056 RIVISTA al meccanismo NATIVO: skill nativa `.github/skills/wiki-author/` (dispatcher SKILL.md che assorbe `/wiki` + payload byte-copiato), riferimenti relativi co-locati; abbandonati custom-agent-skill + `.github/sertor/` + `{SKILL_DIR}`) · 2026-06-18 (+ sezione «Parità by construction» FEAT-001/feature 056)
+updated: 2026-07-01 (aggiunta sezione «Default model-policy per-agente (Copilot CLI)» FEAT-015: frontmatter `model:` dai custom-agent, fonte unica versionata, fail-loud install-time, guardie riconciliate) · 2026-06-19 (sezione «Parità by construction» FEAT-001/056 RIVISTA al meccanismo NATIVO: skill nativa `.github/skills/wiki-author/` (dispatcher SKILL.md che assorbe `/wiki` + payload byte-copiato), riferimenti relativi co-locati; abbandonati custom-agent-skill + `.github/sertor/` + `{SKILL_DIR}`) · 2026-06-18 (+ sezione «Parità by construction» FEAT-001/feature 056)
 sources: ["packages/sertor-install-kit/src/sertor_install_kit/assistant.py", "packages/sertor/src/sertor_installer/install_wiki.py", "packages/sertor/src/sertor_installer/install_rag.py", "specs/044-distribuzione-copilot/plan.md", "requirements/sertor-cli/distribuzione-copilot/requirements.md"]
 ---
 
@@ -132,10 +132,46 @@ La regola che chiude il buco è **host-agnosticità alla sorgente** + **deposito
 **Enforcement = guardia di parità** (`packages/sertor/tests/test_assets_copilot_parity.py`): rende i
 piani Copilot (wiki + governance + rag) — e quello Claude per la closure — e fallisce su un body che
 reintroduce `.claude/`, uno slash-command, un nome di assistente, **oppure** che cita un file del
-payload **non depositato** (*closure dei riferimenti*). Un riferimento dangling fa fallire nominando
+payload **non depositato** (*closure dei riferimenti*). Un riferimento dangling fa fallisce nominando
 il file: un agente «rotto in silenzio» (playbook mancante) diventa un **fallimento esplicito** del
 test (Principio IV). La regola è codificata in tre sedi: questa pagina, la sezione *Host-agnostic
 authoring* del [[wiki-playbook]], e la **Definition of Done** del blocco rituale distribuito.
+
+## Default model-policy per-agente (Copilot CLI, FEAT-015)
+
+**Meccanismo:** i 5 agenti Sertor-authored (concierge, configuration-manager, requirements-analyst,
+requirements, wiki-curator) ricevono un campo `model:` nel frontmatter del custom-agent `.agent.md`,
+**centralizzato e versionato** nel kit (`model_policy.py`). Risolve la richiesta del 2026-06-30
+([[copilot-default-models]], elaborata in PR #135).
+
+**Fonte unica versionata** (`packages/sertor-install-kit/src/sertor_install_kit/model_policy.py`):
+- Costante `MODEL_POLICY_VERSION = "1.0.0"` (indipendente dalla versione Sertor)
+- Mappa agente→modello: concierge/configuration-manager → `claude-haiku-4.5` (dispatcher, basso carico);
+  requirements-analyst/requirements/wiki-curator → `claude-sonnet-4.6` (reasoning + sintesi)
+- Funzione `resolve_model(agent_name, policy_version)` fail-loud su agente fuori ambito → zero
+  deposito parziale (Principio IV), niente silent config-mismatch
+- Importata da **entrambi** i pacchetti (`sertor` + `sertor-flow`) → niente drift, niente dipendenza
+  cross-pacchetto
+
+**Integrazione plan-builder:** `render_custom_agent(…, model: str | None)` riceve il modello dal
+profilo/policy e lo scrive nel frontmatter YAML di Copilot CLI. Path Claude byte-identico (niente
+echo dell'alias). Fail-loud install-time se il profilo Copilot CLI non copre un agente atteso.
+
+**Guardie riconciliate:** le guardie di test distinguono alias Claude **nudo** (`haiku`/`sonnet`/`opus`,
+**assente**, cattivo) dal campo `model:` **di policy** (`claude-haiku-4.5`, **presente**, buono). Parsing
+YAML-aware (chiave `model:`, non substring, poiché `claude-haiku-4.5` contiene `haiku`).
+
+**Finding di verifica:** il meccanismo config `subagents.agents.<name>.model` di Copilot CLI è
+runtime settings, NON un meccanismo di repository. La doc ufficiale GitHub stabilisce che il modello
+di un custom-agent Copilot CLI si configura mediante il campo `model:` nel frontmatter `.agent.md`
+e (secondariamente) via user settings machine-global `~/.copilot/settings.json`. Il default nel
+frontmatter è **al sicuro dagli upgrade per costruzione** perché il file `settings.json` dell'utente
+può sempre sovrascrittere a runtime.
+
+**Scope out dichiarato:** gli agenti vendorati di spec-kit (`speckit.*`: specify/clarify/plan/…)
+rimangono fuori ambito → follow-up FEAT-016 (Could), post-verifica supporto `model:` sui prompt-file.
+
+Record completo: [[feat-083-default-model-policy-copilot]].
 
 ## Relazioni
 

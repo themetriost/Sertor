@@ -150,6 +150,38 @@ server** (section 1) and used by the model automatically once loaded — no agen
 
 ---
 
+## Model defaults for the Sertor-authored agents
+
+Each of the five Sertor-authored custom-agents gets an explicit **default model** at install
+time, set via the `model:` field of its `.agent.md` frontmatter (a versioned profile shared
+by `sertor` and `sertor-flow` — see
+[`packages/sertor/docs/install.md`](../packages/sertor/docs/install.md)):
+
+| Agent | Package | Default model | Rationale |
+|---|---|---|---|
+| `concierge` | `sertor` | `claude-haiku-4.5` | thin dispatcher — mechanical task, economical/fast |
+| `wiki-curator` | `sertor` | `claude-sonnet-4.6` | synthesis/curation — capable |
+| `requirements-analyst` | `sertor-flow` | `claude-sonnet-4.6` | requirements analysis/writing — capable |
+| `configuration-manager` | `sertor-flow` | `claude-haiku-4.5` | git operations from a brief — mechanical, economical/fast |
+| `requirements` | `sertor-flow` | `claude-sonnet-4.6` | EARS elicitation/writing — capable |
+
+**It's a default, not a lock-in.** Change it any time with the CLI's `/subagents` picker
+(persists in `~/.copilot/settings.json`, a file Sertor never touches — the override wins at
+runtime and survives a Sertor upgrade), or by editing the `model:` line in the `.agent.md`
+frontmatter directly (a manual edit is subject to the normal owned-file re-render on the next
+`upgrade`, like the rest of the frontmatter).
+
+**Out of scope:** the `speckit.*` prompt-files (`speckit.specify`/`clarify`/`plan`/... vendored
+by `specify init`) do **not** receive a model default from this mechanism — GitHub's docs do
+not confirm prompt-file support for `model:` (tracked as a follow-up,
+[`FEAT-016`](../requirements/sertor-cli/epic.md) in the `sertor-cli` backlog).
+
+**No tenant probe.** The install is fully offline: it never checks whether a model-ID is
+enabled in your Copilot plan/tenant. If a default isn't available to you, Copilot will
+surface that at runtime when you invoke the agent — not at install time.
+
+---
+
 ## Migrating from the VS Code target
 
 Earlier releases offered a second Copilot target, **`--assistant copilot`**, for Copilot **in

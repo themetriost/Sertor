@@ -24,6 +24,7 @@ import re
 from pathlib import Path
 
 from sertor_install_kit.assistant import AssistantId
+from sertor_install_kit.model_policy import resolve_model
 from sertor_installer.artifacts import Artifact, ArtifactKind
 from sertor_installer.install_rag import build_rag_plan
 from sertor_installer.install_wiki import _render_for_target, build_install_plan
@@ -66,15 +67,18 @@ def _render_wiki(art: Artifact) -> str:
 
 
 def _render_rag(art: Artifact) -> str:
-    # G1 (E12, R-1 CRITICAL): mirror the REAL render of the plan (`install_rag._render_rag_file`).
-    # A Copilot custom-agent (`.agent.md`, e.g. `concierge`) is rendered via `render_custom_agent`
-    # (frontmatter translated, `model:` omitted); every other FILE/MARKER_BLOCK body is byte-copy.
-    # If this byte-copied the `.agent.md` source instead, the Claude `model: sonnet` frontmatter
-    # would slip past the no-leak checks (a/b/c) on Copilot.
+    # G1 (E12, R-1 CRITICAL): mirror the REAL render of the plan
+    # (`install_rag._render_rag_file`). A Copilot custom-agent (`.agent.md`, e.g.
+    # `concierge`) is rendered via `render_custom_agent` with the POLICY model
+    # substituted (E2-FEAT-015); every other FILE/MARKER_BLOCK body is byte-copy. If this
+    # byte-copied the `.agent.md` source instead — or omitted the policy model — the Claude
+    # `model: sonnet` frontmatter (or a bare alias) could slip past the no-leak checks
+    # (a/b/c) on Copilot.
     assert art.source is not None
     text = read_asset_text(art.source)
     if art.target_rel.endswith(".agent.md"):
-        return render_custom_agent(text)
+        name = art.target_rel.rsplit("/", 1)[-1].removesuffix(".agent.md")
+        return render_custom_agent(text, model=resolve_model(name))
     return text
 
 
