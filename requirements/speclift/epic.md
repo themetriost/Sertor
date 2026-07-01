@@ -167,8 +167,11 @@ imminenti che invaliderebbero il vendoring nel breve periodo.
 Pochi, veramente validi per l'intera epica (ogni feature a valle li eredita):
 
 - **REQ-E1 (Ubiquitous):** *The speclift capability shall never import `sertor_core` directly; it
-  shall interact with Sertor's retrieval exclusively through the `sertor-rag` CLI vehicle (subprocess),
-  consistent with Principio XI.*
+  shall interact with Sertor's retrieval exclusively through Sertor's supported agent-facing vehicle
+  — the `sertor-rag` **MCP server** (encapsulated in a skill), not the `sertor-rag` CLI — consistent
+  with Principio XI and with Sertor's rule that external consumers integrate via the MCP (the CLI is a
+  thin/internal consumer). Historical note: the upstream Sinthari code uses the CLI vehicle; the CLI→MCP
+  divergence is intentional and has been fed back to Sinthari (see FEAT-001 self-host, Gruppo H).*
 - **REQ-E2 (Unwanted):** *If the Sertor RAG index is missing or unreachable, then speclift shall fail
   loud with an explicit, actionable error and a dedicated exit code, never degrading silently or
   fabricating anchored requirements.*

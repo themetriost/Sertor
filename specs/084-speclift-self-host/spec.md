@@ -1,8 +1,9 @@
 # Feature Specification: Self-hosting / dogfooding di SpecLift su Sertor (speclift FEAT-001)
 
-**Feature Branch**: `084-speclift-self-host` · **Created**: 2026-07-01 · **Status**: Draft
+**Feature Branch**: `084-speclift-self-host` · **Created**: 2026-07-01 · **Status**: Draft (rigenerata
+dopo cambio di decisione: retrieval via **MCP dentro una skill**, non via CLI)
 
-<!-- Deriva da: FEAT-001 (epica speclift) — requirements/speclift/self-host/requirements.md
+<!-- Deriva da: FEAT-001 (epica speclift) — requirements/speclift/self-host/requirements.md (REVISIONATO)
      Fonti a monte: wiki/sources/input-other-agents/speclift-handoff-sinthari.md (handoff),
      wiki/sources/input-other-agents/speclift-recon.md (ricognizione ancorata a file:riga). -->
 
@@ -11,9 +12,10 @@
 capacità `diff → requisiti EARS ancorati multi-quota`: dato un changeset git genera requisiti su tre
 livelli insieme (capacità utente / comportamento / implementazione), ognuno legato a `file:righe` +
 simbolo + (se esiste) il test che fallirebbe se il requisito si rompesse, **riverificato sul filesystem**
-prima di essere reso (il "moat"). Il meccanismo è un "sandwich deterministico": una CLI meccanica a due
-marce (`speclift bundle` estrae l'evidenza, `speclift assemble` la riverifica e la rende) più **un solo
-stadio di giudizio** — l'agente chiamante che scrive le frasi EARS via la skill `speclift`.
+prima di essere reso (il "moat"). Il meccanismo è un "sandwich deterministico": stadi meccanici a due
+marce (`speclift bundle` impacchetta l'evidenza, `speclift assemble` la riverifica e la rende) più
+**stadi di giudizio** affidati all'agente chiamante, che orchestra la localizzazione dell'evidenza e
+scrive le frasi EARS via la skill `speclift`.
 
 Questa feature è **solo** il primo dei due punti dell'handoff: **rendere SpecLift utilizzabile nel repo
 Sertor** (self-hosting/dogfooding) per generare requisiti EARS ancorati dai changeset reali di Sertor,
@@ -32,25 +34,49 @@ alimentando il "lint semantico" del rituale di step con evidenza ancorata invece
 > i documenti (`requirements/`, wiki, `CLAUDE.md`) **onesti rispetto al codice reale**, prevenendo il drift
 > che il punto 3 del rituale di step («lint semantico di allineamento») oggi cerca di correggere a mano.
 > Rafforza dunque la **veridicità e freschezza del contesto** che il RAG poi serve — non lo produce, ma lo
-> mantiene sano nel tempo.
+> mantiene sano nel tempo. In più, questa versione self-host **consuma il contratto d'integrazione stabile
+> che Sertor pubblica per gli agenti — il server MCP** — rispettando il principio per cui i consumatori
+> esterni si integrano via MCP, non via CLI.
 
 > **Natura del cambiamento: ADDITIVA / vendoring di un nuovo membro del workspace, ZERO runtime di
 > `sertor_core` (Principio XI).** La feature aggiunge il pacchetto `packages/speclift` al workspace `uv` e
 > deposita la skill per il dogfood; **non** importa né invoca `sertor_core`, non aggiunge porte/adapter/
 > engine/comandi al core, non introduce un LLM interno alla CLI. SpecLift consuma il retrieval di Sertor
-> **esclusivamente** tramite il vehicle CLI `sertor-rag search --type code --json` (subprocess). Il
+> **esclusivamente** tramite il vehicle **MCP** (tool `search_code`), invocato dall'agente orchestratore
+> dentro la skill — **mai** tramite la CLI `sertor-rag search` e **mai** importando la libreria. Il
 > pacchetto core resta **byte-identico**: zero modifica, zero nuovo import.
+
+> **Cambio di decisione del proprietario (vincolante, sostituisce l'approccio CLI iniziale — non
+> riaprire).** L'approccio iniziale metteva in ambito «configurare il vehicle CLI (`sertor-rag search`)
+> per la root Sertor». È **SUPERATO**. Principio guida: **Sertor pubblica il server MCP proprio perché i
+> consumatori esterni NON dipendano dalla CLI** — la CLI `sertor-rag` è un consumatore interno/sottile,
+> l'**MCP è il contratto d'integrazione** per gli agenti. Quindi il self-host di SpecLift **non deve
+> dipendere dalla CLI**: la localizzazione dell'evidenza avviene tramite il tool MCP `search_code`,
+> orchestrato dall'agente dentro la skill; l'adapter CLI vendorato `adapters/rag_sertor.py`
+> (`SertorRagLocator`) **non viene usato** e viene **escluso fisicamente** dalla copia vendorata.
 
 > **Decisioni di scope — FISSATE (ratificate; non riaprire).**
 > - **Vendoring:** SpecLift diventa un nuovo membro del workspace `packages/speclift`, self-contained
->   (hatchling, dominio puro ports&adapters, ZERO import `sertor_core` — verificato dal recon).
+>   (hatchling, dominio puro ports&adapters, ZERO import `sertor_core` — verificato dal recon), con **nota
+>   di provenienza** esplicita (repo/commit/versione).
+> - **Retrieval via MCP dentro una skill, NON via CLI:** il self-host **non** dipende dalla CLI
+>   `sertor-rag search`; l'adapter `SertorRagLocator`/`rag_sertor.py` **non è usato** ed è **escluso
+>   fisicamente** dal pacchetto vendorato. La localizzazione dell'evidenza (simboli/test) avviene tramite
+>   il tool MCP `search_code`, invocato dall'agente orchestratore dentro la skill. La porta
+>   `EvidenceLocator` è **alimentata** dall'evidenza già ottenuta dall'agente, attraverso un'interfaccia
+>   esplicita e ispezionabile.
+> - **Deviazione dichiarata dal «sandwich a un solo stadio intelligente» di Sinthari:** ora l'agente tocca
+>   **due stadi** — localizza l'evidenza (via MCP) **E** scrive le frasi EARS — non uno solo. È una
+>   deviazione **intenzionale e dichiarata**, non un'estensione silenziosa; il feedback è **rimandato a
+>   Sinthari** sul canale `input-other-agents`.
 > - **Solo self-host:** la distribuzione su ospiti esterni (installer/packaging) è **FEAT-002**, epica a
 >   parte, con casa di distribuzione non ancora decisa — **fuori ambito qui**.
-> - **`sertor_core` INVARIATO** (Principio XI): il legame con Sertor è un solo comando CLI, mai un import.
-> - **Onestà doc↔codice (non negoziabile):** il legame reale col RAG è **un solo comando**
->   `sertor-rag search --type code --json`, **NON** i tool MCP di navigazione del code-graph
->   (`find_symbol`/`who_calls`) che la narrativa upstream (handoff/wiki Sinthari) descrive. Questa
->   discrepanza va **dichiarata** in questo artefatto e in ogni documento derivato — non propagata.
+> - **`sertor_core` INVARIATO** (Principio XI): il legame con Sertor è il tool MCP `search_code`, mai un
+>   import, mai la CLI.
+> - **Onestà sulla divergenza (Gruppo H, invertito):** il self-host **adotta** l'MCP in divergenza
+>   intenzionale dal codice vendorato/upstream (che usa la CLI `sertor-rag search`); il gap residuo
+>   rispetto alla narrativa upstream (navigazione code-graph `find_symbol`/`who_calls`) **resta** e va
+>   dichiarato — `search_code` è ricerca semantica, non navigazione del code-graph.
 > - **IT invariata:** codice/commenti/skill restano in italiano per il self-host; la traduzione IT→EN
 >   host-facing è tema trasversale (E12), fuori ambito.
 > - **Nessuna automazione:** SpecLift resta uno strumento su richiesta, non un gate automatico né un passo
@@ -61,46 +87,75 @@ alimentando il "lint semantico" del rituale di step con evidenza ancorata invece
 > - Il pacchetto `speclift` è self-contained sotto `src/speclift/`; il grep `import sertor_core` su `src/`
 >   dà **zero import** (le uniche occorrenze sono commenti «mai `import sertor_core`» in `config.py:26`,
 >   `rag_sertor.py:3`).
-> - Consumo RAG = un solo sottocomando `sertor-rag search <q> --type code --json -k 5` via subprocess
->   (`rag_sertor.py:86`); l'output atteso è un array JSON piatto con almeno `path` (opzionale `chunk_id`)
->   — **compatibile** con la CLI Sertor odierna (`--type code` non è impattato dal breaking change di
->   `--type both`, feature 070).
-> - Fail-loud RAG: indice mancante/irraggiungibile/output non-JSON → `RagUnavailableError` → **exit 3**
->   (`rag_sertor.py:87-99,120-124`). SpecLift **consuma** l'indice, non lo costruisce.
-> - Vehicle di default hardcodato `("uv","run","--project",".sertor","sertor-rag")` (`config.py:27`, campo
->   `Config.sertor_rag_vehicle`, letto come costante module-level `DEFAULT_CONFIG` in `cli.py`); **nessun**
->   flag CLI né env var di override esiste oggi. Nel repo Sertor il RAG vive a **root** (`uv run
->   sertor-rag`), non in `.sertor/`.
+> - **Fatto di provenienza (NON usato nel self-host):** l'adapter CLI vendorato consuma il RAG con un solo
+>   sottocomando `sertor-rag search <q> --type code --json -k 5` via subprocess (`rag_sertor.py:86`), con
+>   vehicle di default hardcodato `("uv","run","--project",".sertor","sertor-rag")` (`config.py:27`, campo
+>   `Config.sertor_rag_vehicle`). Questo path — `SertorRagLocator`/`rag_sertor.py` — è **escluso
+>   fisicamente** dalla copia vendorata (vedi DA-D-3); è riportato qui solo come tracciabilità.
+> - **Vehicle del self-host = tool MCP `search_code`** del server `sertor-rag` (le istruzioni del server
+>   prescrivono di citare sempre `path#chunk`): ricerca semantica sul codice, **non** navigazione del
+>   code-graph (`find_symbol`/`who_calls`).
+> - Precedente più vicino a un adapter «alimentato» invece che «attivo»: `FakeLocator` in
+>   `tests/unit/test_locate_evidence.py` (implementa `locate_symbols`/`locate_tests` restituendo dati
+>   precostituiti) — la classe di produzione del self-host può ricalcarne la forma (stessa interfaccia di
+>   porta, dati letti da un artefatto invece che cablati nel test).
+> - Fail-loud RAG upstream: indice mancante/irraggiungibile/output non-JSON → `RagUnavailableError` → exit
+>   dedicato. SpecLift **consuma** l'indice, non lo costruisce (NFR-4).
 > - `requires-python = ">=3.12"` + `target-version = "py312"`; nessuna sintassi 3.12-only trovata nel grep
 >   (`StrEnum` è 3.11+) → il pin è **probabilmente riducibile** a `>=3.11`, da confermare con la suite.
 > - Unica dipendenza runtime dichiarata: `jsonschema>=4.0`, usata **solo** nei test di contratto.
 > - La skill (`skills/speclift/SKILL.md`) è già **host-agnostica** (verificato: nessun path assistente,
->   nessuno slash-command, nessun nome-modello).
+>   nessuno slash-command, nessun nome-modello); il self-host la **estende** a orchestrare anche la
+>   localizzazione dell'evidenza via MCP (assente nell'upstream, la cui CLI la esegue internamente).
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 — SpecLift produce evidenza ancorata dai changeset reali di Sertor (P1, Must)
-Un contributore di Sertor, con l'indice RAG del repo costruito e fresco, esegue `speclift bundle <ref>`
-su un commit reale di Sertor e ottiene un **fascicolo di evidenza non vuoto** con àncore su file/simboli
-Sertor reali. Dopo aver scritto le frasi EARS (lo stadio di giudizio) e passato il tutto a `speclift
-assemble`, ottiene un **report canonico** (JSON + Markdown) le cui àncore sono **riverificate** sul
-filesystem di Sertor — nessuna àncora non verificata accettata in silenzio (finisce sotto `excluded`).
+### User Story 1 — SpecLift produce evidenza ancorata dai changeset reali di Sertor, end-to-end (P1, Must)
+Un contributore di Sertor, con l'indice RAG del repo costruito e fresco, esegue il flusso self-host su un
+commit reale: l'agente **localizza l'evidenza** interrogando il tool MCP `search_code` (guidato dalla
+skill), la passa allo stadio deterministico `speclift bundle` che produce un **fascicolo di evidenza non
+vuoto** con àncore su file/simboli Sertor reali. Dopo aver scritto le frasi EARS (uno stadio di giudizio)
+e passato il tutto a `speclift assemble`, ottiene un **report canonico** (JSON + Markdown) le cui àncore
+sono **riverificate** sul filesystem di Sertor — nessuna àncora non verificata accettata in silenzio
+(finisce sotto `excluded`).
 
-**Independent Test**: eseguire il ciclo `bundle → autoring → assemble` su un commit dogfood scelto con
-l'indice fresco; il bundle referenzia path Sertor reali, il report finale riverifica ogni àncora e
-segnala esplicitamente le escluse.
+**Independent Test**: eseguire il ciclo `localizza-evidenza (agente + MCP search_code) → bundle → autoring
+→ assemble` su un commit dogfood scelto con l'indice fresco; il bundle referenzia path Sertor reali, il
+report finale riverifica ogni àncora sul filesystem e segnala esplicitamente le escluse.
 
 **Acceptance**:
-1. **Given** l'indice RAG di Sertor costruito e fresco, **When** si esegue `speclift bundle <ref>` su un
-   commit reale, **Then** il fascicolo di evidenza è non vuoto e le sue voci referenziano path Sertor
-   reali e (dove risolvibili) simboli reali.
+1. **Given** l'indice RAG di Sertor costruito e fresco, **When** l'agente localizza l'evidenza via
+   `search_code` e la passa a `speclift bundle`, **Then** il fascicolo di evidenza è non vuoto e le sue
+   voci referenziano path Sertor reali e (dove risolvibili) simboli reali.
 2. **Given** un bundle autorato (frasi EARS scritte dall'agente chiamante, ancorate per indice), **When**
    si esegue `speclift assemble`, **Then** viene prodotto un report canonico JSON + Markdown le cui àncore
    sono riverificate sul filesystem di Sertor.
 3. **Given** un'àncora che non verifica sul filesystem, **When** il report è reso, **Then** compare sotto
    `excluded` con motivo, mai scartata in silenzio né tenuta come valida.
 
-### User Story 2 — `sertor_core` resta invariato e non nasce alcun ciclo di dipendenze (P1, Must)
+### User Story 2 — Il retrieval passa dall'MCP dentro una skill, mai dalla CLI (P1, Must)
+Il self-host **non** invoca la CLI `sertor-rag`: l'adapter CLI vendorato (`SertorRagLocator`/
+`rag_sertor.py`) non è usato ed è escluso dalla copia. La localizzazione dell'evidenza (simboli e test di
+copertura) avviene **esclusivamente** tramite il tool MCP `search_code`, invocato dall'agente
+orchestratore dentro la skill; la porta `EvidenceLocator` è **alimentata** dall'evidenza già localizzata
+dall'agente, attraverso un'interfaccia **esplicita e ispezionabile** (mai una convenzione implicita), mai
+eseguendo query live dalla porta e mai importando `sertor_core`.
+
+**Independent Test**: grep di invocazioni della CLI `sertor-rag`/import di `rag_sertor` sul path di
+localizzazione evidenza del self-host → assente; verificare che l'interfaccia con cui l'agente consegna
+l'evidenza a SpecLift è documentata/ispezionabile e che il retrieval usa il tool MCP `search_code`.
+
+**Acceptance**:
+1. **Given** il self-host, **When** localizza l'evidenza, **Then** lo fa solo tramite il tool MCP
+   `search_code` invocato dall'agente nella skill, **non** tramite la CLI `sertor-rag search` (subprocess)
+   e **non** con una fase deterministica che interroga il RAG da sé.
+2. **Given** l'adapter CLI vendorato `rag_sertor.py`, **When** si ispeziona il pacchetto vendorato,
+   **Then** quel path non è usato dal composition root del self-host (ed è escluso dalla copia — DA-D-3).
+3. **Given** la porta `EvidenceLocator` del self-host, **When** riceve l'evidenza dall'agente, **Then** la
+   riceve attraverso un'interfaccia esplicita e ispezionabile (es. un artefatto documentato), non da una
+   query live eseguita dalla porta.
+
+### User Story 3 — `sertor_core` resta invariato e non nasce alcun ciclo di dipendenze (P1, Must)
 Un manutentore che aggiunge `packages/speclift` al workspace verifica che il pacchetto core sia
 **byte-identico** (zero modifica, zero nuovo import) e che `uv sync --all-packages` risolva senza errori:
 il nuovo membro **non** introduce un ciclo tra `sertor-core`, `sertor`, `sertor-install-kit`,
@@ -115,47 +170,42 @@ sertor_core` su `packages/speclift` → zero occorrenze (fuori dai commenti che 
    (zero modifica, zero nuovo import come conseguenza di questa feature).
 2. **Given** `packages/speclift` aggiunto, **When** si esegue `uv sync --all-packages`, **Then** la
    risoluzione riesce senza errori e senza ciclo di dipendenze tra i membri del workspace.
-3. **Given** SpecLift che localizza evidenza, **When** consuma il retrieval di Sertor, **Then** lo fa
-   esclusivamente via il vehicle CLI `sertor-rag search` (subprocess), mai importando la libreria core.
 
-### User Story 3 — Fallimento onesto e azionabile quando l'indice RAG non c'è (P1, Must)
-Un utente che esegue SpecLift su un repo/indice non ancora costruito ottiene un **fallimento esplicito**
-con l'exit code dedicato (3) e un messaggio che identifica la causa (RAG non raggiungibile) e, idealmente,
-indica il comando di rimedio (`sertor-rag index .` dalla root) — mai un degrado silenzioso né risultati
-vuoti/fabbricati come se la query fosse riuscita.
+### User Story 4 — Fallimento onesto quando l'MCP/indice non è disponibile (P1, Must)
+Quando il server MCP di Sertor o il suo indice RAG non sono disponibili/raggiungibili mentre l'agente
+tenta di localizzare l'evidenza via `search_code`, la skill **si ferma e lo segnala esplicitamente**,
+nominando il componente non disponibile e (quando applicabile) il rimedio (es. ricostruire/aggiornare
+l'indice RAG con `sertor-rag index .` dalla root) — mai proseguendo con un insieme di evidenza parziale,
+vuoto o **fabbricato** come se il retrieval fosse riuscito.
 
-**Independent Test**: eseguire SpecLift con l'indice RAG assente; l'esecuzione esce con codice 3 e stampa
-su stderr un messaggio che nomina la causa e (idealmente) il comando di rimedio.
-
-**Acceptance**:
-1. **Given** l'indice RAG mancante/irraggiungibile, **When** lo stadio di localizzazione dell'evidenza
-   gira, **Then** SpecLift esce con exit code 3 e un messaggio esplicito su stderr.
-2. **Given** il fallimento RAG-unavailable, **When** il messaggio è reso, **Then** raccomanda il comando
-   di rimedio concreto (`sertor-rag index .` dalla root), non un generico «RAG non raggiungibile».
-3. **Given** l'assenza di indice, **When** SpecLift fallisce, **Then** non restituisce risultati vuoti o
-   fabbricati come se la query fosse riuscita.
-
-### User Story 4 — Il vehicle RAG punta alla root di Sertor, non a `.sertor/` (P1, Must)
-Un utente che invoca SpecLift dalla root del repo Sertor raggiunge l'indice RAG **senza passare flag o
-variabili d'ambiente ad-hoc ogni volta**: il vehicle è configurato per la root Sertor (equivalente a `uv
-run sertor-rag`), non per il default upstream che assume un sotto-progetto `.sertor/`. Il meccanismo di
-configurazione è **esplicito e ispezionabile** (documentato nel pacchetto vendorato o nella sua
-configurazione), mai una modifica locale non tracciata che diverga silenziosamente dalla nota di
-provenienza.
-
-**Independent Test**: invocare SpecLift dalla root Sertor senza flag/env ad-hoc; raggiunge l'indice e
-restituisce risultati. Ispezionare come è impostato il vehicle: la configurazione è tracciata, non un
-edit locale nascosto.
+**Independent Test**: eseguire il flusso con l'MCP/indice non disponibile; la skill si arresta con un
+messaggio esplicito che nomina la causa e (idealmente) il comando di rimedio, senza produrre evidenza.
 
 **Acceptance**:
-1. **Given** l'istanza self-hosted, **When** invoca il RAG di Sertor, **Then** usa il vehicle applicabile
-   alla root del repo (equivalente a `uv run sertor-rag`), non il default upstream `.sertor/`.
-2. **Given** un'invocazione dalla root Sertor, **When** SpecLift interroga il RAG, **Then** raggiunge
-   l'indice e ritorna risultati senza richiedere flag/env ad-hoc a ogni chiamata.
-3. **Given** il meccanismo di configurazione del vehicle, **When** lo si ispeziona, **Then** è esplicito e
-   documentato (non una modifica locale non tracciata che diverga dalla provenienza).
+1. **Given** il server MCP o l'indice RAG non disponibile/irraggiungibile, **When** l'agente tenta di
+   localizzare l'evidenza via `search_code`, **Then** la skill si ferma e lo segnala esplicitamente,
+   nominando il componente non disponibile.
+2. **Given** il fallimento, **When** il messaggio è reso, **Then** indica (quando applicabile) il rimedio
+   concreto (es. ricostruire/aggiornare l'indice RAG), non un generico «RAG non raggiungibile».
+3. **Given** l'MCP/indice assente, **When** il flusso fallisce, **Then** non prosegue con evidenza
+   parziale, vuota o fabbricata come se il retrieval fosse riuscito.
 
-### User Story 5 — La suite di test vendorata è verde nel workspace Sertor (P1, Must)
+### User Story 5 — Fallimento onesto quando l'evidenza fornita dall'agente è malformata (P1, Must)
+Quando l'artefatto di evidenza che l'agente consegna a SpecLift (l'interfaccia di US2) è assente,
+malformato, o non conforme alla sua interfaccia documentata, lo stadio di SpecLift che consuma l'evidenza
+**fallisce fail-loud** con un errore esplicito e azionabile che identifica il problema — mai ripiegando in
+silenzio su evidenza vuota/di default né fabbricando un'àncora.
+
+**Independent Test**: fornire a SpecLift un file di evidenza assente o malformato; lo stadio di consumo
+fallisce con un errore esplicito che identifica il problema, senza degradare in silenzio.
+
+**Acceptance**:
+1. **Given** l'artefatto di evidenza assente/malformato/non conforme, **When** lo stadio di consumo di
+   SpecLift lo elabora, **Then** fallisce con un errore esplicito e azionabile che identifica il problema.
+2. **Given** un'evidenza non valida, **When** SpecLift fallisce, **Then** non ripiega in silenzio su
+   evidenza vuota/di default né fabbrica un'àncora.
+
+### User Story 6 — La suite di test vendorata è verde nel workspace Sertor (P1, Must)
 Un manutentore esegue `uv run pytest` nel workspace Sertor e la suite di test vendorata di SpecLift (104
 test all'atto dell'handoff) **gira ed è verde** accanto alle suite degli altri membri del workspace — non
 solo isolatamente nel repo Sinthari originale.
@@ -173,7 +223,7 @@ passano; nessuna regressione nelle suite degli altri membri.
    sono integrati, **Then** l'esito richiesto è comunque una suite verde (il meccanismo di
    riconciliazione è materia di plan, non un requisito qui).
 
-### User Story 6 — Provenienza del vendoring tracciata e mantenuta (P1, Must)
+### User Story 7 — Provenienza del vendoring tracciata e mantenuta (P1, Must)
 Un contributore che ispeziona `packages/speclift` trova una **nota di provenienza esplicita** (URL del
 repository upstream, commit hash, versione al momento del vendoring), leggibile senza consultazioni
 esterne, che documenta da quale stato upstream la copia è derivata. Se in futuro la copia è aggiornata da
@@ -188,40 +238,49 @@ versione; corrisponde allo stato vendorato.
 2. **Given** un aggiornamento della copia da uno stato upstream più recente, **When** avviene, **Then** la
    nota di provenienza è aggiornata di conseguenza, senza diventare silenziosamente stantia.
 
-### User Story 7 — La skill del dogfood è depositata e host-agnostica (P1, Must)
+### User Story 8 — La skill del dogfood è depositata, host-agnostica e orchestra il retrieval (P1, Must)
 Un agente frontier del dogfood Sertor (Claude Code oggi) trova la skill `speclift` depositata in
-`.claude/skills/speclift/SKILL.md` e può scoprirla e invocarla. Il corpo della skill resta
-**host-agnostico**: nessun path specifico d'assistente, nessuna sintassi slash-command, nessun nome di
-modello — coerente con la proprietà già verificata nell'upstream.
+`.claude/skills/speclift/SKILL.md` e può scoprirla e invocarla. Per il self-host la skill **istruisce
+anche** l'agente a orchestrare la localizzazione dell'evidenza — interrogare il tool MCP `search_code` per
+ogni hunk cambiato e consegnare l'evidenza allo stadio deterministico `bundle` (tramite l'interfaccia di
+US2) — **prima** di scrivere le frasi EARS. Il corpo della skill resta **host-agnostico**: nessun path
+specifico d'assistente, nessuna sintassi slash-command, nessun nome di modello.
 
-**Independent Test**: verificare la presenza di `.claude/skills/speclift/SKILL.md`; il corpo non contiene
-path assistente hardcoded, slash-command, né nomi-modello.
+**Independent Test**: verificare la presenza di `.claude/skills/speclift/SKILL.md`; il corpo istruisce
+l'orchestrazione del retrieval via `search_code` e non contiene path assistente hardcoded, slash-command,
+né nomi-modello.
 
 **Acceptance**:
 1. **Given** il repo Sertor, **When** la feature è completa, **Then** esiste `.claude/skills/speclift/
-   SKILL.md`, scopribile e invocabile dall'agente ospite durante il dogfooding.
+   SKILL.md`, scopribile e invocabile dall'agente ospite, che istruisce anche a orchestrare la
+   localizzazione dell'evidenza via MCP `search_code` prima dell'autoring EARS.
 2. **Given** il corpo della skill depositata, **When** lo si ispeziona, **Then** resta host-agnostico (no
    path assistente, no slash-command, no nomi-modello), coerente con l'upstream.
 
-### User Story 8 — La discrepanza doc↔codice sul legame RAG è dichiarata, non propagata (P1, Must)
+### User Story 9 — La divergenza dal codice vendorato è dichiarata e rimandata a Sinthari (P1, Must)
 Chi legge la documentazione di questa feature (questo artefatto e ogni pagina wiki distillata da esso)
-apprende **esplicitamente** che il legame runtime reale di SpecLift con Sertor è un **singolo comando CLI**
-(`sertor-rag search --type code --json`), **non** i tool MCP di navigazione del code-graph
-(`find_symbol`/`who_calls`) che l'handoff e la narrativa wiki Sinthari descrivono — così nessun agente del
-dogfood si aspetta una navigazione del code-graph che SpecLift non usa.
+apprende **esplicitamente** che il meccanismo di localizzazione dell'evidenza del self-host **diverge
+intenzionalmente** dal codice vendorato/upstream Sinthari — che raggiunge Sertor solo via la CLI
+`sertor-rag search --type code --json` (`rag_sertor.py`) — adottando invece il tool MCP `search_code`
+orchestrato dall'agente nella skill; e che questa adozione **non colma** del tutto la narrativa upstream
+di navigazione del code-graph (`find_symbol`/`who_calls`): `search_code` è ricerca semantica, non
+navigazione del grafo, quindi resta un gap doc↔meccanismo più piccolo e spostato. La divergenza è
+**registrata come feedback a Sinthari** sul canale `input-other-agents`, così Sinthari può decidere se far
+convergere l'upstream verso il retrieval MCP.
 
-**Independent Test**: la documentazione derivata contiene la precisazione esplicita «legame reale = un solo
-comando `sertor-rag search --type code --json`, non `find_symbol`/`who_calls`».
+**Independent Test**: la documentazione derivata contiene la dichiarazione esplicita della divergenza
+intenzionale (MCP `search_code` vs CLI vendorata) + del gap residuo (non è navigazione code-graph); esiste
+una voce di feedback a Sinthari in `wiki/sources/input-other-agents/`.
 
 **Acceptance**:
-1. **Given** questo artefatto di specifica e ogni pagina wiki derivata, **When** descrivono il legame di
-   SpecLift col RAG di Sertor, **Then** dichiarano esplicitamente che è un solo comando CLI, non i tool MCP
-   di code-graph.
-2. **Given** la narrativa upstream che cita `find_symbol`/`who_calls`, **When** viene recepita nel dogfood
-   Sertor, **Then** la discrepanza è dichiarata lato Sertor, non ripetuta acriticamente (e non si tenta di
-   correggerla a monte in Sinthari — fuori ambito).
+1. **Given** questo artefatto e ogni pagina wiki derivata, **When** descrivono il meccanismo di
+   localizzazione dell'evidenza, **Then** dichiarano esplicitamente che diverge intenzionalmente dal
+   codice vendorato/upstream (CLI) adottando l'MCP `search_code`, e che resta un gap rispetto alla
+   narrativa di navigazione del code-graph.
+2. **Given** l'adozione della divergenza per il self-host, **When** avviene, **Then** è registrata come
+   feedback a Sinthari sul canale `input-other-agents`, per un'eventuale convergenza upstream.
 
-### User Story 9 — Riconciliazione della versione Python con verifica empirica (P2, Should)
+### User Story 10 — Riconciliazione della versione Python con verifica empirica (P2, Should)
 Un manutentore riconcilia il `requires-python` di SpecLift (`>=3.12`) verso il pavimento del workspace
 Sertor (`>=3.11`), **solo dopo** aver verificato empiricamente che la suite gira ed è verde su un
 interprete Python 3.11. Se invece un costrutto genuinamente 3.12-only risultasse richiesto, il pin **non**
@@ -240,21 +299,26 @@ se resta a `>=3.12`, esiste una dichiarazione esplicita del costrutto 3.12-only 
    workspace.
 
 ## Edge Cases
-- **Vehicle non riconfigurato** — se il vehicle restasse al default upstream (`uv run --project .sertor
-  sertor-rag`), SpecLift fallirebbe fail-loud (exit 3) ma la causa reale (vehicle sbagliato, non «RAG giù»)
-  non sarebbe ovvia senza un messaggio azionabile → US3/US4 (R-3).
-- **Indice RAG stantio/assente** — SpecLift **consuma** l'indice, non lo costruisce: assenza/irraggiungibilità
-  = exit 3 azionabile (US3). Gli stadi che non toccano il RAG (`ingest`, `parse_diff`, `filter_sources`)
-  continuano a funzionare senza indice (NFR-4).
+- **Path CLI tentato per errore** — se il path di localizzazione evidenza tentasse di invocare la CLI
+  `sertor-rag` (o l'adapter `rag_sertor.py`), è **scorretto per il self-host**: il vehicle è il tool MCP
+  `search_code`, non la CLI (US2, R-2). L'adapter CLI è escluso fisicamente (DA-D-3).
+- **MCP/indice RAG stantio/assente** — SpecLift **consuma** l'indice, non lo costruisce: MCP non
+  raggiungibile o indice assente durante la localizzazione = fail-loud esplicito con rimedio (US4). Gli
+  stadi che non toccano il RAG (`ingest`, `parse_diff`, `filter_sources`) continuano a funzionare senza
+  indice (NFR-4).
+- **Evidenza fornita dall'agente malformata** — assente/malformata/non conforme all'interfaccia = fail-loud
+  esplicito, mai ripiego silenzioso su evidenza vuota o àncora fabbricata (US5, R-3). È il guasto più
+  subdolo del design MCP-skill: non c'è più un unico comando CLI che fallisce in modo osservabile.
 - **Costrutto 3.12-only irriducibile** — se la verifica empirica su 3.11 fallisse contro l'evidenza del
-  grep, il pin resta a 3.12 e va dichiarato l'impatto sul pavimento del workspace (US9, R-2).
+  grep, il pin resta a 3.12 e va dichiarato l'impatto sul pavimento del workspace (US10, R-4).
 - **Deriva silenziosa del vendoring** — senza nota di provenienza/processo di aggiornamento, la copia può
-  divergere dall'upstream Sinthari nel tempo (US6, R-4).
+  divergere dall'upstream Sinthari nel tempo (US7, R-5).
 - **Conflitto configurazione pytest/lint** — marker (`contract`/`integration` Sinthari vs `cloud`/
   `integration` Sertor) e stile ruff (`line-length` 110/`py312` vs 100/`py311`) potrebbero richiedere
-  riconciliazione perché la suite resti verde (US5, R-5); esito richiesto = verde, meccanismo = plan.
+  riconciliazione perché la suite resti verde (US6, R-6); esito richiesto = verde, meccanismo = plan.
 - **Àncora non verificata dal moat** — sempre elencata sotto `excluded` con motivo, mai scartata in
-  silenzio (US1) — invariante ereditato dall'handoff, da non alterare.
+  silenzio (US1) — invariante ereditato dall'handoff, da non alterare. Il moat verifica sul **filesystem**,
+  mai via RAG.
 
 ## Requirements *(mandatory)*
 
@@ -266,39 +330,48 @@ se resta a `>=3.12`, esiste una dichiarazione esplicita del costrutto 3.12-only 
   `uv`. *(REQ-001; CS-3/CS-5)*
 - **FR-002 (nota di provenienza).** Il pacchetto vendorato porta una nota di provenienza esplicita (URL
   repository upstream, commit hash, versione al momento del vendoring), ispezionabile senza lookup esterno.
-  *(REQ-002; US6)*
+  *(REQ-002; US7)*
 - **FR-003 (provenienza mantenuta).** Se la copia vendorata è aggiornata da uno stato upstream più recente,
   la nota di provenienza è aggiornata di conseguenza, senza diventare silenziosamente stantia. *(REQ-003;
-  US6)*
+  US7)*
 
-**Gruppo B — Vehicle RAG configurato per Sertor (Must)**
-- **FR-004 (vehicle alla root Sertor).** L'istanza self-hosted invoca il RAG di Sertor tramite il vehicle
-  applicabile alla root del repository (equivalente a `uv run sertor-rag`), non tramite il default upstream
-  che assume un sotto-progetto `.sertor/`. *(REQ-007; CS-1)*
-- **FR-005 (meccanismo esplicito e ispezionabile).** Il meccanismo usato per configurare il vehicle RAG del
-  self-host è esplicito e ispezionabile (documentato nel pacchetto vendorato o nella sua configurazione),
-  mai una modifica locale non tracciata che diverga silenziosamente da ciò che la nota di provenienza
-  (FR-002) implica sul sorgente vendorato. *(REQ-008; US4)*
-- **FR-006 (raggiungibilità senza flag ad-hoc).** Invocando SpecLift dalla root del repo Sertor, esso
-  raggiunge con successo l'indice RAG e ritorna risultati, senza richiedere all'invocante flag o variabili
-  d'ambiente ad-hoc e non documentate a ogni chiamata. *(REQ-009; CS-1)*
+**Gruppo B — Retrieval via MCP dentro una skill, non via CLI (Must)**
+- **FR-004 (nessuna dipendenza dalla CLI).** Il path di localizzazione dell'evidenza del self-host **non**
+  invoca la CLI `sertor-rag` (subprocess) — incluso l'adapter upstream `SertorRagLocator`
+  (`rag_sertor.py`): quel path è scorretto per il self-host e non è usato. *(REQ-007; CS-1/CS-3)*
+- **FR-005 (evidenza solo via tool MCP `search_code`).** Il self-host localizza l'evidenza (simboli
+  candidati e test di copertura) **esclusivamente** tramite il tool MCP `search_code` di Sertor, invocato
+  dall'agente orchestratore dentro la skill — mai da una fase deterministica che interroga il RAG da sé, mai
+  importando `sertor_core`. *(REQ-008; CS-1)*
+- **FR-006 (`EvidenceLocator` alimentato + interfaccia esplicita).** L'implementazione della porta
+  `EvidenceLocator` usata dal self-host è **alimentata** dall'evidenza già localizzata dall'agente (via MCP),
+  invece di eseguire query di retrieval live; l'interfaccia con cui l'agente consegna l'evidenza a SpecLift è
+  **esplicita e ispezionabile** (es. un artefatto documentato prodotto dall'agente), mai una convenzione
+  implicita o non documentata. La forma esatta di questa interfaccia è decisione di plan (DA-D-3). *(REQ-009;
+  US2)*
 
-**Gruppo C — Fail-loud sul prerequisito RAG (Must)**
-- **FR-007 (fail-loud con exit dedicato).** Se l'indice RAG di Sertor è mancante, non costruito o
-  irraggiungibile quando lo stadio di localizzazione dell'evidenza gira, SpecLift esce con l'exit code
-  dedicato non-zero (3) e stampa un messaggio d'errore esplicito su stderr, invece di degradare in silenzio
-  o restituire risultati vuoti/fabbricati come se la query fosse riuscita. *(REQ-012; CS-6)*
-- **FR-008 (messaggio azionabile).** Dove l'istanza self-hosted solleva l'errore RAG-unavailable, il
-  messaggio raccomanda il comando di rimedio concreto (`sertor-rag index .`, dalla root del repo), invece
-  di un generico «RAG non raggiungibile» senza prossimo passo. *(REQ-013; CS-6)*
-
-**Gruppo D — Skill depositata per il dogfood (Must)**
-- **FR-009 (skill depositata).** Il repo Sertor include una copia della skill speclift in
-  `.claude/skills/speclift/SKILL.md`, così che l'agente ospite di Sertor possa scoprire e invocare la
-  capacità durante il dogfooding. *(REQ-010; US7)*
-- **FR-010 (skill host-agnostica).** Il corpo della skill depositata resta host-agnostico (nessun path
+**Gruppo C — Skill depositata per il dogfood (Must)**
+- **FR-007 (skill depositata + orchestra il retrieval).** Il repo Sertor include una copia della skill
+  speclift in `.claude/skills/speclift/SKILL.md`, scopribile e invocabile dall'agente ospite durante il
+  dogfooding. Per il self-host la skill istruisce **anche** l'agente a orchestrare la localizzazione
+  dell'evidenza — interrogare il tool MCP `search_code` per ogni hunk cambiato — e a consegnare l'evidenza
+  risultante allo stadio deterministico `bundle` (tramite l'interfaccia di FR-006), prima di scrivere le
+  frasi EARS. *(REQ-010; US8)*
+- **FR-008 (skill host-agnostica).** Il corpo della skill depositata resta host-agnostico (nessun path
   d'assistente hardcoded, nessuna sintassi slash-command, nessun nome-modello), coerente con la proprietà
-  host-agnostica già verificata nella skill upstream. *(REQ-011; US7)*
+  host-agnostica già verificata nella skill upstream. *(REQ-011; US8)*
+
+**Gruppo D — Fail-loud sulla localizzazione dell'evidenza (Must)**
+- **FR-009 (fail-loud su MCP/indice non disponibile).** Se il server MCP di Sertor o il suo indice RAG è
+  non disponibile o irraggiungibile quando l'agente tenta di localizzare l'evidenza via `search_code`, la
+  skill si ferma e lo segnala esplicitamente, nominando il componente non disponibile e (quando applicabile)
+  il rimedio (es. ricostruire/aggiornare l'indice RAG), invece di proseguire con un insieme di evidenza
+  parziale, vuoto o fabbricato come se il retrieval fosse riuscito. *(REQ-012; CS-6)*
+- **FR-010 (fail-loud su evidenza malformata).** Se l'artefatto di evidenza che l'agente consegna a
+  SpecLift (FR-006) è assente, malformato o non conforme alla sua interfaccia documentata, lo stadio di
+  SpecLift che consuma l'evidenza fallisce fail-loud con un errore esplicito e azionabile che identifica il
+  problema, invece di ripiegare in silenzio su evidenza vuota/di default o fabbricare un'àncora. *(REQ-013;
+  CS-6)*
 
 **Gruppo E — Test integrati e non-regressione (Must)**
 - **FR-011 (suite verde nel workspace).** La suite di test vendorata di speclift (104 test all'handoff)
@@ -313,90 +386,116 @@ se resta a `>=3.12`, esiste una dichiarazione esplicita del costrutto 3.12-only 
   CS-5)*
 
 **Gruppo F — Verifica di dogfooding end-to-end (Must)**
-- **FR-014 (bundle su commit reale).** Quando `speclift bundle <ref>` è eseguito su un commit reale di
-  Sertor con l'indice RAG costruito e fresco, il comando produce un fascicolo di evidenza non vuoto le cui
+- **FR-014 (bundle su commit reale).** Quando il flusso self-host — evidenza localizzata dall'agente via il
+  tool MCP `search_code`, poi impacchettata dallo stadio deterministico `bundle` — è eseguito su un commit
+  reale di Sertor con l'indice RAG costruito e fresco, produce un fascicolo di evidenza non vuoto le cui
   voci referenziano path Sertor reali e (dove risolvibili) simboli reali. *(REQ-017; CS-1)*
 - **FR-015 (report verificato dal moat).** Quando il bundle risultante è autorato (frasi EARS scritte
   dall'agente chiamante, ancorate per indice) e passato a `speclift assemble`, il comando produce un report
-  canonico (JSON + Markdown) le cui àncore sono riverificate contro il filesystem reale di Sertor, con ogni
-  àncora non verificata elencata sotto `excluded` invece che scartata in silenzio. *(REQ-018; CS-2)*
+  canonico (JSON + Markdown) le cui àncore sono riverificate contro il **filesystem** reale di Sertor (mai
+  via RAG), con ogni àncora non verificata elencata sotto `excluded` invece che scartata in silenzio.
+  *(REQ-018; CS-2)*
 
-**Gruppo G — Onestà sulla discrepanza doc↔codice (Must)**
-- **FR-016 (discrepanza dichiarata).** La documentazione di questa feature (questo artefatto e ogni pagina
-  wiki entità distillata da esso) dichiara esplicitamente che il legame runtime reale di speclift con
-  Sertor è un singolo comando CLI (`sertor-rag search --type code --json`), non i tool MCP di navigazione
-  del code-graph (`find_symbol`/`who_calls`) che l'handoff upstream e la narrativa wiki Sinthari descrivono.
-  *(REQ-019; US8)*
+**Gruppo G — Onestà sulla divergenza dal codice vendorato (Must)**
+- **FR-016 (divergenza dichiarata + gap residuo).** La documentazione di questa feature (questo artefatto e
+  ogni pagina wiki entità distillata da esso) dichiara esplicitamente che il meccanismo di localizzazione
+  dell'evidenza del self-host **diverge intenzionalmente** dal codice vendorato/upstream Sinthari — che
+  raggiunge Sertor solo via la CLI `sertor-rag search --type code --json` (`rag_sertor.py`) — adottando il
+  tool MCP `search_code` orchestrato dall'agente nella skill; e che questa adozione **non realizza del
+  tutto** la narrativa upstream di navigazione del code-graph (`find_symbol`/`who_calls`), perché
+  `search_code` è ricerca semantica, non navigazione del grafo — resta quindi un gap doc↔meccanismo più
+  piccolo e spostato. *(REQ-019; US9)*
+- **FR-017 (feedback a Sinthari).** Quando questa divergenza dal codice vendorato/upstream è adottata per il
+  self-host, è registrata come feedback a Sinthari sul canale di intake esistente `input-other-agents`
+  (`wiki/sources/input-other-agents/`), così che Sinthari possa decidere se far convergere l'upstream
+  `speclift` verso il retrieval basato su MCP. *(REQ-020; US9)*
 
 **Gruppo H — Riconciliazione versione Python (Should / condizionale)**
-- **FR-017 (riconciliazione con floor del workspace).** Il `requires-python` del pacchetto speclift
+- **FR-018 (riconciliazione con floor del workspace).** Il `requires-python` del pacchetto speclift
   vendorato è riconciliato con il pavimento del workspace Sertor (`>=3.11`), a meno che una feature di
-  linguaggio genuinamente Python-3.12-only sia verificata come richiesta dal codice. *(REQ-004; US9)*
-- **FR-018 (verifica empirica su 3.11).** Quando il vincolo `requires-python` di speclift è abbassato a
+  linguaggio genuinamente Python-3.12-only sia verificata come richiesta dal codice. *(REQ-004; US10)*
+- **FR-019 (verifica empirica su 3.11).** Quando il vincolo `requires-python` di speclift è abbassato a
   `>=3.11`, la suite di test vendorata è eseguita su un interprete Python 3.11 e passa, come condizione di
-  accettazione del vincolo abbassato. *(REQ-005; US9)*
-- **FR-019 (pin 3.12 irriducibile dichiarato).** Se un costrutto genuinamente Python-3.12-only risultasse
+  accettazione del vincolo abbassato. *(REQ-005; US10)*
+- **FR-020 (pin 3.12 irriducibile dichiarato).** Se un costrutto genuinamente Python-3.12-only risultasse
   richiesto dal codice di speclift, il vincolo NON è abbassato in silenzio: la discrepanza è documentata
   esplicitamente insieme al suo impatto sul pavimento effettivo del workspace Sertor. *(REQ-006 — Could,
-  condizionale; US9)*
+  condizionale; US10)*
 
 ### Requisiti non funzionali
-- **RNF-1 (Principio XI — vehicle-only):** SpecLift consuma il retrieval di Sertor esclusivamente tramite
-  il vehicle CLI (subprocess), mai importando `sertor_core`; questa feature non introduce alcuna nuova via
-  di accesso diretto alla libreria. *(NFR-1)*
+- **RNF-1 (Principio XI — vehicle-only, MCP):** SpecLift consuma il retrieval di Sertor esclusivamente
+  tramite il vehicle **MCP** (tool `search_code`), mai tramite CLI subprocess e mai importando
+  `sertor_core`; questa feature non introduce alcuna nuova via di accesso diretto alla libreria. Sertor
+  pubblica sia CLI sia MCP come vehicle legittimi, ma il self-host sceglie l'MCP come **unico** vehicle del
+  proprio path di localizzazione evidenza, disattivando l'adapter CLI vendorato. *(NFR-1)*
 - **RNF-2 (isolamento dipendenze runtime):** la dipendenza runtime dichiarata da Sinthari (`jsonschema`,
   usata solo dai test di contratto per quanto verificato) dovrebbe restare/diventare una dipendenza di
   solo-test/dev quando possibile, per non gonfiare l'installazione runtime — Should (vedi DA-D-2). *(NFR-2)*
 - **RNF-3 (additività del workspace):** l'aggiunta di `packages/speclift` non altera comportamento o
   dipendenze risolte degli altri membri; `uv sync --all-packages` continua a risolvere per tutti. *(NFR-3)*
 - **RNF-4 (non-fatale sugli stadi che non toccano il RAG):** le fasi che non interrogano il RAG (`ingest`,
-  `parse_diff`, `filter_sources`) continuano a funzionare senza indice costruito; solo `locate_evidence`
-  (e quindi l'intera marcia `bundle`) richiede il prerequisito RAG — comportamento upstream **non
-  alterato**. *(NFR-4)*
+  `parse_diff`, `filter_sources`) continuano a funzionare senza indice costruito; solo la localizzazione
+  dell'evidenza (`locate_evidence` / marcia `bundle`) richiede il prerequisito MCP/RAG — comportamento
+  upstream **non alterato**. *(NFR-4)*
 - **RNF-5 (lingua):** codice, commenti e skill di SpecLift restano in italiano per il self-host; la
   traduzione host-facing è fuori ambito. *(NFR-5)*
-- **RNF-6 (determinismo del sandwich):** nessuna modifica introdotta da questa feature (vendoring,
-  riconciliazione versione, vehicle, skill) altera la proprietà «un solo stadio intelligente»: la CLI resta
-  deterministica in ingresso e in uscita. *(NFR-6)*
+- **RNF-6 (determinismo del sandwich — DEVIAZIONE DICHIARATA):** spostare la localizzazione dell'evidenza
+  dall'adapter CLI deterministico all'agente (che la ottiene coi tool MCP, guidato dalla skill) fa sì che
+  l'agente tocchi **due stadi** del sandwich — localizzazione **E** stesura EARS — anziché il solo stadio di
+  stesura del design originale di Sinthari. È una **deviazione dichiarata**, non un'estensione silenziosa:
+  comunicata come feedback a Sinthari (FR-017). Le fasi di impacchettamento (bundle), verifica delle àncore
+  (**il moat**, sul filesystem) e resa (render) **restano** deterministiche e NON toccano il RAG — è lì che
+  il moat preserva la garanzia forte (nessuna àncora accettata senza riverifica sul filesystem). *(NFR-6)*
 - **RNF-7 (`sertor-core` invariato):** nessuna modifica a porte/adapter/composition/engine/comandi del core
   come conseguenza di questa feature.
 
 ### Key Entities
 - **`packages/speclift` (nuovo membro del workspace)** — copia vendorata self-contained del pacchetto
   speclift (hatchling, dominio puro ports&adapters, zero import `sertor_core`), risolvibile nel workspace
-  `uv`, con nota di provenienza (repo/commit/versione).
+  `uv`, con nota di provenienza (repo/commit/versione), **priva** dell'adapter CLI `rag_sertor.py` (escluso).
 - **Nota di provenienza** — artefatto ispezionabile che documenta lo stato upstream da cui la copia è
   derivata; mantenuto aggiornato a ogni re-vendoring.
-- **Vehicle RAG configurato per la root Sertor** — la configurazione (esplicita e ispezionabile) che fa sì
-  che SpecLift invochi `uv run sertor-rag` alla root del repo invece del default upstream `.sertor/`.
-- **Skill del dogfood (`.claude/skills/speclift/SKILL.md`)** — la skill host-agnostica depositata; è il
-  «cervello» del sandwich (l'agente chiamante scrive le frasi EARS leggendo il bundle, per indice).
-- **Errore RAG-unavailable (exit 3) azionabile** — il fallimento fail-loud sul prerequisito RAG, con
-  messaggio che indica il comando di rimedio.
+- **Adapter `EvidenceLocator` alimentato dall'evidenza dell'agente** — l'implementazione di porta che
+  riceve l'evidenza già localizzata dall'agente (via MCP `search_code`) attraverso un'interfaccia esplicita
+  e ispezionabile, invece di eseguire query live; ricalca la forma del precedente `FakeLocator`.
+- **Interfaccia evidenza agente→SpecLift** — il canale esplicito e documentato con cui l'agente consegna
+  l'evidenza a SpecLift (forma esatta = DA-D-3; raccomandazione: riuso dei modelli di dominio `Symbol`/
+  `TestRef`).
+- **Skill del dogfood (`.claude/skills/speclift/SKILL.md`)** — la skill host-agnostica depositata; per il
+  self-host orchestra **due stadi** di giudizio: la localizzazione dell'evidenza via MCP `search_code` e la
+  stesura delle frasi EARS leggendo il bundle (per indice).
+- **Fail-loud MCP/indice non disponibile** — l'arresto esplicito e azionabile quando il server MCP o
+  l'indice RAG non è disponibile durante la localizzazione.
+- **Fail-loud evidenza malformata** — l'errore esplicito quando l'artefatto di evidenza dell'agente è
+  assente/malformato/non conforme.
 - **Suite di test vendorata (104 test)** — integrata e verde in `uv run pytest` del workspace.
-- **Legame RAG reale = un solo comando CLI** — `sertor-rag search --type code --json`, non i tool MCP di
-  code-graph: entità di *onestà documentale*, non un componente da costruire.
+- **Legame RAG reale = tool MCP `search_code` (in divergenza dal codice vendorato che usa la CLI)** — entità
+  di *onestà documentale*: il self-host adotta l'MCP, l'upstream usa la CLI; resta un gap rispetto alla
+  navigazione del code-graph descritta dalla narrativa upstream.
 
 ## Success Criteria *(mandatory)*
-- **CS-1 (gira nel repo Sertor):** `speclift bundle <ref>` su un commit reale di Sertor con indice fresco
-  produce un fascicolo di evidenza non vuoto con àncore su file/simboli Sertor reali — verificabile
-  eseguendo il comando su un commit dogfood. *(FR-004/006/014, US1/US4)*
+- **CS-1 (gira nel repo Sertor):** il flusso self-host — evidenza localizzata dall'agente via il tool MCP
+  `search_code`, poi impacchettata da `speclift bundle` — eseguito su un commit reale di Sertor con indice
+  fresco, produce un fascicolo di evidenza non vuoto con àncore su file/simboli Sertor reali — verificabile
+  eseguendo il flusso su un commit dogfood. *(FR-004/005/006/014, US1/US2)*
 - **CS-2 (report verificato prodotto):** il fascicolo, autorato e passato a `speclift assemble`, produce un
   report canonico (JSON + Markdown) le cui àncore risultano riverificate sul filesystem di Sertor; nessuna
   àncora non verificata accettata in silenzio. *(FR-015, US1)*
 - **CS-3 (`sertor_core` invariato):** zero modifica e zero nuovo import di `sertor_core` come conseguenza
   della feature — verificabile con `git diff` sul core e grep di `import sertor_core` su `packages/speclift`
-  (atteso: zero fuori dai commenti dichiarativi). *(FR-012, US2)*
+  (atteso: zero fuori dai commenti dichiarativi). *(FR-012, US3)*
 - **CS-4 (test integrati verdi):** la suite vendorata gira ed è verde in `uv run pytest` nel workspace
-  Sertor, non solo isolatamente nel repo Sinthari. *(FR-011, US5)*
+  Sertor, non solo isolatamente nel repo Sinthari. *(FR-011, US6)*
 - **CS-5 (nessun ciclo di dipendenze):** `uv sync --all-packages` risolve senza errori con il nuovo membro
-  `packages/speclift`. *(FR-001/013, US2)*
-- **CS-6 (fail-loud azionabile):** su un repo senza indice RAG costruito, SpecLift fallisce con l'exit code
-  3 e un messaggio che identifica la causa, idealmente indicando `sertor-rag index .` — verificabile
-  eseguendo SpecLift su un indice assente. *(FR-007/008, US3)*
-- **CS-7 (provenienza + onestà doc):** `packages/speclift` porta una nota di provenienza ispezionabile e la
-  documentazione dichiara esplicitamente il legame RAG reale (un solo comando CLI, non i tool MCP di
-  code-graph). *(FR-002/003/016, US6/US8)*
+  `packages/speclift`. *(FR-001/013, US3)*
+- **CS-6 (fail-loud azionabile):** con l'MCP/indice RAG non disponibile durante la localizzazione, **o** con
+  un artefatto di evidenza malformato, il flusso fallisce esplicitamente — mai evidenza vuota o fabbricata —
+  con un messaggio che identifica la causa e (quando applicabile) il rimedio — verificabile eseguendo il
+  flusso in quelle condizioni. *(FR-009/010, US4/US5)*
+- **CS-7 (provenienza + onestà sulla divergenza):** `packages/speclift` porta una nota di provenienza
+  ispezionabile e la documentazione dichiara esplicitamente la divergenza intenzionale (adozione dell'MCP
+  `search_code` vs la CLI del codice vendorato) più il gap residuo sulla navigazione del code-graph, con
+  feedback registrato a Sinthari. *(FR-002/003/016/017, US7/US9)*
 
 ## Assumptions
 - **A-001 — Vendoring one-shot come direzione (DA in plan):** la modalità di vendoring (copia versionata
@@ -404,17 +503,19 @@ se resta a `>=3.12`, esiste una dichiarazione esplicita del costrutto 3.12-only 
   requisito qui è solo che la copia sia un membro del workspace con provenienza tracciata (FR-001/002).
 - **A-002 — `git` già prerequisito:** SpecLift invoca `git` via subprocess (`git show`/`git diff`); il repo
   Sertor lo soddisfa per definizione — nessun requisito aggiuntivo.
-- **A-003 — Indice RAG mantenuto dai meccanismi esistenti:** l'indice resta fresco tramite
-  `sertor-rag index .` + hook `rag-freshness` (E10-FEAT-011/016); questa feature **non** introduce un
-  refresh proprio — SpecLift consuma l'indice.
-- **A-004 — Compatibilità CLI verificata:** `sertor-rag search --type code --json` ritorna un array JSON
-  piatto con `path`/`chunk_id`; SpecLift legge `path`/`chunk_id` → combacia; `--type code` non è impattato
-  dal breaking change di `--type both` (feature 070).
+- **A-003 — MCP/indice RAG mantenuto dai meccanismi esistenti:** l'indice resta fresco tramite
+  `sertor-rag index .` + hook `rag-freshness` (E10-FEAT-011/016), e il server MCP `sertor-rag` è quello
+  registrato nel repo; questa feature **non** introduce un refresh/registrazione propri — SpecLift consuma
+  l'indice via il tool MCP.
+- **A-004 — Tool MCP `search_code` disponibile e adeguato:** il server `sertor-rag` espone `search_code`
+  (ricerca semantica sul codice, cita `path#chunk`); è sufficiente a localizzare simboli candidati e (dove
+  presenti) test di copertura per alimentare il bundle. Non fornisce navigazione del code-graph
+  (`find_symbol`/`who_calls`) — gap dichiarato (FR-016).
 - **A-005 — MVP upstream stabile:** l'MVP Sinthari è mergiato e verde (104 test) e non subirà modifiche
   upstream imminenti che invaliderebbero il vendoring nel breve periodo.
 - **A-006 — Pin 3.12 probabilmente riducibile:** nessuna sintassi 3.12-only rilevata nel grep del recon
-  (`StrEnum` è 3.11+); la verifica empirica su 3.11 (FR-018) è la condizione di accettazione — resta il
-  ramo FR-019 se il grep si rivelasse incompleto.
+  (`StrEnum` è 3.11+); la verifica empirica su 3.11 (FR-019) è la condizione di accettazione — resta il
+  ramo FR-020 se il grep si rivelasse incompleto.
 
 ### Fuori ambito (dichiarato)
 - **Distribuzione su ospiti esterni** (installer/packaging per chi installa Sertor da zero): **FEAT-002**,
@@ -422,24 +523,27 @@ se resta a `>=3.12`, esiste una dichiarazione esplicita del costrutto 3.12-only 
 - **Traduzione IT→EN** degli asset SpecLift: tema linguistico trasversale (E12), tracciato altrove.
 - **Implementazione della famiglia futura** (SpecAudit, Debrief, Guida al test): capacità distinte e future
   (backlog epica `speclift` FEAT-003/004/005), non in ambito qui.
-- **Contribuire a monte a Sinthari** (nessuna PR verso `github.com/themetriost/Sinthari`).
+- **Contribuire a monte a Sinthari** (nessuna PR verso `github.com/themetriost/Sinthari`): la divergenza si
+  registra come feedback (FR-017), non come contributo di codice a monte.
 - **Qualunque modifica a `sertor_core`**: la libreria resta byte-identica (Principio XI).
 - **Automatizzare l'invocazione di SpecLift nel rituale di step** (gate automatico o innesco a ogni commit):
   resta uno strumento su richiesta.
-- **Correggere la narrativa upstream** sulla discrepanza doc↔codice: si dichiara lato Sertor, non si
-  corregge a monte.
-- **Il *come* di dettaglio** (modalità di vendoring, collocazione di `jsonschema`, meccanismo di
-  configurazione del vehicle): fase di **design/plan**.
+- **Colmare il gap sulla navigazione del code-graph**: il self-host adotta la ricerca semantica
+  (`search_code`), non `find_symbol`/`who_calls`; il gap residuo si **dichiara**, non si chiude qui.
+- **Il *come* di dettaglio** (modalità di vendoring, collocazione di `jsonschema`, forma esatta
+  dell'interfaccia evidenza agente→SpecLift ed esclusione fisica di `rag_sertor.py`): fase di **design/plan**.
 
 > **Tracciamento dello scope.** I rinvii reali di questa feature sono già promossi a case durevoli: la
 > distribuzione su ospiti è **FEAT-002** (backlog epica `speclift`); la famiglia SpecAudit/Debrief/Guida al
-> test è **FEAT-003/004/005** (stesso backlog); la traduzione IT→EN è tema **E12**. Nessun rinvio reale
+> test è **FEAT-003/004/005** (stesso backlog); la traduzione IT→EN è tema **E12**; la convergenza upstream
+> è **feedback registrato a Sinthari** (`input-other-agents`), non un debito interno. Nessun rinvio reale
 > resta sepolto in `specs/`. La feature è *done* quando: SpecLift gira nel repo Sertor producendo evidenza
-> ancorata e un report riverificato (US1); `sertor_core` è invariato e il workspace risolve senza cicli
-> (US2/US5); il fail-loud su indice assente è azionabile (US3); il vehicle punta alla root Sertor (US4); la
-> provenienza è tracciata (US6); la skill host-agnostica è depositata (US7); la discrepanza doc↔codice è
-> dichiarata (US8); la versione Python è riconciliata con verifica empirica o l'irriducibilità è dichiarata
-> (US9).
+> ancorata via MCP e un report riverificato (US1); il retrieval passa dall'MCP dentro la skill, mai dalla
+> CLI, con interfaccia evidenza esplicita (US2); `sertor_core` è invariato e il workspace risolve senza
+> cicli (US3); il fail-loud è azionabile sia su MCP/indice assente sia su evidenza malformata (US4/US5); la
+> suite è verde (US6); la provenienza è tracciata (US7); la skill host-agnostica orchestra il retrieval
+> (US8); la divergenza dal codice vendorato è dichiarata e rimandata a Sinthari (US9); la versione Python è
+> riconciliata con verifica empirica o l'irriducibilità è dichiarata (US10).
 
 ### Forche di design — per `/speckit-plan` (sono *come*, non scope)
 - **DA-D-1 — Copia versionata vs sync del vendoring.** (a) copia one-shot pinnata al commit `be4da28`,
@@ -450,11 +554,17 @@ se resta a `>=3.12`, esiste una dichiarazione esplicita del costrutto 3.12-only 
   *(FR-001/002/003)*
 - **DA-D-2 — `jsonschema` runtime → dev.** Il recon conferma che `jsonschema` è usata **solo** dai test di
   contratto; spostarla in `[dev]` ridurrebbe l'impronta runtime senza perdere copertura, ma è una
-  divergenza dal `pyproject.toml` upstream da documentare (FR-005) e verificare (nessun import runtime
+  divergenza dal `pyproject.toml` upstream da documentare (FR-002/003) e verificare (nessun import runtime
   nascosto). Raccomandazione debole: spostarla; decisione al plan. *(RNF-2)*
-- **DA-D-3 — Meccanismo di configurazione del vehicle RAG.** (a) patchare la costante `DEFAULT_CONFIG`
-  nella copia vendorata, documentando la divergenza puntuale; (b) estendere il codice vendorato con una
-  variabile d'ambiente (es. `SPECLIFT_RAG_VEHICLE`) letta da `config.py`, riusabile anche da un futuro
-  ospite (FEAT-002) ma modifica funzionale da ri-applicare a ogni sync; (c) wrapper/composition locale che
-  costruisce `Config` programmaticamente, bypassando l'entry-point console. Il requisito comportamentale
-  (FR-004) resta valido indipendentemente dal meccanismo. *(FR-004/005)*
+- **DA-D-3 — Forma dell'interfaccia evidenza agente→SpecLift, ed esclusione fisica di `rag_sertor.py`.**
+  (a) forma esatta dell'artefatto che l'agente produce dopo il retrieval MCP — es. un JSON con gli stessi
+  campi già modellati da `Symbol`/`TestRef` in `domain/models.py`, o un formato più grezzo che un adapter
+  self-host traduce — e dove vive (es. un file temporaneo accanto agli altri file del sandwich).
+  Raccomandazione debole: **JSON con la stessa forma di `Symbol`/`TestRef`** (riuso dei modelli di dominio,
+  zero schema nuovo; precedente `FakeLocator`). (b) se `adapters/rag_sertor.py` è **escluso fisicamente**
+  dalla copia vendorata o vendorato-ma-morto. Raccomandazione debole: **escludere fisicamente** (un ospite
+  che ispeziona `packages/speclift` non trova codice morto che finge di essere usato), coerente con DA-D-1.
+  Il requisito comportamentale (FR-004/005/006) resta valido indipendentemente dal meccanismo. *(FR-004/
+  005/006)*
+  > **Nota:** la vecchia forca «meccanismo di configurazione del vehicle CLI» (ex DA-D-3 del design CLI) è
+  > **SUPERATA** dal cambio di decisione: non esiste più un vehicle CLI da configurare per il self-host.

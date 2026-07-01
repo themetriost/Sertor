@@ -26,12 +26,14 @@ members = ["packages/sertor", "packages/sertor-install-kit", "packages/sertor-fl
 | I1 | `uv sync --all-packages` risolve senza errori | `uv sync --all-packages --extra dev` | CS-5 |
 | I2 | `sertor-core` byte-identico | `git diff -- pyproject.toml src/sertor_core` = vuoto | CS-3, FR-012 |
 | I3 | Zero import del core in speclift | `grep -rn "import sertor_core\|from sertor_core" packages/speclift/src` = 0 (fuori dai commenti dichiarativi) | CS-3, FR-012 |
-| I4 | Suite speclift verde | `uv run pytest packages/speclift/tests -m "not cloud"` | CS-4, FR-011 |
-| I5 | Suite speclift verde su 3.11 | `uv run --python 3.11 pytest packages/speclift/tests -m "not cloud"` | FR-018 |
+| I3b | **Nessun aggancio alla CLI `sertor-rag`** | `grep -rn "sertor-rag\|rag_sertor\|SertorRagLocator" packages/speclift/src` = 0 (l'adapter CLI è rimosso, D-3) | FR-004/REQ-007 |
+| I4 | Suite speclift verde | `uv run pytest packages/speclift/tests -m "not cloud"` (netto: −`test_rag_sertor` +`test_agent_evidence`) | CS-4, FR-011 |
+| I5 | Suite speclift verde su 3.11 | `uv run --python 3.11 pytest packages/speclift/tests -m "not cloud"` | FR-019 |
 | I6 | Le altre suite invariate | step CI `Tests — sertor / -install-kit / -flow` verdi | RNF-3 |
 | I7 | Lint di root verde | `uv run ruff check .` (speclift escluso) | D-5 |
-| I8 | Provenienza presente | `packages/speclift/VENDORING.md` esiste, cita repo/commit/versione | FR-002, CS-7 |
-| I9 | Skill depositata e host-agnostica | `.claude/skills/speclift/SKILL.md` esiste, no path-assistente/slash/nome-modello | FR-009/010 |
+| I8 | Provenienza presente | `packages/speclift/VENDORING.md` esiste, cita repo/commit/versione + le divergenze del swap | FR-002, CS-7 |
+| I9 | Skill depositata, host-agnostica (forma), orchestra il retrieval | `.claude/skills/speclift/SKILL.md` esiste, no path-assistente/slash/nome-modello, istruisce la localizzazione via MCP `search_code` | FR-007/008 |
+| I10 | Fail-loud evidenza malformata | `speclift bundle --evidence <file-malformato>` → `EvidenceInputError` exit 6, nessun output di evidenza | FR-010/REQ-013 |
 
 ## Configurazione per-pacchetto (contratto anti-conflitto)
 
@@ -74,3 +76,5 @@ Nuovo step nel job `test` (dopo `Tests — sertor-flow`):
 - Il **test di packaging distribuibile** (`tests/integration/test_packaging.py`) **non** include
   speclift: è dogfood-only, non distribuito (distribuzione = **FEAT-002**). Versione statica `0.1.0`.
 - Nessuna guardia di sync bundlato↔dogfood per la skill (territorio FEAT-002).
+- Il **retrieval MCP** (`search_code`) è esercitato dall'**agente** nella skill, **non** dal codice
+  testato: le suite girano **offline** (il fail-loud MCP/indice vive nella skill, non nel codice — E7).
