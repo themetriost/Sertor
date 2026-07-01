@@ -555,6 +555,43 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
+`specs/083-default-model-policy-copilot/plan.md` (FEAT-015 epica **sertor-cli** (E2) — **default
+model-policy per i subagent Copilot CLI**: quando l'ospite è **GitHub Copilot CLI**, Sertor rende i 5
+agenti Sertor-authored come `.agent.md` ma oggi **omette sempre** `model:` → modello implicito e
+variabilità non voluta tra installazioni (feedback utente `wiki/sources/usersfeedback/copilot-default-models.md`).
+La feature distribuisce a ciascuno un **default ragionato** (dispatcher meccanici `concierge`/
+`configuration-manager` → `claude-haiku-4.5`; scrittura/reasoning/sintesi `requirements-analyst`/
+`requirements`/`wiki-curator` → `claude-sonnet-4.6`) via il campo `model:` del frontmatter, da una
+**fonte unica versionata** nel kit condiviso `sertor-install-kit`, restando **modificabile** dall'utente.
+**ADDITIVA / distribuzione-installer pura, ZERO `sertor_core`** (Principio XI), zero LLM, verificabile
+offline; **path Claude byte-identico** (`model: sonnet` di `concierge` invariato). **6 forche di *come*
+risolte (research, ancoraggio MCP `search_code`/`find_symbol`/`who_calls`, nessun errore tool):**
+**DA-D-1** profilo = **nuovo modulo `sertor_install_kit/model_policy.py`** (mappa costante Python
+`_MODEL_POLICY` + `MODEL_POLICY_VERSION="1"` + `IN_SCOPE_AGENTS` + `resolve_model()`, riesportato dal kit;
+scartati file-dati e risolutore esterno — importato non copiato = no drift). **DA-D-2** innesto =
+**estendere `render_custom_agent`** (`surfaces.py:53`) sostituendo il parametro-eco `include_model: bool`
+con **`model: str | None`** (sostituzione dal profilo, MAI eco dell'alias canonico); i **3 call-site**
+(`install_rag._render_rag_file`, `install_wiki._render_for_target`, `install_governance._render_for_target`)
+derivano il nome-agente dal basename `target_rel` e passano `resolve_model(name)`; post-processing scartato.
+**DA-D-3** guardie riconciliate da «substring `haiku` assente» a «valore `model:` **non è un alias nudo**
+(`haiku`/`sonnet`/`opus`) **e** = policy-id» (sottigliezza: `claude-haiku-4.5` **contiene** `haiku` → il
+vecchio assert darebbe falso positivo); helper `_model_value`; **nuova real-asset guard** sui 5 depositi in
+`tmp_path` + `_render_rag` parity allineato (`test_assets_copilot_guard.py`/`test_schema_copilot_frontmatter.py`/
+`test_assets_copilot_parity.py`). **DA-D-4** fail-loud = **nuovo `ModelPolicyError(InstallerError)`** nominante,
+materializzato al **build del piano** (prima di ogni scrittura → nessun deposito parziale), stesso
+`resolve_model` del render. **DA-D-5** profilo NON è un asset → fuori dal sync-guard (`test_assets_sync.py`);
+importato da entrambi i pacchetti = no drift per costruzione (scioglie R-5); guardia di coerenza `IN_SCOPE_AGENTS`
+== 5 nomi depositati + pin dei 5 ID. **DA-D-6** nessun fallback strutturale nel primo taglio (documentale/globale,
+YAGNI III). **DoD:** distribuzione via `sertor install rag` (concierge/wiki-curator) + `sertor-flow install`
+(gli altri 3), doc utente `docs/install-copilot.md` + tabella capability `packages/sertor/docs/install.md`
+aggiornate nello stesso step. **Scope promosso:** assegnazione modello agli `speckit.*` (prompt-file spec-kit,
+supporto `model:` non confermato → spike) → **nuova voce backlog `FEAT-NNN` epica `sertor-cli`** (dichiarata,
+edit del flusso principale). `sertor-core` **INVARIATO** (RNF-8). Constitution **PASS 12/12 + missione PASS**
+(pre e post-design) senza deroghe (Complexity Tracking vuoto) — assegnare a ogni agente un modello adeguato al
+compito migliora **qualità e prevedibilità** del lavoro dell'agente ospite sul corpus fuso e rende reale la
+host-agnosticità (Principio X). **Nota di processo:** `setup-plan.ps1`/`speckit-plan/SKILL.md` ASSENTI →
+parametri per convenzione dal branch (forma da `082`); nessun hook eseguito; MCP `sertor-rag` interrogato
+(nessun errore tool). Branch `083-default-model-policy-copilot`. Storico:
 `specs/082-parity-guard-budget/plan.md` (FEAT-024 epica **debito-tecnico** (E10) — **parity guard esteso
 (.ps1/.json) + budget di altitude dei blocchi CLAUDE.md in CI**: chiude due falle nei guard-rail offline
 (audit ISSUE-10) con **tre guardie ADDITIVE solo-test, ZERO `sertor_core`, zero codice runtime**
