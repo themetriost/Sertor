@@ -78,8 +78,10 @@ dev = [
 [tool.uv.workspace]
 # Monorepo uv (FEAT-012/037, D1): la root è `sertor-core`; i membri sono `packages/sertor`
 # (installer wiki/rag, consumatore di sertor-core), `packages/sertor-install-kit` (motore di
-# installazione condiviso, stdlib-only) e `packages/sertor-flow` (installer governance/SDLC).
-members = ["packages/sertor", "packages/sertor-install-kit", "packages/sertor-flow"]
+# installazione condiviso, stdlib-only), `packages/sertor-flow` (installer governance/SDLC) e
+# `packages/speclift` (SpecLift vendorato per il self-host, feature 084 — zero dipendenze
+# dagli altri membri: `speclift -> ∅`, nessun `[tool.uv.sources]` necessario per esso).
+members = ["packages/sertor", "packages/sertor-install-kit", "packages/sertor-flow", "packages/speclift"]
 
 [tool.uv.sources]
 # In sviluppo, `sertor-core` (dipendenza di `packages/sertor`) si risolve dal workspace,
@@ -107,7 +109,9 @@ line-length = 100
 target-version = "py311"
 # The exploration prototype is FROZEN/read-only by design (see CLAUDE.md): out of lint scope, so
 # `ruff check .` (the documented lint command, and CI) stays green on the maintained code.
-extend-exclude = ["prototype"]
+# packages/speclift is VENDORED verbatim from Sinthari (feature 084): it keeps its own
+# [tool.ruff] (110/py311/+SIM) and MUST NOT be reformatted to Sertor's style on re-vendoring.
+extend-exclude = ["prototype", "packages/speclift"]
 src = [
     "src", "tests",
     "packages/sertor/src", "packages/sertor/tests",
