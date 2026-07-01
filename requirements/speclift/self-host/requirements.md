@@ -5,7 +5,7 @@
 ## 1. Contesto e problema (perché)
 
 **SpecLift** (handoff da Sinthari, `github.com/themetriost/Sinthari` `master @ 5ee6fc1`, PR #5, versione
-pluggable mergiata con ~122 test verdi — vedi `wiki/sources/input-other-agents/speclift-handoff-sinthari.md` e
+pluggable mergiata con ~122 test verdi — vedi `wiki/sources/input-other-agents/processed/speclift-handoff-sinthari.md` e
 la ricognizione ancorata `wiki/sources/input-other-agents/speclift-recon.md`) è una capacità
 `diff → requisiti EARS ancorati`: dato un changeset git, genera requisiti multi-quota (capacità
 utente / comportamento / implementazione), ognuno legato a `file:righe` + simbolo + test, riverificati

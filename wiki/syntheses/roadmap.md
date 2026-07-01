@@ -14,7 +14,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > `requirements → spec → plan → tasks → implement`.
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-06-30)
+## ⚡ Executive summary (stato al 2026-07-01)
 
 ### ✅ Capacità consegnate (feature su `master`)
 
@@ -45,17 +45,19 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **Guida d'install host-assistant-aware + NRT** (E12-FEAT-012, merge `030c695`, 2026-06-26) — `guided-setup`/`concierge` rilevano l'host e passano sempre `--assistant <host>` a rag/wiki/flow (prima default `claude` su host Copilot → layout sbagliato); + NRT anti-regressione per-PR. Fix di un bug reale emerso in dogfooding | `usabilità` |
 | **Fail-loud breadcrumb negli hook + fallback «asset mancante → STOP» negli agent** (E10-FEAT-019, merge `629481b`/PR #125, 2026-06-29) — Principio XII reso reale sugli asset distribuiti: 4 hook (`memory-capture`/`rag-freshness`/`wiki-pending-check`/`version-check`) scrivono un breadcrumb ispezionabile `.sertor/.last-hook-error` (schema `hook.error/1`, sovrascritto, secret-free, `exit 0` sempre) sui path prima muti; 3 agent (`concierge`/`wiki-curator`/`requirements-analyst`) si fermano su asset mancante invece di procedere a vuoto. 4 guardie anti-regressione (incl. il buco sync dogfood D-5). Additivo, `sertor-core` invariato | `debito-tecnico` |
 | **Portabilità OS degli hook (guardia pwsh) + onestà sui surface inerti** (E10-FEAT-018, merge `8257fd3`/PR #127, 2026-06-30) — Principio XII + X: gli hook `.ps1` cablati con `"shell": "powershell"` fallivano in silenzio su mac/Linux (`powershell` assente). Nuovo modulo puro `host_env.py` nel kit: su host non-Windows senza `pwsh` l'installer emette una **nota azionabile** (installa PowerShell Core) via `InstallReport.notes` (primo uso reale) invece del silent fail — **detect-only, wiring invariato**. + nota onestà `memory-capture` inerte su Copilot. Doc utente col limite tecnico dichiarato. Additivo, `sertor-core` invariato, schema `install.report/1` invariato | `debito-tecnico` |
+| **Default model-policy subagent Copilot CLI** (E2-FEAT-015, merge `4e30d00`/PR #135, 2026-07-01) — i 5 agenti Sertor-authored su Copilot CLI ricevono un `model:` di default da una fonte unica versionata (`model_policy.py`), fail-loud install-time; meccanismo reale = frontmatter `.agent.md` (non un blocco settings, verificato vs doc ufficiale); path Claude byte-identico, core invariato | `sertor-cli` |
+| **Self-host di SpecLift** (E14-FEAT-001, merge `bbfb74d`/PR #136, 2026-07-01) — `diff → requisiti EARS ancorati` (handoff da Sinthari) vendorato come `packages/speclift`; retrieval via **MCP** (Adapter B pluggable, esito della collaborazione agent-to-agent feedback CLI→MCP); dogfood e2e verde; core invariato, 122 test | `speclift` |
 
 *Dettaglio (PR, date, numeri) nella sezione ✅ DONE in fondo alla pagina.*
 
 > **Governance:** Costituzione **v1.4.0** — **Missione & stella polare (North Star)** (differenziatore = **fusione code+doc**; gate «Allineamento alla missione» nel Constitution Check) + **Principio XII «Fail Loud, Fix the Cause»** (v1.3.0: riparare la causa, non disattivare/silenziare per schivare un errore). Distribuita agli ospiti via `sertor-flow` (starter neutro + blocco SDLC).
 
-### 📋 Le 13 epiche (per stato)
+### 📋 Le 14 epiche (per stato)
 
 > **⚠️ Nessuna epica è "finita" finché TUTTE le sue feature non sono consegnate.** Le 4 storiche hanno
-> il **nucleo su `master`** ma residui aperti (tranne `sertor-core`, ormai completa); le altre 8 sono
-> **da fare**. Una *feature* (`FEAT-NNN`) vive **dentro** un'epica — le capacità già consegnate stanno
-> nella tabella sopra, qui c'è il quadro a livello di epica.
+> il **nucleo su `master`** ma residui aperti (tranne `sertor-core`, ormai completa); le altre sono
+> **da fare** o appena avviate. Una *feature* (`FEAT-NNN`) vive **dentro** un'epica — le capacità già
+> consegnate stanno nella tabella sopra, qui c'è il quadro a livello di epica.
 
 | # | Epica | Stato | Residuo / 1° passo |
 |---|---|---|---|
@@ -72,8 +74,9 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **E11** | [`multiutente`](../../requirements/multiutente/epic.md) | 📋 differita | finché il caso d'uso team non è concreto |
 | **E12** | 🆕 [`usabilità`](../../requirements/usabilita/epic.md) | 🔄 **MVP completo** (FEAT-001/002/010 ✅ su `master`) | **owner del layer UX** (skill agentiche + agente *concierge* + poche primitive deterministiche, D↔N). **FEAT-001 `doctor` ✅** (PR #100, fix freschezza #102) + **FEAT-002 guided-setup ✅** (skill + agente `concierge` model-pinned, PR #101) + **FEAT-010 discoverability CLI ✅** (`uv run --project .sertor`, PR #103/#104) + **FEAT-012 install host-aware ✅** (PR #115, fix dogfooding + NRT, 2026-06-26). MVP (doctor + guida + invocazione robusta) coperto. Restano Should: config-recommender (FEAT-004), explain (FEAT-005), search-diagnose (FEAT-007), concierge pieno (FEAT-009, **stub avviato**), progress GloVe (FEAT-003). Assorbe item UX-facing da E2/E3/E10 (cross-ref) · **FEAT-013 description trigger-rich EN** (da audit, P0) |
 | **E13** | 🆕 [`documentazione-marketing`](../../requirements/documentazione-marketing/epic.md) | 📋 nuova (2026-06-24) | **owner della documentazione ESTERNA + marketing** (confine netto: E12 = UX in-product · `wiki/` = doc interna · meccanismi nelle epiche d'origine — E13 li *racconta*, cross-ref). Due fasi: **Fase 1 — doc utente** (getting-started unico, README di valore, pagina «cos'è/perché» imperniata sulla fusione code+doc — MVP Must/Should) · **Fase 2 — marketing pubblico** (posizionamento, demo/screencast, landing/sito) **gated sul go-public** (apertura repo/PyPI, oggi E2/FEAT-006 = Won't). 1° passo: FEAT-001/002/003 (Fase 1) |
+| **E14** | 🆕 [`speclift`](../../requirements/speclift/epic.md) | 🔄 FEAT-001 ✅ su master | **`diff → requisiti EARS ancorati`** (handoff da Sinthari, sandwich deterministico + moat). **FEAT-001 self-host ✅** (vendoring Adapter B/MCP, merge `bbfb74d`/PR #136, 2026-07-01). Restano: **FEAT-002 distribuzione su ospiti** (casa non decisa: `sertor-flow` vs `sertor`) · famiglia futura **FEAT-003 SpecAudit / FEAT-004 Debrief / FEAT-005 Guida-al-test** (Could). Nato dalla collaborazione agent-to-agent (feedback CLI→MCP recepito upstream) |
 
-*Legenda:* ✅ completa · 🔄 nucleo consegnato, residui aperti · 📋 da fare · 🆕 nuova. *Numerazione `E1`..`E13`: vista standing per epica (E1 nucleo `sertor-core`, E11 `multiutente` differita, E12 `usabilità`, E13 `documentazione-marketing` nuova 2026-06-24); E1–E4 storiche, E5–E10 dal backlog audit 2026-06-16, E12 dall'esplorazione UX 2026-06-23, E13 dalla richiesta 2026-06-24.*
+*Legenda:* ✅ completa · 🔄 nucleo consegnato, residui aperti · 📋 da fare · 🆕 nuova. *Numerazione `E1`..`E14`: vista standing per epica (E1 nucleo `sertor-core`, E11 `multiutente` differita, E12 `usabilità`, E13 `documentazione-marketing`, E14 `speclift` nuova 2026-07-01 da handoff Sinthari); E1–E4 storiche, E5–E10 dal backlog audit 2026-06-16, E12 dall'esplorazione UX 2026-06-23, E13 dalla richiesta 2026-06-24.*
 
 ### 🔄 IN PROGRESS (dettaglio)
 
@@ -104,22 +107,26 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > collaterale (non roadmap): `.env` dogfood ha `SERTOR_OBSERVABILITY_OTEL` attivo senza collector su
 > `localhost:4318` → rumore di connessione a ogni comando.
 
-**🔄 In pipeline ora:**
+**🔄 In pipeline ora:** *(nulla di attivo — E14 SpecLift ed E2-FEAT-015 consegnati oggi)*
 
-- **E2-FEAT-015 — default model-policy subagent Copilot CLI — 🔄 PR APERTA, CI VERDE, attesa merge.**
-  *Cosa:* i 5 agenti Sertor-authored resi come `.agent.md` su Copilot CLI ricevono un `model:` di default
-  esplicito da una **fonte unica versionata** nel kit (`sertor_install_kit/model_policy.py`), con fail-loud
-  install-time se il profilo non copre un agente in ambito; path Claude byte-identico, `sertor-core`
-  invariato (Principio XI). *Finding di verifica:* la config `subagents.agents.<name>.model` proposta
-  dall'utente **non è un meccanismo di repo** → il default vive nel frontmatter `.agent.md` (doc ufficiale);
-  l'override utente via `/subagents` (in `~/.copilot/settings.json`) resta al sicuro e vince a runtime.
-  *Dove:* branch `083-default-model-policy-copilot`, [PR #135](https://github.com/themetriost/Sertor/pull/135);
-  SpecKit completo (spec 18/18 · plan Constitution **12/12 + missione** · 21 task). *Test:* kit **151** ·
-  sertor **487** · sertor-flow **140** · root **1134 pass / 3 skip**, ruff clean; CI Win+Linux verde.
-  *Prossimo passo concreto:* merge (utente) → poi re-index dogfood + smoke MCP. *Follow-up non-bloccante
-  (giudizio LLM, solo LIVE):* verificare su ospite Copilot reale che (a) l'override `/subagents` sopravviva
-  a `upgrade` e (b) i model-ID (`claude-haiku-4.5`/`claude-sonnet-4.6`) siano abilitati nel tenant.
-  *Scope out promosso:* modello per gli `speckit.*` → **E2-FEAT-016** (Could, previa spike).
+- **E14-FEAT-001 — self-host di SpecLift (vendoring Adapter B) — ✅ CONSEGNATA (merge `bbfb74d`/PR #136, 2026-07-01) su `master`.**
+  *Cosa:* SpecLift (capacità `diff → requisiti EARS ancorati`, **handoff da Sinthari**) vendorato come membro
+  workspace `packages/speclift` per il dogfooding. **Storia collaborativa agent-to-agent:** handoff → nostro
+  feedback «i consumatori esterni usano l'**MCP**, non la CLI» → Sinthari ha reso l'`EvidenceLocator` **pluggable**
+  (Adapter B: agente+MCP) e mergiato su `master` (`5ee6fc1`) → noi **adottiamo l'Adapter B via vendoring puro**
+  (zero fork, convergenza). Retrieval via MCP `search_code` (three-gear flow); Adapter A CLI dormiente;
+  `sertor-core` INVARIATO. 2 divergenze di packaging (Python `>=3.11`, `jsonschema`→dev) + LICENSE MIT.
+  *Test:* speclift **122** (su 3.11 e 3.12) · non-regressione sertor 487 / kit 151 / flow 140 / core-root 1064;
+  Constitution **12/12 + missione**. **Dogfood e2e verde** (moat: anchor `verified`). Post-merge: re-index
+  (1186 doc) + smoke MCP verde (code-graph auto-reload sui simboli nuovi). *Follow-up:* distribuzione su ospiti =
+  **E14-FEAT-002** (casa non decisa); famiglia SpecAudit/Debrief = E14-FEAT-003/004/005.
+
+- **E2-FEAT-015 — default model-policy subagent Copilot CLI — ✅ CONSEGNATA (merge `4e30d00`/PR #135, 2026-07-01) su `master`.**
+  I 5 agenti Sertor-authored su Copilot CLI ricevono un `model:` di default da una fonte unica versionata
+  (`sertor_install_kit/model_policy.py`), fail-loud install-time su profilo incompleto; path Claude byte-identico,
+  `sertor-core` invariato. Meccanismo verificato = `model:` nel frontmatter `.agent.md` (non un blocco settings).
+  Constitution 12/12 + missione; kit 151 · sertor 487 · flow 140 · root 1134/3-skip. *Scope out promosso:*
+  modello per gli `speckit.*` → **E2-FEAT-016** (Could, previa spike).
 
 - **E10-FEAT-019 ✅ CONSEGNATA (merge `629481b`/PR #125, 2026-06-29) su `master`.** SpecKit completo
   specify→plan→tasks→implement, Constitution **12/12 + missione**, ruff clean; test: sertor **443** ·
