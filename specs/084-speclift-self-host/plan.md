@@ -3,35 +3,41 @@
 **Branch**: `084-speclift-self-host` | **Date**: 2026-07-01 | **Spec**: [`spec.md`](./spec.md)
 
 **Input**: Feature specification da `specs/084-speclift-self-host/spec.md` +
-`requirements/speclift/self-host/requirements.md` + recon `wiki/sources/input-other-agents/speclift-recon.md`.
+`requirements/speclift/self-host/requirements.md` + recon
+`wiki/sources/input-other-agents/speclift-recon-pluggable.md` (flow reale) +
+`wiki/sources/input-other-agents/speclift-recon.md` (packaging).
 
-> **Rigenerato dopo il cambio di decisione del proprietario:** il self-host **non** dipende dalla CLI
-> `sertor-rag`; il retrieval passa dal **server MCP** (tool `search_code`) orchestrato dall'agente dentro
-> una **skill**. Il vecchio piano (vehicle CLI) è **SUPERATO**.
+> **Rigenerato dopo che Sinthari ha recepito il nostro feedback.** Upstream ha mergiato su `master`
+> (**`5ee6fc1`**, PR #7) una versione **PLUGGABLE** dell'`EvidenceLocator` (`ProvidedEvidenceLocator`,
+> Adapter B: agente + tool MCP), **senza rimuovere** l'adapter CLI. → **Adottiamo il loro codice reale**:
+> la feature diventa **vendoring PURO** (zero fork). Il precedente piano (swap del locator inventato:
+> `AgentEvidenceLocator`, `--candidates-out`/`--evidence`, `EvidenceInputError` exit 6) è **SUPERATO**.
 
 ## Summary
 
-Vendorare **SpecLift** (handoff Sinthari, `master @ be4da28`, MVP ~106 test) nel repo Sertor come nuovo
+Vendorare **SpecLift** (Sinthari `master @ 5ee6fc1`, MVP pluggable ~122 test) nel repo Sertor come nuovo
 membro del workspace `uv` **`packages/speclift`**, per usarlo in **dogfooding** — generare requisiti EARS
-ancorati e riverificati dai changeset reali di Sertor, alimentando il *lint semantico* del rituale di step
-con evidenza ancorata. La feature è **additiva / vendoring**: **`sertor_core` resta byte-identico**
-(Principio XI), e SpecLift consuma il retrieval di Sertor **esclusivamente** via il vehicle **MCP** (tool
+ancorati e riverificati dai changeset reali di Sertor, alimentando il *lint semantico* del rituale di
+step con evidenza ancorata. La feature è **additiva / vendoring PURO**: **`sertor_core` resta
+byte-identico** (Principio XI), e il **codice `src/**` di speclift è copiato verbatim** (nessun fork). Il
+self-host usa l'**Adapter B** pluggable upstream: il retrieval passa dal vehicle **MCP** (tool
 `search_code`), orchestrato dall'agente nella skill — **mai** via la CLI `sertor-rag search`, **mai**
 importando il core. La distribuzione su ospiti esterni è **FEAT-002**, fuori ambito.
 
 **Approccio tecnico (dal research):**
-- **Swap del solo locator (D-3):** rimuovi `adapters/rag_sertor.py` (adapter CLI), aggiungi
-  `AgentEvidenceLocator` (file-reader) dietro la **stessa porta** `EvidenceLocator`; l'agente localizza via
-  MCP `search_code` e consegna l'evidenza in un **artefatto JSON** (forma `Symbol`/`TestRef`, come il
-  `FakeLocator`). Candidati out via `bundle --candidates-out`; evidenza in via `bundle --evidence`; nuovo
-  `EvidenceInputError` (exit 6) fail-loud su evidenza malformata. Moat **invariato** (verifica sul
-  filesystem). *(Contratto: `contracts/agent-evidence-interface.md`.)*
-- copia one-shot pinnata a `be4da28` + `VENDORING.md` (D-1); `jsonschema` → dev, runtime `[]` (D-2);
-  `requires-python` a `>=3.11` con verifica empirica, piano B se irriducibile (D-4); ruff di root **esclude**
-  `packages/speclift`, speclift tiene il proprio `[tool.ruff]` (D-5); test per-pacchetto + step CI, marker
-  nel pyproject di speclift (D-6); `LICENSE` MIT + provenienza che registra l'assenza upstream (stessa-org,
-  D-7); versione statica `0.1.0`, escluso dal packaging distribuibile (D-8); skill dogfood **estesa** a
-  orchestrare il retrieval via MCP (D-9).
+- **Adozione dell'Adapter B pluggable (D-3):** vendora **entrambi** gli adapter (`SertorRagLocator` +
+  `ProvidedEvidenceLocator`) dietro la porta `EvidenceLocator`; il dogfood usa il **three-gear flow reale**
+  — `speclift changeset <ref> --out` (candidati) → l'agente localizza coi tool MCP e scrive `located.json`
+  → `speclift bundle --changeset … --located …` → `assemble`. `rag_sertor.py` **resta** (dormiente); moat,
+  exit-code (malformato→5, flag-misuse→2) e interfaccia (`located.json` chiavato `file::query`,
+  `query_keys` G6) sono **quelli upstream**. *(Contratto: `contracts/evidence-locator-port.md` che
+  **riferisce** quello upstream, non lo reinventa.)*
+- copia one-shot pinnata a **`5ee6fc1`** + `VENDORING.md` (D-1); `jsonschema` → dev, runtime `[]` (D-2);
+  `requires-python` a `>=3.11` con verifica empirica, piano B se irriducibile (D-4); ruff di root
+  **esclude** `packages/speclift`, speclift tiene il proprio `[tool.ruff]` (D-5); test per-pacchetto +
+  step CI, marker nel pyproject di speclift, **suite completa** (D-6); `LICENSE` MIT + provenienza che
+  registra l'assenza upstream (stessa-org, D-7); versione statica `0.1.0`, escluso dal packaging
+  distribuibile (D-8); skill dogfood = **copia verbatim** (upstream ha già Procedura A/B, D-9).
 
 ## Technical Context
 
@@ -41,11 +47,12 @@ importando il core. La distribuzione su ospiti esterni è **FEAT-002**, fuori am
 `ruff>=0.6`, `jsonschema>=4` (test di contratto). **Nessuna** dipendenza da altri membri del workspace,
 **nessun** SDK MCP importato (l'MCP è consumato dall'**agente** nella skill, non dal codice SpecLift).
 
-**Storage**: N/A. SpecLift legge il filesystem (git diff, verifica àncore) e riceve l'evidenza da un
-artefatto JSON prodotto dall'agente; non scrive stato persistente proprio. Non tocca il RAG.
+**Storage**: N/A. SpecLift legge il filesystem (git diff, verifica àncore) e, nel flow B, riceve
+l'evidenza da `located.json` prodotto dall'agente; non scrive stato persistente proprio. Non tocca il RAG.
 
-**Testing**: `pytest` (~28 file; suite netta = upstream −`test_rag_sertor` +`test_agent_evidence`); marker
-`contract`/`integration`; integration offline (git-fixture locale).
+**Testing**: `pytest` (**suite completa upstream**, ~122 test; nessuna rimozione — vendoring puro);
+marker `contract`/`integration`; integration offline (git-fixture locale; `test_rag_sertor` con runner
+mockato).
 
 **Target Platform**: Windows + Linux (matrice CI), offline-capable (nessuna rete richiesta dai test — il
 retrieval MCP è nell'agente, non nel codice testato).
@@ -55,80 +62,86 @@ hatchling). Non un servizio, non una libreria del core.
 
 **Performance Goals**: N/A (strumento su richiesta, determinismo prioritario).
 
-**Constraints**: `sertor_core` invariato (Principio XI); zero ciclo di dipendenze; retrieval **solo** via
-MCP `search_code` (skill), **zero** CLI `sertor-rag`, **zero** import `sertor_core`; fail-loud su MCP/indice
-(skill) e su evidenza malformata (exit 6); skill host-agnostica nella forma; suite verde nel workspace.
+**Constraints**: `sertor_core` invariato (Principio XI); codice `src/**` di speclift **verbatim**; zero
+ciclo di dipendenze; retrieval del dogfood **solo** via MCP `search_code` (Adapter B), **zero** CLI
+`sertor-rag`, **zero** import `sertor_core`; fail-loud su MCP/indice (skill) e su evidenza malformata
+(exit 5 upstream); skill host-agnostica nella forma; suite verde nel workspace.
 
-**Scale/Scope**: 1 nuovo membro workspace; ~25 file sorgente vendorati; **swap del locator** = 1 file
-rimosso (`rag_sertor.py`) + 1 aggiunto (`agent_evidence.py`) + 5 file toccati (`pipeline.py`, `cli.py`,
-`config.py`, `serialize.py`, `domain/errors.py`) + skill estesa + test (−`test_rag_sertor`, +`test_agent_evidence`);
-~5 punti d'integrazione workspace (root `pyproject.toml` × 2, `ci.yml`, pyproject del pacchetto,
-`.claude/skills/`). Divergenze vendorate tracciate in `VENDORING.md`.
+**Scale/Scope**: 1 nuovo membro workspace; ~25 file sorgente **vendorati verbatim** (2 adapter, il seam
+pluggable, `query_keys`, la skill Procedura A/B); **zero file di codice modificati** (vs 5+ del design
+«swap» superato); ~5 punti d'integrazione workspace (root `pyproject.toml` × 2, `ci.yml`, pyproject del
+pacchetto, `.claude/skills/`) + 2 file nostri (`LICENSE`, `VENDORING.md`). Divergenze **solo di
+packaging** tracciate in `VENDORING.md`.
 
 ## Constitution Check
 
 *GATE — v1.4.0. PASS/FAIL per principio; ogni FAIL va risolto o giustificato in Complexity Tracking.*
 
 - [x] **I — Dipendenze verso l'interno (NON-NEGOZIABILE): PASS.** `sertor_core` invariato; SpecLift ha il
-  proprio dominio puro ports&adapters. Lo **swap del locator** è precisamente Dependency Rule + Plugin: si
-  sostituisce un adapter concreto (`SertorRagLocator`→`AgentEvidenceLocator`) dietro la porta
-  `EvidenceLocator`, senza toccare dominio/stadi (`locate_evidence.py` invariato). Zero SDK nel dominio.
-- [x] **II — Boundary & local-first: PASS.** SpecLift resta interamente locale (git + filesystem + lettura
-  di un file di evidenza). Il retrieval MCP vive **fuori** dal codice SpecLift (nell'agente). N/A per vector
-  store proprio.
-- [x] **III — YAGNI & unità piccole: PASS.** Lo swap è la modifica **minima** che realizza «retrieval via
-  MCP nella skill»: si rimpiazza il **solo** adapter di localizzazione. Il flag `--candidates-out` +
-  l'`AgentEvidenceLocator` + `EvidenceInputError` sono ciascuno **necessari** al design (candidati out,
-  evidenza in, fail-loud). Le generalizzazioni (env-var vehicle, sync, distribuzione, config-all'install)
-  sono rinviate a FEAT-002. *(Nota onesta: il design MCP tocca più file vendorati del vecchio design CLI —
-  che patchava una costante — ma è il prezzo della decisione del proprietario, non complessità speculativa.)*
-- [x] **IV — Errori espliciti (NON-NEGOZIABILE): PASS.** Nuovo `EvidenceInputError` (exit 6) su evidenza
-  assente/malformata: niente `None` silenzioso, niente evidenza vuota/di default, niente àncora fabbricata.
-  Il fail-loud MCP/indice vive nella skill (l'agente si ferma). Fedele alla policy errori upstream.
-- [x] **V — Testabilità & misure: PASS.** Suite F.I.R.S.T. integrata e verde nel workspace (CS-4); il nuovo
-  `AgentEvidenceLocator` è testato in isolamento (fed da file valido/assente/malformato) e riusa i test di
-  `locate_evidence` (stessa forma del `FakeLocator`). hit@k/MRR **N/A** (SpecLift non è un motore di
-  retrieval — la misura pertinente è la suite verde + il moat deterministico).
-- [x] **VI — Idempotenza & non-distruttività: PASS.** Stadi deterministici invariati; il vendoring non avvia
-  indicizzazione (install≠run); nessuna sovrascrittura di file utente; `assemble` rilegge input e riverifica
-  sul filesystem. *(Deviazione dal sandwich: l'agente tocca 2 stadi — vedi nota sotto, non è una deroga.)*
-- [x] **VII — Leggibilità: PASS.** Vocabolario di dominio preservato (ingest/parse/locate/lift/verify/render);
-  il nuovo adapter e il flag hanno nomi rivelatori (`AgentEvidenceLocator`, `--candidates-out`, `--evidence`).
-- [x] **VIII — Configurabilità centralizzata: PASS.** Nessun default hardcodato nel corpo: rimosso il vehicle
-  morto da `config.py`; il percorso dell'evidenza è un argomento CLI esplicito, non una costante sparsa.
-- [x] **IX — Osservabilità: PASS (N/A per il core).** SpecLift ha la sua `observability.py` (stage_event);
-  la feature non introduce operazioni nel core Sertor da loggare. Nessun segreto nei log.
-- [x] **X — Host-agnostico (NON-NEGOZIABILE): PASS (con confine dichiarato).** La skill resta host-agnostica
-  nella **forma** (no path-assistente, no slash-command, no nome-modello). I nuovi passi nominano il tool MCP
-  **`search_code`**: è un vehicle **di Sertor** (il framework consumato), **non** un dettaglio del progetto
-  *ospite* — Principio X vieta di presumere l'ospite, non di nominare i vehicle di Sertor. Il corpo è dunque
-  host-agnostico nella forma e **Sertor-targeted nel contenuto del retrieval** (inevitabile: la capacità
-  *localizza l'evidenza tramite il retrieval di Sertor*). Il dogfooding non è usato come licenza per accoppiare
-  la forma. Generalizzazione host-facing (installer/IT→EN) = FEAT-002/E12. *(Tensione dichiarata con onestà,
-  research D-9.)*
-- [x] **XI — Consumo via vehicles: PASS (allineato/rafforzato).** Retrieval **solo** via il vehicle **MCP**
-  `search_code` (l'interfaccia d'integrazione per gli agenti); **zero** CLI `sertor-rag`, **zero**
-  `import sertor_core` (l'adapter CLI `rag_sertor.py` è **rimosso**; grep negativo sul core verificato). È
-  l'applicazione letterale della regola «i consumatori esterni si integrano via MCP» (REQ-E1). Nessuna nuova
-  via d'accesso diretto introdotta.
-- [x] **XII — Fail Loud, Fix the Cause: PASS.** Due punti fail-loud: (a) MCP/indice giù → l'agente si ferma e
-  segnala (skill, con rimedio); (b) evidenza malformata → `EvidenceInputError` exit 6, mai degrado silenzioso.
-  Il finding «Sinthari senza LICENSE» è **segnalato** (D-7), non sepolto. La divergenza dal codice vendorato è
-  **dichiarata** e rimandata a Sinthari (FR-016/017), non nascosta.
+  proprio dominio puro ports&adapters, vendorato verbatim. La porta `EvidenceLocator` ha **due** adapter
+  pluggable (upstream) — Dependency Rule + Plugin allo stato dell'arte: il dominio/stadi non conoscono
+  l'adapter concreto. Zero SDK nel dominio.
+- [x] **II — Boundary & local-first: PASS.** SpecLift resta interamente locale (git + filesystem +
+  lettura di `located.json`). Il retrieval MCP vive **fuori** dal codice SpecLift (nell'agente). N/A per
+  vector store proprio.
+- [x] **III — YAGNI & unità piccole: PASS (rafforzato).** Il **vendoring puro** è la modifica **minima**:
+  adottando il codice pluggable upstream, la nostra divergenza di codice runtime è **zero** (solo
+  packaging). Convergere con l'upstream è il migliore risultato DRY/manutenzione — nessuna astrazione
+  nostra da mantenere, re-vendoring economico. Le generalizzazioni (distribuzione, config-all'install)
+  sono rinviate a FEAT-002.
+- [x] **IV — Errori espliciti (NON-NEGOZIABILE): PASS.** Gli exit-code upstream sono adottati tale-e-quali
+  (malformato→5, flag-misuse→2, RAG giù dell'Adapter A→3): niente `None` silenzioso, niente evidenza
+  vuota/di default, niente àncora fabbricata. Il fail-loud MCP/indice vive nella skill (l'agente si
+  ferma). **Nessun** `EvidenceInputError`/exit 6 nostro (era superfluo — l'exit 5 upstream copre
+  l'evidenza malformata).
+- [x] **V — Testabilità & misure: PASS.** Suite F.I.R.S.T. **completa** integrata e verde nel workspace
+  (CS-4), inclusi i test dell'Adapter B (`test_provided_locator`/`test_query_keys`/`test_three_gear_flow`)
+  offline. hit@k/MRR **N/A** (SpecLift non è un motore di retrieval — la misura pertinente è la suite
+  verde + il moat deterministico).
+- [x] **VI — Idempotenza & non-distruttività: PASS.** Stadi deterministici verbatim; il vendoring non
+  avvia indicizzazione (install≠run); nessuna sovrascrittura di file utente; `assemble` rilegge input e
+  riverifica sul filesystem. *(Deviazione dal sandwich con l'Adapter B: l'agente tocca 2 stadi — è una
+  scelta **upstream dichiarata**, vedi nota sotto, non una deroga.)*
+- [x] **VII — Leggibilità: PASS.** Vocabolario di dominio preservato verbatim
+  (ingest/parse/locate/lift/verify/render + changeset/located/bundle). Nessun nostro rename.
+- [x] **VIII — Configurabilità centralizzata: PASS.** `config.py` è vendorato verbatim (incluso
+  `SERTOR_RAG_VEHICLE`, usato solo dall'Adapter A dormiente); il percorso dell'evidenza è un argomento CLI
+  esplicito upstream, non una costante sparsa.
+- [x] **IX — Osservabilità: PASS (N/A per il core).** SpecLift ha la sua `observability.py`
+  (`stage_event`); la feature non introduce operazioni nel core Sertor da loggare. Nessun segreto nei log.
+- [x] **X — Host-agnostico (NON-NEGOZIABILE): PASS (con confine dichiarato).** La skill upstream è **già**
+  host-agnostica nella **forma** (no path-assistente, no slash-command, no nome-modello — verificato); la
+  scelta A vs B è essa stessa host-agnostica (sceglie in base a cosa l'host espone). I passi della
+  Procedura B nominano i tool MCP **di Sertor** (`search_code`/…): sono vehicle **di Sertor** (il framework
+  consumato), **non** un dettaglio del progetto *ospite* — Principio X vieta di presumere l'ospite, non di
+  nominare i vehicle di Sertor. Host-agnostico nella forma e **Sertor-targeted nel contenuto** del
+  retrieval (inevitabile: la capacità *localizza l'evidenza tramite il retrieval di Sertor*). Il
+  dogfooding non è usato come licenza per accoppiare la forma. Generalizzazione host-facing = FEAT-002/E12.
+- [x] **XI — Consumo via vehicles: PASS (allineato/rafforzato).** Nel flow B il retrieval passa **solo**
+  dal vehicle **MCP** `search_code` (l'interfaccia d'integrazione per gli agenti); **zero** CLI
+  `sertor-rag`, **zero** `import sertor_core`. L'adapter CLI `rag_sertor.py` **esiste** ma è **dormiente**
+  nel nostro uso (garanzia strutturale: il flow B non invoca mai `SertorRagLocator.locate_*`; tripwire:
+  nessun `.sertor/` in root → uso erroneo fallirebbe *loud*). È l'applicazione letterale della regola «i
+  consumatori esterni si integrano via MCP» (REQ-E1). Nessuna nuova via d'accesso diretto introdotta.
+- [x] **XII — Fail Loud, Fix the Cause: PASS.** Fail-loud a due punti: (a) MCP/indice giù → l'agente si
+  ferma e segnala (skill, con rimedio); (b) evidenza malformata → exit **5** upstream, mai degrado
+  silenzioso. Il finding «Sinthari senza LICENSE» (verificato a `5ee6fc1`) è **segnalato** (D-7), non
+  sepolto. Il feedback CLI→MCP è **già stato recepito** da upstream (`5ee6fc1`) — Fix the Cause a monte.
 - [x] **Allineamento alla missione: PASS (indiretto, dichiarato con onestà).** SpecLift **non** tocca il
   differenziatore diretto (fusione code+doc / motori / hit-rate): è **periferico**. Il contributo è
   **indiretto ma reale**: produce requisiti ancorati e riverificati che tengono `requirements/`/wiki/
-  `CLAUDE.md` **onesti rispetto al codice reale**, rafforzando **veridicità e freschezza** del contesto che il
-  RAG poi serve. In più, il self-host **consuma il contratto d'integrazione che Sertor pubblica per gli agenti
-  — l'MCP** — rispettando la regola per cui i consumatori esterni non dipendono dalla CLI. Non gonfiato: la
-  spec stessa lo dichiara periferico.
+  `CLAUDE.md` **onesti rispetto al codice reale**, rafforzando **veridicità e freschezza** del contesto che
+  il RAG poi serve. In più, il self-host **consuma il contratto d'integrazione che Sertor pubblica per gli
+  agenti — l'MCP** — rispettando la regola per cui i consumatori esterni non dipendono dalla CLI. Non
+  gonfiato: la spec stessa lo dichiara periferico.
 
-> **Nota di design (NON una deroga costituzionale): deviazione dal «sandwich a un solo stadio intelligente».**
-> Spostando la localizzazione dall'adapter deterministico all'agente (che la ottiene via MCP `search_code`),
-> l'agente ora tocca **due** stadi di giudizio — localizza **E** scrive le frasi EARS — anziché uno solo. È
-> una scelta **consapevole e dichiarata**, comunicata a Sinthari come feedback (FR-017). Il **moat** (verifica
-> delle àncore sul **filesystem**, `anchor_fs.py`, mai via RAG) resta l'ultima rete: un'evidenza
-> mal-localizzata che non regge è **esclusa**, mai accettata in silenzio — la garanzia forte è preservata.
+> **Nota di design (NON una deroga costituzionale): la deviazione dal «sandwich a un solo stadio
+> intelligente» è ora una SCELTA UPSTREAM DICHIARATA.** Con l'Adapter B l'agente tocca **due** stadi di
+> giudizio — localizza **E** scrive le frasi EARS — anziché uno solo. A differenza del piano precedente,
+> **non è una nostra estensione**: è documentata apertamente da Sinthari in
+> `contracts/evidence-locator-port.md:41-46` (vendorato). Il **moat** (verifica delle àncore sul
+> **filesystem**, `anchor_fs.py`, mai via RAG) resta l'ultima rete: un'evidenza mal-localizzata che non
+> regge è **esclusa**, mai accettata in silenzio — la garanzia forte è preservata per entrambi gli adapter.
 
 **Esito pre-design: PASS 12/12 + missione PASS.** Nessuna deroga. **Complexity Tracking vuoto.**
 
@@ -139,37 +152,37 @@ rimosso (`rag_sertor.py`) + 1 aggiunto (`agent_evidence.py`) + 5 file toccati (`
 ```text
 specs/084-speclift-self-host/
 ├── plan.md                          # questo file
-├── research.md                      # Fase 0 — 9 decisioni (D-1..D-9), D-3 = swap del locator/MCP
-├── data-model.md                    # Fase 1 — entità di integrazione E1..E8
-├── quickstart.md                    # Fase 1 — ciclo candidati→localizza(MCP)→bundle→autoring→assemble
+├── research.md                      # Fase 0 — 9 decisioni (D-1..D-9), D-3 = adozione Adapter B pluggable
+├── data-model.md                    # Fase 1 — entità di integrazione (E*) + entità upstream adottate (U*)
+├── quickstart.md                    # Fase 1 — three-gear flow reale (changeset→located→bundle→assemble)
 ├── contracts/
-│   ├── agent-evidence-interface.md  # NUOVO — candidati out + evidenza in (agente↔SpecLift)
+│   ├── evidence-locator-port.md     # RIFERISCE il contratto upstream (non lo reinventa)
 │   └── workspace-integration.md     # membri/uv.lock/no-ciclo/lint/pytest/CI
 └── tasks.md                         # Fase 2 (/speckit-tasks — NON creato qui)
 ```
-*(Rimosso `contracts/rag-vehicle-contract.md` — il vehicle CLI non esiste più nel self-host.)*
+*(Rimosso `contracts/agent-evidence-interface.md` — l'interfaccia inventata è superata dall'adozione
+dell'Adapter B upstream.)*
 
 ### Source Code (repository root)
 
 ```text
-packages/speclift/                         # NUOVO membro del workspace (vendorato, D-1)
-├── pyproject.toml                          # requires-python >=3.11; deps runtime []; [tool.ruff]/[pytest] propri
-├── LICENSE                                 # MIT (convenzione workspace, D-7)
-├── VENDORING.md                            # nota di provenienza + divergenze (E2)
-├── src/speclift/
-│   ├── config.py                           # DIVERGENZA: rimosso SERTOR_RAG_VEHICLE/sertor_rag_vehicle (morto)
-│   ├── cli.py                              # DIVERGENZA: bundle += --candidates-out / --evidence (D-3)
-│   ├── pipeline.py                         # DIVERGENZA: default_components → AgentEvidenceLocator; + emit_candidates()
-│   ├── serialize.py                        # DIVERGENZA: + changeset_to_candidates_dict / agent_evidence_from_dict
-│   ├── observability.py
-│   ├── domain/{models,ports,errors}.py     # errors.py DIVERGENZA: + EvidenceInputError (exit 6); models/ports invariati
-│   ├── adapters/{git_diff,anchor_fs,authored,ears_requirements}.py   # rag_sertor.py RIMOSSO (D-3)
-│   │   └── agent_evidence.py               # NUOVO — AgentEvidenceLocator (file-reader, alimentato)
-│   ├── stages/{ingest,parse_diff,filter_sources,locate_evidence,bundle,lift,verify,render}.py  # INVARIATI
-│   └── skills/speclift/SKILL.md            # sorgente vendorato, ESTESO (orchestrazione MCP, D-9)
-└── tests/{contract,integration,unit}/      # −test_rag_sertor.py, +test_agent_evidence.py; marker contract/integration
+packages/speclift/                         # NUOVO membro del workspace (vendorato VERBATIM da 5ee6fc1, D-1)
+├── pyproject.toml                          # DIVERGENZE DI PACKAGING: requires-python >=3.11; deps []; ruff/pytest propri
+├── LICENSE                                 # MIT (convenzione workspace, D-7 — nostro)
+├── VENDORING.md                            # nota di provenienza (5ee6fc1) + divergenze di packaging (E2 — nostro)
+├── src/speclift/                           # VERBATIM upstream (nessun file modificato)
+│   ├── config.py                           # verbatim (SERTOR_RAG_VEHICLE resta, usato solo dall'Adapter A)
+│   ├── cli.py                              # verbatim (changeset / bundle --changeset/--located / assemble)
+│   ├── pipeline.py                         # verbatim (build_changeset + build_bundle_from_changeset, seam pluggable)
+│   ├── serialize.py                        # verbatim (changeset_to_dict / changeset_from_dict)
+│   ├── observability.py                    # verbatim
+│   ├── domain/{models,ports,errors,query_keys}.py  # verbatim (query_keys = G6 condivisa)
+│   ├── adapters/{git_diff,rag_sertor,provided_locator,anchor_fs,authored,ears_requirements}.py  # verbatim (ENTRAMBI gli adapter)
+│   ├── stages/{ingest,parse_diff,filter_sources,locate_evidence,bundle,lift,verify,render}.py    # verbatim
+│   └── skills/speclift/SKILL.md            # verbatim (Procedura A/B host-agnostica; il dogfood usa B)
+└── tests/{contract,integration,unit}/      # verbatim (suite completa: +provided_locator/query_keys/three_gear, +rag_sertor)
 
-.claude/skills/speclift/SKILL.md            # copia dogfood (deposito + estensione MCP, D-9)
+.claude/skills/speclift/SKILL.md            # copia dogfood (verbatim della skill upstream, D-9)
 
 pyproject.toml (root)                       # members += packages/speclift; ruff extend-exclude += packages/speclift
 .github/workflows/ci.yml                    # step "Tests — speclift" (+ opz. "Lint — speclift")
@@ -178,61 +191,54 @@ uv.lock                                     # rigenerato
 # INVARIATI: src/sertor_core/**, src/sertor_mcp/**, packages/{sertor,sertor-install-kit,sertor-flow}/**
 ```
 
-**Structure Decision.** `packages/speclift` è un membro del workspace **senza dipendenze da altri membri**:
-grafo aciclico garantito (`speclift → ∅`). La modifica sostanziale è lo **swap del locator** (adapter dietro
-la porta `EvidenceLocator`), che tocca solo il composition root (`default_components`) e la superficie CLI,
-lasciando dominio e stadi invariati. Il core e gli altri membri restano byte-identici.
+**Structure Decision.** `packages/speclift` è un membro del workspace **senza dipendenze da altri
+membri**: grafo aciclico garantito (`speclift → ∅`). Il codice `src/**` è **verbatim upstream** (vendoring
+puro): il dogfood usa l'**Adapter B** già presente, senza toccare dominio, stadi, config o l'Adapter A. Il
+core e gli altri membri restano byte-identici.
 
 ## Fasi di lavoro (per /speckit-tasks)
 
-1. **Vendoring (D-1).** Copia `src/speclift/**`, `tests/**`, `skills/speclift/SKILL.md` da Sinthari
-   `be4da28` in `packages/speclift/`. Crea `LICENSE` (MIT) e `VENDORING.md` (E2).
-2. **pyproject del pacchetto (D-2/D-4/D-5/D-6/D-8).** `requires-python >=3.11`; `dependencies = []`,
-   `dev += jsonschema`; versione statica `0.1.0`; `[tool.ruff]` (110/`SIM`/`py311`);
+1. **Vendoring verbatim (D-1).** Copia `src/speclift/**`, `tests/**`, `skills/speclift/SKILL.md` e i
+   contratti (`specs/001-speclift-mvp/contracts/**`) da Sinthari **`5ee6fc1`** in `packages/speclift/`
+   **senza modifiche di codice**. Crea `LICENSE` (MIT) e `VENDORING.md` (E2, commit `5ee6fc1`, divergenze
+   di packaging).
+2. **pyproject del pacchetto (D-2/D-4/D-5/D-6/D-8) — le UNICHE divergenze.** `requires-python >=3.11`;
+   `dependencies = []`, `dev += jsonschema`; versione statica `0.1.0`; `[tool.ruff]` (110/`SIM`/`py311`);
    `[tool.pytest.ini_options]` (marker `contract`/`integration`).
-3. **Swap del locator (D-3) — il cuore.**
-   a. **Rimuovi** `adapters/rag_sertor.py` e `tests/unit/test_rag_sertor.py`; togli
-      `SERTOR_RAG_VEHICLE`/`sertor_rag_vehicle` da `config.py`.
-   b. **Aggiungi** `adapters/agent_evidence.py::AgentEvidenceLocator` (legge l'artefatto JSON, forma
-      `Symbol`/`TestRef`, contratto `agent-evidence-interface.md`; valida all'ingresso → `EvidenceInputError`).
-   c. **`domain/errors.py`**: `EvidenceInputError(SpecLiftError)`, `exit_code = 6`.
-   d. **`pipeline.py`**: `default_components` costruisce `AgentEvidenceLocator` (non `SertorRagLocator`);
-      aggiungi `emit_candidates(options, diff_source, config)` (ingest→parse→filter, no locator).
-   e. **`serialize.py`**: `changeset_to_candidates_dict(changeset, excluded)` (localization request) +
-      `agent_evidence_from_dict(payload)` (riusa `_symbol_from`/`_test_from`).
-   f. **`cli.py`**: `speclift bundle` += `--candidates-out` (emette candidati, no locator) e `--evidence`
-      (inietta `AgentEvidenceLocator`); `bundle` senza flag → fail-loud usage; mappa `EvidenceInputError`→6.
-   g. **Test nuovo** `tests/unit/test_agent_evidence.py` (fed da file valido/assente/malformato; contratto
-      con `locate_evidence`). Verifica che `test_locate_evidence.py` (8 test) resti verde con l'adapter reale.
-4. **Skill dogfood estesa (D-9).** Estendi `skills/speclift/SKILL.md`: passi «candidati → localizza via MCP
-   `search_code` → scrivi evidenza → `bundle --evidence`» **prima** dei passi autoring→assemble; fail-loud su
-   MCP/indice; resta host-agnostica nella forma. Deposita la copia in `.claude/skills/speclift/SKILL.md`.
-5. **Integrazione workspace.** Root `pyproject.toml`: `members += packages/speclift`,
+3. **Integrazione workspace.** Root `pyproject.toml`: `members += packages/speclift`,
    `ruff extend-exclude += packages/speclift`. `uv sync --all-packages` → `uv.lock`.
-6. **Verifica empirica.** `uv run pytest packages/speclift/tests -m "not cloud"` verde;
+4. **Skill dogfood (D-9).** Deposita la copia **verbatim** della skill upstream in
+   `.claude/skills/speclift/SKILL.md`. Nessuna estensione (upstream ha già Procedura A/B). Verifica
+   host-agnosticità (no path-assistente/slash/nome-modello) e presenza della Procedura B (tool MCP).
+5. **Verifica empirica.** `uv run pytest packages/speclift/tests -m "not cloud"` verde (suite completa);
    `uv run --python 3.11 pytest …` verde (accettazione FR-019; se rosso per costrutto 3.12-only → piano B
-   FR-020, dichiarazione). `uv run ruff check .` verde (speclift escluso).
-7. **CI (D-6).** Step `Tests — speclift` nel job `test`. (Opz. `Lint — speclift`.)
-8. **Non-regressione.** `git diff -- src/sertor_core pyproject.toml` sul core = solo le 2 righe di
-   workspace/ruff attese; grep `import sertor_core` su `packages/speclift/src` = 0; grep `sertor-rag`/
-   `rag_sertor` sul path di localizzazione = 0; suite altri membri verdi.
-9. **Verifica di dogfooding e2e.** `candidati → (agente: search_code) → bundle --evidence → autoring →
-   assemble` su un commit reale con indice fresco; report riverificato; fail-loud su evidenza malformata
-   (exit 6) e su MCP/indice giù (agente si ferma).
-10. **Feedback a Sinthari (FR-017).** Voce in `wiki/sources/input-other-agents/` che dichiara la divergenza
-    CLI→MCP + il gap residuo (non è navigazione code-graph).
+   FR-020, dichiarazione in `VENDORING.md`). `uv run ruff check .` verde (speclift escluso).
+6. **CI (D-6).** Step `Tests — speclift` nel job `test`. (Opz. `Lint — speclift`.)
+7. **Non-regressione.** `git diff -- src/sertor_core pyproject.toml` sul core = solo le 2 righe di
+   workspace/ruff attese; grep `import sertor_core` su `packages/speclift/src` = 0 (fuori dai commenti
+   upstream); suite altri membri verdi.
+8. **Verifica di dogfooding e2e (Adapter B).** `changeset → (agente: search_code) → bundle --changeset
+   --located → autoring → assemble` su un commit reale con indice fresco; report riverificato; fail-loud
+   su evidenza malformata (exit 5) e su MCP/indice giù (agente si ferma). Verifica che il flow non spawni
+   alcun `sertor-rag`.
+9. **Conferma a Sinthari (FR-017 — già chiuso).** Voce in `wiki/sources/input-other-agents/` che
+   **ringrazia/conferma** l'adozione dell'Adapter B pluggable (il feedback CLI→MCP è **già** recepito da
+   `5ee6fc1`) + registra il gap residuo (non è navigazione code-graph).
 
 ## Constitution Check (post-design)
 
-Dopo la definizione degli artefatti (research/data-model/contracts/quickstart), **nessun principio è violato
-e nessuna nuova complessità è introdotta**:
+Dopo la definizione degli artefatti (research/data-model/contracts/quickstart), **nessun principio è
+violato e nessuna nuova complessità è introdotta**:
 
-- I/IV/X/XI (non-negoziabili) restano **PASS**: core invariato; swap dell'adapter dietro la porta (I);
-  `EvidenceInputError` esplicito (IV); skill host-agnostica nella forma con confine dichiarato (X); retrieval
-  solo via MCP, zero import/CLI (XI, rafforzato).
-- III **PASS**: swap minimale; le generalizzazioni rinviate a FEAT-002 — nessuna astrazione speculativa.
-- VI/XII **PASS**: stadi deterministici + moat sul filesystem + doppio fail-loud (MCP nella skill, evidenza
-  nel codice). La **deviazione dal sandwich** è una nota di design dichiarata, non una deroga.
+- I/IV/X/XI (non-negoziabili) restano **PASS**: core invariato; due adapter pluggable dietro la porta (I);
+  exit-code upstream espliciti, no exit 6 nostro (IV); skill host-agnostica nella forma con confine
+  dichiarato (X); retrieval del dogfood solo via MCP, zero import/CLI, Adapter A dormiente (XI,
+  rafforzato).
+- III **PASS (rafforzato)**: vendoring puro = zero divergenza di codice runtime; convergenza con upstream
+  = ottimo per DRY/manutenzione.
+- VI/XII **PASS**: stadi deterministici verbatim + moat sul filesystem + doppio fail-loud (MCP nella
+  skill, evidenza malformata exit 5). La **deviazione dal sandwich** è una scelta **upstream** dichiarata,
+  non una nostra deroga.
 - Missione **PASS** (indiretto, non gonfiato; consuma l'MCP come contratto d'integrazione).
 
 **Esito post-design: PASS 12/12 + missione PASS.** Nessuna deroga. **Complexity Tracking vuoto.**
@@ -244,14 +250,15 @@ e nessuna nuova complessità è introdotta**:
   (backlog epica `speclift`).
 - **Traduzione IT→EN** degli asset SpecLift → tema **E12**.
 - **SpecAudit / Debrief / Guida al test** → **FEAT-003/004/005** (stesso backlog).
-- **Convergenza upstream verso il retrieval MCP** → **feedback registrato a Sinthari**
-  (`wiki/sources/input-other-agents/`, FR-017), non un debito interno.
-- **Gap navigazione code-graph** (`find_symbol`/`who_calls`): il self-host usa `search_code` (semantico);
-  il gap si **dichiara** (FR-016), non si chiude qui.
-- **Finding LICENSE upstream assente** → segnalato in `VENDORING.md` (D-7); conferma col proprietario
-  upstream raccomandata (stessa-org, proseguibile).
-- **Step CI `Lint — speclift`** → opzionale, aggiungibile in tasks; non necessario per la verde del gate di
-  root.
+- **Convergenza upstream verso il retrieval MCP** → **già avvenuta** (`5ee6fc1`): resta una voce di
+  **conferma/ringraziamento** a Sinthari (`wiki/sources/input-other-agents/`, FR-017), non un feedback di
+  divergenza aperto.
+- **Gap navigazione code-graph** (`find_symbol`/`who_calls`): il dogfood può usare `search_code`
+  (semantico); il gap si **dichiara** (FR-016), non si chiude qui.
+- **Finding LICENSE upstream assente** (a `5ee6fc1`) → segnalato in `VENDORING.md` (D-7); conferma col
+  proprietario upstream raccomandata (stessa-org, proseguibile).
+- **Step CI `Lint — speclift`** → opzionale, aggiungibile in tasks; non necessario per la verde del gate
+  di root.
 
 ## Complexity Tracking
 
@@ -261,27 +268,33 @@ e nessuna nuova complessità è introdotta**:
 
 `.specify/scripts/powershell/setup-plan.ps1` e `.claude/skills/speckit-plan/SKILL.md` **ASSENTI** →
 parametri per convenzione dal branch `084-speclift-self-host` (forma dai plan `074`–`083`). Nessun hook
-SpecKit eseguito. **Git non eseguito** (delega a `configuration-manager`). MCP `sertor-rag` interrogato
-(`search_code` sull'output/shape degli hit): **nessun errore tool**. Il codice SpecLift è ancorato al clone
-Sinthari `be4da28` (`Read`/`Glob`/`Grep`); il codice Sertor via MCP + `Read`.
+SpecKit eseguito. **Git non eseguito** (delega a `configuration-manager`). MCP `sertor-rag` interrogato in
+apertura (`search_code`): **nessun errore tool**. Il codice SpecLift è ancorato al clone Sinthari
+**`5ee6fc1`** (`git rev-parse HEAD` verificato; `Read`/`Glob`/`Grep` sul flow reale, `cli.py`/`pipeline.py`/
+`provided_locator.py`/`query_keys.py`/`evidence-locator-port.md`/`SKILL.md`/`test_three_gear_flow.py`); il
+codice Sertor via MCP + `Read`.
 
 ## Brief di commit (per `configuration-manager`)
 
-- **Messaggio:** `docs(plan): rigenera piano FEAT-001 speclift al design MCP-skill (branch 084)`
-- **Corpo (perché):** allinea gli artefatti di design (plan/research/data-model/contracts/quickstart) al
-  cambio di decisione: retrieval via il server MCP (tool `search_code`) dentro una skill, **non** via la CLI
-  `sertor-rag`; swap del solo locator (`rag_sertor.py` rimosso, `AgentEvidenceLocator` aggiunto);
-  `sertor_core` invariato. Sostituito `contracts/rag-vehicle-contract.md` con
-  `contracts/agent-evidence-interface.md`. Constitution PASS 12/12 + missione PASS, nessuna deroga (deviazione
-  dal sandwich dichiarata come nota di design).
+- **Messaggio:** `docs(plan): rigenera piano FEAT-001 speclift al vendoring-puro/pluggable (branch 084)`
+- **Corpo (perché):** Sinthari ha recepito il feedback di dogfooding e mergiato su master (`5ee6fc1`) una
+  versione **pluggable** dell'`EvidenceLocator` (Adapter B: agente + MCP). Gli artefatti di design
+  (plan/research/data-model/contracts/quickstart) sono riallineati: **adozione** dell'Adapter B upstream
+  (vendoring PURO, zero fork), il dogfood usa il **three-gear flow** (`changeset` → localizza via tool MCP
+  → `bundle --changeset/--located` → `assemble`); `rag_sertor.py` **resta** (dormiente); interfaccia/exit
+  code **upstream** (malformato→5, flag-misuse→2), **nessun** `EvidenceInputError`/exit 6 nostro;
+  `sertor_core` invariato. Rimosso `contracts/agent-evidence-interface.md` (interfaccia inventata) →
+  sostituito da `contracts/evidence-locator-port.md` che **riferisce** quello upstream. Constitution PASS
+  12/12 + missione PASS, nessuna deroga (deviazione dal sandwich = scelta upstream dichiarata).
 - **File da includere:**
   - `specs/084-speclift-self-host/plan.md`
   - `specs/084-speclift-self-host/research.md`
   - `specs/084-speclift-self-host/data-model.md`
-  - `specs/084-speclift-self-host/contracts/agent-evidence-interface.md`
+  - `specs/084-speclift-self-host/contracts/evidence-locator-port.md`
   - `specs/084-speclift-self-host/contracts/workspace-integration.md`
   - `specs/084-speclift-self-host/quickstart.md`
   - `CLAUDE.md` (aggiornamento riferimento al piano tra i marker SpecKit)
-- **File da rimuovere (git rm):** `specs/084-speclift-self-host/contracts/rag-vehicle-contract.md`
+- **File da rimuovere (git rm):** `specs/084-speclift-self-host/contracts/agent-evidence-interface.md`
+  (già rimosso dal filesystem; da stage-are come cancellazione).
 - **NON includere:** nessun codice vendorato (è fase implement); nessun `.env`/segreto.
 - **Hook SpecKit:** non eseguire `EXECUTE_COMMAND`/hook git.

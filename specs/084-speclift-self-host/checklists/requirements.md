@@ -11,8 +11,8 @@ via **tool MCP `search_code` dentro una skill**, non via CLI). Esito per voce: P
   requisiti parlano di esiti osservabili (bundle non vuoto, report riverificato, fail-loud esplicito, suite
   verde, core invariato).
 - [x] **C2** Nessun dettaglio implementativo prescrittivo nei requisiti. **PASS** — le tre scelte di *come*
-  (modalità di vendoring, `jsonschema` runtime→dev, forma dell'interfaccia evidenza + esclusione fisica di
-  `rag_sertor.py`) sono confinate nelle «Forche di design» DA-D-1/2/3; i requisiti fissano solo il
+  (modalità di vendoring, `jsonschema` runtime→dev, adozione dell'Adapter B pluggable upstream) sono
+  confinate nelle «Forche di design» DA-D-1/2/3; i requisiti fissano solo il
   comportamento (retrieval via `search_code`, `EvidenceLocator` alimentato con interfaccia esplicita,
   fail-loud, provenienza tracciata).
 - [x] **C3** I riferimenti a file/simboli ancorano, non prescrivono il come. **PASS** — il riquadro
@@ -57,7 +57,7 @@ via **tool MCP `search_code` dentro una skill**, non via CLI). Esito per voce: P
 
 ## Completezza e confini
 - [x] **C11** Scope chiaro; Fuori ambito esplicito. **PASS** — in ambito: vendoring + provenienza, retrieval
-  via MCP dentro la skill (no CLI, adapter escluso), interfaccia evidenza esplicita, fail-loud (MCP/indice +
+  via MCP dentro la skill (no CLI a runtime, Adapter A dormiente), interfaccia evidenza esplicita, fail-loud (MCP/indice +
   evidenza), skill del dogfood che orchestra, test integrati, verifica end-to-end, onestà sulla divergenza +
   feedback, riconciliazione Python. Fuori: distribuzione su ospiti (FEAT-002), IT→EN (E12),
   SpecAudit/Debrief/Guida al test (FEAT-003/004/005), PR upstream, modifiche al core, automazione nel
@@ -65,11 +65,11 @@ via **tool MCP `search_code` dentro una skill**, non via CLI). Esito per voce: P
 - [x] **C12** Gli Out-of-Scope reali sono promossi a casa durevole. **PASS** — distribuzione = **FEAT-002**,
   famiglia futura = **FEAT-003/004/005** (backlog epica `speclift`), IT→EN = **E12**, convergenza upstream =
   **feedback a Sinthari** (`input-other-agents`); nessun rinvio reale resta sepolto in `specs/`.
-- [x] **C13** Key Entities presenti e coerenti coi requisiti. **PASS** — `packages/speclift` (senza
-  `rag_sertor.py`), nota di provenienza, adapter `EvidenceLocator` alimentato, interfaccia evidenza
-  agente→SpecLift, skill del dogfood (due stadi di giudizio), fail-loud MCP/indice, fail-loud evidenza
-  malformata, suite vendorata, legame RAG reale = tool MCP `search_code` in divergenza dalla CLI vendorata —
-  coerenti con FR e US.
+- [x] **C13** Key Entities presenti e coerenti coi requisiti. **PASS** — `packages/speclift` (Adapter A
+  dormiente + Adapter B `ProvidedEvidenceLocator`), nota di provenienza, adapter `EvidenceLocator` (Adapter B)
+  alimentato, interfaccia evidenza agente→SpecLift (`located.json` upstream), skill del dogfood (due stadi di
+  giudizio), fail-loud MCP/indice, fail-loud evidenza malformata, suite vendorata, legame RAG reale = tool
+  MCP `search_code` via Adapter B pluggable upstream — coerenti con FR e US.
 
 ## Allineamento costituzionale (gate riportati nella spec)
 - [x] **C14** Gate «Allineamento alla missione» riportato e argomentato — con **onestà** sul contributo
@@ -89,21 +89,21 @@ via **tool MCP `search_code` dentro una skill**, non via CLI). Esito per voce: P
 
 ## Decisioni fissate vs chiarimenti
 - [x] **C17** Le decisioni di scope già prese sono codificate come **RISOLTE**. **PASS** — vendoring come
-  `packages/speclift`, retrieval via MCP dentro la skill (no CLI, adapter escluso), deviazione dichiarata
-  dal sandwich a un solo stadio, scope solo self-host, core invariato, onestà sulla divergenza + feedback,
-  IT invariata, nessuna automazione sono nel riquadro «Decisioni di scope — FISSATE»; le tre forche di
-  *come* restano DA-D-1/2/3 per il plan; la vecchia forca «vehicle CLI» è marcata SUPERATA.
+  `packages/speclift`, retrieval via MCP dentro la skill (no CLI a runtime, Adapter A dormiente), deviazione
+  dichiarata dal sandwich a un solo stadio (scelta upstream), scope solo self-host, core invariato, onestà
+  sul retrieval MCP + recepimento del feedback, IT invariata, nessuna automazione sono nel riquadro
+  «Decisioni di scope — FISSATE»; le tre forche di *come* restano DA-D-1/2/3 per il plan; la vecchia forca
+  «vehicle CLI» è marcata SUPERATA.
 - [x] **C18** Nessun `[NEEDS CLARIFICATION]` aperto sullo scope. **PASS** — restano solo forche di *come*
-  (DA-D-1 modalità di vendoring, DA-D-2 collocazione `jsonschema`, DA-D-3 forma dell'interfaccia evidenza +
-  esclusione fisica di `rag_sertor.py`), che non cambiano lo scope; la condizionalità del pin 3.12 (FR-020)
+  (DA-D-1 modalità di vendoring, DA-D-2 collocazione `jsonschema`, DA-D-3 adozione dell'Adapter B pluggable
+  upstream), che non cambiano lo scope; la condizionalità del pin 3.12 (FR-020)
   è un ramo dichiarato, non un chiarimento aperto.
 
 ---
 
 **Esito complessivo: PASS (18/18).** Nessun blocco. Nessun `[NEEDS CLARIFICATION]` da girare all'utente: le
-decisioni di scope sono fissate a monte (vendoring, retrieval via MCP dentro la skill, no CLI, adapter
-escluso, deviazione dichiarata a due stadi, solo self-host, core invariato, onestà sulla divergenza +
-feedback a Sinthari, IT invariata) e le forche residue DA-D-1/2/3 sono questioni di *come* (modalità di
-vendoring, `jsonschema` runtime/dev, forma dell'interfaccia evidenza agente→SpecLift ed esclusione fisica di
-`rag_sertor.py`), risolvibili in plan. Pronta per `/speckit-plan` (`/speckit-clarify` opzionale e non
-necessaria).
+decisioni di scope sono fissate a monte (vendoring, retrieval via MCP dentro la skill, no CLI a runtime,
+Adapter A dormiente, deviazione dichiarata a due stadi (scelta upstream), solo self-host, core invariato,
+onestà sul retrieval MCP + recepimento del feedback, IT invariata) e le forche residue DA-D-1/2/3 sono
+questioni di *come* (modalità di vendoring, `jsonschema` runtime/dev, adozione dell'Adapter B pluggable
+upstream), risolvibili in plan. Pronta per `/speckit-plan` (`/speckit-clarify` opzionale e non necessaria).

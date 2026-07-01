@@ -4,8 +4,8 @@
 
 ## 1. Contesto e problema (perché)
 
-**SpecLift** (handoff da Sinthari, `github.com/themetriost/Sinthari` `master @ be4da28`, PR #5, MVP
-mergiato con 104 test verdi — vedi `wiki/sources/input-other-agents/speclift-handoff-sinthari.md` e
+**SpecLift** (handoff da Sinthari, `github.com/themetriost/Sinthari` `master @ 5ee6fc1`, PR #5, versione
+pluggable mergiata con ~122 test verdi — vedi `wiki/sources/input-other-agents/speclift-handoff-sinthari.md` e
 la ricognizione ancorata `wiki/sources/input-other-agents/speclift-recon.md`) è una capacità
 `diff → requisiti EARS ancorati`: dato un changeset git, genera requisiti multi-quota (capacità
 utente / comportamento / implementazione), ognuno legato a `file:righe` + simbolo + test, riverificati
@@ -27,14 +27,16 @@ decidere come impacchettare SpecLift per un ospite prima di aver verificato che 
 
 **Cambio di decisione del proprietario del progetto (vincolante, sostituisce l'approccio iniziale).**
 I requisiti mettevano inizialmente in ambito "configurare il vehicle CLI per la root Sertor". Il
-problema reale non è *quale* vehicle CLI configurare: è che SpecLift, così come vendorato, si aggancia
+problema reale non è *quale* vehicle CLI configurare: è che l'MVP iniziale di SpecLift si agganciava
 esclusivamente alla **CLI** (`sertor-rag search` via subprocess) mentre **il contratto d'integrazione
 stabile che Sertor pubblica per i consumatori esterni è il server MCP**. Principio guida: **Sertor
 espone l'MCP proprio perché i consumatori esterni NON debbano dipendere dalla CLI** — la CLI è un
-consumatore interno/sottile, l'MCP è l'interfaccia d'integrazione per gli agenti. La decisione presa:
-**rimuovere ogni dipendenza dalla CLI** e incapsulare il retrieval **in una skill** che usa i **tool
-MCP** (`search_code`), guidata dall'agente che orchestra la localizzazione dell'evidenza. L'adapter CLI
-`rag_sertor.py` (vendorato da Sinthari) **non viene usato** nel self-host (vedi Gruppo C/H).
+consumatore interno/sottile, l'MCP è l'interfaccia d'integrazione per gli agenti. Questo feedback
+CLI→MCP è **già stato recepito a monte**: la versione pluggable vendorata (commit `5ee6fc1`) espone sia
+l'Adapter A CLI sia l'**Adapter B** MCP-via-agente (`ProvidedEvidenceLocator`). La decisione presa:
+**adottare l'Adapter B** e incapsulare il retrieval **in una skill** che usa i **tool MCP**
+(`search_code`), guidata dall'agente che orchestra la localizzazione dell'evidenza. L'adapter CLI
+`rag_sertor.py` (Adapter A) **non viene usato** nel self-host (vedi Gruppo C/H).
 
 **Problemi concreti, verificati nel recon (restano validi salvo dove annotato "SUPERATO"):**
 - Il pacchetto Sinthari pinna `requires-python = ">=3.12"`; tutti i pacchetti Sertor pinnano `>=3.11`
@@ -45,14 +47,15 @@ MCP** (`search_code`), guidata dall'agente che orchestra la localizzazione dell'
   "configurare": il self-host non invoca affatto quella CLI, quindi il vehicle hardcodato dell'upstream
   resta semplicemente inutilizzato dal path di localizzazione evidenza.
 - L'handoff e la wiki Sinthari descrivono SpecLift come utente del code-graph MCP
-  (`find_symbol`/`who_calls`); il codice **vendorato** (upstream, invariato in questo self-host) usa
-  **solo** `sertor-rag search --type code --json` via subprocess — resta una discrepanza doc↔codice
-  **nel codice upstream**, indipendente dalla decisione qui sopra. **Decisione presa qui:** per il
-  self-host su Sertor, l'evidenza non viene più localizzata da quell'adapter CLI: la si ottiene tramite
-  il tool MCP `search_code`, dentro una skill che orchestra l'agente — una **divergenza intenzionale
-  dal codice vendorato** (non dalla narrativa upstream, a cui anzi si avvicina restando comunque un
-  gap: `search_code` è ricerca semantica, non navigazione del code-graph), dichiarata e comunicata a
-  Sinthari come feedback (Gruppo H).
+  (`find_symbol`/`who_calls`); il codice **vendorato** (upstream, invariato in questo self-host) espone
+  **due adapter pluggable** (commit `5ee6fc1`): l'**Adapter A** CLI (`SertorRagLocator`, `sertor-rag
+  search --type code --json` via subprocess) e l'**Adapter B** MCP-via-agente (`ProvidedEvidenceLocator`)
+  — il feedback CLI→MCP è quindi già stato recepito a monte. **Decisione presa qui:** per il self-host su
+  Sertor, l'evidenza non viene localizzata dall'adapter CLI (Adapter A, dormiente): si **adotta l'Adapter B**
+  upstream, ottenendola tramite il tool MCP `search_code`, dentro una skill che orchestra l'agente — non
+  una divergenza, ma l'adozione della versione pluggable già mergiata (a cui la narrativa upstream si
+  avvicina, restando comunque un gap: `search_code` è ricerca semantica, non navigazione del code-graph),
+  con l'avvenuto recepimento registrato a Sinthari (Gruppo H).
 
 ## 2. Obiettivi e criteri di successo
 
@@ -117,14 +120,15 @@ MCP** (`search_code`), guidata dall'agente che orchestra la localizzazione dell'
 - **Fail-loud sulla localizzazione dell'evidenza**: MCP/indice non disponibile quando l'agente tenta
   di localizzare l'evidenza, **o** evidenza fornita dall'agente assente/malformata → la skill/pipeline
   lo segnala esplicitamente, mai risultati vuoti o inventati spacciati per validi (Principio XII).
-- **Integrazione dei test** vendorati (104 alla data dell'handoff) nell'infrastruttura di test del
+- **Integrazione dei test** vendorati (~122 nella versione pluggable) nell'infrastruttura di test del
   workspace Sertor, verdi.
 - **Verifica di dogfooding end-to-end**: il ciclo localizzazione-evidenza (agente + MCP `search_code`)
   → bundle → autoring → assemble, eseguito su un commit reale di Sertor, produce un report verificato.
-- **Dichiarazione esplicita** che il self-host **diverge intenzionalmente** dal codice vendorato/
-  upstream (che usa la CLI `sertor-rag search`) adottando l'MCP (`search_code`) per la localizzazione
-  dell'evidenza, con **feedback inviato a Sinthari** (canale `input-other-agents`) per un'eventuale
-  convergenza upstream — in questo documento e in ogni artefatto derivato (es. pagina wiki di
+- **Dichiarazione esplicita** che il self-host adotta l'**Adapter B pluggable** (MCP `search_code`) che
+  il codice vendorato/upstream **contiene già** (commit `5ee6fc1`) per la localizzazione dell'evidenza —
+  il feedback CLI→MCP è quindi già recepito a monte, non una divergenza aperta — e che resta il gap
+  residuo sulla navigazione del code-graph, con l'avvenuto recepimento **registrato a Sinthari** (canale
+  `input-other-agents`) — in questo documento e in ogni artefatto derivato (es. pagina wiki di
   distillazione).
 
 ### Fuori ambito
@@ -220,7 +224,7 @@ MCP** (`search_code`), guidata dall'agente che orchestra la localizzazione dell'
 
 ### Gruppo F — Test integrati e non-regressione
 
-- **REQ-014** *Ubiquitous.* The vendored speclift test suite (104 tests at handoff time) shall run
+- **REQ-014** *Ubiquitous.* The vendored speclift test suite (~122 tests in the pluggable version) shall run
   and pass within the Sertor workspace's test infrastructure (`uv run pytest`), invoked alongside the
   existing test suites of the other workspace members.
 
@@ -244,27 +248,28 @@ MCP** (`search_code`), guidata dall'agente che orchestra la localizzazione dell'
   actual Sertor filesystem, with any non-verifying anchor listed under `excluded` rather than silently
   dropped.
 
-### Gruppo H — Onestà sulla divergenza dal codice vendorato (INVERTITO)
+### Gruppo H — Onestà sul retrieval MCP e sul gap residuo
 
 > **Nota di revisione:** questo gruppo dichiarava in origine che SpecLift usa la CLI-search e non
-> l'MCP. Con il cambio di decisione, è **invertito**: il self-host **adotta** l'MCP, in divergenza
-> intenzionale dal codice vendorato/upstream (che resta sulla CLI); il gap residuo rispetto alla
-> narrativa upstream (code-graph navigation) non è comunque colmato — vedi REQ-019.
+> l'MCP. Con il cambio di decisione — e con il **recepimento a monte del feedback CLI→MCP** — il
+> self-host **adotta l'Adapter B pluggable** (`ProvidedEvidenceLocator`, MCP-via-agente) che il codice
+> vendorato/upstream **contiene già** (commit `5ee6fc1`): non è più una divergenza aperta, ma un
+> feedback recepito. Il gap residuo rispetto alla narrativa upstream (code-graph navigation) non è
+> comunque colmato — vedi REQ-019.
 
 - **REQ-019** *Ubiquitous.* This feature's documentation (this requirements artifact and any wiki
   entity page distilled from it) shall state explicitly that the self-hosted instance's
-  evidence-location mechanism **intentionally diverges** from the vendored/upstream Sinthari code —
-  which reaches Sertor exclusively via the `sertor-rag search --type code --json` CLI subprocess
-  (`adapters/rag_sertor.py`) — by consuming evidence located through Sertor's MCP tool `search_code`,
-  invoked by the orchestrating agent within the skill, instead of the CLI vehicle. The same
+  evidence-location mechanism uses Sertor's MCP tool `search_code`, adopting the **pluggable Adapter B**
+  (`ProvidedEvidenceLocator`) that the vendored/upstream Sinthari code **already contains** (commit
+  `5ee6fc1`) — so the CLI→MCP feedback is already received, not an open divergence. The same
   documentation shall also state that this does not fully realize the upstream handoff/wiki
   narrative's original claim of code-graph navigation (`find_symbol`/`who_calls`): `search_code` is a
   semantic search tool, not a graph-navigation tool, so a smaller, shifted doc↔mechanism gap remains.
 
-- **REQ-020** *Event-driven.* When this divergence from the vendored/upstream code is adopted for the
-  self-host, it shall be recorded as feedback to Sinthari through the existing `input-other-agents`
-  intake channel (`wiki/sources/input-other-agents/`), so that Sinthari can decide whether to converge
-  the upstream `speclift` codebase toward MCP-based retrieval.
+- **REQ-020** *Event-driven.* When the self-host adopts upstream Adapter B, the fact that the CLI→MCP
+  feedback has been received and merged by Sinthari (commit `5ee6fc1`) shall be recorded/confirmed
+  through the existing `input-other-agents` intake channel (`wiki/sources/input-other-agents/`),
+  closing the feedback loop toward the upstream `speclift` codebase.
 
 ## 6. Requisiti non funzionali
 
@@ -288,13 +293,12 @@ MCP** (`search_code`), guidata dall'agente che orchestra la localizzazione dell'
 - **NFR-5 (Lingua):** codice, commenti e skill di SpecLift restano in italiano per il self-host; è
   coerente con l'uso interno/dogfood del progetto. La traduzione per la distribuzione host-facing
   generale è fuori ambito (§4).
-- **NFR-6 (Determinismo del sandwich — DEVIAZIONE DICHIARATA):** spostare la localizzazione
-  dell'evidenza dall'adapter CLI deterministico all'agente (che la ottiene coi tool MCP, guidato dalla
-  skill) fa sì che l'agente tocchi **due stadi** del sandwich — localizzazione dell'evidenza E stesura
-  delle frasi EARS — anziché il solo stadio di stesura del design originale ("un solo stadio
-  intelligente"). È una **deviazione dichiarata** dal principio "sandwich a un solo stadio
-  intelligente" di Sinthari, non un'estensione silenziosa: comunicata come feedback a Sinthari
-  (REQ-020). Le fasi di impacchettamento (bundle), verifica delle àncore (**il moat**) e resa (render)
+- **NFR-6 (Determinismo del sandwich — flusso Adapter B):** con l'Adapter B pluggable (upstream,
+  MCP-via-agente) la localizzazione dell'evidenza passa dall'agente (che la ottiene coi tool MCP, guidato
+  dalla skill), così l'agente tocca **due stadi** del sandwich — localizzazione dell'evidenza E stesura
+  delle frasi EARS — anziché il solo stadio di stesura dell'MVP CLI originario ("un solo stadio
+  intelligente"). È il flusso **già supportato a monte** dall'Adapter B (feedback CLI→MCP recepito,
+  REQ-020), dichiarato esplicitamente. Le fasi di impacchettamento (bundle), verifica delle àncore (**il moat**) e resa (render)
   **restano** deterministiche e NON toccano il RAG — è lì che il moat preserva la garanzia forte
   (nessuna àncora accettata senza riverifica sul filesystem).
 
@@ -342,8 +346,8 @@ MCP** (`search_code`), guidata dall'agente che orchestra la localizzazione dell'
   non **navigazione del code-graph** (`find_symbol`/`who_calls`) come descrive la narrativa upstream
   (handoff/wiki Sinthari): se la skill/documentazione depositata lasciasse intendere che l'adozione
   dell'MCP colma questo gap, gli agenti del dogfood si aspetterebbero una capacità di navigazione che
-  SpecLift non ha. **Mitigazione:** REQ-019/020 e Gruppo H dichiarano sia la divergenza dal codice
-  vendorato sia il gap residuo rispetto alla narrativa originale.
+  SpecLift non ha. **Mitigazione:** REQ-019/020 e Gruppo H dichiarano sia l'adozione dell'Adapter B MCP
+  (già presente upstream) sia il gap residuo rispetto alla narrativa originale.
 - **R-2 — Pin Python 3.12 irriducibile:** se la verifica empirica su 3.11 fallisse per ragioni non
   anticipate dal grep statico, il pin resterebbe a 3.12, alzando il pavimento effettivo del
   workspace `uv`. **Mitigazione:** REQ-006, dichiarazione esplicita e valutazione dell'impatto prima
@@ -365,14 +369,13 @@ MCP** (`search_code`), guidata dall'agente che orchestra la localizzazione dell'
   test (REQ-014) potrebbe richiedere di riconciliare configurazione pytest (marker dichiarati,
   altrimenti warning/errore a seconda della configurazione pytest) e stile lint. **Mitigazione:**
   materia di plan; il requisito qui è solo l'esito (suite verde), non il meccanismo.
-- **R-6 — Deviazione dal sandwich a un solo stadio intelligente:** spostare la localizzazione
-  dell'evidenza dall'adapter CLI deterministico all'agente fa sì che l'agente tocchi **due stadi**
-  (localizza l'evidenza via MCP E scrive le frasi EARS), non uno solo come nel design originale di
-  Sinthari. È una deviazione **dichiarata**, non un compromesso silenzioso: il moat (verifica delle
-  àncore sul filesystem) resta l'ultima rete che impedisce a un'evidenza mal-localizzata di produrre un
-  requisito accettato. **Mitigazione:** la deviazione è comunicata a Sinthari come feedback (REQ-020,
-  canale `input-other-agents`), così può essere valutata/eventualmente convergere upstream; nel
-  frattempo il moat (invariato, NFR-6) contiene il rischio residuo.
+- **R-6 — Flusso a due stadi dell'Adapter B:** con l'Adapter B pluggable la localizzazione
+  dell'evidenza passa dall'agente, così l'agente tocca **due stadi** (localizza l'evidenza via MCP E
+  scrive le frasi EARS), non uno solo come nell'MVP CLI originario. È il flusso **già supportato a monte**
+  dall'Adapter B, dichiarato esplicitamente: il moat (verifica delle àncore sul filesystem) resta l'ultima
+  rete che impedisce a un'evidenza mal-localizzata di produrre un requisito accettato. **Mitigazione:**
+  il feedback CLI→MCP è già recepito upstream (REQ-020, canale `input-other-agents`, commit `5ee6fc1`);
+  il moat (invariato, NFR-6) contiene il rischio residuo.
 
 ## 9. Prioritizzazione (MoSCoW)
 
@@ -388,7 +391,7 @@ MCP** (`search_code`), guidata dall'agente che orchestra la localizzazione dell'
 ## 10. Domande aperte
 
 - **[DA-1 — DA CHIARIRE in plan]** *Copia versionata vs sync dal repo Sinthari.* Due opzioni: **(a)
-  copia versionata "one-shot"** — si vendora lo stato a un commit pinnato (`be4da28`), documentato
+  copia versionata "one-shot"** — si vendora lo stato a un commit pinnato (`5ee6fc1`), documentato
   dalla nota di provenienza (REQ-002), e ogni aggiornamento futuro è un'azione manuale esplicita
   (re-vendoring); **(b) meccanismo di sync** — uno script analogo a `sync.py`/`generate.py` di
   `sertor-flow` che periodicamente riallinea la copia locale allo stato upstream. **Osservazione:**
@@ -425,24 +428,16 @@ MCP** (`search_code`), guidata dall'agente che orchestra la localizzazione dell'
   wrapper/composition locale che costruisce `Components`/`Config` programmaticamente per il caso
   Sertor, bypassando l'entry-point console `speclift` standard (richiede invocare la libreria invece
   dello script installato, un cambio più invasivo dell'esperienza CLI).
-- **[DA-4 — DA CHIARIRE in plan, nuova]** *Forma esatta dell'interfaccia evidenza-agente→SpecLift, e
-  suo utilizzo nei test.* Il cambio di decisione impone che l'`EvidenceLocator` sia alimentato
-  dall'evidenza già localizzata dall'agente (via MCP `search_code`), non da query live eseguite dalla
-  porta. Restano aperte: **(a)** la forma esatta dell'artefatto che l'agente produce — es. un JSON con
-  gli stessi campi già modellati da `Symbol`/`TestRef` in `domain/models.py`
-  (`name`/`path`/`line`/`kind`/`provenance` per i simboli; `name`/`path`/`covers_symbol`/`line`/
-  `provenance` per i test), o un formato più grezzo che un adapter self-host traduce — e dove vive
-  (es. `<TMP>/speclift-evidence-input.json` accanto agli altri file temporanei del sandwich, o un
-  percorso dedicato); **(b)** se `adapters/rag_sertor.py` (l'adapter CLI vendorato da Sinthari) viene
-  **escluso fisicamente** dalla copia vendorata in `packages/speclift`, oppure vendorato-ma-morto (mai
-  importato dal composition root del self-host) — coerente con DA-1 (copia one-shot vs sync: escludere
-  selettivamente un file complica un futuro re-vendoring "tutto il tree"; tenerlo-ma-morto è più
-  semplice ma lascia codice inerte/potenzialmente fuorviante nel pacchetto). **Osservazione:** un
-  test-double con la stessa forma esiste **già** upstream — `FakeLocator` in
-  `tests/unit/test_locate_evidence.py` (implementa `locate_symbols`/`locate_tests` restituendo dati
-  precostituiti per file/simbolo) — è il precedente più vicino a un adapter "alimentato" invece che
-  "attivo": la nuova classe di produzione per il self-host può ricalcarne la forma (stessa interfaccia
-  di porta, dati letti da un artefatto invece che cablati nel test). Raccomandazione debole: JSON con
-  la stessa forma di `Symbol`/`TestRef` (riuso dei modelli di dominio già esistenti, zero nuovo schema
-  da inventare), e `rag_sertor.py` escluso fisicamente dalla copia (un ospite che ispeziona
-  `packages/speclift` non trova così codice morto che finge di essere usato). Decisione finale in plan.
+- **[DA-4 — RISOLTA a monte (adozione dell'Adapter B pluggable upstream)]** *Forma dell'interfaccia
+  evidenza-agente→SpecLift, e sorte di `rag_sertor.py`.* Il cambio di decisione impone che
+  l'`EvidenceLocator` sia alimentato dall'evidenza già localizzata dall'agente (via MCP `search_code`),
+  non da query live eseguite dalla porta. La forca è **risolta dal codice vendorato stesso**: la versione
+  pluggable Sinthari (commit `5ee6fc1`) contiene già l'**Adapter B** (`ProvidedEvidenceLocator`,
+  MCP-via-agente) accanto all'**Adapter A** CLI (`SertorRagLocator`). **(a) Forma dell'interfaccia** = la
+  `located.json` dell'Adapter B, chiavata `"<file_path>::<query>"`, che l'agente popola dopo il retrieval
+  MCP; il flusso è a tre marce: `changeset` → localizza via MCP → `bundle --changeset --located` →
+  `assemble`. Nessuno schema nuovo da inventare — si adotta verbatim quello upstream. **(b) `rag_sertor.py`**
+  (Adapter A, CLI): **si mantiene** nella copia vendorata come **pluggable ma dormiente** (non importato dal
+  path di localizzazione del self-host), coerente con DA-1 (copia one-shot: tenere l'intero tree semplifica
+  un futuro re-vendoring) e con la natura pluggable dell'upstream — non va escluso fisicamente. Il self-host
+  usa l'Adapter B. Decisione **fissata**; resta a plan solo il wiring (dove vive `located.json` nel sandwich).
