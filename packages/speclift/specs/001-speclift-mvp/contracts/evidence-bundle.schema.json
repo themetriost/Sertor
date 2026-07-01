@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sinthari/speclift/contracts/evidence-bundle.schema.json",
+  "title": "SpecLift Evidence Bundle",
+  "description": "Contratto versionato, fonte di verità, prodotto dalle fasi deterministiche e consumato dallo stadio di stesura EARS. Indipendente dalla vista Markdown.",
+  "type": "object",
+  "required": ["version", "changeset_ref", "items", "unresolved"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "string", "const": "1", "description": "versione del contratto" },
+    "changeset_ref": { "type": "string", "description": "riferimento git d'origine (commit/range/STAGED)" },
+    "items": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/evidenceItem" }
+    },
+    "unresolved": {
+      "type": "array",
+      "description": "hunk senza alcuna evidenza (per trasparenza, non per la stesura)",
+      "items": { "$ref": "#/$defs/hunk" }
+    }
+  },
+  "$defs": {
+    "anchor": {
+      "type": "object",
+      "required": ["file", "lines", "granularity", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "file": { "type": "string" },
+        "lines": { "type": "array", "items": { "type": "integer" }, "minItems": 2, "maxItems": 2 },
+        "symbol": { "type": ["string", "null"] },
+        "test": { "$ref": "#/$defs/testRef" },
+        "granularity": { "enum": ["symbol", "hunk"] },
+        "status": { "enum": ["verified", "unverified"] }
+      }
+    },
+    "testRef": {
+      "type": ["object", "null"],
+      "required": ["name", "path", "covers_symbol"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "path": { "type": "string" },
+        "line": { "type": "integer" },
+        "covers_symbol": { "type": "string" },
+        "provenance": { "type": "string" }
+      }
+    },
+    "symbol": {
+      "type": "object",
+      "required": ["name", "path", "line"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "path": { "type": "string" },
+        "line": { "type": "integer" },
+        "kind": { "type": "string" },
+        "provenance": { "type": "string" }
+      }
+    },
+    "hunk": {
+      "type": "object",
+      "required": ["file_path", "new_range"],
+      "additionalProperties": false,
+      "properties": {
+        "file_path": { "type": "string" },
+        "old_range": { "type": "array", "items": { "type": "integer" }, "minItems": 2, "maxItems": 2 },
+        "new_range": { "type": "array", "items": { "type": "integer" }, "minItems": 2, "maxItems": 2 },
+        "candidate_identifiers": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "evidenceItem": {
+      "type": "object",
+      "required": ["hunk", "symbols", "tests", "anchor", "granularity_used"],
+      "additionalProperties": false,
+      "properties": {
+        "hunk": { "$ref": "#/$defs/hunk" },
+        "symbols": { "type": "array", "items": { "$ref": "#/$defs/symbol" } },
+        "tests": { "type": "array", "items": { "$ref": "#/$defs/testRef" } },
+        "anchor": { "$ref": "#/$defs/anchor" },
+        "granularity_used": { "enum": ["symbol", "hunk"] }
+      }
+    }
+  }
+}

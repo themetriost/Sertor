@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sinthari/speclift/contracts/output.schema.json",
+  "title": "SpecLift Report (output canonico)",
+  "description": "Output canonico (fonte di verità). La vista Markdown è derivata e deve coincidere per requisiti e àncore.",
+  "type": "object",
+  "required": ["version", "changeset_ref", "requirements", "drifts", "excluded", "open_questions"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "string", "const": "1" },
+    "changeset_ref": { "type": "string" },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "quota", "statement", "anchor"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "quota": { "enum": ["user_capability", "behaviour", "implementation"] },
+          "statement": { "type": "string", "description": "frase EARS (keyword inglese)" },
+          "anchor": { "$ref": "evidence-bundle.schema.json#/$defs/anchor" },
+          "source_item": { "type": "string", "description": "riferimento all'EvidenceItem d'origine" }
+        }
+      }
+    },
+    "drifts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["description", "anchor", "status"],
+        "additionalProperties": false,
+        "properties": {
+          "description": { "type": "string" },
+          "anchor": { "$ref": "evidence-bundle.schema.json#/$defs/anchor" },
+          "status": { "const": "proposed" }
+        }
+      }
+    },
+    "excluded": {
+      "type": "array",
+      "description": "requisiti scartati perché privi di àncora verificabile (trasparenza del moat)",
+      "items": {
+        "type": "object",
+        "required": ["statement", "reason"],
+        "properties": {
+          "statement": { "type": "string" },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "open_questions": { "type": "array", "items": { "type": "string" } }
+  }
+}

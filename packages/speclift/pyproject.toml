@@ -1,0 +1,46 @@
+[project]
+name = "speclift"
+version = "0.1.0"
+description = "SpecLift — generatore diff → requisiti EARS ancorati (MVP)"
+readme = "specs/001-speclift-mvp/quickstart.md"
+requires-python = ">=3.11"
+dependencies = [
+    # Solo standard library nel core. `git` è invocato via subprocess (nessuna dipendenza libgit).
+    # Sertor RAG è consumato via vehicle MCP dall'agente nella skill, mai importato (Adapter B);
+    # l'Adapter A (rag_sertor.py, CLI-vehicle) resta vendorato ma dormiente nel self-host Sertor.
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+    # jsonschema: SOLO test di contratto (tests/contract/conftest.py, test_bundle.py,
+    # test_render_json.py) — verificato, zero import in src/speclift/ (D-2, RNF-2).
+    "jsonschema>=4.0",
+]
+
+[project.scripts]
+speclift = "speclift.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/speclift"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+markers = [
+    "contract: contract tests against JSON schemas / port contracts",
+    "integration: end-to-end tests on real git fixtures",
+]
+
+[tool.ruff]
+src = ["src", "tests"]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

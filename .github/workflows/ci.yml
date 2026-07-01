@@ -55,6 +55,12 @@ jobs:
       - name: Tests — sertor-flow (governance installer)
         run: uv run pytest packages/sertor-flow/tests -m "not cloud and not integration"
 
+      - name: Tests — speclift (vendored self-host)
+        run: uv run pytest packages/speclift/tests -m "not cloud"
+
+      - name: Lint — speclift (vendored, own ruff config)
+        run: uv run ruff check packages/speclift
+
   # End-to-end host smoke (FEAT-003 epica debito-tecnico): installs Sertor capabilities from
   # git+url@master exactly as a third-party host would. The matrix is {os} x {assistant}; EACH job
   # runs all three capabilities for its assistant: rag (install→index→doctor→search), wiki (deposit)
