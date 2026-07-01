@@ -87,12 +87,14 @@ def test_custom_agent_present_and_formed(tmp_path: Path):  # FR-011
     assert "name: wiki-curator" in text
 
 
-def test_custom_agent_omits_model(tmp_path: Path):  # FR-017 / SC-005
+def test_custom_agent_has_policy_model(tmp_path: Path):  # E2-FEAT-015 (was FR-017/SC-005)
     _install(tmp_path)
+    from sertor_install_kit.model_policy import resolve_model
     from sertor_installer.surfaces import split_frontmatter
 
     text = (tmp_path / ".github/agents/wiki-curator.agent.md").read_text(encoding="utf-8")
-    assert "model:" not in split_frontmatter(text)[0]
+    front = split_frontmatter(text)[0]
+    assert f"model: {resolve_model('wiki-curator')}" in front
 
 
 # ---------------------------------------------------------------- US3: hook wiring (native schema)

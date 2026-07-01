@@ -52,6 +52,7 @@ without a rendering on the chosen assistant is reported as an explicit **gap**, 
 | MCP server, instruction block, skill, agent | Operational on **all OSes and targets** — do not depend on `pwsh`. |
 | Hook scripts (`.ps1`) | **Require `pwsh` (PowerShell Core) on macOS/Linux.** On Windows: operational via `powershell` (Claude) or `pwsh` (Copilot CLI). Without `pwsh` on macOS/Linux they are installed but **non-operational**; the install report says so in a note (E10-FEAT-018). |
 | `memory-capture` (Copilot CLI) | Wired and deposited, but requires **`SERTOR_MEMORY=true` + `SERTOR_MEMORY_ADAPTER=copilot-cli`** to capture Copilot CLI sessions; with defaults it fires but captures nothing useful. The install report declares this; out-of-the-box completion is planned (FEAT-009). |
+| Sertor-authored agent `model:` default (Copilot CLI) | Each of the 5 Sertor-authored `.agent.md` custom-agents gets an explicit default model from a versioned profile (`sertor-install-kit`); user-overridable via `/subagents` or by editing the frontmatter. Install is offline — no probe of tenant model availability. See [`docs/install-copilot.md`](../../docs/install-copilot.md#model-defaults-for-the-sertor-authored-agents). |
 
 > The table above states **operability**, not parity: where a surface is operational only with extra
 > configuration it is marked as such. For the `pwsh` prerequisite and the per-target operability

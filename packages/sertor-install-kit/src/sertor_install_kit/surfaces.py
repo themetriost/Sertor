@@ -50,25 +50,28 @@ def render_prompt_file(canonical_text: str) -> str:
     return header + body.lstrip("\n")
 
 
-def render_custom_agent(canonical_text: str, *, include_model: bool = False) -> str:
+def render_custom_agent(canonical_text: str, *, model: str | None = None) -> str:
     """Renders a Copilot custom-agent (`*.agent.md`) from the canonical agent asset.
 
-    The persona **body** is the shared substrate (reused verbatim); the frontmatter is translated to
-    the Copilot custom-agent shape (`name`/`description`/`tools` preserved when present).
+    The persona **body** is the shared substrate (reused verbatim); the frontmatter is
+    translated to the Copilot custom-agent shape (`name`/`description`/`tools` preserved
+    when present).
 
-    FEAT-011/FR-017 (Q6=a): the Claude `model:` value (e.g. `haiku`) is INVALID on Copilot, so the
-    `model` field is OMITTED by default (`include_model=False`). The Claude plan never uses this
-    renderer (it keeps the `.claude/**` byte-copy layout), so omitting `model` causes no Claude
-    regression. The parameter makes the omission an explicit caller decision, not a side effect.
+    E2-FEAT-015: `model`, when given, is a POLICY-resolved model-ID (e.g. `claude-haiku-4.5`)
+    SUBSTITUTED for whatever `model:` the canonical frontmatter carries — a Claude alias
+    (e.g. `haiku`) is INVALID on Copilot and is NEVER echoed. `model=None` (default) OMITS
+    the field entirely (byte-identical to the pre-FEAT-015 `include_model=False` behaviour);
+    the Claude plan never calls this renderer (byte-copy `.claude/**`), so this is a no-op
+    there (FR-012/RNF-5).
     """
     front, body = split_frontmatter(canonical_text)
     fields = _parse_simple_frontmatter(front)
-    keys = ("name", "description", "tools", "model") if include_model \
-        else ("name", "description", "tools")
     lines = [_FRONTMATTER_FENCE]
-    for key in keys:
+    for key in ("name", "description", "tools"):
         if key in fields:
             lines.append(f"{key}: {_yaml_scalar(fields[key])}")
+    if model is not None:
+        lines.append(f"model: {_yaml_scalar(model)}")
     lines.append(_FRONTMATTER_FENCE)
     lines.append("")
     return "\n".join(lines) + "\n" + body.lstrip("\n")

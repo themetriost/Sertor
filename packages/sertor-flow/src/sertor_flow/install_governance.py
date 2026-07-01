@@ -47,6 +47,7 @@ from sertor_install_kit import (
     remove_path,
     render_custom_agent,
     render_prompt_file,
+    resolve_model,
     update_file_if_changed,
     update_marker_block,
     write_marker_block,
@@ -143,6 +144,13 @@ def build_governance_plan(profile: GovernanceProfile) -> list[Artifact]:
     aprofile = AssistantProfile.for_assistant(AssistantId.from_str(profile.assistant))
     plan: list[Artifact] = []
 
+    if aprofile.assistant is AssistantId.COPILOT_CLI:
+        # Fail-loud BEFORE any artifact is written (FR-008/009, DA-D-4): this plan deposits
+        # THREE Copilot agents in one list — validate the policy covers all of them up front,
+        # so a profile gap never leaves the first N already written (partial install).
+        for _source, _surface, _claude_name, copilot_name in _SERTOR_AUTHORED:
+            resolve_model(copilot_name)
+
     # 1+2. Sertor-authored AGENT/COMMAND surfaces, routed per-assistant via the AssistantProfile.
     for source, surface, claude_name, copilot_name in _SERTOR_AUTHORED:
         name = claude_name if aprofile.assistant is AssistantId.CLAUDE else copilot_name
@@ -207,7 +215,8 @@ def _render_for_target(art: Artifact) -> str:
     if art.target_rel.endswith(_RENDER_PROMPT_SUFFIX):
         return render_prompt_file(canonical)
     if art.target_rel.endswith(_RENDER_AGENT_SUFFIX):
-        return render_custom_agent(canonical)
+        name = art.target_rel.rsplit("/", 1)[-1].removesuffix(_RENDER_AGENT_SUFFIX)
+        return render_custom_agent(canonical, model=resolve_model(name))
     return canonical
 
 

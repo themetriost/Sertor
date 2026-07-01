@@ -22,3 +22,12 @@ class ConfigError(InstallerError):
     def __init__(self, message: str, *, key: str | None = None):
         self.key = key
         super().__init__(message if key is None else f"{message} (key: {key})")
+
+
+class ModelPolicyError(InstallerError):
+    """The model-policy profile has no entry for an in-scope Copilot custom-agent
+    (E2-FEAT-015).
+
+    Fail-loud install-time (Principio XII): raised at PLAN-BUILD time (before any artifact
+    is written), never rendered as a silently-omitted/incomplete `model:` field.
+    """

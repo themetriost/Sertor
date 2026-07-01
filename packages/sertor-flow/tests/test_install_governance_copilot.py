@@ -122,14 +122,17 @@ def test_cli_requirements_command_is_custom_agent(installed_copilot_cli: Path):
     assert not (installed_copilot_cli / ".github/prompts/requirements.prompt.md").exists()
 
 
-def test_cli_custom_agent_omits_model(installed_copilot_cli: Path):
-    """FR-017: the CLI custom-agent for the COMMAND omits the Claude `model:` field."""
+def test_cli_custom_agent_has_policy_model(installed_copilot_cli: Path):
+    """E2-FEAT-015 (was FR-017): the CLI custom-agent for the COMMAND carries the POLICY
+    model-id, never the omitted/Claude-alias state of FEAT-011/049."""
     from sertor_install_kit import split_frontmatter
+    from sertor_install_kit.model_policy import resolve_model
 
     text = (installed_copilot_cli / ".github/agents/requirements.agent.md").read_text(
         encoding="utf-8"
     )
-    assert "model:" not in split_frontmatter(text)[0]
+    front = split_frontmatter(text)[0]
+    assert f"model: {resolve_model('requirements')}" in front
 
 
 def test_cli_command_body_reused_from_canonical(installed_copilot_cli: Path):

@@ -46,6 +46,7 @@ from sertor_install_kit.lifecycle import (
     execute_lifecycle as _kit_execute_lifecycle,
 )
 from sertor_install_kit.mcp_merge import merge_mcp, remove_mcp_server
+from sertor_install_kit.model_policy import resolve_model
 from sertor_install_kit.observability import log_event
 from sertor_install_kit.settings_merge import merge_settings, remove_settings_entries
 from sertor_installer.artifacts import (
@@ -363,15 +364,17 @@ def _concierge_artifact(assistant: AssistantId) -> Artifact:
 def _render_rag_file(art: Artifact) -> str:
     """Content for a rag FILE artifact: rendered for a Copilot custom-agent, byte-copy otherwise.
 
-    Local render-aware helper (a `_render_for_target` twin of `install_wiki`/`install_governance`),
-    NOT a new kit seam (`render_custom_agent` is already exported). The `.agent.md` branch maps the
-    Claude frontmatter to the Copilot custom-agent shape (`model:` omitted). Every other FILE
-    (native skill `.md`, hook `.ps1`) is reused verbatim (byte-copy) — the body never drifts.
+    Local render-aware helper (a `_render_for_target` twin of `install_wiki`/
+    `install_governance`), NOT a new kit seam (`render_custom_agent` is already exported).
+    The `.agent.md` branch maps the Claude frontmatter to the Copilot custom-agent shape,
+    substituting the POLICY model-ID (E2-FEAT-015) — never echoing the Claude alias. Every
+    other FILE (native skill `.md`, hook `.ps1`) is reused verbatim (byte-copy).
     """
     assert art.source is not None
     text = read_asset_text(art.source)
     if art.target_rel.endswith(".agent.md"):
-        return render_custom_agent(text)
+        name = art.target_rel.rsplit("/", 1)[-1].removesuffix(".agent.md")
+        return render_custom_agent(text, model=resolve_model(name))
     return text
 
 
@@ -394,6 +397,10 @@ def build_rag_plan(
     # The Copilot CLI shares the `.github/**` host-facing surfaces; its MCP container is `.mcp.json`
     # (mcpServers), resolved via the AssistantProfile.
     is_copilot = assistant is AssistantId.COPILOT_CLI
+    if is_copilot:
+        # Fail-loud BEFORE any artifact is written (FR-008/009, DA-D-4): this plan deposits a
+        # single Copilot agent (`concierge`) — validate the policy covers it up front.
+        resolve_model("concierge")
 
     plan: list[Artifact] = []
     if with_deps:

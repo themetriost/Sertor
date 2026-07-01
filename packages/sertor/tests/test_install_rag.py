@@ -309,18 +309,33 @@ def test_concierge_agent_deposited_copilot(tmp_path: Path, make_runner):  # US8-
     _run(tmp_path, runner, backend="azure", assistant=AssistantId.COPILOT_CLI)
     dest = tmp_path / ".github" / "agents" / "concierge.agent.md"
     assert dest.is_file()
-    # Copilot custom-agent → `render_custom_agent` OMITS `model:` (FEAT-011/049).
-    assert "model:" not in _frontmatter(dest.read_text(encoding="utf-8"))
+    # E2-FEAT-015: Copilot custom-agent → `render_custom_agent` substitutes the POLICY
+    # model-id (never a bare Claude alias — FEAT-011/049 non-regression).
+    from sertor_install_kit.model_policy import resolve_model
+
+    front = _frontmatter(dest.read_text(encoding="utf-8"))
+    assert f"model: {resolve_model('concierge')}" in front
 
 
 def test_concierge_copilot_frontmatter_no_claude_names(tmp_path: Path, make_runner):  # US8-AC3
+    """No Claude product/model name leaks into the Copilot frontmatter — EXCEPT the policy
+    `model:` line itself, which legitimately carries an id containing the substring "claude"
+    (E2-FEAT-015, e.g. `claude-haiku-4.5`, a NATIVE Copilot model id, not a Claude alias)."""
     runner = make_runner()
     _run(tmp_path, runner, backend="azure", assistant=AssistantId.COPILOT_CLI)
-    fm = _frontmatter(
-        (tmp_path / ".github" / "agents" / "concierge.agent.md").read_text(encoding="utf-8")
+    text = (tmp_path / ".github" / "agents" / "concierge.agent.md").read_text(encoding="utf-8")
+    fm = _frontmatter(text)
+    non_model_lines = "\n".join(
+        ln for ln in fm.splitlines() if not ln.strip().startswith("model:")
     )
     for name in ("Claude", "Opus", "Haiku", "claude"):
-        assert name not in fm, f"Claude product/model name {name!r} leaked into Copilot frontmatter"
+        assert name not in non_model_lines, (
+            f"Claude product/model name {name!r} leaked into Copilot frontmatter "
+            f"(outside model:)"
+        )
+    model_line = next(ln for ln in fm.splitlines() if ln.strip().startswith("model:"))
+    value = model_line.split(":", 1)[1].strip()
+    assert value not in {"haiku", "sonnet", "opus"}
 
 
 def test_concierge_lifecycle_uninstall_claude(tmp_path: Path, make_runner):  # W6
@@ -366,8 +381,13 @@ def test_concierge_upgrade_copilot_render_aware(tmp_path: Path, make_runner):  #
     execute_rag_lifecycle(
         plan, profile, runner, LifecycleOp.UPGRADE, assistant=AssistantId.COPILOT_CLI
     )
+    from sertor_install_kit.model_policy import resolve_model
+
     fm = _frontmatter(dest.read_text(encoding="utf-8"))
-    assert "model:" not in fm  # upgrade re-rendered the agent (translated frontmatter)
+    # upgrade re-rendered the agent: the stale Claude `model: sonnet` is replaced by the
+    # policy id (E2-FEAT-015, US6 idempotence/lifecycle).
+    assert f"model: {resolve_model('concierge')}" in fm
+    assert "model: sonnet" not in fm
 
 
 # ===================================================== E12 guided-setup: concierge routing (US9)
