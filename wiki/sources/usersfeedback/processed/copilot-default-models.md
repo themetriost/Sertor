@@ -4,7 +4,7 @@ type: source
 tags: [usersfeedback, copilot-cli, subagents, model-policy, installer, distribuzione]
 created: 2026-06-30
 source: utente Copilot (richiesta feature, 2026-06-30)
-status: da elaborare
+status: elaborata (2026-07-01)
 ---
 
 # Richiesta utente: default model assignment per agenti Copilot installati da Sertor
@@ -117,3 +117,24 @@ via `/subagents` dopo l'installazione.
   `SETTINGS_MERGE`); il rispetto del modello già scelto dall'utente (req. 3) richiede un merge
   che **non** sovrascriva chiavi pre-esistenti senza conferma.
 - **Default modificabile:** coerente con la natura non-distruttiva dell'installer (req. nota utente).
+
+## Esito elaborazione (2026-07-01)
+
+### Elaborazione in E2-FEAT-015
+
+La richiesta è stata **elaborata e implementata** nella feature **E2-FEAT-015** del backlog epica `sertor-cli`:
+- **Branch:** `083-default-model-policy-copilot` (PR #135)
+- **Status:** ✅ Implementata; CI verde (Win+Linux), Constitution 12/12, ruff clean
+- **Scope realizzato:** 5 agenti Sertor-authored (concierge, configuration-manager, requirements-analyst, requirements, wiki-curator)
+- **Meccanismo reale:** campo `model:` nel frontmatter `.agent.md` di Copilot CLI (forma nativa), fonte unica versionata `model_policy.py` nel kit, fail-loud install-time, guardie riconciliate
+- **Finding di verifica chiave:** il meccanismo config `subagents.agents.<name>.model` è runtime settings di Copilot CLI (user `~/.copilot/settings.json`); il default nel frontmatter è il luogo corretto per install-time e al sicuro dagli upgrade per costruzione
+
+### Scope out dichiarato
+
+- **Agenti vendorati (`speckit.*`):** rimandati a **FEAT-016** (Could, post-verifica supporto `model:` sui prompt-file di spec-kit)
+
+### Pagine wiki di riferimento
+
+- [[feat-083-default-model-policy-copilot]] — Record completo dell'implementazione (experiment)
+- [[assistant-targeting]] — Sezione nuova «Default model-policy per-agente» (tech)
+- [[sertor-install-kit]] — Nuovo modulo `model_policy.py`
