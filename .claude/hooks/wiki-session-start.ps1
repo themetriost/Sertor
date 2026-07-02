@@ -37,7 +37,7 @@ $log = if (Test-Path $logDir) {
 $lines = @(
     'SESSION START - load the project context BEFORE replying to the user.',
     'Do this NOW, on your own initiative:',
-    "1. Read (the outputs enter the context in full): wiki/syntheses/roadmap.md ; wiki/index.md (the wiki catalog) ; wiki/log/$log (the tail of the journal).",
+    "1. Read (the outputs enter the context in full): wiki/syntheses/roadmap.md ; wiki/log/$log (the tail of the journal). Read wiki/index.md (the wiki catalog) ON DEMAND, only when you need to navigate the wiki.",
     '2. Then show the user the executive summary of the roadmap: the block between the markers <!-- EXEC:START --> and <!-- EXEC:END --> of wiki/syntheses/roadmap.md.',
     'Reminder: during project work delegate the wiki update to the wiki-curator agent (see the instructions, Wiki and documentation section).'
 )

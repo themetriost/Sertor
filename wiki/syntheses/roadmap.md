@@ -120,7 +120,8 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   commit `3e800a0`). **⏸️ PAUSA A-backlog (scelta utente 2026-07-02):** anticipato il vendoring di **SpecAudit**
   (`packages/specaudit`, E14-FEAT-003, 59 test verdi 3.11+3.12, skill dogfood) per poter testare la coppia
   **SpecLift→SpecAudit** sui changeset reali delle A durante la loro implementazione. *Prossimo passo concreto:*
-  ripresa dell'A-backlog da **A-03** (BM25 staleness auto-heal nel server MCP, P0/S, `sertor-core`).
+  **A-03 ✅** (merge `ddac060`/PR #144) e **A-04 🔄** (session-open: EXEC:END spostato + `index.md` on-demand +
+  potatura CLAUDE.md) fatti → prosegui con **A-05** (9 skill speckit fantasma: creare o de-referenziare + guardia, P0).
 
 - **E14-FEAT-001 — self-host di SpecLift (vendoring Adapter B) — ✅ CONSEGNATA (merge `bbfb74d`/PR #136, 2026-07-01) su `master`.**
   *Cosa:* SpecLift (capacità `diff → requisiti EARS ancorati`, **handoff da Sinthari**) vendorato come membro
@@ -207,6 +208,8 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 - **Agenzia RAG incorporata** — ❌ **abbandonata by design (2026-06-16, decisione utente)**: l'agentic RAG
   è già ✅ composito (MCP+agente) e un agente nel core con modello minore non lo migliorerebbe; i 36 REQ in
   `sertor-core/motore-agentico/` restano **elicitazione storica**, non pianificata.
+
+<!-- EXEC:END -->
 
 ### ✅ DONE (su `master`, le rilevanti)
 
@@ -554,7 +557,6 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   FEAT-009 d'epica).
 - **Startup di sessione**: hook SessionStart **sottile** (direttiva-`Read`, ~630 B) che fa caricare roadmap/index/log
   al flusso principale e mostrare l'executive summary — supera il cap ~10K del canale-hook (verificato in sessione 2026-06-09).
-<!-- EXEC:END -->
 
 ## Visione
 
@@ -669,9 +671,9 @@ Legenda: ✅ consegnata · 🔄 parziale (nucleo fatto, residuo aperto) · 📋 
 | ID | Tipo | P | Titolo | Casa d'epica candidata | Stato |
 |---|---|---|---|---|---|
 | A-01 | FIX | P0 | `upgrade` safety: assistente esplicito/rilevato, no capability creep | `sertor-cli` (E2) | ✅ merge `a9e84e3`/PR #141 (auto-detect · no creep · switch consentito) |
-| A-02 | FIX | P0 | Licenza speclift: provenienza onesta (titolarità comune) + LICENSE upstream + re-pin | `speclift` (E14) | ✅ in-repo (merge `9a7e3b7`/PR #142) **+ outbound risolto alla sorgente**: Sinthari ha aggiunto la `LICENSE` MIT (commit `3e800a0`) recependo la richiesta |
-| A-03 | FIX | P0 | BM25 staleness auto-heal (terza gamba MCP) | `sertor-core` (E1) | 🔄 fix+test (reload su token `(mtime_ns,size)`, gemello code-graph); 1054 unit verdi, branch (PR) |
-| A-04 | FIX | P0 | Session-open 55k→~10k token (EXEC-only + potatura CLAUDE.md) | `debito-tecnico` (E10) | 📋 |
+| A-02 | FIX | P0 | Licenza speclift: provenienza onesta (titolarità comune) + LICENSE upstream + re-pin | `speclift` (E14) | ✅ **CHIUSO su entrambi i lati**: in-repo (merge `9a7e3b7`/PR #142) + **Sinthari ha aggiunto e pushato la `LICENSE` MIT** (© themetriost, PR #12/merge `1245355`) → speclift+specaudit ereditano la licenza alla sorgente |
+| A-03 | FIX | P0 | BM25 staleness auto-heal (terza gamba MCP) | `sertor-core` (E1) | ✅ merge `ddac060`/PR #144 (reload su token `(mtime_ns,size)`, gemello code-graph; 1054 unit + 2 staleness verdi). **Dogfood SpecLift→SpecAudit** sul changeset: 6/6 àncore verificate; audit 2 SODDISFATTO + 2 NON_DOCUMENTATO (vanish-case) |
+| A-04 | FIX | P0 | Session-open 55k→~10k token (EXEC-only + potatura CLAUDE.md) | `debito-tecnico` (E10) | 🔄 EXEC:END spostato prima del changelog DONE + `index.md` on-demand al SessionStart + potatura CLAUDE.md (branching stantio, blockquote hook); redesign profondo della rappresentazione EXEC rinviato a cross-team |
 | A-05 | FIX | P0 | 9 skill speckit fantasma: creare o de-referenziare + guardia | `debito-tecnico` (E10) | 📋 |
 | A-06 | FIX | P0 | Doc: `configure` documentato + quick-start Claude su GloVe | `documentazione-marketing` (E13) | 📋 |
 | A-07 | EVO | P1 | `search_docs` MRR 0.55 (leva missione) | `retrieval-qualita` E5-FEAT-003 | 📋 |
