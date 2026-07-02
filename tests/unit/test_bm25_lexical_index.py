@@ -142,6 +142,31 @@ def test_no_tmp_leftovers_after_build(tmp_path):
     assert leftovers == []                     # atomic write: tmp+rename (Principio VI)
 
 
+# --- staleness auto-heal (A-03, twin of the code-graph reload) ----------------------------------
+
+def test_query_reloads_when_sidecar_rebuilt_by_another_process(tmp_path):
+    # The MCP server memoizes this adapter and the default engine is hybrid: a re-index in ANOTHER
+    # process rewrites the sidecar. The long-lived instance must serve the FRESH corpus without a
+    # restart — not a cached stale one (the missing leg of the staleness auto-heal triad).
+    server = _index(tmp_path)                                   # long-lived instance (the MCP)
+    assert server.query(COLL, "IndexNotFoundError", k=3)[0] == "errors.py#0"  # populates the cache
+    other_process = Bm25LexicalIndex(tmp_path)                  # a separate re-index process
+    other_process.build(COLL, [LexicalEntry("nuovo.py#0", "simbolo ZetaFresca", "code", "n.py")])
+    # reloads on the changed on-disk token (mtime+size), no restart needed
+    assert server.query(COLL, "ZetaFresca", k=5) == ["nuovo.py#0"]
+    assert server.query(COLL, "IndexNotFoundError", k=5) == []  # the old corpus is gone
+
+
+def test_query_after_reset_by_another_process_invalidates_cache(tmp_path):
+    server = _index(tmp_path)
+    assert server.query(COLL, "IndexNotFoundError", k=3)        # populates the cache
+    Bm25LexicalIndex(tmp_path).reset(COLL)                      # another process drops the sidecar
+    assert not server.exists(COLL)                              # the vanished sidecar is observed
+    # engine gates on exists(); a raw query on a vanished index errs (no stale cached return)
+    with pytest.raises(OSError):
+        server.query(COLL, "IndexNotFoundError", k=3)
+
+
 # --- determinism (FR-008/NFR-06) ----------------------------------------------------------------
 
 def test_query_is_deterministic_and_ties_break_by_chunk_id(tmp_path):
