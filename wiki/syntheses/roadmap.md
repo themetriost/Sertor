@@ -670,7 +670,7 @@ Legenda: ✅ consegnata · 🔄 parziale (nucleo fatto, residuo aperto) · 📋 
 |---|---|---|---|---|---|
 | A-01 | FIX | P0 | `upgrade` safety: assistente esplicito/rilevato, no capability creep | `sertor-cli` (E2) | ✅ merge `a9e84e3`/PR #141 (auto-detect · no creep · switch consentito) |
 | A-02 | FIX | P0 | Licenza speclift: provenienza onesta (titolarità comune) + LICENSE upstream + re-pin | `speclift` (E14) | ✅ in-repo (merge `9a7e3b7`/PR #142) **+ outbound risolto alla sorgente**: Sinthari ha aggiunto la `LICENSE` MIT (commit `3e800a0`) recependo la richiesta |
-| A-03 | FIX | P0 | BM25 staleness auto-heal (terza gamba MCP) | `sertor-core` (E1) | 📋 |
+| A-03 | FIX | P0 | BM25 staleness auto-heal (terza gamba MCP) | `sertor-core` (E1) | 🔄 fix+test (reload su token `(mtime_ns,size)`, gemello code-graph); 1054 unit verdi, branch (PR) |
 | A-04 | FIX | P0 | Session-open 55k→~10k token (EXEC-only + potatura CLAUDE.md) | `debito-tecnico` (E10) | 📋 |
 | A-05 | FIX | P0 | 9 skill speckit fantasma: creare o de-referenziare + guardia | `debito-tecnico` (E10) | 📋 |
 | A-06 | FIX | P0 | Doc: `configure` documentato + quick-start Claude su GloVe | `documentazione-marketing` (E13) | 📋 |

@@ -44,8 +44,12 @@ class Bm25LexicalIndex:
 
     def __init__(self, index_dir: Path | str):
         self._dir = Path(index_dir) / "lexical"
-        # per-collection cache: (entries, bm25, token_sets) — invalidated by build/reset.
-        self._cache: dict[str, tuple[list[LexicalEntry], object, list[set[str]]]] = {}
+        # per-collection cache: on-disk token (mtime_ns, size) -> (entries, bm25, token_sets).
+        # Invalidated by a changed/vanished sidecar on disk (staleness auto-heal, see `_load`) as
+        # well as by build/reset in-process.
+        self._cache: dict[
+            str, tuple[tuple[int, int], tuple[list[LexicalEntry], object, list[set[str]]]]
+        ] = {}
 
     def _sidecar(self, collection: str) -> Path:
         return self._dir / f"{collection}.json"
@@ -74,9 +78,22 @@ class Bm25LexicalIndex:
         self._cache.pop(collection, None)
 
     def _load(self, collection: str) -> tuple[list[LexicalEntry], object, list[set[str]]]:
-        if collection in self._cache:
-            return self._cache[collection]
         path = self._sidecar(collection)
+        # Reload when the sidecar changed on disk (mtime+size): keeps a long-lived server (the MCP
+        # memoizes this adapter, and the default engine is hybrid) from fusing against a lexical
+        # corpus left stale by a re-index in another process — the missing leg of the staleness
+        # auto-heal, twin of the code-graph reload (adapters/graph/networkx_graph.py) and the
+        # Chroma client refresh (adapters/vectorstores/chroma.py).
+        try:
+            stat = path.stat()
+        except OSError:
+            self._cache.pop(collection, None)  # a vanished sidecar invalidates a stale cache
+            token: tuple[int, int] | None = None
+        else:
+            token = (stat.st_mtime_ns, stat.st_size)
+            cached = self._cache.get(collection)
+            if cached is not None and cached[0] == token:
+                return cached[1]
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
         except json.JSONDecodeError as exc:
@@ -100,8 +117,10 @@ class Bm25LexicalIndex:
             tokenized = [tokenize(e.text) or [""] for e in entries]
             bm25 = BM25Okapi(tokenized)
             token_sets = [set(tokens) for tokens in tokenized]
-        self._cache[collection] = (entries, bm25, token_sets)
-        return self._cache[collection]
+        result = (entries, bm25, token_sets)
+        if token is not None:
+            self._cache[collection] = (token, result)
+        return result
 
     def query(
         self,
