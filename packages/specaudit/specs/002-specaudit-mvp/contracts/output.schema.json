@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sinthari/specaudit/contracts/output.schema.json",
+  "title": "SpecAudit Report (output canonico)",
+  "description": "Output canonico (fonte di verità). La vista Markdown è derivata e deve coincidere per verdetti e citazioni (SC-006). Ogni record cita l'àncora SpecLift (copiata dal bundle, mai riverificata).",
+  "type": "object",
+  "required": ["version", "changeset_ref", "records", "matrix", "declared_gaps", "open_questions"],
+  "additionalProperties": false,
+  "$defs": {
+    "level": { "enum": ["alta", "media", "bassa"] },
+    "verdict": { "enum": ["SODDISFATTO", "PARZIALE", "MANCANTE", "DRIFTED", "NON_DOCUMENTATO"] },
+    "anchor": { "$ref": "audit-bundle.schema.json#/$defs/anchor" }
+  },
+  "properties": {
+    "version": { "type": "string", "const": "1" },
+    "changeset_ref": { "type": "string" },
+    "records": {
+      "type": "array",
+      "description": "Ordinati: prima i non-SODDISFATTO per rischio decrescente, poi i SODDISFATTO.",
+      "items": {
+        "type": "object",
+        "required": ["verdict", "verdict_confidence", "anchors", "proposed", "speclift_refs"],
+        "additionalProperties": false,
+        "properties": {
+          "original_ref": { "type": ["string", "null"], "description": "id/provenienza del requisito originale (null per gli 'di più')" },
+          "speclift_refs": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "id/riferimenti degli item SpecLift coinvolti (citazione)"
+          },
+          "verdict": { "$ref": "#/$defs/verdict" },
+          "explanation": { "type": ["string", "null"], "description": "obbligatoria se verdict != SODDISFATTO" },
+          "verdict_confidence": { "$ref": "#/$defs/level" },
+          "alignment_confidence": { "oneOf": [ { "$ref": "#/$defs/level" }, { "type": "null" } ] },
+          "anchors": {
+            "type": "array",
+            "description": "Copiate dal bundle per indice (mai riverificate).",
+            "items": { "$ref": "#/$defs/anchor" }
+          },
+          "risk": {
+            "oneOf": [
+              {
+                "type": "object",
+                "required": ["severity", "detectability", "risk"],
+                "additionalProperties": false,
+                "properties": {
+                  "severity": { "$ref": "#/$defs/level" },
+                  "detectability": { "$ref": "#/$defs/level" },
+                  "risk": { "$ref": "#/$defs/level" }
+                }
+              },
+              { "type": "null" }
+            ],
+            "description": "Presente sse verdict != SODDISFATTO."
+          },
+          "proposed": { "type": "boolean", "description": "true sse verdict == DRIFTED (REQ-A06)" },
+          "notes": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "gap ereditati pertinenti (es. àncora SpecLift unverified, aggancio debole)"
+          }
+        }
+      }
+    },
+    "matrix": {
+      "type": "object",
+      "required": ["counts"],
+      "additionalProperties": false,
+      "properties": {
+        "counts": {
+          "type": "object",
+          "required": ["SODDISFATTO", "PARZIALE", "MANCANTE", "DRIFTED", "NON_DOCUMENTATO"],
+          "additionalProperties": false,
+          "properties": {
+            "SODDISFATTO": { "type": "integer", "minimum": 0 },
+            "PARZIALE": { "type": "integer", "minimum": 0 },
+            "MANCANTE": { "type": "integer", "minimum": 0 },
+            "DRIFTED": { "type": "integer", "minimum": 0 },
+            "NON_DOCUMENTATO": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "records_by_verdict": {
+          "type": "object",
+          "description": "Tracciabilità: per ogni verdetto, i riferimenti ai record di dettaglio (REQ-005).",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "declared_gaps": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Propagati dal bundle + emersi in adjudication (FR-017/REQ-011)."
+    },
+    "open_questions": { "type": "array", "items": { "type": "string" } }
+  }
+}

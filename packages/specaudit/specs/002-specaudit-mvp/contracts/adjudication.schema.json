@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sinthari/specaudit/contracts/adjudication.schema.json",
+  "title": "SpecAudit Adjudication (scritta dall'agente, input di `report`)",
+  "description": "Allineamento (N:M) + classificazione. Referenzia gli item del bundle SOLO per indice. Le àncore NON si scrivono qui: le attacca il runtime dal bundle. Completezza e integrità dei riferimenti sono verificate (fail-loud) da `report`.",
+  "type": "object",
+  "required": ["changeset_ref", "groups", "extras"],
+  "additionalProperties": false,
+  "$defs": {
+    "level": { "enum": ["alta", "media", "bassa"] },
+    "verdict": { "enum": ["SODDISFATTO", "PARZIALE", "MANCANTE", "DRIFTED", "NON_DOCUMENTATO"] }
+  },
+  "properties": {
+    "changeset_ref": { "type": "string", "description": "deve combaciare col bundle" },
+    "groups": {
+      "type": "array",
+      "description": "Un gruppo per requisito originale (centrato su di esso). speclift vuoto = candidato MANCANTE.",
+      "items": {
+        "type": "object",
+        "required": ["original", "speclift", "alignment_confidence", "verdict", "verdict_confidence"],
+        "additionalProperties": false,
+        "properties": {
+          "original": { "type": "integer", "minimum": 0, "description": "indice del requisito originale" },
+          "speclift": {
+            "type": "array",
+            "items": { "type": "integer", "minimum": 0 },
+            "description": "indici degli item SpecLift allineati (0..N)"
+          },
+          "alignment_confidence": { "$ref": "#/$defs/level" },
+          "verdict": { "$ref": "#/$defs/verdict" },
+          "explanation": { "type": "string", "description": "obbligatoria/non vuota se verdict != SODDISFATTO; nomina gli item divergenti (multi-item)" },
+          "verdict_confidence": { "$ref": "#/$defs/level" },
+          "severity": { "$ref": "#/$defs/level", "description": "richiesta se verdict != SODDISFATTO" },
+          "detectability": { "$ref": "#/$defs/level", "description": "richiesta se verdict != SODDISFATTO" }
+        }
+      }
+    },
+    "extras": {
+      "type": "array",
+      "description": "Item SpecLift 'di più' (senza contropartita originale): NON_DOCUMENTATO, o riaggancio motivato.",
+      "items": {
+        "type": "object",
+        "required": ["speclift", "verdict", "explanation", "verdict_confidence"],
+        "additionalProperties": false,
+        "properties": {
+          "speclift": { "type": "integer", "minimum": 0, "description": "indice dell'item SpecLift" },
+          "verdict": { "$ref": "#/$defs/verdict" },
+          "explanation": { "type": "string" },
+          "verdict_confidence": { "$ref": "#/$defs/level" },
+          "severity": { "$ref": "#/$defs/level" },
+          "detectability": { "$ref": "#/$defs/level" }
+        }
+      }
+    },
+    "open_questions": { "type": "array", "items": { "type": "string" } }
+  }
+}
