@@ -4,7 +4,7 @@
 dopo cambio di decisione: retrieval via **MCP dentro una skill**, non via CLI)
 
 <!-- Deriva da: FEAT-001 (epica speclift) — requirements/speclift/self-host/requirements.md (REVISIONATO)
-     Fonti a monte: wiki/sources/input-other-agents/speclift-handoff-sinthari.md (handoff),
+     Fonti a monte: wiki/sources/input-other-agents/processed/speclift-handoff-sinthari.md (handoff),
      wiki/sources/input-other-agents/speclift-recon.md (ricognizione ancorata a file:riga). -->
 
 **Input**: FEAT-001 dell'epica `speclift`. **SpecLift** (handoff da Sinthari,

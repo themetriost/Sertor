@@ -848,7 +848,7 @@ falsificare la cronologia) — dichiara onestamente la lacuna nella nuova voce.
       created: 2026-07-01
       status: chiuso — Adapter B vendorato e in uso nel self-host
       sources:
-        - "wiki/sources/input-other-agents/sinthari-reply-speclift-locator-pluggable.md (la loro risposta)"
+        - "wiki/sources/input-other-agents/processed/sinthari-reply-speclift-locator-pluggable.md (la loro risposta)"
         - "wiki/sources/input-other-agents/speclift-recon-pluggable.md (la nostra ricognizione ancorata)"
         - "specs/084-speclift-self-host/ (piano/ricerca/tasks di questa feature)"
       ---
@@ -1020,7 +1020,7 @@ il RAG di dogfooding può eventualmente restituire anche il codice/doc di SpecLi
   - `pyproject.toml` (root — solo le 2 righe: `members` + `extend-exclude`)
   - `uv.lock` (rigenerato)
   - `.github/workflows/ci.yml` (step `Tests — speclift` + opzionale `Lint — speclift`)
-  - `wiki/sources/input-other-agents/sinthari-reply-speclift-locator-pluggable.md` (aggiornamento
+  - `wiki/sources/input-other-agents/processed/sinthari-reply-speclift-locator-pluggable.md` (aggiornamento
     campo `status`)
   - `wiki/sources/input-other-agents/sertor-confirms-speclift-adapter-b-vendored.md` (nuovo)
   - Eventuali artefatti prodotti dalla verifica e2e (`$env:TEMP\speclift-*`) **non** vanno

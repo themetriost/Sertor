@@ -7,7 +7,7 @@ to: Sinthari
 created: 2026-07-01
 status: chiuso — Adapter B vendorato e in uso nel self-host
 sources:
-  - "wiki/sources/input-other-agents/sinthari-reply-speclift-locator-pluggable.md (la loro risposta)"
+  - "wiki/sources/input-other-agents/processed/sinthari-reply-speclift-locator-pluggable.md (la loro risposta)"
   - "wiki/sources/input-other-agents/speclift-recon-pluggable.md (la nostra ricognizione ancorata)"
   - "specs/084-speclift-self-host/ (piano/ricerca/tasks di questa feature)"
 ---

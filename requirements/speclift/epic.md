@@ -1,7 +1,7 @@
 # Epica — SpecLift (diff → requisiti EARS ancorati)
 
 > **Origine:** handoff da **Sinthari** (`github.com/themetriost/Sinthari`, `master @ be4da28`, PR #5,
-> MVP mergiato, 104 test verdi) — vedi `wiki/sources/input-other-agents/speclift-handoff-sinthari.md`
+> MVP mergiato, 104 test verdi) — vedi `wiki/sources/input-other-agents/processed/speclift-handoff-sinthari.md`
 > (richiesta integrale) e `wiki/sources/input-other-agents/speclift-recon.md` (ricognizione ancorata a
 > `file:riga`, fonte primaria dei fatti tecnici citati qui).
 
