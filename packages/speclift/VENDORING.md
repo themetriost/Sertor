@@ -7,7 +7,7 @@
 | `upstream_version` | `0.1.0` |
 | `vendored_at` | 2026-07-01 |
 | `handoff` | first-party, stessa organizzazione GitHub `themetriost`; `5ee6fc1` è il recepimento upstream del nostro feedback di dogfooding (CLI→MCP, Adapter B pluggable) |
-| `upstream_license` | **ASSENTE** a `5ee6fc1` (nessun file `LICENSE*` nel repo Sinthari, verificato) — questa copia è integrata sotto la licenza MIT di Sertor (`LICENSE` in questa cartella); da confermare col proprietario upstream (stessa-org, non bloccante) |
+| `upstream_license` | **ASSENTE** a `5ee6fc1` (nessun file `LICENSE*` nel repo Sinthari, verificato). **Titolarità confermata (2026-07-02):** `themetriost/Sinthari` e `themetriost/Sertor` hanno lo **stesso titolare legale** → l'MIT di questa copia (`LICENSE` in questa cartella) è un **atto legittimo del titolare** (first-party), non una rilicenza di codice di terzi. **Azione residua tracciata (A-02, audit SWOT):** committare una `LICENSE` MIT **a monte nel repo Sinthari** e ri-pinnare, così anche i vendoring futuri dallo stesso repo (es. SpecAudit, [[FEAT-003]]) ereditano la licenza alla sorgente invece di apporla a valle. Non bloccante per il dogfood; belt-and-suspenders legale. |
 
 ## Cosa è vendorato verbatim (zero modifiche di codice)
 
@@ -32,7 +32,7 @@
 | 2 | `[project.optional-dependencies].dev` | `["pytest>=8.0","ruff>=0.6"]` | `+= "jsonschema>=4.0"` | sposta la dipendenza da (1) qui |
 | 3 | `requires-python` | `>=3.12` | `>=3.11` | riconciliazione col pavimento del workspace Sertor (D-4), **condizionata** alla verifica empirica su 3.11 (vedi `tasks.md` Fase 8/US10 — se irriducibile, questo campo E questa riga tornano a `>=3.12` con la discrepanza dichiarata sotto) |
 | 4 | `[tool.ruff] target-version` | `py312` | `py311` | coerente col punto 3 |
-| 5 | `LICENSE` | assente | MIT (Sertor) | D-7, finding registrato sopra |
+| 5 | `LICENSE` | assente | MIT (Sertor) | D-7; titolarità comune confermata 2026-07-02 (riga `upstream_license` sopra) → atto del titolare, non rilicenza di terzi; azione residua A-02 = LICENSE a monte + re-pin |
 
 Tutto il resto del `pyproject.toml` (nome, versione statica `0.1.0`, descrizione, `readme`,
 `project.scripts`, `build-system`, `tool.hatch.build.targets.wheel`,
