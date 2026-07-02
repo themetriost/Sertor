@@ -74,7 +74,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **E11** | [`multiutente`](../../requirements/multiutente/epic.md) | 📋 differita | finché il caso d'uso team non è concreto |
 | **E12** | 🆕 [`usabilità`](../../requirements/usabilita/epic.md) | 🔄 **MVP completo** (FEAT-001/002/010 ✅ su `master`) | **owner del layer UX** (skill agentiche + agente *concierge* + poche primitive deterministiche, D↔N). **FEAT-001 `doctor` ✅** (PR #100, fix freschezza #102) + **FEAT-002 guided-setup ✅** (skill + agente `concierge` model-pinned, PR #101) + **FEAT-010 discoverability CLI ✅** (`uv run --project .sertor`, PR #103/#104) + **FEAT-012 install host-aware ✅** (PR #115, fix dogfooding + NRT, 2026-06-26). MVP (doctor + guida + invocazione robusta) coperto. Restano Should: config-recommender (FEAT-004), explain (FEAT-005), search-diagnose (FEAT-007), concierge pieno (FEAT-009, **stub avviato**), progress GloVe (FEAT-003). Assorbe item UX-facing da E2/E3/E10 (cross-ref) · **FEAT-013 description trigger-rich EN** (da audit, P0) |
 | **E13** | 🆕 [`documentazione-marketing`](../../requirements/documentazione-marketing/epic.md) | 📋 nuova (2026-06-24) | **owner della documentazione ESTERNA + marketing** (confine netto: E12 = UX in-product · `wiki/` = doc interna · meccanismi nelle epiche d'origine — E13 li *racconta*, cross-ref). Due fasi: **Fase 1 — doc utente** (getting-started unico, README di valore, pagina «cos'è/perché» imperniata sulla fusione code+doc — MVP Must/Should) · **Fase 2 — marketing pubblico** (posizionamento, demo/screencast, landing/sito) **gated sul go-public** (apertura repo/PyPI, oggi E2/FEAT-006 = Won't). 1° passo: FEAT-001/002/003 (Fase 1) |
-| **E14** | 🆕 [`speclift`](../../requirements/speclift/epic.md) | 🔄 FEAT-001 ✅ su master | **`diff → requisiti EARS ancorati`** (handoff da Sinthari, sandwich deterministico + moat). **FEAT-001 self-host ✅** (vendoring Adapter B/MCP, merge `bbfb74d`/PR #136, 2026-07-01). Restano: **FEAT-002 distribuzione su ospiti** (casa non decisa: `sertor-flow` vs `sertor`) · famiglia futura **FEAT-003 SpecAudit / FEAT-004 Debrief / FEAT-005 Guida-al-test** (Could). Nato dalla collaborazione agent-to-agent (feedback CLI→MCP recepito upstream) |
+| **E14** | 🆕 [`speclift`](../../requirements/speclift/epic.md) | 🔄 FEAT-001 ✅ su master | **`diff → requisiti EARS ancorati`** (handoff da Sinthari, sandwich deterministico + moat). **FEAT-001 self-host ✅** (vendoring Adapter B/MCP, merge `bbfb74d`/PR #136, 2026-07-01). **FEAT-003 SpecAudit 🆕 handoff ricevuto (2026-07-02, Sinthari PR #8/`91c5a45`)** — verdetto per-requisito top-down, gemello di FEAT-001, da vendorare in `sertor-flow` (Should). Restano: **FEAT-002 distribuzione su ospiti** (casa non decisa: `sertor-flow` vs `sertor`) · **FEAT-004 Debrief / FEAT-005 Guida-al-test** (Could). Nato dalla collaborazione agent-to-agent (feedback CLI→MCP recepito upstream) |
 
 *Legenda:* ✅ completa · 🔄 nucleo consegnato, residui aperti · 📋 da fare · 🆕 nuova. *Numerazione `E1`..`E14`: vista standing per epica (E1 nucleo `sertor-core`, E11 `multiutente` differita, E12 `usabilità`, E13 `documentazione-marketing`, E14 `speclift` nuova 2026-07-01 da handoff Sinthari); E1–E4 storiche, E5–E10 dal backlog audit 2026-06-16, E12 dall'esplorazione UX 2026-06-23, E13 dalla richiesta 2026-06-24.*
 
@@ -112,11 +112,14 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 - **Audit SWOT + backlog azionabile — 🔄 IN CORSO (2026-07-02).**
   *Cosa:* audit completo del workspace (5 subagent paralleli: core · packages/CI · governance · backlog ·
   doc/wiki) → SWOT + **20 item prioritizzati P0–P2** (tabella sotto, dettaglio/evidenze in
-  [[audit-swot-2026-07-02]]). *Dove:* `wiki/syntheses/audit-swot-2026-07-02.md`, branch `085-audit-swot`
-  (PR #140, docs-only). *Prossimo passo concreto:* attaccare il backlog **in ordine da A-01 in giù**, con
-  **checkpoint a fine di ogni item** (decisione utente 2026-07-02). *Blocco/decisione aperta:* la promozione
-  di ciascun A-xx a `FEAT-NNN` d'epica si decide item-per-item mentre lo si affronta. Prima consegna: **A-01**
-  (upgrade safety multi-assistente).
+  [[audit-swot-2026-07-02]]). Si attacca **in ordine da A-01 in giù**, con **checkpoint a fine di ogni item**.
+  *Consegnato:* **A-01 ✅** (merge `a9e84e3`/PR #141 — lifecycle installer sicuro: auto-detect dell'installato,
+  no capability creep, switch d'assistente solo con consenso; 491 test pacchetto verdi, `sertor-core` invariato,
+  doc utente aggiornata). *Prossimo passo concreto:* **A-02** (licenza speclift) — **riformulato dalla causa**
+  dopo l'handoff SpecAudit di Sinthari: il repo `themetriost/Sinthari` non ha LICENSE e stiamo per vendorare un
+  **secondo** pacchetto (specaudit) → fix unico a monte (LICENSE nel repo Sinthari + re-pin) che copre speclift +
+  specaudit. *Blocco/decisione aperta:* A-02 richiede la conferma utente che **Sinthari e Sertor sono lo stesso
+  titolare legale**; in arrivo **E14-FEAT-003 SpecAudit** (da Could-idea a handoff ricevuto, vendoring in `sertor-flow`).
 
 - **E14-FEAT-001 — self-host di SpecLift (vendoring Adapter B) — ✅ CONSEGNATA (merge `bbfb74d`/PR #136, 2026-07-01) su `master`.**
   *Cosa:* SpecLift (capacità `diff → requisiti EARS ancorati`, **handoff da Sinthari**) vendorato come membro
@@ -664,8 +667,8 @@ Legenda: ✅ consegnata · 🔄 parziale (nucleo fatto, residuo aperto) · 📋 
 
 | ID | Tipo | P | Titolo | Casa d'epica candidata | Stato |
 |---|---|---|---|---|---|
-| A-01 | FIX | P0 | `upgrade` safety: assistente esplicito/rilevato, no capability creep | `sertor-cli` (E2) | 🔄 fix+test+doc, branch `086` (PR aperta) |
-| A-02 | FIX | P0 | Licenza speclift: LICENSE upstream + re-pin | `speclift` (E14) | 📋 |
+| A-01 | FIX | P0 | `upgrade` safety: assistente esplicito/rilevato, no capability creep | `sertor-cli` (E2) | ✅ merge `a9e84e3`/PR #141 (auto-detect · no creep · switch consentito) |
+| A-02 | FIX | P0 | Licenza speclift: provenienza onesta (titolarità comune) + LICENSE upstream + re-pin | `speclift` (E14) | 🔄 in-repo ✅ (VENDORING.md: titolarità `themetriost` comune confermata → atto del titolare); **outbound pendente**: LICENSE nel repo Sinthari + re-pin (richiede ok + repo) |
 | A-03 | FIX | P0 | BM25 staleness auto-heal (terza gamba MCP) | `sertor-core` (E1) | 📋 |
 | A-04 | FIX | P0 | Session-open 55k→~10k token (EXEC-only + potatura CLAUDE.md) | `debito-tecnico` (E10) | 📋 |
 | A-05 | FIX | P0 | 9 skill speckit fantasma: creare o de-referenziare + guardia | `debito-tecnico` (E10) | 📋 |
