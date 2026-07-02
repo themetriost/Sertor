@@ -1,0 +1,45 @@
+[project]
+name = "specaudit"
+version = "0.1.0"
+description = "SpecAudit — verdetto per-requisito: requisiti originali ↔ output SpecLift ancorato (MVP)"
+readme = "specs/002-specaudit-mvp/quickstart.md"
+requires-python = ">=3.11"
+dependencies = [
+    # Solo standard library nel core. Consuma un *.speclift.json + una fonte requirements/;
+    # NON importa speclift, NON legge codice/test/CI, NON dipende dal RAG (moat strutturale).
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+    # jsonschema + referencing: SOLO test di contratto (tests/specaudit/contract/conftest.py),
+    # zero import in src/specaudit/ (verificato). referencing arriva transitivo con jsonschema>=4.18.
+    "jsonschema>=4.0",
+]
+
+[project.scripts]
+specaudit = "specaudit.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/specaudit"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "."]
+markers = [
+    "contract: contract tests against JSON schemas / port contracts",
+    "integration: end-to-end tests on real git fixtures",
+]
+
+[tool.ruff]
+src = ["src", "tests"]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

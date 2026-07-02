@@ -61,6 +61,12 @@ jobs:
       - name: Lint — speclift (vendored, own ruff config)
         run: uv run ruff check packages/speclift
 
+      - name: Tests — specaudit (vendored self-host)
+        run: uv run pytest packages/specaudit/tests -m "not cloud"
+
+      - name: Lint — specaudit (vendored, own ruff config)
+        run: uv run ruff check packages/specaudit
+
   # End-to-end host smoke (FEAT-003 epica debito-tecnico): installs Sertor capabilities from
   # git+url@master exactly as a third-party host would. The matrix is {os} x {assistant}; EACH job
   # runs all three capabilities for its assistant: rag (install→index→doctor→search), wiki (deposit)

@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sinthari/specaudit/contracts/audit-bundle.schema.json",
+  "title": "SpecAudit Audit Bundle (output di `prepare`, input dell'agente)",
+  "description": "I due insiemi indicizzati (originale + SpecLift) + i gap dichiarati. Autoconsistente: l'agente giudica leggendo solo questo. Indici stabili e densi (0..N-1) per ciascun insieme.",
+  "type": "object",
+  "required": ["version", "changeset_ref", "original", "speclift", "declared_gaps", "source_provenance"],
+  "additionalProperties": false,
+  "$defs": {
+    "anchor": {
+      "type": "object",
+      "description": "Àncora SpecLift trasportata inalterata (mai riverificata).",
+      "required": ["file", "lines", "granularity", "status"],
+      "properties": {
+        "file": { "type": "string" },
+        "lines": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "symbol": { "type": ["string", "null"] },
+        "test": { "type": ["string", "null"] },
+        "granularity": { "enum": ["symbol", "hunk"] },
+        "status": { "enum": ["verified", "unverified"] }
+      }
+    }
+  },
+  "properties": {
+    "version": { "type": "string", "const": "1" },
+    "changeset_ref": { "type": "string" },
+    "original": {
+      "type": "array",
+      "description": "Requisiti originali (fonte forward). Vuoto ammesso; l'assenza va in declared_gaps.",
+      "items": {
+        "type": "object",
+        "required": ["index", "id", "text", "provenance"],
+        "additionalProperties": false,
+        "properties": {
+          "index": { "type": "integer", "minimum": 0 },
+          "id": { "type": "string" },
+          "text": { "type": "string" },
+          "provenance": { "type": "string" }
+        }
+      }
+    },
+    "speclift": {
+      "type": "array",
+      "description": "Item reverse-engineered da SpecLift (requirements[] + drifts[]).",
+      "items": {
+        "type": "object",
+        "required": ["index", "origin", "statement", "anchor"],
+        "additionalProperties": false,
+        "properties": {
+          "index": { "type": "integer", "minimum": 0 },
+          "origin": { "enum": ["requirement", "drift"] },
+          "quota": { "enum": ["user_capability", "behaviour", "implementation", null] },
+          "statement": { "type": "string" },
+          "anchor": { "$ref": "#/$defs/anchor" }
+        }
+      }
+    },
+    "declared_gaps": {
+      "type": "array",
+      "description": "Lacune dichiarate: es. 'original_source: absent', sorgenti escluse propagate da SpecLift. Mai silenzio.",
+      "items": { "type": "string" }
+    },
+    "source_provenance": {
+      "type": "object",
+      "required": ["original", "speclift"],
+      "additionalProperties": false,
+      "properties": {
+        "original": { "type": "string", "description": "da dove viene la fonte originale (o 'absent')" },
+        "speclift": { "type": "string", "description": "path/ref dell'output SpecLift consumato" }
+      }
+    }
+  }
+}
