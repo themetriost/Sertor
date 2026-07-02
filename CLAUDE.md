@@ -379,11 +379,7 @@ chi dovrebbe?* Corollari operativi:
    all'utente l'executive summary** della roadmap. L'hook *innesca*, il `Read` *trasporta*, il rituale tiene
    il *contenuto* vero.
 5. **Re-index del corpus toccato** —
-   > **ENFORCED VIA HOOK (E10-FEAT-011):** il re-index a fine sessione è ora un hook deterministico
-   > (`rag-freshness.ps1`, `SessionEnd`). Confine D↔N: l'hook re-indicizza e verifica (meccanico);
-   > l'agente esegue la correzione indotta all'avvio se lo stato è degradato (giudizio). Il testo
-   > seguente descrive ancora la rete agente (valida finché il buco filtro-metadata `where` non è
-   > chiuso da E12 e finché l'hook non è su tutti gli ospiti).
+   > **Enforced via hook** `rag-freshness.ps1` (`SessionEnd`) — vedi E10-FEAT-011. Il testo seguente descrive la rete agente complementare.
 
    se lo step ha modificato **file indicizzati nel corpus RAG**,
    ricostruisci l'indice, così il RAG di dogfooding non serve mai contesto stantio (è l'essenza:
@@ -426,10 +422,7 @@ chi dovrebbe?* Corollari operativi:
    questa pratica con il sistema-wiki. Vedi [[step-ritual]] e la panoramica [[sertor-in-parole-semplici]].
 
 8. **Smoke test del RAG di dogfooding** —
-   > **ENFORCED VIA HOOK (E10-FEAT-011):** la verifica di salute (`sertor-rag doctor`) è ora parte
-   > dell'hook `rag-freshness.ps1` (`SessionEnd`). Il buco del filtro metadata `where` (guasto storico
-   > 2026-06-19) **non** è coperto dall'hook (promosso a E12-FEAT-011 usabilità) → il rituale punto 8
-   > dell'agente resta la rete per quel buco specifico.
+   > **Enforced via hook** `rag-freshness.ps1` (`SessionEnd`) — vedi E10-FEAT-011. Il buco del filtro metadata `where` non è coperto dall'hook → il punto 8 resta la rete dell'agente.
 
    **allo stesso momento del commit** dello step (specie dopo
    un re-index), il flusso principale **esercita il server MCP `sertor-rag`** per verificare che sia
@@ -480,7 +473,7 @@ meccanismo che fa la registrazione.
 
 ## Git & versionamento (regola SEMPRE attiva)
 
-Questo workspace è un **repo git con remote `origin`** (ci si pusha regolarmente). **Policy di branching durante la fase di prototipo (attuale):** commit e push **direttamente su `master`/`main`** (autorizzato). Al passaggio in produzione si adotterà **SpecKit** e si lavorerà a **branch + PR** (niente più push diretti su main). Convenzione: **un commit dopo ogni step** di lavoro significativo (incluso l'aggiornamento del wiki). Messaggi in stile
+Questo workspace è un **repo git con remote `origin`** (ci si pusha regolarmente). **Policy di branching (produzione):** si lavora a **branch + PR**, **mai push diretti su `master`/`main`** (invariante del `configuration-manager`). Convenzione: **un commit dopo ogni step** di lavoro significativo (incluso l'aggiornamento del wiki); git delegato al `configuration-manager`. Messaggi in stile
 **Conventional Commits in italiano** (`tipo(scope): sommario`; scope tipici `01-baseline`,
 `prototype`, `requirements`, `cli`, `shared`, `wiki`), corpo che spiega il *perché*, footer
 `Co-Authored-By`. **Mai committare** `.env`, `*.key`, il contenuto di `raw/`, i virtualenv o gli
