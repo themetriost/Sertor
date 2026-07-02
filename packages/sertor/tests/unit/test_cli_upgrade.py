@@ -129,19 +129,73 @@ def test_upgrade_dry_run_exit_0(tmp_path: Path):
 
 
 def test_upgrade_switch_assistant_removes_old_specific(tmp_path: Path, capsys):
-    # install for claude, then upgrade --assistant copilot-cli
+    # install for claude, then switch to copilot-cli. A-01 (decision b): the switch REMOVES the
+    # coexisting claude install → it is destructive → requires explicit consent (`--yes`).
     _install_rag(tmp_path)
     assert (tmp_path / ".claude/hooks/sertor-rag-usage-check.ps1").exists()
     capsys.readouterr()
     rc = main([
         "upgrade", "rag", "--target", str(tmp_path), "--no-deps",
-        "--assistant", "copilot-cli", "--json",
+        "--assistant", "copilot-cli", "--yes", "--json",
     ])
     assert rc == 0
     # claude-specific hook (not shared with copilot-cli) becomes obsolete → removed; copilot-cli
     # surfaces are created/updated.
     assert (tmp_path / ".github/hooks/sertor-rag-usage-check.ps1").exists()
     assert not (tmp_path / ".claude/hooks/sertor-rag-usage-check.ps1").exists()
+
+
+def test_upgrade_switch_without_consent_is_refused(tmp_path: Path, capsys):
+    # A-01 (decision b): an explicit switch that would strip a coexisting assistant WITHOUT --yes
+    # (and no TTY) is a usage error — never a silent removal. The claude install is preserved.
+    _install_rag(tmp_path)
+    capsys.readouterr()
+    rc = main([
+        "upgrade", "rag", "--target", str(tmp_path), "--no-deps",
+        "--assistant", "copilot-cli",  # no --yes, pytest has no TTY
+    ])
+    assert rc == 2  # UsageError
+    assert (tmp_path / ".claude/hooks/sertor-rag-usage-check.ps1").exists()  # untouched
+    assert not (tmp_path / ".github/hooks/sertor-rag-usage-check.ps1").exists()  # no switch
+
+
+def test_bare_upgrade_preserves_coexisting_assistant(tmp_path: Path, capsys):
+    # A-01: with BOTH assistants installed, a bare `upgrade` (no --assistant) must upgrade both and
+    # strip neither — the confirmed footgun (default --assistant=claude used to remove copilot).
+    _install_rag(tmp_path)  # claude
+    assert main([
+        "install", "rag", "--target", str(tmp_path), "--no-deps", "--assistant", "copilot-cli",
+    ]) == 0
+    claude_hook = tmp_path / ".claude/hooks/sertor-rag-usage-check.ps1"
+    copilot_hook = tmp_path / ".github/hooks/sertor-rag-usage-check.ps1"
+    assert claude_hook.exists() and copilot_hook.exists()
+    capsys.readouterr()
+    rc = main(["upgrade", "rag", "--target", str(tmp_path), "--no-deps", "--json"])
+    assert rc == 0
+    payload = json.loads(capsys.readouterr().out.strip())
+    assert payload["summary"]["removed"] == 0  # nothing stripped
+    assert claude_hook.exists()   # coexistence preserved
+    assert copilot_hook.exists()
+    assert (tmp_path / ".sertor").exists()  # shared runtime never swept as cruft
+
+
+def test_bare_upgrade_no_capability_creep(tmp_path: Path, capsys):
+    # A-01: a bare `upgrade` on a wiki-only host must NOT bootstrap the rag capability the host
+    # never asked for (the old default installed rag+wiki+governance regardless).
+    _install_wiki(tmp_path)
+    assert not (tmp_path / ".sertor").exists()  # rag not installed
+    capsys.readouterr()
+    rc = main(["upgrade", "--target", str(tmp_path), "--no-deps"])
+    assert rc == 0
+    assert not (tmp_path / ".sertor").exists()  # still no rag → no creep
+
+
+def test_bare_lifecycle_clean_host_is_noop(tmp_path: Path, capsys):
+    # A-01: bare verb on a host with nothing installed → honest no-op, exit 0, no creep.
+    rc = main(["upgrade", "--target", str(tmp_path), "--no-deps"])
+    assert rc == 0
+    assert not (tmp_path / ".sertor").exists()
+    assert "nothing to upgrade" in capsys.readouterr().out
 
 
 # --- T053: observability ------------------------------------------------------------------------

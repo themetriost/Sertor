@@ -661,17 +661,30 @@ own marker blocks / hook entries / `.gitignore` lines are touched, byte-for-byte
 uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor upgrade
 # Or a single capability, projecting first:
 sertor upgrade rag --dry-run
-sertor upgrade rag                       # refresh; switch assistant with --assistant copilot-cli
+sertor upgrade rag                       # refresh the installed assistant(s), in place
 
 # Uninstall (per capability or all-in-one). The wiki/ dir is PRESERVED by default:
 sertor uninstall rag                     # remove the RAG runtime + shared edits + MCP entry
-sertor uninstall                         # all capabilities (wiki rag) + a pointer for governance
+sertor uninstall                         # all installed capabilities + a pointer for governance
 sertor uninstall wiki --purge-wiki --yes # also delete wiki/ (opt-in, needs --yes or a TTY)
 
 # Governance (separate package, symmetric verbs):
 sertor-flow upgrade
 sertor-flow uninstall
 ```
+
+**Auto-detection (a bare verb operates on what is actually installed).** `sertor upgrade` /
+`sertor uninstall` with no capability and no `--assistant` resolve to the capabilities and
+assistants **actually present** on the host: they never bootstrap a capability the host didn't
+have, and — with **both** Claude and Copilot installed — a bare `upgrade` refreshes **both** and
+strips **neither**. Pass a capability (`upgrade rag`) or `--assistant <name>` only to narrow the
+scope on purpose.
+
+**Switching assistant is a consented, non-silent action.** An **explicit** `sertor upgrade rag
+--assistant copilot-cli` on a host that *also* has Claude installed is an **assistant switch**: it
+removes the coexisting Claude surfaces. Because that is destructive, it is never silent — on a TTY
+it prompts `[y/N]`; non-interactively it requires **`--yes`**; otherwise it stops with an actionable
+usage error (exit 2) that names what would be removed. To upgrade both instead, omit `--assistant`.
 
 Notes on `--purge-wiki` (decision D4, CI-safe): without it the `wiki/` directory is kept; with
 `--yes` it is removed (after printing a page/byte count); on a TTY without `--yes` it prompts; with

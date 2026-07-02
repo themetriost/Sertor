@@ -664,7 +664,7 @@ Legenda: ✅ consegnata · 🔄 parziale (nucleo fatto, residuo aperto) · 📋 
 
 | ID | Tipo | P | Titolo | Casa d'epica candidata | Stato |
 |---|---|---|---|---|---|
-| A-01 | FIX | P0 | `upgrade` safety: assistente esplicito/rilevato, no capability creep | `sertor-cli` (E2) | 📋 |
+| A-01 | FIX | P0 | `upgrade` safety: assistente esplicito/rilevato, no capability creep | `sertor-cli` (E2) | 🔄 fix+test+doc, branch `086` (PR aperta) |
 | A-02 | FIX | P0 | Licenza speclift: LICENSE upstream + re-pin | `speclift` (E14) | 📋 |
 | A-03 | FIX | P0 | BM25 staleness auto-heal (terza gamba MCP) | `sertor-core` (E1) | 📋 |
 | A-04 | FIX | P0 | Session-open 55k→~10k token (EXEC-only + potatura CLAUDE.md) | `debito-tecnico` (E10) | 📋 |

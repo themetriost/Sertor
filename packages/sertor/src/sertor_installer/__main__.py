@@ -13,7 +13,7 @@ from pathlib import Path
 
 from sertor_core.domain.errors import ConfigError, IngestionError, SertorError
 from sertor_install_kit.artifacts import ArtifactOutcome, LifecycleOp, Outcome
-from sertor_install_kit.assistant import AssistantId
+from sertor_install_kit.assistant import AssistantId, AssistantProfile, Surface
 from sertor_install_kit.errors import InstallerError
 from sertor_install_kit.lifecycle import remove_path
 from sertor_install_kit.observability import log_event
@@ -181,10 +181,6 @@ def _build_parser() -> argparse.ArgumentParser:
         "--purge-wiki", action="store_true",
         help="also remove the wiki/ directory (opt-in, needs --yes or a TTY confirmation)",
     )
-    uninstall.add_argument(
-        "--yes", action="store_true",
-        help="non-interactive consent for --purge-wiki (CI-safe)",
-    )
 
     return parser
 
@@ -193,8 +189,9 @@ def _add_lifecycle_flags(p: argparse.ArgumentParser) -> None:
     """Common flags for `upgrade`/`uninstall` (FR-001/002/003)."""
     p.add_argument("--target", default=".", help="host repo root (default: cwd)")
     p.add_argument(
-        "--assistant", default="claude",
-        help="target assistant: claude (default) | copilot-cli",
+        "--assistant", default=None,
+        help="target assistant: claude | copilot-cli. Omit to auto-detect what is installed "
+             "and operate on all of it (never strips a coexisting assistant).",
     )
     p.add_argument("--backend", choices=["azure", "local"], default="azure",
                    help="embeddings backend for the reconstructed rag plan (default: azure)")
@@ -204,6 +201,11 @@ def _add_lifecycle_flags(p: argparse.ArgumentParser) -> None:
                    help="do not touch the isolated Python deps (skip the uv bootstrap step)")
     p.add_argument("--dry-run", action="store_true",
                    help="project the operation without touching the filesystem")
+    p.add_argument(
+        "--yes", action="store_true",
+        help="non-interactive consent for a destructive action (an assistant switch on upgrade, "
+             "or --purge-wiki on uninstall); CI-safe",
+    )
     p.add_argument("--json", action="store_true", help="emit the report as JSON")
 
 
@@ -309,9 +311,11 @@ def _validate_target(args) -> Path:
     return target_root
 
 
-def _lifecycle_rag(target_root: Path, args, op: LifecycleOp) -> InstallReport:
-    """Builds the rag plan and runs the lifecycle verb (feature 048)."""
-    assistant = AssistantId.from_str(args.assistant)
+def _lifecycle_rag(
+    target_root: Path, args, op: LifecycleOp, assistant: AssistantId,
+    obsolete_assistants: tuple[AssistantId, ...] | None,
+) -> InstallReport:
+    """Builds the rag plan and runs the lifecycle verb for `assistant` (feature 048)."""
     opts = RagInstallOptions(
         target_root=target_root, backend=args.backend, mcp_scope=args.mcp_scope,
         with_deps=not getattr(args, "no_deps", False),
@@ -321,20 +325,88 @@ def _lifecycle_rag(target_root: Path, args, op: LifecycleOp) -> InstallReport:
         profile, with_deps=opts.with_deps, mcp_scope=args.mcp_scope, assistant=assistant
     )
     return execute_rag_lifecycle(
-        plan, profile, SubprocessRunner(), op, assistant, dry_run=args.dry_run
+        plan, profile, SubprocessRunner(), op, assistant, dry_run=args.dry_run,
+        obsolete_assistants=obsolete_assistants,
     )
 
 
-def _lifecycle_wiki(target_root: Path, args, op: LifecycleOp) -> InstallReport:
-    """Builds the wiki plan and runs the lifecycle verb (feature 048)."""
-    assistant = AssistantId.from_str(args.assistant)
+def _lifecycle_wiki(
+    target_root: Path, args, op: LifecycleOp, assistant: AssistantId,
+    obsolete_assistants: tuple[AssistantId, ...] | None,
+) -> InstallReport:
+    """Builds the wiki plan and runs the lifecycle verb for `assistant` (feature 048)."""
     profile = build_host_profile(target_root)
     plan = build_install_plan(assistant)
-    report = execute_wiki_lifecycle(plan, profile, op, assistant, dry_run=args.dry_run)
+    report = execute_wiki_lifecycle(
+        plan, profile, op, assistant, dry_run=args.dry_run,
+        obsolete_assistants=obsolete_assistants,
+    )
     # `--purge-wiki` gate (uninstall only, FR-027/028, decision D4) lives in the CLI.
     if op is LifecycleOp.UNINSTALL and getattr(args, "purge_wiki", False):
         _maybe_purge_wiki(target_root, args, report)
     return report
+
+
+# --- A-01: install-state detection + assistant-switch consent (no silent cross-assistant strip) --
+
+_RAG_MARKER = "SERTOR:RAG-USAGE"
+_WIKI_MARKER = "SERTOR:WIKI-RITUAL"
+
+
+def _instruction_marker_present(target_root: Path, assistant: AssistantId, marker: str) -> bool:
+    """An assistant has a capability installed iff its instruction file carries the marker block.
+
+    The authoritative signal is the marker written by a *real* install — NOT a stray owned file
+    (a leftover standalone hook of an uninstalled assistant is cruft, not a coexisting install).
+    """
+    rel = AssistantProfile.for_assistant(assistant).target_for(Surface.INSTRUCTION_BLOCK).target_rel
+    path = target_root / rel
+    if not path.exists():
+        return False
+    try:
+        text = path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:  # pragma: no cover - unreadable file → treat as absent
+        return False
+    return f"<!-- {marker} START -->" in text
+
+
+def _installed_assistants(capability: str, target_root: Path) -> list[AssistantId]:
+    """Assistants with `capability` (`rag`/`wiki`) actually installed on the host."""
+    marker = _RAG_MARKER if capability == "rag" else _WIKI_MARKER
+    return [
+        a for a in (AssistantId.CLAUDE, AssistantId.COPILOT_CLI)
+        if _instruction_marker_present(target_root, a, marker)
+    ]
+
+
+def _detect_installed_capabilities(target_root: Path) -> list[str]:
+    """Capabilities `sertor` owns that are actually installed (no creep on a bare verb)."""
+    return [c for c in _SERTOR_CAPABILITIES if _installed_assistants(c, target_root)]
+
+
+def _require_switch_consent(
+    args, op: LifecycleOp, requested: AssistantId, others: list[AssistantId]
+) -> None:
+    """Guard (A-01, decision b): an explicit `--assistant` upgrade that would REMOVE a coexisting
+    assistant is an assistant switch — never silent. Consent via `--yes` or an interactive y/N;
+    otherwise a usage error names the finding (CI-safe: never destroy without consent)."""
+    names = ", ".join(a.value for a in others)
+    if getattr(args, "yes", False):
+        return
+    if sys.stdin.isatty():
+        print(
+            f"`{op.value} --assistant {requested.value}` will REMOVE the coexisting install of: "
+            f"{names} (assistant switch). Continue? [y/N] ",
+            end="", flush=True,
+        )
+        if sys.stdin.readline().strip().lower() in ("y", "yes"):
+            return
+        raise UsageError("assistant switch declined")
+    raise UsageError(
+        f"{names} is also installed; `--assistant {requested.value}` would remove it "
+        f"(assistant switch). Re-run with --yes to confirm the switch, or omit --assistant to "
+        f"{op.value} every installed assistant."
+    )
 
 
 def _maybe_purge_wiki(target_root: Path, args, report: InstallReport) -> None:
@@ -382,9 +454,16 @@ def _wiki_size(wiki_dir: Path) -> tuple[int, int]:
 
 
 def _run_lifecycle(args, op: LifecycleOp) -> int:
-    """Shared `upgrade`/`uninstall` handler (per-capability + aggregate, feature 048)."""
+    """Shared `upgrade`/`uninstall` handler (per-capability + aggregate, feature 048).
+
+    A-01: a *bare* verb (no capability / no `--assistant`) resolves to what is ACTUALLY installed —
+    it never installs capabilities the host did not have (no creep) and never strips a coexisting
+    assistant. An explicit `--assistant` that would remove another installed assistant is a switch,
+    gated by consent (`_require_switch_consent`).
+    """
     target_root = _validate_target(args)
-    capabilities = args.capabilities or list(_SERTOR_CAPABILITIES) + ["governance"]
+    explicit_assistant = getattr(args, "assistant", None) is not None
+    requested = AssistantId.from_str(args.assistant) if explicit_assistant else None
 
     purge = getattr(args, "purge_wiki", False)
     if purge:
@@ -393,17 +472,46 @@ def _run_lifecycle(args, op: LifecycleOp) -> int:
         if args.capabilities and "wiki" not in args.capabilities:
             raise UsageError("--purge-wiki is valid only for the `wiki` capability (or aggregate)")
 
+    # Capability resolution: explicit list as-is; empty → only the installed ones (no creep).
+    if args.capabilities:
+        capabilities = list(args.capabilities)
+    else:
+        capabilities = _detect_installed_capabilities(target_root)
+        if not capabilities:
+            if not args.json:
+                print(f"no Sertor capabilities detected under {target_root}; "
+                      f"nothing to {op.value}.")
+            else:
+                empty = InstallReport(
+                    target=str(target_root), capability="all", assistant=None, op=op
+                )
+                print(empty.render_json())
+            return 0
+
     reports: list[InstallReport] = []
     governance_hint = False
     for cap in capabilities:
-        if cap == "rag":
-            reports.append(_lifecycle_rag(target_root, args, op))
-        elif cap == "wiki":
-            reports.append(_lifecycle_wiki(target_root, args, op))
-        elif cap == "governance":
+        if cap == "governance":
             governance_hint = True
-        else:
+            continue
+        if cap not in _SERTOR_CAPABILITIES:
             raise UsageError(f"unknown capability: {cap}")
+        installed = _installed_assistants(cap, target_root)
+        if explicit_assistant:
+            targets = [requested]
+            if op is LifecycleOp.UPGRADE and (others := [a for a in installed if a != requested]):
+                _require_switch_consent(args, op, requested, others)
+            obsolete_assts = None  # explicit: all-assistant scope (consented switch / inverse)
+        else:
+            targets = installed or [AssistantId.CLAUDE]
+            # Bare: sweep only cruft (owned paths of NOT-installed assistants); a real coexisting
+            # install is in `targets` → never in the obsolete scope → preserved.
+            obsolete_assts = tuple(a for a in AssistantId if a not in targets)
+        for assistant in targets:
+            if cap == "rag":
+                reports.append(_lifecycle_rag(target_root, args, op, assistant, obsolete_assts))
+            else:
+                reports.append(_lifecycle_wiki(target_root, args, op, assistant, obsolete_assts))
 
     report = _aggregate(reports, target_root, args, op) if len(reports) != 1 else reports[0]
     _emit_lifecycle_event(op, report, args)
@@ -420,10 +528,15 @@ def _run_lifecycle(args, op: LifecycleOp) -> int:
 def _aggregate(
     reports: list[InstallReport], target_root: Path, args, op: LifecycleOp
 ) -> InstallReport:
-    """Merges per-capability reports into one aggregate report (US8/FR-032)."""
+    """Merges per-capability reports into one aggregate report (US8/FR-032).
+
+    The aggregate assistant is derived from the reports actually produced (A-01): one distinct
+    assistant → its value; several (a bare verb over a multi-assistant host) → `None`, honestly.
+    """
+    seen = {r.assistant for r in reports if getattr(r, "assistant", None)}
     agg = InstallReport(
         target=str(target_root), capability="all",
-        assistant=getattr(args, "assistant", None), op=op,
+        assistant=(next(iter(seen)) if len(seen) == 1 else None), op=op,
     )
     for r in reports:
         for o in r.outcomes:
@@ -435,7 +548,7 @@ def _emit_lifecycle_event(op: LifecycleOp, report: InstallReport, args) -> None:
     """Observability (FR-007): one event per operation, no secrets in the fields."""
     log_event(
         logging.INFO, op.value, capability=report.capability,
-        assistant=getattr(args, "assistant", None),
+        assistant=report.assistant,
         updated=report.updated, removed=report.removed,
         skipped=report.skipped, errors=report.errors,
     )

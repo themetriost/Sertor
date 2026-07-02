@@ -1061,17 +1061,24 @@ def execute_rag_lifecycle(
     op: LifecycleOp,
     assistant: AssistantId = AssistantProfile.DEFAULT,
     dry_run: bool = False,
+    obsolete_assistants: tuple[AssistantId, ...] | None = None,
 ) -> InstallReport:
     """Executes the `rag` plan with the lifecycle verb `op` via the kit orchestrator (feature 048).
 
-    For UPGRADE the obsolete phase scans the owned paths of ALL assistants (so artifacts of a
-    previously-installed OTHER assistant, not produced by the current `--assistant` plan, are
-    removed — FR-016) and removes those absent from the current plan. UNINSTALL applies the inverse
-    of every plan artifact. `dry_run` projects without writing.
+    For UPGRADE the obsolete phase scans the owned paths of `obsolete_assistants` (default: ALL
+    assistants) and removes those absent from the current plan. The CLI narrows this scope to avoid
+    the cross-assistant footgun (A-01): a *bare* `upgrade` passes only the NOT-installed assistants
+    (cruft sweep, a coexisting install is preserved); an *explicit* `--assistant` switch passes
+    `None` → all assistants (the deliberate, consented consolidation, FR-016). UNINSTALL applies the
+    inverse of every plan artifact. `dry_run` projects without writing.
     """
     apply = make_rag_apply(profile, runner, assistant, dry_run=dry_run)
     owned = sertor_owned_paths(assistant)
-    obsolete = _union_owned(tuple(AssistantId)) if op is LifecycleOp.UPGRADE else None
+    if op is LifecycleOp.UPGRADE:
+        scope = obsolete_assistants if obsolete_assistants is not None else tuple(AssistantId)
+        obsolete = _union_owned(scope)
+    else:
+        obsolete = None
     # `.sertor/` is removed in block on uninstall (FR-030), not per-sub-artifact.
     return _kit_execute_lifecycle(
         plan, owned, apply, op=op, target=str(profile.target_root),
