@@ -1,12 +1,15 @@
-"""Sync of `sertor`'s assets to `.claude/` in the dev repo (D2) — over the kit's `sync` (037).
+"""Sync of `sertor`'s byte-copied assets to the dev repo (D2) — over the kit's `sync` (037).
 
-Canonical source = assets in the package; `.claude/` in the repo is the **derived copy**. This
-script, *in development*, propagates `assets/claude/**` → `.claude/**` so that dogfooding runs on
-the installable version. Canonical direction: **assets → .claude** (never the reverse).
+Canonical source = assets in the package; the dogfood trees are the **derived copy**. This script,
+*in development*, propagates every **byte-copied file asset** the installer deposits (FILE/
+CREATE_IF_ABSENT) → its dogfood destination, so dogfooding runs on the installable version.
+Canonical direction: **assets → repo** (never the reverse).
 
-The generic sync helper migrated to `sertor-install-kit` (anchor + subtree→dest parametric); this
-wrapper binds the anchor to `"sertor_installer"` and the single `claude` → `.claude` mapping,
-preserving the historical `sync_assets_to_claude(repo_root, dry_run)` API.
+Covered subtrees (E15-FEAT-002): `assets/claude/**` → `.claude/**`, plus the byte-copied RAG assets
+`assets/rag/{hooks,skills,agents}/**` → `.claude/{hooks,skills,agents}/**`. The **non-byte** RAG
+assets (`rag/env*`, `rag/mcp*`, `rag/settings*`, `claude-md-block*`, `rag/sertor-cli-reference.md`)
+live in `assets/rag/` root — NOT in these subtrees — and are merged/generated/marker-deposited at
+install (process-fidelity, E15-FEAT-001), so they are excluded by construction.
 
 Usage: `python -m sertor_installer.sync [--repo-root <path>] [--dry-run]`.
 """
@@ -15,20 +18,28 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from sertor_install_kit.sync import sync_subtree
+from sertor_install_kit.sync import sync_assets
 
 _ANCHOR = "sertor_installer"
 
+# Byte-copied file-asset subtrees → their dogfood destination. Enumerating the subtrees (not
+# filtering by pattern) is what keeps the byte↔non-byte boundary robust and verifiable.
+_BYTE_MAPPING: tuple[tuple[str, str], ...] = (
+    ("claude", ".claude"),
+    ("rag/hooks", ".claude/hooks"),
+    ("rag/skills", ".claude/skills"),
+    ("rag/agents", ".claude/agents"),
+)
+
 
 def sync_assets_to_claude(repo_root: Path, dry_run: bool = False) -> dict[str, str]:
-    """Copies `assets/claude/**` to `<repo_root>/.claude/`. Returns `{rel: status}`.
+    """Copies every byte-copied file asset to its dogfood destination.
 
-    Status ∈ `created` · `updated` · `identical`. The returned keys keep the historical form
-    (relative to `.claude/`, without the `claude/` prefix) for backward compatibility.
+    Returns `{"<subtree>/<rel>": status}`, status ∈ `created` · `updated` · `identical`. Keys are
+    prefixed with the source subtree so several subtrees merge unambiguously (only `main()` consumes
+    them, for display).
     """
-    prefixed = sync_subtree(_ANCHOR, "claude", repo_root / ".claude", dry_run=dry_run)
-    # Strip the `claude/` subtree prefix the kit adds, to keep the historical key form.
-    return {rel.removeprefix("claude/"): status for rel, status in prefixed.items()}
+    return sync_assets(_ANCHOR, repo_root, _BYTE_MAPPING, dry_run=dry_run)
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -37,13 +37,13 @@ def test_never_imports_core_library(body):
 def test_no_automatic_mode(body):
     # every write must require explicit confirmation (REQ-051)
     lowered = body.lower()
-    assert "conferma esplicita" in lowered or "azione esplicita" in lowered
-    assert "mai inferire" in lowered or "inferire" in lowered
+    assert "no automatic mode" in lowered or "explicit confirmation" in lowered
+    assert "never infer" in lowered or "infer" in lowered
 
 
 def test_handles_missing_case(body):
     # REQ-052: offer to create a new case when the query has none
-    assert "assente" in body.lower()
+    assert "absent" in body.lower()
 
 
 def test_host_agnostic(body):

@@ -1,138 +1,140 @@
 ---
 name: eval-suite-author
-description: "Assisted authoring of the evaluation suite (ground-truth). Use it whenever evaluation cases need to be created or grown. Triggers on 'create eval cases', 'build the ground-truth suite', 'add a retrieval test case', 'add a graph navigation case', or wanting to measure retrieval/graph quality on this corpus. Authors retrieval cases (query -> expected path) and code-graph navigation cases (relation + symbol -> expected set of refs): using the project's RAG/MCP tools over the indexed corpus, the agent DERIVES candidates, proposes them for approval, and persists ONLY the approved ones by invoking the CLI subcommands `eval add-case` / `graph-eval add-case`. It never runs the evaluation (that is deterministic and does not depend on this skill); it never imports the core library."
-argument-hint: "Descrivi l'area/funzionalità del corpus per cui vuoi creare casi di valutazione (es. 'il retrieval sui simboli del dominio')"
+description: "Assisted authoring of the evaluation suite (ground-truth). Use it whenever evaluation cases need to be created or grown. Triggers on 'create eval cases', 'build the ground-truth suite', 'add a retrieval test case', 'add a graph navigation case', or wanting to measure retrieval/graph quality on this corpus. Authors retrieval cases (query -> expected path) and code-graph navigation cases (relation + symbol -> expected set of refs): using the project's RAG/MCP tools over the indexed corpus, the agent derives candidates, proposes them for approval, and persists only the approved ones by invoking the CLI subcommands `eval add-case` / `graph-eval add-case`. It never runs the evaluation (that is deterministic and does not depend on this skill); it never imports the core library."
+argument-hint: "Describe the corpus area/capability you want evaluation cases for (e.g. 'retrieval over the domain symbols')"
 user-invocable: true
 disable-model-invocation: false
 ---
 
 ## User Input
 
-Il testo che ha invocato questa capacità **è** l'area del corpus per cui derivare casi di valutazione
-(es. «i simboli pubblici del core», «le query architetturali sulla composizione»). Se è vuoto, chiedi
-all'utente di descrivere l'area o l'obiettivo della suite.
+The text that invoked this capability IS the corpus area to derive evaluation cases for (e.g. "the
+public symbols of the core", "the architectural queries about composition"). If it is empty, ask the
+user to describe the area or the goal of the suite.
 
-## Scopo
+## Purpose
 
-Questa skill aiuta a **costruire la suite di valutazione** (`eval/suite.toml`) — l'insieme di coppie
-`query → path attesi` con cui si misura la pertinenza del retrieval (hit-rate@k / MRR). È **genesi
-assistita**: l'agente *propone*, l'utente *approva*, e solo gli approvati vengono scritti. La misura
-vera e propria (`eval run`) è **deterministica** e **non dipende da questa skill né da alcun LLM**:
-qui si cura solo il *dato* (la suite), non l'esecuzione.
+This skill helps build the evaluation suite (`eval/suite.toml`) - the set of (query -> expected paths)
+pairs used to measure retrieval relevance (hit-rate@k / MRR). It is **assisted** authoring: the agent
+proposes, the user approves, and only the approved cases are written. The measurement itself
+(`eval run`) is **deterministic** and does not depend on this skill or on any LLM: here you only curate
+the data (the suite), not the run.
 
-## Confine vincolante (D↔N)
+## Hard boundary (deterministic vs judgment)
 
-- **Niente esecuzione, niente import della libreria.** Questa skill NON valuta e NON importa il core.
-  Ogni scrittura passa **solo** dal vehicle CLI: `sertor-rag eval add-case`. Non accedere mai alla
-  libreria direttamente né alle factory `build_*`. È il Principio XI: si accede a Sertor solo via
-  vehicle (CLI o MCP).
-- **Solo casi approvati.** Nessun candidato viene persistito senza un'approvazione esplicita
-  dell'utente. L'agente propone; l'utente decide; l'agente scrive gli accettati.
+- No execution, no library import. This skill does not evaluate and does not import the core. Every
+  write goes through the CLI vehicle only: `sertor-rag eval add-case`. Never access the library
+  directly nor the `build_*` factories. Access Sertor through a vehicle (CLI or MCP).
+- Approved cases only. No candidate is persisted without an explicit approval from the user. The agent
+  proposes; the user decides; the agent writes the accepted ones.
 
-## Prerequisito: il corpus dev'essere indicizzato
+> **How to invoke `sertor-rag`.** The runtime CLI lives in the project's `.sertor/.venv` (not on
+> `PATH`); route every call through `uv run --project .sertor sertor-rag <args>`. For the two
+> invocation levels, the venv fallback and the Windows notes, see `sertor-cli-reference.md` (it ships
+> with the RAG capability).
 
-La derivazione legge il corpus tramite i tool RAG/MCP (ricerca codice/doc, ricerca simboli). Se il
-corpus non è indicizzato, questi tool tornano vuoti o in errore: in tal caso **fermati con un
-messaggio azionabile** —
+## Prerequisite: the corpus must be indexed
 
-> «Il corpus non risulta indicizzato. Indicizzalo prima con `sertor-rag index .`, poi rilancia.»
+Derivation reads the corpus through the RAG/MCP tools (code/doc search, symbol search). If the corpus
+is not indexed those tools return empty or error: in that case STOP with an actionable message -
 
-Per verificare in modo deterministico che un path candidato esista davvero nell'indice, usa il
-vehicle: `sertor-rag eval validate-path <path> [...]` (esce sempre 0; riporta `missing`/`checked`).
+> "The corpus does not appear to be indexed. Index it first with
+> `uv run --project .sertor sertor-rag index .`, then re-run."
 
-## Procedura
+To deterministically check that a candidate path really exists in the index, use the vehicle:
+`uv run --project .sertor sertor-rag eval validate-path <path> [...]` (it always exits 0; it reports
+the missing/checked paths).
 
-1. **Inquadra l'area.** Dall'input individua l'area/funzionalità del corpus su cui creare casi
-   (simboli specifici, file architetturali, comportamenti).
+## Procedure
 
-2. **Deriva candidati con i tool RAG/MCP.** Per ogni candidato formula una **query** realistica
-   (come la scriverebbe un utente o un agente) e individua il **path atteso** — il file che *dovrebbe*
-   comparire tra i risultati. Mescola due tipi (campo `kind`, opzionale ma consigliato):
-   - `symbol` — query a simbolo esatto (nome di classe/funzione/errore). Usa la ricerca simboli del
-     grafo per trovare dove è definito.
-   - `nl` — query architetturale in linguaggio naturale (un concetto/comportamento). Usa la ricerca
-     combinata codice+doc.
+1. Frame the area. From the input, identify the corpus area/capability to create cases for (specific
+   symbols, architectural files, behaviours).
 
-3. **Verifica i path candidati.** Per ciascun `expected`, controlla che sia presente nell'indice con
-   `sertor-rag eval validate-path <path>`. Se manca, o correggi il path, o segnalalo all'utente (un
-   path fuori indice non potrà mai essere un hit).
+2. Derive candidates with the RAG/MCP tools. For each candidate, write a realistic query (as a user or
+   agent would write it) and identify the expected path - the file that should appear among the
+   results. Mix two types (the optional but recommended `kind` field):
+   - `symbol` - exact-symbol query (a class/function/error name). Use the graph symbol search to find
+     where it is defined.
+   - `nl` - architectural natural-language query (a concept/behaviour). Use the combined code+doc
+     search.
 
-4. **Proponi all'utente.** Presenta i candidati come una lista chiara `query → expected (kind)` e
-   chiedi quali approvare. Spiega brevemente il razionale di ciascuno (perché quel file è atteso).
+3. Verify the candidate paths. For each `expected`, check that it is present in the index with
+   `uv run --project .sertor sertor-rag eval validate-path <path>`. If it is missing, fix the path or
+   flag it to the user (a path outside the index can never be a hit).
 
-5. **Persisti SOLO gli approvati.** Per ogni caso approvato invoca il vehicle:
+4. Propose to the user. Present the candidates as a clear `query -> expected (kind)` list and ask which
+   to approve. Briefly explain the rationale of each (why that file is expected).
 
-   ```powershell
-   sertor-rag eval add-case --query "<la query>" `
-       --expected "<percorso/atteso.ext>" --kind symbol
-   ```
-
-   Se un path atteso non è nell'indice, il comando avvisa e richiede `--confirm` prima di scrivere
-   (REQ-012): inoltralo all'utente, non forzare il `--confirm` di tua iniziativa. `add-case` è
-   idempotente (una query già presente non viene duplicata) e non-distruttivo.
-
-6. **Chiudi.** Riepiloga quali casi sono stati aggiunti e ricorda che la suite è **dato versionato**:
-   va committata. La valutazione si lancia con `sertor-rag eval run` (deterministica, indipendente).
-
-## Genesi di casi di navigazione del grafo (`[[graph_case]]`)
-
-Oltre ai casi di retrieval, la suite può contenere casi di **navigazione del grafo del codice**: un
-caso = **relazione + simbolo target → insieme atteso di `ref`** (`path#qualname`). La metrica è a
-**insiemi** (precision/recall/F1), non a rank. Relazioni MVP supportate: `who_calls` (chi chiama il
-simbolo) e `defines` (dove è definito). Anche qui la genesi è assistita: l'agente propone uno
-**snapshot deterministico**, l'utente approva, e solo gli approvati vengono scritti.
-
-1. **Naviga lo stato corrente del grafo (snapshot deterministico).** Per la relazione+simbolo
-   richiesti, ottieni l'insieme candidato di `ref` invocando il vehicle deterministico:
+5. Persist the approved ones only. For each approved case, invoke the vehicle:
 
    ```powershell
-   sertor-rag graph-eval validate-ref --relation who_calls --target build_facade --json
+   uv run --project .sertor sertor-rag eval add-case --query "<the query>" `
+       --expected "<path/to/expected.ext>" --kind symbol
    ```
 
-   L'output JSON riporta `checked`/`unverifiable`/`graph_available`. Per *scoprire* l'insieme
-   corrente (snapshot), passa l'insieme che ti aspetti e leggi quali risultano `unverifiable`, oppure
-   ricava i `ref` reali dai tool RAG/MCP (ricerca simboli / chi-chiama) e confrontali. L'insieme
-   candidato è **ciò che il grafo restituisce ora**, non un giudizio autonomo dell'agente.
+   If an expected path is not in the index, the command warns and requires `--confirm` before writing.
+   Forward that to the user; do not force `--confirm` yourself. `add-case` is idempotent (a query
+   already present is not duplicated) and non-destructive.
 
-2. **Proponi l'insieme all'utente.** Presenta l'insieme candidato di `ref` come **proposta da
-   approvare** (è uno snapshot: «oggi questi sono i chiamanti di `X`»). Spiega che l'insieme diventerà
-   il valore atteso del caso e che il gate ne misurerà la non-regressione.
+6. Close. Summarise which cases were added and remind the user that the suite is versioned project data:
+   it must be committed. The evaluation is launched with `uv run --project .sertor sertor-rag eval run`
+   (deterministic, independent).
 
-3. **Persisti SOLO dopo approvazione esplicita.** Per ogni caso approvato:
+## Authoring code-graph navigation cases (`[[graph_case]]`)
+
+Beyond retrieval cases, the suite can hold code-graph navigation cases: a case = relation + target
+symbol -> expected set of `ref` (`path#qualname`). The metric is set-based (precision/recall/F1), not
+rank. MVP relations: `who_calls` (callers of the symbol) and `defines` (where it is defined). Here too
+authoring is assisted: the agent proposes a **deterministic** snapshot, the user approves, and only the
+approved cases are written.
+
+1. Navigate the current graph state (deterministic snapshot). For the requested relation+symbol, get
+   the candidate set of refs by invoking the deterministic vehicle:
 
    ```powershell
-   sertor-rag graph-eval add-case --relation who_calls --target build_facade `
-       --expected "src/.../a.py#A,src/.../b.py#B" --confirm
+   uv run --project .sertor sertor-rag graph-eval validate-ref --relation who_calls --target build_facade --json
    ```
 
-   - Mai scrittura implicita o automatica: l'utente deve **approvare** l'insieme prima.
-   - Se la verifica riporta `ref` **non verificabili** (`unverifiable` non vuoto): **nominali**
-     all'utente e offri di escluderli o di procedere comunque con `--confirm`. Non forzare `--confirm`
-     di tua iniziativa.
-   - `add-case` è **idempotente** su `(relation, target)` e non-distruttivo (preserva i casi di
-     retrieval `[[case]]` e gli altri `[[graph_case]]`).
-   - Un caso con insieme atteso **vuoto** è legittimo (atteso «nessun chiamante»): usa
-     `--expected ""`.
+   The JSON output reports `checked`/`unverifiable`/`graph_available`. To discover the current set
+   (snapshot), pass the refs you expect and read which are `unverifiable`, or derive the real refs from
+   the RAG/MCP tools (symbol / who-calls search) and compare. The candidate set is what the graph
+   returns now, not the agent's autonomous judgment.
 
-4. **Ri-authoring di uno snapshot esistente.** Se l'insieme corretto è cambiato e l'utente lo
-   approva, aggiorna il caso con `sertor-rag graph-eval amend-case --relation R --target T
-   --expected "..."`. È il percorso deterministico di re-congelamento dello snapshot; la decisione
-   resta dell'utente.
+2. Propose the set to the user. Present the candidate set of refs as a proposal to approve (it is a
+   snapshot: "these are the callers of `X` today"). Explain that the set becomes the case's expected
+   value and that the gate measures its non-regression.
 
-5. **Se il grafo non è costruito** (`graph_available=false`): **fermati con un messaggio azionabile**
-   — «Il grafo del codice non risulta costruito. Indicizza prima il progetto con `sertor-rag index
-   .`, poi rilancia.»
+3. Persist only after explicit approval. For each approved case:
 
-**Confine D↔N (vincolante anche qui).** Il run deterministico (`sertor-rag graph-eval run`) **non
-dipende** da questa skill né da alcun LLM: la skill è la superficie di *giudizio* (proporre/approvare
-gli insiemi), il run è la *misura* deterministica nel core. Ogni accesso al grafo passa **solo** dai
-sottocomandi `graph-eval validate-ref`/`add-case`/`amend-case` (vehicle, Principio XI): la skill non
-importa mai la libreria del core.
+   ```powershell
+   uv run --project .sertor sertor-rag graph-eval add-case --relation who_calls --target build_facade `
+       --expected "path/to/a.py#A,path/to/b.py#B" --confirm
+   ```
 
-## Cosa NON fare
+   - Never an implicit or automatic write: the user must approve the set first.
+   - If the check reports `unverifiable` refs (non-empty): name them to the user and offer to drop them
+     or proceed with `--confirm`. Do not force `--confirm` yourself.
+   - `add-case` is idempotent on `(relation, target)` and non-destructive (it preserves the retrieval
+     `[[case]]` and the other `[[graph_case]]`).
+   - A case with an empty expected set is legitimate (expected "no callers"): use `--expected ""`.
 
-- Non scrivere mai segreti nella suite (è dato versionato e diffabile a mano).
-- Non inventare path/ref: ogni `expected` dev'essere reale (verificato con `validate-path` per i
-  casi di retrieval, con `graph-eval validate-ref` per i casi di navigazione).
-- Non eseguire la valutazione al posto dell'utente come se fosse parte della genesi: sono fasi
-  separate (genesi = giudizio assistito; run = misura deterministica).
+4. Re-authoring an existing snapshot. If the correct set changed and the user approves it, update the
+   case with `uv run --project .sertor sertor-rag graph-eval amend-case --relation R --target T --expected "..."`.
+   It is the deterministic path to re-freeze the snapshot; the decision stays the user's.
+
+5. If the graph is not built (`graph_available=false`): STOP with an actionable message - "The code
+   graph does not appear to be built. Index the project first with
+   `uv run --project .sertor sertor-rag index .`, then re-run."
+
+Hard boundary (deterministic vs judgment, here too). The deterministic run
+(`uv run --project .sertor sertor-rag graph-eval run`) does not depend on this skill or on any LLM:
+the skill is the judgment surface (propose/approve
+the sets), the run is the deterministic measure in the core. Every access to the graph goes only
+through the `graph-eval validate-ref`/`add-case`/`amend-case` subcommands (vehicle): the skill never
+imports the core library.
+
+## What NOT to do
+
+- Never write secrets into the suite (it is versioned data, diffable by hand).
+- Do not invent paths/refs: every `expected` must be real (verified with `validate-path` for retrieval
+  cases, with `graph-eval validate-ref` for navigation cases).
