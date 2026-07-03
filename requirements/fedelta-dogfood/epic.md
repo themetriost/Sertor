@@ -87,7 +87,7 @@ file **e** stesso processo d'install — su RAG + wiki + governance.*
 | ID | Feature | Valore / obiettivo | Priorità | Stato |
 |----|---------|--------------------|----------|-------|
 | FEAT-001 | **Harness di process-fidelity** — test/CI che esegue i veri installer (`sertor install rag`/`wiki`, `sertor-flow install`) in **sandbox** (clone) e verifica corrispondenza col dogfood committato (o superset dichiarato); esercita merge/wiring/idempotenza/uninstall reali | Il cuore: «prodotto dal vero installer» senza distruggere il dogfood curato | **Must** | da decomporre |
-| FEAT-002 | **Sync completo + guardie totali** — estendere `sertor_installer.sync` a `assets/rag/**` + `settings.hooks.json` + blocco SDLC; guardia byte per **ogni** asset distribuito | Chiude i buchi dell'asset-fidelity + il drift silenzioso | **Must** | da decomporre |
+| FEAT-002 | **Sync completo + guardie totali** — estendere `sertor_installer.sync` a `assets/rag/**` + `settings.hooks.json` + blocco SDLC; guardia byte per **ogni** asset distribuito | Chiude i buchi dell'asset-fidelity + il drift silenzioso | **Must** | 🔄 requisiti scritti (`sync-completo-guardie/`, 2026-07-03); prossimo: specify |
 | FEAT-003 | **Artefatti RAG mancanti nel dogfood** — portare (o dichiarare assenti con motivo): hook `sertor-rag-usage-check.ps1` + wiring PreToolUse, skill `guided-setup`, agent `concierge`, `.sertor/sertor-cli-reference.md`, `.sertor/.sertor-version`, blocco `SERTOR:RAG-USAGE` in CLAUDE.md | Dogfoodiamo **tutto** il RAG, non un sottoinsieme | **Should** | da decomporre |
 | FEAT-004 | **Riconciliazione divergenze hand-authored** — `.mcp.json` (dev venv-form vs runtime `.sertor/`-form), `.sertor/.env`, blocchi CLAUDE.md (marker-block vs prosa italiana): per ciascuno **adotta la forma-client o dichiara la divergenza-dev** (+ guardia) | Nessuna divergenza silenziosa dogfood↔client | **Should** | da decomporre |
 | FEAT-005 | **Installer preservante su `plan-template.md`** (≡ **E10-FEAT-028**, cross-ref) — backup/restore o replace-if-upstream attorno a `specify init --force` | Prerequisito per la process-fidelity **governance** (il dogfood può usare `sertor-flow install` senza perdere il mission-gate) | **Should** | 📋 (E10-FEAT-028) |
@@ -95,12 +95,14 @@ file **e** stesso processo d'install — su RAG + wiki + governance.*
 
 *Fetta già consegnata:* **E10-FEAT-027** (SpecKit machinery via script isolato) — prima superficie resa fedele; l'harness FEAT-001 la assorbirà come caso.
 
-## 8. Domande aperte
-- **[DA CHIARIRE]** Modello target della process-fidelity: **(a)** harness in **sandbox** (installa su un
-  clone, confronta — non tocca il repo; raccomandato per R-1) vs **(b)** il dogfood **è** un output d'install
-  (si rigenera eseguendo gli installer sul repo, con tutti gli installer resi preservanti). (a) è più sicuro
-  e incrementale; (b) è la fedeltà massima ma richiede preservazione totale.
-- **[DA CHIARIRE]** Le divergenze-dev legittime (es. `.mcp.json` venv monorepo per lo sviluppo) si
-  **dichiarano** (dev≠client documentato e guardato) o si **eliminano** (il dogfood usa la runtime-form `.sertor/`)?
-- **[DA CHIARIRE]** Priorità relativa: prima chiudere l'**asset-fidelity** (FEAT-002/003, cheap, alto valore
-  anti-drift) o prima l'**harness** di process-fidelity (FEAT-001, il cuore)?
+## 8. Decisioni (risolte 2026-07-03)
+- **Modello target = SANDBOX.** L'harness (FEAT-001) installa i veri installer su un **clone** del repo e
+  confronta l'esito col dogfood committato — **non tocca mai il repo** (R-1). Il modello «il dogfood è un
+  output d'install» è scartato per ora (esigerebbe preservazione totale prima; più rischioso).
+- **Divergenze hand-authored = DICHIARA-O-ELIMINA per-artefatto.** Per ogni divergenza: se è una
+  comodità-dev legittima (es. `.mcp.json` col venv monorepo) la si **dichiara** (dev≠client documentato +
+  guardia); se accidentale la si **elimina** (il dogfood adotta la forma-client). Decisione caso-per-caso nel
+  `plan` di FEAT-004. *(No «elimina tutto» — over-engineering; no «dichiara tutto» — nasconderebbe le accidentali.)*
+- **Priorità = ASSET-FIDELITY PRIMA.** Prima **FEAT-002** (sync completo + guardie: chiude il drift silenzioso,
+  cheap, è la fondazione del confronto dell'harness), poi FEAT-003, poi FEAT-001 (harness), FEAT-004/005/006 a
+  seguire. FEAT-005 (`plan-template` preservante) resta piccolo e sblocca la governance quando serve.
