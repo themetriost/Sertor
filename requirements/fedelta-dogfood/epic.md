@@ -73,36 +73,51 @@ file **e** stesso processo d'install — su RAG + wiki + governance.*
 - **Dipendenza:** rete per `uvx` quando l'harness esercita `sertor-flow install`/`specify init`.
 
 ## 6. Rischi
-- **R-1:** eseguire i veri installer *sul repo* (non in sandbox) distruggerebbe artefatti curati
-  (plan-template, forse altro non ancora mappato). *Mitigazione:* l'harness opera su **clone/sandbox**, mai
-  sul repo; scoprire empiricamente ogni clobber (come per plan-template) prima di automatizzare.
+- **R-1 (col nuovo modello, il self-install gira SUL dogfood):** un `sertor(-flow) install` sul repo può
+  distruggere artefatti curati (`plan-template.md` verificato; altro da mappare). *Mitigazione:* **installer
+  preservanti (FEAT-005)** + scoperta **empirica** di ogni clobber prima di automatizzare il self-install
+  (FEAT-001/008); la costituzione v1.4.0 è già verificata **salva**.
 - **R-2 (staleness inversa):** alcuni template sono **indietro** rispetto al dogfood (es. `wiki.config.toml.tmpl`
   senza `explainers`/`audit`/`strings`/`roles.vcs`/`rag`) → «fedeltà» potrebbe voler dire allineare il
   *template* alla realtà, non il contrario. *Mitigazione:* FEAT-006 decide direzione per-artefatto.
-- **R-3:** over-engineering — inseguire la fedeltà bit-perfetta dove una divergenza-dev è legittima (es.
-  `.mcp.json` venv per lo sviluppo monorepo). *Mitigazione:* «adotta **o** dichiara» (SC-4), non «adotta sempre».
+- **R-3 (attrito del self-install ad ogni merge):** bump+install ad ogni merge aggiunge un passo al rituale
+  post-merge. *Mitigazione:* meccanizzarlo (FEAT-008, hook/script), tenerlo veloce; i **test** restano
+  sull'editable (nessun re-install per il ciclo di sviluppo — solo il runtime dogfood usa l'installato).
 
 ## 7. Backlog di feature
 
 | ID | Feature | Valore / obiettivo | Priorità | Stato |
 |----|---------|--------------------|----------|-------|
-| FEAT-001 | **Harness di process-fidelity** — test/CI che esegue i veri installer (`sertor install rag`/`wiki`, `sertor-flow install`) in **sandbox** (clone) e verifica corrispondenza col dogfood committato (o superset dichiarato); esercita merge/wiring/idempotenza/uninstall reali | Il cuore: «prodotto dal vero installer» senza distruggere il dogfood curato | **Must** | da decomporre |
+| FEAT-001 | **Il dogfood prodotto dal vero `sertor install` da version bump (self-install)** — meccanismo che, ad ogni merge su `master`, fa **version bump** e **installa** la versione risultante nel dogfood (runtime `.sertor/` + asset via il processo reale: merge/wiring/deposit), così l'agente gira sull'**installato**. **NON** un confronto sandbox: il dogfood *È* l'output d'install. Esercita merge/wiring/idempotenza reali by-construction. | Il **cuore** del nuovo modello: process-fidelity piena, zero ambiguità repo-source↔installato | **Must** | 🔄 **RIORIENTATA (2026-07-03)** da «harness sandbox» a «self-install da version bump» (direttiva utente). Da decomporre. Dipende da FEAT-005 (installer preservante) |
+| FEAT-007 | **Runtime del dogfood sull'installato (repoint `.sertor/`)** — `.mcp.json`, hook e i puntatori runtime del dogfood passano dal venv monorepo (`.venv`) alla runtime-form installata (`.sertor/`), come un client | Elimina l'ambiguità repo-source↔installato nel runtime (assorbe la parte `.mcp.json` di FEAT-004) | **Should** | da decomporre (segue FEAT-001) |
+| FEAT-008 | **Rituale post-merge: version bump → self-install** — cablare nel rituale (e/o hook post-merge) il passo «bump versione + `sertor install` da HEAD nel dogfood» ad ogni merge su `master`, **prima** di re-index/smoke | Rende la cadenza decisa **meccanica**, non discrezionale (confine D↔N) | **Should** | da decomporre |
 | FEAT-002 | **Sync completo + guardie totali** — estendere `sertor_installer.sync` a `assets/rag/**` + `settings.hooks.json` + blocco SDLC; guardia byte per **ogni** asset distribuito | Chiude i buchi dell'asset-fidelity + il drift silenzioso | **Must** | ✅ **IMPLEMENTATA (2026-07-03)** — `sertor_installer.sync` esteso ai subtree byte RAG (`rag/{hooks,skills,agents}`); guardia **esaustiva auto-derivante** (`test_assets_rag_dogfood_sync`, 11 casi vs 3 fissi). Il sync ha **creato** i 3 asset mancanti (concierge · sertor-rag-usage-check · guided-setup → **assorbe F3-file**) e **riallineato** le 2 eval-skill dal fork IT al canon EN (**chiude E10-FEAT-025**); test `test_skill_eval_feedback` riconciliato al canon. 1065 unit verdi, ruff pulito, `sertor-core` invariato |
 | FEAT-003 | **Artefatti RAG mancanti nel dogfood** — portare (o dichiarare assenti con motivo): hook `sertor-rag-usage-check.ps1` + wiring PreToolUse, skill `guided-setup`, agent `concierge`, `.sertor/sertor-cli-reference.md`, `.sertor/.sertor-version`, blocco `SERTOR:RAG-USAGE` in CLAUDE.md | Dogfoodiamo **tutto** il RAG, non un sottoinsieme | **Should** | 🔄 **file byte assorbiti da FEAT-002** (hook `sertor-rag-usage-check.ps1`, skill `guided-setup`, agent `concierge` ora nel dogfood via sync). **Resta il non-byte:** wiring PreToolUse in `settings.json`, `.sertor/sertor-cli-reference.md` + `.sertor/.sertor-version` (dest gitignorata), blocco `SERTOR:RAG-USAGE` in CLAUDE.md → **process-fidelity (FEAT-001)** |
 | FEAT-004 | **Riconciliazione divergenze hand-authored** — `.mcp.json` (dev venv-form vs runtime `.sertor/`-form), `.sertor/.env`, blocchi CLAUDE.md (marker-block vs prosa italiana): per ciascuno **adotta la forma-client o dichiara la divergenza-dev** (+ guardia) | Nessuna divergenza silenziosa dogfood↔client | **Should** | da decomporre |
 | FEAT-005 | **Installer preservante su `plan-template.md`** (≡ **E10-FEAT-028**, cross-ref) — backup/restore o replace-if-upstream attorno a `specify init --force` | Prerequisito per la process-fidelity **governance** (il dogfood può usare `sertor-flow install` senza perdere il mission-gate) | **Should** | 📋 (E10-FEAT-028) |
 | FEAT-006 | **Template ↔ realtà (staleness inversa)** — allineare i template **indietro** rispetto al dogfood (`wiki.config.toml.tmpl`: `explainers`/`audit`/`strings`/`roles.vcs`/`rag`), o dichiarare le estensioni dogfood | Il template riflette la realtà che un client dovrebbe ricevere | **Could** | da decomporre |
 
-*Fetta già consegnata:* **E10-FEAT-027** (SpecKit machinery via script isolato) — prima superficie resa fedele; l'harness FEAT-001 la assorbirà come caso.
+*Consegnate ma **interim** sotto il nuovo modello:* **E10-FEAT-027** (SpecKit via script isolato) e
+**FEAT-002** (sync esteso) hanno reso fedeli gli **asset** (asset-fidelity) — restano validi come guardie/
+dev-tooling, ma la **via di fedeltà** passa ora al self-install (FEAT-001): la SpecKit reale arriverà da
+`sertor-flow install` (FEAT-001+FEAT-005), non dallo script; il sync-come-fedeltà si depreca.
 
-## 8. Decisioni (risolte 2026-07-03)
-- **Modello target = SANDBOX.** L'harness (FEAT-001) installa i veri installer su un **clone** del repo e
-  confronta l'esito col dogfood committato — **non tocca mai il repo** (R-1). Il modello «il dogfood è un
-  output d'install» è scartato per ora (esigerebbe preservazione totale prima; più rischioso).
-- **Divergenze hand-authored = DICHIARA-O-ELIMINA per-artefatto.** Per ogni divergenza: se è una
-  comodità-dev legittima (es. `.mcp.json` col venv monorepo) la si **dichiara** (dev≠client documentato +
-  guardia); se accidentale la si **elimina** (il dogfood adotta la forma-client). Decisione caso-per-caso nel
-  `plan` di FEAT-004. *(No «elimina tutto» — over-engineering; no «dichiara tutto» — nasconderebbe le accidentali.)*
+## 8. Decisioni (2026-07-03)
+- **Modello target = REAL-INSTALL DA VERSION BUMP** *(direttiva utente — **supera** la scelta «sandbox»
+  precedente)*. Il **runtime del dogfood** (ciò che l'agente usa: MCP · hook · skill · SpecKit · asset) gira
+  **solo sulla versione INSTALLATA** via `sertor install`/`sertor-flow install` (qualsiasi forma), prodotta da
+  un **version bump**. Il dogfood **È** l'output d'install, non un confronto sandbox. *«Non voglio più dare
+  spazio ad ambiguità.»* Fonte: [[feedback_dogfood_solo_via_install_versionbump]].
+  - **Cadenza:** version bump → **self-install** → re-index/smoke **ad ogni merge su `master`** (nuovo passo
+    del rituale post-merge, item 8 di FEAT-008).
+  - **Confine dev↔dogfood:** **test/sviluppo** sull'editable workspace (`.venv`, `uv run pytest`); **runtime
+    dell'agente** **solo sull'installato**.
+- **Divergenze del RUNTIME = ELIMINA (non dichiara).** `.mcp.json` e i puntatori runtime devono usare la
+  **forma-client installata** (`.sertor/` runtime), non il venv monorepo → si **eliminano** (FEAT-004/007). La
+  «dichiara-o-elimina» resta solo per divergenze **puramente di sviluppo** che non toccano il runtime dogfood.
+- **Sync/script = INTERIM (non più la via di fedeltà).** `sertor_installer.sync` (FEAT-002) e lo script SpecKit
+  isolato (FEAT-027) restano utili come **guardie/dev-tooling**, ma la fedeltà ora passa dall'**install reale**;
+  il sync-come-fedeltà si **deprecca** quando il self-install (FEAT-001) è in piedi.
 - **Priorità = ASSET-FIDELITY PRIMA.** Prima **FEAT-002** (sync completo + guardie: chiude il drift silenzioso,
   cheap, è la fondazione del confronto dell'harness), poi FEAT-003, poi FEAT-001 (harness), FEAT-004/005/006 a
   seguire. FEAT-005 (`plan-template` preservante) resta piccolo e sblocca la governance quando serve.
