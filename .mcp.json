@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "sertor-rag": {
-      "command": ".venv/Scripts/python.exe",
-      "args": ["-m", "sertor_mcp.server"],
+      "command": "uv",
+      "args": ["run", "--project", ".sertor", "python", "-m", "sertor_mcp.server"],
       "env": { "SERTOR_CORPUS": "sertor" }
     }
   }
