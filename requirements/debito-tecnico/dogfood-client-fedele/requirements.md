@@ -62,6 +62,10 @@ Sertor deve lavorare come un progetto-cliente di Sertor; ogni divergenza dal cli
 - Il layout **Copilot** (`.github/prompts/speckit.*`): il dogfood è su Claude (eventuale estensione futura).
 - Modifiche al **prodotto** `sertor-flow`/installer o al comando `specify init` (si **consuma** il percorso
   esistente; se serve un entrypoint di sola-materializzazione, è decisione di design a valle).
+  → **Crepa di fedeltà residua promossa a E10-FEAT-028:** il dogfood materializza via `specify init`
+  **isolato** (script) e **non** via `sertor-flow install`, perché l'installer con `specify init --force`
+  clobbererebbe la costituzione v1.4.0 curata. Rendere l'installer *idempotente-preservante* (così il
+  dogfood possa usare il vehicle vero) è FEAT-028.
 - Ridistribuzione agli ospiti degli agenti hand-authored (contraddirebbe il pivot 045).
 - Qualunque modifica a `sertor-core`.
 
