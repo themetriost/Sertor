@@ -1,0 +1,10 @@
+[project]
+name = "sertor-runtime"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "sertor-core[graph,mcp,rerank]",
+]
+
+[tool.uv.sources]
+sertor-core = { git = "https://github.com/themetriost/Sertor.git" }
