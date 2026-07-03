@@ -188,6 +188,18 @@ I marker pytest sono definiti in `pyproject.toml`: `cloud` (richiede credenziali
 workspace `uv`, popolato da `uv sync --all-packages --extra dev` (+ `--extra azure` per il dogfood),
 e fa girare anche il server MCP (`.mcp.json` lo punta). Il vecchio `.venv-core/` è stato eliminato.
 
+**Machinery SpecKit (setup, come `uv sync`).** Il dogfood ottiene la machinery SpecKit — skill native
+`speckit-*`, `.specify/scripts/`, template — **come un ospite**, materializzandola dal percorso d'install
+(E10-FEAT-027, il dogfood è un *client Sertor fedele*). È **rigenerabile e git-ignorata** (come il `.venv`):
+
+```powershell
+.\scripts\dev\materialize-speckit.ps1   # specify init isolato + copia selettiva; NON tocca
+                                         # constitution.md / plan-template.md / feature.json (Sertor-authored)
+```
+
+Idempotente; richiede rete (`uvx` scarica spec-kit al pin `SPECKIT_VERSION`). Su un clone fresco/CI la
+machinery è assente finché non si esegue lo script — le fasi SpecKit che usano gli script lo richiedono.
+
 ## Setup ed esecuzione
 
 - **Ambiente / dipendenze:** preferire **`uv`** (fallback `venv` + `pip`). Usare
