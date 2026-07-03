@@ -2373,7 +2373,7 @@ wheels = [
 [[package]]
 name = "sertor-core"
 version = "0.1.0"
-source = { git = "https://github.com/themetriost/Sertor.git#2e8ce3032427c4a9d24f1a4425ca82b1f08e37c1" }
+source = { git = "https://github.com/themetriost/Sertor.git#879b6889b86e25e39cb255b97736e7d93efe2616" }
 dependencies = [
     { name = "chromadb" },
     { name = "httpx" },

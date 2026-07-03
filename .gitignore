@@ -33,6 +33,9 @@ build/
 **/.sertor/.version-check.json
 **/.sertor/.sertor-version
 **/.sertor/.sertor-flow-version
+# Lock volatile del runtime dogfood (088, E15-FEAT-008): tracks HEAD, rigenerato dal re-lock post-merge.
+# Solo .sertor/pyproject.toml è versionato (spec stabile); il lock è locale per evitare churn/loop.
+**/.sertor/uv.lock
 
 # Log rigenerabili (re-index, ecc.)
 **/*.log
