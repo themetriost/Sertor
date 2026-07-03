@@ -6,10 +6,11 @@
 # THE SAME WAY, so the workspace exercises the real client path instead of diverging (audit A-05). The
 # machinery is regenerable and git-ignored (like `.venv`): this script is the setup step that produces it.
 #
-# HOW (safe by construction). `specify init --force` at the repo root would overwrite the Sertor-authored
-# constitution (v1.4.0) and the customized plan-template.md. So we run it in an ISOLATED temp dir and copy
-# back ONLY the regenerable machinery; the Sertor-authored artifacts are never touched and are re-checked
-# afterwards (fail loud if they changed). UTF-8 is forced (spec-kit's rich banner aborts on cp1252 consoles).
+# HOW (safe by construction). `specify init --force` at the repo root clobbers the customized
+# `plan-template.md` (verified empirically); the constitution is create-if-absent and survives, but we do
+# not rely on that — we run init in an ISOLATED temp dir and copy back ONLY the regenerable machinery, so
+# ALL Sertor-authored artifacts (constitution.md, plan-template.md, feature.json) are never touched, and
+# re-checked afterwards (fail loud if they changed). UTF-8 is forced (spec-kit's rich banner aborts on cp1252).
 #
 # Idempotent: re-running replaces the regenerable machinery and leaves the Sertor-authored artifacts intact.
 param([switch]$Quiet)
