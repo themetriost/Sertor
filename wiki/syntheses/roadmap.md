@@ -120,8 +120,11 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   commit `3e800a0`). **⏸️ PAUSA A-backlog (scelta utente 2026-07-02):** anticipato il vendoring di **SpecAudit**
   (`packages/specaudit`, E14-FEAT-003, 59 test verdi 3.11+3.12, skill dogfood) per poter testare la coppia
   **SpecLift→SpecAudit** sui changeset reali delle A durante la loro implementazione. *Prossimo passo concreto:*
-  **A-03 ✅** (merge `ddac060`/PR #144) e **A-04 🔄** (session-open: EXEC:END spostato + `index.md` on-demand +
-  potatura CLAUDE.md) fatti → prosegui con **A-05** (9 skill speckit fantasma: creare o de-referenziare + guardia, P0).
+  **A-03 ✅** (merge `ddac060`/PR #144), **A-04 ✅** (merge `e83c6de`/PR #145). **A-05 — diagnosi fatta,
+  promosso a debito:** il primo fix (de-reference dei 9 agenti + guardia) è stato **ritirato** perché
+  *incistava* lo special case (la guardia *benediva* la divergenza dal client) invece di risolverlo. La causa
+  reale — il dogfood non è un client Sertor fedele — è ora **E10-FEAT-027** (da decomporre via SpecKit).
+  → poi **A-06** (doc: `configure` documentato + quick-start Claude su GloVe, P0).
 
 - **E14-FEAT-001 — self-host di SpecLift (vendoring Adapter B) — ✅ CONSEGNATA (merge `bbfb74d`/PR #136, 2026-07-01) su `master`.**
   *Cosa:* SpecLift (capacità `diff → requisiti EARS ancorati`, **handoff da Sinthari**) vendorato come membro
@@ -673,8 +676,8 @@ Legenda: ✅ consegnata · 🔄 parziale (nucleo fatto, residuo aperto) · 📋 
 | A-01 | FIX | P0 | `upgrade` safety: assistente esplicito/rilevato, no capability creep | `sertor-cli` (E2) | ✅ merge `a9e84e3`/PR #141 (auto-detect · no creep · switch consentito) |
 | A-02 | FIX | P0 | Licenza speclift: provenienza onesta (titolarità comune) + LICENSE upstream + re-pin | `speclift` (E14) | ✅ **CHIUSO su entrambi i lati**: in-repo (merge `9a7e3b7`/PR #142) + **Sinthari ha aggiunto e pushato la `LICENSE` MIT** (© themetriost, PR #12/merge `1245355`) → speclift+specaudit ereditano la licenza alla sorgente |
 | A-03 | FIX | P0 | BM25 staleness auto-heal (terza gamba MCP) | `sertor-core` (E1) | ✅ merge `ddac060`/PR #144 (reload su token `(mtime_ns,size)`, gemello code-graph; 1054 unit + 2 staleness verdi). **Dogfood SpecLift→SpecAudit** sul changeset: 6/6 àncore verificate; audit 2 SODDISFATTO + 2 NON_DOCUMENTATO (vanish-case) |
-| A-04 | FIX | P0 | Session-open 55k→~10k token (EXEC-only + potatura CLAUDE.md) | `debito-tecnico` (E10) | 🔄 EXEC:END spostato prima del changelog DONE + `index.md` on-demand al SessionStart + potatura CLAUDE.md (branching stantio, blockquote hook); redesign profondo della rappresentazione EXEC rinviato a cross-team |
-| A-05 | FIX | P0 | 9 skill speckit fantasma: creare o de-referenziare + guardia | `debito-tecnico` (E10) | 📋 |
+| A-04 | FIX | P0 | Session-open 55k→~10k token (EXEC-only + potatura CLAUDE.md) | `debito-tecnico` (E10) | ✅ merge `e83c6de`/PR #145 (EXEC:END spostato prima del changelog DONE + `index.md` on-demand al SessionStart + potatura CLAUDE.md); redesign profondo della rappresentazione EXEC rinviato a cross-team |
+| A-05 | FIX | P0 | 9 skill speckit fantasma → **promosso a debito** (E10-FEAT-027) | `debito-tecnico` (E10) | 🔄 **diagnosi fatta, fix ritirato.** Il primo tentativo (de-reference dei 9 agenti + guardia di root) **incistava** lo special case: la guardia *benediva* la divergenza dal client invece di eliminarla. Causa reale = **il dogfood non è un client Sertor fedele** (gli mancano skill/script SpecKit che ogni ospite riceve da `specify init`; porta 9 agenti orfani che nessun client ha, `test_no_vendored_speckit_agents`). Conversione fedele-al-client tracciata come **E10-FEAT-027** (materializza machinery via install isolato · rimuovi agenti orfani · gitignore · doc · guardia «no agenti speckit hand-authored»). Materializzazione verificata (`specify init --ai claude` v0.8.18 + overlay UTF-8 → risolve skill+script). `sertor-core` invariato |
 | A-06 | FIX | P0 | Doc: `configure` documentato + quick-start Claude su GloVe | `documentazione-marketing` (E13) | 📋 |
 | A-07 | EVO | P1 | `search_docs` MRR 0.55 (leva missione) | `retrieval-qualita` E5-FEAT-003 | 📋 |
 | A-08 | FIX | P1 | Security review installer (merge settings.json + hook auto-eseguiti) | `debito-tecnico` (E10) | 📋 |
