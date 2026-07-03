@@ -58,3 +58,19 @@ Thumbs.db
 # ma tieni il nostro README della cartella. (corpus del prototipo, isolato in prototype/)
 prototype/raw/*
 !prototype/raw/README.md
+
+# Machinery SpecKit materializzata dal percorso d'install (E10-FEAT-027) — RIGENERABILE come `.venv`:
+# la produce `scripts/dev/materialize-speckit.ps1` (che lancia `specify init`, spec-kit pinnato). NON
+# vendorata in git (eviterebbe drift di pin / re-vendoring, cfr. pivot launch-installer 045). Il dogfood
+# la ottiene come un ospite, via lo step di setup. Restano TRACCIATI gli artefatti Sertor-authored:
+# .specify/memory/constitution.md, .specify/templates/plan-template.md, .specify/feature.json.
+.claude/skills/speckit-*/
+.specify/scripts/
+.specify/workflows/
+.specify/integrations/
+.specify/init-options.json
+.specify/integration.json
+.specify/templates/checklist-template.md
+.specify/templates/constitution-template.md
+.specify/templates/spec-template.md
+.specify/templates/tasks-template.md

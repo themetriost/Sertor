@@ -1,68 +1,68 @@
 ---
 name: eval-feedback
 description: "Explicit relevance feedback that turns a user's verdict on search results into a refinement of the evaluation suite. Use it whenever someone judges retrieval quality. Triggers on 'this result is wrong/right', 'mark this as relevant', 'the expected file for this query should be X', 'tune the eval suite from these results', or reviewing what a search returned. The agent observes the results, receives the user's verdict (relevant / not relevant), and updates the `expected` of the matching case - always through the CLI vehicle `sertor-rag eval add-case`. No verdict is ever inferred or persisted without an explicit user action. It never imports the core library."
-argument-hint: "La query di cui stai valutando i risultati (o lascia vuoto e parti da una ricerca appena fatta)"
+argument-hint: "The query whose results you are judging (or leave empty and start from a search you just ran)"
 user-invocable: true
 disable-model-invocation: false
 ---
 
 ## User Input
 
-Il testo che ha invocato questa capacità è la **query** di cui si sta valutando la pertinenza dei
-risultati. Se è vuoto, parti dall'ultima ricerca fatta o chiedi all'utente quale query considerare.
+The text that invoked this capability is the query whose result relevance is being judged. If it is
+empty, start from the last search performed or ask the user which query to consider.
 
-## Scopo
+## Purpose
 
-Questa skill cattura il **feedback esplicito** dell'utente su quanto un retrieval è pertinente, e lo
-traduce in un raffinamento della **suite di valutazione** (`eval/suite.toml`): se l'utente indica che
-un certo file *era* il risultato giusto per una query (o che quello restituito *non* lo era), la suite
-viene aggiornata così che la misura futura (`eval run`) catturi quel giudizio. È il ciclo di
-miglioramento del ground-truth a partire dall'uso reale.
+This skill captures the user's explicit feedback on how relevant a retrieval was, and turns it into a
+refinement of the evaluation suite (`eval/suite.toml`): if the user indicates that a certain file was
+the right result for a query (or that the returned one was not), the suite is updated so that the
+future measure (`eval run`) captures that judgment. It is the ground-truth improvement loop fed by real
+usage.
 
-## Confine vincolante (nessun giudizio implicito)
+## Hard boundary (no implicit judgment)
 
-- **Mai inferire, mai persistire senza azione esplicita** (REQ-051): ogni modifica alla suite richiede
-  una conferma esplicita dell'utente. Non esiste una modalità «automatica»: l'agente non deduce la
-  pertinenza dai punteggi né scrive da solo. Propone; l'utente conferma; l'agente scrive.
-- **Solo via vehicle** (Principio XI): ogni scrittura passa dal sottocomando CLI
-  `sertor-rag eval add-case`. Non accedere mai alla libreria del core direttamente.
+- Never infer, never persist without an explicit action. Every change to the suite requires an explicit
+  confirmation from the user. There is no automatic mode: the agent does not deduce relevance from the
+  scores nor writes on its own. It proposes; the user confirms; the agent writes.
+- Vehicle only. Every write goes through the CLI subcommand `sertor-rag eval add-case`. Never access the
+  core library directly.
+- Never write secrets into the suite (it is versioned, hand-diffable project data).
 
-## Procedura
+> **How to invoke `sertor-rag`.** The runtime CLI lives in the project's `.sertor/.venv` (not on
+> `PATH`); route every call through `uv run --project .sertor sertor-rag <args>`. For the two
+> invocation levels, the venv fallback and the Windows notes, see `sertor-cli-reference.md` (it ships
+> with the RAG capability).
 
-1. **Osserva i risultati.** Considera la query e i risultati che il retrieval ha restituito (es. da
-   `sertor-rag search`). Mostrali all'utente in modo leggibile (path + perché potrebbe essere
-   pertinente o no).
+## Procedure
 
-2. **Raccogli il giudizio esplicito.** Chiedi all'utente, per la query, quale/i file è *davvero* il
-   risultato atteso (pertinente). Il giudizio è dell'utente, non tuo: non assegnarlo da solo.
+1. Observe the results. Consider the query and the results the retrieval returned (e.g. from
+   `uv run --project .sertor sertor-rag search`). Show them to the user readably (path + why it might
+   or might not be relevant).
 
-3. **Verifica i path.** Controlla che i path indicati esistano nell'indice con
-   `sertor-rag eval validate-path <path>` (esce sempre 0; segnala `missing`). Un atteso fuori indice
-   non potrà mai essere un hit: segnalalo.
+2. Collect the explicit verdict. Ask the user, for the query, which file(s) is the truly expected
+   (relevant) result. The verdict is the user's, not yours: do not assign it yourself.
 
-4. **Aggiorna la suite, su conferma.**
-   - **Caso già nella suite** — se esiste un caso per quella query, proponi di aggiornarne gli
-     `expected` con i path che l'utente ha confermato pertinenti; applica solo dopo conferma.
-   - **Caso assente** (REQ-052) — se non c'è un caso per quella query, **offri di crearne uno nuovo**
-     con i path approvati; crea solo dopo conferma.
+3. Verify the paths. Check that the indicated paths exist in the index with
+   `uv run --project .sertor sertor-rag eval validate-path <path>` (it always exits 0; it reports the
+   missing paths). An expected path outside the index can never be a hit: flag it.
 
-   In entrambi i casi la scrittura passa dal vehicle:
+4. Update the suite, on confirmation.
+   - Case already in the suite - if a case for that query exists, propose to update its `expected` with
+     the paths the user confirmed as relevant; apply only after confirmation.
+   - Case absent - if there is no case for that query, offer to create a new one with the approved
+     paths; create only after confirmation.
+
+   In both cases the write goes through the vehicle:
 
    ```powershell
-   sertor-rag eval add-case --query "<la query>" `
-       --expected "<path approvato>[,<altro>]" --kind nl
+   uv run --project .sertor sertor-rag eval add-case --query "<the query>" `
+       --expected "<approved/path.ext>[,<another>]" --kind nl
    ```
 
-   `add-case` è idempotente (una query già presente non viene duplicata) e non-distruttivo; se un path
-   non è nell'indice il comando richiede `--confirm` — inoltra la richiesta all'utente, non forzarla.
+   `add-case` is idempotent (a query already present is not duplicated) and non-destructive; if a path
+   is not in the index the command requires `--confirm` - forward that request to the user, do not force
+   it.
 
-5. **Chiudi.** Riepiloga cosa è stato aggiornato e ricorda che la suite è **dato versionato** (va
-   committata) e che la misura (`sertor-rag eval run`) resta **deterministica e indipendente** da
-   questa skill.
-
-## Cosa NON fare
-
-- Non dedurre la pertinenza dai punteggi di similarità e scriverla in autonomia.
-- Non avere/usare una modalità automatica: ogni azione di scrittura passa dalla conferma dell'utente e
-  dal CLI.
-- Non scrivere segreti nella suite.
+5. Close. Summarise what was updated and remind the user that the suite is versioned project data (it
+   must be committed) and that the measure (`uv run --project .sertor sertor-rag eval run`) stays
+   deterministic and independent of this skill.
