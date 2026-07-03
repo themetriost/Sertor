@@ -52,6 +52,38 @@ def test_preexisting_constitution_preserved(tmp_path: Path):
     assert _outcome_for(report, ".specify/memory/constitution.md").outcome.value == "skipped"
 
 
+def test_preexisting_plan_template_preserved(tmp_path: Path):
+    """A host's customized `.specify/templates/plan-template.md` survives `specify init --force`
+    (E15-FEAT-005/E10-FEAT-028): the installer backs it up and restores it around the launch, since
+    `specify init` CLOBBERS it and it is not in the Sertor plan."""
+    plan_tpl = tmp_path / ".specify/templates/plan-template.md"
+    plan_tpl.parent.mkdir(parents=True, exist_ok=True)
+    user_content = "# Plan Template\n## Constitution Check (mission-gate)\ncustom Sertor content\n"
+    plan_tpl.write_text(user_content, encoding="utf-8")
+
+    report = execute_governance_plan(
+        build_governance_profile(tmp_path), runner=FakeSpecifyRunner()
+    )
+
+    assert report.errors == 0
+    # The fake `specify init` clobbers plan-template.md; the installer restores the host's version.
+    assert plan_tpl.read_text(encoding="utf-8") == user_content
+    assert _outcome_for(report, ".specify/templates/plan-template.md").outcome.value == "updated"
+
+
+def test_fresh_plan_template_left_upstream(tmp_path: Path):
+    """On a fresh host (no pre-existing plan-template), the upstream one from `specify init` stays —
+    no regression, no invented file, no restore outcome."""
+    report = execute_governance_plan(
+        build_governance_profile(tmp_path), runner=FakeSpecifyRunner()
+    )
+
+    assert report.errors == 0
+    plan_tpl = tmp_path / ".specify/templates/plan-template.md"
+    assert plan_tpl.read_text(encoding="utf-8") == "# speckit asset (mocked launch)\n"
+    assert ".specify/templates/plan-template.md" not in [o.target_rel for o in report.outcomes]
+
+
 def test_preexisting_init_options_preserved(tmp_path: Path, fake_runner):
     """A pre-existing generated file (`init-options.json`) is left as-is (skip-if-present)."""
     init = tmp_path / ".specify/init-options.json"

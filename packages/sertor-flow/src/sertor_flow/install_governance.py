@@ -313,6 +313,12 @@ def execute_governance_plan(
     )
 
     # Step 0: obtain SpecKit by launching its installer (fail-fast on absence/failure/layout).
+    # `specify init --force` CLOBBERS `.specify/templates/plan-template.md` (verified); it is not in
+    # the Sertor plan, so a host's customized template (the mission-gate) would be lost. Preserve it
+    # across the launch (E15-FEAT-005/E10-FEAT-028): back up before, restore after. Host-agnostic:
+    # keep whatever was there, imposing no Sertor-specific template.
+    plan_template = root / ".specify" / "templates" / "plan-template.md"
+    preserved_plan_template = plan_template.read_bytes() if plan_template.is_file() else None
     try:
         launch_outcome = launch_speckit(profile, runner)
     except InstallerError as exc:
@@ -325,6 +331,19 @@ def execute_governance_plan(
             f"assistant={profile.assistant}, version={profile.speckit_version}",
         )
     )
+    if preserved_plan_template is not None and (
+        not plan_template.is_file() or plan_template.read_bytes() != preserved_plan_template
+    ):
+        # Restore the customized plan-template that `specify init --force` overwrote (fail-loud if
+        # the write fails — no silent vanilla left, Principio XII).
+        plan_template.write_bytes(preserved_plan_template)
+        report.add(
+            ArtifactOutcome(
+                ".specify/templates/plan-template.md",
+                Outcome.UPDATED,
+                "preserved host customization across specify init --force",
+            )
+        )
 
     plan = build_governance_plan(profile)
 
