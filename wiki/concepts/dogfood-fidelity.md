@@ -75,4 +75,5 @@ ancora via sync (asset-fidelity, non process-fidelity). F4 la chiude facendoli p
 ## Vedi anche
 - La pratica di base che questo modello rende fedele: [[dogfooding]].
 - L'audit che ha nominato i due livelli: [[audit-fedelta-dogfood-2026-07-03]].
+- Il dry-run empirico che ha verificato l'idempotenza dei veri installer: [[asset-install-installer-dry-run-2026-07-04]].
 - Le direttive standing: [[feedback_dogfood_client_fedele]], [[feedback_dogfood_solo_via_install_versionbump]].
