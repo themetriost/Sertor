@@ -393,6 +393,14 @@ chi dovrebbe?* Corollari operativi:
 5. **Re-index del corpus toccato** —
    > **Enforced via hook** `rag-freshness.ps1` (`SessionEnd`) — vedi E10-FEAT-011. Il testo seguente descrive la rete agente complementare.
 
+   > **DOGFOOD-ONLY — re-lock del runtime PRIMA del re-index (dopo un merge su `master`, E15-FEAT-008).** Il
+   > runtime `.sertor/` installa `sertor-core` da `git=<repo>` **HEAD** ma il lock fissa il commit: dopo un
+   > merge resta stantio. Quando uno step si chiude con un **merge su `master`**, esegui
+   > **`scripts/dev/relock-runtime.ps1`** (check-then-act: no-op se già a HEAD; re-lock via `uv` se indietro;
+   > fail-loud) **prima** di re-indicizzare, così l'indice si ricostruisce sul runtime aggiornato. È
+   > **dogfood-only** (gli ospiti pinnano versioni + auto-updater E2-FEAT-013): lo script vive in `scripts/dev/`,
+   > **non** è distribuito e **non** va nell'hook `rag-freshness.ps1` né nei blocchi `claude-md-block`.
+
    se lo step ha modificato **file indicizzati nel corpus RAG**,
    ricostruisci l'indice, così il RAG di dogfooding non serve mai contesto stantio (è l'essenza:
    contesto dell'agente sempre reale). **Modello a corpus unico (decisione 2026-06-10):** il wiki vive
@@ -485,7 +493,7 @@ meccanismo che fa la registrazione.
 
 ## Git & versionamento (regola SEMPRE attiva)
 
-Questo workspace è un **repo git con remote `origin`** (ci si pusha regolarmente). **Policy di branching (produzione):** si lavora a **branch + PR**, **mai push diretti su `master`/`main`** (invariante del `configuration-manager`). Convenzione: **un commit dopo ogni step** di lavoro significativo (incluso l'aggiornamento del wiki); git delegato al `configuration-manager`. Messaggi in stile
+Questo workspace è un **repo git con remote `origin`** (ci si pusha regolarmente). **Policy di branching (produzione):** si lavora a **branch + PR**, **mai push diretti su `master`/`main`** (invariante del `configuration-manager`). Convenzione: **un commit dopo ogni step** di lavoro significativo (incluso l'aggiornamento del wiki); git delegato al `configuration-manager`. **Gate pre-merge (VINCOLANTE, E15-FEAT-008):** prima di mergiare una PR su `master`, la **suite completa** (`uv run pytest -m "not cloud"`) **e** il lint (`uv run ruff check .`) devono essere **verdi** — non ci si fida di run locali mirati. *Origine (2026-07-03): un merge senza rigirare la suite ha lasciato una guardia stantia e rotto la CI di `master`; poi un commit senza `ruff check` l'ha rotta di nuovo.* Messaggi in stile
 **Conventional Commits in italiano** (`tipo(scope): sommario`; scope tipici `01-baseline`,
 `prototype`, `requirements`, `cli`, `shared`, `wiki`), corpo che spiega il *perché*, footer
 `Co-Authored-By`. **Mai committare** `.env`, `*.key`, il contenuto di `raw/`, i virtualenv o gli
@@ -568,14 +576,13 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/085-dogfood-client-fedele/plan.md` (**E10-FEAT-027** epica **debito-tecnico** — *il dogfood di
-Sertor come client SpecKit fedele*). Nato dall'item **A-05** dell'audit SWOT: il dogfood non è un client
-fedele (gli mancano skill/script SpecKit che ogni ospite riceve da `specify init`; porta 9 agenti
-`speckit-*` hand-authored che nessun client ha). Piano: materializzare la machinery via il percorso
-d'install in modo **isolato** (senza clobber di `constitution.md` v1.4.0 / `plan-template.md` custom),
-**gitignorare** il rigenerabile con uno step di setup documentato, **rimuovere** i 9 agenti orfani, +
-**guardia** anti-regressione. Constitution **12/12 + missione PASS**, zero `sertor-core`. Branch
-`087-a05-dogfood-client-debt`. *(Nota di processo: machinery SpecKit assente → artefatti prodotti per
-convenzione — è precisamente il debito che la feature chiude.)*
+`specs/088-relock-runtime/plan.md` (**E15-FEAT-008** epica **fedelta-dogfood** — *rituale post-merge:
+re-lock del runtime `.sertor/` a HEAD*). Il runtime `.sertor/` (F1) installa `sertor-core` da `git=<repo>`
+HEAD ma il lock fissa il commit → dopo un merge resta stantio. Piano (Q1 = opzione a): script **dogfood-only**
+`scripts/dev/relock-runtime.ps1` (check-then-act, fail-loud) invocato dal **rituale post-merge**; +
+**gitignore** di `.sertor/uv.lock` (correzione F1: lock tracciato + re-lock = churn/loop) lasciando tracciato
+solo `.sertor/pyproject.toml`; + **guardia** confine dogfood↔distribuito; + doc rituale post-merge con **gate
+«suite+ruff verdi» pre-merge**. Constitution **12/12 + missione PASS**, zero `sertor-core`. Branch
+`092-f8-relock-runtime`.
 
 <!-- SPECKIT END -->

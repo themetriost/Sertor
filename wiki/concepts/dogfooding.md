@@ -3,7 +3,7 @@ title: Dogfooding
 type: concept
 tags: [dogfooding, rag, mcp, contesto-ancorato, corpus, sertor-core]
 created: 2026-06-07
-updated: 2026-06-07
+updated: 2026-07-03
 sources: ["CLAUDE.md", ".mcp.json", "src/sertor_mcp/server.py"]
 ---
 
@@ -31,5 +31,8 @@ corpus sia stato **indicizzato** prima dell'uso.
   disciplina.
 
 ## Vedi anche
+- **Il dogfood non basta che *interroghi* sé stesso: deve *essere* ciò che un ospite otterrebbe** →
+  [[dogfood-fidelity]] (runtime installato `.sertor/` che traccia HEAD, re-lock post-merge, confine
+  dev↔dogfood, asset- vs process-fidelity).
 - La superficie che lo abilita: [[server-mcp-produzione-feat-mcp]]. L'isolamento dei corpora:
   [[corpus-index-naming]]. Il record d'avvio (isolamento prototipo + setup): [[chiusura-prototipo-dogfooding]].
