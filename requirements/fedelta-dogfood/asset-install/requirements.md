@@ -206,6 +206,28 @@ mitiga). Questi non sono ipotesi: sono osservati.
   hanno dest **gitignorata** — vanno dogfoodati come presenza runtime o basta dichiararli prodotti
   dall'install a runtime? (SC-5).
 
+## 11. Findings empirici (dry-run 2026-07-04)
+
+Eseguiti i 3 veri installer da `git+url@master` via `uvx` contro il dogfood (branch usa-e-getta,
+output scartato — riproducibile). Dettaglio in [[asset-install-installer-dry-run-2026-07-04]].
+
+- **Esito headline: per lo più idempotente.** Runtime + ~tutti gli asset `skipped (already present)`
+  = **byte-identici** a quelli dell'installer → la asset-fidelity byte del sync (FEAT-002) è reale;
+  `specify init` skippato; `.env`/`.mcp.json`/costituzione v1.4.0/`wiki.config` **preservati**. Il
+  residuo di process-fidelity è **piccolo**: +174 righe reali in `CLAUDE.md` (3 blocchi) + hook in
+  `settings.json` + `.sertor/sertor-cli-reference.md` creato (chiude parte di FEAT-003).
+- **DA-1 risolta → ibrido per-blocco** (decisione utente): RAG-USAGE tieni-blocco/prosa-intatta ·
+  WIKI-RITUAL prosa-vince (10 vs 4 punti) · SDLC-RITUAL ibrido vero (blocco esplicita le 7 fasi
+  SpecKit). CLAUDE.md resterebbe **bilingue** (prosa IT + blocchi EN) → da decidere. Riconciliazione
+  = step deliberato a valle.
+- **Nuovo finding — churn CRLF (REQ-002/012):** gli installer scrivono CRLF, i file dogfood erano LF
+  → diff gonfiato (CLAUDE.md 1228 vs **174 reali**). Fix = `.gitattributes` (`* text=auto eol=lf`);
+  **affligge ogni ospite Windows** → candidato fix di prodotto nel template (backlog E15).
+- **`wiki/log.md` legacy = istanza di E15-FEAT-006** (staleness inversa): l'installer crea il
+  monolitico `wiki/log.md`, il dogfood usa la rotazione `wiki/log/<data>.md` → il **template è
+  indietro**; scartare nel dogfood + allineare il template.
+- **Nessuna sorpresa distruttiva** → R-1 mitigato empiricamente; la via all'obiettivo è a basso rischio.
+
 ---
 
 **Commit proposto:** `docs(requirements): E15 asset-install (FEAT-001 scope B) — process-fidelity degli asset via veri installer`
