@@ -64,13 +64,14 @@ def test_wiki_plan_subset_of_owned(assistant):
 def test_claude_and_copilot_cli_host_surfaces_distinct(tmp_path):
     """FEAT-012: Claude (`.claude/**`, `CLAUDE.md`) and Copilot CLI (`.github/**`) own DISTINCT
     host-facing surfaces; only the assistant-agnostic runtime targets (`.sertor`, `.mcp.json`,
-    `.gitignore`) coincide. So a cross-assistant upgrade only removes the other's host-facing
-    artifacts, never the shared runtime (FR-016). The VS Code (`copilot`) target was removed."""
+    `.gitignore`, `.gitattributes`) coincide. So a cross-assistant upgrade only removes the other's
+    host-facing artifacts, never the shared runtime (FR-016)."""
     claude = rag_owned(AssistantId.CLAUDE)
     copilot_cli = rag_owned(AssistantId.COPILOT_CLI)
     shared = claude.covered_targets() & copilot_cli.covered_targets()
-    # The shared paths are only the assistant-agnostic runtime (both targets use `.mcp.json`).
-    assert shared <= {".gitignore", ".sertor", ".mcp.json"}
+    # Shared paths are only the assistant-agnostic host-root files (`.mcp.json`, `.gitignore`,
+    # `.gitattributes`) and the runtime dir `.sertor`.
+    assert shared <= {".gitignore", ".gitattributes", ".sertor", ".mcp.json"}
     # The host-facing hook script lives in distinct trees per assistant.
     assert ".github/hooks/sertor-rag-usage-check.ps1" in copilot_cli.covered_targets()
     assert ".github/hooks/sertor-rag-usage-check.ps1" not in claude.covered_targets()

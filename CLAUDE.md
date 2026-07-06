@@ -188,17 +188,20 @@ I marker pytest sono definiti in `pyproject.toml`: `cloud` (richiede credenziali
 workspace `uv`, popolato da `uv sync --all-packages --extra dev` (+ `--extra azure` per il dogfood),
 e fa girare anche il server MCP (`.mcp.json` lo punta). Il vecchio `.venv-core/` è stato eliminato.
 
-**Machinery SpecKit (setup, come `uv sync`).** Il dogfood ottiene la machinery SpecKit — skill native
-`speckit-*`, `.specify/scripts/`, template — **come un ospite**, materializzandola dal percorso d'install
-(E10-FEAT-027, il dogfood è un *client Sertor fedele*). È **rigenerabile e git-ignorata** (come il `.venv`):
+**Machinery SpecKit (setup).** Il dogfood ottiene la machinery SpecKit — skill native `speckit-*`,
+`.specify/scripts/`, template — **come un ospite**, eseguendo il **vero installer sul dogfood**
+(`sertor-flow install --assistant claude` → `specify init`, E15-FEAT-001 scope B / *process-fidelity*):
+è la stessa via di un client. È **rigenerabile e git-ignorata** (come il `.venv`).
 
-```powershell
-.\scripts\dev\materialize-speckit.ps1   # specify init isolato + copia selettiva; NON tocca
-                                         # constitution.md / plan-template.md / feature.json (Sertor-authored)
-```
+> **Nota (E15 asset-install):** la **fonte** degli asset host-facing (machinery `.specify/`, `.claude/`,
+> blocchi `CLAUDE.md`, wiring `settings.json`) è **il vero install**, non gli script dev. Lo script
+> `scripts/dev/materialize-speckit.ps1` (specify init isolato + copia selettiva) resta solo come
+> **dev-tool / bootstrap fallback** e come propagazione della guardia byte — **non** è più il modo con cui
+> il dogfood *ottiene* la machinery. `specify init` è idempotente/skip-if-present.
 
-Idempotente; richiede rete (`uvx` scarica spec-kit al pin `SPECKIT_VERSION`). Su un clone fresco/CI la
-machinery è assente finché non si esegue lo script — le fasi SpecKit che usano gli script lo richiedono.
+Il vero install (e il fallback) richiedono rete (`uvx` scarica spec-kit al pin `SPECKIT_VERSION`). Su un
+clone fresco/CI la machinery è assente finché non si esegue l'install — le fasi SpecKit che usano gli
+script lo richiedono.
 
 ## Setup ed esecuzione
 
@@ -573,6 +576,21 @@ principale) oppure delega all'agente `wiki-curator` (in background).
 I trigger **non orchestrano da soli** (un hook non può avviare un subagent): rendono *automatica* la
 delega che resta affidata al `wiki-curator`.
 
+## Blocchi installati vs prosa dogfood (come leggere questo file)
+
+Da qui in giù vivono i **blocchi marker `SERTOR:*`** (più il riferimento SpecKit): sono il **contratto
+client-form generico** che *ogni* ospite riceve installando Sertor — depositati e rigenerati dai **veri
+installer** (`sertor install rag`/`wiki`, `sertor-flow install`), in **inglese** e host-agnostici,
+**posseduti dai marker** (un ri-install li aggiorna in place, non li duplica). La **prosa italiana sopra**
+è la governance **propria di questo progetto** (il dogfood): elabora, localizza e arricchisce quei
+contratti con le regole dogfood-specifiche (corpus del prototipo, rituale di step a 10 punti, re-lock del
+runtime, gate pre-merge, ecc.). **Dove i due si sovrappongono, per il dogfood vince la prosa** (è
+l'applicazione operativa, più ricca); i blocchi **restano** perché il dogfood è un **client fedele** — ha
+esattamente ciò che riceve ogni ospite (process-fidelity: E15 asset-install). Il file è dunque **bilingue
+per costruzione** (blocchi EN + prosa IT), senza contraddizione: contratto generico sotto, applicazione
+dogfood sopra. *(Non riconciliare cancellando la prosa: i blocchi sono rigenerati dall'installer, la prosa
+è la conoscenza dogfood — vanno tenuti entrambi.)*
+
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
@@ -590,3 +608,177 @@ FEAT-009 chiusa not-a-bug (no dipendenza). `sertor-core` **invariato** (XI), nes
 Sertor-specifico (X). Constitution **12/12 + missione PASS**. Branch `089-asset-install`.
 
 <!-- SPECKIT END -->
+
+<!-- SERTOR:SDLC-RITUAL START -->
+## Development method (SDLC) — always active
+
+This project follows a spec-driven development method (SpecKit) with an explicit
+constitution gate and disciplined version control. These rules are standing: apply
+them on every significant change, without being asked.
+
+### The SpecKit flow
+
+Significant work flows through these phases, in order; each consumes the artifacts
+of the previous one:
+
+1. **requirements** — capture the need (EARS-style requirements) before designing.
+2. **specify** — write the feature specification (`spec.md`): what and why, scope,
+   out-of-scope, acceptance criteria.
+3. **clarify** — resolve open questions in the spec before planning; never guess on
+   a real design fork — ask, with context.
+4. **plan** — produce the implementation plan (`plan.md`), data model, contracts,
+   and research decisions.
+5. **tasks** — decompose the plan into ordered, dependency-aware tasks (`tasks.md`).
+6. **analyze** — cross-check spec ↔ plan ↔ tasks for consistency and coverage.
+7. **implement** — execute the tasks in order, producing real code and tests.
+
+The phases are driven by the SpecKit skills installed for your assistant (the `speckit-*` skills)
+and the templates/scripts under `.specify/`.
+
+### Constitution Check (gate)
+
+The project constitution lives in `.specify/memory/constitution.md`. It is a **gate**,
+not decoration:
+
+- Re-check the constitution at `plan` time and again after design: list each
+  principle and mark PASS / N/A, justifying any deviation explicitly.
+- A change that violates a principle is reworked or its complexity is justified in
+  writing — it does not ship silently.
+- Amend the constitution through its own flow (semantic versioning), never by drift.
+
+### Error discipline — fix, don't suppress
+
+When something errors, remove the cause. **Never disable, mute, or route around a
+capability just to silence its error** — early, visible feedback is a value. Graceful
+degradation is acceptable only when it *reports* the failure (a warning/finding);
+silent suppression, or turning a feature off to dodge its error, is not. Disabling a
+capability is a deliberate, recorded decision, never a reflex. (Constitution: *Fail
+Loud, Fix the Cause*.)
+
+### Version control discipline (owner of git/commit rules)
+
+This block is the **owner** of git and commit discipline for the project.
+
+- **Branch + PR workflow.** Significant work happens on a feature branch and merges
+  via pull request. **No direct pushes to the default branch** (`main`/`master`).
+- **Conventional Commits.** Commit messages follow `type(scope): summary`; the body
+  explains the *why*; one commit per significant step.
+- **Never commit secrets or regenerable artifacts.** `.env`, key files, virtual
+  environments, caches, build output, logs, and indexes stay out of version control
+  (covered by `.gitignore`).
+- **Delegate git operations to the `configuration-manager` agent.** All version
+  control actions (staging, commit, branch, merge, tag, push, pull) are delegated to
+  the `configuration-manager` agent rather than performed inline, so the main flow is
+  never blocked on bookkeeping. Pass it a self-contained brief (what was done, which
+  files, why, the requested operation). Destructive/irreversible operations
+  (`push --force`, `reset --hard`, history rewrite, `branch -D`, `clean -fd`) run
+  **only when explicitly requested** in the brief; otherwise the agent stops and
+  reports.
+<!-- SERTOR:SDLC-RITUAL END -->
+
+<!-- SERTOR:RAG-USAGE START -->
+## Sertor RAG — How to use it
+
+This project has the **Sertor RAG** capability installed. When you need to search or retrieve from
+the indexed corpus (code and documentation), use one of the provided **vehicles**:
+
+- **CLI** — run `uv run --project .sertor sertor-rag` (e.g.
+  `uv run --project .sertor sertor-rag search "<query>"`). It is the supported entry point: the bare
+  command is NOT on `PATH` (it lives in `.sertor/.venv`), so always route it through `uv run --project
+  .sertor`.
+- **MCP tools** — the `sertor-rag` MCP server exposes search/navigation tools (`search_code`,
+  `search_docs`, `search_combined`, `find_symbol`, `who_calls`, `get_context`).
+
+For the full invocation reference — the two levels (runtime CLIs via `uv run`, installer via `uvx`),
+the venv fallback, and the Windows setup notes — see `sertor-cli-reference.md` (deposited under
+`.sertor/` by `sertor install rag`).
+
+**Do NOT import `sertor_core` directly in your own scripts.** The library is meant to be consumed
+through its vehicles (CLI / MCP), which wire in the cross-cutting concerns — configuration,
+observability, error handling — for you. Importing `sertor_core` by hand bypasses them and is not a
+supported way to use the capability.
+
+### Search first, read second
+
+When you need to understand code or docs in this corpus, **query the Sertor RAG before reading files
+by hand**: run `uv run --project .sertor sertor-rag search` or use the MCP search/navigation tools,
+let the results point you to the relevant files, then read those. It keeps your answers anchored to
+what is actually indexed.
+
+If a Sertor RAG tool returns an **error** (unreachable backend, missing or stale index), treat it as
+a **signal**, not noise: say so instead of silently falling back to a blind file read. A broken
+retrieval tool is worth surfacing, not burying.
+
+### Conversation memory (optional)
+
+This capability also ships **conversation memory** — a local, opt-in episodic archive of past
+sessions. When it is enabled (`SERTOR_MEMORY=true` in `.sertor/.env`) you can recall earlier work:
+
+- `uv run --project .sertor sertor-rag memory search "<query>"` — full-text search over archived
+  sessions ("did we discuss X?").
+- `uv run --project .sertor sertor-rag memory list` / `… memory show <key>` — browse and read an
+  archived session.
+- `uv run --project .sertor sertor-rag memory archive` — capture the current sessions (also runs
+  automatically at session end).
+
+Memory is **off by default** (privacy): the commands and the automatic capture do nothing until you
+set `SERTOR_MEMORY=true`. Content is stored locally and scrubbed of secrets; nothing leaves the machine.
+
+This is a **usage instruction**, not a constraint on your project: your own code and tests are
+unaffected.
+<!-- SERTOR:RAG-USAGE END -->
+
+<!-- SERTOR:WIKI-RITUAL START -->
+## Step Ritual / Definition of Done (LLM Wiki)
+
+This project maintains a **local wiki** in `wiki/`, inspired by Karpathy's "LLM Wiki" pattern:
+a persistent, cumulative artifact that grows with each session instead of rebuilding
+knowledge from scratch every time. Configuration lives in `wiki.config.toml` (the single source of
+host-specific settings: root, taxonomy, source folders, language).
+
+> **Golden rule:** every significant thing that is done must be documented in the wiki — experiments, decisions,
+> concepts/technologies explored, ingested sources. Do not wait for the user to ask.
+> Purely mechanical, minor changes do not require a log entry.
+
+A **step** is a meaningful unit of work (a feature, a fix, a decision, a research task,
+an analysis). **At the end of each step**, the main flow executes — on its own initiative — this
+checklist:
+
+1. **Record** (`record`) — create/update the impacted pages, backlinks, and `index.md`, and append
+   the log entry (today's file in `wiki/log/`). Structural work → delegatable to the
+   `wiki-curator` agent.
+2. **Distill entities** (`distill`) — identify the durable entities/concepts the step surfaced
+   and, if they have their own identity and are referenced from multiple points, give each a
+   dedicated page in `concepts/`/`tech/`; the dated record stays lean and points to them. This is **judgment** → stays
+   in the main flow.
+3. **Semantic lint** (`lint` level B) — verify that the wiki has not drifted away from the
+   reality of the project (code, requirements, VCS state): flag every claim the repo contradicts,
+   fix on confirmation. This is **judgment** → stays in the main flow.
+4. **Plain-language summary (explainer)** — when a step develops or plans a **significant capability**
+   (a requirement, a feature, a product capability), produce or update a **plain-language description**
+   under `wiki/explainers/` (for non-technical readers): what it does and why, with an everyday analogy
+   and no jargon, each pointing to the corresponding technical page. This is **judgment** → stays in the
+   main flow. **Calibrate to value (optional):** only for capabilities worth explaining to a
+   non-technical stakeholder — not for mechanical or tooling-only steps. It applies both to what is
+   *done* and to what is *about to be built* (the page marks the status).
+
+**Delegation.** That these actions happen is the main flow's responsibility; executing or delegating them
+is merely a choice to avoid blocking. The `record` (structured transcription) is delegatable to the
+`wiki-curator` agent; distillation and semantic lint, being judgment, stay in the main flow.
+To manually trigger a consolidation, invoke the wiki capability of your assistant (main flow)
+or delegate to `wiki-curator` (background).
+
+**When to record:** at the same moment as the step commit. The log entry is
+not deferrable: a step is not closed until both the commit **and** the log entry are done.
+
+**Definition of Done — host-agnostic assets.** Touching a distributable asset (a skill, agent,
+command, instruction block, or its support payload) requires verifying **parity across assistants**:
+the body must stay host-agnostic (no literal assistant paths, no slash-command invocations, payload
+referenced by name) so the SAME body works on every assistant. A step that edits such an asset is not
+done until that parity holds (a parity guard enforces it where available).
+
+For the full list of wiki operations (`record`/`distill`/`ingest`/`query`/`lint`/`reorg`/`generate`/
+`rag-sync`/`structure`), the page conventions (frontmatter, wikilink backlinks, kebab-case naming) and
+the log-entry format, see `wiki-playbook.md` — the single source of truth bundled with the wiki
+capability, read on demand.
+<!-- SERTOR:WIKI-RITUAL END -->

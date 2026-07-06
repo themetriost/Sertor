@@ -9,6 +9,10 @@ sources: ["requirements/fedelta-dogfood/asset-install/requirements.md", "require
 
 # Dry-run: i 3 veri installer contro il dogfood (E15 asset-install)
 
+> ⚠️ **Implementata (2026-07-06).** I tre finding di questo dry-run sono stati risolti:
+> FEAT-010 line-ending + CLAUDE.md ibrido + wiki/log schema. Vedi [[asset-install-scope-b-implementation-2026-07-06]]
+> (pagina esperimento dell'implementazione).
+
 > **Cosa:** eseguiti i 3 veri installer di Sertor (`sertor install rag`, `sertor install wiki`,
 > `sertor-flow install`) da `git+url@master` via `uvx` — *come un host reale* — contro il dogfood
 > (repo vivo, branch usa-e-getta `090-asset-install-exec`), per **osservare** cosa depositano prima di

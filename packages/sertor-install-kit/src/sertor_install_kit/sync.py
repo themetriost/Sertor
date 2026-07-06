@@ -6,6 +6,11 @@ Canonical source = assets in the package; the dev repo trees (`.claude/`, `.spec
 **assets → repo** (never the reverse). A guard test prevents the two copies from diverging
 (drift = CI error).
 
+**Role after E15 asset-install — dev-tool / anti-drift guard, NOT the fidelity source.** The dogfood
+now *obtains* its assets by running the **real** installers on itself (process-fidelity,
+E15-FEAT-001 scope B); this helper is a development convenience and the propagation side of the byte
+guard, not the source of truth for how the assets get there.
+
 Generalized over the anchor and the subtree→destination mapping so it is reusable by both `sertor`
 (anchor `sertor_installer`, `claude` → `.claude`) and `sertor-flow` (anchor `sertor_flow`,
 `claude` → `.claude`, `specify` → `.specify`).

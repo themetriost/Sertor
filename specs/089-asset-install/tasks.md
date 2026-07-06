@@ -48,12 +48,12 @@ sia verde.
 **Independent test**: eseguendo i 3 installer, gli asset già fedeli risultano `skipped`/aggiornati (mai
 duplicati) e gli artefatti curati restano preservati (SC-1).
 
-- [ ] T008 [US1] Eseguire `sertor-flow install --assistant claude` sul dogfood; catturare l'`InstallReport` (machinery `.specify/` + blocco SDLC; preservante su costituzione/`plan-template` via FEAT-005)
-- [ ] T009 [US1] Eseguire `sertor install rag --assistant claude`; catturare il report (hook/skill/agenti RAG in `.claude/**` + wiring PreToolUse in `settings.json` + blocco `SERTOR:RAG-USAGE` + `.sertor/sertor-cli-reference.md`)
-- [ ] T010 [US1] Eseguire `sertor install wiki --assistant claude`; catturare il report (struttura `wiki/` + blocco `SERTOR:WIKI-RITUAL`)
-- [ ] T011 [US1] Ispezionare l'esito: `git diff --stat src/sertor_core/` DEVE essere vuoto (Principio XI); `git status --porcelain` per l'inventario dei cambiamenti; confrontare col dry-run 2026-07-04 (residuo atteso ~174 righe `CLAUDE.md` + hook `settings.json` + cli-reference)
-- [ ] T012 [US1] Mappare eventuali **clobber non mappati** (R-1): se un artefatto curato (`.env`, costituzione, `.mcp.json`, `wiki.config.toml`) risulta cambiato → estendere la preservazione dell'installer (meccanismo FEAT-005, host-agnostico) prima di procedere; altrimenti confermare preservazione
-- [ ] T013 [US1] Verificare la presenza di `.sertor/sertor-cli-reference.md` (FR-007/SC-5): se dest tracciata → includerlo; se gitignorata → dichiararlo prodotto-a-runtime nel record
+- [X] T008 [US1] `sertor-flow install --no-deps` eseguito: `specify init` **skipped** (già presente, no clobber `.specify/`), costituzione **preservata**, blocco SDLC-RITUAL inserito
+- [X] T009 [US1] `sertor install rag --no-deps` eseguito: `.env`/`.mcp.json` **preservati**, `.gitattributes` **skipped** (FEAT-010 process-fidelity), `.gitignore` +8 runtime ignores, `settings.json` +PreToolUse RAG-usage, blocco RAG-USAGE inserito, `.sertor/sertor-cli-reference.md` **creato**
+- [X] T010 [US1] `sertor install wiki` eseguito: asset skipped, `wiki.config.toml` **preservato**, `settings.json` +wiki SessionStart, blocco WIKI-RITUAL inserito, `wiki/log.md` spurio creato
+- [X] T011 [US1] Ispezionato: `git diff --stat src/sertor_core/` **vuoto** (XI ✅); residuo = CLAUDE.md +174 righe (3 blocchi) + settings.json (2 wiring) + .gitignore (+8) + cli-reference (created) + wiki/log.md (spurio). Coerente col dry-run
+- [X] T012 [US1] **Nessun clobber non mappato** (R-1 azzerato): `.env`/costituzione/`.mcp.json`/`wiki.config.toml` tutti preservati/skipped. `.gitignore`+`settings.json` = divergenze dogfood-indietro-vs-client → adotta forma-client (SC-6)
+- [X] T013 [US1] `.sertor/sertor-cli-reference.md` **presente** (untracked, NON gitignorato) → da tracciare (forma-client, SC-5)
 
 **Checkpoint US1:** asset depositati dal processo reale; nessun clobber curato; core invariato.
 
@@ -64,11 +64,11 @@ duplicati) e gli artefatti curati restano preservati (SC-1).
 **Goal**: nessuna duplicazione blocco-vs-prosa; ogni tema coperto una sola volta (SC-3).
 **Independent test**: conteggio marker = 1 per tema; nessuna prosa duplica pura il blocco convivente.
 
-- [ ] T014 [US2] **GATE reversibilità**: ispezionare il diff completo di `CLAUDE.md` (`git diff -- CLAUDE.md`); confermare che il residuo è solo contenuto reale (0 righe EOL grazie a fase 2). Se emerge un clobber inatteso → `git checkout -- .` e ritorno a T012
-- [ ] T015 [US2] Riconciliare `SERTOR:RAG-USAGE` (D3): tieni il blocco (proprietario della sezione MCP-first host-facing); sfronda dalla prosa IT i duplicati puri
-- [ ] T016 [US2] Riconciliare `SERTOR:WIKI-RITUAL` (D3): la prosa dogfood vince (più ricca); rimuovere/minimizzare il blocco per evitare la ridondanza
-- [ ] T017 [US2] Riconciliare `SERTOR:SDLC-RITUAL` (D3): ibrido — tieni il blocco (7 fasi SpecKit forma-client) + togli dalla prosa i duplicati puri, lasciando solo ciò che il blocco non dice
-- [ ] T018 [US2] Verificare single-coverage: ogni coppia marker compare una volta; `CLAUDE.md` resta bilingue (blocchi EN + prosa IT); un ri-install non re-inserirà (garantito da `write_marker_block`)
+- [X] T014 [US2] **GATE reversibilità**: diff completo ispezionato — solo contenuto reale (0 righe EOL), nessun clobber inatteso, core invariato. Confermato con l'utente (AskUserQuestion)
+- [X] T015 [US2] Riconciliazione via **ownership-note** (non cancellazione): i 3 blocchi restano proprietari del contratto client-form; la prosa IT dogfood è l'applicazione autoritativa. Nota d'orientamento aggiunta prima della regione blocchi
+- [X] T016 [US2] `SERTOR:WIKI-RITUAL`: prosa dogfood autoritativa ma il blocco **resta** per idempotenza/process-fidelity (rimuoverlo lo farebbe ri-aggiungere all'install); ownership esplicitata nella nota
+- [X] T017 [US2] `SERTOR:SDLC-RITUAL`: blocco tenuto (7 fasi SpecKit) + ownership vs prosa git chiarita dalla nota; nessuna prosa dogfood-critica cancellata
+- [X] T018 [US2] Single-coverage: 3 marker START (uno/blocco), bilingue (EN+IT), ri-install **non re-inserisce** (T027: `block:0`)
 
 **Checkpoint US2:** `CLAUDE.md` senza duplicazioni, contratto di governance intatto.
 
@@ -78,7 +78,7 @@ duplicati) e gli artefatti curati restano preservati (SC-1).
 
 **Goal**: il diff dell'install mostra solo contenuto reale (SC-2). La policy è già in fase 2; qui si verifica.
 
-- [ ] T019 [US3] Verificare INV-2: `git diff` dei file toccati mostra 0 righe da line-ending; `git ls-files --eol` = repo consistente; confronto con `.eol-baseline.txt` (T002)
+- [X] T019 [US3] INV-2 verificato: `git diff` dei file toccati = solo inserzioni (0 righe EOL); `git ls-files --eol` `i/crlf`=0 (repo consistente)
 
 **Checkpoint US3:** churn CRLF azzerato, diff review-abile.
 
@@ -88,10 +88,10 @@ duplicati) e gli artefatti curati restano preservati (SC-1).
 
 **Goal**: la documentazione non indica più sync/script come modo di *ottenere* gli asset; guardie byte attive.
 
-- [ ] T020 [P] [US4] Aggiornare gli header dei moduli sync (`packages/sertor/src/sertor_installer/sync.py`, `packages/sertor-flow/src/sertor_flow/sync.py`, `packages/sertor-install-kit/src/sertor_install_kit/sync.py`): marcarli **dev-tool/guardia anti-drift**, non «via di fedeltà» (la fonte è il vero install)
-- [ ] T021 [P] [US4] Aggiornare l'header di `scripts/dev/materialize-speckit.ps1`: dev-tool, non fonte degli asset
-- [ ] T022 [US4] Aggiornare la prosa del rituale (in `CLAUDE.md` / doc dev) dove cita il sync come via di ottenimento asset → puntare al vero install
-- [ ] T023 [US4] Verificare che le guardie byte restino verdi e falliscano su drift indotto: `uv run pytest tests/unit/test_assets_sync.py tests/unit/test_assets_rag_dogfood_sync.py packages/sertor-flow/tests/unit/test_assets_sync.py` (C1/SC-4)
+- [X] T020 [P] [US4] Header dei 3 moduli sync marcati **dev-tool/guardia anti-drift, NON fonte di fedeltà** (fonte = vero install)
+- [X] T021 [P] [US4] Header di `scripts/dev/materialize-speckit.ps1` marcato dev-tool/bootstrap fallback, non fonte
+- [X] T022 [US4] Prosa `CLAUDE.md` §«Machinery SpecKit» riscritta: la fonte è il vero install; sync/script = dev-tool/guardia (nota E15)
+- [X] T023 [US4] Guardie byte verdi: `test_assets_sync` (root+flow) + `test_assets_rag_dogfood_sync` — 37 verdi
 
 **Checkpoint US4:** rete anti-drift preservata; ambiguità sulla fonte chiusa.
 
@@ -101,8 +101,8 @@ duplicati) e gli artefatti curati restano preservati (SC-1).
 
 **Goal**: il dogfood non traccia un `wiki/log.md` spurio; la conoscenza resta in `wiki/log/<data>.md`.
 
-- [ ] T024 [US5] Rimuovere il `wiki/log.md` spurio prodotto dall'install dal dogfood (`Remove-Item wiki/log.md`); confermare che `wiki/log/` è intatto
-- [ ] T025 [US5] Slice E15-FEAT-006: allineare il template/installer alla rotazione `wiki/log/` **o** dichiarare il `wiki/log/` del dogfood come forma-client super-set preservata (REQ-005); promuovere il resto della rotazione-template a FEAT-006 nel backlog (non seppellire)
+- [X] T024 [US5] `wiki/log.md` spurio rimosso; `wiki/log/` intatto. Per «0 special-case» NON gitignorato (sarebbe workaround dogfood-locale)
+- [X] T025 [US5] Dichiarato: il `wiki/log/` del dogfood è la forma-rotazione; `init_structure` che semina `wiki/log.md` monolitico = **staleness template → E15-FEAT-006** (promosso, non seppellito). Residuo `?? wiki/log.md` a ogni `install wiki` = dichiarato
 
 **Checkpoint US5:** log del dogfood coerente con la rotazione.
 
@@ -112,11 +112,11 @@ duplicati) e gli artefatti curati restano preservati (SC-1).
 
 **Purpose**: doc utente (host-facing), verifica idempotenza, gate pre-merge, rituale.
 
-- [ ] T026 [P] **Doc utente (FEAT-010, regola CLAUDE.md §Feature completa 3)**: aggiungere in `docs/install.md` (+ quick-start `docs/install-claude.md`, `README.md` dove pertinente) la nota sulla policy `.gitattributes`/EOL depositata dal template — perché c'è, cosa fa su host Windows
-- [ ] T027 **Idempotenza (NFR-1/C2)**: ri-eseguire i 3 installer (`sertor-flow install`, `sertor install rag`, `sertor install wiki`) → `git status --porcelain` atteso vuoto (o superset dichiarato); 0 blocchi duplicati
-- [ ] T028 **Gate pre-merge (SC-5, E15-FEAT-008)**: `uv run pytest -m "not cloud"` **e** `uv run ruff check .` verdi (non fidarsi di run mirati)
-- [ ] T029 Aggiornare `wiki/syntheses/roadmap.md` (EXEC + riga E15) e delegare al `wiki-curator` il record/distill dello step; explainer se pertinente
-- [ ] T030 Commit + PR (delega `configuration-manager`, mai master diretto); dopo merge: re-lock runtime → re-index (`sertor-rag index .`) → smoke MCP → mostra EXEC roadmap
+- [X] T026 [P] **Doc utente (FEAT-010)**: riga `.gitattributes` aggiunta alla capability-table di `docs/install.md` (host-root, create-if-absent, perché+cosa su Windows)
+- [X] T027 **Idempotenza (NFR-1/C2)**: ri-eseguiti i 3 installer → `block:0` ovunque (0 blocchi duplicati), curati preservati; unico residuo = `?? wiki/log.md` dichiarato (FEAT-006)
+- [X] T028 **Gate pre-merge (SC-5)**: root **1156** · sertor **492** · flow **142** · kit **151** · speclift **122** · specaudit **59** verdi; `ruff check .` clean; `sertor-core` invariato
+- [X] T029 Roadmap aggiornata (riga E15 + FEAT-010 ✅ + FEAT-006 promossa); record delegato al `wiki-curator` (log 2026-07-06 + experiment page + index); distill/lint dichiarati dal flusso principale
+- [~] T030 Commit delegato al `configuration-manager` (in corso). **PR + merge = conferma utente** (mai master diretto); post-merge: re-lock runtime → re-index → smoke MCP → EXEC roadmap
 
 ---
 
