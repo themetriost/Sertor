@@ -21,8 +21,8 @@ description: "Task list — E15 asset-install (fedelta-dogfood, FEAT-001 scope B
 
 **Purpose**: catturare lo stato pre-install per poter ispezionare/annullare.
 
-- [ ] T001 Verificare di essere su branch `089-asset-install` con working tree pulito (`git status`); i soli untracked ammessi sono `.sertor/.last-hook-error` e `wiki/sources/Human/` (non correlati, non toccarli)
-- [ ] T002 Catturare la baseline: `git rev-parse HEAD` e `git ls-files --eol > specs/089-asset-install/.eol-baseline.txt` (scratch, non committato) come riferimento per il confronto no-churn
+- [X] T001 Verificare di essere su branch `089-asset-install` con working tree pulito (`git status`); i soli untracked ammessi sono `.sertor/.last-hook-error` e `wiki/sources/Human/` (non correlati, non toccarli)
+- [X] T002 Catturare la baseline: `git rev-parse HEAD` (4364472) e `git ls-files --eol` (1454 file) su scratch come riferimento per il confronto no-churn
 
 ---
 
@@ -32,11 +32,11 @@ description: "Task list — E15 asset-install (fedelta-dogfood, FEAT-001 scope B
 illeggibile (D1). Serve US3 ma è prerequisito di US1. ⚠️ Nessun installer va eseguito prima che questa fase
 sia verde.
 
-- [ ] T003 Creare `.gitattributes` alla radice del dogfood con `* text=auto eol=lf` (+ eventuali eccezioni binarie note); documentare l'intenzione in una riga di commento
-- [ ] T004 Allineare l'index: `git add .gitattributes && git add --renormalize .`; verificare `git ls-files --eol | Select-String "crlf"` = nessun match testuale spurio (INV-2)
-- [ ] T005 [P] Rinormalizzare a LF i bundle `assets/` dei tre package (`packages/sertor/src/sertor_installer/assets/**`, `packages/sertor-flow/src/sertor_flow/assets/**`, `packages/sertor-install-kit/**/assets/**` se presenti) così le guardie byte confrontano LF↔LF (Edge Case CRLF↔byte-guard)
-- [ ] T006 **[FEAT-010, host-facing]** Aggiungere `.gitattributes` come **asset distribuito** e cablarlo nel piano dell'installer (`sertor install wiki` o `rag`) con deposito **create-if-absent** (non clobberare un `.gitattributes` preesistente dell'ospite — Principio VI/X); contenuto generico `* text=auto eol=lf`
-- [ ] T007 [P] Nuovo test negativo `tests/unit/test_asset_install_eol.py`: asserisce `eol=lf` sui path chiave (`CLAUDE.md`, `.claude/**`, `assets/**`) e fallisce su EOL-inconsistenza (C3)
+- [X] T003 Creato `.gitattributes` alla radice del dogfood con `* text=auto eol=lf` + commento d'intenzione
+- [X] T004 Index allineato a LF: `git add .gitattributes && git add --renormalize .` → 94 file rinormalizzati, `i/crlf`=0 (index tutto LF), worktree pulito in `git status` (attributo `eol=lf` neutralizza il CRLF su disco)
+- [X] T005 [P] Bundle `assets/` già LF (verificato); coperti dal renormalize globale — nessuna modifica necessaria (guardie byte confrontano via `read_text` = EOL-insensibili)
+- [X] T006 **[FEAT-010, host-facing]** Aggiunto `assets/rag/gitattributes` (host-agnostico) + artifact `FILE/CREATE_IF_ABSENT` in `build_rag_plan` (target `.gitattributes`, non clobbera un file host preesistente); pin positivo `test_rag_plan_deposits_gitattributes` + whitelist host-root aggiornata
+- [X] T007 [P] `tests/unit/test_asset_install_eol.py`: policy LF presente + `.gitattributes` dogfood byte-identico all'asset installer (process-fidelity, SC-2); 2 test verdi
 
 **Checkpoint fase 2:** repo EOL-consistente, guardie byte ancora verdi, `sertor-core` non toccato.
 

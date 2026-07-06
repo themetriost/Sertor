@@ -440,6 +440,17 @@ def build_rag_plan(
     plan.append(
         Artifact(ArtifactKind.GITIGNORE_APPEND, None, ".gitignore", WriteStrategy.APPEND_LINES)
     )
+    # Host-root line-ending policy: deposit `.gitattributes` (LF) so the install (and any later
+    # tool that rewrites a file on Windows) produces a clean, review-able diff. CREATE_IF_ABSENT:
+    # non-destructive — a host that already owns a `.gitattributes` keeps its own (Principio VI/X).
+    plan.append(
+        Artifact(
+            ArtifactKind.FILE,
+            "rag/gitattributes",
+            ".gitattributes",
+            WriteStrategy.CREATE_IF_ABSENT,
+        )
+    )
     # Group B (042): host-facing RAG usage instruction block (own markers), routed per-assistant.
     plan.append(
         Artifact(
