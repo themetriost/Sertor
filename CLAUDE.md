@@ -576,13 +576,17 @@ delega che resta affidata al `wiki-curator`.
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/088-relock-runtime/plan.md` (**E15-FEAT-008** epica **fedelta-dogfood** — *rituale post-merge:
-re-lock del runtime `.sertor/` a HEAD*). Il runtime `.sertor/` (F1) installa `sertor-core` da `git=<repo>`
-HEAD ma il lock fissa il commit → dopo un merge resta stantio. Piano (Q1 = opzione a): script **dogfood-only**
-`scripts/dev/relock-runtime.ps1` (check-then-act, fail-loud) invocato dal **rituale post-merge**; +
-**gitignore** di `.sertor/uv.lock` (correzione F1: lock tracciato + re-lock = churn/loop) lasciando tracciato
-solo `.sertor/pyproject.toml`; + **guardia** confine dogfood↔distribuito; + doc rituale post-merge con **gate
-«suite+ruff verdi» pre-merge**. Constitution **12/12 + missione PASS**, zero `sertor-core`. Branch
-`092-f8-relock-runtime`.
+`specs/089-asset-install/plan.md` (**E15-FEAT-001 scope B** epica **fedelta-dogfood** — *asset-install:
+gli asset host-facing del dogfood prodotti dai VERI installer, 0 special-case*). Chiude la **metà asset**
+della fedeltà dogfood: la **fonte** degli asset (`.claude/` hook+skill+agenti, machinery `.specify/`,
+blocchi marker `CLAUDE.md`, wiring `settings.json`) diventa l'esecuzione dei veri `sertor install
+rag`/`wiki` + `sertor-flow install` **sul dogfood**, non il `sync` interim né `materialize-speckit.ps1`.
+La feature è **90% una procedura operativa** reversibile (runbook in `quickstart.md`) + poche modifiche
+host-agnostiche: **`.gitattributes` LF** (E15-FEAT-010, dogfood+bundle+template, azzera il churn CRLF) ·
+riconciliazione **ibrida per-blocco** di `CLAUDE.md` (RAG tieni-blocco · WIKI prosa-vince · SDLC ibrido,
+dogfood-only) · scarto del `wiki/log.md` legacy (slice E15-FEAT-006) · sync/script retrocessi a
+guardia-non-fonte. Decisioni lock: DD-1=A (LF ovunque), DD-2=CLAUDE.md bilingue (blocchi EN + prosa IT),
+FEAT-009 chiusa not-a-bug (no dipendenza). `sertor-core` **invariato** (XI), nessun asset distribuito
+Sertor-specifico (X). Constitution **12/12 + missione PASS**. Branch `089-asset-install`.
 
 <!-- SPECKIT END -->
