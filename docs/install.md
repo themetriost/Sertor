@@ -65,10 +65,16 @@ pip install "git+https://github.com/themetriost/Sertor#subdirectory=packages/ser
 ## Prerequisites
 
 - **Python ≥ 3.11** and [`uv`](https://github.com/astral-sh/uv) (recommended; `pip` as an alternative).
-- An **embeddings** provider, of your choice:
-  - **local** — [Ollama](https://ollama.com) running (`ollama serve`) with an embedding model:
-    `ollama pull nomic-embed-text`;
-  - **cloud** — an **Azure OpenAI** deployment of `text-embedding-3-*`.
+- An **embeddings** provider. The default is **zero-config**:
+  - **`glove` (default)** — static GloVe 6B word vectors, **local-first with nothing to run**;
+    downloaded once per machine (~822 MB) and offline afterwards.
+  - **`azure`** (opt-in, best quality) — an **Azure OpenAI** deployment of `text-embedding-3-*`
+    (needs credentials; fill them with `sertor configure` — see *Filling `.sertor/.env`* under §6).
+  - **`ollama`** (opt-in) — a local [Ollama](https://ollama.com) server (`ollama serve` +
+    `ollama pull nomic-embed-text`), selected explicitly with `SERTOR_EMBED_PROVIDER=ollama`.
+  - **`hash`** — a zero-download lexical floor for airgapped/CI.
+  See the **Embedding providers** table below. *(The default used to imply Ollama; it is
+  now `glove` — Ollama and Azure are selected explicitly.)*
 - **`pwsh` (PowerShell Core) — required on macOS/Linux** for the lifecycle hooks distributed by
   `sertor install`. The hooks are PowerShell-only (`.ps1`). On **Windows** they run via the bundled
   PowerShell 5.1, so nothing extra is needed; on **macOS/Linux** install PowerShell Core separately:
@@ -101,7 +107,7 @@ only OS-conditional surface:
 In the target repository:
 
 ```bash
-# base (local: Ollama + Chroma)
+# base (local-first: glove embeddings + Chroma store, zero-config)
 uv add "sertor-core @ git+https://github.com/themetriost/Sertor"
 
 # with cloud extras and/or MCP server
@@ -332,7 +338,7 @@ root.
 # from a machine with `uv`, in the root of the target repo (Azure embeddings):
 uv run sertor install rag --backend azure
 # variants:
-uv run sertor install rag --backend local --no-rerank   # Ollama, without reranker
+uv run sertor install rag --backend local --no-rerank   # local-first (glove), without reranker
 uv run sertor install rag --no-deps                      # config scaffold only (no uv add)
 uv run sertor install rag --mcp-scope local              # no .mcp.json in the repo (registers in the client)
 uv run sertor install rag --assistant copilot-cli        # target the GitHub Copilot CLI: .mcp.json (§9)
@@ -356,7 +362,36 @@ Default: `azure` backend, all extras (`mcp`+`graph`+`rerank`) plus the backend's
 /`--no-rerank` to reduce scope, `--no-deps` for scaffold only. Exit `0`/`1` (domain error,
 fail-fast: `uv` absent or `uv add` failed)/`2` (wrong usage). Re-running is safe (identical state).
 
-After installation (explicit separate step — fill in the secrets in `.sertor/.env` first):
+### Filling `.sertor/.env`: `sertor configure`
+
+`sertor install rag` deposits a `.sertor/.env` with **empty secrets** (install ≠ configure). You can
+edit that file by hand, or use the guided command **`sertor configure`**, which brings it from
+"empty secrets" to "ready" without opening an editor:
+
+```bash
+uv run sertor configure                       # interactive: prompts only for the fields the backend needs
+uv run sertor configure --backend local       # local-first (glove): no secrets needed — nothing to fill
+uv run sertor configure --backend azure        # prompts for AZURE_OPENAI_ENDPOINT / _API_KEY (masked)
+uv run sertor configure --set AZURE_OPENAI_ENDPOINT=https://x.openai.azure.com --non-interactive  # CI-safe
+```
+
+- **`--backend {azure,local}`** (default `azure`) → sets `SERTOR_EMBED_PROVIDER` (`azure`→`azure`,
+  `local`→`glove`). **`glove` needs no secrets**, so with `--backend local` there is nothing to fill.
+- **`--store {local,azure}`** (default = backend) → `SERTOR_STORE_BACKEND` (embeddings and store are
+  independent knobs; e.g. Azure embeddings + local Chroma store).
+- **`--set KEY=VALUE`** (repeatable) — explicit value for a known field; combine with
+  **`--non-interactive`** for CI (never prompts; a missing required field is a named error, not a
+  silent partial write).
+- **`--overwrite`** — allow replacing values already present (default is **additive, non-destructive**:
+  existing values are kept). Secrets are entered via a hidden prompt and **masked** in all output.
+- **`--check`** (opt-in) — live-probe the provider through the `sertor-rag` vehicle *(Should / deferred:
+  degrades honestly today)*. **`--json`** — machine-readable report.
+
+Resolution per field: `flag/--set → existing .env or environment → prompt (if a TTY) → template
+default`. After configuring, verify with `uv run --project .sertor sertor-rag doctor`.
+
+After installation (explicit separate step — fill in the secrets in `.sertor/.env` first, e.g. with
+`sertor configure` above):
 
 ```bash
 uv run --project .sertor sertor-rag index .   # index host sources (keeps cwd; `.sertor/` is index/.env only)
