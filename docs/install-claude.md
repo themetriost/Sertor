@@ -11,8 +11,10 @@ sections — install each on its own, or all three. Every installer is **non-des
 
 - **Python ≥ 3.11** and **[`uv`](https://github.com/astral-sh/uv)** (the supported install path).
 - Network access to GitHub (Sertor ships via `git+url`, not PyPI yet).
-- An **embeddings provider** for the RAG: **Azure OpenAI** (`text-embedding-3-*`) *or* local
-  **[Ollama](https://ollama.com)** (`ollama pull nomic-embed-text`).
+- An **embeddings provider** for the RAG. The default **`glove`** is **zero-config** (static GloVe
+  vectors, downloaded once per machine, offline afterwards) — **nothing to install or run**. Opt into
+  **Azure OpenAI** (`text-embedding-3-*`, best quality, needs credentials) or a local
+  **[Ollama](https://ollama.com)** server explicitly.
 
 Run each command **in the root of the target repository**.
 
@@ -24,11 +26,13 @@ Bring the full retrieval capability (index + search + MCP server) into an isolat
 runtime. Your sources are never touched; works even on non-Python repos.
 
 ```powershell
-# 1. install (Azure embeddings; use --backend local for Ollama)
+# 1. install (Azure embeddings; use --backend local for the zero-config `glove` embedder)
 uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install rag --backend azure
 
-# 2. edit .sertor/.env and fill the empty secrets:
-#    AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY (skip for --backend local)
+# 2. fill the secrets in .sertor/.env — guided (no editor) or by hand:
+uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor configure --backend azure
+#    prompts for AZURE_OPENAI_ENDPOINT / AZURE_OPENAI_API_KEY (masked).
+#    Skip this step entirely with --backend local: `glove` needs no secrets.
 
 # 3. index the repo (explicit step — install never indexes)
 uv run --project .sertor sertor-rag index .
