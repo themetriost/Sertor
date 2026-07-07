@@ -1,6 +1,11 @@
 #!/usr/bin/env pwsh
 # Materialize the SpecKit machinery into the Sertor dogfood — as a faithful Sertor client (E10-FEAT-027).
 #
+# ROLE after E15 asset-install (FEAT-001 scope B): this is a **dev-tool**, NOT the fidelity source.
+# The dogfood now *obtains* its machinery by running the **real** `sertor-flow install` on itself
+# (process-fidelity). `specify init` there is idempotent/skip-if-present, so this isolated-materialize
+# script remains only as a development convenience / bootstrap fallback — not the way the assets arrive.
+#
 # WHY. A project that installs Sertor gets the SpecKit machinery from the install path
 # (`sertor-flow install --assistant claude` -> `specify init`, feature 045). The dogfood must obtain it
 # THE SAME WAY, so the workspace exercises the real client path instead of diverging (audit A-05). The

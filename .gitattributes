@@ -1,0 +1,6 @@
+# Normalize all text files to LF in the repository.
+# Without this, editors and tools on Windows may write CRLF while sources use LF, flooding diffs
+# with spurious line-ending changes and making review harder. `text=auto` lets git detect binary
+# files and leave them untouched; text files are stored and checked out with LF, consistent across
+# Windows, macOS and Linux hosts.
+* text=auto eol=lf

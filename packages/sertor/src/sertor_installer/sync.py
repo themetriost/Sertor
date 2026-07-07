@@ -5,6 +5,13 @@ Canonical source = assets in the package; the dogfood trees are the **derived co
 CREATE_IF_ABSENT) → its dogfood destination, so dogfooding runs on the installable version.
 Canonical direction: **assets → repo** (never the reverse).
 
+**Role after E15 asset-install (FEAT-001 scope B) — dev-tool / anti-drift guard, NOT the fidelity
+source.** The way the dogfood *obtains* its host-facing assets is now the **real installer** run on
+the dogfood (`sertor install rag`/`wiki`, `sertor-flow install`) — process-fidelity. This `sync` is
+kept only as a development convenience and as the propagation side of the byte-guard tests
+(`test_assets_sync`, `test_assets_rag_dogfood_sync`), which keep dogfood↔bundle in parity. Do
+**not** treat it as the source of truth for how the assets get there.
+
 Covered subtrees (E15-FEAT-002): `assets/claude/**` → `.claude/**`, plus the byte-copied RAG assets
 `assets/rag/{hooks,skills,agents}/**` → `.claude/{hooks,skills,agents}/**`. The **non-byte** RAG
 assets (`rag/env*`, `rag/mcp*`, `rag/settings*`, `claude-md-block*`, `rag/sertor-cli-reference.md`)

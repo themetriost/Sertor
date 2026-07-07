@@ -462,6 +462,17 @@ def build_rag_plan(
             WriteStrategy.CREATE_IF_ABSENT,
         )
     )
+    # Host-root line-ending policy: deposit `.gitattributes` (LF) so the install (and any later tool
+    # that rewrites a file on Windows) produces a clean, review-able diff. CREATE_IF_ABSENT:
+    # non-destructive — a host that already owns a `.gitattributes` keeps its own (Principio VI/X).
+    plan.append(
+        Artifact(
+            ArtifactKind.FILE,
+            "rag/gitattributes",
+            ".gitattributes",
+            WriteStrategy.CREATE_IF_ABSENT,
+        )
+    )
     plan.append(
         Artifact(
             ArtifactKind.SETTINGS_MERGE,
@@ -862,6 +873,7 @@ def sertor_owned_paths(assistant: AssistantId = AssistantProfile.DEFAULT) -> Ser
         owned_files=(
             hook_target, memory_hook_target, concierge_target,
             *freshness_files, *version_check_files,
+            ".gitattributes",  # host-root LF policy (FEAT-010), CREATE_IF_ABSENT → owned FILE
         ),
         shared_edits=(
             SharedEdit(instruction_target, SharedEditKind.MARKER, "SERTOR:RAG-USAGE"),

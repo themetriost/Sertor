@@ -11,6 +11,7 @@ import pytest
 from sertor_core.domain.errors import ConfigError
 from sertor_install_kit.artifacts import LifecycleOp
 from sertor_install_kit.assistant import AssistantId
+from sertor_installer.artifacts import ArtifactKind, WriteStrategy
 from sertor_installer.install_rag import (
     build_rag_plan,
     execute_rag_lifecycle,
@@ -158,6 +159,28 @@ def test_no_deps_skips_uv(tmp_path: Path, make_runner):
     assert (tmp_path / ".mcp.json").is_file()
 
 
+# --- E15-FEAT-010: host-root line-ending policy (.gitattributes) ----------------------------
+
+def test_rag_plan_deposits_gitattributes(tmp_path: Path):
+    """FEAT-010: the RAG plan deposits a host-root `.gitattributes` (LF), non-destructively.
+
+    Anti-regression: a clean, review-able install diff on any host (Windows in particular) depends
+    on this artifact being present with CREATE_IF_ABSENT (never clobbering a host's own file).
+    """
+    profile = RagHostProfile.from_options(RagInstallOptions(target_root=tmp_path, backend="azure"))
+    gitattrs = [
+        a for a in build_rag_plan(profile, with_deps=True) if a.target_rel == ".gitattributes"
+    ]
+    assert len(gitattrs) == 1, "exactly one .gitattributes artifact expected"
+    art = gitattrs[0]
+    assert art.kind is ArtifactKind.FILE
+    assert art.strategy is WriteStrategy.CREATE_IF_ABSENT
+    # The deposited content is the generic LF policy (host-agnostic, no Sertor-internal references).
+    from sertor_installer.resources import read_asset_text
+
+    assert "* text=auto eol=lf" in read_asset_text(art.source)
+
+
 # --- feature 016 (FR-001/REQ-301): runtime confined to .sertor/ -----------------------------
 
 def test_rag_plan_no_runtime_file_in_root(tmp_path: Path):
@@ -169,7 +192,7 @@ def test_rag_plan_no_runtime_file_in_root(tmp_path: Path):
     profile = RagHostProfile.from_options(RagInstallOptions(target_root=tmp_path, backend="azure"))
     # Runtime stays under `.sertor/`; host-facing governance artifacts (feature 042: CLAUDE.md
     # block + `.claude/` hook + settings) are allowed in root, like `install wiki`.
-    allowed_root = {".mcp.json", ".gitignore", "CLAUDE.md"}
+    allowed_root = {".mcp.json", ".gitignore", ".gitattributes", "CLAUDE.md"}
     allowed_top = {".sertor", ".claude"}
     for art in build_rag_plan(profile, with_deps=True):
         rel = art.target_rel.replace("\\", "/")

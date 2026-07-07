@@ -5,6 +5,11 @@ Canonical source = the Sertor-authored assets vendored in this package; the dev 
 **assets → repo** (never the reverse). A guard test (`test_assets_sync.py`) prevents the two copies
 from diverging (drift = CI error).
 
+**Role after E15 asset-install — dev-tool / anti-drift guard, NOT the fidelity source.** The dogfood
+now *obtains* its governance assets by running the **real** `sertor-flow install` on itself
+(process-fidelity, E15-FEAT-001 scope B). This `sync` remains only as a development convenience and
+the propagation side of the byte guard; it is not how the assets are meant to get there.
+
 Scope after the launch-installer pivot (feature 045): the bundle NO LONGER vendors SpecKit
 (`assets/claude/skills/speckit-*`, `assets/claude/agents/speckit-*`, `assets/specify/**`) — those
 come from `specify init`. So the only Sertor-authored `claude/**` surfaces left to sync are:

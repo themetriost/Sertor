@@ -77,3 +77,12 @@ prototype/raw/*
 .specify/templates/constitution-template.md
 .specify/templates/spec-template.md
 .specify/templates/tasks-template.md
+# Sertor RAG runtime (sertor install rag)
+.sertor/.venv/
+.sertor/.index*
+.sertor/.env
+.sertor/.rag-health.json
+.sertor/.version-check.json
+.sertor/.sertor-version
+.sertor/.sertor-flow-version
+.sertor/.last-hook-error
