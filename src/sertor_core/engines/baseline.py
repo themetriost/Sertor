@@ -16,6 +16,7 @@ from sertor_core.domain.entities import IndexReport, RetrievalResult
 from sertor_core.domain.errors import IndexNotFoundError
 from sertor_core.domain.ports import EmbeddingProvider, VectorStore
 from sertor_core.observability.logging import log_event
+from sertor_core.services.dedup import dedup_results
 from sertor_core.services.indexing import IndexingService
 from sertor_core.services.retrieval import apply_min_score
 
@@ -76,10 +77,16 @@ class BaselineEngine:
         self.ensure_index()
         started = time.perf_counter()
         vector = self._embedder.embed([query])[0]
-        raw = self._store.query(self._collection, vector, k, "both")
+        # Fetch a pool > k when dedup is on so collapsing duplicates can backfill (A-07).
+        fetch = max(k, self._settings.rerank_pool) if self._settings.dedup_enabled else k
+        raw = self._store.query(self._collection, vector, fetch, "both")
         # Confidence threshold (018, REQ-H1/H2): filter weak hits on the EXISTING index. A result
         # filter, not an absent index — the strict `IndexNotFoundError` policy stays unchanged.
-        results, low = apply_min_score(raw, self._settings.retrieval_min_score)
+        filtered, low = apply_min_score(raw, self._settings.retrieval_min_score)
+        deduped = 0
+        if self._settings.dedup_enabled:
+            filtered, deduped = dedup_results(filtered)
+        results = filtered[:k]
         log_event(
             logging.INFO,
             "baseline_query",
@@ -87,6 +94,7 @@ class BaselineEngine:
             provider=self._embedder.name,
             k=k,
             results=len(results),
+            deduped=deduped,  # near-duplicate results removed before the cut (A-07)
             elapsed_ms=round((time.perf_counter() - started) * 1000, 2),
         )
         if low:
