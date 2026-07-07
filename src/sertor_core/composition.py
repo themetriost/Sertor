@@ -382,6 +382,9 @@ def build_facade(settings: Settings | None = None):
         min_score=settings.retrieval_min_score,
         # RAG-demonstrability content (064): only when BOTH the store and the content opt-in are on.
         content_enabled=settings.observability_content_enabled and settings.observability_enabled,
+        # Query-time dedup (E5-FEAT-003 / A-07): reuse rerank_pool as the pre-cut pool size (D1).
+        dedup_enabled=settings.dedup_enabled,
+        dedup_pool=settings.rerank_pool,
     )
 
 

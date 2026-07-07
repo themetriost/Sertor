@@ -67,6 +67,55 @@ def test_exact_symbol_query_surfaces_lexical_match_on_top():
     assert all(isinstance(h, RetrievalResult) for h in hits)   # FR-009: entity unchanged
 
 
+# --- E5-FEAT-003 / A-07: query-time dedup of near-duplicate results ------------------------------
+
+def _dup_store(emb: FakeEmbedder) -> tuple[InMemoryStore, InMemoryLexicalIndex]:
+    """Store where the SAME content lives in two paths (a byte-copy) plus a distinct doc."""
+    from sertor_core.domain.entities import LexicalEntry
+
+    dup = "duplicated governance block about the step ritual"
+    texts = {
+        "CLAUDE.md#0": (dup, "CLAUDE.md"),
+        "assets/block.md#0": (dup, "assets/block.md"),   # byte-copy of the block
+        "concepts/x.md#0": ("a distinct canonical concept page", "concepts/x.md"),
+    }
+    store = InMemoryStore()
+    store.upsert(COLL, [
+        EmbeddedChunk(cid, emb.embed([t])[0], _payload(t, p, "doc"))
+        for cid, (t, p) in texts.items()
+    ])
+    lexical = InMemoryLexicalIndex()
+    lexical.build(COLL, [LexicalEntry(cid, t, "doc", p) for cid, (t, p) in texts.items()])
+    return store, lexical
+
+
+def _copies(paths: list[str]) -> int:
+    return paths.count("CLAUDE.md") + paths.count("assets/block.md")
+
+
+def test_dedup_collapses_duplicates_and_backfills_distinct(monkeypatch):
+    # US1: with dedup on (default), the two byte-copies collapse to one and the distinct doc
+    # backfills the freed top-k slot (pool > k even with the reranker off).
+    monkeypatch.delenv("SERTOR_DEDUP", raising=False)
+    emb = FakeEmbedder(dim=8)
+    store, lexical = _dup_store(emb)
+    hits = _engine(store=store, lexical=lexical, emb=emb).query("duplicated governance block", k=2)
+    paths = [h.path for h in hits]
+    assert _copies(paths) == 1                    # only ONE copy survives
+    assert "concepts/x.md" in paths               # the distinct doc surfaces
+
+
+def test_dedup_bypass_keeps_duplicates():
+    # US2 / SC-003: with SERTOR_DEDUP=false the behaviour is pre-feature (both copies may appear).
+    import dataclasses
+
+    emb = FakeEmbedder(dim=8)
+    store, lexical = _dup_store(emb)
+    settings = dataclasses.replace(Settings.load(env_file=None), dedup_enabled=False)
+    eng = HybridEngine(emb, store, lexical, COLL, settings)
+    assert _copies([h.path for h in eng.query("duplicated governance block", k=2)]) == 2
+
+
 def test_results_are_deterministic():
     eng = _engine()
     first = [h.chunk_id for h in eng.query("provider di embeddings", k=3)]

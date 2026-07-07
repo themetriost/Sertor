@@ -197,6 +197,10 @@ class Settings:
     rrf_pool: int = 30                     # candidates per source before fusion (REQ-011)
     rerank_enabled: bool = False           # second cross-encoder stage (default off, R-3)
     rerank_pool: int = 15                  # fused pool passed to the reranker (~3×k, REQ-024)
+    # query-time dedup of near-duplicate results before the top-k cut (E5-FEAT-003 / A-07).
+    # Default on: it is a no-op on already-distinct results and un-buries canonical pages when the
+    # same content lives in multiple paths. Reuses `rerank_pool` as the pre-cut pool size (D1).
+    dedup_enabled: bool = True
 
     # structural code graph (FEAT-005): build integrated in index() + navigation
     graph_enabled: bool = True             # build graph inside index() (DA-2)
@@ -363,6 +367,7 @@ class Settings:
             rrf_pool=int(os.getenv("SERTOR_RRF_POOL", "30")),
             rerank_enabled=_bool_env("SERTOR_RERANK", False),
             rerank_pool=int(os.getenv("SERTOR_RERANK_POOL", "15")),
+            dedup_enabled=_bool_env("SERTOR_DEDUP", True),
             graph_enabled=_bool_env("SERTOR_GRAPH", True),
             graph_ambiguity_threshold=int(os.getenv("SERTOR_GRAPH_AMBIGUITY", "2")),
             graph_limit_definitions=int(os.getenv("SERTOR_GRAPH_LIMIT_DEFS", "10")),

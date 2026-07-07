@@ -198,7 +198,7 @@ intent = "both"
 
 [[case]]
 query = "incremental index refresh requirements and implementation"
-expected = ["requirements/sertor-core/refresh-incrementale/requirements.md", "src/sertor_core/services/indexing.py"]
+expected = ["requirements/sertor-core/refresh-incrementale/requirements.md", "src/sertor_core/services/indexing.py", "specs/046-refresh-incrementale/spec.md"]
 kind = "nl"
 intent = "both"
 

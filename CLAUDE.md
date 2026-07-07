@@ -594,18 +594,18 @@ dogfood sopra. *(Non riconciliare cancellando la prosa: i blocchi sono rigenerat
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/089-asset-install/plan.md` (**E15-FEAT-001 scope B** epica **fedelta-dogfood** — *asset-install:
-gli asset host-facing del dogfood prodotti dai VERI installer, 0 special-case*). Chiude la **metà asset**
-della fedeltà dogfood: la **fonte** degli asset (`.claude/` hook+skill+agenti, machinery `.specify/`,
-blocchi marker `CLAUDE.md`, wiring `settings.json`) diventa l'esecuzione dei veri `sertor install
-rag`/`wiki` + `sertor-flow install` **sul dogfood**, non il `sync` interim né `materialize-speckit.ps1`.
-La feature è **90% una procedura operativa** reversibile (runbook in `quickstart.md`) + poche modifiche
-host-agnostiche: **`.gitattributes` LF** (E15-FEAT-010, dogfood+bundle+template, azzera il churn CRLF) ·
-riconciliazione **ibrida per-blocco** di `CLAUDE.md` (RAG tieni-blocco · WIKI prosa-vince · SDLC ibrido,
-dogfood-only) · scarto del `wiki/log.md` legacy (slice E15-FEAT-006) · sync/script retrocessi a
-guardia-non-fonte. Decisioni lock: DD-1=A (LF ovunque), DD-2=CLAUDE.md bilingue (blocchi EN + prosa IT),
-FEAT-009 chiusa not-a-bug (no dipendenza). `sertor-core` **invariato** (XI), nessun asset distribuito
-Sertor-specifico (X). Constitution **12/12 + missione PASS**. Branch `089-asset-install`.
+`specs/090-retrieval-result-dedup/plan.md` (**E5-FEAT-003** epica **retrieval-qualita** / leva **A-07** —
+*dedup dei risultati near-duplicate nel retrieval*). Chiude A-07: `search_docs` degrada con la crescita del
+corpus perché lo **stesso contenuto** vive in più path (i blocchi `CLAUDE.md` byte-identici alle copie del
+bundle `assets/**`) e satura il top-k, seppellendo le pagine canoniche `wiki/concepts/*.md`. Fix: una
+funzione **pura** `dedup_results()` a **query-time**, applicata **prima del cut** in tutti i siti di
+retrieval (ibrido main+fallback, facade fallback+fused, baseline), che tiene l'istanza col rank più alto di
+ogni gruppo a **contenuto normalizzato identico**. **Punto critico:** serve un **pool > k** prima del cut
+(riuso `rerank_pool`) o la dedup ridurrebbe sotto k senza backfill. MVP **esatto** (content-hash sha1,
+zero LLM); *fuzzy* rinviato al backlog E5. Manopola `SERTOR_DEDUP` (default on, VIII); indicizzazione
+invariata (FR-007); host-agnostico (X). **Accettazione = lift MISURATO** sull'eval a GT fissa (gate
+`--fused` da rosso a verde), no re-baseline finché il lift non è reale (XII). Constitution **12/12 +
+missione PASS** (forte: rafforza la metà debole della fusione code+doc). Branch `090-retrieval-result-dedup`.
 
 <!-- SPECKIT END -->
 

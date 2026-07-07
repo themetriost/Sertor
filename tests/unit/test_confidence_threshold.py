@@ -20,7 +20,11 @@ from tests.fixtures.mocks import FakeEmbedder, InMemoryLexicalIndex
 
 
 def _r(score: float, cid: str = "c#0", doc_type: DocType = DocType.CODE) -> RetrievalResult:
-    return RetrievalResult(text="t", path="p.py", chunk_id=cid, doc_type=doc_type, score=score)
+    # Distinct text per chunk so the query-time dedup (A-07) is a no-op here: these tests exercise
+    # the confidence threshold, not dedup (identical placeholder text would legitimately collapse).
+    return RetrievalResult(
+        text=f"t-{cid}", path="p.py", chunk_id=cid, doc_type=doc_type, score=score
+    )
 
 
 class _ScoreStore:

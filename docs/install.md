@@ -181,7 +181,14 @@ SERTOR_RRF_C=60            # RRF fusion constant
 SERTOR_RRF_POOL=30         # candidates per source before fusion
 SERTOR_RERANK=false        # second-stage cross-encoder (requires the `rerank` extra)
 SERTOR_RERANK_POOL=15      # fused pool passed to the reranker (~3×k)
+SERTOR_DEDUP=true          # drop near-duplicate results before the top-k cut (default on)
 ```
+
+> **Result dedup (`SERTOR_DEDUP`, default on).** When the same content lives in several files (a
+> shared `CLAUDE.md`/wiki block, a vendored copy), those near-duplicates can crowd the top-k and bury
+> the canonical page. The dedup keeps the highest-ranked instance of each near-duplicate group before
+> the cut, so distinct content fills the results. It is a **no-op** on already-distinct results and
+> adds no dependency (a content-overlap test, no LLM); set `SERTOR_DEDUP=false` to disable.
 
 > **Migration:** a corpus indexed **before** the hybrid engine continues to work (degrades to
 > vector-only with a log warning); a **re-index** (`sertor-rag index .`) also builds the lexical

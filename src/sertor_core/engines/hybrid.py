@@ -26,6 +26,7 @@ from sertor_core.domain.ports import (
     VectorStore,
 )
 from sertor_core.observability.logging import log_event
+from sertor_core.services.dedup import dedup_results
 from sertor_core.services.indexing import IndexingService
 from sertor_core.services.retrieval import apply_min_score, content_fields
 
@@ -107,11 +108,18 @@ class HybridEngine:
                 collection=self._collection,
                 hint="re-index the corpus to enable hybrid retrieval",
             )
-            raw = self._store.query(self._collection, vector, k, doc_type)
+            # Fetch a pool > k when dedup is on so collapsing duplicates can backfill (A-07).
+            fetch = max(k, self._settings.rerank_pool) if self._settings.dedup_enabled else k
+            raw = self._store.query(self._collection, vector, fetch, doc_type)
             # Confidence threshold (018, REQ-H1/H2): here the score is cosine similarity → filter.
-            results, low = apply_min_score(raw, min_score)
+            filtered, low = apply_min_score(raw, min_score)
+            deduped = 0
+            if self._settings.dedup_enabled:
+                filtered, deduped = dedup_results(filtered)
+            results = filtered[:k]
             self._log_query(results, lexical_hits=0, dense_hits=len(raw),
-                            rerank_applied=False, started=started, query=query, abstained=low)
+                            rerank_applied=False, started=started, query=query,
+                            abstained=low, deduped=deduped)
             if low:
                 self._log_low_confidence(raw)
             return results
@@ -128,10 +136,18 @@ class HybridEngine:
             self._log_low_confidence(dense_raw)
             return []
         lexical_ids = self._lexical.query(self._collection, query, pool, doc_type)
-        # The fused pool covers k or, if the reranker is active, the second-stage pool size.
-        fused_k = max(k, self._settings.rerank_pool) if self._use_reranker() else k
+        # The fused pool must be large enough for the reranker AND for dedup to backfill after
+        # removing duplicates (E5-FEAT-003 / A-07): even with the reranker off, dedup needs a pool
+        # bigger than k, otherwise collapsing duplicates would shrink the result below k with no
+        # distinct content to take their place.
+        needs_pool = self._use_reranker() or self._settings.dedup_enabled
+        fused_k = max(k, self._settings.rerank_pool) if needs_pool else k
         fused = rrf([[r.chunk_id for r in dense], lexical_ids], k=fused_k, c=self._settings.rrf_c)
         candidates = self._materialize(fused, dense)
+
+        deduped = 0
+        if self._settings.dedup_enabled:
+            candidates, deduped = dedup_results(candidates)
 
         if self._use_reranker():
             results = self._rerank(query, candidates[: self._settings.rerank_pool], k)
@@ -140,7 +156,7 @@ class HybridEngine:
 
         self._log_query(results, lexical_hits=len(lexical_ids), dense_hits=len(dense),
                         rerank_applied=self._use_reranker(), started=started,
-                        query=query, abstained=False)
+                        query=query, abstained=False, deduped=deduped)
         return results
 
     def _use_reranker(self) -> bool:
@@ -214,6 +230,7 @@ class HybridEngine:
         started: float,
         query: str,
         abstained: bool,
+        deduped: int = 0,
     ) -> None:
         content_on = (
             self._settings.observability_content_enabled and self._settings.observability_enabled
@@ -228,6 +245,7 @@ class HybridEngine:
             dense_hits=dense_hits,
             fused_k=len(results),
             rerank_applied=rerank_applied,
+            deduped=deduped,  # near-duplicate results removed before the cut (A-07)
             abstained=abstained,  # 0 results + abstained → "abstained" verdict (vs plain miss)
             elapsed_ms=round((time.perf_counter() - started) * 1000, 2),
             **content_fields(query, results, self._default_k, enabled=content_on),

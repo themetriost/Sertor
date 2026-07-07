@@ -27,6 +27,7 @@ from sertor_core.domain.ports import (
 )
 from sertor_core.observability.logging import log_event
 from sertor_core.observability.scrub import scrub_text
+from sertor_core.services.dedup import dedup_results
 
 
 def apply_min_score(
@@ -102,6 +103,8 @@ class RetrievalFacade:
         retriever: RetrieverStrategy | None = None,
         min_score: float | None = None,
         content_enabled: bool = False,
+        dedup_enabled: bool = False,
+        dedup_pool: int = 15,
     ):
         self._embedder = embedder
         self._store = store
@@ -119,6 +122,10 @@ class RetrievalFacade:
         # Optional confidence threshold (018, REQ-H1/H2): applied only on the facade's own dense
         # path; on the retriever path the hybrid engine applies it (no double filtering).
         self._min_score = min_score
+        # Query-time dedup (E5-FEAT-003 / A-07): applied on the facade's OWN paths (dense fallback +
+        # multi-collection fused). On the retriever path the engine dedups (no double dedup).
+        self._dedup_enabled = dedup_enabled
+        self._dedup_pool = dedup_pool
 
     @property
     def provider(self) -> str:
@@ -146,8 +153,14 @@ class RetrievalFacade:
             return self._retriever.retrieve(query, k, doc_type)
         started = time.perf_counter()
         vector = self._embedder.embed([query])[0]
-        raw = self._store.query(self._collection, vector, k, doc_type)
-        results, low = apply_min_score(raw, self._min_score)
+        # Fetch a pool > k when dedup is on so collapsing duplicates can backfill (A-07).
+        fetch = max(k, self._dedup_pool) if self._dedup_enabled else k
+        raw = self._store.query(self._collection, vector, fetch, doc_type)
+        filtered, low = apply_min_score(raw, self._min_score)
+        deduped = 0
+        if self._dedup_enabled:
+            filtered, deduped = dedup_results(filtered)
+        results = filtered[:k]
         log_event(
             logging.INFO,
             "retrieve",
@@ -156,6 +169,7 @@ class RetrievalFacade:
             doc_type=doc_type,
             k=k,
             results=len(results),
+            deduped=deduped,  # near-duplicate results removed before the cut (A-07)
             abstained=low,  # results==0 + abstained → "abstained" verdict (vs plain miss)
             elapsed_ms=round((time.perf_counter() - started) * 1000, 2),
             **content_fields(query, results, k, enabled=self._content_enabled),
@@ -264,7 +278,13 @@ class RetrievalFacade:
         for collection in targets:
             candidates.extend(self._store.query(collection, vector, k, doc_type))
         # Total deterministic ordering: descending score, ties broken by chunk_id (FR-003).
-        fused = sorted(candidates, key=lambda r: (-r.score, r.chunk_id))[:k]
+        ordered = sorted(candidates, key=lambda r: (-r.score, r.chunk_id))
+        # Dedup on the full ordered pool BEFORE the cut so the top-k backfills with distinct
+        # content (A-07); the per-collection fan-out already provides a pool > k.
+        deduped = 0
+        if self._dedup_enabled:
+            ordered, deduped = dedup_results(ordered)
+        fused = ordered[:k]
         fused, low = apply_min_score(fused, self._min_score)
         log_event(
             logging.INFO,
@@ -274,6 +294,7 @@ class RetrievalFacade:
             doc_type=doc_type,
             k=k,
             results=len(fused),
+            deduped=deduped,  # near-duplicate results removed before the cut (A-07)
             elapsed_ms=round((time.perf_counter() - started) * 1000, 2),
         )
         if low:
