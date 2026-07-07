@@ -204,7 +204,7 @@ intent = "both"
 
 [[case]]
 query = "fusion coverage how it is specified and implemented"
-expected = ["requirements/retrieval-qualita/qualita-search-code-nl/requirements.md", "src/sertor_core/services/eval/fusion.py"]
+expected = ["requirements/retrieval-qualita/qualita-search-code-nl/requirements.md", "src/sertor_core/services/eval/fusion.py", "specs/069-qualita-fusione-code-doc/research.md"]
 kind = "nl"
 intent = "both"
 
