@@ -219,12 +219,18 @@ error with the installation instruction. Edge coverage per language is **declare
 hierarchy for all 10 syntactic languages, calls for all, imports/inheritance for Python.
 
 **Embedding cache (hardening, REQ-H4):** with a paid provider (Azure) every `sertor-rag index .`
-re-embeds the whole corpus. Enable the content-hash cache so re-indexing an **unchanged** corpus
-does not re-embed identical chunks — only changed/new chunks are sent to the provider:
+would re-embed identical content. The content-hash cache reuses embeddings for **unchanged** chunks —
+only changed/new chunks are sent to the provider. It is **on by default** (A-08 security review):
 
 ```bash
-SERTOR_EMBED_CACHE=true     # default: false (full re-embed on every rebuild)
+SERTOR_EMBED_CACHE=false    # default: true — disable to force a full re-embed on every rebuild
 ```
+
+> **Recurring cost note (SessionEnd re-index).** The **RAG-freshness** hook re-indexes at the end of
+> **every** agent session (see §10.1). On a **paid** provider this means recurring, automatic
+> embedding calls — the embedding cache above (default on) plus the incremental indexer (only changed
+> files are embedded) keep that near-zero when nothing changed, but the egress is real: budget for it,
+> or switch the runtime to the local `glove` provider (free) if you don't want any cloud calls.
 
 The cache lives at `<index_dir>/embed_cache.sqlite` (git-ignored), keyed by `(model, content-hash)`
 so a provider/model change never serves stale vectors. It is safe to delete at any time (causes at

@@ -60,7 +60,11 @@ class RagInstallOptions:
             raise ConfigError(f"invalid mcp-scope: {self.mcp_scope}", key="mcp_scope")
 
     def resolved_corpus(self) -> str:
-        return self.corpus or sanitize_corpus(self.target_root.name)
+        # Sanitize BOTH the explicit `--corpus` and the folder-name default (A-08 security review):
+        # the corpus flows verbatim into `.sertor/.env` (`SERTOR_CORPUS=`) and the `.mcp.json`
+        # template via `.format()`; an unsanitized newline/quote could inject extra env lines
+        # (clobbering a secret) or break the MCP JSON. A corpus is a slug → normalising is safe.
+        return sanitize_corpus(self.corpus or self.target_root.name)
 
     def extras(self) -> list[str]:
         return compose_extras(self.backend, self.include_graph, self.include_rerank)
