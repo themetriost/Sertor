@@ -165,12 +165,15 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 **Candidati a valore = Should aperti:**
 
-- **FEAT-003 → miglioramento per-superficie di `search_docs` (Should, `retrieval-qualita`)** — misura e
-  contratto sono fatti (T1+T2 su `master`); la diagnosi ha isolato il vero collo di bottiglia: **`search_docs`
-  MRR 0.55** (gli item attesi rankano a 6-8 sulle query NL/concettuali). *Primo passo:* valutare una leva
-  per-superficie (contextual retrieval / chunking dei doc / gestione query) **solo se** mostra lift
-  misurato sul set NL. *(La fusione NON era il problema: lo «0.17» era artefatto della metrica AND, corretta
-  a OR. Debito: estensione skill `eval-suite-author`, P2. HyDE: niente LLM nel run, RNF-3.)*
+- **FEAT-003 → dedup dei risultati near-duplicate ✅ (2026-07-07, merge `67b4177`)** — la leva `search_docs`
+  è stata affrontata: la causa misurata era la **duplicazione di contenuto** (blocchi `CLAUDE.md` ↔ copie
+  bundle `assets/**`) che saturava il top-k. Dedup fuzzy (shingle+containment) a query-time → `search_docs`
+  @5 0.75→0.88, union solida, `search_code` intatto; baseline eval ri-registrato al corpus 1302 (dedup on).
+  **Leva profonda residua tracciata (nuova):** **competizione tra doc *correlati* (non duplicati)** al
+  confine k=3 — il `search_docs` hit@3 oscilla con la crescita del corpus perché contenuto *diverso* ma
+  affine (spec/log della stessa feature) compete con la pagina-concetto attesa. Il dedup non lo tocca (non
+  sono duplicati); serve una leva distinta (contextual retrieval / re-ranking di diversità / gestione query),
+  **solo se** mostra lift misurato. *(HyDE escluso: niente LLM nel run, RNF-3.)*
 
 *(Le capacità già consegnate stanno in ✅ Capacità consegnate sopra e in ✅ DONE in fondo.)*
 
