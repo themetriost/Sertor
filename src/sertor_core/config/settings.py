@@ -117,8 +117,10 @@ class Settings:
     embed_retry_attempts: int = 3          # total attempts per batch; 1 = no retry
     embed_retry_base_s: float = 0.5        # base of the exponential backoff (seconds)
     # embedding cache (019, REQ-H4): content-hash cache so re-indexing an unchanged corpus does
-    # not re-embed identical chunks. Default off = today's behaviour (full re-embed on rebuild).
-    embed_cache_enabled: bool = False
+    # not re-embed identical chunks. Default ON (A-08 security review): the SessionEnd rag-freshness
+    # hook re-indexes unconditionally on every session, so on a paid provider (azure) the cache
+    # avoids re-embedding identical content — bounding the recurring, automatic embedding cost.
+    embed_cache_enabled: bool = True
     # observability persistence (020): keep the structured events that the core already emits in a
     # local queryable store (enables historical reports). Default off = today's behaviour (ephemeral
     # stderr logging only). The store lives at `<index_dir>/observability.sqlite` (git-ignored).
@@ -328,7 +330,7 @@ class Settings:
             embed_batch_size=int(os.getenv("EMBED_BATCH_SIZE", "64")),
             embed_retry_attempts=int(os.getenv("SERTOR_EMBED_RETRY_ATTEMPTS", "3")),
             embed_retry_base_s=float(os.getenv("SERTOR_EMBED_RETRY_BASE", "0.5")),
-            embed_cache_enabled=_bool_env("SERTOR_EMBED_CACHE", False),
+            embed_cache_enabled=_bool_env("SERTOR_EMBED_CACHE", True),
             observability_enabled=_bool_env("SERTOR_OBSERVABILITY", False),
             observability_bucket=os.getenv("SERTOR_OBSERVABILITY_BUCKET", "day"),
             observability_refresh_s=float(os.getenv("SERTOR_OBSERVABILITY_REFRESH", "2.0")),

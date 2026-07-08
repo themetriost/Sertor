@@ -158,7 +158,10 @@ try {
 
     # --- fetch the remote /VERSION if cache stale/absent/forced (FR-002/008) ---
     if (-not $cacheFresh) {
-        $url = if ($env:SERTOR_VERSION_CHECK_URL) { $env:SERTOR_VERSION_CHECK_URL } else { $DefaultUrl }
+        # A-08 security review: honour the env override ONLY over TLS. A non-`https://` override
+        # (e.g. plain http, or file:) would allow a MITM/local endpoint to spoof the update notice;
+        # fall back to the trusted default rather than fetch over an untrusted scheme.
+        $url = if ($env:SERTOR_VERSION_CHECK_URL -like 'https://*') { $env:SERTOR_VERSION_CHECK_URL } else { $DefaultUrl }
         try {
             $resp = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 5
             $body = $resp.Content

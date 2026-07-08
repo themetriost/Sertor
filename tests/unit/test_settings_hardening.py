@@ -32,12 +32,13 @@ def test_min_score_blank_env_is_none(monkeypatch):
 
 
 def test_embed_cache_knob_from_env(monkeypatch):
-    # 019, REQ-H4: the cache is an explicit opt-in.
-    monkeypatch.setenv("SERTOR_EMBED_CACHE", "true")
-    assert Settings.load(env_file=None).embed_cache_enabled is True
-
-
-def test_embed_cache_default_off(monkeypatch):
-    # FR-007: default disabled = today's full re-embed behaviour.
-    monkeypatch.delenv("SERTOR_EMBED_CACHE", raising=False)
+    # 019, REQ-H4: the cache is configurable; explicit false disables it.
+    monkeypatch.setenv("SERTOR_EMBED_CACHE", "false")
     assert Settings.load(env_file=None).embed_cache_enabled is False
+
+
+def test_embed_cache_default_on(monkeypatch):
+    # A-08 security review: default ON — the unconditional SessionEnd re-index would otherwise
+    # re-embed identical content on a paid provider every session.
+    monkeypatch.delenv("SERTOR_EMBED_CACHE", raising=False)
+    assert Settings.load(env_file=None).embed_cache_enabled is True

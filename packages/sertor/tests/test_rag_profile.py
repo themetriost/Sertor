@@ -45,6 +45,20 @@ def test_explicit_corpus_wins(tmp_path: Path):
     assert opts.resolved_corpus() == "custom"
 
 
+def test_explicit_corpus_is_sanitized(tmp_path: Path):
+    # A-08 security review: an explicit --corpus is sanitized too (not just the folder default),
+    # so a newline/quote cannot inject extra lines into `.sertor/.env` or break the `.mcp.json`.
+    opts = RagInstallOptions(
+        target_root=tmp_path / "X", corpus="x\nAZURE_OPENAI_API_KEY=leak"
+    )
+    resolved = opts.resolved_corpus()
+    assert "\n" not in resolved and '"' not in resolved
+    assert resolved == "x-azure_openai_api_key-leak"
+
+    quoted = RagInstallOptions(target_root=tmp_path / "X", corpus='a"b').resolved_corpus()
+    assert '"' not in quoted
+
+
 def test_invalid_backend_raises():
     with pytest.raises(ConfigError):
         RagInstallOptions(target_root=Path("."), backend="foo")
