@@ -10,25 +10,25 @@ mrr = 0.7772893772893773
 10 = 1.0
 
 [fused_baseline]
-recorded_at = "2026-06-21T20:16:14Z"
+recorded_at = "2026-07-08T12:48:02Z"
 provider = "azure:text-embedding-3-large"
 queries = 22
 union_hit_rate = 1.0
 
 [[fused_baseline.surface]]
 surface = "search_code"
-mrr = 0.7395833333333334
+mrr = 0.75
 [fused_baseline.surface.hit_rate]
 1 = 0.625
-3 = 0.875
+3 = 1.0
 5 = 1.0
 10 = 1.0
 
 [[fused_baseline.surface]]
 surface = "search_docs"
-mrr = 0.5520833333333333
+mrr = 0.55625
 [fused_baseline.surface.hit_rate]
 1 = 0.375
-3 = 0.75
+3 = 0.625
 5 = 0.875
 10 = 0.875
