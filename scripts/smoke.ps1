@@ -297,14 +297,16 @@ function Invoke-WikiSmoke {
     if ($IsCopilot) {
         Assert-Path ".github/skills/wiki-author/SKILL.md"
         Assert-Path ".github/agents/wiki-curator.agent.md"
-        Assert-Path ".github/hooks/wiki-pending-check.ps1"
+        Assert-Path ".github/hooks/wiki-pending-check.py"
+        Assert-Path ".github/hooks/_hooklib.py"
         Assert-Path ".github/hooks/sertor-hooks.json"
         Assert-MarkerInFile ".github/copilot-instructions.md" "SERTOR:WIKI-RITUAL"
     } else {
         Assert-Path ".claude/skills/wiki-author/SKILL.md"
         Assert-Path ".claude/commands/wiki.md"
         Assert-Path ".claude/agents/wiki-curator.md"
-        Assert-Path ".claude/hooks/wiki-pending-check.ps1"
+        Assert-Path ".claude/hooks/wiki-pending-check.py"
+        Assert-Path ".claude/hooks/_hooklib.py"
         Assert-Path ".claude/settings.json"
         Assert-MarkerInFile "CLAUDE.md" "SERTOR:WIKI-RITUAL"
     }

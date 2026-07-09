@@ -245,14 +245,16 @@ wiki_smoke() {
     if [ "$IS_COPILOT" -eq 1 ]; then
         assert_path ".github/skills/wiki-author/SKILL.md"
         assert_path ".github/agents/wiki-curator.agent.md"
-        assert_path ".github/hooks/wiki-pending-check.ps1"
+        assert_path ".github/hooks/wiki-pending-check.py"
+        assert_path ".github/hooks/_hooklib.py"
         assert_path ".github/hooks/sertor-hooks.json"
         assert_marker ".github/copilot-instructions.md" "SERTOR:WIKI-RITUAL"
     else
         assert_path ".claude/skills/wiki-author/SKILL.md"
         assert_path ".claude/commands/wiki.md"
         assert_path ".claude/agents/wiki-curator.md"
-        assert_path ".claude/hooks/wiki-pending-check.ps1"
+        assert_path ".claude/hooks/wiki-pending-check.py"
+        assert_path ".claude/hooks/_hooklib.py"
         assert_path ".claude/settings.json"
         assert_marker "CLAUDE.md" "SERTOR:WIKI-RITUAL"
     fi
