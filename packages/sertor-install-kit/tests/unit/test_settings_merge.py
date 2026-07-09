@@ -8,7 +8,11 @@ import pytest
 
 from sertor_install_kit.artifacts import Outcome
 from sertor_install_kit.errors import ConfigError
-from sertor_install_kit.settings_merge import merge_settings, remove_settings_entries
+from sertor_install_kit.settings_merge import (
+    merge_settings,
+    remove_hook_entries_by_command_substring,
+    remove_settings_entries,
+)
 
 _FRAGMENT = {
     "hooks": {
@@ -207,3 +211,74 @@ def test_dedicated_file_with_leftover_user_hook_kept(tmp_path: Path):
     assert p.exists()  # the user's "echo mine" survives → file kept
     data = json.loads(p.read_text(encoding="utf-8"))
     assert any(e.get("command") == "echo mine" for e in data["hooks"]["Stop"])
+
+
+# --- A-09: remove_hook_entries_by_command_substring (legacy `.ps1` migration) ------------------
+
+# Old Claude wiring (nested, `"shell": "powershell"`) and old Copilot wiring (flat, `pwsh -File`).
+_LEGACY_CLAUDE = {
+    "hooks": {
+        "SessionEnd": [{"hooks": [{"type": "command", "shell": "powershell", "command": (
+            "$d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; "
+            "& (Join-Path $d '.claude/hooks/rag-freshness.ps1')"
+        )}]}],
+    }
+}
+_PS1_BASENAMES = ("rag-freshness.ps1", "version-check.ps1", "memory-capture.ps1")
+
+
+def test_removes_legacy_ps1_entry_by_substring(tmp_path: Path):
+    p = tmp_path / "settings.json"
+    p.write_text(json.dumps(_LEGACY_CLAUDE), encoding="utf-8")
+    outcome, detail = remove_hook_entries_by_command_substring(p, _PS1_BASENAMES)
+    assert outcome is Outcome.REMOVED and "1" in detail
+    assert json.loads(p.read_text(encoding="utf-8")).get("hooks", {}) == {}
+
+
+def test_preserves_new_py_and_user_entries(tmp_path: Path):
+    """Only the legacy `.ps1` entry is stripped; the `.py` entry and a user hook survive."""
+    p = tmp_path / "settings.json"
+    py_cmd = "uv run --no-project python .claude/hooks/rag-freshness.py --assistant claude"
+    p.write_text(json.dumps({"hooks": {"SessionEnd": [
+        {"hooks": [{"type": "command", "shell": "powershell", "command":
+                    "& (Join-Path $d '.claude/hooks/rag-freshness.ps1')"}]},
+        {"hooks": [{"type": "command", "command": py_cmd}]},
+        {"hooks": [{"type": "command", "command": "echo mine"}]},
+    ]}}), encoding="utf-8")
+    outcome, _ = remove_hook_entries_by_command_substring(p, _PS1_BASENAMES)
+    assert outcome is Outcome.REMOVED
+    cmds = [h["command"] for e in json.loads(p.read_text(encoding="utf-8"))["hooks"]["SessionEnd"]
+            for h in e["hooks"]]
+    assert any("rag-freshness.py" in c for c in cmds)   # portable entry kept
+    assert "echo mine" in cmds                          # user entry kept
+    assert not any(".ps1" in c for c in cmds)           # legacy entry gone
+
+
+def test_copilot_flat_legacy_ps1_removed(tmp_path: Path):
+    p = tmp_path / "sertor-hooks.json"
+    old = "pwsh -File .github/hooks/rag-freshness.ps1"
+    p.write_text(json.dumps({"version": 1, "hooks": {"SessionEnd": [
+        {"type": "command", "command": old, "timeoutSec": 15},
+    ]}}), encoding="utf-8")
+    outcome, _ = remove_hook_entries_by_command_substring(
+        p, _PS1_BASENAMES, delete_if_empty=True
+    )
+    assert outcome is Outcome.REMOVED
+    assert not p.exists()  # dedicated file emptied → deleted
+
+
+def test_no_legacy_entry_skips(tmp_path: Path):
+    p = tmp_path / "settings.json"
+    p.write_text(json.dumps({"hooks": {"SessionEnd": [
+        {"hooks": [{"type": "command", "command":
+                    "uv run --no-project python .claude/hooks/rag-freshness.py"}]},
+    ]}}), encoding="utf-8")
+    outcome, _ = remove_hook_entries_by_command_substring(p, _PS1_BASENAMES)
+    assert outcome is Outcome.SKIPPED  # nothing legacy → idempotent no-op
+
+
+def test_missing_file_skips(tmp_path: Path):
+    outcome, _ = remove_hook_entries_by_command_substring(
+        tmp_path / "nope.json", _PS1_BASENAMES
+    )
+    assert outcome is Outcome.SKIPPED

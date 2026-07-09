@@ -21,9 +21,9 @@ _DECISION_PAYLOAD = re.compile(r"""["']?decision["']?\s*[:=]""")
 _BLOCK_COMMENT = re.compile(r"<#.*?#>", re.DOTALL)
 # I tre script rag SessionEnd soggetti alla guardia.
 _RAG_SESSION_END_SCRIPTS = frozenset({
-    "rag-freshness.ps1",
-    "memory-capture.ps1",
-    "version-check.ps1",
+    "rag-freshness.py",
+    "memory-capture.py",
+    "version-check.py",
 })
 
 

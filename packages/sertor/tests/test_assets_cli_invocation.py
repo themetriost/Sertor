@@ -246,7 +246,7 @@ def test_no_bare_invocations_in_invoking_assets():
 # Agent-facing assets whose bodies must never reintroduce `uv run --directory .sertor` (it changes
 # the cwd to `.sertor`, so `sertor-rag index .` would index `.sertor` itself). The MCP server
 # template is intentionally excluded — it takes no path argument and keeps `--directory`.
-_FOOTGUN_BANNED_ASSETS = (*_INVOKING_ASSETS, "claude/hooks/wiki-pending-check.ps1")
+_FOOTGUN_BANNED_ASSETS = (*_INVOKING_ASSETS, "claude/hooks/wiki-pending-check.py")
 
 
 def test_no_directory_footgun_in_agent_facing_assets():

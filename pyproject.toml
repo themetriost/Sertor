@@ -113,7 +113,14 @@ target-version = "py311"
 # packages/speclift and packages/specaudit are VENDORED verbatim from Sinthari (features 084/next):
 # each keeps its own [tool.ruff] (110/py311/+SIM) and MUST NOT be reformatted to Sertor's style on
 # re-vendoring.
-extend-exclude = ["prototype", "packages/speclift", "packages/specaudit"]
+# The installer's distributed hook assets (A-09) are standalone host scripts deposited into a host's
+# `.claude/hooks/` and run via `uv run --no-project python` — deliverable artifacts, not the package's
+# own importable source (the former `.ps1` were likewise never linted). Out of the project's lint scope.
+extend-exclude = [
+    "prototype", "packages/speclift", "packages/specaudit",
+    "packages/sertor/src/sertor_installer/assets",
+    ".claude/hooks",  # dogfood's own installed copies of the deliverable hook artifacts (A-09)
+]
 src = [
     "src", "tests",
     "packages/sertor/src", "packages/sertor/tests",
@@ -136,4 +143,5 @@ addopts = "-ra"
 markers = [
     "cloud: test che richiedono credenziali/servizi cloud (esclusi dalla CI locale)",
     "integration: test di integrazione end-to-end",
+    "hooks_smoke: A-09 — esegue gli hook portabili via `uv run --no-project python` (smoke CI matrice ubuntu+windows, C6)",
 ]

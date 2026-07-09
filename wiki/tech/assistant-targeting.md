@@ -59,7 +59,7 @@ mantiene una doppia copia a mano (traduzione pura: deriva). Invece:
   sola fonte;
 - la forma Copilot è **resa** a install-time (`surfaces.py`: prompt-file e custom-agent generati dal
   contenuto Claude) con una **guardia anti-drift** che fallisce sulla divergenza (REQ-021);
-- gli **script** degli hook (`.ps1`) sono **riusati identici** tra assistenti; varia solo il wiring.
+- gli **script** degli hook (`.py` portabili, invocati via `uv run --no-project python` — A-09) sono **riusati identici** tra assistenti; varia solo il wiring.
 
 Si riusano le `ArtifactKind` esistenti ([[sertor-install-kit]]): `MARKER_BLOCK` su
 `copilot-instructions.md`, `SETTINGS_MERGE` sul JSON `.github/hooks/*`, `MCP_MERGE` con **`root_key`
@@ -87,7 +87,7 @@ di `agent:`; `model:` Claude nei custom-agent). FEAT-011 corregge **tradicendo n
 
 - gli hook Copilot sono **generati nativamente** da `render_copilot_hooks`/`HookEntrySpec` nel kit
   (`version:1`, voci piatte, `timeoutSec`, nessun campo Claude-only); gli asset statici sono rimossi;
-- gli script `.ps1` rendono l'output **nativo per assistente** via `-Assistant copilot` (agentStop
+- gli script (oggi `.py`) rendono l'output **nativo per assistente** via `--assistant copilot` (agentStop
   `{decision:"allow",reason}`, sessionEnd su stderr, **mai dual-field**); preToolUse resta **fail-open**;
 - il **COMMAND** su `copilot-cli` è un **custom-agent** (`.github/agents/*.agent.md`, l'unica forma
   invocabile da CLI) via il nuovo `command_vehicle` del profilo; su VS Code resta prompt-file (`agent:`);

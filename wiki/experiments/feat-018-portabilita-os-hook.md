@@ -11,7 +11,15 @@ sources: ["specs/078-portabilita-os-hook/", "requirements/debito-tecnico/portabi
 
 **Feature:** Portabilità cross-OS degli hook distribuiti e dichiarazione esplicita dei surface inerti su Copilot.
 
-**Stato:** ✅ Implementata (2026-06-30, branch `078-portabilita-os-hook`).
+**Stato:** ✅ Implementata (2026-06-30, branch `078-portabilita-os-hook`) · ⚠️ **SUPERATA da A-09 (E2-FEAT-010, 2026-07-09).**
+
+> **⚠️ Superata (A-09 / E2-FEAT-010).** Questa feature *rilevava e segnalava* il gap (hook `.ps1`
+> inerti su non-Windows senza `pwsh`) senza risolverlo, accettando la "limitazione tecnica" che
+> cambiare `powershell`→`pwsh` avrebbe rotto Windows. **A-09 ha rimosso la causa alla radice**:
+> gli 8 hook sono stati riscritti in **Python portabile** invocato via `uv run --no-project python`,
+> **senza alcuna dipendenza da PowerShell/`pwsh` su nessun OS** (fix, non mitigazione — Principio XII).
+> Di conseguenza la **guardia `pwsh` di questa feature è stata rimossa** (`host_env.py` eliminato) e la
+> "nota pwsh" non ha più ragione di esistere. Vedi il branch `095-portable-hooks-09` e il log del 2026-07-09.
 
 **Driver costituzionale:** [[principle-xii|Principio XII «Fail Loud, Fix the Cause»]] + [[principle-x|Principio X host-agnostico]].
 

@@ -45,7 +45,7 @@ def test_claude_rag_artifacts_unchanged(tmp_path: Path, make_runner):
     assert "mcpServers" in data and "sertor-rag" in data["mcpServers"]
     # Claude routes the instruction block to CLAUDE.md and the hook under `.claude/`
     assert (tmp_path / "CLAUDE.md").is_file()
-    assert (tmp_path / ".claude/hooks/sertor-rag-usage-check.ps1").is_file()
+    assert (tmp_path / ".claude/hooks/sertor-rag-usage-check.py").is_file()
     assert not (tmp_path / ".github").exists()
     assert not (tmp_path / ".vscode").exists()
     # E10-FEAT-018: on the real Windows CI `is_windows()` is True → the pwsh guard is a no-op and no

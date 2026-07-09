@@ -98,9 +98,9 @@ def test_hook_script_byte_identical_to_claude(tmp_path: Path, make_runner):
     (surface-map property 3, ported from the removed VS Code suite)."""
     runner = make_runner()
     _run(tmp_path, runner, backend="azure", with_deps=False)
-    copied = tmp_path / ".github" / "hooks" / "sertor-rag-usage-check.ps1"
+    copied = tmp_path / ".github" / "hooks" / "sertor-rag-usage-check.py"
     assert copied.is_file()
-    canonical = read_asset_text("rag/hooks/sertor-rag-usage-check.ps1")
+    canonical = read_asset_text("rag/hooks/sertor-rag-usage-check.py")
     assert copied.read_text(encoding="utf-8") == canonical
 
 
@@ -118,4 +118,4 @@ def test_rag_wiring_is_native_copilot_schema(tmp_path: Path, make_runner):  # FR
     assert "shell" not in entry and "statusMessage" not in entry      # R3
     assert "timeout" not in entry and entry["timeoutSec"] == 10       # R4
     assert entry["matcher"] == "Bash|Write|Edit|MultiEdit"            # PreToolUse matcher
-    assert "-Assistant copilot" in entry["command"]                   # native output selector
+    assert "--assistant copilot" in entry["command"]                  # native output selector

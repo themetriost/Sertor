@@ -5,10 +5,9 @@
         "hooks": [
           {
             "type": "command",
-            "shell": "powershell",
             "timeout": 15,
             "statusMessage": "Carico lo stato del wiki",
-            "command": "$d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; & (Join-Path $d '.claude/hooks/wiki-session-start.ps1') -Assistant claude"
+            "command": "uv run --no-project python .claude/hooks/wiki-session-start.py --assistant claude"
           }
         ]
       }
@@ -18,10 +17,9 @@
         "hooks": [
           {
             "type": "command",
-            "shell": "powershell",
             "timeout": 10,
             "statusMessage": "Verifico lo stato del wiki",
-            "command": "$d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; & (Join-Path $d '.claude/hooks/wiki-pending-check.ps1') -Mode Stop"
+            "command": "uv run --no-project python .claude/hooks/wiki-pending-check.py --mode Stop --assistant claude"
           }
         ]
       }
@@ -31,9 +29,8 @@
         "hooks": [
           {
             "type": "command",
-            "shell": "powershell",
             "timeout": 10,
-            "command": "$d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; & (Join-Path $d '.claude/hooks/wiki-pending-check.ps1') -Mode SessionEnd"
+            "command": "uv run --no-project python .claude/hooks/wiki-pending-check.py --mode SessionEnd --assistant claude"
           }
         ]
       }

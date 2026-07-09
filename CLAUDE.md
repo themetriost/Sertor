@@ -594,18 +594,18 @@ dogfood sopra. *(Non riconciliare cancellando la prosa: i blocchi sono rigenerat
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/090-retrieval-result-dedup/plan.md` (**E5-FEAT-003** epica **retrieval-qualita** / leva **A-07** —
-*dedup dei risultati near-duplicate nel retrieval*). Chiude A-07: `search_docs` degrada con la crescita del
-corpus perché lo **stesso contenuto** vive in più path (i blocchi `CLAUDE.md` byte-identici alle copie del
-bundle `assets/**`) e satura il top-k, seppellendo le pagine canoniche `wiki/concepts/*.md`. Fix: una
-funzione **pura** `dedup_results()` a **query-time**, applicata **prima del cut** in tutti i siti di
-retrieval (ibrido main+fallback, facade fallback+fused, baseline), che tiene l'istanza col rank più alto di
-ogni gruppo a **contenuto normalizzato identico**. **Punto critico:** serve un **pool > k** prima del cut
-(riuso `rerank_pool`) o la dedup ridurrebbe sotto k senza backfill. MVP **esatto** (content-hash sha1,
-zero LLM); *fuzzy* rinviato al backlog E5. Manopola `SERTOR_DEDUP` (default on, VIII); indicizzazione
-invariata (FR-007); host-agnostico (X). **Accettazione = lift MISURATO** sull'eval a GT fissa (gate
-`--fused` da rosso a verde), no re-baseline finché il lift non è reale (XII). Constitution **12/12 +
-missione PASS** (forte: rafforza la metà debole della fusione code+doc). Branch `090-retrieval-result-dedup`.
+`specs/095-portable-hooks-09/plan.md` (**E2 / leva A-09** epica **sertor-cli** — *portabilità POSIX degli
+hook*). Gli 8 hook host-facing sono PowerShell (`.ps1`, wirati `"shell":"powershell"`/`pwsh`) → **inerti su
+mac/Linux senza `pwsh`** (Principio X violato in pratica). Fix: riscrittura **iso-funzionale** in **una**
+implementazione **portabile** (Python), invocata via **`uv run --no-project python <hook>`** — `uv` è
+garantito (dip d'install), `--no-project` **isola** dal `pyproject.toml` dell'host e **non** dipende da
+`.sertor/.venv` (funziona anche wiki-only). Wiring **OS-indipendente** (via il kit, no `"shell":"powershell"`);
+gli hook che toccano il RAG chiamano `uv run --project .sertor sertor-rag …` **internamente** (XI). Detach
+del worker re-index cross-OS (`subprocess.Popen`+`start_new_session`/`DETACHED_PROCESS`). **DA-1 lock =
+sostituzione** (single-impl, ritiro `.ps1`) con **verifica di parità come gate pre-merge** (output
+per-assistente + effetti di stato coincidono coi `.ps1`; offline + smoke CI matrice ubuntu+windows).
+`sertor-core` invariato (logica hook = asset installer), zero dip nuove, fail-safe/breadcrumb preservati.
+Constitution **12/12 + missione PASS** (forte: portabilità = installabile ovunque). Branch `095-portable-hooks-09`.
 
 <!-- SPECKIT END -->
 
