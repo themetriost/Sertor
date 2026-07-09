@@ -12,8 +12,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # A-10 (debito-tecnico E10): detect whether a PR touches the install/smoke surface, so the
+  # expensive E2E `smoke` job runs on PRs ONLY when relevant (installer, install-kit, governance,
+  # the smoke scripts, or this workflow) — not on doc/wiki-only PRs. On push/dispatch the smoke job
+  # ignores this and always runs (see its `if`). Closes the gap that let the smoke-script `.ps1`
+  # regression pass #161 unseen (the smoke job did not run on PRs at all).
+  changes:
+    name: detect relevant changes
+    runs-on: ubuntu-latest
+    # `dorny/paths-filter` reads the PR's changed files via the API on `pull_request` events, which
+    # needs `pull-requests: read` — the default GITHUB_TOKEN lacks it, so grant it explicitly.
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      smoke: ${{ steps.filter.outputs.smoke }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            smoke:
+              - 'packages/sertor/**'
+              - 'packages/sertor-install-kit/**'
+              - 'packages/sertor-flow/**'
+              - 'scripts/smoke.sh'
+              - 'scripts/smoke.ps1'
+              - '.github/workflows/ci.yml'
+
   test:
-    name: test (${{ matrix.os }})
+    name: test (${{ matrix.os }} / py${{ matrix.python }})
     strategy:
       fail-fast: false
       matrix:
@@ -21,6 +50,13 @@ jobs:
         # the suite must pass on both ("prima Windows, poi Linux"). fail-fast: false so a failure
         # on one OS does not cancel the other (we want to see both).
         os: [windows-latest, ubuntu-latest]
+        python: ["3.12"]
+        # A-10 (debito-tecnico E10): add a Python 3.11 leg — the project declares `>=3.11`, so a
+        # 3.11-only incompatibility would otherwise ship unseen. Added ubuntu-only via `include`
+        # (the OS axis stays on 3.12) to catch it without doubling the whole matrix.
+        include:
+          - os: ubuntu-latest
+            python: "3.11"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -30,11 +66,11 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Pin Python 3.12
-        run: uv python install 3.12
+      - name: Pin Python ${{ matrix.python }}
+        run: uv python install ${{ matrix.python }}
 
       - name: Sync (all workspace packages + dev extras)
-        run: uv sync --all-packages --extra dev --python 3.12
+        run: uv sync --all-packages --extra dev --python ${{ matrix.python }}
 
       - name: Lint (ruff)
         run: uv run ruff check .
@@ -74,12 +110,17 @@ jobs:
         run: uv run ruff check packages/specaudit
 
   # End-to-end host smoke (FEAT-003 epica debito-tecnico): installs Sertor capabilities from
-  # git+url@master exactly as a third-party host would. The matrix is {os} x {assistant}; EACH job
+  # git+url@<ref> exactly as a third-party host would. The matrix is {os} x {assistant}; EACH job
   # runs all three capabilities for its assistant: rag (install→index→doctor→search), wiki (deposit)
-  # and flow/governance (deposit; `specify init` needs network). It pulls `master` (the real
-  # distribution channel), so it is a POST-MERGE / on-demand guardian — NOT a per-PR gate (it does
-  # not test the PR's own diff). Runs only on push to master and on manual dispatch. The host runs
-  # OUTSIDE the checkout with a scrubbed env (rag provider = hash).
+  # and flow/governance (deposit; `specify init` needs network). The host runs OUTSIDE the checkout
+  # with a scrubbed env (rag provider = hash).
+  #
+  # A-10 (debito-tecnico E10): it is BOTH a per-PR gate AND a post-merge guardian. On push/dispatch
+  # it installs from `master` (the distribution channel). On a PR it installs from the PR BRANCH
+  # (`SERTOR_SMOKE_REF = github.head_ref`), so it tests the PR's OWN diff BEFORE merge — and it runs
+  # on a PR ONLY when the `changes` job flags the install/smoke surface as touched (path-filter), to
+  # spare runner minutes on doc-only PRs. This closes the gap that let the smoke-script `.ps1`
+  # regression pass #161 unseen (previously the smoke did not run on PRs at all).
   #
   # Per-assistant selection: pytest `-k <assistant>` picks the (assistant, capability) params for
   # this job's assistant (rag+wiki+flow). The capabilities × assistants matrix lives in the test.
@@ -90,7 +131,10 @@ jobs:
   # README content. Hardening option (not used): pin the clone to a fixed commit for reproducibility.
   smoke:
     name: smoke (${{ matrix.os }} / ${{ matrix.assistant }})
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: changes
+    if: >-
+      github.event_name == 'push' || github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && needs.changes.outputs.smoke == 'true')
     strategy:
       fail-fast: false
       matrix:
@@ -135,7 +179,10 @@ jobs:
 
       # Run all three capabilities (rag/wiki/flow) for this job's assistant. SERTOR_SMOKE_TARGET is
       # honoured by the wrapper for `rag` only; wiki/flow use the synthetic fixture regardless.
-      - name: Host smoke (${{ matrix.assistant }} × rag/wiki/flow from git+url@master)
+      # SERTOR_SMOKE_REF (A-10): install from the PR branch on a PR (tests the PR's own diff), else
+      # from `master` (github.head_ref is empty on push/dispatch → the wrapper defaults to master).
+      - name: Host smoke (${{ matrix.assistant }} × rag/wiki/flow from git+url@${{ github.head_ref || 'master' }})
         env:
           SERTOR_SMOKE_TARGET: ${{ runner.temp }}/pgntofen
+          SERTOR_SMOKE_REF: ${{ github.head_ref || 'master' }}
         run: uv run pytest -m integration tests/integration/test_host_smoke.py -k "${{ matrix.assistant }}" -v

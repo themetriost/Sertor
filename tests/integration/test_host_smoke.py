@@ -19,8 +19,9 @@ Why a wrapper instead of re-implementing the flow in Python: the same script a d
 hand is what CI runs, so they cannot drift. The script drives the real installed entry-points
 (``uvx --from git+url … sertor install <cap>`` / ``sertor-flow install``), which is exactly what
 catches the integration bugs the offline suite misses (CLI discoverability, cwd/index anchoring,
-per-assistant asset routing). It pulls ``master`` — the real distribution channel — so this is a
-POST-MERGE / on-demand guardian, not a per-PR gate (it does not test the PR's own diff).
+per-assistant asset routing). The install ref is ``SERTOR_SMOKE_REF`` (default ``master``); CI sets
+it to the PR branch (A-10), so on a PR the smoke installs the PR's OWN diff — a true pre-merge gate,
+not just a post-merge guardian. On push/dispatch it stays on ``master`` (the distribution channel).
 
 Target selection: by default the script runs on a NEUTRAL synthetic fixture it creates in a temp
 dir. For ``rag`` ONLY, set the optional env var ``SERTOR_SMOKE_TARGET`` to a path to an
@@ -76,25 +77,32 @@ def _smoke_target(capability: str) -> str | None:
     return str(target.resolve())
 
 
+def _smoke_ref() -> str:
+    """Git ref the smoke installs from (A-10). ``SERTOR_SMOKE_REF`` (default ``master``): CI sets it
+    to the PR branch so a PR's smoke tests the PR's OWN diff (a true pre-merge gate), not master."""
+    return os.environ.get("SERTOR_SMOKE_REF", "master").strip() or "master"
+
+
 def _smoke_command(assistant: str, capability: str, target: str | None) -> list[str]:
     """Platform-specific invocation of the smoke script (ps1 on Windows, sh elsewhere).
 
     The assistant/capability are passed as flags; ``target`` (rag only) is forwarded so the script
-    runs on that real repo. On POSIX the positional contract is ``REF [TARGET]`` followed by the
-    flags (the script parses positionals and flags independently).
+    runs on that real repo. The git ref to install from is ``_smoke_ref()`` — ``-Ref`` on Windows,
+    the leading positional ``REF`` on POSIX (the script parses positionals and flags independently).
     """
+    ref = _smoke_ref()
     if sys.platform == "win32":
         script = SCRIPTS_DIR / "smoke.ps1"
         pwsh = shutil.which("pwsh") or shutil.which("powershell")
         if pwsh is None:
             pytest.skip("no PowerShell (pwsh/powershell) in PATH — Windows smoke not runnable")
         cmd = [pwsh, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script)]
-        cmd += ["-Assistant", assistant, "-Capability", capability]
+        cmd += ["-Ref", ref, "-Assistant", assistant, "-Capability", capability]
         if target is not None:
             cmd += ["-Target", target]
         return cmd
     script = SCRIPTS_DIR / "smoke.sh"
-    cmd = ["bash", str(script), "master"]  # positional REF
+    cmd = ["bash", str(script), ref]  # positional REF
     if target is not None:
         cmd += [target]  # positional TARGET (REF then TARGET — see scripts/smoke.sh usage)
     cmd += ["--assistant", assistant, "--capability", capability]
@@ -111,7 +119,7 @@ def _preconditions_or_skip() -> None:
 @pytest.mark.parametrize("assistant", ASSISTANTS)
 @pytest.mark.parametrize("capability", CAPABILITIES)
 def test_host_smoke(assistant: str, capability: str):
-    """The smoke script installs from git+url@master for (assistant, capability) and asserts green.
+    """The smoke script installs from git+url@<ref> for (assistant, capability) and asserts green.
 
     For ``rag`` it also drives index→doctor→search and asserts documents>0 (the cwd/anchor
     regression would yield documents=0) and results>0. For ``wiki``/``flow`` it asserts the deposit
