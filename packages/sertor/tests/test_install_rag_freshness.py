@@ -368,25 +368,10 @@ def test_freshness_assets_present():
     assert ".rag-health.json" in start
 
 
-# --- US9 (R-3): guard against bundled <-> dogfood drift for the freshness hooks ----------------
-
-def test_rag_freshness_dogfood_sync():
-    """The `assets/rag/hooks/` tree is NOT covered by the `claude/`-subtree sync guard
-    (`tests/unit/test_assets_sync.py`): this guard keeps the dogfood `.claude/hooks/` copies in
-    byte-parity with the bundled source (FR-024, R-3)."""
-    repo_root = Path(__file__).resolve().parents[3]
-    bundled_base = (
-        repo_root / "packages/sertor/src/sertor_installer/assets/rag/hooks"
-    )
-    dogfood_base = repo_root / ".claude/hooks"
-    for name in (
-        "rag-freshness.ps1", "rag-freshness-start.ps1",
-        "version-check.ps1", "version-check-start.ps1",   # E2-FEAT-013
-    ):
-        bundled = bundled_base / name
-        dogfood = dogfood_base / name
-        assert dogfood.is_file(), f"dogfood .claude/hooks/{name} mancante"
-        assert bundled.read_bytes() == dogfood.read_bytes(), (
-            f"Drift: {name} bundlato != dogfood .claude/hooks/{name} "
-            f"(ricopia l'asset bundlato in .claude/hooks/)"
-        )
+# --- US9 (R-3): bundled <-> dogfood drift for the freshness hooks ------------------------------
+#
+# The former hardcoded `.ps1` name list here is subsumed by the AUTO-DERIVED guard
+# `tests/unit/test_assets_rag_dogfood_sync.py`, which enumerates EVERY byte-copied
+# `assets/rag/hooks/` asset (now the portable `.py` hooks, including rag-freshness{,-start} and
+# version-check{,-start}) and asserts byte-parity with the dogfood `.claude/hooks/` copies — without
+# a hardcoded list to keep in sync. Removed with the A-09 PowerShell→Python port.

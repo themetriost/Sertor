@@ -71,11 +71,11 @@ description: "Task list — E2 A-09 portabilità hook (hook portabili)"
 
 **Goal**: una implementazione per hook; `.ps1` ritirati a parità verde; wiring OS-indipendente.
 
-- [ ] T019 [US3] **Rimuovere** gli 8 `.ps1` dal bundle (`assets/rag/hooks/*.ps1`, `assets/claude/hooks/wiki-*.ps1`) e dal dogfood (`.claude/hooks/*.ps1`) — solo a parità verde (US2)
-- [ ] T020 [US3] Aggiornare le **guardie di sync** dogfood↔bundle al nuovo insieme (`.py` al posto dei `.ps1`): `test_assets_rag_dogfood_sync`, `test_assets_sync` — enumerano i `.py`
-- [ ] T021 [US3] Aggiornare la **nota `pwsh`-unavailability** (E10-FEAT-018, `host_env.py`): non è più precondizione per l'operatività degli hook — rimuovere/riformulare + test relativi
-- [ ] T022 [US3] `sertor upgrade`: **riconciliazione del wiring** — rimuovere le voci `settings.json` che puntano ai `.ps1` rimossi e installare quelle nuove (no wiring orfano, edge migrazione)
-- [ ] T023 [US3] Verifica single-impl: `git grep '"shell": "powershell"'` = vuoto per gli 8 hook; nessun `.ps1` residuo (SC-005)
+- [X] T019 [US3] **Rimossi** gli 8 `.ps1` dal **bundle** (`assets/rag/hooks/*.ps1` ×6 + `assets/claude/hooks/wiki-*.ps1` ×2). Dogfood `.claude/hooks/*.ps1` → migrati **post-merge via `sertor upgrade`** (non hand-edit: regola dogfood-via-install), vedi T028.
+- [X] T020 [US3] **Guardie di sync** auto-adattate: `test_assets_rag_dogfood_sync`/`test_assets_sync` enumerano l'asset-dir (ora solo `.py` + `_hooklib.py`) → coprono i `.py` senza modifica; rimosso il ridondante hardcoded `test_rag_freshness_dogfood_sync`.
+- [X] T021 [US3] **Nota `pwsh` rimossa** (E10-FEAT-018 superata): eliminati `host_env.py` + `test_host_env.py` + `test_install_pwsh_guard.py` + i 2 call-site (`maybe_note_pwsh`). Il gap pwsh è **chiuso dalla portabilità**, non silenziato (XII). Nota Copilot memory-capture preservata.
+- [X] T022 [US3] **`upgrade` riconcilia il wiring**: legacy `.ps1` dichiarati **owned** → obsolete-phase li rimuove (file); nuovo helper kit `remove_hook_entries_by_command_substring` strippa le voci `.ps1` per **basename** (robusto alle vecchie forme Claude `& (Join-Path…)` / Copilot `pwsh -File`), cablato in upgrade rag+wiki. Test: 5 unit kit + 3 integration sertor (file rimossi · wiring strippato · user-hook preservato). *(uninstall-di-host-legacy fuori scope T022 — solo upgrade.)*
+- [X] T023 [US3] Single-impl **verificato** (bundle): 0 `.ps1` hook, 0 `"shell":"powershell"` negli asset; solo i target legacy-migration restano in sorgente (intenzionali). Migrazione **live** del dogfood → T028 post-merge.
 
 **Checkpoint US3:** un corpo per hook, wiring OS-indip., `.ps1` ritirati.
 

@@ -15,7 +15,6 @@ from __future__ import annotations
 import json
 import logging
 
-from sertor_install_kit import host_env
 from sertor_install_kit.artifacts import LifecycleOp
 from sertor_install_kit.assistant import AssistantId, AssistantProfile, Surface
 from sertor_install_kit.claude_md import (
@@ -48,7 +47,11 @@ from sertor_install_kit.lifecycle import (
 from sertor_install_kit.mcp_merge import merge_mcp, remove_mcp_server
 from sertor_install_kit.model_policy import resolve_model
 from sertor_install_kit.observability import log_event
-from sertor_install_kit.settings_merge import merge_settings, remove_settings_entries
+from sertor_install_kit.settings_merge import (
+    merge_settings,
+    remove_hook_entries_by_command_substring,
+    remove_settings_entries,
+)
 from sertor_installer.artifacts import (
     Artifact,
     ArtifactKind,
@@ -141,6 +144,22 @@ _RAG_MATCHER = "Bash|Write|Edit|MultiEdit"
 _HOOKLIB_ASSET = "rag/hooks/_hooklib.py"
 _HOOKLIB_TARGET = ".claude/hooks/_hooklib.py"
 _HOOKLIB_TARGET_COPILOT = ".github/hooks/_hooklib.py"
+
+# A-09 migration: the RAG hooks a PREVIOUS version deposited as PowerShell `.ps1`. An `upgrade` must
+# leave the host single-impl (DA-1) — remove the legacy `.ps1` FILES (declared legacy-owned so the
+# obsolete phase strips them) and the legacy `.ps1` WIRING entries (matched by basename substring,
+# robust to the old Claude `& (Join-Path …)` / Copilot `pwsh -File` command shapes).
+_LEGACY_RAG_HOOK_STEMS = (
+    "sertor-rag-usage-check", "memory-capture", "rag-freshness", "rag-freshness-start",
+    "version-check", "version-check-start",
+)
+_LEGACY_PS1_BASENAMES = tuple(f"{stem}.ps1" for stem in _LEGACY_RAG_HOOK_STEMS)
+
+
+def _legacy_ps1_targets(is_copilot: bool) -> tuple[str, ...]:
+    """Legacy `.ps1` hook targets a prior version deposited, per assistant (removed on upgrade)."""
+    base = ".github/hooks" if is_copilot else ".claude/hooks"
+    return tuple(f"{base}/{name}" for name in _LEGACY_PS1_BASENAMES)
 
 
 def _copilot_rag_hook_specs() -> list[HookEntrySpec]:
@@ -817,11 +836,9 @@ def execute_rag_plan(
     report = _kit_execute_plan(
         plan, apply, target=str(profile.target_root), capability="rag", assistant=assistant.value
     )
-    # E10-FEAT-018: honest, non-fatal install-time notes (Principio XII). The pwsh guard surfaces
-    # the non-Windows-without-`pwsh` gap for the deposited `.ps1` hooks; the Copilot note declares
-    # the `memory-capture` adapter caveat. Both detect+report only — no wiring is rewritten (D-3).
-    hook_surfaces = [a.target_rel for a in plan if a.target_rel.endswith(".ps1")]
-    host_env.maybe_note_pwsh(report, hook_surfaces)
+    # Honest, non-fatal install-time note (Principio XII): the Copilot `memory-capture` adapter
+    # caveat. (The former `pwsh`-unavailability note is gone — A-09 made the hooks portable Python,
+    # so there is no `.ps1` surface that needs PowerShell Core; E10-FEAT-018 is superseded.)
     if assistant is AssistantId.COPILOT_CLI:
         report.note(_COPILOT_MEMORY_NOTE)
     return report
@@ -894,6 +911,9 @@ def sertor_owned_paths(assistant: AssistantId = AssistantProfile.DEFAULT) -> Ser
             hook_target, memory_hook_target, concierge_target,
             *freshness_files, *version_check_files,
             ".gitattributes",  # host-root LF policy (FEAT-010), CREATE_IF_ABSENT → owned FILE
+            # A-09: legacy `.ps1` hooks (not plan targets) — declared owned so the UPGRADE obsolete
+            # phase strips them from a host installed by a previous version (single-impl, DA-1).
+            *_legacy_ps1_targets(is_copilot),
         ),
         shared_edits=(
             SharedEdit(instruction_target, SharedEditKind.MARKER, "SERTOR:RAG-USAGE"),
@@ -1007,6 +1027,14 @@ def _apply_rag_upgrade(
     if art.kind is ArtifactKind.GITIGNORE_APPEND:
         return _apply_gitignore(profile)
     if art.kind is ArtifactKind.SETTINGS_MERGE:
+        # A-09 migration: strip any legacy `.ps1` hook entries BEFORE the additive `.py` merge, so
+        # an upgrading host is left single-impl (no orphan wiring pointing at the removed `.ps1`).
+        # Idempotent (no-op once none remain / on a fresh host); safe across the per-hook artifacts
+        # that all target the same settings file.
+        dest = root / art.target_rel
+        remove_hook_entries_by_command_substring(
+            dest, _LEGACY_PS1_BASENAMES, delete_if_empty=(dest.name == "sertor-hooks.json")
+        )
         return _apply_rag_settings(profile, art)
     raise ConfigError(f"unhandled artifact kind: {art.kind}")  # pragma: no cover
 

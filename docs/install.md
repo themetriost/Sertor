@@ -75,32 +75,23 @@ pip install "git+https://github.com/themetriost/Sertor#subdirectory=packages/ser
   - **`hash`** — a zero-download lexical floor for airgapped/CI.
   See the **Embedding providers** table below. *(The default used to imply Ollama; it is
   now `glove` — Ollama and Azure are selected explicitly.)*
-- **`pwsh` (PowerShell Core) — required on macOS/Linux** for the lifecycle hooks distributed by
-  `sertor install`. The hooks are PowerShell-only (`.ps1`). On **Windows** they run via the bundled
-  PowerShell 5.1, so nothing extra is needed; on **macOS/Linux** install PowerShell Core separately:
-  <https://learn.microsoft.com/powershell/scripting/install/installing-powershell>. The affected
-  hook surfaces are `rag-freshness.ps1`, `rag-freshness-start.ps1`, `version-check.ps1`,
-  `version-check-start.ps1`, `memory-capture.ps1`, `sertor-rag-usage-check.ps1` and
-  `wiki-pending-check.ps1`. **Without `pwsh`, these surfaces are installed but non-operational** —
-  `sertor install` will say so in an actionable note (it never fails the install for this).
+- **No PowerShell / `pwsh` needed — the hooks are portable.** The lifecycle hooks distributed by
+  `sertor install` are **portable Python** scripts, invoked as `uv run --no-project python <hook>.py`.
+  They work identically on **Windows, macOS and Linux** with **no PowerShell dependency**. `uv` is
+  already the package prerequisite (above); `--no-project` isolates the hook from the host's own
+  `pyproject.toml`, so it runs anywhere without touching the host's environment.
 
 ### Operatività per target (which surfaces are operational after `sertor install`)
 
-The MCP server, instruction block (`CLAUDE.md`/`.github/copilot-instructions.md`), skills and agents
-work on **every OS and target** — they do not depend on `pwsh`. The `.ps1` lifecycle hooks are the
-only OS-conditional surface:
+Every distributed surface — the MCP server, the instruction block (`CLAUDE.md`/
+`.github/copilot-instructions.md`), the skills, the agents and the **lifecycle hooks** — works on
+**every OS and target**. Since the hooks are portable Python (run via `uv run --no-project python`),
+there is no OS-conditional surface and no PowerShell requirement:
 
 | Target | Fully operational after install | Needs extra configuration |
 |---|---|---|
-| Claude on Windows | MCP, `CLAUDE.md` block, `.ps1` hooks (via `powershell`), skills, agents | — |
-| Copilot CLI on any OS | MCP, instruction block, skills, agents | Hooks: require `pwsh` on macOS/Linux. `memory-capture`: requires `SERTOR_MEMORY=true` + `SERTOR_MEMORY_ADAPTER=copilot-cli` to capture Copilot CLI sessions |
-| Claude on macOS/Linux | MCP, `CLAUDE.md` block, skills, agents | Hooks: require `pwsh`. The Claude hook wiring uses `"shell": "powershell"`, so operability of the `.ps1` hooks on Claude/non-Windows may also depend on the client's `shell` semantics (verification in progress — see below) |
-
-> **Technical limit (honest).** The Claude hook wiring is `"shell": "powershell"` and the Copilot CLI
-> wiring is `pwsh -File`. Installing `pwsh` is necessary on macOS/Linux, but on **Claude/non-Windows**
-> it may not be sufficient on its own: whether the Claude client resolves `"shell": "powershell"` to
-> PowerShell Core is not yet confirmed. We do **not** rewrite the wiring to `pwsh` because that would
-> break Windows PowerShell 5.1 hosts. A portable Claude hook wiring is tracked as a follow-up.
+| Claude on any OS | MCP, `CLAUDE.md` block, hooks, skills, agents | — |
+| Copilot CLI on any OS | MCP, instruction block, hooks, skills, agents | `memory-capture`: requires `SERTOR_MEMORY=true` + `SERTOR_MEMORY_ADAPTER=copilot-cli` to capture Copilot CLI sessions |
 
 ## 1. Package installation
 
@@ -320,9 +311,9 @@ What it installs (all **without** starting any indexing, LLM, or network — ins
 
 The command prints a **report** per artifact (`created`/`skipped`/`merged`/`block`) and exits with
 `0` (success), `1` (domain error, fail-fast with explicit partial state — re-running fills the gaps),
-or `2` (wrong usage). Re-running is safe: identical state, zero duplicates. Prerequisite for the
-session hook: PowerShell (`pwsh`) on the host; without it, the wiki remains fully usable (automatic
-reminders do not fire).
+or `2` (wrong usage). Re-running is safe: identical state, zero duplicates. The session hooks are
+**portable Python** (run via `uv run --no-project python`), so they work on Windows, macOS and Linux
+with **no PowerShell dependency**.
 
 ### Deterministic wiki tooling (already included in the core package)
 
@@ -366,8 +357,8 @@ What it does (all **without** indexing — install ≠ run):
 | `.env` (backend template, **empty secrets** to fill in) | `<target>/.sertor/.env` | additive per-key merge (never overwrites your values) |
 | `.mcp.json` (`sertor-rag` server via `uv run --directory .sertor`) — scope `project` (default) | **host root** | additive merge (preserves other MCP servers) |
 | MCP registration in the client (`claude mcp add-json … --scope local`) — scope `local` | **outside the repo** (`~/.claude.json`) | idempotent (skip if already registered); fail-fast if `claude` is missing |
-| **RAG-freshness hooks** (E10-FEAT-011): `rag-freshness.ps1` (**SessionEnd**: re-index + `doctor` → writes `.sertor/.rag-health.json`) + `rag-freshness-start.ps1` (**SessionStart**, Claude: induces a fix if the last verdict was `degraded`) + their wiring | `.claude/hooks/**` + `.claude/settings.json` (Claude) · `.github/hooks/**` + `.github/hooks/sertor-hooks.json` (Copilot CLI) | per-file skip; wiring is an additive dedup merge |
-| **Version-check hooks** (E2-FEAT-013): `version-check.ps1` (**SessionEnd**: GET `/VERSION` ~1/day → writes `.sertor/.version-check.json`) + `version-check-start.ps1` (**SessionStart**, Claude; static startup prompt on Copilot CLI: warns if behind — never auto-upgrades) + their wiring; plus the install-time stamp `.sertor/.sertor-version` | `.claude/hooks/**` + `.claude/settings.json` (Claude) · `.github/hooks/**` + `.github/hooks/sertor-hooks.json` (Copilot CLI) | per-file skip; wiring is an additive dedup merge |
+| **RAG-freshness hooks** (E10-FEAT-011): `rag-freshness.py` (**SessionEnd**: re-index + `doctor` → writes `.sertor/.rag-health.json`) + `rag-freshness-start.py` (**SessionStart**, Claude: induces a fix if the last verdict was `degraded`) + their wiring | `.claude/hooks/**` + `.claude/settings.json` (Claude) · `.github/hooks/**` + `.github/hooks/sertor-hooks.json` (Copilot CLI) | per-file skip; wiring is an additive dedup merge |
+| **Version-check hooks** (E2-FEAT-013): `version-check.py` (**SessionEnd**: GET `/VERSION` ~1/day → writes `.sertor/.version-check.json`) + `version-check-start.py` (**SessionStart**, Claude; static startup prompt on Copilot CLI: warns if behind — never auto-upgrades) + their wiring; plus the install-time stamp `.sertor/.sertor-version` | `.claude/hooks/**` + `.claude/settings.json` (Claude) · `.github/hooks/**` + `.github/hooks/sertor-hooks.json` (Copilot CLI) | per-file skip; wiring is an additive dedup merge |
 | `.gitignore` (`.sertor/.venv/`, `.sertor/.index*`, `.sertor/.env`, `.sertor/.rag-health.json`, `.sertor/.version-check.json`, `.sertor/.sertor-version`) | **host root** | append dedup |
 | `.gitattributes` (`* text=auto eol=lf` — normalizes text files to LF so the install produces a clean, review-able diff on Windows instead of a CRLF line-ending churn) | **host root** | **create-if-absent** (a host that already has a `.gitattributes` keeps its own — never overwritten) |
 
@@ -621,7 +612,7 @@ take).
 Since FEAT-011, `sertor install rag` wires two host hooks so the corpus stays fresh **without relying
 on anyone remembering to re-index**:
 
-- **SessionEnd — `rag-freshness.ps1`**: at the end of every agent session it returns **immediately**
+- **SessionEnd — `rag-freshness.py`**: at the end of every agent session it returns **immediately**
   (it does **not** stall the session close, even on a large repo — E10-FEAT-016) by launching a
   **detached background worker**. The worker, through the CLI vehicles only (it never imports the
   library), runs `sertor-rag doctor` → writes the verdict to **`.sertor/.rag-health.json`** (schema
@@ -630,20 +621,19 @@ on anyone remembering to re-index**:
   cache), so when nothing changed it is **near-free**; there is deliberately no change-detection
   inside the hook. Because the work runs in the background, the recorded verdict can be **at most one
   session behind**. The hook is **non-fatal** (always exits 0) and **invokes no LLM**.
-- **SessionStart — `rag-freshness-start.ps1`** (Claude; on the Copilot CLI it is a static startup
+- **SessionStart — `rag-freshness-start.py`** (Claude; on the Copilot CLI it is a static startup
   prompt instead of a script): it re-reads `.sertor/.rag-health.json` and, **only if the last verdict
   was `degraded`**, tells the agent to run `sertor-rag index .` and/or reconnect the MCP server
   **before** working — so it never reasons on stale context. A `healthy` verdict is a silent no-op.
 
 This moves the mechanical "re-index + health check" steps from the agent's discretion to a
-deterministic harness (the agent keeps the judgment; the hook does the mechanics). **Prerequisite:
-PowerShell on the host** — Windows ships it (5.1); on macOS/Linux install PowerShell Core (`pwsh`,
-see [Prerequisites](#prerequisites)). Without it these lifecycle hooks are installed but never run,
-and `sertor install` declares the gap in an actionable note. The state file `.sertor/.rag-health.json`
-is **git-ignored** (regenerable, never versioned).
+deterministic harness (the agent keeps the judgment; the hook does the mechanics). The hooks are
+**portable Python**, run via `uv run --no-project python`, so they work on Windows, macOS and Linux
+with **no PowerShell dependency** (`uv` is already the package prerequisite). The state file
+`.sertor/.rag-health.json` is **git-ignored** (regenerable, never versioned).
 
-> **Manual re-index is still available** any time — right after a large change, or if `pwsh` is
-> absent: `uv run --project .sertor sertor-rag index .`, and `uv run --project .sertor sertor-rag
+> **Manual re-index is still available** any time — right after a large change:
+> `uv run --project .sertor sertor-rag index .`, and `uv run --project .sertor sertor-rag
 > doctor` to check health on demand.
 
 #### Update notice — you're on an old Sertor (E2-FEAT-013)
@@ -654,7 +644,7 @@ sources) and **not** the manual *Pulling the latest Sertor build* below (the act
 just the **notice about the Sertor version**. Like the index-freshness hooks, `sertor install rag`
 wires it as two host hooks (parity Claude / Copilot CLI):
 
-- **SessionEnd — `version-check.ps1`**: at most **~once per day** (cached) it does a single `GET` of
+- **SessionEnd — `version-check.py`**: at most **~once per day** (cached) it does a single `GET` of
   the `/VERSION` file on `master` (the public raw URL; override with the env var
   **`SERTOR_VERSION_CHECK_URL`**) and compares it to the version that was stamped **at install time**
   into `.sertor/.sertor-version`. It writes the result to **`.sertor/.version-check.json`** (schema
@@ -662,13 +652,14 @@ wires it as two host hooks (parity Claude / Copilot CLI):
   (it reads the install-time stamp, never `importlib.metadata`). **Offline → silent skip.** Privacy:
   the only network egress is the `GET` of the public `/VERSION`; no project content or secret is sent,
   and the state file holds only public version numbers.
-- **SessionStart — `version-check-start.ps1`** (Claude; on the Copilot CLI it is a **static startup
+- **SessionStart — `version-check-start.py`** (Claude; on the Copilot CLI it is a **static startup
   prompt** instead of a script): if the installed version is **behind**, it **warns** you and points
   to the update command (`sertor upgrade`, or `uvx --refresh …` — see *Pulling the latest Sertor build*
   below). It is **only a notice — never an auto-upgrade**: you decide when to update.
 
-Prerequisite: PowerShell (`pwsh`) on the host. The state file `.sertor/.version-check.json` and the
-stamp `.sertor/.sertor-version` are **git-ignored** (regenerable, never versioned).
+Like the RAG-freshness hooks, these are **portable Python** (run via `uv run --no-project python`)
+and need **no PowerShell**. The state file `.sertor/.version-check.json` and the stamp
+`.sertor/.sertor-version` are **git-ignored** (regenerable, never versioned).
 
 #### Pulling the latest Sertor build onto a host
 
@@ -768,12 +759,14 @@ everything is `skipped`), `1` domain error (fail-fast, the failed step is named)
 - **Claude assets (B):** `.claude/skills/wiki-author/`, `.claude/skills/requirements/`,
   `.claude/commands/wiki.md`, `.claude/commands/speckit.*.md`, `.claude/agents/wiki-curator.md`,
   `.claude/agents/requirements-analyst.md`, `.claude/agents/configuration-manager.md`,
-  `.claude/hooks/wiki-pending-check.ps1`, `.claude/hooks/sertor-rag-usage-check.ps1`
+  `.claude/hooks/wiki-pending-check.py`, `.claude/hooks/sertor-rag-usage-check.py`,
+  `.claude/hooks/_hooklib.py`
 - **Copilot CLI assets (B):** `.github/agents/wiki.agent.md`, `.github/agents/wiki-author.agent.md`,
   `.github/agents/wiki-curator.agent.md`, `.github/agents/requirements.agent.md`,
   `.github/agents/requirements-analyst.agent.md`, `.github/agents/configuration-manager.agent.md`,
   `.github/prompts/speckit.*.prompt.md` (these SpecKit prompts come from the upstream installer),
-  `.github/hooks/wiki-pending-check.ps1`, `.github/hooks/sertor-rag-usage-check.ps1`,
+  `.github/hooks/wiki-pending-check.py`, `.github/hooks/sertor-rag-usage-check.py`,
+  `.github/hooks/_hooklib.py`,
   `.github/hooks/sertor-hooks.json`. **Legacy VS Code residue** (if you ever installed the removed
   `copilot` target): `.vscode/mcp.json` and `.github/prompts/{wiki,wiki-author,requirements}.prompt.md`
   — see the migration note in [install-copilot.md](install-copilot.md#migrating-from-the-vs-code-target).
@@ -794,12 +787,12 @@ reference. Review before running — it is **destructive**.
 Remove-Item -Recurse -Force .sertor -ErrorAction SilentlyContinue
 # 2. B — standalone assets:
 Remove-Item -Recurse -Force wiki, .specify -ErrorAction SilentlyContinue
-Remove-Item -Force .claude\commands\wiki.md, .claude\agents\wiki-curator.md, .claude\agents\requirements-analyst.md, .claude\agents\configuration-manager.md, .claude\hooks\wiki-pending-check.ps1, .claude\hooks\sertor-rag-usage-check.ps1 -ErrorAction SilentlyContinue
+Remove-Item -Force .claude\commands\wiki.md, .claude\agents\wiki-curator.md, .claude\agents\requirements-analyst.md, .claude\agents\configuration-manager.md, .claude\hooks\wiki-pending-check.py, .claude\hooks\sertor-rag-usage-check.py, .claude\hooks\_hooklib.py -ErrorAction SilentlyContinue
 Remove-Item -Recurse -Force .claude\skills\wiki-author, .claude\skills\requirements -ErrorAction SilentlyContinue
 Get-ChildItem .claude\commands\speckit.*.md -ErrorAction SilentlyContinue | Remove-Item -Force
 # Copilot CLI layout (if you installed for copilot-cli) — delete ONLY Sertor's files, not the
 # whole .github/{agents,hooks} dirs (they may hold your own content):
-Remove-Item -Force .github\agents\wiki.agent.md, .github\agents\wiki-author.agent.md, .github\agents\wiki-curator.agent.md, .github\agents\requirements.agent.md, .github\agents\requirements-analyst.agent.md, .github\agents\configuration-manager.agent.md, .github\hooks\wiki-pending-check.ps1, .github\hooks\sertor-rag-usage-check.ps1, .github\hooks\sertor-hooks.json -ErrorAction SilentlyContinue
+Remove-Item -Force .github\agents\wiki.agent.md, .github\agents\wiki-author.agent.md, .github\agents\wiki-curator.agent.md, .github\agents\requirements.agent.md, .github\agents\requirements-analyst.agent.md, .github\agents\configuration-manager.agent.md, .github\hooks\wiki-pending-check.py, .github\hooks\sertor-rag-usage-check.py, .github\hooks\_hooklib.py, .github\hooks\sertor-hooks.json -ErrorAction SilentlyContinue
 Get-ChildItem .github\prompts\speckit.*.prompt.md -ErrorAction SilentlyContinue | Remove-Item -Force
 # Legacy VS Code residue (if you ever used the removed `copilot` target):
 Remove-Item -Force .github\prompts\wiki.prompt.md, .github\prompts\wiki-author.prompt.md, .github\prompts\requirements.prompt.md -ErrorAction SilentlyContinue

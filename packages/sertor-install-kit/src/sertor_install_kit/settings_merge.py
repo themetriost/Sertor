@@ -121,6 +121,60 @@ def _fragment_commands(fragment: dict) -> set[str]:
     return commands
 
 
+def remove_hook_entries_by_command_substring(
+    settings_path: Path, substrings: tuple[str, ...], *, delete_if_empty: bool = False
+) -> tuple[Outcome, str]:
+    """Removes hook entries whose `command` CONTAINS any of `substrings` — a migration primitive.
+
+    Sibling of `remove_settings_entries` (exact-command match), but matches by substring so it can
+    strip a PREVIOUS wiring form whose exact command string is no longer known — e.g. the legacy
+    `.ps1` hook entries (Claude `& (Join-Path … 'hooks/<name>.ps1')` or Copilot `pwsh -File
+    .github/hooks/<name>.ps1`) that an `upgrade` replaces with the portable `.py` wiring (A-09). The
+    substrings are the Sertor hook `.ps1` basenames, so only Sertor's own legacy entries match; a
+    user's unrelated hook is preserved. Same shape/idempotency as `remove_settings_entries`.
+    """
+    if not settings_path.exists():
+        return Outcome.SKIPPED, "no legacy entries"
+
+    raw = settings_path.read_text(encoding="utf-8")
+    try:
+        existing = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ConfigError(
+            f"malformed JSON at line {exc.lineno}: {exc.msg}", key=str(settings_path)
+        ) from exc
+    if not isinstance(existing, dict):
+        raise ConfigError("settings.json is not a JSON object", key=str(settings_path))
+
+    pruned = json.loads(json.dumps(existing))  # deep copy, never mutate in place
+    hooks = pruned.get("hooks", {})
+    removed = 0
+    for event in list(hooks.keys()):
+        kept = []
+        for entry in hooks[event]:
+            cmds = _inner_commands(entry) if isinstance(entry, dict) else set()
+            if any(sub in cmd for cmd in cmds for sub in substrings):
+                removed += 1
+                continue
+            kept.append(entry)
+        if kept:
+            hooks[event] = kept
+        else:
+            del hooks[event]
+    if not hooks and "hooks" in pruned:
+        del pruned["hooks"]
+
+    if removed == 0:
+        return Outcome.SKIPPED, "no legacy entries"
+    if delete_if_empty and "hooks" not in pruned and set(pruned.keys()) <= {"version"}:
+        settings_path.unlink()
+        return Outcome.REMOVED, "file removed (no entries left)"
+    settings_path.write_text(
+        json.dumps(pruned, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    return Outcome.REMOVED, f"-{removed} legacy hook entries"
+
+
 def remove_settings_entries(
     settings_path: Path, hooks_fragment: dict, *, delete_if_empty: bool = False
 ) -> tuple[Outcome, str]:

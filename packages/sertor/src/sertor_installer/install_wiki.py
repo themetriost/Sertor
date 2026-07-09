@@ -18,7 +18,6 @@ from pathlib import Path
 from sertor_core.domain.errors import SertorError
 from sertor_core.wiki_tools.profile import load_profile
 from sertor_core.wiki_tools.structure import init_structure
-from sertor_install_kit import host_env
 from sertor_install_kit.artifacts import LifecycleOp
 from sertor_install_kit.assistant import AssistantId, AssistantProfile, Surface
 from sertor_install_kit.claude_md import remove_marker_block, update_marker_block
@@ -37,7 +36,10 @@ from sertor_install_kit.lifecycle import (
     execute_lifecycle as _kit_execute_lifecycle,
 )
 from sertor_install_kit.model_policy import resolve_model
-from sertor_install_kit.settings_merge import remove_settings_entries
+from sertor_install_kit.settings_merge import (
+    remove_hook_entries_by_command_substring,
+    remove_settings_entries,
+)
 from sertor_installer import claude_md, config_gen, settings_merge
 from sertor_installer.artifacts import (
     Artifact,
@@ -80,6 +82,21 @@ _WIKI_HOOK_SCRIPT_DST = ".github/hooks/wiki-pending-check.py"
 # Shared hook helper (A-09): imported by the portable `.py` hook; must be deposited alongside it.
 _WIKI_HOOKLIB_SRC = "claude/hooks/_hooklib.py"
 _WIKI_HOOKLIB_DST = ".github/hooks/_hooklib.py"
+
+# A-09 migration: the wiki hooks a PREVIOUS version deposited as PowerShell `.ps1`. An `upgrade`
+# must remove the legacy `.ps1` FILES (declared legacy-owned) and WIRING entries (by basename).
+_LEGACY_WIKI_PS1_BASENAMES = ("wiki-pending-check.ps1", "wiki-session-start.ps1")
+
+
+def _legacy_wiki_ps1_targets(assistant: AssistantId) -> tuple[str, ...]:
+    """Legacy `.ps1` wiki-hook files a prior version deposited (removed on upgrade).
+
+    Claude got both `.ps1` (the `assets/claude/**` walk); Copilot got only `wiki-pending-check.ps1`
+    (its SessionStart was already a static prompt — no session-start script, W5).
+    """
+    if assistant is AssistantId.CLAUDE:
+        return (".claude/hooks/wiki-pending-check.ps1", ".claude/hooks/wiki-session-start.ps1")
+    return (".github/hooks/wiki-pending-check.ps1",)
 # FEAT-011: the Copilot hook wiring is GENERATED natively (render_copilot_hooks), no longer read
 # from a static Claude-format asset. The sentinel source marks the GENERATED-wiki wiring so the
 # apply callback builds it instead of reading a file (no new ArtifactKind, data-model §4).
@@ -409,10 +426,8 @@ def execute_plan(
     report = _kit_execute_plan(
         plan, apply, target=str(root), capability="wiki", assistant=assistant.value
     )
-    # E10-FEAT-018: honest, non-fatal pwsh guard for the deposited `.ps1` lifecycle hooks on
-    # non-Windows hosts without PowerShell Core. Detect+report only; no wiring is rewritten (D-3).
-    hook_surfaces = [a.target_rel for a in plan if a.target_rel.endswith(".ps1")]
-    host_env.maybe_note_pwsh(report, hook_surfaces)
+    # (The former `pwsh`-unavailability note is gone — A-09 made the wiki hooks portable Python, so
+    # there is no `.ps1` surface that needs PowerShell Core; E10-FEAT-018 is superseded.)
     return report
 
 
@@ -429,11 +444,16 @@ def sertor_owned_paths(assistant: AssistantId = AssistantProfile.DEFAULT) -> Ser
     plan's `target_rel`s ⊆ these (the manifest replacement).
     """
     plan = build_install_plan(assistant)
-    owned_files = tuple(
-        a.target_rel
-        for a in plan
-        if a.kind in (ArtifactKind.FILE, ArtifactKind.CONFIG)
-        and a.target_rel != "wiki/"
+    owned_files = (
+        *(
+            a.target_rel
+            for a in plan
+            if a.kind in (ArtifactKind.FILE, ArtifactKind.CONFIG)
+            and a.target_rel != "wiki/"
+        ),
+        # A-09: legacy `.ps1` wiki hooks (not plan targets) — declared owned so the UPGRADE obsolete
+        # phase strips them from a host installed by a previous version (single-impl, DA-1).
+        *_legacy_wiki_ps1_targets(assistant),
     )
     aprofile = AssistantProfile.for_assistant(assistant)
     instruction_target = aprofile.target_for(Surface.INSTRUCTION_BLOCK).target_rel
@@ -526,6 +546,12 @@ def _apply_wiki_upgrade(
     if art.kind is ArtifactKind.CONFIG:
         return _apply_config(target_root, art, profile)  # create-if-absent, preserves user config
     if art.kind is ArtifactKind.SETTINGS_MERGE:
+        # A-09 migration: strip legacy `.ps1` wiki-hook entries BEFORE the additive `.py` merge, so
+        # an upgrading host is left single-impl (no orphan wiring pointing at the removed `.ps1`).
+        dest = _resolve(target_root, art.target_rel)
+        remove_hook_entries_by_command_substring(
+            dest, _LEGACY_WIKI_PS1_BASENAMES, delete_if_empty=(dest.name == "sertor-hooks.json")
+        )
         return _apply_settings(target_root, art, assistant)  # additive idempotent
     raise ConfigError(f"unhandled artifact kind: {art.kind}")  # pragma: no cover
 

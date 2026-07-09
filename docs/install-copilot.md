@@ -23,11 +23,11 @@ It writes the MCP server to `.mcp.json` (`mcpServers` root, where the CLI looks)
   **no credentials**, downloaded once per machine (~822 MB) on the first index. Alternatives:
   **Azure OpenAI** (`text-embedding-3-*`, cloud, billable), local **[Ollama](https://ollama.com)**
   (`ollama pull nomic-embed-text`), or **`hash`** (zero-download lexical floor, for airgapped/CI).
-- **`pwsh` (PowerShell Core) — required on macOS/Linux for the lifecycle hooks** distributed by
-  `sertor install rag`/`wiki` on the Copilot CLI (the hooks are PowerShell-only `.ps1`). On Windows it
-  is already present; on **macOS/Linux without `pwsh` the hooks are installed but never run**. Install
-  it from <https://learn.microsoft.com/powershell/scripting/install/installing-powershell>. The
-  installer declares this gap in an actionable note (it never fails the install for it).
+- **No PowerShell needed — the hooks are portable.** The lifecycle hooks distributed by
+  `sertor install rag`/`wiki` on the Copilot CLI are **portable Python** scripts, invoked as
+  `uv run --no-project python <hook>.py`. They work identically on **Windows, macOS and Linux** with
+  **no PowerShell dependency** (`uv` is already the package prerequisite above; `--no-project` isolates
+  the hook from the host's own `pyproject.toml`).
 
 Run each command **in the root of the target repository**.
 
@@ -71,15 +71,16 @@ and docs. Quick check: `uv run --project .sertor sertor-rag search "how does X w
 ### Staying fresh automatically (E10-FEAT-011)
 
 `install rag` wires the corpus to stay fresh on its own. A **SessionEnd** hook
-(`.github/hooks/rag-freshness.ps1`) re-indexes (incremental — near-free when nothing changed) and runs
+(`.github/hooks/rag-freshness.py`) re-indexes (incremental — near-free when nothing changed) and runs
 `doctor` at the end of each session, recording the verdict in `.sertor/.rag-health.json`. On the
 Copilot CLI the **SessionStart** signal is a **static startup prompt** (not a script) that, if the last
-verdict was `degraded`, asks the agent to re-index / reconnect the MCP server before working. Needs
-`pwsh`; no LLM is invoked by the hook and it never blocks the session. Manual re-index any time:
+verdict was `degraded`, asks the agent to re-index / reconnect the MCP server before working. The hook
+is portable Python (run via `uv run --no-project python`, no PowerShell); no LLM is invoked by it and
+it never blocks the session. Manual re-index any time:
 `uv run --project .sertor sertor-rag index .`. Details: [install.md §10.1](install.md#101-refresh).
 
 There is also an **update notice** (E2-FEAT-013): a **SessionEnd** hook
-(`.github/hooks/version-check.ps1`) checks the remote `/VERSION` at most ~once a day, and on the
+(`.github/hooks/version-check.py`) checks the remote `/VERSION` at most ~once a day, and on the
 Copilot CLI the **SessionStart** signal is a **static startup prompt** that **warns** you if you're
 behind, pointing to `sertor upgrade` / `uvx --refresh`. It is **only a notice, never an auto-upgrade**
 (you decide when to update). Details: [install.md §10.1](install.md#101-refresh).

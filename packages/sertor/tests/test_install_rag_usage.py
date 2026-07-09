@@ -7,11 +7,7 @@ non-destructive, idempotent; the hook's absence must not break the capability (P
 from __future__ import annotations
 
 import json
-import shutil
-import subprocess
 from pathlib import Path
-
-import pytest
 
 from sertor_install_kit.artifacts import ArtifactKind, WriteStrategy
 from sertor_installer.install_rag import (
@@ -206,51 +202,21 @@ def test_rerun_no_changes_to_existing_artifacts(tmp_path: Path, make_runner):
     assert (tmp_path / _SETTINGS_REL).read_text(encoding="utf-8") == settings_before
 
 
-# --- hook script: form + warn/exclusion/fail-open smoke (skipped if no PowerShell) -----------
+# --- hook script: portable-Python asset form --------------------------------------------------
+#
+# The warn/exclusion/fail-open EXECUTION matrix (formerly a pwsh smoke here) is now covered by the
+# portable-hook parity gate in `test_portable_hooks_parity.py`: `test_usage_check_warns_on_direct_
+# import`, `::test_usage_check_skips_test_paths`, `::test_usage_check_fail_open_on_no_import` and
+# `::test_usage_check_fail_open_on_empty_and_garbage` run the `.py` hook and assert exit 0 + a
+# stderr-only warning (never a stdout payload). This file keeps only the asset-form check.
 
 def _hook_script_path() -> Path:
-    return Path(str(asset_path("rag/hooks/sertor-rag-usage-check.ps1")))
+    return Path(str(asset_path("rag/hooks/sertor-rag-usage-check.py")))
 
 
 def test_hook_script_asset_form():
-    """Asset is present, PowerShell, fail-open (exit 0) and detects `sertor_core`."""
+    """Asset is present, portable Python, fail-open (always exit 0) and detects `sertor_core`."""
     text = _hook_script_path().read_text(encoding="utf-8")
     assert "import" in text and "sertor_core" in text  # detection
-    assert "exit 0" in text                            # non-blocking / fail-open
-    assert "[Console]::Error" in text                  # warning on stderr
-
-
-_PWSH = shutil.which("pwsh") or shutil.which("powershell")
-
-
-def _invoke_hook(payload: str) -> subprocess.CompletedProcess:
-    return subprocess.run(
-        [_PWSH, "-NoProfile", "-File", str(_hook_script_path())],
-        input=payload,
-        capture_output=True,
-        text=True,
-    )
-
-
-@pytest.mark.skipif(_PWSH is None, reason="PowerShell not available on this host")
-@pytest.mark.parametrize(
-    ("payload", "expect_warn"),
-    [
-        # violation: import outside test → warn
-        ('{"tool_name":"Bash","tool_input":{"command":"python -c import sertor_core"}}', True),
-        # test path → excluded
-        (
-            '{"tool_name":"Write","tool_input":'
-            '{"file_path":"tests/test_x.py","content":"import sertor_core"}}',
-            False,
-        ),
-        # legit vehicle usage → no signal
-        ('{"tool_name":"Bash","tool_input":{"command":"sertor-rag search foo"}}', False),
-        # parse error → fail-open, no signal
-        ("not json at all", False),
-    ],
-)
-def test_hook_warn_and_exclusion_smoke(payload: str, expect_warn: bool):
-    res = _invoke_hook(payload)
-    assert res.returncode == 0  # never blocks
-    assert bool(res.stderr.strip()) is expect_warn
+    assert "_hooklib.run" in text                      # non-blocking / fail-open (always exit 0)
+    assert "file=sys.stderr" in text                   # warning on stderr only
