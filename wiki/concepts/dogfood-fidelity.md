@@ -46,7 +46,7 @@ progetto `uv` a sé (`.sertor/pyproject.toml` + `.sertor/uv.lock` + `.sertor/.ve
   fail-loud, **dogfood-only**) lo riallinea meccanicamente nel rituale post-merge, *prima* di re-index/smoke.
   Il lock è **gitignorato** (volatile, tracks HEAD); solo `.sertor/pyproject.toml` è versionato (la spec
   stabile). Confine D↔N: lo script è deterministico, l'innesco è giudizio del flusso principale — e resta
-  **fuori** dagli asset distribuiti (l'hook `rag-freshness.ps1` non deve inseguire HEAD).
+  **fuori** dagli asset distribuiti (l'hook `rag-freshness.py` non deve inseguire HEAD).
 
 ## Il confine dev↔dogfood (non è uno special-case)
 

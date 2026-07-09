@@ -64,7 +64,7 @@ esplicito, mai normalizzato in silenzio.
 ## Chi lo consuma
 
 `wiki_tools` è a sua volta esercitato da [[thin-consumer|consumatori sottili]]: l'hook
-`wiki-pending-check.ps1` è un thin wrapper su `scan`; la skill/agente del wiki lo chiamano per il meccanico,
+`wiki-pending-check.py` è un thin wrapper su `scan`; la skill/agente del wiki lo chiamano per il meccanico,
 tenendosi il giudizio. Realizzato in **FEAT-003-D** (record datato: [[nucleo-wiki-deterministico-feat003d]]).
 
 ## Vedi anche

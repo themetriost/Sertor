@@ -3,15 +3,16 @@ title: SessionStart hook
 type: tech
 tags: [hook, claude-code, wiki, contesto, da-w1]
 created: 2026-05-31
-updated: 2026-06-09
-sources: [".claude/settings.json"]
+updated: 2026-07-09 (A-09: hook riscritto in Python portabile, non più comando PowerShell inline)
+sources: [".claude/settings.json", ".claude/hooks/wiki-session-start.py"]
 ---
 
 # SessionStart hook
 
-Il **SessionStart hook** fa aprire la sessione con lo **stato del progetto** nel contesto. È un
-comando PowerShell **inline** (non uno script separato) dichiarato in `.claude/settings.json`
-(`statusMessage` = "Carico lo stato del wiki", timeout 15s). È la prova empirica del ruolo *"contesto
+Il **SessionStart hook** fa aprire la sessione con lo **stato del progetto** nel contesto. Dal 2026-07-09
+(A-09) è uno **script Python portabile** — `wiki-session-start.py`, invocato via
+`uv run --no-project python` (nessuna dipendenza da PowerShell/`pwsh`, funziona su ogni OS) — cablato in
+`.claude/settings.json` (`statusMessage` = "Carico lo stato del wiki", timeout 15s). È la prova empirica del ruolo *"contesto
 iniettato"* del wiki ([[wiki-role-da-w1]]): l'**host** (Claude Code) spinge la mappa del wiki davanti al
 modello in modalità *push*, prima di qualunque query e senza passare dal RAG.
 
@@ -22,9 +23,10 @@ Si esegue all'**avvio** della sessione e — come si osserva dai `system-reminde
 flusso principale a caricare il contesto *di propria iniziativa* con il tool `Read` —
 `wiki/syntheses/roadmap.md`, `wiki/index.md`, l'ultimo file di `wiki/log/` — e poi a **mostrare all'utente
 l'executive summary** della roadmap (il blocco tra i marker `<!-- EXEC:START -->` / `<!-- EXEC:END -->`).
-L'unica computazione che fa è risolvere la radice da `$env:CLAUDE_PROJECT_DIR` e calcolare il **nome** della
-partizione di log più recente (vedi sotto), da nominare nella direttiva; forza l'output in UTF-8. Il comando
-esatto vive in `.claude/settings.json` (non trascritto qui: una copia nel wiki divergerebbe al primo ritocco).
+L'unica computazione che fa è risolvere la radice da `CLAUDE_PROJECT_DIR` (con fallback alla cwd, via
+`_hooklib`) e calcolare il **nome** della partizione di log più recente (vedi sotto), da nominare nella
+direttiva. Il wiring esatto vive in `.claude/settings.json` (non trascritto qui: una copia nel wiki
+divergerebbe al primo ritocco).
 
 La catena è: **l'hook *innesca*, il `Read` *trasporta*, il rituale tiene il *contenuto* vero**.
 
