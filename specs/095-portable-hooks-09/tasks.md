@@ -61,7 +61,7 @@ description: "Task list — E2 A-09 portabilità hook (hook portabili)"
 - [X] T015 [US2] Parità **effetti di stato**: `version-check`→`.version-check.json` (cache-path, no rete), schema invariato; `.rag-health.json` via worker (dogfood)
 - [X] T016 [US2] **Fail-safe/stdin-guard** coperti (fail-open usage-check, no-op malformed, no-hang senza stdin)
 - [X] T017 [US2] **Detach** foreground di `rag-freshness`: ritorna subito (parità); worker disaccoppiato
-- [ ] T018 [US2] **Smoke CI matrice** (ubuntu + windows) — **DA FARE** (prova la portabilità reale dell'esecuzione via `uv run --no-project`)
+- [X] T018 [US2] **Smoke CI matrice** (ubuntu + windows) — `test_portable_hooks_smoke.py` guida ogni hook via il **vero vehicle** `uv run --no-project python <hook>.py` (marker `hooks_smoke`, 8 test, exit-0 + effetti hermetici, no rete); step CI dedicato *«Smoke — portable hooks»* nel job `test` (matrice windows+ubuntu, **per-PR**), escluso dal run sertor principale (no doppio-run). Prova la portabilità reale dell'esecuzione (C6, SC-001/005) su entrambi gli OS senza `pwsh`. Verde in locale (Windows, 8/8, 1.6s), ruff clean.
 
 **Checkpoint US2:** parità verde (gate) su tutti gli hook/assistenti/OS.
 

@@ -47,7 +47,13 @@ jobs:
         run: uv run pytest -m "not cloud and not integration"
 
       - name: Tests — sertor (wiki/rag installer)
-        run: uv run pytest packages/sertor/tests -m "not cloud and not integration"
+        run: uv run pytest packages/sertor/tests -m "not cloud and not integration and not hooks_smoke"
+
+      # A-09 (E2, T018/C6): drive each portable hook through the REAL host-facing vehicle
+      # (`uv run --no-project python <hook>.py`) on THIS matrix OS — proves cross-OS execution with
+      # no `pwsh`/shell dependency. Runs per-PR on both windows-latest and ubuntu-latest.
+      - name: Smoke — portable hooks (uv run --no-project python)
+        run: uv run pytest packages/sertor/tests -m hooks_smoke -v
 
       - name: Tests — sertor-install-kit
         run: uv run pytest packages/sertor-install-kit/tests -m "not cloud and not integration"

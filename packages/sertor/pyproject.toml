@@ -55,4 +55,5 @@ addopts = "-ra"
 markers = [
     "cloud: test che richiedono credenziali/servizi cloud (esclusi dalla CI locale)",
     "integration: test di integrazione end-to-end",
+    "hooks_smoke: A-09 — esegue gli hook portabili via `uv run --no-project python` (smoke CI ubuntu+windows, C6)",
 ]
