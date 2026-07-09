@@ -26,7 +26,7 @@ description: "Task list — E2 A-09 portabilità hook (hook portabili)"
 
 **Purpose**: il meccanismo d'invocazione portabile + l'harness di parità, prerequisiti di ogni hook.
 
-- [ ] T003 Kit/installer: sostituire nel **wiring** la forma `"shell":"powershell"` + `.ps1` con `uv run --no-project python <hookpath>` (Claude `settings.*.json` + Copilot) — **DA FARE**
+- [X] T003 Kit/installer: **wiring portato** — 7 settings JSON Claude (no `"shell"`, `.ps1`→`.py`, comando `uv run --no-project python .../<name>.py [--assistant/--mode]`) + Copilot `HookEntrySpec` (`_PY` al posto di `_PWSH`, `--assistant/--mode`). **Deposito `_hooklib.py`** aggiunto (mancava: gli hook lo importano) per rag+wiki, entrambi gli assistenti; owned-paths aggiornati. `resources.py` salta `__pycache__` (i `.py` negli asset generano bytecode). Suite `-m "not cloud"` **1176 verde**, ruff clean, `sertor-core` invariato. *(Coda coupled resa verde qui: guardie sync dogfood auto-coprono i `.py` (≈T020), sync dogfood eseguito (≈T025), nota `pwsh` rag ora inerte + test invertiti (≈T021 lato-rag); restano T019/T022/T023 + T021 lato-wiki.)*
 - [X] T004 Helper condiviso `_hooklib.py` (stdin-guard `read_event`, `project_root`/`sertor_dir`, `write_breadcrumb` secret-free `hook.error/1`, `run()` fail-safe exit-0) — creato + provato
 - [X] T005 [P] Harness di parità `test_portable_hooks_parity.py` (subprocess con evento simulato → stdout/stderr + file `.sertor/*`); 10 test verdi
 

@@ -42,6 +42,11 @@ def iter_asset_dir(anchor: str, relative: str) -> Iterator[tuple[str, str]]:
 
     def _walk(node: Traversable, prefix: str) -> Iterator[tuple[str, str]]:
         for child in sorted(node.iterdir(), key=lambda c: c.name):
+            # Skip Python bytecode caches: portable `.py` hooks (A-09) live in the asset tree, so a
+            # test/run that imports them materializes `__pycache__/*.pyc` alongside — binary files
+            # that must never be walked as UTF-8 text nor deposited on a host.
+            if child.name == "__pycache__" or child.name.endswith(".pyc"):
+                continue
             child_rel = f"{prefix}{child.name}"
             if child.is_dir():
                 yield from _walk(child, f"{child_rel}/")

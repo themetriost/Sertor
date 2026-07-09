@@ -73,7 +73,7 @@ def test_claude_and_copilot_cli_host_surfaces_distinct(tmp_path):
     # `.gitattributes`) and the runtime dir `.sertor`.
     assert shared <= {".gitignore", ".gitattributes", ".sertor", ".mcp.json"}
     # The host-facing hook script lives in distinct trees per assistant.
-    assert ".github/hooks/sertor-rag-usage-check.ps1" in copilot_cli.covered_targets()
-    assert ".github/hooks/sertor-rag-usage-check.ps1" not in claude.covered_targets()
-    assert ".claude/hooks/sertor-rag-usage-check.ps1" in claude.covered_targets()
-    assert ".claude/hooks/sertor-rag-usage-check.ps1" not in copilot_cli.covered_targets()
+    assert ".github/hooks/sertor-rag-usage-check.py" in copilot_cli.covered_targets()
+    assert ".github/hooks/sertor-rag-usage-check.py" not in claude.covered_targets()
+    assert ".claude/hooks/sertor-rag-usage-check.py" in claude.covered_targets()
+    assert ".claude/hooks/sertor-rag-usage-check.py" not in copilot_cli.covered_targets()

@@ -36,7 +36,7 @@ def test_upgrade_rag_aligned_host_zero_updates(tmp_path: Path, capsys):
 
 def test_upgrade_rag_updates_changed_standalone_file(tmp_path: Path, capsys):
     _install_rag(tmp_path)
-    hook = tmp_path / ".claude/hooks/sertor-rag-usage-check.ps1"
+    hook = tmp_path / ".claude/hooks/sertor-rag-usage-check.py"
     hook.write_text("# stale content\n", encoding="utf-8")  # simulate an old version
     capsys.readouterr()
     rc = main(["upgrade", "rag", "--target", str(tmp_path), "--no-deps", "--json"])
@@ -81,8 +81,8 @@ def test_upgrade_rag_json_schema(tmp_path: Path, capsys):
 def test_upgrade_removes_obsolete_owned_path(tmp_path: Path, capsys):
     # Install BOTH assistants' rag hooks on disk; upgrading for claude makes the copilot-only hook
     # (an owned path absent from the claude plan) obsolete → removed (FR-012). Claude hook stays.
-    _install_rag(tmp_path)  # claude: .claude/hooks/...ps1
-    copilot_hook = tmp_path / ".github/hooks/sertor-rag-usage-check.ps1"
+    _install_rag(tmp_path)  # claude: .claude/hooks/...py
+    copilot_hook = tmp_path / ".github/hooks/sertor-rag-usage-check.py"
     copilot_hook.parent.mkdir(parents=True, exist_ok=True)
     copilot_hook.write_text("# leftover copilot hook\n", encoding="utf-8")
     capsys.readouterr()
@@ -91,7 +91,7 @@ def test_upgrade_removes_obsolete_owned_path(tmp_path: Path, capsys):
     payload = json.loads(capsys.readouterr().out.strip())
     assert payload["summary"]["removed"] >= 1  # the leftover copilot hook
     assert not copilot_hook.exists()
-    assert (tmp_path / ".claude/hooks/sertor-rag-usage-check.ps1").exists()  # current plan kept
+    assert (tmp_path / ".claude/hooks/sertor-rag-usage-check.py").exists()  # current plan kept
 
 
 def test_upgrade_keeps_non_owned_disk_path(tmp_path: Path, capsys):
@@ -108,7 +108,7 @@ def test_upgrade_keeps_non_owned_disk_path(tmp_path: Path, capsys):
 
 def test_upgrade_dry_run_writes_nothing(tmp_path: Path, capsys):
     _install_rag(tmp_path)
-    hook = tmp_path / ".claude/hooks/sertor-rag-usage-check.ps1"
+    hook = tmp_path / ".claude/hooks/sertor-rag-usage-check.py"
     hook.write_text("# stale\n", encoding="utf-8")
     before = {p: p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()}
     capsys.readouterr()
@@ -132,7 +132,7 @@ def test_upgrade_switch_assistant_removes_old_specific(tmp_path: Path, capsys):
     # install for claude, then switch to copilot-cli. A-01 (decision b): the switch REMOVES the
     # coexisting claude install → it is destructive → requires explicit consent (`--yes`).
     _install_rag(tmp_path)
-    assert (tmp_path / ".claude/hooks/sertor-rag-usage-check.ps1").exists()
+    assert (tmp_path / ".claude/hooks/sertor-rag-usage-check.py").exists()
     capsys.readouterr()
     rc = main([
         "upgrade", "rag", "--target", str(tmp_path), "--no-deps",
@@ -141,8 +141,8 @@ def test_upgrade_switch_assistant_removes_old_specific(tmp_path: Path, capsys):
     assert rc == 0
     # claude-specific hook (not shared with copilot-cli) becomes obsolete → removed; copilot-cli
     # surfaces are created/updated.
-    assert (tmp_path / ".github/hooks/sertor-rag-usage-check.ps1").exists()
-    assert not (tmp_path / ".claude/hooks/sertor-rag-usage-check.ps1").exists()
+    assert (tmp_path / ".github/hooks/sertor-rag-usage-check.py").exists()
+    assert not (tmp_path / ".claude/hooks/sertor-rag-usage-check.py").exists()
 
 
 def test_upgrade_switch_without_consent_is_refused(tmp_path: Path, capsys):
@@ -155,8 +155,8 @@ def test_upgrade_switch_without_consent_is_refused(tmp_path: Path, capsys):
         "--assistant", "copilot-cli",  # no --yes, pytest has no TTY
     ])
     assert rc == 2  # UsageError
-    assert (tmp_path / ".claude/hooks/sertor-rag-usage-check.ps1").exists()  # untouched
-    assert not (tmp_path / ".github/hooks/sertor-rag-usage-check.ps1").exists()  # no switch
+    assert (tmp_path / ".claude/hooks/sertor-rag-usage-check.py").exists()  # untouched
+    assert not (tmp_path / ".github/hooks/sertor-rag-usage-check.py").exists()  # no switch
 
 
 def test_bare_upgrade_preserves_coexisting_assistant(tmp_path: Path, capsys):
@@ -166,8 +166,8 @@ def test_bare_upgrade_preserves_coexisting_assistant(tmp_path: Path, capsys):
     assert main([
         "install", "rag", "--target", str(tmp_path), "--no-deps", "--assistant", "copilot-cli",
     ]) == 0
-    claude_hook = tmp_path / ".claude/hooks/sertor-rag-usage-check.ps1"
-    copilot_hook = tmp_path / ".github/hooks/sertor-rag-usage-check.ps1"
+    claude_hook = tmp_path / ".claude/hooks/sertor-rag-usage-check.py"
+    copilot_hook = tmp_path / ".github/hooks/sertor-rag-usage-check.py"
     assert claude_hook.exists() and copilot_hook.exists()
     capsys.readouterr()
     rc = main(["upgrade", "rag", "--target", str(tmp_path), "--no-deps", "--json"])

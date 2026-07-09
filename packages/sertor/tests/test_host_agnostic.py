@@ -11,7 +11,11 @@ to the Sertor *project*:
   server uses) — FEAT-010;
 - `github.com/themetriost/Sertor` — the interim `git+url`/`uvx --from` distribution URL the
   installer-invocation guidance cites (FEAT-010);
-- `SERTOR:WIKI-RITUAL` — namespace of the marker in CLAUDE.md (product name, not host-specific).
+- `SERTOR:WIKI-RITUAL` — namespace of the marker in CLAUDE.md (product name, not host-specific);
+- `Sertor hooks` — the `_hooklib.py` subsystem description of the portable hooks (A-09), shipped
+  byte-identical to every host (a product-name mention, not a dogfood reference);
+- `sertor_dir` — the portable-hook (A-09) code identifier for the `.sertor` runtime directory,
+  identical in every installed hook (a variable name, not a project reference).
 Everything else is considered a reference to the Sertor project → the test fails.
 """
 from __future__ import annotations
@@ -29,6 +33,8 @@ _WHITELIST = (
     "github.com/themetriost/Sertor",
     "sertor-wiki-tools",
     "sertor-rag",
+    "Sertor hooks",   # A-09 portable-hook subsystem description (host-agnostic, in _hooklib.py)
+    "sertor_dir",     # A-09 portable-hook identifier for the `.sertor` runtime dir (host-agnostic)
     ".sertor",
     "SERTOR:WIKI-RITUAL",
 )

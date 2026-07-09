@@ -129,8 +129,8 @@ def test_wiki_wiring_is_native_copilot_schema(tmp_path: Path):  # FR-001..004 / 
 def test_wiki_stop_command_passes_assistant_copilot(tmp_path: Path):
     _install(tmp_path)
     stop = _wiring(tmp_path)["hooks"]["Stop"][0]
-    assert "-Assistant copilot" in stop["command"]
-    assert "-Mode Stop" in stop["command"]
+    assert "--assistant copilot" in stop["command"]
+    assert "--mode Stop" in stop["command"]
     assert stop["timeoutSec"] == 10
 
 
@@ -149,9 +149,9 @@ def test_cli_session_start_is_prompt_not_command(tmp_path: Path):  # FR-006 / SC
 
 def test_hook_script_reused_identically(tmp_path: Path):  # FR-014 / surface-mapping prop.3
     _install(tmp_path)
-    copied = tmp_path / ".github" / "hooks" / "wiki-pending-check.ps1"
+    copied = tmp_path / ".github" / "hooks" / "wiki-pending-check.py"
     assert copied.is_file()
-    canonical = read_asset_text("claude/hooks/wiki-pending-check.ps1")
+    canonical = read_asset_text("claude/hooks/wiki-pending-check.py")
     assert copied.read_text(encoding="utf-8") == canonical
 
 

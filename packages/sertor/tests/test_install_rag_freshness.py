@@ -1,8 +1,9 @@
 """Tests for E10-FEAT-011: deterministic RAG-freshness enforcement via `sertor install rag`.
 
-`install rag` now also deposits the freshness hook (`rag-freshness.ps1`, SessionEnd: re-index +
-doctor + persist) plus a SessionStart signal (`rag-freshness-start.ps1` on Claude; a static native
-prompt on Copilot CLI — W5). Routed per-assistant (Claude `.claude/settings.json`, Copilot native
+`install rag` now also deposits the freshness hook (`rag-freshness.py`, SessionEnd: re-index +
+doctor + persist) plus a SessionStart signal (`rag-freshness-start.py` on Claude; a static native
+prompt on Copilot CLI — W5). Portable (A-09): hooks are Python, run via `uv run --no-project
+python`. Routed per-assistant (Claude `.claude/settings.json`, Copilot native
 `.github/hooks/sertor-hooks.json`). Additive, isolated from memory-capture/rag-usage; the hook is
 non-fatal (exit 0 always) and re-indexes unconditionally (skip delegated to the core, FR-002).
 Mirrors the memory-capture hook pattern (FILE + SETTINGS_MERGE), no new ArtifactKind.
@@ -27,10 +28,10 @@ from sertor_installer.install_rag import (
 from sertor_installer.rag_profile import RagHostProfile, RagInstallOptions
 from sertor_installer.resources import asset_path
 
-_FRESHNESS_HOOK_REL = ".claude/hooks/rag-freshness.ps1"
-_FRESHNESS_START_REL = ".claude/hooks/rag-freshness-start.ps1"
-_FRESHNESS_HOOK_REL_COPILOT = ".github/hooks/rag-freshness.ps1"
-_FRESHNESS_START_REL_COPILOT = ".github/hooks/rag-freshness-start.ps1"
+_FRESHNESS_HOOK_REL = ".claude/hooks/rag-freshness.py"
+_FRESHNESS_START_REL = ".claude/hooks/rag-freshness-start.py"
+_FRESHNESS_HOOK_REL_COPILOT = ".github/hooks/rag-freshness.py"
+_FRESHNESS_START_REL_COPILOT = ".github/hooks/rag-freshness-start.py"
 _SETTINGS_REL = ".claude/settings.json"
 _COPILOT_WIRING_REL = ".github/hooks/sertor-hooks.json"
 
@@ -94,7 +95,7 @@ def test_freshness_isolated_from_memory_capture(tmp_path: Path):
     profile = _profile(tmp_path, backend="azure")
     plan = build_rag_plan(profile, with_deps=False, assistant=AssistantId.CLAUDE)
     files = [_norm(a.target_rel) for a in plan if a.kind is ArtifactKind.FILE]
-    assert ".claude/hooks/memory-capture.ps1" in files
+    assert ".claude/hooks/memory-capture.py" in files
     assert _FRESHNESS_HOOK_REL in files
     settings = [a for a in plan if a.kind is ArtifactKind.SETTINGS_MERGE]
     sources = {a.source for a in settings}
@@ -108,13 +109,13 @@ def test_freshness_settings_merge_both_events_claude(tmp_path: Path, make_runner
     _run(tmp_path, make_runner(), backend="azure", with_deps=False)
     settings = json.loads((tmp_path / _SETTINGS_REL).read_text(encoding="utf-8"))
     end_cmds = [h["command"] for e in settings["hooks"]["SessionEnd"] for h in e.get("hooks", [])]
-    assert any("rag-freshness.ps1" in c for c in end_cmds)
+    assert any("rag-freshness.py" in c for c in end_cmds)
     start_cmds = [
         h["command"] for e in settings["hooks"]["SessionStart"] for h in e.get("hooks", [])
     ]
-    assert any("rag-freshness-start.ps1" in c for c in start_cmds)
+    assert any("rag-freshness-start.py" in c for c in start_cmds)
     # memory-capture still present (isolation)
-    assert any("memory-capture.ps1" in c for c in end_cmds)
+    assert any("memory-capture.py" in c for c in end_cmds)
 
 
 # --- install behaviour: script content / non-fatal --------------------------------------------
@@ -124,32 +125,33 @@ def test_freshness_hook_content(tmp_path: Path, make_runner):
     hook = tmp_path / _FRESHNESS_HOOK_REL
     assert hook.is_file()
     text = hook.read_text(encoding="utf-8")
-    assert "sertor-rag index" in text   # delegates the re-index to the vehicle
-    assert "sertor-rag doctor" in text  # health verdict via the vehicle
-    assert "rag.health/1" in text       # writes the contract schema
-    assert "exit 0" in text             # non-fatal
+    assert '"sertor-rag", "index"' in text   # delegates the re-index to the vehicle (list argv)
+    assert '"sertor-rag", "doctor"' in text  # health verdict via the vehicle (list argv)
+    assert "rag.health/1" in text            # writes the contract schema
+    assert "_hooklib.run" in text            # non-fatal fail-safe runner (always exit 0)
 
 
 def test_freshness_hook_non_blocking_design(tmp_path: Path, make_runner):
     """E10-FEAT-016 refinement: the FOREGROUND only RELAUNCHES this same script DETACHED in worker
-    mode (Start-Process pwsh -Worker), so the session close returns immediately — doctor AND index
-    run off the critical path. The CLI is invoked via `uv run --project <root>/.sertor`
-    (PATH-independent), never bare `uv run sertor-rag`."""
+    mode (`subprocess.Popen` via `_spawn_detached`, `--worker`), so the session close returns
+    immediately — doctor AND index run off the critical path. The CLI is invoked via
+    `uv run --project <root>/.sertor` (PATH-independent), never bare `uv run sertor-rag`."""
     _run(tmp_path, make_runner(), backend="azure", with_deps=False)
     text = (tmp_path / _FRESHNESS_HOOK_REL).read_text(encoding="utf-8")
-    # The foreground spawns a detached worker process.
-    assert "Start-Process" in text
-    assert "-Worker" in text                 # relaunches itself in worker mode
-    # Vehicle invocations use the project-pinned form (PATH-independent), not bare `uv run`.
-    assert "uv run --project" in text
+    # The foreground spawns a detached worker process (cross-OS).
+    assert "subprocess.Popen" in text
+    assert "_spawn_detached" in text
+    assert "--worker" in text                # relaunches itself in worker mode
+    # Vehicle invocations use the project-pinned form (PATH-independent, list argv), not bare uv.
+    assert '"uv", "run", "--project"' in text
     assert "uv run sertor-rag" not in text   # the old bare form must be gone
 
 
 def _script_body(text: str) -> str:
-    """Strip the leading `<# ... #>` comment-help block so positional asserts look only at CODE,
-    not at marker strings that also appear in the documentation."""
-    end = text.find("#>")
-    return text[end + 2 :] if end != -1 else text
+    """Return the hook source as-is. In the portable Python hook the positional-search tokens
+    (`def _worker`, `if args.worker`, `_spawn_detached(`, `os.replace(`, the list-literal vehicle
+    argv) appear ONLY in code, never in the module docstring, so no help-block stripping needed."""
+    return text
 
 
 def test_freshness_foreground_does_not_run_doctor_or_index_synchronously(
@@ -157,18 +159,22 @@ def test_freshness_foreground_does_not_run_doctor_or_index_synchronously(
 ):
     """E10-FEAT-016 refinement: the FOREGROUND branch must NOT run doctor + index synchronously —
     it only spawns the worker. The synchronous doctor/index calls live in the WORKER function
-    (defined before the `if ($Worker)` dispatch); the foreground only does the `Start-Process`
-    relaunch (after the dispatch), so they are never executed on the session-close path."""
+    (`_worker`, defined before the `if args.worker` dispatch); the foreground only does the detached
+    `_spawn_detached` relaunch (after the dispatch), so they are never executed on the session-close
+    path."""
     _run(tmp_path, make_runner(), backend="azure", with_deps=False)
     body = _script_body((tmp_path / _FRESHNESS_HOOK_REL).read_text(encoding="utf-8"))
-    worker_func = body.index("function Invoke-RagFreshnessWorker")
-    worker_dispatch = body.index("if ($Worker)")
-    spawn_pos = body.index("Start-Process")
+    worker_func = body.index("def _worker(")
+    worker_dispatch = body.index("if args.worker")
+    # The foreground detached spawn is the CALL to `_spawn_detached` in main() — its argv is built
+    # from `sys.executable`, a token unique to that call (the `def _spawn_detached` definition and
+    # the argparse `--worker` option both precede the dispatch, so we anchor on the call site).
+    spawn_pos = body.index("sys.executable")
     # Worker function defined first, then the dispatch, then the foreground detached spawn.
     assert worker_func < worker_dispatch < spawn_pos
-    # The synchronous vehicle calls (uv run) live inside the worker function, i.e. BEFORE the
-    # dispatch — the foreground path (after the dispatch) never calls a vehicle directly.
-    first_vehicle = body.index("uv run --project")
+    # The synchronous vehicle calls (uv run, list argv) live inside the worker function, i.e. BEFORE
+    # the dispatch — the foreground path (after the dispatch) never calls a vehicle directly.
+    first_vehicle = body.index('"uv", "run", "--project"')
     assert worker_func < first_vehicle < worker_dispatch
 
 
@@ -177,9 +183,9 @@ def test_freshness_worker_doctor_before_state_before_index(tmp_path: Path, make_
     written BEFORE the re-index, so `.rag-health.json` is never torn/absent."""
     _run(tmp_path, make_runner(), backend="azure", with_deps=False)
     body = _script_body((tmp_path / _FRESHNESS_HOOK_REL).read_text(encoding="utf-8"))
-    doctor_pos = body.index("sertor-rag doctor")
-    state_write_pos = body.index("Move-Item")          # the atomic state write
-    index_pos = body.index("sertor-rag index")
+    doctor_pos = body.index('"sertor-rag", "doctor"')   # doctor vehicle argv
+    state_write_pos = body.index("os.replace(")          # the atomic state write
+    index_pos = body.index('"sertor-rag", "index"')     # index vehicle argv
     assert doctor_pos < state_write_pos < index_pos
 
 
@@ -189,7 +195,7 @@ def test_freshness_start_content(tmp_path: Path, make_runner):
     assert start.is_file()
     text = start.read_text(encoding="utf-8")
     assert ".rag-health.json" in text   # reads the persisted state
-    assert "exit 0" in text             # non-fatal
+    assert "_hooklib.run" in text       # non-fatal fail-safe runner (always exit 0)
     # D<->N (FR-014): the start hook INDUCES (mentions the command in the directive) but never
     # EXECUTES the re-index itself — there is no `uv run`/vehicle invocation in the script body.
     assert "uv run" not in text
@@ -215,7 +221,7 @@ def test_freshness_hook_deposited_copilot(tmp_path: Path):
 
 
 def test_freshness_start_NOT_deposited_copilot(tmp_path: Path):
-    """W5: the Copilot SessionStart is a static prompt — NO `rag-freshness-start.ps1` script."""
+    """W5: the Copilot SessionStart is a static prompt — NO `rag-freshness-start.py` script."""
     profile = _profile(tmp_path, backend="azure")
     plan = build_rag_plan(profile, with_deps=False, assistant=AssistantId.COPILOT_CLI)
     files = [_norm(a.target_rel) for a in plan if a.kind is ArtifactKind.FILE]
@@ -232,7 +238,7 @@ def test_freshness_end_wiring_copilot_native_format(tmp_path: Path, make_runner)
     assert wiring["version"] == 1                       # native schema (R1/W1)
     assert "SessionEnd" in wiring["hooks"]
     entry = next(
-        e for e in wiring["hooks"]["SessionEnd"] if "rag-freshness.ps1" in e.get("command", "")
+        e for e in wiring["hooks"]["SessionEnd"] if "rag-freshness.py" in e.get("command", "")
     )
     assert entry["type"] == "command"
     assert "timeoutSec" in entry and "timeout" not in entry   # native field (W1)
@@ -286,7 +292,7 @@ def test_freshness_owned_files_claude():
 
 
 def test_freshness_owned_files_copilot():
-    """W5: Copilot owns only the SessionEnd script, never a SessionStart `.ps1`."""
+    """W5: Copilot owns only the SessionEnd script, never a SessionStart `.py`."""
     owned = sertor_owned_paths(AssistantId.COPILOT_CLI)
     covered = owned.covered_targets()
     assert _FRESHNESS_HOOK_REL_COPILOT in covered
@@ -325,8 +331,8 @@ def test_uninstall_removes_freshness_settings_preserving_user(tmp_path: Path, ma
     )
     settings = json.loads(settings_path.read_text(encoding="utf-8"))
     end_cmds = [h["command"] for e in settings["hooks"].get("SessionEnd", []) for h in e["hooks"]]
-    assert "echo mine" in end_cmds                              # user hook preserved
-    assert not any("rag-freshness.ps1" in c for c in end_cmds)  # ours removed
+    assert "echo mine" in end_cmds                             # user hook preserved
+    assert not any("rag-freshness.py" in c for c in end_cmds)  # ours removed
 
 
 def test_upgrade_updates_freshness_script(tmp_path: Path, make_runner):
@@ -340,7 +346,7 @@ def test_upgrade_updates_freshness_script(tmp_path: Path, make_runner):
         plan, profile, make_runner(), op=LifecycleOp.UPGRADE, assistant=AssistantId.CLAUDE
     )
     refreshed = hook.read_text(encoding="utf-8")
-    assert "sertor-rag index" in refreshed   # upgraded to the bundled body
+    assert '"sertor-rag", "index"' in refreshed   # upgraded to the bundled body (list argv)
 
 
 def test_freshness_install_idempotent(tmp_path: Path, make_runner):
@@ -349,16 +355,16 @@ def test_freshness_install_idempotent(tmp_path: Path, make_runner):
     _run(tmp_path, make_runner(), backend="azure", with_deps=False)
     settings = json.loads((tmp_path / _SETTINGS_REL).read_text(encoding="utf-8"))
     end_cmds = [h["command"] for e in settings["hooks"]["SessionEnd"] for h in e.get("hooks", [])]
-    assert sum("rag-freshness.ps1" in c for c in end_cmds) == 1
+    assert sum("rag-freshness.py" in c for c in end_cmds) == 1
     assert (tmp_path / _SETTINGS_REL).read_text(encoding="utf-8") == before
 
 
 # --- asset form -------------------------------------------------------------------------------
 
 def test_freshness_assets_present():
-    end = Path(str(asset_path("rag/hooks/rag-freshness.ps1"))).read_text(encoding="utf-8")
+    end = Path(str(asset_path("rag/hooks/rag-freshness.py"))).read_text(encoding="utf-8")
     assert "rag.health/1" in end
-    start = Path(str(asset_path("rag/hooks/rag-freshness-start.ps1"))).read_text(encoding="utf-8")
+    start = Path(str(asset_path("rag/hooks/rag-freshness-start.py"))).read_text(encoding="utf-8")
     assert ".rag-health.json" in start
 
 

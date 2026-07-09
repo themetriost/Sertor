@@ -1,6 +1,6 @@
 """Tests for feature 071 (FEAT-009): conversation-memory distribution via `sertor install rag`.
 
-`install rag` now also deposits the conversation-capture hook (`memory-capture.ps1`) plus a
+`install rag` now also deposits the conversation-capture hook (`memory-capture.py`) plus a
 `SessionEnd` wiring entry, routed per-assistant (Claude `.claude/settings.json`, Copilot native
 `.github/hooks/sertor-hooks.json`), plus the memory knobs in the `.env` template and a mention in
 the RAG-usage instruction block. Additive, idempotent, privacy-by-default; the hook is no-op unless
@@ -21,8 +21,8 @@ from sertor_installer.install_rag import (
 from sertor_installer.rag_profile import RagHostProfile, RagInstallOptions
 from sertor_installer.resources import asset_path
 
-_MEMORY_HOOK_REL = ".claude/hooks/memory-capture.ps1"
-_MEMORY_HOOK_REL_COPILOT = ".github/hooks/memory-capture.ps1"
+_MEMORY_HOOK_REL = ".claude/hooks/memory-capture.py"
+_MEMORY_HOOK_REL_COPILOT = ".github/hooks/memory-capture.py"
 _SETTINGS_REL = ".claude/settings.json"
 _COPILOT_WIRING_REL = ".github/hooks/sertor-hooks.json"
 
@@ -79,9 +79,9 @@ def test_memory_hook_deposited(tmp_path: Path, make_runner):
     hook = tmp_path / _MEMORY_HOOK_REL
     assert hook.is_file()
     text = hook.read_text(encoding="utf-8")
-    assert "memory archive" in text   # delegates to the CLI vehicle
-    assert "exit 0" in text           # non-fatal / non-blocking
-    assert "SERTOR_MEMORY" in text    # privacy gate
+    assert '"sertor-rag", "memory", "archive"' in text  # delegates to the CLI vehicle (list argv)
+    assert "_hooklib.run" in text                       # non-fatal / non-blocking (always exit 0)
+    assert "SERTOR_MEMORY" in text                      # privacy gate
 
 
 def test_memory_hook_create_if_absent_preserves_user_version(tmp_path: Path, make_runner):
@@ -97,7 +97,7 @@ def test_sessionend_entry_added(tmp_path: Path, make_runner):
     settings = json.loads((tmp_path / _SETTINGS_REL).read_text(encoding="utf-8"))
     assert "SessionEnd" in settings["hooks"]
     cmds = [h["command"] for e in settings["hooks"]["SessionEnd"] for h in e.get("hooks", [])]
-    assert any("memory-capture.ps1" in c for c in cmds)
+    assert any("memory-capture.py" in c for c in cmds)
 
 
 def test_memory_coexists_with_rag_usage(tmp_path: Path, make_runner):
@@ -125,7 +125,7 @@ def test_sessionend_preserves_existing_hooks(tmp_path: Path, make_runner):
     settings = json.loads(settings_path.read_text(encoding="utf-8"))
     cmds = [h["command"] for e in settings["hooks"]["SessionEnd"] for h in e["hooks"]]
     assert "echo mine" in cmds                                   # user hook preserved
-    assert any("memory-capture.ps1" in c for c in cmds)          # ours added
+    assert any("memory-capture.py" in c for c in cmds)          # ours added
 
 
 def test_memory_install_idempotent(tmp_path: Path, make_runner):
@@ -138,7 +138,7 @@ def test_memory_install_idempotent(tmp_path: Path, make_runner):
         h["command"] for e in settings["hooks"]["SessionEnd"] for h in e.get("hooks", [])
     ]
     # no duplicate memory entry
-    assert sum("memory-capture.ps1" in c for c in sessionend_cmds) == 1
+    assert sum("memory-capture.py" in c for c in sessionend_cmds) == 1
     assert (tmp_path / _SETTINGS_REL).read_text(encoding="utf-8") == before
     assert (tmp_path / _MEMORY_HOOK_REL).read_text(encoding="utf-8") == hook_before
 
@@ -154,7 +154,7 @@ def test_copilot_memory_wiring_generated_native(tmp_path: Path, make_runner):
     assert wiring["version"] == 1                       # native schema (R1)
     assert "SessionEnd" in wiring["hooks"]
     entry = wiring["hooks"]["SessionEnd"][0]
-    assert "memory-capture.ps1" in entry["command"]
+    assert "memory-capture.py" in entry["command"]
     assert "timeoutSec" in entry and "timeout" not in entry   # native field (R4)
     # coexists with the rag-usage PreToolUse wiring in the same dedicated file
     assert "PreToolUse" in wiring["hooks"]
@@ -193,12 +193,12 @@ def test_uninstall_removes_memory_preserving_user_hook(tmp_path: Path, make_runn
     settings = json.loads(settings_path.read_text(encoding="utf-8"))
     cmds = [h["command"] for e in settings["hooks"].get("SessionEnd", []) for h in e["hooks"]]
     assert "echo mine" in cmds                                   # user hook preserved
-    assert not any("memory-capture.ps1" in c for c in cmds)      # ours removed
+    assert not any("memory-capture.py" in c for c in cmds)      # ours removed
 
 
 # --- asset form ------------------------------------------------------------------------------
 
 def test_memory_hook_asset_form():
-    text = Path(str(asset_path("rag/hooks/memory-capture.ps1"))).read_text(encoding="utf-8")
-    assert "memory archive" in text
-    assert "exit 0" in text
+    text = Path(str(asset_path("rag/hooks/memory-capture.py"))).read_text(encoding="utf-8")
+    assert '"sertor-rag", "memory", "archive"' in text  # delegates to the CLI vehicle (list argv)
+    assert "_hooklib.run" in text                       # non-fatal fail-safe runner (always exit 0)

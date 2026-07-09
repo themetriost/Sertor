@@ -1,7 +1,7 @@
 """Tests for feature 042 (Principio XI, groups B+C): host-facing RAG-usage enforcement.
 
 `install rag` now deposits a `CLAUDE.md` block (`SERTOR:RAG-USAGE`, group B) and a host-specific
-PreToolUse hook (`.claude/hooks/sertor-rag-usage-check.ps1` + settings entry, group C). Additive,
+PreToolUse hook (`.claude/hooks/sertor-rag-usage-check.py` + settings entry, group C). Additive,
 non-destructive, idempotent; the hook's absence must not break the capability (Principio X).
 """
 from __future__ import annotations
@@ -31,7 +31,7 @@ def _run(target: Path, runner, **opts):
     return execute_rag_plan(plan, profile, runner), profile
 
 
-_HOOK_REL = ".claude/hooks/sertor-rag-usage-check.ps1"
+_HOOK_REL = ".claude/hooks/sertor-rag-usage-check.py"
 _SETTINGS_REL = ".claude/settings.json"
 
 
@@ -136,8 +136,8 @@ def test_hook_file_deposited(tmp_path: Path, make_runner):
     hook = tmp_path / _HOOK_REL
     assert hook.is_file()
     text = hook.read_text(encoding="utf-8")
-    assert "sertor_core" in text  # detection logic present
-    assert "exit 0" in text       # fail-open / non-blocking
+    assert "sertor_core" in text     # detection logic present
+    assert "_hooklib.run" in text    # fail-open / non-blocking (always exit 0)
 
 
 def test_hook_file_create_if_absent_preserves_user_version(tmp_path: Path, make_runner):
@@ -157,7 +157,7 @@ def test_settings_merge_adds_pretooluse_entry(tmp_path: Path, make_runner):
         for e in settings["hooks"]["PreToolUse"]
         for h in e.get("hooks", [])
     ]
-    assert any("sertor-rag-usage-check.ps1" in c for c in cmds)
+    assert any("sertor-rag-usage-check.py" in c for c in cmds)
 
 
 def test_settings_merge_preserves_existing_hooks(tmp_path: Path, make_runner):

@@ -6,9 +6,8 @@
         "hooks": [
           {
             "type": "command",
-            "shell": "powershell",
             "timeout": 10,
-            "command": "$d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; & (Join-Path $d '.claude/hooks/sertor-rag-usage-check.ps1')"
+            "command": "uv run --no-project python .claude/hooks/sertor-rag-usage-check.py --assistant claude"
           }
         ]
       }

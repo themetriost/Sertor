@@ -119,6 +119,7 @@ target-version = "py311"
 extend-exclude = [
     "prototype", "packages/speclift", "packages/specaudit",
     "packages/sertor/src/sertor_installer/assets",
+    ".claude/hooks",  # dogfood's own installed copies of the deliverable hook artifacts (A-09)
 ]
 src = [
     "src", "tests",

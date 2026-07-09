@@ -75,8 +75,11 @@ _CONFIG_TARGET = "wiki/wiki.config.toml"
 _COPILOT_INSTRUCTIONS = ".github/copilot-instructions.md"
 _COPILOT_HOOK_WIRING = ".github/hooks/sertor-hooks.json"
 # Hook scripts are REUSED byte-for-byte from the Claude asset (FR-014); only the wiring differs.
-_WIKI_HOOK_SCRIPT_SRC = "claude/hooks/wiki-pending-check.ps1"
-_WIKI_HOOK_SCRIPT_DST = ".github/hooks/wiki-pending-check.ps1"
+_WIKI_HOOK_SCRIPT_SRC = "claude/hooks/wiki-pending-check.py"
+_WIKI_HOOK_SCRIPT_DST = ".github/hooks/wiki-pending-check.py"
+# Shared hook helper (A-09): imported by the portable `.py` hook; must be deposited alongside it.
+_WIKI_HOOKLIB_SRC = "claude/hooks/_hooklib.py"
+_WIKI_HOOKLIB_DST = ".github/hooks/_hooklib.py"
 # FEAT-011: the Copilot hook wiring is GENERATED natively (render_copilot_hooks), no longer read
 # from a static Claude-format asset. The sentinel source marks the GENERATED-wiki wiring so the
 # apply callback builds it instead of reading a file (no new ArtifactKind, data-model §4).
@@ -101,9 +104,10 @@ _COPILOT_SKILL_MD = f"{_COPILOT_SKILL_DIR}/SKILL.md"   # the dispatcher SKILL.md
 _RENDER_PROMPT_SUFFIX = ".prompt.md"
 _RENDER_AGENT_SUFFIX = ".agent.md"
 
-# Native Copilot hook commands (the script invocation; `-Assistant copilot` selects the native
-# output). `pwsh -File` is the portable interpreter; the path is relative to the host root.
-_PWSH = "pwsh -File"
+# Native Copilot hook commands (the script invocation; `--assistant copilot` selects the native
+# output). Portable invocation (A-09): `uv run --no-project python <relpath>.py` — OS-independent,
+# no `pwsh`; the path is relative to the host root (cwd on hook fire).
+_PY = "uv run --no-project python"
 
 
 def _copilot_wiki_hook_specs(assistant: AssistantId) -> list[HookEntrySpec]:
@@ -115,11 +119,11 @@ def _copilot_wiki_hook_specs(assistant: AssistantId) -> list[HookEntrySpec]:
     """
     stop = HookEntrySpec(
         "Stop", "command",
-        f"{_PWSH} {_WIKI_HOOK_SCRIPT_DST} -Mode Stop -Assistant copilot", 10,
+        f"{_PY} {_WIKI_HOOK_SCRIPT_DST} --mode Stop --assistant copilot", 10,
     )
     session_end = HookEntrySpec(
         "SessionEnd", "command",
-        f"{_PWSH} {_WIKI_HOOK_SCRIPT_DST} -Mode SessionEnd -Assistant copilot", 10,
+        f"{_PY} {_WIKI_HOOK_SCRIPT_DST} --mode SessionEnd --assistant copilot", 10,
     )
     # CLI: SessionStart is a static prompt (the directive). No script invocation.
     session_start = HookEntrySpec(
@@ -250,7 +254,11 @@ def _build_copilot_wiki_plan(assistant: AssistantId) -> list[Artifact]:
                  WriteStrategy.CREATE_IF_ABSENT)
     )
     # HOOK scripts: reuse byte-for-byte (FR-014). The CLI SessionStart is a static prompt, so no
-    # session-start script is installed — only the Stop/SessionEnd check script.
+    # session-start script is installed — only the Stop/SessionEnd check script + its shared helper.
+    plan.append(
+        Artifact(ArtifactKind.FILE, _WIKI_HOOKLIB_SRC, _WIKI_HOOKLIB_DST,
+                 WriteStrategy.CREATE_IF_ABSENT)
+    )
     plan.append(
         Artifact(ArtifactKind.FILE, _WIKI_HOOK_SCRIPT_SRC, _WIKI_HOOK_SCRIPT_DST,
                  WriteStrategy.CREATE_IF_ABSENT)

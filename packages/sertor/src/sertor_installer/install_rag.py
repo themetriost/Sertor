@@ -90,8 +90,8 @@ _CLI_REFERENCE_TARGET = ".sertor/sertor-cli-reference.md"
 
 # Group C (Principio XI, feature 042): host-specific PreToolUse hook (adapter of the trigger).
 # Its absence MUST NOT break the RAG capability (Principio X).
-_RAG_HOOK_ASSET = "rag/hooks/sertor-rag-usage-check.ps1"
-_RAG_HOOK_TARGET = ".claude/hooks/sertor-rag-usage-check.ps1"
+_RAG_HOOK_ASSET = "rag/hooks/sertor-rag-usage-check.py"
+_RAG_HOOK_TARGET = ".claude/hooks/sertor-rag-usage-check.py"
 _RAG_USAGE_SETTINGS = "rag/settings.rag-usage.json"
 _SETTINGS_TARGET = ".claude/settings.json"
 
@@ -125,13 +125,22 @@ class McpRegistrationError(InstallerError):
 
 
 # Copilot rag surfaces (feature 044): host-facing artifacts under `.github/**` (script reused).
-_RAG_HOOK_TARGET_COPILOT = ".github/hooks/sertor-rag-usage-check.ps1"
+_RAG_HOOK_TARGET_COPILOT = ".github/hooks/sertor-rag-usage-check.py"
 # FEAT-011: the Copilot PreToolUse wiring is GENERATED natively (render_copilot_hooks). The sentinel
 # source marks the GENERATED rag wiring so the apply callback builds it instead of reading a file.
 _COPILOT_RAG_WIRING_SENTINEL = "(generated: copilot rag-usage hooks)"
 _COPILOT_HOOK_WIRING = ".github/hooks/sertor-hooks.json"
-_PWSH = "pwsh -File"
+# Portable invocation (A-09 / E2-FEAT-010): every hook is a Python script run via
+# `uv run --no-project python <relpath>.py` — OS-independent (no `pwsh`, no `"shell"`).
+# `--no-project` isolates from any host `pyproject.toml`; the path is relative to the host root.
+_PY = "uv run --no-project python"
 _RAG_MATCHER = "Bash|Write|Edit|MultiEdit"
+
+# Shared hook helper (stdlib-only): every portable `.py` hook imports `_hooklib` from its own
+# directory, so it MUST be byte-copied alongside the hooks into the assistant's hook container.
+_HOOKLIB_ASSET = "rag/hooks/_hooklib.py"
+_HOOKLIB_TARGET = ".claude/hooks/_hooklib.py"
+_HOOKLIB_TARGET_COPILOT = ".github/hooks/_hooklib.py"
 
 
 def _copilot_rag_hook_specs() -> list[HookEntrySpec]:
@@ -143,7 +152,7 @@ def _copilot_rag_hook_specs() -> list[HookEntrySpec]:
     return [
         HookEntrySpec(
             "PreToolUse", "command",
-            f"{_PWSH} {_RAG_HOOK_TARGET_COPILOT} -Assistant copilot", 10,
+            f"{_PY} {_RAG_HOOK_TARGET_COPILOT} --assistant copilot", 10,
             matcher=_RAG_MATCHER,
         )
     ]
@@ -158,9 +167,9 @@ def _copilot_rag_hook_specs() -> list[HookEntrySpec]:
 # distribute the adapter VALUE (`SERTOR_MEMORY_ADAPTER=copilot-cli`) in the `.env` template — that
 # is FEAT-009 (memory-conversations epic). So out of the box the Copilot wiring fires with the
 # default adapter and captures nothing useful; `execute_rag_plan` surfaces an honest note (018).
-_MEMORY_HOOK_ASSET = "rag/hooks/memory-capture.ps1"
-_MEMORY_HOOK_TARGET = ".claude/hooks/memory-capture.ps1"
-_MEMORY_HOOK_TARGET_COPILOT = ".github/hooks/memory-capture.ps1"
+_MEMORY_HOOK_ASSET = "rag/hooks/memory-capture.py"
+_MEMORY_HOOK_TARGET = ".claude/hooks/memory-capture.py"
+_MEMORY_HOOK_TARGET_COPILOT = ".github/hooks/memory-capture.py"
 _MEMORY_CAPTURE_SETTINGS = "rag/settings.memory-capture.json"
 _COPILOT_MEMORY_WIRING_SENTINEL = "(generated: copilot memory-capture hooks)"
 
@@ -186,7 +195,7 @@ def _copilot_memory_hook_specs() -> list[HookEntrySpec]:
     return [
         HookEntrySpec(
             "SessionEnd", "command",
-            f"{_PWSH} {_MEMORY_HOOK_TARGET_COPILOT}", 15,
+            f"{_PY} {_MEMORY_HOOK_TARGET_COPILOT} --assistant copilot", 15,
         )
     ]
 
@@ -195,17 +204,17 @@ def _copilot_memory_hook_specs() -> list[HookEntrySpec]:
 # WITH the rag capability (shared runtime `.sertor/`, CLI `sertor-rag`). Same FILE + SETTINGS_MERGE
 # pattern as memory-capture (no new ArtifactKind). The script body is host-agnostic, exits 0 always,
 # and NEVER imports `sertor_core` (Principio XI) — it consumes the `sertor-rag` vehicles only.
-_FRESHNESS_HOOK_ASSET = "rag/hooks/rag-freshness.ps1"
-_FRESHNESS_HOOK_TARGET = ".claude/hooks/rag-freshness.ps1"
-_FRESHNESS_HOOK_TARGET_COPILOT = ".github/hooks/rag-freshness.ps1"
+_FRESHNESS_HOOK_ASSET = "rag/hooks/rag-freshness.py"
+_FRESHNESS_HOOK_TARGET = ".claude/hooks/rag-freshness.py"
+_FRESHNESS_HOOK_TARGET_COPILOT = ".github/hooks/rag-freshness.py"
 _FRESHNESS_SETTINGS = "rag/settings.rag-freshness.json"
 _COPILOT_FRESHNESS_END_WIRING_SENTINEL = "(generated: copilot freshness-end hooks)"
 
 # RAG freshness signal – SessionStart (E10-FEAT-011): re-read the persisted state and INDUCE a fix
 # when degraded. On Claude this is a dedicated script (`rag-freshness-start.ps1`); on Copilot CLI it
 # is a NATIVE static prompt (no script deposited — W5 of the wiring contract).
-_FRESHNESS_START_ASSET = "rag/hooks/rag-freshness-start.ps1"
-_FRESHNESS_START_TARGET = ".claude/hooks/rag-freshness-start.ps1"
+_FRESHNESS_START_ASSET = "rag/hooks/rag-freshness-start.py"
+_FRESHNESS_START_TARGET = ".claude/hooks/rag-freshness-start.py"
 _FRESHNESS_START_SETTINGS = "rag/settings.rag-freshness-start.json"
 _COPILOT_FRESHNESS_START_WIRING_SENTINEL = "(generated: copilot freshness-start hooks)"
 
@@ -222,7 +231,7 @@ def _copilot_freshness_end_specs() -> list[HookEntrySpec]:
             # index run off the critical path), so the timeout only covers that spawn. Parity with
             # Claude `settings.rag-freshness.json` (15s).
             "SessionEnd", "command",
-            f"{_PWSH} {_FRESHNESS_HOOK_TARGET_COPILOT}", 15,
+            f"{_PY} {_FRESHNESS_HOOK_TARGET_COPILOT} --assistant copilot", 15,
         )
     ]
 
@@ -251,17 +260,17 @@ def _copilot_freshness_start_specs() -> list[HookEntrySpec]:
 # new ArtifactKind). The script body is host-agnostic, exits 0 always, and NEVER imports
 # `sertor_core` nor runs Python (Principio XI) — it does only HTTP+file (FR-014). Twin of
 # rag-freshness but the check is HTTP+file, not a CLI vehicle.
-_VERSION_CHECK_HOOK_ASSET = "rag/hooks/version-check.ps1"
-_VERSION_CHECK_HOOK_TARGET = ".claude/hooks/version-check.ps1"
-_VERSION_CHECK_HOOK_TARGET_COPILOT = ".github/hooks/version-check.ps1"
+_VERSION_CHECK_HOOK_ASSET = "rag/hooks/version-check.py"
+_VERSION_CHECK_HOOK_TARGET = ".claude/hooks/version-check.py"
+_VERSION_CHECK_HOOK_TARGET_COPILOT = ".github/hooks/version-check.py"
 _VERSION_CHECK_SETTINGS = "rag/settings.version-check.json"
 _COPILOT_VERSION_CHECK_END_WIRING_SENTINEL = "(generated: copilot version-check-end hooks)"
 
 # Version-update check signal – SessionStart (E2-FEAT-013): read the persisted state and warn if
 # behind. On Claude this is a dedicated script (`version-check-start.ps1`); on Copilot CLI it is a
 # NATIVE static prompt (no script deposited — W5 of the wiring contract).
-_VERSION_CHECK_START_ASSET = "rag/hooks/version-check-start.ps1"
-_VERSION_CHECK_START_TARGET = ".claude/hooks/version-check-start.ps1"
+_VERSION_CHECK_START_ASSET = "rag/hooks/version-check-start.py"
+_VERSION_CHECK_START_TARGET = ".claude/hooks/version-check-start.py"
 _VERSION_CHECK_START_SETTINGS = "rag/settings.version-check-start.json"
 _COPILOT_VERSION_CHECK_START_WIRING_SENTINEL = "(generated: copilot version-check-start hooks)"
 
@@ -280,7 +289,7 @@ def _copilot_version_check_end_specs() -> list[HookEntrySpec]:
     return [
         HookEntrySpec(
             "SessionEnd", "command",
-            f"{_PWSH} {_VERSION_CHECK_HOOK_TARGET_COPILOT}", 15,
+            f"{_PY} {_VERSION_CHECK_HOOK_TARGET_COPILOT} --assistant copilot", 15,
         )
     ]
 
@@ -447,6 +456,16 @@ def build_rag_plan(
             _RAG_USAGE_BLOCK,
             aprofile.target_for(Surface.INSTRUCTION_BLOCK).target_rel,
             WriteStrategy.APPEND_BLOCK,
+        )
+    )
+    # Shared hook helper (A-09): deposit `_hooklib.py` alongside the hooks — every portable `.py`
+    # hook imports it from its own directory, so it MUST land in the hook container before any hook.
+    plan.append(
+        Artifact(
+            ArtifactKind.FILE,
+            _HOOKLIB_ASSET,
+            _HOOKLIB_TARGET_COPILOT if is_copilot else _HOOKLIB_TARGET,
+            WriteStrategy.CREATE_IF_ABSENT,
         )
     )
     # Group C (042): anti-bypass hook — script REUSED identically (FR-014), wiring per-assistant.
@@ -871,6 +890,7 @@ def sertor_owned_paths(assistant: AssistantId = AssistantProfile.DEFAULT) -> Ser
     return SertorOwnedPaths(
         owned_dirs=(".sertor", *skill_dirs),
         owned_files=(
+            _HOOKLIB_TARGET_COPILOT if is_copilot else _HOOKLIB_TARGET,  # shared hook helper (A-09)
             hook_target, memory_hook_target, concierge_target,
             *freshness_files, *version_check_files,
             ".gitattributes",  # host-root LF policy (FEAT-010), CREATE_IF_ABSENT → owned FILE

@@ -5,9 +5,8 @@
         "hooks": [
           {
             "type": "command",
-            "shell": "powershell",
             "timeout": 15,
-            "command": "$d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; & (Join-Path $d '.claude/hooks/version-check.ps1')"
+            "command": "uv run --no-project python .claude/hooks/version-check.py --assistant claude"
           }
         ]
       }
