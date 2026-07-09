@@ -394,7 +394,7 @@ chi dovrebbe?* Corollari operativi:
    all'utente l'executive summary** della roadmap. L'hook *innesca*, il `Read` *trasporta*, il rituale tiene
    il *contenuto* vero.
 5. **Re-index del corpus toccato** —
-   > **Enforced via hook** `rag-freshness.ps1` (`SessionEnd`) — vedi E10-FEAT-011. Il testo seguente descrive la rete agente complementare.
+   > **Enforced via hook** `rag-freshness.py` (`SessionEnd`) — vedi E10-FEAT-011. Il testo seguente descrive la rete agente complementare.
 
    > **DOGFOOD-ONLY — re-lock del runtime PRIMA del re-index (dopo un merge su `master`, E15-FEAT-008).** Il
    > runtime `.sertor/` installa `sertor-core` da `git=<repo>` **HEAD** ma il lock fissa il commit: dopo un
@@ -402,7 +402,7 @@ chi dovrebbe?* Corollari operativi:
    > **`scripts/dev/relock-runtime.ps1`** (check-then-act: no-op se già a HEAD; re-lock via `uv` se indietro;
    > fail-loud) **prima** di re-indicizzare, così l'indice si ricostruisce sul runtime aggiornato. È
    > **dogfood-only** (gli ospiti pinnano versioni + auto-updater E2-FEAT-013): lo script vive in `scripts/dev/`,
-   > **non** è distribuito e **non** va nell'hook `rag-freshness.ps1` né nei blocchi `claude-md-block`.
+   > **non** è distribuito e **non** va nell'hook `rag-freshness.py` né nei blocchi `claude-md-block`.
 
    se lo step ha modificato **file indicizzati nel corpus RAG**,
    ricostruisci l'indice, così il RAG di dogfooding non serve mai contesto stantio (è l'essenza:
@@ -445,7 +445,7 @@ chi dovrebbe?* Corollari operativi:
    questa pratica con il sistema-wiki. Vedi [[step-ritual]] e la panoramica [[sertor-in-parole-semplici]].
 
 8. **Smoke test del RAG di dogfooding** —
-   > **Enforced via hook** `rag-freshness.ps1` (`SessionEnd`) — vedi E10-FEAT-011. Il buco del filtro metadata `where` non è coperto dall'hook → il punto 8 resta la rete dell'agente.
+   > **Enforced via hook** `rag-freshness.py` (`SessionEnd`) — vedi E10-FEAT-011. Il buco del filtro metadata `where` non è coperto dall'hook → il punto 8 resta la rete dell'agente.
 
    **allo stesso momento del commit** dello step (specie dopo
    un re-index), il flusso principale **esercita il server MCP `sertor-rag`** per verificare che sia
@@ -566,7 +566,7 @@ cresce a ogni sessione, invece di ricostruire la conoscenza ogni volta.
 Per innescare manualmente un consolidamento usa il comando **`/wiki`** (lavora nel flusso
 principale) oppure delega all'agente `wiki-curator` (in background).
 
-**Hook (trigger automatici, vedi `.claude/hooks/wiki-pending-check.ps1`):**
+**Hook (trigger automatici, vedi `.claude/hooks/wiki-pending-check.py`):**
 - `SessionStart` — carica indice + coda log a inizio sessione (contesto iniettato).
 - `Stop` — a fine turno, se rileva lavoro non ancora registrato (file di `src/specs/requirements/.claude`
   più recenti dell'ultima voce di log), inietta un **promemoria non bloccante** a delegare al

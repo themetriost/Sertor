@@ -6,24 +6,9 @@
         "hooks": [
           {
             "type": "command",
-            "shell": "powershell",
-            "timeout": 15,
-            "statusMessage": "Carico lo stato del wiki",
-            "command": "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; $logDir = Join-Path $d 'wiki/log'; $log = if (Test-Path $logDir) { Get-ChildItem $logDir -Filter '*.md' | Where-Object { $_.Name -ne 'index.md' } | Sort-Object Name | Select-Object -Last 1 -ExpandProperty Name } else { 'log.md' }; 'AVVIO SESSIONE - carica il contesto del progetto PRIMA di rispondere all utente.'; 'Esegui ORA, di tua iniziativa, questi passi:'; \"1. Leggi con il tool Read (gli output entrano interi nel contesto, nessun limite di troncatura): wiki/syntheses/roadmap.md ; wiki/log/$log (coda del registro). Leggi wiki/index.md (catalogo del wiki) SU RICHIESTA, solo quando serve navigare il wiki.\"; '2. Poi mostra all utente l executive summary della roadmap: il blocco tra i marker <!-- EXEC:START --> e <!-- EXEC:END --> di wiki/syntheses/roadmap.md.'; 'Promemoria: durante le attivita di progetto delega l aggiornamento del wiki all agente wiki-curator (vedi CLAUDE.md, sezione Wiki e documentazione).'"
-          },
-          {
-            "type": "command",
-            "shell": "powershell",
             "timeout": 10,
             "statusMessage": "Checking RAG freshness",
-            "command": "$d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; & (Join-Path $d '.claude/hooks/rag-freshness-start.ps1') -Assistant claude"
-          },
-          {
-            "type": "command",
-            "shell": "powershell",
-            "timeout": 10,
-            "statusMessage": "Verifico la disponibilità di aggiornamenti Sertor",
-            "command": "$d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; & (Join-Path $d '.claude/hooks/version-check-start.ps1') -Assistant claude"
+            "command": "uv run --no-project python .claude/hooks/rag-freshness-start.py --assistant claude"
           }
         ]
       },
@@ -31,53 +16,19 @@
         "hooks": [
           {
             "type": "command",
-            "shell": "powershell",
+            "timeout": 10,
+            "statusMessage": "Verifico la disponibilità di aggiornamenti Sertor",
+            "command": "uv run --no-project python .claude/hooks/version-check-start.py --assistant claude"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
             "timeout": 15,
             "statusMessage": "Carico lo stato del wiki",
-            "command": "$d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; & (Join-Path $d '.claude/hooks/wiki-session-start.ps1') -Assistant claude"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "shell": "powershell",
-            "timeout": 10,
-            "statusMessage": "Verifico lo stato del wiki",
-            "command": "$d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; & (Join-Path $d '.claude/hooks/wiki-pending-check.ps1') -Mode Stop"
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "shell": "powershell",
-            "timeout": 10,
-            "command": "$d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; & (Join-Path $d '.claude/hooks/wiki-pending-check.ps1') -Mode SessionEnd"
-          },
-          {
-            "type": "command",
-            "shell": "powershell",
-            "timeout": 15,
-            "command": "$d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; & (Join-Path $d '.claude/hooks/memory-capture.ps1')"
-          },
-          {
-            "type": "command",
-            "shell": "powershell",
-            "timeout": 30,
-            "command": "$d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; & (Join-Path $d '.claude/hooks/rag-freshness.ps1')"
-          },
-          {
-            "type": "command",
-            "shell": "powershell",
-            "timeout": 15,
-            "command": "$d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; & (Join-Path $d '.claude/hooks/version-check.ps1')"
+            "command": "uv run --no-project python .claude/hooks/wiki-session-start.py --assistant claude"
           }
         ]
       }
@@ -88,9 +39,58 @@
         "hooks": [
           {
             "type": "command",
-            "shell": "powershell",
             "timeout": 10,
-            "command": "$d = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { '.' }; & (Join-Path $d '.claude/hooks/sertor-rag-usage-check.ps1')"
+            "command": "uv run --no-project python .claude/hooks/sertor-rag-usage-check.py --assistant claude"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 15,
+            "command": "uv run --no-project python .claude/hooks/memory-capture.py --assistant claude"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 15,
+            "command": "uv run --no-project python .claude/hooks/rag-freshness.py --assistant claude"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 15,
+            "command": "uv run --no-project python .claude/hooks/version-check.py --assistant claude"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 10,
+            "command": "uv run --no-project python .claude/hooks/wiki-pending-check.py --mode SessionEnd --assistant claude"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 10,
+            "statusMessage": "Verifico lo stato del wiki",
+            "command": "uv run --no-project python .claude/hooks/wiki-pending-check.py --mode Stop --assistant claude"
           }
         ]
       }
