@@ -3,7 +3,7 @@ title: Implementazione FEAT-002 Motore Baseline
 type: experiment
 tags: [feat-002, motore-baseline, rag-vettoriale, ranking, valutazione]
 created: 2026-06-03
-updated: 2026-06-08 (distillato: entità in vector-retrieval/indexing-and-retrieval; record ridotto a evento+esito)
+updated: 2026-06-08
 sources: ["specs/002-rag-baseline/plan.md", "specs/002-rag-baseline/tasks.md", "src/sertor_core/engines/**", "tests/**"]
 ---
 

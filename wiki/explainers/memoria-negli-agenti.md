@@ -3,7 +3,7 @@ title: La memoria della conversazione (in parole semplici)
 type: explainer
 tags: [non-tecnici, memoria, conversazioni, archivio, privacy, spiegazione]
 created: 2026-06-14
-updated: 2026-06-22 (+ FEAT-004: ricerca per significato — `memory search --semantic`, opt-in separato, on-machine col motore locale; la ricerca testuale resta il default) · 2026-06-14 (+ FEAT-003: la distillazione attinge all'archivio — `memory show`/`list`, loop cattura→distill chiuso) · 2026-06-14 (+ FEAT-035: superficie CLI + hook SessionEnd, MVP completo)
+updated: 2026-06-22
 sources: ["wiki/concepts/memoria-conversazioni.md", "wiki/tech/transcript-capture-adapter-e-storage.md", "requirements/memoria-conversazioni/epic.md", "requirements/memoria-conversazioni/ricerca-semantica/requirements.md"]
 ---
 

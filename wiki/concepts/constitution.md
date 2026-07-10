@@ -3,7 +3,7 @@ title: Costituzione di Sertor
 type: concept
 tags: [costituzione, governance, clean-code, clean-architecture, produzione, principio-x, host-agnostico, principio-xi]
 created: 2026-05-31
-updated: 2026-06-15 (v1.2.0 — Principio XI: consumo via vehicles CLI/MCP, no libreria a runtime)
+updated: 2026-06-15
 sources: [".specify/memory/constitution.md", ".specify/templates/plan-template.md"]
 ---
 

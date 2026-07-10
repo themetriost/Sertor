@@ -3,7 +3,7 @@ title: I modi di cercare (in parole semplici)
 type: explainer
 tags: [non-tecnici, motori, ibrido, grafo, agentico, spiegazione]
 created: 2026-06-14
-updated: 2026-06-14 (+ guida di scelta «scopri → naviga»: ricerca mista vs mappa delle connessioni)
+updated: 2026-06-14
 sources: ["wiki/concepts/vector-retrieval.md", "wiki/concepts/hybrid-retrieval.md", "wiki/concepts/code-graph.md", "wiki/concepts/retrieval-vs-graph.md"]
 ---
 

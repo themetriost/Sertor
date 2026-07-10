@@ -560,6 +560,9 @@ cresce a ogni sessione, invece di ricostruire la conoscenza ogni volta.
 
 ### Convenzioni
 - **Frontmatter YAML** in ogni pagina: `title`, `type`, `tags`, `created`, `updated`, `sources`.
+  `created`/`updated` sono **date secche** (`YYYY-MM-DD`), **mai** changelog: `updated` porta solo l'ultima
+  data di modifica, la **storia vive nel log** (`wiki/log/`), non appesa al frontmatter (regola A-13,
+  2026-07-10).
 - **Backlink** in stile wikilink `[[nome-pagina]]` (compatibile Obsidian); i link relativi
   Markdown vanno bene per la navigazione da editor/GitHub. Mantieni i cross-reference aggiornati.
 - **Naming** file: kebab-case descrittivo (es. `azure-ai-search.md`, `hybrid-search.md`).

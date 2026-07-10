@@ -3,7 +3,7 @@ title: Step ritual & wiki anti-drift
 type: concept
 tags: [wiki, automazione, hook, governance, processo, delega, fonte-unica, rituale-di-step]
 created: 2026-06-04
-updated: 2026-06-19 (MCP-first di apertura + smoke test di chiusura, punti 8 e standing behavior preiniziale; aggiornati anche mcp-server.md) · 2026-06-10 (rituale a 6 punti: + executive summary roadmap, + re-index dei corpora toccati)
+updated: 2026-06-19
 sources: ["CLAUDE.md", ".claude/skills/wiki-author/wiki-playbook.md", ".claude/agents/wiki-curator.md", ".claude/agents/configuration-manager.md", ".claude/settings.json", ".claude/hooks/wiki-pending-check.ps1"]
 ---
 

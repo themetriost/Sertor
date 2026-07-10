@@ -3,7 +3,7 @@ title: Transcript Capture Adapter & Memory Archive (9ª porta + adapter + store)
 type: tech
 tags: [memoria, capture, adapter, storage, sqlite, host-agnostico, principio-x, feat-001, feat-008, ports-adapters]
 created: 2026-06-14
-updated: 2026-06-22 (aggiunto adapter Copilot CLI FEAT-008; frontmatter + sezione adapter nuova)
+updated: 2026-06-22
 sources: ["src/sertor_core/domain/ports.py", "src/sertor_core/domain/memory.py", "src/sertor_core/adapters/capture/", "src/sertor_core/adapters/memory/", "src/sertor_core/services/memory_archive.py", "src/sertor_core/composition.py"]
 ---
 

@@ -3,7 +3,7 @@ title: Code-graph strutturale (navigazione del codice)
 type: concept
 tags: [code-graph, graphrag, find-symbol, who-calls, navigazione, tree-sitter, networkx, sertor-core, feat-005]
 created: 2026-06-12
-updated: 2026-06-19 (auto-reload su artefatto cambiato: cache chiavata su mtime_ns+size, niente staleness dopo re-index)
+updated: 2026-06-19
 sources: ["src/sertor_core/services/graph_extraction.py", "src/sertor_core/adapters/graph/networkx_graph.py", "specs/014-motore-grafo/**"]
 ---
 

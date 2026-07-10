@@ -3,7 +3,7 @@ title: Server MCP sertor-rag
 type: tech
 tags: [mcp, server, sertor-mcp, thin-consumer, retrieval, dogfooding, sertor-core]
 created: 2026-06-08
-updated: 2026-06-19 (troubleshooting nota 3: client Chroma stantio dopo re-index + auto-heal da query(), con limiti dichiarati e mitigazioni; link a step-ritual) · 2026-06-14 (+ affidabilità e segnalazione errori: _guard su tool + self-test + governance, FEAT-001 affidabilità-dogfood) · 2026-06-12 (sera: superficie a 7 tool — tornati i 4 di grafo, FEAT-005/PR #25; mattina: warm-up eager PR #23 + troubleshooting)
+updated: 2026-06-19
 sources: ["src/sertor_mcp/server.py", ".mcp.json"]
 ---
 

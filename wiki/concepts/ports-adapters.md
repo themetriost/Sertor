@@ -3,7 +3,7 @@ title: Porte e adapter (boundary del retrieval-core)
 type: concept
 tags: [ports, adapters, protocol, hexagonal, clean-architecture, sertor-core, composition]
 created: 2026-06-08
-updated: 2026-06-21 (FEAT-011: +glove (6B 300d PDDL default) e +hash (char-n-gram blake2b stdlib) per EmbeddingProvider; rimozione RAG_BACKEND, manopole ortogonali SERTOR_EMBED_PROVIDER/SERTOR_STORE_BACKEND) · 2026-06-14 (+ 7ª porta ObservabilityStore + cattura via logging.Handler, feature 020) · 2026-06-14 (+ CachingEmbedder decoratore di EmbeddingProvider + token nei log, 019) · 2026-06-12 (sera: +CodeGraph, FEAT-005 — sei porte; pomeriggio: +LexicalIndex/Reranker/RetrieverStrategy, FEAT-004)
+updated: 2026-06-21
 sources: ["src/sertor_core/domain/ports.py", "src/sertor_core/composition.py", "src/sertor_core/adapters/**", "requirements/sertor-core/epic.md"]
 ---
 

@@ -3,7 +3,7 @@ title: Corpus & index naming (RAG)
 type: tech
 tags: [architettura, corpus, indice, naming, prodotto, prototipo]
 created: 2026-06-04
-updated: 2026-06-10 (D-21: modello a corpus unico — il wiki è dentro il corpus primario by design; la collezione `wiki__*` resta capacità senza consumatori sul dogfood; .mcp.json → produzione, claim corretto)
+updated: 2026-06-10
 sources: ["CLAUDE.md", "prototype/shared/config.py", ".mcp.json", "src/sertor_core/config/settings.py", "src/sertor_core/composition.py"]
 ---
 

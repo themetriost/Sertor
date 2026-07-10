@@ -3,7 +3,7 @@ title: Vector retrieval
 type: concept
 tags: [vector-retrieval, dense-retrieval, rag, baseline, embeddings, valutazione, sertor-core]
 created: 2026-06-07
-updated: 2026-06-12 (non è più l'unica modalità né il default: arriva [[hybrid-retrieval]], FEAT-004)
+updated: 2026-06-12
 sources: ["src/sertor_core/engines/baseline.py", "src/sertor_core/engines/evaluation.py", "CLAUDE.md"]
 ---
 

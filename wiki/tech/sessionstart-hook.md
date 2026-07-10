@@ -3,7 +3,7 @@ title: SessionStart hook
 type: tech
 tags: [hook, claude-code, wiki, contesto, da-w1]
 created: 2026-05-31
-updated: 2026-07-09 (A-09: hook riscritto in Python portabile, non più comando PowerShell inline)
+updated: 2026-07-09
 sources: [".claude/settings.json", ".claude/hooks/wiki-session-start.py"]
 ---
 

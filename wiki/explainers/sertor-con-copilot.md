@@ -3,7 +3,7 @@ title: Sertor anche con GitHub Copilot
 type: explainer
 tags: [explainer, copilot, assistente, installazione, non-tecnico, feat-007]
 created: 2026-06-15
-updated: 2026-06-16 (Copilot esiste in due forme — editor e riga di comando — e Sertor le distingue)
+updated: 2026-06-16
 sources: ["specs/044-distribuzione-copilot/spec.md", "requirements/sertor-cli/distribuzione-copilot/requirements.md"]
 ---
 

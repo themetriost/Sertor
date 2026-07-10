@@ -3,7 +3,7 @@ title: tree-sitter-language-pack (binding e wrapper _Node)
 type: tech
 tags: [tree-sitter, parsing, ast, binding, multi-language, chunking, sertor-core]
 created: 2026-06-03
-updated: 2026-06-08 (distillato: rimosse parti gonfie/fabbricate; allineato a code.py reale)
+updated: 2026-06-08
 sources: ["https://pypi.org/project/tree-sitter-language-pack/", "src/sertor_core/services/chunking/code.py"]
 ---
 

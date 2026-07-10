@@ -3,7 +3,7 @@ title: Implementazione FEAT-001 — Nucleo di Retrieval Condiviso
 type: experiment
 tags: [FEAT-001, nucleo-retrieval, implementation, completed, python, tree-sitter]
 created: 2026-06-03
-updated: 2026-06-08 (distillato: l'architettura migrata nelle pagine-entità; record ridotto a evento+esito)
+updated: 2026-06-08
 sources: ["src/sertor_core/**", "specs/001-nucleo-retrieval/plan.md", "specs/001-nucleo-retrieval/tasks.md", "tests/**"]
 ---
 

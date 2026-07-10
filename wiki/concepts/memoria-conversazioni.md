@@ -3,7 +3,7 @@ title: Memoria episodica — Cattura delle conversazioni (il tier grezzo)
 type: concept
 tags: [memoria, episodico, conversazioni, hermes, tier-grezzo, archive, host-agnostico, feat-001, feat-008]
 created: 2026-06-14
-updated: 2026-06-22 (FEAT-008 adapter Copilot CLI implementato, stato aggiornato + backlink) · 2026-06-22 (aggiunto backlink copilot-cli-session-storage per FEAT-008) · 2026-06-22 (+ FEAT-004 ricerca semantica; aggiunta sezione tier semantico) · 2026-06-14 (+ FEAT-035 superficie CLI + hook SessionEnd, MVP completo)
+updated: 2026-06-22
 sources: ["requirements/memoria-conversazioni/epic.md", "requirements/memoria-conversazioni/cattura-copilot-cli/requirements.md", "src/sertor_core/domain/memory.py", "src/sertor_core/adapters/capture/copilot_cli.py", "https://github.com/nous-research/hermesresearch"]
 ---
 
