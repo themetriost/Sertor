@@ -513,11 +513,11 @@ def _apply_wiki_uninstall(
             return ArtifactOutcome(art.target_rel, project_removal(dest), "hook entries")
         fragment = _wiki_hook_fragment(art, assistant)
         # The Copilot dedicated hooks file (`sertor-hooks.json`) is entirely Sertor-owned: if it is
-        # left empty after removal, delete it (don't leave a `{"version":1}` shell). The shared
-        # Claude `.claude/settings.json` keeps the user's content → never delete-if-empty.
-        outcome, detail = remove_settings_entries(
-            dest, fragment, delete_if_empty=(dest.name == "sertor-hooks.json")
-        )
+        # A-17: delete the settings file if removing the Sertor entries leaves it empty — for BOTH
+        # the dedicated `sertor-hooks.json` and the shared `.claude/settings.json`. The key-check in
+        # `remove_settings_entries` deletes ONLY when nothing but `version` remains, so a file with
+        # the user's own content is preserved; the `{}` orphan shell no longer lingers.
+        outcome, detail = remove_settings_entries(dest, fragment, delete_if_empty=True)
         return ArtifactOutcome(art.target_rel, outcome, detail)
     raise ConfigError(f"unhandled artifact kind: {art.kind}")  # pragma: no cover
 
@@ -654,4 +654,6 @@ def execute_wiki_lifecycle(
         plan, owned, apply, op=op, target=str(profile.target_root),
         capability="wiki", assistant=assistant.value, dry_run=dry_run,
         obsolete_owned=obsolete, uninstall_dirs_in_block=block_dirs,
+        # A-17: prune the assistant dir shells left empty after removing the wiki skill files.
+        uninstall_prune_empty=(".claude", ".github"),
     )

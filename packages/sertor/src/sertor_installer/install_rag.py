@@ -961,11 +961,12 @@ def _apply_rag_uninstall(
         # Art-aware fragment (FEAT-009): same source dispatch as install → removes exactly the
         # entries this artifact added (rag-usage PreToolUse OR memory SessionEnd), not another's.
         fragment = _rag_hook_fragment(art)
-        # Copilot dedicated hooks file (`sertor-hooks.json`): delete if left empty after removal;
-        # the shared Claude `.claude/settings.json` is preserved (never delete-if-empty).
-        outcome, detail = remove_settings_entries(
-            dest, fragment, delete_if_empty=(dest.name == "sertor-hooks.json")
-        )
+        # A-17: delete the settings file if removing the Sertor entries leaves it empty — for BOTH
+        # the Copilot dedicated `sertor-hooks.json` AND the shared Claude `.claude/settings.json`.
+        # `remove_settings_entries` deletes ONLY when nothing but `version` remains, so a file with
+        # the user's own hooks/keys is preserved by construction — no user content is lost, and the
+        # `{}` orphan shell no longer lingers.
+        outcome, detail = remove_settings_entries(dest, fragment, delete_if_empty=True)
         return ArtifactOutcome(art.target_rel, outcome, detail)
     if art.kind is ArtifactKind.MCP_MERGE:
         dest = root / art.target_rel
@@ -1147,4 +1148,7 @@ def execute_rag_lifecycle(
         plan, owned, apply, op=op, target=str(profile.target_root),
         capability="rag", assistant=assistant.value, dry_run=dry_run,
         obsolete_owned=obsolete, uninstall_dirs_in_block=(".sertor",),
+        # A-17: prune the assistant dir shells left empty after removing the Sertor hook/skill/agent
+        # files (`.claude/hooks`, `.claude/`, `.github/hooks`, …). A dir with user content is kept.
+        uninstall_prune_empty=(".claude", ".github"),
     )
