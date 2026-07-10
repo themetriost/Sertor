@@ -507,6 +507,15 @@ Questo workspace è un **repo git con remote `origin`** (ci si pusha regolarment
 artefatti rigenerabili (`output/`, `cache/`, `logs/`, `metrics/`, indici/store vettoriali): sono
 coperti da `.gitignore`.
 
+**Versioning di `/VERSION` (policy A-15, 2026-07-10):** `/VERSION` è **SemVer con bump MANUALE**, e si
+tocca **solo a una release user-facing** (quando si pubblica qualcosa che gli ospiti dovrebbero prendere
+via `uvx --refresh`) — **non** a ogni merge. Il tracking per-merge è compito del **dogfood** (runtime
+`.sertor/` che segue HEAD, re-lock a ogni merge, E15); confondere i due farebbe scattare l'avvisatore
+d'aggiornamento (E2-FEAT-013) a ogni commit. Corollario: un `/VERSION` fermo mentre i commit avanzano
+**non è drift** — è «nessuna release esterna ancora», e l'avvisatore è correttamente
+**dormiente-fino-alla-release** (diventa vivo al primo bump). *(Bump automatico da conventional-commit =
+scartato come YAGNI finché non c'è una cadenza di release / ospiti esterni reali.)*
+
 > **Delega (SEMPRE, non bloccante):** **tutte** le operazioni git (staging, commit, branch,
 > merge, tag, push, pull, ...) vanno **delegate all'agente `configuration-manager`**
 > (modello Haiku, vedi `.claude/agents/configuration-manager.md`), lanciato **in background** durante
