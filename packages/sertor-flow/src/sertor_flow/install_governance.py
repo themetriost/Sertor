@@ -517,4 +517,6 @@ def execute_governance_lifecycle(
         plan, owned, apply, op=op, target=str(root),
         capability="governance", assistant=profile.assistant, dry_run=dry_run,
         uninstall_dirs_in_block=block_dirs,
+        # A-17: prune the assistant dir shells left empty after removing the SDLC agent/skill files.
+        uninstall_prune_empty=(".claude", ".github"),
     )

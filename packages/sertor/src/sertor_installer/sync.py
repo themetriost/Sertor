@@ -58,7 +58,26 @@ def main(argv: list[str] | None = None) -> int:
         "--repo-root", default=".", help="root of the development repo (default: cwd)"
     )
     parser.add_argument("--dry-run", action="store_true", help="do not write, only report")
+    parser.add_argument(
+        "--check", action="store_true",
+        help="report drift WITHOUT writing and exit non-zero (1) if any asset differs — a gate "
+             "for CI / a pre-commit hook (A-17). Implies no write.",
+    )
     args = parser.parse_args(argv)
+
+    # `--check`: read-only drift gate. Never writes (dry-run); exit 1 iff any asset is out of sync,
+    # so it can be used as a guard alongside the byte-fidelity tests.
+    if args.check:
+        result = sync_assets_to_claude(Path(args.repo_root).resolve(), dry_run=True)
+        drifted = {rel: s for rel, s in result.items() if s != "identical"}
+        for rel, status in sorted(drifted.items()):
+            print(f"  {status:<10}{rel}")
+        if drifted:
+            print(f"Sync check: {len(drifted)} of {len(result)} asset(s) DRIFTED — run "
+                  "`python -m sertor_installer.sync` to propagate the bundle to the dogfood.")
+            return 1
+        print(f"Sync check: all {len(result)} byte-copied assets in sync.")
+        return 0
 
     result = sync_assets_to_claude(Path(args.repo_root).resolve(), dry_run=args.dry_run)
     for rel, status in sorted(result.items()):

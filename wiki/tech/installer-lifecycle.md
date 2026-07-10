@@ -61,7 +61,7 @@ L'uninstall rispetta le quattro tipologie già note dall'install:
 |------|---------|--------------------------|
 | **A** runtime isolato | `.sertor/` (venv, `.env`, store, indici) | rimozione in blocco (interamente Sertor-owned) |
 | **B** asset standalone | skill, agenti, prompt-file, hook script | rimozione **content-guarded** (`remove_file_if_owned`, A-16): il file si rimuove **solo se** combacia con l'asset deposto; un file **modificato dall'utente** (o pre-esistente diverso) è **preservato + warn**, mai cancellato alla cieca |
-| **C** file condivisi | `CLAUDE.md`, `.gitignore`, `.claude/settings.json` | rimozione dei **soli** blocchi a marker Sertor / linee / entry — il resto **byte-per-byte intatto** |
+| **C** file condivisi | `CLAUDE.md`, `.gitignore`, `.claude/settings.json` | rimozione dei **soli** blocchi a marker Sertor / linee / entry — il resto **byte-per-byte intatto**. Se togliendo le entry Sertor il file resta **vuoto** (`{}` / solo `version`), viene **cancellato** (A-17, `delete_if_empty` esteso al condiviso) invece di lasciare un guscio orfano; con contenuto utente è preservato |
 | **D** registrazione MCP | server `sertor-rag` nel client | de-registrazione (`claude mcp remove` per scope `local`; entry-only per scope `project`) |
 
 I blocchi a marker rimossi sono `SERTOR:WIKI-RITUAL`, `SERTOR:RAG-USAGE`, `SERTOR:SDLC-RITUAL`. Un
@@ -70,6 +70,12 @@ manomesso) **non** viene più saltato in silenzio: `write`/`remove`/`update_mark
 loud** con `MarkerBlockCorruptError` (A-16, Principio XII), nominando file e marker, invece di
 intrappolare il blocco per sempre. Il report usa lo **schema `install.report/1` esteso in modo
 additivo** con gli outcome `updated`/`removed` — non un secondo schema (NFR-06).
+
+**Pulizia orfani (A-17).** A valle delle rimozioni, le **dir-shell** Sertor rimaste **vuote**
+(`.claude/hooks/`, `.claude/`, `.github/…`) sono **potate** bottom-up (`prune_empty_dirs`, param
+`uninstall_prune_empty` di `execute_lifecycle`, wirato nei 3 consumer): una dir con contenuto utente è
+tenuta, una vuota (zero-loss) sparisce — così un ospite che non aveva `.claude/` non resta con un
+guscio orfano. Complemento del content-guard (Tipo B) e del `delete_if_empty` (Tipo C).
 
 ## Invarianti
 

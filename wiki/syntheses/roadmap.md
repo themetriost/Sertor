@@ -114,16 +114,17 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   *Cosa:* audit completo del workspace (5 subagent paralleli: core · packages/CI · governance · backlog ·
   doc/wiki) → SWOT + **20 item prioritizzati P0–P2** (tabella sotto, dettaglio/evidenze in
   [[audit-swot-2026-07-02]]). Si attacca **in ordine da A-01 in giù**, con **checkpoint a fine di ogni item**.
-  *Consegnato (su master):* **A-01 → A-15 ✅** — dettaglio nella tabella SWOT sotto. **A-11 folded** in E6
-  FEAT-007; **A-12/A-13** riconciliazione `epic.md`↔EXEC + `updated:`=data secca (PR #166) — *fonte unica
-  strutturale*; **A-14** hardening `sertor-core` (parse numerico guardato + scrub `detail` MCP, PR #167);
-  **A-15** policy `/VERSION` = bump manuale a release (PR #168, `192c629`). **A-16 ✅ pre-merge** — lifecycle
-  installer robusto: (1) **content-guard** all'uninstall — un FILE owned si rimuove solo se combacia con
-  l'asset deposto, un file **modificato/pre-esistente** è **preservato+warn** (no cancellazione cieca;
-  `remove_file_if_owned`, i 3 consumer rag/wiki/gov); (2) **marker corrotto → fail-loud** (`MarkerBlockCorruptError`:
-  START-xor-END non più SKIPPED silenzioso). Rispetta D3 (niente manifest); +8 test.
-  *Prossimo passo concreto:* commit/PR A-16 + **A-17** (Sync asset: copertura `rag/hooks` 5/5 + `--check`
-  exit code + delete orfani, `debito-tecnico` P2).
+  *Consegnato (su master):* **A-01 → A-16 ✅** — dettaglio nella tabella SWOT sotto. A-11 folded in E6
+  FEAT-007; A-12/A-13 riconciliazione `epic.md`↔EXEC + `updated:`=data secca (PR #166); A-14 hardening
+  `sertor-core` (parse guardato + scrub `detail` MCP, PR #167); A-15 policy `/VERSION` bump manuale a
+  release (PR #168); **A-16** lifecycle robusto (content-guard uninstall + marker fail-loud, PR #169).
+  **Finding auto-updater** (PR #170): inerte su **repo privato** (fetch `/VERSION` 404) → macchina validata
+  live → **E2-FEAT-017** (gated sul go-public). **A-17 ✅ pre-merge** — sync/orfani installer: (1) `--check`
+  **exit-code** sul `sync` (gate drift locale); (2) uninstall **senza orfani** — `settings.json` vuoto
+  cancellato (`delete_if_empty` sul condiviso) + **dir vuote pruned** (`prune_empty_dirs`, i 3 consumer);
+  copertura `rag/hooks` già auto-derivata (E15-FEAT-002). **Chiude il bug tracciato «`.claude/` orfano».**
+  +8 test. *Prossimo passo concreto:* commit/PR A-17 + **A-18** (E13 Fase 1: getting-started + README di
+  valore, EVO).
 
 - **E14-FEAT-001 — self-host di SpecLift (vendoring Adapter B) — ✅ CONSEGNATA (merge `bbfb74d`/PR #136, 2026-07-01) su `master`.**
   *Cosa:* SpecLift (capacità `diff → requisiti EARS ancorati`, **handoff da Sinthari**) vendorato come membro
@@ -602,7 +603,7 @@ riproducibile e production-grade. **Una sola verità interrogabile**: sorgenti (
 | A-14 | FIX | P1 | Settings: parsing numerico guardato + scrub `detail` MCP | `sertor-core` (E1) | 🔄 **implementata, pre-merge (2026-07-10)** — `Settings.load`: 24 parse `int/float(os.getenv)` → helper guardati `_int_env`/`_float_env` (+ `_*_or_none` guardati); valore non-numerico → `ConfigError(key=…)` invece di `ValueError` crudo (Principio XII). `server.py`: `detail=scrub_text(str(exc))` ai 3 siti d'errore (`_guard`/`_self_test`/`warmup`) → no leak segreti nello store. +5 test; ruff clean |
 | A-15 | FIX | P2 | VERSION policy (E2-FEAT-014): decidere il bump o version-check resta morto | `sertor-cli` E2-FEAT-014 | ✅ **decisa (merge `192c629`/PR #168)** — scelta utente: **bump MANUALE a ogni release user-facing** (`/VERSION` SemVer, non a ogni merge — il per-merge è il dogfood via HEAD). Zero codice; bump automatico scartato (YAGNI). Regola in CLAUDE.md §Git & versionamento + E2-FEAT-014 risolta. **Caveat (finding 2026-07-10):** l'avvisatore è inerte anche per un 2° motivo — il fetch di `/VERSION` **404** su repo **privato** → `verdict:"unknown"`; macchina **validata live** (override → `behind` → avviso). Entrambi sciolti al **go-public** → **E2-FEAT-017** |
 | A-16 | FIX | P2 | Lifecycle edge: uninstall di file pre-esistenti + trappola marker corrotto | `sertor-cli` (E2) | 🔄 **implementata, pre-merge (2026-07-10)** — scelta utente **content-guard** (no manifest, rispetta D3): (1) `remove_file_if_owned` nel kit — un FILE owned si cancella solo se combacia con l'asset deposto, altrimenti **preserva+warn**; wirato nei 3 consumer (rag/wiki/gov, split FILE/CONFIG). (2) `MarkerBlockCorruptError` + `_assert_not_corrupt` in `claude_md.py` — START-xor-END → **fail-loud** (non più SKIPPED silenzioso) su write/remove/update. Solo installer package (no `sertor-core`); +8 test; kit 157·sertor 510·flow 142 verdi, ruff clean |
-| A-17 | FIX | P2 | Sync asset: copertura `rag/hooks` 5/5 + `--check` exit code + delete orfani | `debito-tecnico` (E10) | 📋 |
+| A-17 | FIX | P2 | Sync asset: copertura `rag/hooks` 5/5 + `--check` exit code + delete orfani | `debito-tecnico` (E10) | 🔄 **implementata, pre-merge (2026-07-10)** — scelta utente **completo**: (1) **copertura** già risolta (il `sync` enumera il subtree → tutti i 7 hook; guardia auto-derivante E15-FEAT-002); (2) **`--check`** su `sync.py` → exit 1 sul drift (gate locale); (3) **delete orfani** — `delete_if_empty=True` sul `settings.json` **condiviso** (il key-check preserva il contenuto utente) + nuova primitiva kit **`prune_empty_dirs`** (rimuove le dir vuote bottom-up) wirata in `execute_lifecycle` (`uninstall_prune_empty`) nei 3 consumer → **chiude il bug «`.claude/` orfano vuoto»**. Solo installer package; +8 test; kit 162·sertor 513·flow 142 verdi, ruff clean |
 | A-18 | EVO | P2 | E13 Fase 1 Musts (getting-started, README di valore) | `documentazione-marketing` E13 | 📋 |
 | A-19 | EVO | P2 | Refactor seam assistenti (surface-iteration, no ternari binari) pre-Codex | `sertor-cli` (E2) | 📋 |
 | A-20 | FIX | P2 | Igiene: gitignore `.last-hook-error`, triage `sources/Human/`, 6 wikilink rotti, collisione `specs/077`, OTel senza collector | `debito-tecnico` (E10) | 📋 |
@@ -622,8 +623,6 @@ riproducibile e production-grade. **Una sola verità interrogabile**: sorgenti (
 | **Rilevamento attivo dei gap di documentazione** (codice→wiki generativo) | Il residuo *genuino* di FEAT-008: oggi il legame codice↔doc è **passivo** (lo interroghi con `get_context`/`related_docs`), manca il **generativo** — il RAG/code-graph che rileva **entità di codice senza pagina wiki** e le **propone** al `wiki-author` | Scorporato dalla chiusura di FEAT-008 (✅ composita, verificata live 2026-06-16). Casa candidata: feature wiki dedicata o `debito-tecnico` FEAT-005 (igiene-wiki). Riusa il [[code-graph]] (`find_symbol`/`related_docs`) + lint C | 💡 **idea, scorporata da FEAT-008** (2026-06-16) |
 | **Misurare nella TUI *quando si usa il grafo* vs *il vettoriale/ibrido*** (epica `osservabilita`, estende FEAT-015) | Vedere a runtime **quale metodo di retrieval** serve ogni risposta: quando si scende sul code-graph (`find_symbol`/`who_calls`) e quando si resta sulla ricerca densa/ibrida. Oggi la scheda RAG (FEAT-015) mostra query/verdetto/op-MCP ma **non distingue grafo vs ricerca** | Gli eventi distinti **già esistono** (`hybrid_query`/`retrieve` vs i tool grafo via `mcp.<tool>`): serve **aggregarli/etichettarli per metodo** nella TUI. Si lega al fatto che il "routing" del metodo vive **nell'agente** (nessun router nel core, vedi A/B del 2026-06-20) → la TUI lo renderebbe **visibile** | 💡 **idea (utente, 2026-06-20)** |
 | **Timeout espliciti su embed/query (server MCP e adapter)** | L'hang della prima query MCP è stato diagnosticato e **risolto** (causa vera: init pigro di Chroma nella prima tool call parcheggiava il task su Windows → warm-up eager in `main()`, **hotfix PR #23**, vedi [[mcp-server]]); i timeout generici restano una rifinitura di robustezza | Timeout configurabile in `Settings` + eccezione di dominio | 💡 idea ridimensionata (hang risolto 2026-06-12) |
-| 🐞 **Residuo uninstall: `.claude/` orfano vuoto** (lifecycle installer, `sertor-cli`) | `sertor uninstall rag --assistant claude` lascia un `.claude/` orfano (`settings.json`=`{}` + `hooks/` vuota) su un host che non aveva `.claude/`. Stessa classe del bug chiuso da **PR #77** (guscio vuoto), ma sul file `.claude/settings.json` CONDIVISO (che PR #77 preserva di proposito) | Emerso dalla **verifica empirica su Spike** (2026-06-18, test install Claude/Copilot dell'unificazione venv). Fix gemello di PR #77: estendere `delete_if_empty` al `settings.json` condiviso quando è vuoto E creato da Sertor (distinguere user-created è il nodo). Casa: lifecycle `sertor-cli` | 👍 **bug tracciato, da fixare** (2026-06-18) |
-
 ---
 
 ## Questioni aperte (tenute così, per ora)

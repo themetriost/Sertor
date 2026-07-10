@@ -25,6 +25,7 @@ from sertor_install_kit.lifecycle import (
     SertorOwnedPaths,
     deregister_mcp_client,
     execute_lifecycle,
+    prune_empty_dirs,
     remove_file_if_owned,
     remove_path,
     update_file_if_changed,
@@ -70,6 +71,57 @@ def test_remove_file_if_owned_line_ending_insensitive(tmp_path: Path):
     p.write_bytes(b"print('sertor')\r\n")
     outcome, _ = remove_file_if_owned(p, "print('sertor')\n")
     assert outcome is Outcome.REMOVED
+
+
+# --- A-17 prune_empty_dirs (orphan cleanup) -----------------------------------------------------
+
+def test_prune_empty_dirs_removes_empty_tree(tmp_path: Path):
+    root = tmp_path / ".claude"
+    (root / "hooks").mkdir(parents=True)
+    (root / "skills" / "wiki-author").mkdir(parents=True)
+    assert prune_empty_dirs(root) is Outcome.REMOVED
+    assert not root.exists()  # fully empty → the whole `.claude/` shell removed
+
+
+def test_prune_empty_dirs_keeps_dir_with_content(tmp_path: Path):
+    root = tmp_path / ".claude"
+    (root / "hooks").mkdir(parents=True)  # empty → prunable
+    (root / "commands").mkdir(parents=True)
+    (root / "commands" / "user.md").write_text("mine", encoding="utf-8")  # user content
+    assert prune_empty_dirs(root) is Outcome.REMOVED  # the empty `hooks/` subdir was removed
+    assert root.exists()                              # kept: still holds user content
+    assert not (root / "hooks").exists()
+    assert (root / "commands" / "user.md").read_text(encoding="utf-8") == "mine"  # untouched
+
+
+def test_prune_empty_dirs_absent_skips(tmp_path: Path):
+    assert prune_empty_dirs(tmp_path / "nope") is Outcome.SKIPPED
+
+
+def test_prune_empty_dirs_nonempty_skips(tmp_path: Path):
+    d = tmp_path / "d"
+    d.mkdir()
+    (d / "f.txt").write_text("x", encoding="utf-8")
+    assert prune_empty_dirs(d) is Outcome.SKIPPED
+    assert d.exists()
+
+
+def test_execute_lifecycle_uninstall_prunes_empty_dirs(tmp_path: Path):
+    # A removed FILE leaves an empty `.claude/hooks/` → the whole shell is pruned by A-17.
+    (tmp_path / ".claude" / "hooks").mkdir(parents=True)
+    (tmp_path / ".claude" / "hooks" / "h.py").write_text("x", encoding="utf-8")
+    plan = [_art(".claude/hooks/h.py")]
+    owned = SertorOwnedPaths(owned_files=(".claude/hooks/h.py",))
+
+    def apply_fn(art: Artifact, op: LifecycleOp) -> ArtifactOutcome:
+        (tmp_path / art.target_rel).unlink()  # the consumer removes the file
+        return ArtifactOutcome(art.target_rel, Outcome.REMOVED, "file")
+
+    execute_lifecycle(
+        plan, owned, apply_fn, op=LifecycleOp.UNINSTALL, target=str(tmp_path),
+        capability="rag", uninstall_prune_empty=(".claude",),
+    )
+    assert not (tmp_path / ".claude").exists()  # empty orphan shell removed
 
 
 class _FakeRunner:

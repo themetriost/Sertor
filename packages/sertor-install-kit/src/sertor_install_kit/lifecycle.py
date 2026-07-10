@@ -168,6 +168,29 @@ def remove_file_if_owned(
     return Outcome.REMOVED, None
 
 
+def prune_empty_dirs(dest: Path) -> Outcome:
+    """Remove `dest` and its empty subdirectories, bottom-up — post-uninstall orphan cleanup (A-17).
+
+    Only EMPTY directories are removed (an empty dir has nothing to lose); any directory still
+    holding a file — the user's content, or a Sertor asset preserved by the content-guard — is kept,
+    and so is its parent chain. Absent / not-a-dir → `SKIPPED`. Never touches files. Fixes the
+    `.claude/` orphan shell (empty `hooks/` + `.claude/` left after the Sertor hook files were
+    removed). Returns `REMOVED` if any directory was removed, else `SKIPPED`.
+    """
+    if not dest.is_dir() or dest.is_symlink():
+        return Outcome.SKIPPED
+    removed_any = False
+    # Deepest-first: a child directory empties before its parent is examined.
+    for sub in sorted(dest.rglob("*"), key=lambda p: len(p.parts), reverse=True):
+        if sub.is_dir() and not sub.is_symlink() and not any(sub.iterdir()):
+            sub.rmdir()
+            removed_any = True
+    if not any(dest.iterdir()):
+        dest.rmdir()
+        return Outcome.REMOVED
+    return Outcome.REMOVED if removed_any else Outcome.SKIPPED
+
+
 def project_removal(dest: Path) -> Outcome:
     """Read-only projection of `remove_path` (for `--dry-run`): exists → `REMOVED`; else `SKIPPED`.
 
@@ -249,13 +272,16 @@ def execute_lifecycle(
     dry_run: bool = False,
     obsolete_owned: SertorOwnedPaths | None = None,
     uninstall_dirs_in_block: tuple[str, ...] = (),
+    uninstall_prune_empty: tuple[str, ...] = (),
 ) -> InstallReport:
     """Verb-aware orchestrator for `upgrade`/`uninstall` (data-model §6).
 
     1. Walks `plan` with `apply_fn(artifact, op)`, recording each outcome (fail-fast no-rollback,
        like `execute_plan`).
     2. On `UNINSTALL`, removes the `uninstall_dirs_in_block` owned trees in block (FR-030, e.g.
-       `.sertor/`): a single `remove_path` per dir instead of per-sub-artifact.
+       `.sertor/`): a single `remove_path` per dir instead of per-sub-artifact. Then prunes the
+       `uninstall_prune_empty` dirs bottom-up if they are left EMPTY (A-17 orphan cleanup, e.g. the
+       `.claude/` shell after its hook files were removed) — a non-empty dir (user content) is kept.
     3. On `UPGRADE`, runs the **obsolete phase**: any path under `obsolete_owned` (or `owned` if not
        given) that exists on disk but is NOT produced by the current plan is removed via
        `remove_path` (decision D3). A disk path that is NOT Sertor-owned is never removed (FR-013) —
@@ -289,6 +315,15 @@ def execute_lifecycle(
                 report.add(ArtifactOutcome(rel, project_removal(dest), "runtime block"))
             else:
                 report.add(ArtifactOutcome(rel, remove_path(dest), "runtime block"))
+        # A-17 orphan cleanup: drop the Sertor-created dir shells (e.g. `.claude/hooks`, `.claude/`)
+        # left empty after the file removals. dry-run cannot know post-removal emptiness (the files
+        # were not removed) → reported as a no-op.
+        for rel in uninstall_prune_empty:
+            dest = target_root / rel
+            if dry_run:
+                report.add(ArtifactOutcome(rel, Outcome.SKIPPED, "prune empty (dry-run)"))
+            else:
+                report.add(ArtifactOutcome(rel, prune_empty_dirs(dest), "prune empty orphan dirs"))
 
     if op is LifecycleOp.UPGRADE:
         scope = obsolete_owned if obsolete_owned is not None else owned
