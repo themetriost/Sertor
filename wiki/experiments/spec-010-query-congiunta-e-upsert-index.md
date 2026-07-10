@@ -3,7 +3,7 @@ title: Feature 010 — Query congiunta multi-collezione & upsert-index in CLI (p
 type: experiment
 tags: [feat-003, spec-010, wiki, speckit, query-multi-collezione, upsert-index-cli]
 created: 2026-06-10
-updated: 2026-06-10 (implement completata + PR #20; corretto il naming FEAT-010 → feature/spec 010)
+updated: 2026-06-10
 sources: [
   "specs/010-query-congiunta-e-upsert-index/",
   "requirements/sertor-core/query-congiunta-e-indice/requirements.md",

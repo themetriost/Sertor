@@ -179,6 +179,10 @@ sources: ["<path or URL>", ...]
 ---
 ```
 
+- **`created`/`updated` are bare dates** (`YYYY-MM-DD`), never changelogs — `updated` holds only the
+  *most recent* update date. The **history of changes lives in the log** (`log/`), never accreted into
+  the frontmatter: an `updated` field that grows `(… note) · YYYY-MM-DD (… older note)` entries is
+  drift, not a record. On each edit, overwrite `updated` with the current date.
 - **Stub (node to create):** a forward-link to a page not yet written is realized as a **stub**, not
   as an empty `[[…]]` (which lint A flags as `broken`). Mechanism and rules in [`page-craft.md`](page-craft.md) §4.
 - **Wikilinks** `[[page-name]]` (without `.md`); alias with `[[page-name|displayed text]]`. Keep

@@ -3,7 +3,7 @@ title: Valutazione del retrieval & non-regressione (suite di valutazione host-si
 type: concept
 tags: [retrieval-qualita, valutazione, ground-truth, non-regressione, eval, hit-rate, mrr, feat-001, graph-eval, precision, recall, f1, feat-011, union-hit-rate, feat-003]
 created: 2026-06-20
-updated: 2026-06-21 (FEAT-003 Tempo 2: metrica AND→OR, union_hit_rate, contratto search_combined tupla, segnale per-superficie, lezione di misura)
+updated: 2026-06-21
 sources: ["specs/065-ground-truth-valutazione/plan.md", "specs/066-valutazione-navigazione-grafo/plan.md", "specs/069-qualita-fusione-code-doc/plan.md", "specs/070-search-combined-strutturato/plan.md", "requirements/retrieval-qualita/ground-truth-valutazione/requirements.md", "src/sertor_core/services/eval/", "src/sertor_core/engines/evaluation.py"]
 ---
 

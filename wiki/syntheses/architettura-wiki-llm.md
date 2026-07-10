@@ -3,7 +3,7 @@ title: Architettura del Wiki LLM — stato e roadmap
 type: synthesis
 tags: [architettura, wiki-llm, host-agnostico, principio-x, roadmap, feat-003, deterministico-vs-giudizio]
 created: 2026-06-05
-updated: 2026-06-10 (feature 010: query congiunta multi-collezione + upsert-index in CLI → write-back entrambi cablati, evoluzione 1a chiusa; restano N3/N4/N6)
+updated: 2026-06-10
 sources: [
   "src/sertor_core/wiki_tools/**",
   "wiki.config.toml",

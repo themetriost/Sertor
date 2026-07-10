@@ -34,6 +34,10 @@ grandi e su flotte di collezioni, riusando le porte invece di riscrivere i motor
   i nodi superano la soglia pratica del `networkx`.
 - **Portabilità & isolamento dipendenze**: ogni nuovo backend è un **extra opzionale**, il core resta
   senza dipendenze obbligatorie nuove (Principio III).
+- **Onestà sullo store cloud esistente**: la traccia **Azure AI Search** (`store_backend=azure`) è già
+  cablata ma **a zero test**, con la **memoria semantica** latentemente rotta su questo path; va **testata
+  o dichiarata *experimental*** — niente degradazione silenziosa (Principio XII). *(FEAT-007, ex A-11 del
+  backlog SWOT 2026-07-02.)*
 
 ### Fuori ambito
 - **Qualità** della pertinenza (metriche, HyDE, soglie): epica
@@ -97,6 +101,7 @@ grandi e su flotte di collezioni, riusando le porte invece di riscrivere i motor
 | FEAT-004 | **Query federata su >2 corpora / fan-out a N collezioni** — estende la feature 010 (fail-fast su provider eterogenei) | Scala del retrieval multi-corpus | **Could** | da decomporre |
 | FEAT-005 | **`search_docs` esteso al fan-out + dedup cross-collezione v2** | Ricerca doc su più collezioni senza duplicati | **Could** | da decomporre |
 | FEAT-006 | **Scala del code-graph oltre l'in-memory** — backend a grafo persistente (Neo4j opzionale) oltre la soglia ~50k nodi del `networkx` | Il grafo regge repo grandi | **Could** | da decomporre |
+| FEAT-007 | **Azure AI Search: dichiarare *experimental* o testare** — la traccia store cloud odierna (`store_backend=azure`) è **a zero test**, e la **memoria semantica** è **latentemente rotta** su questo path (`SERTOR_MEMORY_SEMANTIC` + store Azure). O si copre con test reali (marker `cloud`) o si dichiara esplicitamente *experimental* nella doc/config, senza degradazione silenziosa (Principio XII) | Onestà sullo stato del backend online già esistente + memoria semantica non silenziosamente rotta | **Should** | da decomporre |
 
 > **Nota sull'MVP:** il primo passo a valore è **FEAT-001** (PGVector): un secondo store cloud reale,
 > dietro la porta, prova la portabilità del substrato. Il resto (multi-provider, fan-out N, graph scale)

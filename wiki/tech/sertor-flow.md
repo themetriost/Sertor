@@ -3,7 +3,7 @@ title: sertor-flow — l'installer di governance/SDLC
 type: tech
 tags: [installer, governance, sdlc, methodology, speckit-launch, multi-assistente, host-agnostico, produzione]
 created: 2026-06-15
-updated: 2026-06-15 (FEAT-009: multi-assistente Copilot + pivot vendoring→launch-installer)
+updated: 2026-06-15
 sources: ["packages/sertor-flow/", "specs/037-governance-sertor-flow/spec.md", "specs/037-governance-sertor-flow/research.md", "specs/037-governance-sertor-flow/plan.md", ".specify/"]
 ---
 

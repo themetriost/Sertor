@@ -386,7 +386,11 @@ chi dovrebbe?* Corollari operativi:
    scioglie/apre un blocco di un IN PROGRESS; una voce entra/esce dal PLANNED); gli step che non toccano
    lo stato di prodotto **non** lo innescano. **Confine:** è **giudizio** ancorato alla realtà del repo
    (git, `specs/`, `src/`) → resta nel **flusso principale (Opus)**, non a Haiku, come distill e lint
-   semantico; il blocco executive e la mappa-feature sottostante **non devono contraddirsi**. **Iniezione
+   semantico. **Fonte unica dello stato «consegnato» (regola A-12, 2026-07-10):** l'**EXEC è l'unica fonte**
+   di verità sullo stato delle feature; le colonne `Stato` degli `epic.md` e le voci di *«Nuove funzionalità
+   da discutere»* **puntano** all'EXEC per le feature consegnate, **non ne duplicano** merge/PR/date (è la
+   duplicazione che va in deriva). Al merge si aggiorna **solo** l'EXEC; l'`epic.md` marca ✅ + «vedi EXEC».
+   L'EXEC e gli `epic.md` **non devono contraddirsi**. **Iniezione
    (non è compito del rituale):** il SessionStart hook è **sottile** — non *trasporta* il contenuto (il
    canale-hook è limitato a ~10.000 caratteri: l'indice da solo lo sforerebbe), ma **istruisce** il flusso
    principale a caricarlo a freddo con il tool `Read` (`wiki/syntheses/roadmap.md`, `wiki/index.md`, l'ultimo
@@ -556,6 +560,9 @@ cresce a ogni sessione, invece di ricostruire la conoscenza ogni volta.
 
 ### Convenzioni
 - **Frontmatter YAML** in ogni pagina: `title`, `type`, `tags`, `created`, `updated`, `sources`.
+  `created`/`updated` sono **date secche** (`YYYY-MM-DD`), **mai** changelog: `updated` porta solo l'ultima
+  data di modifica, la **storia vive nel log** (`wiki/log/`), non appesa al frontmatter (regola A-13,
+  2026-07-10).
 - **Backlink** in stile wikilink `[[nome-pagina]]` (compatibile Obsidian); i link relativi
   Markdown vanno bene per la navigazione da editor/GitHub. Mantieni i cross-reference aggiornati.
 - **Naming** file: kebab-case descrittivo (es. `azure-ai-search.md`, `hybrid-search.md`).

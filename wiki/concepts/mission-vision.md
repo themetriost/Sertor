@@ -3,7 +3,7 @@ title: Mission, vision & Principle X (host-agnosticity)
 type: concept
 tags: [missione, visione, host-agnostico, principio-x, principio-xi, disaccoppiamento, costituzione]
 created: 2026-06-05
-updated: 2026-06-15 (allineato Costituzione v1.2.0 — Principio XI consumo via vehicles) · 2026-06-13 (+ sezione "Posizionamento: retrieval tool per agenti" — generate=agente, serve=MCP delegati per design; fronte competitivo = precisione/confidenza/freschezza; wiki = generazione precalcolata)
+updated: 2026-06-15
 sources: ["README.md", ".specify/memory/constitution.md"]
 ---
 

@@ -3,7 +3,7 @@ title: Targeting per-assistente (AssistantProfile / Surface)
 type: tech
 tags: [installer, sertor-install-kit, copilot, copilot-cli, claude, host-agnostico, principio-x, feat-007]
 created: 2026-06-15
-updated: 2026-07-01 (aggiunta sezione «Default model-policy per-agente (Copilot CLI)» FEAT-015: frontmatter `model:` dai custom-agent, fonte unica versionata, fail-loud install-time, guardie riconciliate) · 2026-06-19 (sezione «Parità by construction» FEAT-001/056 RIVISTA al meccanismo NATIVO: skill nativa `.github/skills/wiki-author/` (dispatcher SKILL.md che assorbe `/wiki` + payload byte-copiato), riferimenti relativi co-locati; abbandonati custom-agent-skill + `.github/sertor/` + `{SKILL_DIR}`) · 2026-06-18 (+ sezione «Parità by construction» FEAT-001/feature 056)
+updated: 2026-07-01
 sources: ["packages/sertor-install-kit/src/sertor_install_kit/assistant.py", "packages/sertor/src/sertor_installer/install_wiki.py", "packages/sertor/src/sertor_installer/install_rag.py", "specs/044-distribuzione-copilot/plan.md", "requirements/sertor-cli/distribuzione-copilot/requirements.md"]
 ---
 

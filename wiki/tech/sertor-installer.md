@@ -3,7 +3,7 @@ title: sertor — l'installer (pacchetto e comando)
 type: tech
 tags: [installer, cli, wiki, package-data, host-agnostico, produzione]
 created: 2026-06-11
-updated: 2026-06-19 (blocco SERTOR:RAG-USAGE host-facing: nuova disciplina "Search first, MCP-first") · 2026-06-15 (+ motore estratto in [[sertor-install-kit]], governace in [[sertor-flow]])
+updated: 2026-06-19
 sources: ["packages/sertor/", "specs/012-sertor-install-wiki/", "specs/015-sertor-install-rag/", "specs/016-igiene-radice-host/", "requirements/sertor-cli/installer/requirements.md", "requirements/sertor-cli/install-rag/requirements.md", "requirements/sertor-cli/igiene-radice-host/requirements.md"]
 ---
 
