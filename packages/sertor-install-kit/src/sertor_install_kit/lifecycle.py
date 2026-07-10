@@ -142,6 +142,32 @@ def remove_path(dest: Path) -> Outcome:
     return Outcome.REMOVED
 
 
+def remove_file_if_owned(
+    dest: Path, expected_content: str, *, dry_run: bool = False
+) -> tuple[Outcome, str | None]:
+    """Remove a standalone FILE only if its content is what Sertor deposited (A-16 content-guard).
+
+    Guards against deleting a file the user MODIFIED (or a pre-existing file at an owned path with
+    different content): if `dest`'s current text differs from `expected_content` (line-ending
+    insensitive, matching the deposit path in `update_file_if_changed`), the file is PRESERVED and
+    the outcome is `SKIPPED` with a reason — never a blind deletion (FR-013 spirit). Absent →
+    `SKIPPED`. A content match → `REMOVED`. `dry_run` projects the same verdict without mutating.
+
+    Only for regular files (FILE artifacts): a matching symlink is unlinked; owned DIRECTORIES
+    removed in block keep using `remove_path` (a dir has no single "deposited content" to compare).
+    """
+    if not dest.exists() and not dest.is_symlink():
+        return Outcome.SKIPPED, "absent"
+    if dest.is_file() and not dest.is_symlink():
+        current = dest.read_text(encoding="utf-8").replace("\r\n", "\n")
+        if current != expected_content.replace("\r\n", "\n"):
+            return Outcome.SKIPPED, "preserved: modified since install"
+    if dry_run:
+        return Outcome.REMOVED, None
+    dest.unlink()
+    return Outcome.REMOVED, None
+
+
 def project_removal(dest: Path) -> Outcome:
     """Read-only projection of `remove_path` (for `--dry-run`): exists → `REMOVED`; else `SKIPPED`.
 

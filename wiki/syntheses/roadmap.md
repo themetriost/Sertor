@@ -114,15 +114,16 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   *Cosa:* audit completo del workspace (5 subagent paralleli: core · packages/CI · governance · backlog ·
   doc/wiki) → SWOT + **20 item prioritizzati P0–P2** (tabella sotto, dettaglio/evidenze in
   [[audit-swot-2026-07-02]]). Si attacca **in ordine da A-01 in giù**, con **checkpoint a fine di ogni item**.
-  *Consegnato (su master):* **A-01 → A-14 ✅** — dettaglio nella tabella SWOT sotto. **A-11 folded** in E6
-  `backend-store-scala` **FEAT-007** (riferimento A ritirato); **A-12/A-13** riconciliazione `epic.md`↔EXEC
-  + `updated:`=data secca (PR #166) — *fonte unica strutturale* (l'EXEC è l'unica verità sullo stato
-  consegnato, gli `epic.md` vi *puntano*); **A-14** hardening `sertor-core` (parse numerico `Settings`
-  guardato → `ConfigError`, Principio XII; `detail` MCP scrubbato) mergiato (PR #167, `c859a19`).
-  **A-15 ✅ decisa (pre-merge)** — policy `/VERSION` = **bump manuale a release user-facing** (il dogfood
-  traccia HEAD; l'avvisatore E2-FEAT-013 è *dormiente-fino-alla-release*, non morto — zero codice).
-  *Prossimo passo concreto:* commit/PR A-15 + **A-16** (lifecycle edge: uninstall di file pre-esistenti +
-  trappola marker corrotto, `sertor-cli` P2).
+  *Consegnato (su master):* **A-01 → A-15 ✅** — dettaglio nella tabella SWOT sotto. **A-11 folded** in E6
+  FEAT-007; **A-12/A-13** riconciliazione `epic.md`↔EXEC + `updated:`=data secca (PR #166) — *fonte unica
+  strutturale*; **A-14** hardening `sertor-core` (parse numerico guardato + scrub `detail` MCP, PR #167);
+  **A-15** policy `/VERSION` = bump manuale a release (PR #168, `192c629`). **A-16 ✅ pre-merge** — lifecycle
+  installer robusto: (1) **content-guard** all'uninstall — un FILE owned si rimuove solo se combacia con
+  l'asset deposto, un file **modificato/pre-esistente** è **preservato+warn** (no cancellazione cieca;
+  `remove_file_if_owned`, i 3 consumer rag/wiki/gov); (2) **marker corrotto → fail-loud** (`MarkerBlockCorruptError`:
+  START-xor-END non più SKIPPED silenzioso). Rispetta D3 (niente manifest); +8 test.
+  *Prossimo passo concreto:* commit/PR A-16 + **A-17** (Sync asset: copertura `rag/hooks` 5/5 + `--check`
+  exit code + delete orfani, `debito-tecnico` P2).
 
 - **E14-FEAT-001 — self-host di SpecLift (vendoring Adapter B) — ✅ CONSEGNATA (merge `bbfb74d`/PR #136, 2026-07-01) su `master`.**
   *Cosa:* SpecLift (capacità `diff → requisiti EARS ancorati`, **handoff da Sinthari**) vendorato come membro
@@ -600,7 +601,7 @@ riproducibile e production-grade. **Una sola verità interrogabile**: sorgenti (
 | A-13 | FIX | P1 | `updated:` = data secca; storia solo nel log | `debito-tecnico` (E10) | 🔄 **implementata, pre-merge (2026-07-10)** — regola «`updated:`/`created:` = data secca, storia nel log» nel playbook (dogfood+bundle, parità verde) + CLAUDE.md convenzioni; **25 pagine** ripulite (changelog nel frontmatter → data secca; `roadmap.md` da ~13KB → `2026-07-10`) |
 | A-14 | FIX | P1 | Settings: parsing numerico guardato + scrub `detail` MCP | `sertor-core` (E1) | 🔄 **implementata, pre-merge (2026-07-10)** — `Settings.load`: 24 parse `int/float(os.getenv)` → helper guardati `_int_env`/`_float_env` (+ `_*_or_none` guardati); valore non-numerico → `ConfigError(key=…)` invece di `ValueError` crudo (Principio XII). `server.py`: `detail=scrub_text(str(exc))` ai 3 siti d'errore (`_guard`/`_self_test`/`warmup`) → no leak segreti nello store. +5 test; ruff clean |
 | A-15 | FIX | P2 | VERSION policy (E2-FEAT-014): decidere il bump o version-check resta morto | `sertor-cli` E2-FEAT-014 | ✅ **decisa, pre-merge (2026-07-10)** — scelta utente: **bump MANUALE a ogni release user-facing** (`/VERSION` SemVer, non a ogni merge — il per-merge è il dogfood via HEAD). `0.1.0` fermo = «nessuna release ancora», non drift; avvisatore FEAT-013 **dormiente-fino-alla-release**, non morto. Zero codice; bump automatico scartato (YAGNI). Regola in CLAUDE.md §Git & versionamento + E2-FEAT-014 risolta |
-| A-16 | FIX | P2 | Lifecycle edge: uninstall di file pre-esistenti + trappola marker corrotto | `sertor-cli` (E2) | 📋 |
+| A-16 | FIX | P2 | Lifecycle edge: uninstall di file pre-esistenti + trappola marker corrotto | `sertor-cli` (E2) | 🔄 **implementata, pre-merge (2026-07-10)** — scelta utente **content-guard** (no manifest, rispetta D3): (1) `remove_file_if_owned` nel kit — un FILE owned si cancella solo se combacia con l'asset deposto, altrimenti **preserva+warn**; wirato nei 3 consumer (rag/wiki/gov, split FILE/CONFIG). (2) `MarkerBlockCorruptError` + `_assert_not_corrupt` in `claude_md.py` — START-xor-END → **fail-loud** (non più SKIPPED silenzioso) su write/remove/update. Solo installer package (no `sertor-core`); +8 test; kit 157·sertor 510·flow 142 verdi, ruff clean |
 | A-17 | FIX | P2 | Sync asset: copertura `rag/hooks` 5/5 + `--check` exit code + delete orfani | `debito-tecnico` (E10) | 📋 |
 | A-18 | EVO | P2 | E13 Fase 1 Musts (getting-started, README di valore) | `documentazione-marketing` E13 | 📋 |
 | A-19 | EVO | P2 | Refactor seam assistenti (surface-iteration, no ternari binari) pre-Codex | `sertor-cli` (E2) | 📋 |
