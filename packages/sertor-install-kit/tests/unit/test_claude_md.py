@@ -3,16 +3,47 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from sertor_install_kit.artifacts import Outcome
 from sertor_install_kit.claude_md import (
     remove_marker_block,
     update_marker_block,
     write_marker_block,
 )
+from sertor_install_kit.errors import MarkerBlockCorruptError
 
 _START = "<!-- SERTOR:SDLC-RITUAL START -->"
 _END = "<!-- SERTOR:SDLC-RITUAL END -->"
 _BLOCK = "## Rituale\nContenuto del blocco.\n"
+
+
+def test_corrupt_block_start_without_end_fails_loud(tmp_path: Path):
+    # A-16: a start marker without its matching end (truncated/tampered block) FAILS LOUD on every
+    # operation, instead of silently skipping and trapping the block forever (Principio XII).
+    p = tmp_path / "CLAUDE.md"
+    p.write_text(f"# User\n\n{_START}\nhalf a block, end marker lost\n", encoding="utf-8")
+    with pytest.raises(MarkerBlockCorruptError):
+        remove_marker_block(p, _START, _END)
+    with pytest.raises(MarkerBlockCorruptError):
+        write_marker_block(p, _BLOCK, _START, _END)
+    with pytest.raises(MarkerBlockCorruptError):
+        update_marker_block(p, _BLOCK, _START, _END)
+
+
+def test_corrupt_block_end_without_start_fails_loud(tmp_path: Path):
+    p = tmp_path / "CLAUDE.md"
+    p.write_text(f"# User\n\nstray end only\n{_END}\n", encoding="utf-8")
+    with pytest.raises(MarkerBlockCorruptError):
+        remove_marker_block(p, _START, _END)
+
+
+def test_wellformed_block_not_flagged_corrupt(tmp_path: Path):
+    # Sanity: a normal (both markers, ordered) block round-trips without a false corruption raise.
+    p = tmp_path / "CLAUDE.md"
+    write_marker_block(p, _BLOCK, _START, _END)
+    assert write_marker_block(p, _BLOCK, _START, _END) is Outcome.SKIPPED
+    assert remove_marker_block(p, _START, _END) is Outcome.REMOVED
 
 
 def test_absent_creates_with_block_only(tmp_path: Path):

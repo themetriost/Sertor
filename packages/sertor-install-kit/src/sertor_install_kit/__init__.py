@@ -45,6 +45,7 @@ from sertor_install_kit.lifecycle import (
     execute_lifecycle,
     project_removal,
     project_update,
+    remove_file_if_owned,
     remove_path,
     update_file_if_changed,
 )
@@ -102,6 +103,7 @@ __all__ = [
     "SharedEdit",
     "SharedEditKind",
     "update_file_if_changed",
+    "remove_file_if_owned",
     "remove_path",
     "deregister_mcp_client",
     "project_removal",

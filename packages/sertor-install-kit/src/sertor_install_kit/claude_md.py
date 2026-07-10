@@ -15,11 +15,34 @@ from __future__ import annotations
 from pathlib import Path
 
 from sertor_install_kit.artifacts import Outcome
+from sertor_install_kit.errors import MarkerBlockCorruptError
 
 
 def _wrap(block_content: str, marker_start: str, marker_end: str) -> str:
     """Wraps block content between markers (each marker on its own line)."""
     return f"{marker_start}\n{block_content.rstrip()}\n{marker_end}\n"
+
+
+def _assert_not_corrupt(
+    existing: str, marker_start: str, marker_end: str, path: Path
+) -> None:
+    """Fail loud if the block is corrupt: exactly one marker present, or end before start (A-16).
+
+    A well-formed state is either BOTH markers absent (no block yet) or START then END in order.
+    Anything else — a start without a matching end after it, an end without a start, or reversed
+    markers — is a truncated/tampered block: raise `MarkerBlockCorruptError` instead of silently
+    skipping (Principio XII), so the operator repairs it rather than the installer no-op'ing.
+    """
+    start = existing.find(marker_start)
+    end = existing.find(marker_end)
+    if (start == -1 and end == -1) or (start != -1 and end > start):
+        return
+    present, missing = (marker_start, marker_end) if start != -1 else (marker_end, marker_start)
+    raise MarkerBlockCorruptError(
+        f"corrupt marker block in {path}: '{present}' is present but '{missing}' is missing or "
+        "out of order — the block was truncated or tampered. Restore the missing marker or remove "
+        "the stray one, then re-run."
+    )
 
 
 def write_marker_block(
@@ -43,6 +66,7 @@ def write_marker_block(
         return Outcome.BLOCK
 
     existing = path.read_text(encoding="utf-8")
+    _assert_not_corrupt(existing, marker_start, marker_end, path)
     if marker_start in existing:
         return Outcome.SKIPPED
 
@@ -94,6 +118,7 @@ def remove_marker_block(path: Path, marker_start: str, marker_end: str) -> Outco
     if not path.exists():
         return Outcome.SKIPPED
     existing = path.read_text(encoding="utf-8")
+    _assert_not_corrupt(existing, marker_start, marker_end, path)
     parts = _split_around_block(existing, marker_start, marker_end)
     if parts is None:
         return Outcome.SKIPPED
@@ -124,6 +149,7 @@ def update_marker_block(
     if not path.exists():
         return write_marker_block(path, content, marker_start, marker_end)
     existing = path.read_text(encoding="utf-8")
+    _assert_not_corrupt(existing, marker_start, marker_end, path)
     start = existing.find(marker_start)
     if start == -1:
         return write_marker_block(path, content, marker_start, marker_end)

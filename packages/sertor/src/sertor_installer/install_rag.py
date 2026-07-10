@@ -38,7 +38,7 @@ from sertor_install_kit.lifecycle import (
     deregister_mcp_client,
     project_removal,
     project_update,
-    remove_path,
+    remove_file_if_owned,
     update_file_if_changed,
 )
 from sertor_install_kit.lifecycle import (
@@ -948,9 +948,12 @@ def _apply_rag_uninstall(
         outcome = remove_marker_block(dest, MARKER_START_RAG, MARKER_END_RAG)
         return ArtifactOutcome(art.target_rel, outcome, "RAG-usage block stripped")
     if art.kind is ArtifactKind.FILE:
+        # A-16 content-guard: remove the standalone FILE only if it still matches what Sertor
+        # deposited; a user-modified (or pre-existing-different) file is preserved, not blindly
+        # deleted. A `.sertor/`-internal file is removed by the runtime block regardless.
         dest = root / art.target_rel
-        outcome = project_removal(dest) if dry_run else remove_path(dest)
-        return ArtifactOutcome(art.target_rel, outcome, "standalone hook")
+        outcome, guard_detail = remove_file_if_owned(dest, _render_rag_file(art), dry_run=dry_run)
+        return ArtifactOutcome(art.target_rel, outcome, guard_detail or "standalone hook")
     if art.kind is ArtifactKind.SETTINGS_MERGE:
         dest = root / art.target_rel
         if dry_run:

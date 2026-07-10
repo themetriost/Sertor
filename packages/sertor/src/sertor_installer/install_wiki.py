@@ -29,6 +29,7 @@ from sertor_install_kit.lifecycle import (
     SharedEditKind,
     project_removal,
     project_update,
+    remove_file_if_owned,
     remove_path,
     update_file_if_changed,
 )
@@ -490,11 +491,16 @@ def _apply_wiki_uninstall(
     """
     if art.kind is ArtifactKind.STRUCTURE:
         return ArtifactOutcome(art.target_rel, Outcome.SKIPPED, "wiki dir preserved")
-    if art.kind in (ArtifactKind.FILE, ArtifactKind.CONFIG):
+    if art.kind is ArtifactKind.FILE:
+        # A-16 content-guard: preserve a user-modified wiki asset instead of blind deletion.
+        dest = _resolve(target_root, art.target_rel)
+        outcome, guard_detail = remove_file_if_owned(dest, _render_for_target(art), dry_run=dry_run)
+        return ArtifactOutcome(art.target_rel, outcome, guard_detail or "wiki asset")
+    if art.kind is ArtifactKind.CONFIG:
+        # CONFIG (`wiki.config.toml`) keeps its own removal semantics (out of A-16 content-guard).
         dest = _resolve(target_root, art.target_rel)
         outcome = project_removal(dest) if dry_run else remove_path(dest)
-        detail = "wiki config" if art.kind is ArtifactKind.CONFIG else "wiki asset"
-        return ArtifactOutcome(art.target_rel, outcome, detail)
+        return ArtifactOutcome(art.target_rel, outcome, "wiki config")
     if art.kind is ArtifactKind.MARKER_BLOCK:
         dest = _resolve(target_root, art.target_rel)
         if dry_run:

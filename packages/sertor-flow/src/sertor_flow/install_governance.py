@@ -43,6 +43,7 @@ from sertor_install_kit import (
     project_removal,
     project_update,
     read_asset_text,
+    remove_file_if_owned,
     remove_marker_block,
     remove_path,
     render_custom_agent,
@@ -408,7 +409,13 @@ def _apply_gov_uninstall(
     """
     if art.kind is ArtifactKind.CONFIG and art.strategy is WriteStrategy.CREATE_IF_ABSENT:
         return ArtifactOutcome(art.target_rel, Outcome.SKIPPED, "constitution preserved")
-    if art.kind in (ArtifactKind.FILE, ArtifactKind.CONFIG):
+    if art.kind is ArtifactKind.FILE:
+        # A-16 content-guard: preserve a user-modified governance asset instead of blind deletion.
+        dest = _resolve(target_root, art.target_rel)
+        outcome, guard_detail = remove_file_if_owned(dest, _render_for_target(art), dry_run=dry_run)
+        return ArtifactOutcome(art.target_rel, outcome, guard_detail or "governance asset")
+    if art.kind is ArtifactKind.CONFIG:
+        # CONFIG (the host constitution) keeps its own removal semantics (out of A-16 guard).
         dest = _resolve(target_root, art.target_rel)
         outcome = project_removal(dest) if dry_run else remove_path(dest)
         return ArtifactOutcome(art.target_rel, outcome, "governance asset")

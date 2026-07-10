@@ -25,9 +25,51 @@ from sertor_install_kit.lifecycle import (
     SertorOwnedPaths,
     deregister_mcp_client,
     execute_lifecycle,
+    remove_file_if_owned,
     remove_path,
     update_file_if_changed,
 )
+
+# --- A-16 content-guard: remove_file_if_owned ---------------------------------------------------
+
+def test_remove_file_if_owned_removes_matching(tmp_path: Path):
+    # A file whose content matches what Sertor deposited is removed (the normal uninstall path).
+    p = tmp_path / "hook.py"
+    p.write_text("print('sertor')\n", encoding="utf-8")
+    outcome, _ = remove_file_if_owned(p, "print('sertor')\n")
+    assert outcome is Outcome.REMOVED
+    assert not p.exists()
+
+
+def test_remove_file_if_owned_preserves_modified(tmp_path: Path):
+    # A user-modified (or pre-existing-different) file is PRESERVED, not blindly deleted.
+    p = tmp_path / "hook.py"
+    p.write_text("print('user edit')\n", encoding="utf-8")
+    outcome, detail = remove_file_if_owned(p, "print('sertor')\n")
+    assert outcome is Outcome.SKIPPED
+    assert p.exists()
+    assert detail and "modified" in detail
+
+
+def test_remove_file_if_owned_absent_skips(tmp_path: Path):
+    outcome, _ = remove_file_if_owned(tmp_path / "nope.py", "x")
+    assert outcome is Outcome.SKIPPED
+
+
+def test_remove_file_if_owned_dry_run_projects_without_deleting(tmp_path: Path):
+    p = tmp_path / "hook.py"
+    p.write_text("print('sertor')\n", encoding="utf-8")
+    outcome, _ = remove_file_if_owned(p, "print('sertor')\n", dry_run=True)
+    assert outcome is Outcome.REMOVED
+    assert p.exists()  # dry-run projects the removal verdict but never mutates
+
+
+def test_remove_file_if_owned_line_ending_insensitive(tmp_path: Path):
+    # CRLF on disk vs LF expected: the deposit path is line-ending insensitive → still a match.
+    p = tmp_path / "hook.py"
+    p.write_bytes(b"print('sertor')\r\n")
+    outcome, _ = remove_file_if_owned(p, "print('sertor')\n")
+    assert outcome is Outcome.REMOVED
 
 
 class _FakeRunner:
