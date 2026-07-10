@@ -114,14 +114,15 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   *Cosa:* audit completo del workspace (5 subagent paralleli: core · packages/CI · governance · backlog ·
   doc/wiki) → SWOT + **20 item prioritizzati P0–P2** (tabella sotto, dettaglio/evidenze in
   [[audit-swot-2026-07-02]]). Si attacca **in ordine da A-01 in giù**, con **checkpoint a fine di ogni item**.
-  *Consegnato (su master):* **A-01 → A-13 ✅** — dettaglio nella tabella SWOT sotto. **A-11 folded** in E6
-  `backend-store-scala` **FEAT-007** (riferimento A ritirato); **A-12** riconciliazione `epic.md`↔EXEC +
-  **A-13** `updated:`=data secca mergiati (PR #166, `28cecba`) — *fonte unica strutturale*: l'EXEC è
-  l'unica verità sullo stato consegnato, gli `epic.md` vi *puntano*. **A-14 ✅ pre-merge** — `sertor-core`:
-  parsing numerico di `Settings` **guardato** (valore non-numerico → `ConfigError` che nomina la variabile,
-  non un traceback crudo; Principio XII) + `detail` degli errori MCP **scrubbato** (`scrub_text`, niente
-  leak di segreti nello store osservabilità). *Prossimo passo concreto:* commit/PR A-14 + **A-15** (VERSION
-  policy E2-FEAT-014: decidere il bump o il version-check resta morto).
+  *Consegnato (su master):* **A-01 → A-14 ✅** — dettaglio nella tabella SWOT sotto. **A-11 folded** in E6
+  `backend-store-scala` **FEAT-007** (riferimento A ritirato); **A-12/A-13** riconciliazione `epic.md`↔EXEC
+  + `updated:`=data secca (PR #166) — *fonte unica strutturale* (l'EXEC è l'unica verità sullo stato
+  consegnato, gli `epic.md` vi *puntano*); **A-14** hardening `sertor-core` (parse numerico `Settings`
+  guardato → `ConfigError`, Principio XII; `detail` MCP scrubbato) mergiato (PR #167, `c859a19`).
+  **A-15 ✅ decisa (pre-merge)** — policy `/VERSION` = **bump manuale a release user-facing** (il dogfood
+  traccia HEAD; l'avvisatore E2-FEAT-013 è *dormiente-fino-alla-release*, non morto — zero codice).
+  *Prossimo passo concreto:* commit/PR A-15 + **A-16** (lifecycle edge: uninstall di file pre-esistenti +
+  trappola marker corrotto, `sertor-cli` P2).
 
 - **E14-FEAT-001 — self-host di SpecLift (vendoring Adapter B) — ✅ CONSEGNATA (merge `bbfb74d`/PR #136, 2026-07-01) su `master`.**
   *Cosa:* SpecLift (capacità `diff → requisiti EARS ancorati`, **handoff da Sinthari**) vendorato come membro
@@ -598,7 +599,7 @@ riproducibile e production-grade. **Una sola verità interrogabile**: sorgenti (
 | A-12 | FIX | P1 | Riconciliazione epic.md↔EXEC enforced + pulizia fondo-roadmap zombie | `debito-tecnico` (E10) | 🔄 **implementata, pre-merge (2026-07-10)** — *enforcement per costruzione* (opzione A): EXEC = fonte unica, `epic.md` puntano. Fatto: blocco fossile «Mappa delle feature» eliminato (~85 righe) · 6 righe `epic.md` allineate (sertor-cli/fedelta-dogfood×3/debito-tecnico/speclift + osservabilità) · idee promosse/consegnate rimosse dalle *Nuove funzionalità* · licenza «DA APRIRE»→MIT · «riavvio MCP»→auto-heal · regola fonte-unica nel rituale (CLAUDE.md item 4) + «Come mantenere» |
 | A-13 | FIX | P1 | `updated:` = data secca; storia solo nel log | `debito-tecnico` (E10) | 🔄 **implementata, pre-merge (2026-07-10)** — regola «`updated:`/`created:` = data secca, storia nel log» nel playbook (dogfood+bundle, parità verde) + CLAUDE.md convenzioni; **25 pagine** ripulite (changelog nel frontmatter → data secca; `roadmap.md` da ~13KB → `2026-07-10`) |
 | A-14 | FIX | P1 | Settings: parsing numerico guardato + scrub `detail` MCP | `sertor-core` (E1) | 🔄 **implementata, pre-merge (2026-07-10)** — `Settings.load`: 24 parse `int/float(os.getenv)` → helper guardati `_int_env`/`_float_env` (+ `_*_or_none` guardati); valore non-numerico → `ConfigError(key=…)` invece di `ValueError` crudo (Principio XII). `server.py`: `detail=scrub_text(str(exc))` ai 3 siti d'errore (`_guard`/`_self_test`/`warmup`) → no leak segreti nello store. +5 test; ruff clean |
-| A-15 | FIX | P2 | VERSION policy (E2-FEAT-014): decidere il bump o version-check resta morto | `sertor-cli` E2-FEAT-014 | 📋 |
+| A-15 | FIX | P2 | VERSION policy (E2-FEAT-014): decidere il bump o version-check resta morto | `sertor-cli` E2-FEAT-014 | ✅ **decisa, pre-merge (2026-07-10)** — scelta utente: **bump MANUALE a ogni release user-facing** (`/VERSION` SemVer, non a ogni merge — il per-merge è il dogfood via HEAD). `0.1.0` fermo = «nessuna release ancora», non drift; avvisatore FEAT-013 **dormiente-fino-alla-release**, non morto. Zero codice; bump automatico scartato (YAGNI). Regola in CLAUDE.md §Git & versionamento + E2-FEAT-014 risolta |
 | A-16 | FIX | P2 | Lifecycle edge: uninstall di file pre-esistenti + trappola marker corrotto | `sertor-cli` (E2) | 📋 |
 | A-17 | FIX | P2 | Sync asset: copertura `rag/hooks` 5/5 + `--check` exit code + delete orfani | `debito-tecnico` (E10) | 📋 |
 | A-18 | EVO | P2 | E13 Fase 1 Musts (getting-started, README di valore) | `documentazione-marketing` E13 | 📋 |
