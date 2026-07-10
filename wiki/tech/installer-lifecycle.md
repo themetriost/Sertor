@@ -3,7 +3,7 @@ title: Ciclo di vita dell'installer (upgrade / uninstall)
 type: tech
 tags: [installer, lifecycle, upgrade, uninstall, sertor-install-kit, sertor-flow, feat-008]
 created: 2026-06-17
-updated: 2026-06-17
+updated: 2026-07-10
 sources: ["specs/048-lifecycle-installer/plan.md", "specs/048-lifecycle-installer/research.md", "requirements/sertor-cli/lifecycle-installer/requirements.md", "packages/sertor-install-kit/src/sertor_install_kit/lifecycle.py", "docs/install.md"]
 ---
 
@@ -60,13 +60,16 @@ L'uninstall rispetta le quattro tipologie già note dall'install:
 | Tipo | Esempio | Operazione di rimozione |
 |------|---------|--------------------------|
 | **A** runtime isolato | `.sertor/` (venv, `.env`, store, indici) | rimozione in blocco (interamente Sertor-owned) |
-| **B** asset standalone | skill, agenti, prompt-file, hook script | rimozione del file |
+| **B** asset standalone | skill, agenti, prompt-file, hook script | rimozione **content-guarded** (`remove_file_if_owned`, A-16): il file si rimuove **solo se** combacia con l'asset deposto; un file **modificato dall'utente** (o pre-esistente diverso) è **preservato + warn**, mai cancellato alla cieca |
 | **C** file condivisi | `CLAUDE.md`, `.gitignore`, `.claude/settings.json` | rimozione dei **soli** blocchi a marker Sertor / linee / entry — il resto **byte-per-byte intatto** |
 | **D** registrazione MCP | server `sertor-rag` nel client | de-registrazione (`claude mcp remove` per scope `local`; entry-only per scope `project`) |
 
-I blocchi a marker rimossi sono `SERTOR:WIKI-RITUAL`, `SERTOR:RAG-USAGE`, `SERTOR:SDLC-RITUAL`. Il
-report usa lo **schema `install.report/1` esteso in modo additivo** con gli outcome `updated`/`removed`
-— non un secondo schema (NFR-06).
+I blocchi a marker rimossi sono `SERTOR:WIKI-RITUAL`, `SERTOR:RAG-USAGE`, `SERTOR:SDLC-RITUAL`. Un
+blocco **corrotto** (marker d'inizio presente ma marker di fine mancante, o viceversa — troncato/
+manomesso) **non** viene più saltato in silenzio: `write`/`remove`/`update_marker_block` **falliscono
+loud** con `MarkerBlockCorruptError` (A-16, Principio XII), nominando file e marker, invece di
+intrappolare il blocco per sempre. Il report usa lo **schema `install.report/1` esteso in modo
+additivo** con gli outcome `updated`/`removed` — non un secondo schema (NFR-06).
 
 ## Invarianti
 
