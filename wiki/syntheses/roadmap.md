@@ -64,7 +64,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **E1** | [`sertor-core`](../../requirements/sertor-core/epic.md) | ✅ completa (FEAT-011 ✅ merge `34b599a`) | **Nessun residuo Should aperto** — FEAT-011 embedder locale consegnata (2026-06-21). Resta solo il debito P2 **TASK-D04** (rinomina flag installer `--backend`→`--provider`). *(agenzia incorporata ❌ abbandonata by design)* |
 | **E2** | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | ergonomia installer · Codex · PyPI · `configure --check` (probe live, deferred) *(packaging ✅ + lifecycle ✅ + hardening Copilot FEAT-011 ✅ + wizard config ✅ + Copilot CLI-only ✅ + verifica empirica Copilot LIVE ✅ + **version-update check FEAT-013 ✅** PR #113 2026-06-26)* |
 | **E3** | [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | **export OTel FEAT-005 ✅** + arricchimento span FEAT-013 ✅ + TUI tabella FEAT-014 ✅ + **visibilità RAG/dimostrabilità FEAT-015 ✅** (PR #88) · drift FEAT-012 · metriche aggregate · stima € (Should) · web · CSV/MD |
-| **E4** | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso + **distribuibile** + **semantico** + **multi-assistente** | remember-this · retention (Could) · parità MCP `show`/`list` (FEAT-010) *(cattura Copilot CLI FEAT-008 ✅ + ricerca semantica FEAT-004 ✅ + distribuzione installer FEAT-009 ✅, 2026-06-22)* |
+| **E4** | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso + **distribuibile** + **semantico** + **multi-assistente** · **🐛 bug cattura auto** | **🐛 DA INVESTIGARE (2026-07-09):** la **cattura automatica** non popolava l'archivio (`memory list` vuoto benché `SERTOR_MEMORY=true`); il motore è sano (archive manuale = 58 sessioni · full-text+semantica ok). Ipotesi: hook `memory-capture` era `.ps1` (migrato a `.py` con A-09) → verificare al prossimo SessionEnd se archivia da solo (rischio R-1 cattura host-specifica). · remember-this · retention (Could) · parità MCP `show`/`list` (FEAT-010) *(cattura Copilot CLI FEAT-008 ✅ + ricerca semantica FEAT-004 ✅ + distribuzione installer FEAT-009 ✅)* |
 | **E5** | 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | 🔄 FEAT-001+011 ✅ · FEAT-003 T1+T2 ✅ su master | **eval IR ✅** (PR #92) + **graph-eval ✅** (FEAT-011) + skill live ✅ + **FEAT-003 misura fusione + `search_combined` strutturato (tupla, metrica OR) ✅** (merge `42aceaf`+`908bd92`). **Scoperta:** lo «0.17» era artefatto dell'AND; a OR union=1.00, il vero debole è **`search_docs` MRR 0.55** (leva futura). Restano FEAT-002/004/005-007 |
 | **E6** | 🆕 [`backend-store-scala`](../../requirements/backend-store-scala/epic.md) | 📋 aperta | adapter PGVector (Should) |
 | **E7** | 🆕 [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 📋 aperta | chunking SQL → **sblocca** schema-SQL |
@@ -114,20 +114,14 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   *Cosa:* audit completo del workspace (5 subagent paralleli: core · packages/CI · governance · backlog ·
   doc/wiki) → SWOT + **20 item prioritizzati P0–P2** (tabella sotto, dettaglio/evidenze in
   [[audit-swot-2026-07-02]]). Si attacca **in ordine da A-01 in giù**, con **checkpoint a fine di ogni item**.
-  *Consegnato:* **A-01 ✅** (merge `a9e84e3`/PR #141 — lifecycle installer sicuro: auto-detect dell'installato,
-  no capability creep, switch d'assistente solo con consenso; 491 test pacchetto verdi, `sertor-core` invariato,
-  doc utente aggiornata) · **A-02 in-repo ✅** (merge `9a7e3b7`/PR #142 — provenienza licenza speclift resa onesta
-  su titolarità comune `themetriost`; **outbound risolto alla sorgente:** Sinthari ha aggiunto la `LICENSE` MIT,
-  commit `3e800a0`). **⏸️ PAUSA A-backlog (scelta utente 2026-07-02):** anticipato il vendoring di **SpecAudit**
-  (`packages/specaudit`, E14-FEAT-003, 59 test verdi 3.11+3.12, skill dogfood) per poter testare la coppia
-  **SpecLift→SpecAudit** sui changeset reali delle A durante la loro implementazione. *Prossimo passo concreto:*
-  **A-03 ✅** (merge `ddac060`/PR #144), **A-04 ✅** (merge `e83c6de`/PR #145). **A-05 — diagnosi fatta,
-  promosso a debito:** il primo fix (de-reference dei 9 agenti + guardia) è stato **ritirato** perché
-  *incistava* lo special case (la guardia *benediva* la divergenza dal client) invece di risolverlo. La causa
-  reale — il dogfood non è un client Sertor fedele — è diventata **E10-FEAT-027**, ora **IMPLEMENTATA** sul
-  branch `087-a05-dogfood-client-debt` (SpecKit completo, Constitution 12/12; script di materializzazione
-  isolata + gitignore + 9 agenti rimossi + guardia; 1057 unit verdi, `sertor-core` invariato). → poi **A-06**
-  (doc: `configure` documentato + quick-start Claude su GloVe, P0).
+  *Consegnato:* **A-01 → A-10 ✅** (dettaglio nella tabella SWOT sotto) · **A-11 folded** in E6
+  `backend-store-scala` **FEAT-007** (Azure Search experimental/test; riferimento A ritirato). *In corso:*
+  **A-12** — riconciliazione `epic.md`↔EXEC + de-zombie del fondo-roadmap, via **fonte unica strutturale**
+  (l'**EXEC** è l'unica verità sullo stato consegnato; gli `epic.md` vi *puntano*, non lo duplicano):
+  eliminato il blocco fossile «Mappa delle feature» (~85 righe), 6 righe `epic.md` allineate, idee
+  promosse/consegnate rimosse dalle *Nuove funzionalità*, licenza «DA APRIRE» chiusa (MIT), regola
+  fonte-unica nel rituale (CLAUDE.md item 4). *Prossimo passo concreto:* commit + **A-13** (`updated:` = data
+  secca, storia solo nel log).
 
 - **E14-FEAT-001 — self-host di SpecLift (vendoring Adapter B) — ✅ CONSEGNATA (merge `bbfb74d`/PR #136, 2026-07-01) su `master`.**
   *Cosa:* SpecLift (capacità `diff → requisiti EARS ancorati`, **handoff da Sinthari**) vendorato come membro
@@ -581,95 +575,6 @@ riproducibile e production-grade. **Una sola verità interrogabile**: sorgenti (
   (meccanica del log) e `specs/009` (decoupling store) sono **lavori abilitanti** sul nucleo/wiki-tools,
   **non** le FEAT-008/009 dell'epica (arricchimento Wiki↔RAG / refresh incrementale, ancora da decomporre).
 
-## Stato in breve (al 2026-06-11)
-
-- **Su `master`** (l'unico asset reale): nucleo di retrieval + motore baseline + **wiki** (metà
-  deterministica `wiki_tools` **in codice** + metà giudizio **come skills/playbook** in `.claude/`) +
-  **server MCP** + **query congiunta multi-collezione** e `upsert-index` in CLI (feature 010) +
-  **CLI di esecuzione RAG `sertor-rag`** (feature 011, [[sertor-rag-cli]]) + **installer
-  `sertor install wiki`** (feature 012, [[sertor-installer]], pacchetto distinto in workspace), più
-  i lavori abilitanti (meccanica log, decoupling store/embeddings, regola di re-index).
-- **Dogfooding di produzione VIVO**: corpus `sertor` (207 doc / 1778 chunk, **wiki incluso** come
-  documentazione — modello a corpus unico, D-21), embeddings Azure `text-embedding-3-large` + Chroma
-  locale in `.index-sertor/`. Servito dal server MCP `sertor-rag`. La collezione `wiki__*` resta come
-  capacità esercitabile (rag-sync), senza consumatori.
-- **Rami abbandonati (NON su `master` → non contano come asset):** il vecchio tentativo CLI
-  (`specs/004`, superato dalla feature 011 reimplementata su master) e i tentativi *in codice* di
-  FEAT-003-N (`specs/003`/`005`, superati dall'approccio a skills). Oggi il prodotto è usabile come
-  **libreria + server MCP + CLI `sertor-rag`**; manca l'**installer** `sertor install <capacità>` (DA-8).
-- Qualità: **359 test verdi** (321 root + 38 pacchetto `sertor`; **zero xfail**: i 2 storici di
-  misura sono strict dal 2026-06-12), ruff pulito su src/tests/packages; ogni feature su master
-  passata col **Constitution Check** (costituzione v1.1.0, 10 principi).
-
-## Mappa delle feature (epica `sertor-core`) & stato reale
-
-Legenda: ✅ su master · 🧪 operativo, consolidamento formale aperto · 💀 ramo morto (non su master) · 🔜 prossima (Should) · 💤 dopo (Could)
-
-| ID epica | Feature | Pri | Stato | Dove |
-|---|---|---|---|---|
-| FEAT-001 | Nucleo di retrieval (ingestione, chunking code-aware, embeddings, vector store, facade) | Must | ✅ | `specs/001`, `src/sertor_core` |
-| FEAT-002 | Motore RAG vettoriale (baseline) | Must | ✅ | `specs/002`, `engines/baseline` |
-| FEAT-003 | Skill: creare/indicizzare l'LLM Wiki | Must | ✅ **COMPLETATA (2026-06-10)**: D al 100% (feature 010 inclusa — [[spec-010-query-congiunta-e-upsert-index]]) + N tutte chiuse (N1/N2/N3/N4/N6/N8 ✅, dettaglio nel tracker) o riassegnate (N5/N9 → FEAT-007; N7 ⛔ D-20) | vedi sotto |
-| — FEAT-003-D | …nucleo **deterministico** (`wiki_tools` + `wiki.config.toml`) | Must | ✅ | `specs/006` (PR #13), `src/sertor_core/wiki_tools` |
-| — FEAT-003-N | …operazioni **assistite da LLM** (record/distill/lint/ingest) | Must | ✅ come **skills/playbook** (giudizio ≠ codice) | `.claude/skills/wiki-author`, `/wiki`, `wiki-curator` |
-| FEAT-MCP | Server MCP di produzione (`sertor_mcp`, superficie su `build_facade`) | Should | ✅ | `specs/007` (PR #15) |
-| FEAT-004 | Motore RAG **ibrido + reranking** | Should | ✅ **master (2026-06-12, PR #24)** — nuovo default ([[hybrid-retrieval]]); xfail storici chiusi strict | `specs/013`, `engines/hybrid`, `adapters/lexical` + `adapters/rerank` |
-| FEAT-005 | Motore RAG a **grafo / GraphRAG** *(riporta `find_symbol`/`who_calls` nel MCP)* | Should | ✅ **master (2026-06-12, PR #25)** — code-graph strutturale ([[code-graph]]); promessa dei 4 tool mantenuta | `specs/014`, `services/graph_extraction`, `adapters/graph` |
-| FEAT-006 | Motore RAG **agentico** (multi-step, query planning) | Should | ✅ **soddisfatta in forma composita (2026-06-13)** — MCP+agente = agentic RAG; agenzia incorporata = dote Could differita | composito (MCP + agente client) |
-| FEAT-007 | Skill: **mantenere il wiki vivo** (spider/lint) *(2026-06-10: assorbe da FEAT-003-N la N5 lint semantico — residuo: probe deterministici di freschezza — e la N9 lint organizzativo/reorg)* | Should | 🔜 da decomporre | — |
-| FEAT-008 | Arricchimento bidirezionale **Wiki↔RAG** | Could | 💤 da decomporre | — |
-| FEAT-009 | **Refresh incrementale** dell'indice (solo file cambiati) | Could | 💤 da decomporre | — |
-
-### Epica `sertor-cli` (il veicolo) — **nucleo consegnato**, aggiornata il 2026-06-17
-
-**DA-8 (2026-06-11) — split installer/esecuzione:** `sertor` = solo **install** (`sertor install
-<capacità>`) + **ciclo di vita** (`upgrade`/`uninstall`, FEAT-008); l'**esecuzione** vive nei
-console-script del core (`sertor-rag`, `sertor-wiki-tools`).
-
-Legenda: ✅ consegnata · 🔄 parziale (nucleo fatto, residuo aperto) · 📋 da decomporre · 💤 Won't.
-
-| ID | Feature | Pri | Stato |
-|---|---|---|---|
-| FEAT-001 | CLI installabile + **packaging distribuibile** `git+url` | Must | ✅ esecuzione `sertor-rag` (PR #21) + packaging LICENSE/versione/metadati/build (PR #68, 2026-06-17) |
-| FEAT-002 | Installazione selettiva delle capacità (`install wiki`/`rag`/`governance`) | Must | ✅ `install wiki` (PR #22) · `install rag` (live su Kaelen) · `governance` = puntatore a `sertor-flow` |
-| FEAT-003 | **Configurazione** (provider LLM + vector DB; **wizard**) | Should | ✅ **CONSEGNATA (PR #75, 2026-06-17)** — `sertor configure [rag]`: CI-safe, scrittura `.env` non-distruttiva, validazione statica, anti-leak segreti. `--check`/US5 deferred (→ `sertor-rag check` core) |
-| FEAT-004 | Comando esecuzione RAG (`index`/`search`) | Should | ✅ feature `esecuzione` (PR #21) |
-| FEAT-005 | Setup governance (skill/agenti SDLC + requisiti) | Should | ✅ pacchetto separato `sertor-flow` (PR #56) |
-| FEAT-007 | Distribuzione **Copilot** — pacchetto `sertor` (wiki+rag) | Must | ✅ consegnata (PR #64/#66); schema sanato FEAT-011 (PR #73); **consolidata CLI-only FEAT-012 (PR #76)** — VS Code rimosso, verificata live |
-| FEAT-009 | Distribuzione **Copilot** — governance `sertor-flow` | Must | ✅ consegnata (PR #65); schema sanato FEAT-011; **CLI-only FEAT-012** (naming `copilot-cli`, `requirements` custom-agent) |
-| **FEAT-012** | **Consolidamento Copilot CLI-only** (rimozione VS Code, naming uniforme, `requirements` custom-agent, mapping upstream) | Should | ✅ **CONSEGNATA (PR #76, 2026-06-17)** — 530 test, Constitution 11/11, core invariato |
-| **FEAT-008** | **Ciclo di vita installer** — `upgrade`/`uninstall` (sertor + sertor-flow) | Could | ✅ **CONSEGNATA (PR #71, 2026-06-17)** — primitive nel kit, diff a posteriori, `--purge-wiki` CI-safe ([[installer-lifecycle]]) |
-| **FEAT-011** | **Hardening compatibilità Copilot** — schema nativo (hook `version:1`/flat/`powershell`; output `.ps1` per-assistente; comandi via custom-agent su CLI; frontmatter `agent:`/no `model:`; suite validità-schema) | Must | ✅ **CONSEGNATA (PR #73, 2026-06-17)** — 453 test verdi, no-hack nativo. ⚠️ **Gap dichiarato:** SessionStart VS Code `[ASSUNTO-VSC]` + MCP CLI da **verificare empiricamente** su ospite reale (follow-up) |
-| FEAT-010 | **Ergonomia & portabilità** (fallback `pip` · avviso target non-Python · hook Linux `sh` · install multi-target · reviewer clean-code) | Could | 📋 **in coda** (dopo FEAT-003 wizard + refactor CLI-only; decisione utente 2026-06-17) |
-| FEAT-006 | Distribuzione pubblica **PyPI** | Won't | 💤 rinviata (gating: licenza MIT scelta) |
-
-> **Stato epica:** nucleo consegnato (packaging FEAT-001 + lifecycle FEAT-008 + **hardening compat
-> Copilot FEAT-011**, PR #73). La conformità allo schema nativo Copilot è sanata (hook/output/comandi/
-> frontmatter); **resta da verificare empiricamente sul client reale** il SessionStart VS Code
-> (`[ASSUNTO-VSC]`) e il target MCP della CLI → **follow-up** (vedi §Nuove funzionalità). Altro
-> residuo: **FEAT-003 wizard config** (Should), **FEAT-010 ergonomia** (Could, da decomporre),
-> **Codex** (Could, non avviato), **PyPI** (Won't).
-
-> Oggi il prodotto si usa come **libreria** (`import sertor_core`), via **server MCP** e via
-> **CLI `sertor-rag`** ([[sertor-rag-cli]]). Il vecchio ramo CLI (`specs/004`) è definitivamente
-> superato dalla feature 011.
-
-## Lavori abilitanti già mergiati (non sono FEAT d'epica)
-
-| Spec | Cosa | Esito |
-|---|---|---|
-| `specs/008` | Meccanica del log del wiki (rotazione giornaliera + `append-log` curato + `migrate`) | ✅ PR #18 |
-| `specs/009` | **Decoupling store ↔ provider di embeddings** (`SERTOR_STORE_BACKEND`) + `AzureEmbedder` v1 | ✅ PR #19 → ha abilitato l'indice dogfood `sertor` |
-
-## Roadmap per fasi
-
-- **✅ Fatto (master):** Nucleo · Baseline · Wiki (deterministico `wiki_tools` + operazioni LLM come skills) · Server MCP · CLI di esecuzione `sertor-rag` (feature 011) · Decoupling store · Indice dogfood `sertor` (vivo via MCP e CLI).
-- **💀 NON su master (rami abbandonati — non contano):** CLI `sertor` (`specs/004`) · tentativi *in codice* di FEAT-003-N (`specs/003`/`005`, superati dalle skills). Da rifare su master se servono.
-- **🔜 Prossimo (Should):** Manutenzione wiki (FEAT-007) · Distribuzione multi-assistente (FEAT-007 CLI). *(FEAT-006 agentico ✅ soddisfatta in forma composita: MCP+agente è agentic RAG; agenzia incorporata = dote Could differita.)*
-- **💤 Dopo (Could):** Arricchimento Wiki↔RAG (FEAT-008) · Refresh incrementale indice (FEAT-009).
-
----
-
 ## 🔍 Backlog dall'audit indipendente (SWOT 2026-07-02)
 
 > Esito dell'audit richiesto dall'utente (prompt in `wiki/sources/Human/`). Dettaglio, evidenze
@@ -688,9 +593,9 @@ Legenda: ✅ consegnata · 🔄 parziale (nucleo fatto, residuo aperto) · 📋 
 | A-07 | EVO | P1 | `search_docs` MRR 0.55 (leva missione) | `retrieval-qualita` E5-FEAT-003 | ✅ **E5-FEAT-003 dedup consegnata su branch `090` (2026-07-07)** — `search_docs` degradava perché lo stesso contenuto (blocchi `CLAUDE.md` ↔ copie bundle `assets/**`) saturava il top-k. **Misura-prima:** l'MVP dedup *esatto* (content-hash) è risultato **insufficiente** (i chunk dello stesso blocco da file diversi hanno confini diversi → non byte-identici); il **fuzzy** (shingle 5-word + containment ≥0.8) ha consegnato il lift: **`search_docs` hit@3 0.62→0.75** (baseline ristabilito), MRR 0.55→0.57, `search_code` intatto, **gate `--fused` PASS**. Funzione pura `dedup_results` a query-time nei 5 siti di retrieval (pool>k), manopola `SERTOR_DEDUP` default-on, host-agnostico. 1 residuo union (competizione doc-fratelli, NON dedup) chiuso con calibrazione GT legittima. **Follow-up tracciato:** near-dup a scala (MinHash) + leva «doc-fratelli». *(dettaglio: `wiki/log/2026-07-07.md`, spec `090`)* |
 | A-08 | FIX | P1 | Security review installer (merge settings.json + hook auto-eseguiti) | `debito-tecnico` (E10) | ✅ **review + 3 fix su branch `093` (2026-07-08)** — **Bottom line: superficie difensivamente ben costruita** (hook injection-safe by construction, merge non-distruttivi/`json.loads`-only, breadcrumb secret-free, no RCE dalla version-check). Fix: **#1** `--corpus` non sanitizzato → **injection in `.env`/`.mcp.json`** (newline clobberava la key) → `resolved_corpus()` ora sanitizza anche l'esplicito (+test); **#2** re-index incondizionato a ogni SessionEnd → costo Azure → **`SERTOR_EMBED_CACHE` default ON** + nota costo in `docs/install.md`; **#3** version-check honora l'URL override **solo su https** (no MITM del notice). **#4 (`.env` non gitignorato) = FALSO POSITIVO** colto in verifica (`RUNTIME_IGNORES` include già `.sertor/.env`). `sertor-core` toccato solo per il default cache |
 | A-09 | FIX | P1 | Hook POSIX story (promuovere E2-FEAT-010 da Could) | `sertor-cli` E2-FEAT-010 | ✅ **DONE (merge `0ffe904`/PR #161 + hotfix smoke `9e85f70`/PR #162)** — 8 hook riscritti in **Python portabile** (`uv run --no-project python`, zero dip `pwsh`); parità coi `.ps1` provata (gate) + smoke CI matrice ubuntu+windows (test **e** smoke E2E verdi); `.ps1` **ritirati** (single-impl DA-1); `upgrade` migra host legacy (file+wiring, helper `remove_hook_entries_by_command_substring`); **E10-FEAT-018 superata** (`host_env.py`/nota pwsh rimossi — fix, non mitigazione); doc utente aggiornata. `sertor-core` invariato. **Migrazione live del dogfood eseguita** via `sertor upgrade` (8 `.ps1` rimossi, `settings.json` riwirato a `.py`, 0 residui) — valida T022 dal vivo. Dettaglio [[feat-010-hook-portabili]] |
-| A-10 | FIX | P1 | CI: smoke E2E su PR + job 3.11 + (opz.) leg cloud | `debito-tecnico` (E10) | 📋 |
-| A-11 | FIX | P1 | Azure Search: dichiarare experimental o testare (memoria semantica) | `sertor-core` (E1) / `backend-store-scala` (E6) | 📋 |
-| A-12 | FIX | P1 | Riconciliazione epic.md↔EXEC enforced + pulizia fondo-roadmap zombie | `debito-tecnico` (E10) | 📋 |
+| A-10 | FIX | P1 | CI: smoke E2E su PR + job 3.11 + (opz.) leg cloud | `debito-tecnico` (E10) | ✅ **DONE (merge `c9e5140`/PR #164)** — lo smoke E2E ora è un **gate pre-merge**: job `changes` (`dorny/paths-filter`, permesso `pull-requests:read`) lo attiva sui PR che toccano la superficie install/smoke, e `SERTOR_SMOKE_REF=github.head_ref` fa installare dal **branch del PR** (testa il diff, non master) → avrebbe colto la regressione di #161. + leg **Python 3.11** (ubuntu, via `include`). Leg `cloud` opzionale non fatto. Il PR #164 si è auto-validato (tocca `ci.yml`). |
+| ~~A-11~~ | — | — | Azure Search experimental/test → **spostata in E6** `backend-store-scala` **FEAT-007** (store cloud online); riferimento A ritirato | `backend-store-scala` (E6) | ➡️ promossa a E6-FEAT-007 (2026-07-10) |
+| A-12 | FIX | P1 | Riconciliazione epic.md↔EXEC enforced + pulizia fondo-roadmap zombie | `debito-tecnico` (E10) | 🔄 **implementata, pre-merge (2026-07-10)** — *enforcement per costruzione* (opzione A): EXEC = fonte unica, `epic.md` puntano. Fatto: blocco fossile «Mappa delle feature» eliminato (~85 righe) · 6 righe `epic.md` allineate (sertor-cli/fedelta-dogfood×3/debito-tecnico/speclift + osservabilità) · idee promosse/consegnate rimosse dalle *Nuove funzionalità* · licenza «DA APRIRE»→MIT · «riavvio MCP»→auto-heal · regola fonte-unica nel rituale (CLAUDE.md item 4) + «Come mantenere» |
 | A-13 | FIX | P1 | `updated:` = data secca; storia solo nel log | `debito-tecnico` (E10) | 📋 |
 | A-14 | FIX | P1 | Settings: parsing numerico guardato + scrub `detail` MCP | `sertor-core` (E1) | 📋 |
 | A-15 | FIX | P2 | VERSION policy (E2-FEAT-014): decidere il bump o version-check resta morto | `sertor-cli` E2-FEAT-014 | 📋 |
@@ -705,47 +610,25 @@ Legenda: ✅ consegnata · 🔄 parziale (nucleo fatto, residuo aperto) · 📋 
 ## 🧭 Nuove funzionalità da discutere (sezione a mano)
 
 > Idee **prima** che diventino feature formali. Stati: 💡 idea · 🗣️ in discussione · 👍 approvata (→ decomporre) · ❌ scartata.
+>
+> **Quando un'idea è promossa a epica o consegnata, esce da qui:** vive nel backlog dell'epica
+> (`requirements/<epica>/epic.md`) + nell'**EXEC** (fonte unica dello stato «consegnato»). Qui restano
+> solo le idee **ancora aperte** — non si duplica lo stato delle feature (regola A-12, 2026-07-10).
 
 | Idea | Valore / perché | Note / vincoli | Stato |
 |------|-----------------|----------------|-------|
-| **`sertor-rag check` — probe di connettività del vehicle** (epica `sertor-core`) | Verifica «le credenziali/il provider funzionano davvero» senza un indice: serve a `sertor configure --check` (FEAT-003 US5) e in generale come health-check. Oggi `sertor-rag` ha solo `index`/`search`/`observe`/`memory`; `search` richiede un indice → inadatto a freddo | Comando di `sertor-core` (vehicle, Principio XI): embed di prova via il provider configurato, esito + errore azionabile, niente scrittura. Sblocca `--check`/US5 del wizard (oggi degradato onestamente) | 👍 **follow-up tracciato (2026-06-17)** — da promuovere a FEAT di `sertor-core` |
-| **Verifica empirica della distribuzione Copilot su ospite reale** | FEAT-011 conforme *offline*; la prova che **funzioni davvero** si ha solo sul client reale (spirito «installato≠funzionante») | **FATTA END-TO-END** su Copilot CLI 1.0.63 (log interattivi): **MCP** connesso (7 tool), **tutti gli agent** caricati (wiki + governance + 10 speckit), **tutti e 4 gli hook** scattano (SessionStart/PreToolUse/Stop/SessionEnd — Stop/SessionEnd silenziosi se nessun pending). Scoperti+risolti 3 bug (PR #74); il log pre-fix conteneva `prompt hook prompt is required` → conferma del fix. Discovery: config di progetto caricata solo in sessione INTERATTIVA, non in `-p`. | ✅ **fatto end-to-end (2026-06-17, PR #74)** |
-| **Refactor distribuzione Copilot CLI-only** (decisioni utente 2026-06-17) | Eliminare il footgun VS Code↔CLI e l'incoerenza di naming; supporto nativo pieno di un solo target | drop VS Code · naming `copilot-cli` uniforme · `requirements` custom-agent · mapping upstream in un punto | ✅ **fatto → FEAT-012 (PR #76, 2026-06-17)** |
 | **Rilevamento attivo dei gap di documentazione** (codice→wiki generativo) | Il residuo *genuino* di FEAT-008: oggi il legame codice↔doc è **passivo** (lo interroghi con `get_context`/`related_docs`), manca il **generativo** — il RAG/code-graph che rileva **entità di codice senza pagina wiki** e le **propone** al `wiki-author` | Scorporato dalla chiusura di FEAT-008 (✅ composita, verificata live 2026-06-16). Casa candidata: feature wiki dedicata o `debito-tecnico` FEAT-005 (igiene-wiki). Riusa il [[code-graph]] (`find_symbol`/`related_docs`) + lint C | 💡 **idea, scorporata da FEAT-008** (2026-06-16) |
-| **Pannello di controllo (TUI) di osservabilità** | Vedere log, consumo (token/€), #chunk, **hit/miss della cache** e fare report. Sertor già emette log strutturati ricchi ma effimeri | **Epica aperta** `requirements/osservabilita/epic.md` (10 feature MoSCoW, 2 strati: osservabilità persistente nel core + pannello TUI). Fork decisi: **superficie = TUI** (web=Could fase 2), **dati = store SQLite locale + export OTel opzionale**. Assorbe «logging come strategia runtime» e i Could **H9/H10** dell'hardening. MVP = FEAT-001→004 (persisti→aggrega→TUI live→report) **+ stima € (Should, DA-O-g risolta)**. Privacy fissata (DA-O-d): **privacy-by-default a strati** (metriche di default · testo opt-in · semantico opt-in ulteriore). Restano domande di design (cattura "live", retention, innesto su `log_event`) | 👍 **epica aperta, da decomporre** (utente, 2026-06-14) |
-| **Memoria conversazioni (terzo livello / episodica, pattern Hermes)** | Archiviare TUTTE le conversazioni come tier grezzo episodico, interrogabile nei casi speciali («ne avevamo già parlato?»); è il tassello mancante sotto il diario del wiki, fonte grezza per la distillazione | **Epica aperta** `requirements/memoria-conversazioni/epic.md` (8 feature MoSCoW). Distinta dall'osservabilità (conoscenza ≠ telemetria), **privacy condivisa** (privacy-by-default, FTS locale, semantico opt-in). MVP = cattura + ricerca episodica locale. **Nodo:** la cattura è host-specifica (Claude Code → harness) → si lega alla distribuzione multi-assistente. Mappa Hermes↔Sertor in epic.md | 👍 **epica aperta, da decomporre, in parallelo** (utente, 2026-06-14) |
-| **Second brain cross-progetto** (il «Sertor dei Sertor» / Meta-Sertor) | Conoscenza condivisa e di più alto livello su TUTTI i propri contesti: condividere esperienze/metodologie, scambiarsi skill/agenti, **sintetizzare asset nuovi** da più progetti. Sertor da autore a **giardiniere della flotta** | Sertor ricorsivo (L0/L1/L2); riusa feature 010 (fan-out) + installer + Principio X; nuovo = confine di **promozione** (giudizio) + **verifica/parametrizzazione** asset + trust/decay. Pagina-visione con diagrammi: [[second-brain-cross-progetto]] | 👍 **promossa a epica `second-brain` (2026-06-16)** — resta DA ESPANDERE (bivi §9) |
-| **Misurare la pertinenza** (chiudere gli `xfail`) con ground-truth reale | Trasforma "funziona" in "misurato" (Principio V); confronto provider | Serve set query→file atteso; baseline = prototipo | 👍 **promossa a epica `retrieval-qualita` FEAT-001 (2026-06-16)** |
-| Migliorare la **qualità `search_code`** (oggi debole su query architetturali) | Il retrieval di codice è il caso d'uso primario | Naturale candidato per FEAT-004 (ibrido) / FEAT-005 (grafo) | 👍 **promossa a epica `retrieval-qualita` FEAT-003 (2026-06-16)** |
 | **Misurare nella TUI *quando si usa il grafo* vs *il vettoriale/ibrido*** (epica `osservabilita`, estende FEAT-015) | Vedere a runtime **quale metodo di retrieval** serve ogni risposta: quando si scende sul code-graph (`find_symbol`/`who_calls`) e quando si resta sulla ricerca densa/ibrida. Oggi la scheda RAG (FEAT-015) mostra query/verdetto/op-MCP ma **non distingue grafo vs ricerca** | Gli eventi distinti **già esistono** (`hybrid_query`/`retrieve` vs i tool grafo via `mcp.<tool>`): serve **aggregarli/etichettarli per metodo** nella TUI. Si lega al fatto che il "routing" del metodo vive **nell'agente** (nessun router nel core, vedi A/B del 2026-06-20) → la TUI lo renderebbe **visibile** | 💡 **idea (utente, 2026-06-20)** |
-| Promuovere **PowerShell / T-SQL / PL-SQL** da fallback a chunking sintattico | Qualità di chunking per questi linguaggi | Validare node-type tree-sitter; incrementale | 👍 **promossa a epica `ingestione-estesa` FEAT-003 (2026-06-16)** (+ Bash) |
-| **Logging come strategia runtime** (osservabilità porta+adapter scelta a runtime) | Oggi la CLI non instrada i log da nessuna parte | Refactor deterministico → SpecKit | 💡 idea |
-| **Tema lingua** (asset installer in inglese, contenuto in lingua host) | Coerenza dell'esperienza su ospiti non-italiani | **Implementato 2026-06-13** (pass mirato): asset+CLI host-facing in inglese + guardia. Residuo: seed localization it/en (D3) + traduzione graduale delle error-string profonde/docstring | ✅ **fatto (asset); seed = follow-up)** |
-| **Distribuzione multi-assistente: GitHub Copilot (+ Codex Could)** | Le capacità non devono dipendere da un solo assistente: MCP nei client Copilot + superfici agentiche tradotte (copilot-instructions/prompt files; Codex: AGENTS.md) | Nuova FEAT-007 epica CLI; distinto da DA-6 (Copilot lì è provider LLM); CLI già assistant-agnostic. **Decomposta** in `distribuzione-copilot/requirements.md` (22 REQ, parità piena, ambito wiki+rag) | ✅ **decomposta (2026-06-15)** → `/speckit-specify` |
-| **Adapter VectorStore per PGVector / MongoDB su Azure** | Ibrido e retrieval su store cloud alternativi ad AI Search (il motore ibrido è già store-agnostico via porte) | Nuovi adapter della porta `VectorStore` (+ eventuale delega ibrida nativa per Atlas Search); feature separata da FEAT-004 | 👍 **promossa a epica `backend-store-scala` FEAT-001/002 (2026-06-16)** |
-| **Conoscenza-schema SQL come corpus interrogabile** | Interrogare «dov'è un dato, quale tabella/vista/stored-procedure/query usare per accedervi», **fuso col corpus di codice+doc**. Prior art mostra un buco: nessuno unisce schema+SP+query-buone+codice applicativo in un endpoint unico — ed è lo spazio di Sertor | Mappa sull'architettura: nuovo sorgente d'ingestione (DDL/viste/SP) nel corpus unico + **schema-graph parallelo al [[code-graph]]** (lineage via `who_calls`). **Prerequisito:** parsing sintattico T-SQL/PL-SQL (oggi esclusi R-N2). Ricognizione completa in [[conoscenza-schema-sql-rag]] (DataHub/WrenAI/Vanna/RASL/SchemaGraphSQL). Domande aperte: introspezione live vs parsing statico file-based, confine col Text-to-SQL, cattura pattern d'accesso | 👍 **promossa a epica `conoscenza-schema-sql` (2026-06-16)** — scope aperto in §9 |
-| **Distribuzione della memoria via installer** (FEAT-009 epica memoria) | Per la regola «feature completa = installabile» (CLAUDE.md), l'MVP memoria **non è completo** finché un ospite non lo riceve via `sertor install`: manopole `.env` (`SERTOR_MEMORY`/`_LIST_LIMIT`/`SERTOR_EPISODIC_*`), hook `memory-capture.ps1` + voce `SessionEnd` negli asset, cenno nel `claude-md-block` | **Recupera il rinvio A-009 di FEAT-035** (era appeso solo in `specs/035-…`, mai promosso — primo frutto della regola di promozione out-of-scope). Owner installer = epica `sertor-cli`; si combina con la distribuzione multi-assistente (FEAT-008) | 👍 **debito di completamento, da decomporre** (utente, 2026-06-14) |
 | **Timeout espliciti su embed/query (server MCP e adapter)** | L'hang della prima query MCP è stato diagnosticato e **risolto** (causa vera: init pigro di Chroma nella prima tool call parcheggiava il task su Windows → warm-up eager in `main()`, **hotfix PR #23**, vedi [[mcp-server]]); i timeout generici restano una rifinitura di robustezza | Timeout configurabile in `Settings` + eccezione di dominio | 💡 idea ridimensionata (hang risolto 2026-06-12) |
-| **Igiene radice ospite** (feature `sertor-cli`, asse **DOVE**) | Radice ospite ordinata: `wiki.config.toml`→`wiki/`, `.sertor/` unica sede del runtime, meccanismo `--mcp-scope project\|local`, residenti inevitabili a root documentati | Consegnata: `specs/016`, PR #26 (auto-discovery CLI + `MCP_REGISTER` + fix Sertor one-shot). | ✅ **su master (2026-06-13)** |
-| **Leak minori recuperati dall'audit out-of-scope (2026-06-14)** | Voci rinviate rimaste appese nelle spec, ora tracciate per non perderle (regola «out-of-scope si promuovono», CLAUDE.md) | (1) **Installer lifecycle** upgrade+uninstall → FEAT-008 `sertor-cli`; (2) **ingestione estesa** repo remoti URL + formati non-testo → FEAT-010 `sertor-core`; (3) **GraphRAG "alla Microsoft"** (knowledge-graph LLM, da `specs/014`) — contingente alla decisione LLM-nel-core; (4) **parità MCP** per `memory show/list` (da `specs/036`); (5) **export CSV/MD** dei report osservabilità (da `specs/023`, distinto dall'export OTel già FEAT-005) | 💡 **idee tracciate, da prioritizzare** (audit 2026-06-14) |
 | 🐞 **Residuo uninstall: `.claude/` orfano vuoto** (lifecycle installer, `sertor-cli`) | `sertor uninstall rag --assistant claude` lascia un `.claude/` orfano (`settings.json`=`{}` + `hooks/` vuota) su un host che non aveva `.claude/`. Stessa classe del bug chiuso da **PR #77** (guscio vuoto), ma sul file `.claude/settings.json` CONDIVISO (che PR #77 preserva di proposito) | Emerso dalla **verifica empirica su Spike** (2026-06-18, test install Claude/Copilot dell'unificazione venv). Fix gemello di PR #77: estendere `delete_if_empty` al `settings.json` condiviso quando è vuoto E creato da Sertor (distinguere user-created è il nodo). Casa: lifecycle `sertor-cli` | 👍 **bug tracciato, da fixare** (2026-06-18) |
-| **Collaborazione multiutente / enterprise** (asse **CHI** — ora EPICA propria) | Non è un tema di installer: è **workflow** (cosa/quando condividere, collaborazione su RAG+wiki, ownership, governance leggera) | **Epica aperta** `requirements/multiutente/epic.md` (6 feature M01..M06, 7 domande aperte DA-M-a..g). La bozza `installer-multiutente` ne è la fetta-installer (FEAT-M01, congelata). **Da affrontare in seguito**, quando il caso d'uso team è concreto. | 📋 **epica aperta, differita** (utente, 2026-06-12) |
 
 ---
 
 ## Questioni aperte (tenute così, per ora)
 
-- **Licenza di Sertor (DA APRIRE):** Sertor **non è ancora licenziato**. Scelta da prendere — incide su
-  riusabilità (la mission è "framework installabile ovunque"), su cosa possiamo bundlare e su come gli
-  ospiti possono usarlo. Candidati tipici: **MIT/Apache-2.0** (permissive, massima adozione — coerenti
-  con local-first e con l'idea di strumento riusabile), vs copyleft (GPL/AGPL, più protettive ma
-  attritive per l'adozione). Nota emersa il 2026-06-14 valutando l'integrazione con Langfuse (MIT
-  core)/Phoenix (Elastic License 2.0, non-OSI)/Grafana (AGPLv3): integrarli **via OpenTelemetry** non
-  contagia Sertor; il vincolo morderebbe solo se li *incorporassimo*. La scelta della licenza propria
-  resta indipendente e da fare prima di una distribuzione pubblica (PyPI).
 - **Soglie di pertinenza**: non fissate a priori; da misurare su ground-truth reale (DA-003 / DA-1·3).
 - **Numerazione**: epica FEAT-NNN ≠ `specs/NNN` (vedi banner sopra) — non riconciliarle a forza, documentare.
-- **Server MCP & nuovo indice**: dopo ogni feature che cambia il codice del server serve un **riavvio** del subprocess MCP per servirlo.
+- **Server MCP & codice nuovo**: il server **auto-guarisce** da indice/dati *stantii* dopo un re-index (ChromaStore auto-refresh + code-graph auto-reload, PR #89/#90 — **nessun riavvio**). Resta necessario un **riavvio** del subprocess MCP solo per servire **codice nuovo del server** (`sertor_mcp`).
 - **Processo: `requirements.md` ↔ `spec.md` si sovrappongono?** (riflessione di metodo, 2026-06-20) — la fase
   `requirements` (skill, EARS) e la `specify` SpecKit (user-story + accettazione) coprono entrambe il
   *cosa/perché* e in FEAT-001 si sono sovrapposte parecchio. **Da fare:** confrontare i due artefatti di
@@ -756,8 +639,8 @@ Legenda: ✅ consegnata · 🔄 parziale (nucleo fatto, residuo aperto) · 📋 
 
 ## Come mantenere questa pagina
 
-- Brainstorming → a mano in *Nuove funzionalità da discutere*.
-- Avanzamento feature → aggiorna *Mappa delle feature & stato reale* (o lo fa il `wiki-curator` quando registra).
+- Brainstorming → a mano in *Nuove funzionalità da discutere*; l'idea **promossa o consegnata esce di lì** (vive nell'epica + EXEC).
+- Avanzamento feature → aggiorna **solo** il blocco **EXEC** in cima (`<!-- EXEC:START/END -->`): è la **fonte unica** dello stato «consegnato». Gli `epic.md` vi **puntano**, non lo duplicano (regola A-12). È giudizio del flusso principale, non del `wiki-curator`.
 - Idea matura → backlog epica + `/requirements` → `/speckit-*`.
 
 ## Riferimenti
