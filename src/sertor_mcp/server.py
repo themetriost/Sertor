@@ -27,6 +27,7 @@ from sertor_core.composition import build_facade, build_graph_service, enable_ob
 from sertor_core.config.settings import Settings
 from sertor_core.domain.entities import RetrievalResult, SymbolHit
 from sertor_core.observability.logging import log_event
+from sertor_core.observability.scrub import scrub_text
 
 mcp = FastMCP(
     "sertor-rag",
@@ -82,7 +83,7 @@ def _guard(tool: str, body: Callable[[], _T]) -> _T:
         return body()
     except Exception as exc:
         log_event(logging.ERROR, f"mcp.{tool}.error",
-                  error=type(exc).__name__, detail=str(exc))
+                  error=type(exc).__name__, detail=scrub_text(str(exc)))
         raise
 
 
@@ -210,7 +211,8 @@ def _self_test() -> bool:
     try:
         _facade().search_code("__healthcheck__", k=1)
     except Exception as exc:  # noqa: BLE001 — diagnostic probe, must not crash the server
-        log_event(logging.ERROR, "mcp.self_test.error", error=type(exc).__name__, detail=str(exc))
+        log_event(logging.ERROR, "mcp.self_test.error",
+                  error=type(exc).__name__, detail=scrub_text(str(exc)))
         print(f"[sertor-rag] self-test FAILED: {type(exc).__name__}: {exc}",
               file=sys.stderr, flush=True)
         return False
@@ -245,7 +247,8 @@ def main() -> None:
         # wiki/log/2026-06-17). Start the server regardless: `_facade()` is not cached on failure,
         # so the first tool call retries and the actionable error surfaces through `_guard` as a
         # tool error — not as a dropped connection.
-        log_event(logging.ERROR, "mcp.warmup.error", error=type(exc).__name__, detail=str(exc))
+        log_event(logging.ERROR, "mcp.warmup.error",
+                  error=type(exc).__name__, detail=scrub_text(str(exc)))
         print(
             f"[sertor-rag] startup warm-up FAILED ({type(exc).__name__}: {exc}). "
             "The server will start, but RAG tools will keep returning this error until the "

@@ -4,7 +4,10 @@ Env-driven, with `.env` loading disabled (`env_file=None`) for isolation.
 """
 from __future__ import annotations
 
+import pytest
+
 from sertor_core.config.settings import Settings
+from sertor_core.domain.errors import ConfigError
 
 
 def test_hardening_knobs_from_env(monkeypatch):
@@ -42,3 +45,35 @@ def test_embed_cache_default_on(monkeypatch):
     # re-embed identical content on a paid provider every session.
     monkeypatch.delenv("SERTOR_EMBED_CACHE", raising=False)
     assert Settings.load(env_file=None).embed_cache_enabled is True
+
+
+# --- A-14: numeric parsing is guarded (fail loud, not a raw ValueError traceback) --------------
+
+def test_invalid_int_env_fails_loud(monkeypatch):
+    # A set-but-non-integer knob raises ConfigError NAMING the variable, not a raw
+    # `ValueError: invalid literal for int()` that hides which knob is misconfigured.
+    monkeypatch.setenv("SERTOR_RRF_C", "not-a-number")
+    with pytest.raises(ConfigError) as exc:
+        Settings.load(env_file=None)
+    assert "SERTOR_RRF_C" in str(exc.value)
+
+
+def test_invalid_float_env_fails_loud(monkeypatch):
+    monkeypatch.setenv("SERTOR_EMBED_RETRY_BASE", "fast")
+    with pytest.raises(ConfigError) as exc:
+        Settings.load(env_file=None)
+    assert "SERTOR_EMBED_RETRY_BASE" in str(exc.value)
+
+
+def test_invalid_optional_float_env_fails_loud(monkeypatch):
+    # The `_or_none` variant is guarded too: a set-but-invalid value fails loud, not a silent None.
+    monkeypatch.setenv("SERTOR_MIN_SCORE", "high")
+    with pytest.raises(ConfigError) as exc:
+        Settings.load(env_file=None)
+    assert "SERTOR_MIN_SCORE" in str(exc.value)
+
+
+def test_blank_numeric_env_uses_default(monkeypatch):
+    # A blank value is treated as unset -> default, never a crash.
+    monkeypatch.setenv("SERTOR_RRF_C", "   ")
+    assert Settings.load(env_file=None).rrf_c == 60

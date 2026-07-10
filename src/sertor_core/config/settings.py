@@ -15,6 +15,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from sertor_core.domain.errors import ConfigError
+
 # Default exclusion patterns for ingestion (REQ-002): environments, artifacts, VCS, secrets.
 # This is an overridable default via config, not a hardcoded list in components.
 _DEFAULT_EXCLUDES: tuple[str, ...] = (
@@ -70,15 +72,50 @@ def _bool_env(name: str, default: bool) -> bool:
     return raw.strip().lower() in ("true", "1", "yes", "on")
 
 
+def _int_env(name: str, default: int) -> int:
+    """Int from env with a default; a set-but-unparseable value fails loud (Principio XII, A-14).
+
+    A blank/absent variable falls back to the default; a value that is set but not a valid integer
+    raises `ConfigError` naming the offending variable and its value — never a raw `ValueError`
+    traceback that hides which knob is misconfigured.
+    """
+    raw = os.getenv(name)
+    if raw is None or not raw.strip():
+        return default
+    try:
+        return int(raw)
+    except ValueError as exc:
+        raise ConfigError(f"{name}={raw!r} is not a valid integer", key=name) from exc
+
+
+def _float_env(name: str, default: float) -> float:
+    """Float from env with a default; a set-but-unparseable value fails loud (Principio XII, A-14).
+
+    Twin of `_int_env`: a blank/absent variable falls back to the default; a set-but-invalid value
+    raises `ConfigError` naming the variable, instead of a raw `ValueError`.
+    """
+    raw = os.getenv(name)
+    if raw is None or not raw.strip():
+        return default
+    try:
+        return float(raw)
+    except ValueError as exc:
+        raise ConfigError(f"{name}={raw!r} is not a valid number", key=name) from exc
+
+
 def _float_or_none_env(name: str) -> float | None:
     """Float from env, or `None` when the variable is absent/blank (018, REQ-H1/H13).
 
-    Distinguishes "unset" (feature disabled, today's behaviour) from an explicit `0.0`.
+    Distinguishes "unset" (feature disabled, today's behaviour) from an explicit `0.0`. A
+    set-but-unparseable value fails loud with `ConfigError` (Principio XII, A-14).
     """
     raw = os.getenv(name)
     if raw is None or not raw.strip():
         return None
-    return float(raw)
+    try:
+        return float(raw)
+    except ValueError as exc:
+        raise ConfigError(f"{name}={raw!r} is not a valid number", key=name) from exc
 
 
 def _int_or_none_env(name: str) -> int | None:
@@ -86,11 +123,15 @@ def _int_or_none_env(name: str) -> int | None:
 
     Twin of `_float_or_none_env`: distinguishes "unset" (no retention hint, default) from an
     explicit integer. Used by `memory_retention_days` (a hook recorded but never enforced here).
+    A set-but-unparseable value fails loud with `ConfigError` (Principio XII, A-14).
     """
     raw = os.getenv(name)
     if raw is None or not raw.strip():
         return None
-    return int(raw)
+    try:
+        return int(raw)
+    except ValueError as exc:
+        raise ConfigError(f"{name}={raw!r} is not a valid integer", key=name) from exc
 
 
 @dataclass(frozen=True)
@@ -327,24 +368,24 @@ class Settings:
             azure_openai_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT", ""),
             azure_openai_api_key=os.getenv("AZURE_OPENAI_API_KEY", ""),
             azure_openai_embed_deployment=os.getenv("AZURE_OPENAI_EMBED_DEPLOYMENT", ""),
-            embed_batch_size=int(os.getenv("EMBED_BATCH_SIZE", "64")),
-            embed_retry_attempts=int(os.getenv("SERTOR_EMBED_RETRY_ATTEMPTS", "3")),
-            embed_retry_base_s=float(os.getenv("SERTOR_EMBED_RETRY_BASE", "0.5")),
+            embed_batch_size=_int_env("EMBED_BATCH_SIZE", 64),
+            embed_retry_attempts=_int_env("SERTOR_EMBED_RETRY_ATTEMPTS", 3),
+            embed_retry_base_s=_float_env("SERTOR_EMBED_RETRY_BASE", 0.5),
             embed_cache_enabled=_bool_env("SERTOR_EMBED_CACHE", True),
             observability_enabled=_bool_env("SERTOR_OBSERVABILITY", False),
             observability_bucket=os.getenv("SERTOR_OBSERVABILITY_BUCKET", "day"),
-            observability_refresh_s=float(os.getenv("SERTOR_OBSERVABILITY_REFRESH", "2.0")),
+            observability_refresh_s=_float_env("SERTOR_OBSERVABILITY_REFRESH", 2.0),
             observability_otel_enabled=_bool_env("SERTOR_OBSERVABILITY_OTEL", False),
             observability_content_enabled=_bool_env("SERTOR_OBSERVABILITY_CONTENT", False),
             memory_enabled=_bool_env("SERTOR_MEMORY", False),
             memory_adapter=os.getenv("SERTOR_MEMORY_ADAPTER", "claude-code"),
             memory_retention_days=_int_or_none_env("SERTOR_MEMORY_RETENTION_DAYS"),
             memory_scrub_patterns=tuple(_split_env("SERTOR_MEMORY_SCRUB_PATTERNS") or ()),
-            episodic_limit=int(os.getenv("SERTOR_EPISODIC_LIMIT", "20")),
-            episodic_snippet_tokens=int(os.getenv("SERTOR_EPISODIC_SNIPPET_TOKENS", "12")),
+            episodic_limit=_int_env("SERTOR_EPISODIC_LIMIT", 20),
+            episodic_snippet_tokens=_int_env("SERTOR_EPISODIC_SNIPPET_TOKENS", 12),
             memory_semantic_enabled=_bool_env("SERTOR_MEMORY_SEMANTIC", False),
-            memory_semantic_limit=int(os.getenv("SERTOR_MEMORY_SEMANTIC_LIMIT", "20")),
-            memory_list_limit=int(os.getenv("SERTOR_MEMORY_LIST_LIMIT", "20")),
+            memory_semantic_limit=_int_env("SERTOR_MEMORY_SEMANTIC_LIMIT", 20),
+            memory_list_limit=_int_env("SERTOR_MEMORY_LIST_LIMIT", 20),
             claude_projects_dir=(
                 Path(os.environ["SERTOR_MEMORY_CLAUDE_PROJECTS_DIR"])
                 if os.getenv("SERTOR_MEMORY_CLAUDE_PROJECTS_DIR")
@@ -358,29 +399,29 @@ class Settings:
             index_dir=resolved_index_dir,
             azure_search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT", ""),
             azure_search_api_key=os.getenv("AZURE_SEARCH_API_KEY", ""),
-            chunk_size=int(os.getenv("CHUNK_SIZE", "1600")),
-            chunk_overlap=int(os.getenv("CHUNK_OVERLAP", "200")),
-            max_chunk_tokens=int(os.getenv("SERTOR_MAX_CHUNK_TOKENS", "8191")),
-            default_k=int(os.getenv("DEFAULT_K", "5")),
-            preview_chars=int(os.getenv("SERTOR_PREVIEW_CHARS", "240")),
+            chunk_size=_int_env("CHUNK_SIZE", 1600),
+            chunk_overlap=_int_env("CHUNK_OVERLAP", 200),
+            max_chunk_tokens=_int_env("SERTOR_MAX_CHUNK_TOKENS", 8191),
+            default_k=_int_env("DEFAULT_K", 5),
+            preview_chars=_int_env("SERTOR_PREVIEW_CHARS", 240),
             retrieval_min_score=_float_or_none_env("SERTOR_MIN_SCORE"),
             engine=os.getenv("SERTOR_ENGINE", "hybrid"),
-            rrf_c=int(os.getenv("SERTOR_RRF_C", "60")),
-            rrf_pool=int(os.getenv("SERTOR_RRF_POOL", "30")),
+            rrf_c=_int_env("SERTOR_RRF_C", 60),
+            rrf_pool=_int_env("SERTOR_RRF_POOL", 30),
             rerank_enabled=_bool_env("SERTOR_RERANK", False),
-            rerank_pool=int(os.getenv("SERTOR_RERANK_POOL", "15")),
+            rerank_pool=_int_env("SERTOR_RERANK_POOL", 15),
             dedup_enabled=_bool_env("SERTOR_DEDUP", True),
             graph_enabled=_bool_env("SERTOR_GRAPH", True),
-            graph_ambiguity_threshold=int(os.getenv("SERTOR_GRAPH_AMBIGUITY", "2")),
-            graph_limit_definitions=int(os.getenv("SERTOR_GRAPH_LIMIT_DEFS", "10")),
-            graph_limit_relations=int(os.getenv("SERTOR_GRAPH_LIMIT_RELS", "8")),
-            graph_limit_docs=int(os.getenv("SERTOR_GRAPH_LIMIT_DOCS", "8")),
+            graph_ambiguity_threshold=_int_env("SERTOR_GRAPH_AMBIGUITY", 2),
+            graph_limit_definitions=_int_env("SERTOR_GRAPH_LIMIT_DEFS", 10),
+            graph_limit_relations=_int_env("SERTOR_GRAPH_LIMIT_RELS", 8),
+            graph_limit_docs=_int_env("SERTOR_GRAPH_LIMIT_DOCS", 8),
             index_incremental=_bool_env("SERTOR_INDEX_INCREMENTAL", True),
-            index_reconcile_every=int(os.getenv("SERTOR_INDEX_RECONCILE_EVERY", "0")),
+            index_reconcile_every=_int_env("SERTOR_INDEX_RECONCILE_EVERY", 0),
             eval_dir=Path(os.getenv("SERTOR_EVAL_DIR", "eval")),
-            eval_tolerance=float(os.getenv("SERTOR_EVAL_TOLERANCE", "0.0")),
-            graph_eval_tolerance=float(os.getenv("SERTOR_GRAPH_EVAL_TOLERANCE", "0.0")),
+            eval_tolerance=_float_env("SERTOR_EVAL_TOLERANCE", 0.0),
+            graph_eval_tolerance=_float_env("SERTOR_GRAPH_EVAL_TOLERANCE", 0.0),
             graph_eval_exact=_bool_env("SERTOR_GRAPH_EVAL_EXACT", False),
-            eval_fusion_k=int(os.getenv("SERTOR_EVAL_FUSION_K", "5")),
+            eval_fusion_k=_int_env("SERTOR_EVAL_FUSION_K", 5),
             exclude_patterns=tuple(excludes) if excludes is not None else _DEFAULT_EXCLUDES,
         )
