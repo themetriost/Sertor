@@ -231,6 +231,30 @@ def test_combined_tool_error_emits_event_and_reraises(monkeypatch, caplog):
         srv._facade.cache_clear()
 
 
+def test_tool_error_detail_is_secret_scrubbed(monkeypatch, caplog):
+    """A-14: the persisted `detail` of an error event is secret-scrubbed — a secret-shaped
+    exception message is redacted (scrub_text) before it reaches the observability store."""
+    secret = "sk-abc123DEF456ghi789"
+
+    class _Boom:
+        def search_code(self, *_a, **_k):
+            raise RuntimeError(f"auth failed with key {secret}")
+
+    _use(monkeypatch, lambda _s=None: _Boom())
+    try:
+        with caplog.at_level(logging.ERROR, logger="sertor_core"):
+            with pytest.raises(RuntimeError):
+                srv.search_code("x")
+        errors = [r for r in caplog.records
+                  if getattr(r, "operation", None) == "mcp.search_code.error"]
+        assert errors, "expected an mcp.search_code.error event"
+        detail = getattr(errors[0], "detail", "")
+        assert secret not in detail        # the raw secret never reaches the store
+        assert "[REDACTED]" in detail      # scrub_text placeholder applied
+    finally:
+        srv._facade.cache_clear()
+
+
 def test_self_test_ok_on_healthy_facade(monkeypatch):
     """The self-test returns True and logs an ok event when a search completes (even empty)."""
     _use(monkeypatch, _empty_facade)  # empty index -> [] is NOT a failure
