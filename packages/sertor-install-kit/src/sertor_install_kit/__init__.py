@@ -21,6 +21,7 @@ from sertor_install_kit.assistant import (
     CommandVehicle,
     Surface,
     SurfaceTarget,
+    select_for,
 )
 from sertor_install_kit.claude_md import (
     remove_marker_block,
@@ -76,6 +77,7 @@ __all__ = [
     # assistant targeting (feature 044; FEAT-011 CommandVehicle)
     "AssistantId",
     "AssistantProfile",
+    "select_for",
     "CommandVehicle",
     "Surface",
     "SurfaceTarget",

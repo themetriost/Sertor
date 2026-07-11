@@ -19,7 +19,7 @@ from sertor_core.domain.errors import SertorError
 from sertor_core.wiki_tools.profile import load_profile
 from sertor_core.wiki_tools.structure import init_structure
 from sertor_install_kit.artifacts import LifecycleOp
-from sertor_install_kit.assistant import AssistantId, AssistantProfile, Surface
+from sertor_install_kit.assistant import AssistantId, AssistantProfile, Surface, select_for
 from sertor_install_kit.claude_md import remove_marker_block, update_marker_block
 from sertor_install_kit.errors import ConfigError, InstallerError
 from sertor_install_kit.executor import execute_plan as _kit_execute_plan
@@ -95,9 +95,12 @@ def _legacy_wiki_ps1_targets(assistant: AssistantId) -> tuple[str, ...]:
     Claude got both `.ps1` (the `assets/claude/**` walk); Copilot got only `wiki-pending-check.ps1`
     (its SessionStart was already a static prompt — no session-start script, W5).
     """
-    if assistant is AssistantId.CLAUDE:
-        return (".claude/hooks/wiki-pending-check.ps1", ".claude/hooks/wiki-session-start.ps1")
-    return (".github/hooks/wiki-pending-check.ps1",)
+    return select_for(assistant, {
+        AssistantId.CLAUDE: (
+            ".claude/hooks/wiki-pending-check.ps1", ".claude/hooks/wiki-session-start.ps1",
+        ),
+        AssistantId.COPILOT_CLI: (".github/hooks/wiki-pending-check.ps1",),
+    })
 # FEAT-011: the Copilot hook wiring is GENERATED natively (render_copilot_hooks), no longer read
 # from a static Claude-format asset. The sentinel source marks the GENERATED-wiki wiring so the
 # apply callback builds it instead of reading a file (no new ArtifactKind, data-model §4).
@@ -464,11 +467,10 @@ def sertor_owned_paths(assistant: AssistantId = AssistantProfile.DEFAULT) -> Ser
     # Sertor-owned dir, removed/upgraded in block: `.claude/skills/wiki-author` on Claude,
     # `.github/skills/wiki-author` on Copilot. The `wiki-curator` custom-agent
     # (`.github/agents/wiki-curator.agent.md`) is a standalone owned_file.
-    owned_dirs: tuple[str, ...] = ("wiki",)
-    if assistant is AssistantId.CLAUDE:
-        owned_dirs = ("wiki", ".claude/skills/wiki-author")
-    else:  # copilot-cli
-        owned_dirs = ("wiki", _COPILOT_SKILL_DIR)
+    owned_dirs: tuple[str, ...] = select_for(assistant, {
+        AssistantId.CLAUDE: ("wiki", ".claude/skills/wiki-author"),
+        AssistantId.COPILOT_CLI: ("wiki", _COPILOT_SKILL_DIR),
+    })
     return SertorOwnedPaths(
         owned_dirs=owned_dirs,
         owned_files=owned_files,

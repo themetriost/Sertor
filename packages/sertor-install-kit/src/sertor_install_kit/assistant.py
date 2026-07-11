@@ -13,9 +13,31 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+from typing import TypeVar
 
 from sertor_install_kit.artifacts import WriteStrategy
 from sertor_install_kit.errors import ConfigError
+
+_T = TypeVar("_T")
+
+
+def select_for(assistant: AssistantId, mapping: dict[AssistantId, _T]) -> _T:
+    """N-ary, fail-loud per-assistant selection — the parity pivot (replaces `X if CLAUDE else Y`).
+
+    Every per-assistant value is expressed as a **total map** over the supported assistants; the
+    value for `assistant` is looked up. A missing key raises an explicit `ConfigError` naming the
+    assistant (Principio IV/XII) instead of silently falling through to an `else` branch. Adding an
+    assistant is therefore adding a key: if a call site forgets it, the install fails loud with a
+    pointer to the exact gap, never a wrong-but-silent default.
+    """
+    try:
+        return mapping[assistant]
+    except KeyError as exc:
+        covered = ", ".join(a.value for a in mapping) or "(none)"
+        raise ConfigError(
+            f"no value for assistant '{assistant.value}': mapping covers {covered}",
+            key=assistant.value,
+        ) from exc
 
 
 class AssistantId(Enum):
@@ -111,6 +133,14 @@ class AssistantProfile:
     def target_for(self, surface: Surface) -> SurfaceTarget | None:
         """Fixed `SurfaceTarget` for a single-arity surface; `None` if not materialized (gap)."""
         return self._targets.get(surface)
+
+    def select(self, mapping: dict[AssistantId, _T]) -> _T:
+        """N-ary, fail-loud per-assistant value selection for this profile's assistant.
+
+        Thin wrapper over `select_for` bound to `self.assistant`; use it in plan-builders to pick a
+        per-assistant name/value from a total map instead of a binary `X if CLAUDE else Y` ternary.
+        """
+        return select_for(self.assistant, mapping)
 
     def render_path(self, surface: Surface, name: str) -> str:
         """Assistant-specific path for a per-file surface (`COMMAND`/`AGENT`).
