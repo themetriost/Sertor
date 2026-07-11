@@ -5,6 +5,7 @@ tags: [feedback, speclift, sinthari, mcp, adapter-b, vendoring, plan-084]
 from: Sertor
 to: Sinthari
 created: 2026-07-01
+updated: 2026-07-01
 status: chiuso — Adapter B vendorato e in uso nel self-host
 sources:
   - "wiki/sources/input-other-agents/processed/sinthari-reply-speclift-locator-pluggable.md (la loro risposta)"

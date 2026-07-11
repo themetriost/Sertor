@@ -9,7 +9,7 @@ sources: ["src/sertor_core/**", "packages/**", ".claude/**", ".specify/**", "req
 
 # Audit indipendente — SWOT & backlog azionabile (2026-07-02)
 
-> Audit completo del workspace richiesto dall'utente (prompt in `wiki/sources/Human/Fable SWOT.md`).
+> Audit completo del workspace richiesto dall'utente (prompt in [[fable-swot-audit-prompt]], `wiki/sources/Human/fable-swot-audit-prompt.md`).
 > Metodo: 5 audit paralleli (core+test · packages+CI · governance/skill/hook · requisiti/backlog ·
 > doc utente/wiki) + verifiche dirette del flusso principale (smoke MCP, re-index, spot-check dei
 > finding più pesanti). Ogni claim è marcato FATTO (osservato) o INFERENZA (dedotto).
