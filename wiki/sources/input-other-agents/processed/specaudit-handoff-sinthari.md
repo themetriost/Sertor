@@ -1,3 +1,12 @@
+---
+title: "Handoff: SpecAudit → pacchetto `sertor-flow` (da Sinthari)"
+type: source
+tags: [specaudit, handoff, sinthari, sertor-flow, runtime]
+created: 2026-07-02
+updated: 2026-07-02
+sources: []
+---
+
 # Handoff: SpecAudit → pacchetto `sertor-flow` (da Sinthari)
 
 Brief self-contained per promuovere **SpecAudit** (sviluppato e validato in Sinthari) a capacità

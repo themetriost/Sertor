@@ -3,6 +3,7 @@ title: "Richiesta utente Copilot — default model assignment per agenti install
 type: source
 tags: [usersfeedback, copilot-cli, subagents, model-policy, installer, distribuzione]
 created: 2026-06-30
+updated: 2026-07-01
 source: utente Copilot (richiesta feature, 2026-06-30)
 status: elaborata (2026-07-01)
 ---

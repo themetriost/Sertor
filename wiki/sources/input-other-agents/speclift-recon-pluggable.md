@@ -3,7 +3,8 @@ title: "Ricognizione SpecLift — EvidenceLocator pluggable (Adapter B agente+MC
 type: source
 tags: [speclift, sinthari, recon, pluggable-locator, provided-evidence-locator, mcp, three-gear, plan-084]
 created: 2026-07-01
-source: "Sinthari repo (github.com/themetriost/Sinthari, branch feat/speclift-pluggable-locator @ 00d5cd0), clonato in C:/Workspace/Git/ExternalRepos/Sinthari"
+updated: 2026-07-01
+sources: ["Sinthari repo (github.com/themetriost/Sinthari, branch feat/speclift-pluggable-locator @ 00d5cd0), clonato in C:/Workspace/Git/ExternalRepos/Sinthari"]
 ---
 
 # Ricognizione SpecLift — EvidenceLocator pluggable

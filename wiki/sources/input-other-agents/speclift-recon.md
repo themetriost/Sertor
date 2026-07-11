@@ -3,7 +3,8 @@ title: "Ricognizione SpecLift (repo Sinthari) — comprensione per decisioni di 
 type: source
 tags: [speclift, sinthari, recon, packaging, sertor-rag, ears, deterministic-sandwich, vendoring]
 created: 2026-07-01
-source: "Sinthari repo (github.com/themetriost/Sinthari, master @ be4da28), clonato in C:/Workspace/Git/ExternalRepos/Sinthari"
+updated: 2026-07-01
+sources: ["Sinthari repo (github.com/themetriost/Sinthari, master @ be4da28), clonato in C:/Workspace/Git/ExternalRepos/Sinthari"]
 ---
 
 # Ricognizione SpecLift

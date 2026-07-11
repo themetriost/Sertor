@@ -3,6 +3,7 @@ title: "Segnalazione utente — passo distill del Wiki Ritual ignorato per un'in
 type: source
 tags: [usersfeedback, wiki-ritual, claude-md, distill, lint, drift, definition-of-done]
 created: 2026-07-01
+updated: 2026-07-02
 source: utente progetto Noetix (segnalazione, 2026-07-01)
 status: elaborata (→ E10-FEAT-026 «Rituale wiki resistente allo skip silenzioso di distill/lint», 2026-07-02)
 ---

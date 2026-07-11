@@ -1,3 +1,12 @@
+---
+title: "Audit degli strumenti Sertor — skill, agent, hook, CLAUDE.md"
+type: source
+tags: [audit, skill, agent, hook, claude-md, parità, parity-guard]
+created: 2026-07-01
+updated: 2026-07-01
+sources: []
+---
+
 # Audit degli strumenti Sertor — skill, agent, hook, CLAUDE.md
 
 > **Oggetto:** analisi di buona-formazione e qualità degli asset *first-party* distribuiti da Sertor
