@@ -1,65 +1,73 @@
 # Sertor
 
-> A framework to give **any project** a **living, queryable, self-maintaining** knowledge of itself — indexing, RAG, and LLM Wiki, without lock-in.
+> Give **any project** a living, queryable knowledge of itself — where **code and documentation answer
+> as one**. Portable, local-first, no lock-in.
 
-## 🌅 Vision
+## Why Sertor: code and docs, fused
 
-Every software project — whether it is code, documentation, or both — should be able to
-**know and query itself**. Knowledge of a codebase and its documents stops being scattered,
-volatile, and rebuilt from scratch every session, and becomes a **living, persistent, self-maintaining
-asset**. And this must be possible **anywhere and without lock-in**: portable from one project to
-another, runnable locally, neutral with respect to the LLM and storage provider.
+Every other tool makes your assistant read **either** the code **or** the docs. Sertor's differentiator
+is that it returns them **together**, for the same question: **the code says *what it does*, the
+documentation says *why*.** That fusion — code, requirements, specs, and wiki in **one queryable
+corpus** — is what turns "search" into understanding.
 
-## 🎯 Mission
+Ask *"how does authentication work?"* and your assistant gets both flows at once:
 
-Sertor is an **installable framework** that equips **any project** — *code+doc*, *doc-only*, or
-*code-only* — with three composable capabilities:
+```text
+search_combined("how does authentication work?")
+{
+  "docs": [ "docs/architecture/auth.md   — why: sessions are signed, tokens rotate every 24h" ],
+  "code": [ "src/auth/session.py         — what: verify_session() checks signature and expiry" ]
+}
+```
 
-1. **Repo-agnostic indexing** of content (code and documents);
-2. **RAG retrieval** with multiple engines, from local to Azure;
-3. a **cumulative LLM Wiki** that grows with the work.
+The rule **and** the reason, in a single retrieval — neither the code nor the docs alone would have
+answered as completely. Everything else Sertor does (indexing, multiple RAG engines, a self-maintaining
+wiki) serves that one goal: **the highest-quality, freshest context handed to the agent.**
 
-Each capability is **decoupled from the host's domain**: Sertor attaches to a project only
-as a *consumer* — today applied to itself, instrumentally, via **dogfooding**. It is delivered as an
-**importable library** (that is the product) — reproducible and suited to contexts of every scale,
-**enterprise included** — while the CLI and MCP are thin vehicles on top.
+## What it is
 
-## The three project profiles
+Sertor is an **installable framework** that equips any project — *code+doc*, *doc-only*, or *code-only* —
+with three composable, host-agnostic capabilities:
 
-Sertor makes no assumptions about the shape of the host. It installs and adapts to:
+- **Repo-agnostic indexing** — *code-aware* (multi-language) and *markdown-aware* chunking,
+  multi-provider embeddings, an abstract vector store.
+- **RAG retrieval** — multiple engines: **hybrid** (lexical BM25 + vector, RRF — the default) with
+  optional reranking, a **vector baseline**, a structural **code graph**, and **agentic** retrieval
+  (MCP server + frontier agent).
+- **A cumulative LLM Wiki** — a project knowledge base written and maintained *during the work*
+  ("LLM Wiki" pattern), itself queryable via RAG.
+
+Sertor attaches to a project only as a *consumer* — it makes **no assumptions about the host's business
+domain**. The **library is the product**; the CLI and MCP server are thin vehicles on top.
+
+## Fits any project
 
 | Profile | Example | What it indexes |
 |---------|---------|----------------|
-| **code + doc** | an application repository with its `docs/` | sources *and* documentation |
-| **doc-only** | a knowledge base, a wiki, a collection of PDF/MD | documents only |
-| **code-only** | a library with no narrative documentation | sources only |
+| **code + doc** | an application repo with its `docs/` | sources *and* documentation |
+| **doc-only** | a knowledge base, a wiki, a set of PDF/MD | documents only |
+| **code-only** | a library with no narrative docs | sources only |
 
-## The three capabilities
+## Portable, local-first, no lock-in
 
-- **Indexing** — repo-agnostic ingestion, *code-aware* (multi-language) and *markdown-aware*
-  chunking, multi-provider embeddings, abstract vector store.
-- **RAG** — retrieval over that content; multiple engines: **hybrid** (lexical BM25 + vector, RRF —
-  the default) with optional reranking, **vector baseline**, a structural **code graph**, and
-  **agentic** retrieval (composite: MCP server + frontier agent).
-- **LLM Wiki** — a project knowledge base that is written and maintained during the work
-  ("LLM Wiki" pattern), itself queryable via RAG.
-
-## Decoupling (why it matters)
-
-Sertor's features and skills **must not know the host's business domain**. The fact that in this
-repository they are applied to Sertor itself is **instrumental** (dogfooding), not a licence to
-embed project-specific assumptions. This principle is binding: see the
-[constitution](.specify/memory/constitution.md).
-
-## Architecture at a glance
-
-- **The library is the product.** The core lives in [`src/sertor_core/`](src/sertor_core/) in
-  **Clean Architecture** (dependencies point inward; the `domain` does not import any SDK).
 - **Local-first ↔ Azure**, swappable via configuration: the embedding provider
-  (`SERTOR_EMBED_PROVIDER=glove|hash|ollama|azure`, default `glove`) and the vector store
-  (`SERTOR_STORE_BACKEND=local|azure`) are independent knobs, without touching the code.
-  LLM/embeddings providers and vector store are behind abstract *ports*.
-- **CLI and MCP** are thin consumers of the library.
+  (`SERTOR_EMBED_PROVIDER=glove|hash|ollama|azure`, default `glove` — zero-config, offline) and the
+  vector store (`SERTOR_STORE_BACKEND=local|azure`) are **independent knobs**, no code changes.
+- **The library is the product.** The core lives in [`src/sertor_core/`](src/sertor_core/) in **Clean
+  Architecture** (dependencies point inward; the `domain` imports no SDK). Providers and stores sit
+  behind abstract *ports*. This decoupling is binding — see the
+  [constitution](.specify/memory/constitution.md).
+
+## Get started
+
+**One path, from nothing to your first retrieval:** **[docs/getting-started.md](docs/getting-started.md)**
+— prerequisites → install → index → a first query that shows the code+doc fusion. It is host-agnostic
+(Claude Code **and** GitHub Copilot CLI).
+
+For details beyond the quickstart: the per-assistant guides
+**[install-claude.md](docs/install-claude.md)** · **[install-copilot.md](docs/install-copilot.md)**, the
+full reference **[docs/install.md](docs/install.md)**, and how to search well (hybrid retrieval vs the
+code graph) in **[docs/retrieval.md](docs/retrieval.md)**.
 
 ## Status
 
@@ -69,42 +77,27 @@ embed project-specific assumptions. This principle is binding: see the
 - ✅ **RAG engines** — **hybrid** (BM25 + vector, RRF) as the default, **vector baseline** (with
   hit\@k / MRR evaluation), a structural **code graph**, and **agentic** retrieval (MCP + agent).
   Production hardening: embeddings content-hash cache, retry/backoff, optional confidence threshold.
-- ✅ **MCP server** (`sertor_mcp`) — `search_code`/`search_docs`/`search_combined` + the 4 graph
-  tools (`find_symbol`/`who_calls`/`related_docs`/`get_context`) for Claude Code and MCP clients.
+- ✅ **MCP server** (`sertor_mcp`) — `search_code`/`search_docs`/`search_combined` + the 4 graph tools
+  (`find_symbol`/`who_calls`/`related_docs`/`get_context`) for Claude Code and MCP clients.
 - ✅ **`sertor-rag` execution CLI** — `index`/`search` from the terminal, runtime observability.
-- ✅ **LLM Wiki** — deterministic core `sertor-wiki-tools` (scan/lint/structure/index/log/move/
-  reconcile) + judgment operations as agentic skills.
-- ✅ **Installers** — `sertor install wiki` (the wiki system) and `sertor install rag` (the RAG
-  capability in an isolated `.sertor/` runtime), non-destructive and idempotent (`install ≠ run`).
-- ✅ **`sertor-flow`** — the development method (SDLC) — SpecKit flow, requirements management, git
-  delegation, a neutral constitution starter — as a **separate, standalone installer**, orthogonal to
-  the RAG (no dependency on `sertor-core`). Built on the shared `sertor-install-kit` toolkit.
+- ✅ **LLM Wiki** — deterministic core `sertor-wiki-tools` (scan/lint/structure/index/log/move/reconcile)
+  + judgment operations as agentic skills.
+- ✅ **Installers** — `sertor install wiki` (the wiki system) and `sertor install rag` (the RAG capability
+  in an isolated `.sertor/` runtime), non-destructive and idempotent (`install ≠ run`).
+- ✅ **`sertor-flow`** — the development method (SDLC): SpecKit flow, requirements management, git
+  delegation, a neutral constitution starter — a **separate, standalone installer**, orthogonal to the
+  RAG (no dependency on `sertor-core`).
 - ✅ **Conversation memory** (MVP) — local capture + episodic full-text search, privacy-by-default,
   feeding wiki distillation.
 - ✅ **Observability** — persistent local event store, reports, and a TUI panel (`sertor-rag observe`).
 
-In development / next: incremental index refresh (only changed files), multi-assistant distribution
-(GitHub Copilot / Codex), semantic memory search, PyPI distribution.
-
-## Installation on another repository
-
-**Quick start — pick your assistant:**
-
-- **[`docs/install-claude.md`](docs/install-claude.md)** — for **Claude Code** hosts.
-- **[`docs/install-copilot.md`](docs/install-copilot.md)** — for **GitHub Copilot** hosts (VS Code & CLI).
-
-Each is a concise, three-section guide — **RAG**, **Wiki**, **Governance (SDLC)** — covering
-`sertor install rag`, `sertor install wiki`, and `sertor-flow install`. The full reference (every
-flag, all config knobs, refresh & uninstall) is **[`docs/install.md`](docs/install.md)**.
-
-For how to query a project once indexed — when to use **hybrid retrieval** vs the **code graph**
-(the *discover → navigate* pattern) — see **[`docs/retrieval.md`](docs/retrieval.md)**.
+In development / next: multi-assistant distribution (Codex), PyPI distribution.
 
 ## Development
 
 Uses [`uv`](https://github.com/astral-sh/uv):
 
-```bash
+```powershell
 uv sync --all-packages --extra dev  # single venv: workspace members + dev + MCP server + code-graph
                                     # (add --extra azure for the Azure dogfood; azure is an opt-in heavy extra)
 uv run pytest -m "not cloud"        # suite without cloud services

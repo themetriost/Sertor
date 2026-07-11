@@ -8,6 +8,9 @@ a name, it gives exact facts about definitions and relationships).
 
 Both run locally and are served by the same `sertor-rag` MCP server — **7 tools = 3 search + 4 graph**.
 
+> **Not installed yet?** Get to a working RAG first with the single *"from nothing to first value"* path:
+> **[getting-started.md](getting-started.md)**. This page is about querying *well* once it is running.
+
 ## The two surfaces
 
 ### Hybrid retrieval — "find by meaning"
