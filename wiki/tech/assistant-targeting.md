@@ -3,7 +3,7 @@ title: Targeting per-assistente (AssistantProfile / Surface)
 type: tech
 tags: [installer, sertor-install-kit, copilot, copilot-cli, claude, host-agnostico, principio-x, feat-007]
 created: 2026-06-15
-updated: 2026-07-01
+updated: 2026-07-11
 sources: ["packages/sertor-install-kit/src/sertor_install_kit/assistant.py", "packages/sertor/src/sertor_installer/install_wiki.py", "packages/sertor/src/sertor_installer/install_rag.py", "specs/044-distribuzione-copilot/plan.md", "requirements/sertor-cli/distribuzione-copilot/requirements.md"]
 ---
 
@@ -17,9 +17,10 @@ all'**assistente ospite**: l'assistente si **configura**, non si presume nel cor
 
 ## Le tre entità
 
-- **`AssistantId`** (enum): l'assistente target — `claude` (default documentato), `copilot` (Copilot
-  in VS Code), `copilot-cli` (Copilot CLI). Valore ignoto → `ConfigError` esplicito (Principio IV).
-  `codex` = futuro (Could).
+- **`AssistantId`** (enum): l'assistente target — oggi **due valori**: `claude` (default documentato) e
+  `copilot-cli` (Copilot CLI). Valore ignoto → `ConfigError` esplicito (Principio IV). *(Il target
+  `copilot` VS Code, presente nella storia sotto, è stato **consolidato in `copilot-cli`** — FEAT-012;
+  `codex` = futuro, Could.)*
 - **`Surface`** (enum): la **categoria logica** di artefatto distribuibile, indipendente
   dall'assistente — `INSTRUCTION_BLOCK`, `MCP_SERVER`, `COMMAND`, `AGENT`, `HOOK`. È il **perno della
   parità**: ogni Surface ha una resa per ciascun assistente.
@@ -49,6 +50,29 @@ all'**assistente ospite**: l'assistente si **configura**, non si presume nel cor
 I plan-builder `build_install_plan`/`build_rag_plan` ([[sertor-installer]]) sono **parametrici**:
 chiedono i target al profilo invece di cablare `.claude/...`. `--assistant claude` resta byte-identico
 al comportamento storico (non-regressione).
+
+## De-binarizzazione del seam — `select_for` (A-19, 2026-07-11)
+
+Il profilo era l'unico posto che *conosce* le convenzioni, ma alcuni **plan-builder** sceglievano ancora
+un valore/nome per-assistente con **ternari binari** `X if CLAUDE else Y` — che assumono *esattamente
+due* assistenti e, con un terzo (Codex), cadrebbero in silenzio nel ramo `else`. A-19 li sostituisce con
+un helper **n-ario e fail-loud** nel kit:
+
+- **`select_for(assistant, {AssistantId: valore})`** (+ metodo `AssistantProfile.select(mapping)`):
+  ogni scelta per-assistente è una **mappa totale** sugli assistenti supportati; una chiave mancante →
+  **`ConfigError`** che nomina l'assistente (Principio IV/XII), mai un default silenzioso. Aggiungere un
+  assistente = **aggiungere una chiave** (fail-loud se dimenticata).
+- Siti convertiti: `_SERTOR_AUTHORED` (governance) da colonne `(claude_name, copilot_name)` →
+  `dict[AssistantId, str]`; il concierge (`install_rag`); i target `.ps1` legacy e `owned_dirs`
+  (`install_wiki`); l'enumerazione `(CLAUDE, COPILOT_CLI)` → `iter(AssistantId)` (`__main__`).
+- **Parità by construction:** `select({CLAUDE:X, COPILOT_CLI:Y})[claude] = X`, identico al ternario →
+  output installato byte-identico per i due assistenti (suite + test seam verdi).
+
+> **Confine onesto (Principio III/YAGNI).** A-19 de-binarizza la **selezione di valori/nomi**, non i
+> pochi guard *a singolo ramo* `if COPILOT_CLI:` che codificano un **comportamento strutturale**
+> dell'assistente (generazione hook nativa, render custom-agent): astrarli senza conoscere le convenzioni
+> di Codex sarebbe speculativo. Un terzo assistente sarà «un'aggiunta di dati» per nomi/target, ma dovrà
+> comunque *decidere* il proprio comportamento a quei punti.
 
 ## Decisione di design — DA-2 «ibrido»
 

@@ -374,7 +374,7 @@ def _installed_assistants(capability: str, target_root: Path) -> list[AssistantI
     """Assistants with `capability` (`rag`/`wiki`) actually installed on the host."""
     marker = _RAG_MARKER if capability == "rag" else _WIKI_MARKER
     return [
-        a for a in (AssistantId.CLAUDE, AssistantId.COPILOT_CLI)
+        a for a in AssistantId
         if _instruction_marker_present(target_root, a, marker)
     ]
 

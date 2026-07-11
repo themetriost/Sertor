@@ -13,6 +13,7 @@ from sertor_install_kit.assistant import (
     AssistantProfile,
     CommandVehicle,
     Surface,
+    select_for,
 )
 from sertor_install_kit.errors import ConfigError
 
@@ -153,3 +154,27 @@ def test_targets_are_relative_no_traversal():
             rel = t.target_rel.replace("\\", "/")
             assert not rel.startswith("/")
             assert ".." not in rel.split("/")
+
+
+# ---------------------------------------- n-ary fail-loud selection (A-19, de-binarize the seam)
+
+def test_select_for_picks_the_assistant_value():
+    """`select_for` replaces the binary `X if CLAUDE else Y`: it returns the mapped value for the
+    given assistant (parity: same value the ternary produced for each of the two assistants)."""
+    mapping = {AssistantId.CLAUDE: "claude-val", AssistantId.COPILOT_CLI: "copilot-val"}
+    assert select_for(AssistantId.CLAUDE, mapping) == "claude-val"
+    assert select_for(AssistantId.COPILOT_CLI, mapping) == "copilot-val"
+
+
+def test_select_for_missing_key_fails_loud():
+    """A partial map (an assistant forgotten) raises an explicit `ConfigError` naming the assistant
+    (Principio IV/XII) — never a silent wrong default, unlike an `else` branch."""
+    with pytest.raises(ConfigError) as exc:
+        select_for(AssistantId.COPILOT_CLI, {AssistantId.CLAUDE: "only-claude"})
+    assert "copilot-cli" in str(exc.value)
+
+
+def test_profile_select_binds_its_assistant():
+    """`AssistantProfile.select` is `select_for` bound to the profile's own assistant."""
+    p = AssistantProfile.for_assistant(AssistantId.COPILOT_CLI)
+    assert p.select({AssistantId.CLAUDE: "x", AssistantId.COPILOT_CLI: "y"}) == "y"

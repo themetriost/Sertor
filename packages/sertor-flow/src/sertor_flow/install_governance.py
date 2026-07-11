@@ -102,14 +102,19 @@ _AGENT_REQUIREMENTS_ANALYST = "claude/agents/requirements-analyst.md"
 _AGENT_CONFIGURATION_MANAGER = "claude/agents/configuration-manager.md"
 _SKILL_REQUIREMENTS = "claude/skills/requirements/SKILL.md"
 
-_SERTOR_AUTHORED: tuple[tuple[str, Surface, str, str], ...] = (
-    # (canonical_source, surface, claude_name, copilot_name)
+_SERTOR_AUTHORED: tuple[tuple[str, Surface, dict[AssistantId, str]], ...] = (
+    # (canonical_source, surface, logical name PER ASSISTANT). The name is a total map over the
+    # supported assistants (the parity pivot): Claude keeps the `.claude/`-relative path, Copilot
+    # the bare command/agent name. Adding an assistant = add a key (fail-loud via `select`).
     (_AGENT_REQUIREMENTS_ANALYST, Surface.AGENT,
-     "agents/requirements-analyst.md", "requirements-analyst"),
+     {AssistantId.CLAUDE: "agents/requirements-analyst.md",
+      AssistantId.COPILOT_CLI: "requirements-analyst"}),
     (_AGENT_CONFIGURATION_MANAGER, Surface.AGENT,
-     "agents/configuration-manager.md", "configuration-manager"),
+     {AssistantId.CLAUDE: "agents/configuration-manager.md",
+      AssistantId.COPILOT_CLI: "configuration-manager"}),
     (_SKILL_REQUIREMENTS, Surface.COMMAND,
-     "skills/requirements/SKILL.md", "requirements"),
+     {AssistantId.CLAUDE: "skills/requirements/SKILL.md",
+      AssistantId.COPILOT_CLI: "requirements"}),
 )
 
 # Render suffixes (Copilot) — the apply callback translates the container, never the body.
@@ -149,12 +154,12 @@ def build_governance_plan(profile: GovernanceProfile) -> list[Artifact]:
         # Fail-loud BEFORE any artifact is written (FR-008/009, DA-D-4): this plan deposits
         # THREE Copilot agents in one list — validate the policy covers all of them up front,
         # so a profile gap never leaves the first N already written (partial install).
-        for _source, _surface, _claude_name, copilot_name in _SERTOR_AUTHORED:
-            resolve_model(copilot_name)
+        for _source, _surface, names in _SERTOR_AUTHORED:
+            resolve_model(names[AssistantId.COPILOT_CLI])
 
     # 1+2. Sertor-authored AGENT/COMMAND surfaces, routed per-assistant via the AssistantProfile.
-    for source, surface, claude_name, copilot_name in _SERTOR_AUTHORED:
-        name = claude_name if aprofile.assistant is AssistantId.CLAUDE else copilot_name
+    for source, surface, names in _SERTOR_AUTHORED:
+        name = aprofile.select(names)
         target_rel = aprofile.render_path(surface, name)
         plan.append(
             Artifact(

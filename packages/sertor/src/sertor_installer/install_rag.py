@@ -379,7 +379,10 @@ def _concierge_artifact(assistant: AssistantId) -> Artifact:
     OMITTED on Copilot — FEAT-011/049). Container resolved by `AssistantProfile.render_path`.
     """
     aprofile = AssistantProfile.for_assistant(assistant)
-    name = "agents/concierge.md" if assistant is AssistantId.CLAUDE else "concierge"
+    name = aprofile.select({
+        AssistantId.CLAUDE: "agents/concierge.md",
+        AssistantId.COPILOT_CLI: "concierge",
+    })
     target_rel = aprofile.render_path(Surface.AGENT, name)
     return Artifact(
         ArtifactKind.FILE,
