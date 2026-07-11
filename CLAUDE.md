@@ -610,18 +610,19 @@ dogfood sopra. *(Non riconciliare cancellando la prosa: i blocchi sono rigenerat
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/095-portable-hooks-09/plan.md` (**E2 / leva A-09** epica **sertor-cli** — *portabilità POSIX degli
-hook*). Gli 8 hook host-facing sono PowerShell (`.ps1`, wirati `"shell":"powershell"`/`pwsh`) → **inerti su
-mac/Linux senza `pwsh`** (Principio X violato in pratica). Fix: riscrittura **iso-funzionale** in **una**
-implementazione **portabile** (Python), invocata via **`uv run --no-project python <hook>`** — `uv` è
-garantito (dip d'install), `--no-project` **isola** dal `pyproject.toml` dell'host e **non** dipende da
-`.sertor/.venv` (funziona anche wiki-only). Wiring **OS-indipendente** (via il kit, no `"shell":"powershell"`);
-gli hook che toccano il RAG chiamano `uv run --project .sertor sertor-rag …` **internamente** (XI). Detach
-del worker re-index cross-OS (`subprocess.Popen`+`start_new_session`/`DETACHED_PROCESS`). **DA-1 lock =
-sostituzione** (single-impl, ritiro `.ps1`) con **verifica di parità come gate pre-merge** (output
-per-assistente + effetti di stato coincidono coi `.ps1`; offline + smoke CI matrice ubuntu+windows).
-`sertor-core` invariato (logica hook = asset installer), zero dip nuove, fail-safe/breadcrumb preservati.
-Constitution **12/12 + missione PASS** (forte: portabilità = installabile ovunque). Branch `095-portable-hooks-09`.
+`specs/096-doc-utente-mvp/plan.md` (**E13 / item A-18** epica **documentazione-marketing** — *doc utente
+MVP, Fase 1 Musts*). Due artefatti di **documentazione statica host-agnostica**: (1) **nuovo**
+`docs/getting-started.md`, percorso unico «dal nulla al primo valore» (prerequisiti → `sertor install rag`
+→ `index` → prima query) che **assorbe e ordina** `docs/install-claude.md`/`install-copilot.md` +
+`retrieval.md` **delegando** loro il dettaglio divergente e **termina con un esempio concreto di fusione
+code+doc** (`search_combined` che rende `(docs, code)`); (2) **riscrittura** di `README.md` **valore-first**
+(apre col differenziatore code+doc + esempio, **preserva i fatti** di capacità/status, punta al
+getting-started come **ingresso unico**). Decisioni di **clarify**: esempi CLI con **entrambe le varianti
+Claude+Copilot affiancate**; esempio code+doc **illustrativo generico** (host-agnostico, sul repo
+dell'utente). **DA-4 (research):** nessun link/lint automatico per `docs/` oggi (`sertor-wiki-tools
+validate` è scoped su `wiki/`) → verifica **manuale/scriptata** dei link relativi in implement; linter
+automatico fuori scope. È **authoring** (D↔N): `sertor-core`/CLI/installer **INVARIATI**, nessun test
+nuovo. Constitution **12/12 + missione PASS** (Principio X centrale). Branch `096-doc-utente-mvp`.
 
 <!-- SPECKIT END -->
 
