@@ -4,6 +4,9 @@ Get Sertor onto a repository whose AI assistant is **Claude Code**. Three capabi
 sections — install each on its own, or all three. Every installer is **non-destructive**,
 **idempotent**, and **install ≠ run** (nothing is indexed until you ask).
 
+> **New to Sertor? Start with the single path.** The host-agnostic *"from nothing to first value"*
+> journey is **[getting-started.md](getting-started.md)** — this page is the Claude-specific detail it
+> delegates to.
 > **Looking for GitHub Copilot?** See **[install-copilot.md](install-copilot.md)**.
 > **All flags, every config knob, refresh & uninstall?** See the full reference **[install.md](install.md)**.
 
