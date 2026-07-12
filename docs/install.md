@@ -266,7 +266,7 @@ uv run sertor-rag index . -v                       # with structured logs visibl
 ```
 
 Exit code: `0` success · `1` domain error (human-readable message on stderr) · `2` wrong usage.
-Full CLI guide: [`specs/011-cli-esecuzione-rag/quickstart.md`](../specs/011-cli-esecuzione-rag/quickstart.md).
+Command & knob reference: [`reference.md`](reference.md).
 
 ## 4. MCP server (for Claude Code and other MCP clients)
 
