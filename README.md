@@ -64,10 +64,14 @@ domain**. The **library is the product**; the CLI and MCP server are thin vehicl
 — prerequisites → install → index → a first query that shows the code+doc fusion. It is host-agnostic
 (Claude Code **and** GitHub Copilot CLI).
 
-For details beyond the quickstart: the per-assistant guides
-**[install-claude.md](docs/install-claude.md)** · **[install-copilot.md](docs/install-copilot.md)**, the
-full reference **[docs/install.md](docs/install.md)**, and how to search well (hybrid retrieval vs the
-code graph) in **[docs/retrieval.md](docs/retrieval.md)**.
+**New to the idea?** The plain-language *"what it is and why"* — no jargon, no code — is
+**[docs/why-sertor.md](docs/why-sertor.md)**.
+
+For everything else — a worked [tutorial](docs/tutorial.md), the per-assistant guides
+([Claude](docs/install-claude.md) · [Copilot](docs/install-copilot.md)), the full
+[reference](docs/install.md), how to [search well](docs/retrieval.md), and
+[troubleshooting](docs/troubleshooting.md) — see the **[documentation index](docs/README.md)**. What
+changed is in the **[changelog](CHANGELOG.md)**.
 
 ## Status
 
