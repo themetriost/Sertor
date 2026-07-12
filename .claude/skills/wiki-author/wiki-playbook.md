@@ -95,6 +95,7 @@ session.
 | `append-log` | places a log entry (body curated by the LLM) in today's file, idempotent | `wiki.append_log/1` |
 | `migrate` | retroactively splits the monolithic log into daily partitions | `wiki.migrate/1` |
 | `upsert-index` | inserts/updates the `- [[page]] — summary` line in the index (LLM-authored summary) | `wiki.upsert_index/1` |
+| `ritual-check` | lists distill/drift candidates for the step (git diff) + a declaration scaffold; the tool finds, the agent judges (anti-silent-skip, read-only) | `wiki.ritual_check/1` |
 
 Invocation: `uv run --project .sertor sertor-wiki-tools <op> --config wiki/wiki.config.toml --root .
 [--json]` (or, from the host root, just `uv run --project .sertor sertor-wiki-tools <op>`: the CLI

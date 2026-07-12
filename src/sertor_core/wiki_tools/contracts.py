@@ -200,6 +200,32 @@ class ReconcileResult:
 
 
 @dataclass(frozen=True)
+class RitualCheckResult:
+    """`wiki.ritual_check/1` — deterministic ritual candidates (read-only, E10-FEAT-026).
+
+    The tool FINDS (structural signals only), the agent JUDGES (D↔N). `distill_candidates`: list of
+    `{"pages": [...], "shared_new_backlinks": int, "reason": str}` — groups of changed pages that
+    likely surface a durable entity not yet distilled. `drift_candidates`: list of
+    `{"page", "signal", "detail"}` — pages worth a semantic lint (`signal` ∈ `stale-updated` |
+    `neighbor-of-change` | `capability-exec`). `declaration_scaffold`: the pre-populated
+    `Rituale: record · distill · lint` line for the step closure. NEVER contains a semantic verdict.
+    """
+
+    scope: str
+    pages_in_scope: list[str] = field(default_factory=list)
+    distill_candidates: list[dict] = field(default_factory=list)
+    drift_candidates: list[dict] = field(default_factory=list)
+    declaration_scaffold: str = ""
+    schema: str = "wiki.ritual_check/1"
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    def to_json(self) -> str:
+        return _to_json(self.to_dict())
+
+
+@dataclass(frozen=True)
 class ErrorResult:
     """`wiki.error/1` — explicit error (Principio IV); no partial state."""
 

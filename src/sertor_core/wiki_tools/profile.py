@@ -63,6 +63,10 @@ class WikiProfile:
     roles: dict[str, str] = field(default_factory=dict)
     rag: dict[str, object] = field(default_factory=dict)
     strings: dict[str, str] = field(default_factory=dict)
+    # Optional `[ritual]` knobs for `ritual-check` (E10-FEAT-026): `distill_dirs` (taxonomy dirs
+    # that are distill homes; default derived from taxonomy), `capability_globs` + `exec_page` (the
+    # config-driven drift signal). Empty = feature-defaults / signal disabled. Host-agnostic.
+    ritual: dict[str, object] = field(default_factory=dict)
 
     @property
     def root_path(self) -> Path:
@@ -176,8 +180,11 @@ def load_profile(config_path: str | Path, root_override: str | Path | None = Non
     rag = data.get("rag") or {}
     strings = data.get("strings") or {}
     roles = data.get("roles") or {}
+    ritual = data.get("ritual") or {}
     if not isinstance(rag, dict) or not isinstance(strings, dict) or not isinstance(roles, dict):
         raise ConfigError("malformed rag/strings/roles sections", key=str(config_path))
+    if not isinstance(ritual, dict):
+        raise ConfigError("malformed ritual section", key=str(config_path))
 
     profile = WikiProfile(
         config_dir=config_dir,
@@ -204,6 +211,7 @@ def load_profile(config_path: str | Path, root_override: str | Path | None = Non
         roles={str(k): str(v) for k, v in roles.items()},
         rag=dict(rag),
         strings={str(k): str(v) for k, v in strings.items()},
+        ritual=dict(ritual),
     )
     log_event(
         logging.INFO,

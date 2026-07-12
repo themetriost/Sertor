@@ -48,7 +48,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **Default model-policy subagent Copilot CLI** (E2-FEAT-015, merge `4e30d00`/PR #135, 2026-07-01) — i 5 agenti Sertor-authored su Copilot CLI ricevono un `model:` di default da una fonte unica versionata (`model_policy.py`), fail-loud install-time; meccanismo reale = frontmatter `.agent.md` (non un blocco settings, verificato vs doc ufficiale); path Claude byte-identico, core invariato | `sertor-cli` |
 | **Self-host di SpecLift** (E14-FEAT-001, merge `bbfb74d`/PR #136, 2026-07-01) — `diff → requisiti EARS ancorati` (handoff da Sinthari) vendorato come `packages/speclift`; retrieval via **MCP** (Adapter B pluggable, esito della collaborazione agent-to-agent feedback CLI→MCP); dogfood e2e verde; core invariato, 122 test | `speclift` |
 | **Doc utente MVP** (E13-FEAT-001+002, merge `6e40ccc`/PR #172, 2026-07-11, item A-18) — **`docs/getting-started.md`** (percorso unico host-agnostico «dal nulla al primo valore», varianti CLI Claude+Copilot affiancate, esempio finale di **fusione code+doc** via `search_combined`) + **README valore-first** (apre col differenziatore code+doc + esempio, fatti preservati, ingresso unico). Prima consegna di E13; authoring puro (core/CLI/installer invariati) | `documentazione-marketing` |
-| **Doc utente Fase 1 COMPLETA** (E13-FEAT-003..008, 2026-07-12) — batch: **`docs/why-sertor.md`** (cos'è e perché, non-tecnici) · **`docs/README.md`** (indice «dove andare per cosa») · **`docs/tutorial.md`** (end-to-end guidato) · **`docs/troubleshooting.md`** (symptom→cause→fix, complemento statico di `doctor`) · **`CHANGELOG.md`** (release notes utente, onesto sull'interim) · **`docs/reference.md`** (comandi+manopole, punta a install.md). Host-agnostici, comandi verbatim dagli asset reali, 0 link a `wiki/`/`specs/` (corretto anche 1 drift CS-5 in install.md). Chiude tutta la **Fase 1** di E13 | `documentazione-marketing` |
+| **Doc utente Fase 1 COMPLETA** (E13-FEAT-003..008, merge `3bcb8b1`/PR #175, 2026-07-12) — batch: **`docs/why-sertor.md`** (cos'è e perché, non-tecnici) · **`docs/README.md`** (indice «dove andare per cosa») · **`docs/tutorial.md`** (end-to-end guidato) · **`docs/troubleshooting.md`** (symptom→cause→fix, complemento statico di `doctor`) · **`CHANGELOG.md`** (release notes utente, onesto sull'interim) · **`docs/reference.md`** (comandi+manopole, punta a install.md). Host-agnostici, comandi verbatim dagli asset reali, 0 link a `wiki/`/`specs/` (corretto anche 1 drift CS-5 in install.md). Chiude tutta la **Fase 1** di E13 | `documentazione-marketing` |
 
 *Dettaglio (PR, date, numeri) nella sezione ✅ DONE in fondo alla pagina.*
 
@@ -167,8 +167,16 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   modulo puro `host_env.py` nel kit; detect-only (wiring invariato). Constitution **12/12 + missione**; test
   sertor **451** · kit **139** · root **1131 passed**; `sertor-core` invariato, schema `install.report/1`
   invariato. *Follow-up non-bloccante:* prova LIVE su ospite mac/Linux senza `pwsh`; fix wiring Claude portabile.
+- **E10-FEAT-026 — rituale wiki anti-skip — 🔄 implementata, pre-merge (2026-07-12), branch `097-rituale-anti-skip`.**
+  MVP parte 1+3 (Should P1, dai 2 feedback ospiti convergenti). **Nuovo sottocomando `sertor-wiki-tools
+  ritual-check`** (deterministico, zero-LLM, sola lettura): scope via git-diff-vs-base (fail-loud/`--pages`),
+  elenca candidati **distill** (≥2 pagine changed con ≥2 nuovi backlink incrociati, 0 nuove `concepts/`/`tech/`)
+  + **drift** (`stale-updated`/`neighbor-of-change`-non-hub/`capability-exec` config-driven) + **scaffold di
+  dichiarazione**. + **dichiarazione forzata** a fine step nel blocco host-facing + playbook. Confine D↔N (tool
+  trova, agente giudica); gemella lato-giudizio di FEAT-011. SpecKit completo; +9 test; suite 1180 verde, ruff
+  clean; `sertor-core` engine invariato. **Fuori scope:** parte 2 (wiki-curator) + parte 4 (moduli derivati).
 - **Prossimo passo aperto:** scegliere il candidato a valore qui sotto (E5-FEAT-003 `search_docs`) o un
-  altro item di backlog (E10 restano solo Could).
+  altro item di backlog.
 
 **Candidati a valore = Should aperti:**
 
