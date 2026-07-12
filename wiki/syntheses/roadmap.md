@@ -167,7 +167,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   modulo puro `host_env.py` nel kit; detect-only (wiring invariato). Constitution **12/12 + missione**; test
   sertor **451** · kit **139** · root **1131 passed**; `sertor-core` invariato, schema `install.report/1`
   invariato. *Follow-up non-bloccante:* prova LIVE su ospite mac/Linux senza `pwsh`; fix wiring Claude portabile.
-- **E10-FEAT-026 — rituale wiki anti-skip — 🔄 implementata, pre-merge (2026-07-12), branch `097-rituale-anti-skip`.**
+- **E10-FEAT-026 — rituale wiki anti-skip — ✅ CONSEGNATA (merge `e906e34`/PR #176, 2026-07-12).**
   MVP parte 1+3 (Should P1, dai 2 feedback ospiti convergenti). **Nuovo sottocomando `sertor-wiki-tools
   ritual-check`** (deterministico, zero-LLM, sola lettura): scope via git-diff-vs-base (fail-loud/`--pages`),
   elenca candidati **distill** (≥2 pagine changed con ≥2 nuovi backlink incrociati, 0 nuove `concepts/`/`tech/`)
