@@ -779,6 +779,13 @@ checklist:
    non-technical stakeholder — not for mechanical or tooling-only steps. It applies both to what is
    *done* and to what is *about to be built* (the page marks the status).
 
+**Forced declaration (anti-silent-skip).** The closure of every significant step MUST emit an explicit
+declaration — `Ritual: record <verdict> · distill: <verdict> · lint: <verdict>` — with a verdict for each
+judgment step; "not needed" is fine but MUST be **declared, never omitted** (a silent skip is the failure
+this prevents). To keep candidate *discovery* off memory, run `sertor-wiki-tools ritual-check` first: it
+lists the step's distill/drift candidates (via git diff) + a declaration scaffold — the **tool finds, you
+judge** (read-only, zero-LLM).
+
 **Delegation.** That these actions happen is the main flow's responsibility; executing or delegating them
 is merely a choice to avoid blocking. The `record` (structured transcription) is delegatable to the
 `wiki-curator` agent; distillation and semantic lint, being judgment, stay in the main flow.

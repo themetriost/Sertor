@@ -167,8 +167,16 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   modulo puro `host_env.py` nel kit; detect-only (wiring invariato). Constitution **12/12 + missione**; test
   sertor **451** · kit **139** · root **1131 passed**; `sertor-core` invariato, schema `install.report/1`
   invariato. *Follow-up non-bloccante:* prova LIVE su ospite mac/Linux senza `pwsh`; fix wiring Claude portabile.
+- **E10-FEAT-026 — rituale wiki anti-skip — 🔄 implementata, pre-merge (2026-07-12), branch `097-rituale-anti-skip`.**
+  MVP parte 1+3 (Should P1, dai 2 feedback ospiti convergenti). **Nuovo sottocomando `sertor-wiki-tools
+  ritual-check`** (deterministico, zero-LLM, sola lettura): scope via git-diff-vs-base (fail-loud/`--pages`),
+  elenca candidati **distill** (≥2 pagine changed con ≥2 nuovi backlink incrociati, 0 nuove `concepts/`/`tech/`)
+  + **drift** (`stale-updated`/`neighbor-of-change`-non-hub/`capability-exec` config-driven) + **scaffold di
+  dichiarazione**. + **dichiarazione forzata** a fine step nel blocco host-facing + playbook. Confine D↔N (tool
+  trova, agente giudica); gemella lato-giudizio di FEAT-011. SpecKit completo; +9 test; suite 1180 verde, ruff
+  clean; `sertor-core` engine invariato. **Fuori scope:** parte 2 (wiki-curator) + parte 4 (moduli derivati).
 - **Prossimo passo aperto:** scegliere il candidato a valore qui sotto (E5-FEAT-003 `search_docs`) o un
-  altro item di backlog (E10 restano solo Could).
+  altro item di backlog.
 
 **Candidati a valore = Should aperti:**
 

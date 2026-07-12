@@ -22,7 +22,7 @@ from sertor_core.wiki_tools.scan import scan
 from sertor_core.wiki_tools.structure import init_structure, validate
 
 _OPS = ("scan", "structure", "validate", "lint", "collect", "index", "append-log", "migrate",
-        "upsert-index", "move", "reconcile")
+        "upsert-index", "move", "reconcile", "ritual-check")
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -79,6 +79,15 @@ def _build_parser() -> argparse.ArgumentParser:
         "--summary", default=None,
         help="index-line summary (for 'upsert-index'; otherwise read from stdin). "
              "The text is author-provided (LLM); the CLI neither generates nor rewrites it",
+    )
+    parser.add_argument(
+        "--base", default=None,
+        help="git diff base for 'ritual-check' (default: merge-base with master)",
+    )
+    parser.add_argument(
+        "--pages", default=None,
+        help="explicit comma-separated page list (rel to wiki root) for 'ritual-check' "
+             "(overrides git diff; use on non-git hosts)",
     )
     return parser
 
@@ -211,6 +220,11 @@ def _run(args, profile):
         from sertor_core.wiki_tools.reconcile import reconcile
 
         return reconcile(profile)
+    if op == "ritual-check":
+        from sertor_core.wiki_tools.ritual_check import ritual_check
+
+        pages = [p.strip() for p in args.pages.split(",") if p.strip()] if args.pages else None
+        return ritual_check(profile, base=args.base, pages=pages)
     raise ConfigError(f"unsupported operation: {op}")  # pragma: no cover
 
 
@@ -253,6 +267,12 @@ def _human(op: str, result) -> str:
         )
     if op == "reconcile":
         return f"candidates={len(data['candidates'])} clean={data['clean']}"
+    if op == "ritual-check":
+        return (
+            f"scope={data['scope']} pages={len(data['pages_in_scope'])} "
+            f"distill={len(data['distill_candidates'])} drift={len(data['drift_candidates'])}\n"
+            f"  {data['declaration_scaffold']}"
+        )
     return result.to_json()  # pragma: no cover
 
 

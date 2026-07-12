@@ -3,7 +3,7 @@ title: wiki-tools (nucleo deterministico del wiki)
 type: tech
 tags: [wiki-tools, cli, deterministico, host-agnostico, wiki, sertor-core, contracts]
 created: 2026-06-08
-updated: 2026-06-13 (+ move/reconcile/collect-status, feature 017)
+updated: 2026-07-12
 sources: ["src/sertor_core/wiki_tools/registry.py", "src/sertor_core/wiki_tools/**", "specs/017-manutenzione-wiki/**", "wiki/wiki.config.toml"]
 ---
 
@@ -42,6 +42,7 @@ da hook/skill/agente senza parsing fragile.
 | `upsert-index` | inserisce/aggiorna la riga link+sommario di una pagina in `index.md` (`--page` + `--summary` o stdin UTF-8); il sommario resta **LLM-authored**, la CLI fa solo il write idempotente; vuoto/multilinea → errore esplicito | `wiki.upsert_index/1` |
 | `move` | sposta/rinomina una pagina `move <src> <dest> [--dry-run]` e **riscrive i link entranti** (wikilink form-preserving — stessa logica target di `lint` — + link relativi); `rewrite-then-move` + recovery da stato parziale; destinazione esistente → errore; tocca pagine+indice, mai i log (feature 017) | `wiki.move/1` |
 | `reconcile` | detection **sola lettura** delle pagine `status: superseded` (con `superseded_by`/`updated`/`reason`); `clean=true` se nessuna; la risoluzione è giudizio su conferma, fuori dal comando (feature 017) | `wiki.reconcile/1` |
+| `ritual-check` | **sola lettura** (E10-FEAT-026): dato lo scope dello step (**git-diff vs base**, o `--pages`; fail-loud se indeterminabile), elenca **candidati a distillazione** (≥2 pagine changed con ≥2 nuovi backlink incrociati e 0 nuove pagine `concepts/`/`tech/`) + **candidati a drift** (`stale-updated`/`neighbor-of-change`-non-hub/`capability-exec` config-driven) + uno **scaffold di dichiarazione** `Rituale: record · distill · lint`. Rende la scoperta **deterministica** (non dalla memoria); il verdetto resta all'agente (D↔N). Config `[ritual]` opzionale (`distill_dirs`/`capability_globs`/`exec_page`/`hub_threshold`) | `wiki.ritual_check/1` |
 
 **Write-back del log curato + rotazione (FEAT-008).** L'op `append-log` riceve il **corpo curato** dall'LLM
 (formato [[deterministic-vs-judgment|log-craft]]) e ne fa solo il **piazzamento** nella partizione della
