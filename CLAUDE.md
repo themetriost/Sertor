@@ -610,19 +610,19 @@ dogfood sopra. *(Non riconciliare cancellando la prosa: i blocchi sono rigenerat
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/096-doc-utente-mvp/plan.md` (**E13 / item A-18** epica **documentazione-marketing** — *doc utente
-MVP, Fase 1 Musts*). Due artefatti di **documentazione statica host-agnostica**: (1) **nuovo**
-`docs/getting-started.md`, percorso unico «dal nulla al primo valore» (prerequisiti → `sertor install rag`
-→ `index` → prima query) che **assorbe e ordina** `docs/install-claude.md`/`install-copilot.md` +
-`retrieval.md` **delegando** loro il dettaglio divergente e **termina con un esempio concreto di fusione
-code+doc** (`search_combined` che rende `(docs, code)`); (2) **riscrittura** di `README.md` **valore-first**
-(apre col differenziatore code+doc + esempio, **preserva i fatti** di capacità/status, punta al
-getting-started come **ingresso unico**). Decisioni di **clarify**: esempi CLI con **entrambe le varianti
-Claude+Copilot affiancate**; esempio code+doc **illustrativo generico** (host-agnostico, sul repo
-dell'utente). **DA-4 (research):** nessun link/lint automatico per `docs/` oggi (`sertor-wiki-tools
-validate` è scoped su `wiki/`) → verifica **manuale/scriptata** dei link relativi in implement; linter
-automatico fuori scope. È **authoring** (D↔N): `sertor-core`/CLI/installer **INVARIATI**, nessun test
-nuovo. Constitution **12/12 + missione PASS** (Principio X centrale). Branch `096-doc-utente-mvp`.
+`specs/097-rituale-anti-skip/plan.md` (**E10 / FEAT-026** epica **debito-tecnico** — *rituale wiki
+resistente allo skip silenzioso di distill/lint*). MVP parte 1+3: (1) **nuovo sottocomando deterministico**
+`ritual-check` in `sertor-wiki-tools` (`src/sertor_core/wiki_tools/`) che, dato lo scope dello step
+(**git-diff vs base**, fallback `--pages`/fail-loud), elenca **candidati a distillazione** (gruppi di pagine
+changed con ≥2 nuovi backlink incrociati e 0 nuove pagine `concepts/`/`tech/`) + **candidati a drift**
+(`stale-updated` · `neighbor-of-change` · `capability-exec` config-driven) + emette lo **scaffold di
+dichiarazione** `Rituale: record · distill · lint`; output JSON `wiki.ritual_check/1` + summary. (2)
+**contratto di dichiarazione forzata** a fine step nel blocco host-facing `SERTOR:WIKI-RITUAL` + playbook
+(verdetto esplicito, «non serve» incluso), distribuito via installer + guardia sync. **Confine D↔N:** il
+tool **trova** (deterministico, zero-LLM, sola lettura), l'agente **giudica** (Principio XI). Host-agnostico
+(config da `wiki.config.toml`, no path hardcodati — Principio X); fail-loud su scope indeterminabile
+(Principio XII). Gemella lato-giudizio di FEAT-011. **Fuori scope:** parte 2 (wiki-curator) + parte 4
+(propagazione `ops/*.md`). Constitution **12/12 + missione PASS**. Branch `097-rituale-anti-skip`.
 
 <!-- SPECKIT END -->
 
