@@ -202,8 +202,7 @@ duplicazione — solo cross-reference e narrazione fedele).
 ## 8. Backlog di feature
 
 > Due fasi. **Fase 1 (documentazione utente)** è attiva ora; **Fase 2 (marketing pubblico)** è **gated**
-> sul go-public (E2). La colonna **Fase** marca l'appartenenza; lo **Stato** è `📋 da decomporre` per
-> tutte (epica nuova).
+> sul go-public (E2). La colonna **Fase** marca l'appartenenza; la **Fase 1 (FEAT-001..008) è ✅ CONSEGNATA** (2026-07-11/12, vedi EXEC); la **Fase 2 (FEAT-009..013) resta `📋 gated`** sul go-public.
 
 ### Fase 1 — Documentazione utente esterna (ora)
 
