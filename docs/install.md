@@ -16,6 +16,8 @@
 > host AI assistant receives the surfaces: `claude` (`.claude/**` + `.mcp.json` + `CLAUDE.md`) or
 > `copilot-cli` (GitHub **Copilot CLI**: `.github/**` + `.mcp.json` with the `mcpServers` root). All
 > three capabilities (`sertor` RAG/Wiki and `sertor-flow` governance) support **`claude|copilot-cli`**.
+> `sertor install` also accepts **several assistants at once** (`--assistant claude,copilot-cli` or
+> `all`) — see [§9](#installing-for-several-assistants-at-once).
 > The legacy VS Code value `copilot` was consolidated into `copilot-cli` (see the migration note in
 > **[install-copilot.md](install-copilot.md#migrating-from-the-vs-code-target)**). See **§9**.
 
@@ -588,6 +590,31 @@ After installing for the **Copilot CLI**, reload its MCP config with `/mcp reloa
 CLI) and verify with `/mcp show`. The CLI discovers `.mcp.json` walking from the cwd up to the git
 root (closest wins); `.github/mcp.json` and the user-level `~/.copilot/mcp-config.json` are also
 read.
+
+### Installing for several assistants at once
+
+`--assistant` also accepts **more than one** assistant in a single command — a comma-separated list
+or the alias **`all`** (every supported assistant). Each assistant gets its own **disjoint**
+containers (Claude in `.claude/**` + `CLAUDE.md`, Copilot in `.github/**`); the shared runtime
+(`.sertor/`, the `.env`, `.mcp.json`) is bootstrapped **once**. A single value (e.g. the default
+`claude`) behaves exactly as before.
+
+```powershell
+# RAG for BOTH Claude and the Copilot CLI in one invocation:
+uv run sertor install rag --assistant claude,copilot-cli --backend azure
+# Wiki for every supported assistant:
+uv run sertor install wiki --assistant all
+```
+
+The report is **aggregated** (one summary listing every artifact across the targets, `--json`
+inspectable). It is **fail-fast**: if one target errors, the install stops before touching the next
+and the exit status reflects the failure.
+
+> **Non-Python hosts.** If the target repository is not a Python project (no `pyproject.toml`/
+> `setup.py` and no `.py` sources), `install rag` prints an **advisory note**: `sertor-rag` still
+> indexes the available files (docs, config, other languages), but the Sertor **runtime** itself
+> requires Python (installed under `.sertor/`). The note is advisory only — it changes nothing and
+> never touches your sources.
 
 The same invariants hold for every assistant: **install ≠ run**, non-destructive (existing files are
 never overwritten — merges are additive and per-file writes skip), idempotent, and secrets are never

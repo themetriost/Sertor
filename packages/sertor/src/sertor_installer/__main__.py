@@ -15,12 +15,14 @@ from sertor_core.domain.errors import ConfigError, IngestionError, SertorError
 from sertor_install_kit.artifacts import ArtifactOutcome, LifecycleOp, Outcome
 from sertor_install_kit.assistant import AssistantId, AssistantProfile, Surface
 from sertor_install_kit.errors import InstallerError
+from sertor_install_kit.host_env import is_python_host
 from sertor_install_kit.lifecycle import remove_path
 from sertor_install_kit.observability import log_event
 from sertor_install_kit.report import InstallReport
 from sertor_installer.command_runner import SubprocessRunner
 from sertor_installer.config_gen import build_host_profile
 from sertor_installer.install_rag import (
+    NON_PYTHON_HOST_NOTE,
     build_rag_plan,
     execute_rag_lifecycle,
     execute_rag_plan,
@@ -218,16 +220,27 @@ def _cmd_install_wiki(args) -> int:
     if not target_root.is_dir():
         raise IngestionError("target is not a directory", path=str(target_root))
 
-    assistant = AssistantId.from_str(args.assistant)
+    assistants = AssistantId.from_csv(args.assistant)
     source_dirs = (
         [d for d in args.source_dirs.split(",")] if args.source_dirs else None
     )
     profile = build_host_profile(
         target_root, source_dirs_override=source_dirs, language=args.language
     )
-    plan = build_install_plan(assistant)
-    report = execute_plan(plan, profile, assistant)
-
+    # E2-FEAT-010: multi-target — one invocation installs for each selected assistant into its
+    # DISJOINT container. Fail-fast (installer contract): stop before touching further assistants
+    # if a target errors. A single target (incl. the default `claude`) → the report is unchanged.
+    reports: list[InstallReport] = []
+    for assistant in assistants:
+        plan = build_install_plan(assistant)
+        report = execute_plan(plan, profile, assistant)
+        reports.append(report)
+        if report.errors:
+            break
+    report = (
+        reports[0] if len(reports) == 1
+        else _aggregate(reports, target_root, LifecycleOp.INSTALL, capability="wiki")
+    )
     print(report.render_json() if args.json else report.render_human())
     return report.exit_code()
 
@@ -240,7 +253,7 @@ def _cmd_install_rag(args) -> int:
     if not target_root.is_dir():
         raise IngestionError("target is not a directory", path=str(target_root))
 
-    assistant = AssistantId.from_str(args.assistant)
+    assistants = AssistantId.from_csv(args.assistant)
     opts = RagInstallOptions(
         target_root=target_root,
         backend=args.backend,
@@ -252,11 +265,28 @@ def _cmd_install_rag(args) -> int:
         mcp_scope=args.mcp_scope,
     )
     profile = RagHostProfile.from_options(opts)
-    plan = build_rag_plan(
-        profile, with_deps=opts.with_deps, mcp_scope=opts.mcp_scope, assistant=assistant
+    # E2-FEAT-010: multi-target — one invocation installs for each selected assistant. The runtime
+    # (`.sertor/`, deps) is assistant-agnostic and SHARED, so DEPENDENCIES are bootstrapped ONCE (on
+    # the first target); later targets add only their per-assistant surfaces (instruction block, MCP
+    # entry, hooks). Fail-fast: stop before further targets on error. Single target → unchanged.
+    reports: list[InstallReport] = []
+    for index, assistant in enumerate(assistants):
+        with_deps = opts.with_deps and index == 0
+        plan = build_rag_plan(
+            profile, with_deps=with_deps, mcp_scope=opts.mcp_scope, assistant=assistant
+        )
+        report = execute_rag_plan(plan, profile, SubprocessRunner(), assistant)
+        reports.append(report)
+        if report.errors:
+            break
+    report = (
+        reports[0] if len(reports) == 1
+        else _aggregate(reports, target_root, LifecycleOp.INSTALL, capability="rag")
     )
-    report = execute_rag_plan(plan, profile, SubprocessRunner(), assistant)
-
+    # E2-FEAT-010: advisory non-Python note, added once to the final report (host-level, not
+    # per-assistant). Non-destructive: it only sets expectations, never changes the install.
+    if not is_python_host(target_root):
+        report.note(NON_PYTHON_HOST_NOTE)
     print(report.render_json() if args.json else report.render_human())
     return report.exit_code()
 
@@ -513,7 +543,7 @@ def _run_lifecycle(args, op: LifecycleOp) -> int:
             else:
                 reports.append(_lifecycle_wiki(target_root, args, op, assistant, obsolete_assts))
 
-    report = _aggregate(reports, target_root, args, op) if len(reports) != 1 else reports[0]
+    report = _aggregate(reports, target_root, op) if len(reports) != 1 else reports[0]
     _emit_lifecycle_event(op, report, args)
     out = report.render_json() if args.json else report.render_human()
     print(out)
@@ -526,21 +556,27 @@ def _run_lifecycle(args, op: LifecycleOp) -> int:
 
 
 def _aggregate(
-    reports: list[InstallReport], target_root: Path, args, op: LifecycleOp
+    reports: list[InstallReport], target_root: Path, op: LifecycleOp, capability: str = "all"
 ) -> InstallReport:
-    """Merges per-capability reports into one aggregate report (US8/FR-032).
+    """Merges per-report outcomes into one aggregate report (US8/FR-032; multi-target FEAT-010).
 
     The aggregate assistant is derived from the reports actually produced (A-01): one distinct
-    assistant → its value; several (a bare verb over a multi-assistant host) → `None`, honestly.
+    assistant → its value; several (a bare lifecycle verb, or a multi-target install) → `None`,
+    honestly. `capability` is preserved by the caller: `all` for a bare lifecycle verb spanning
+    capabilities, or the single capability (`rag`/`wiki`) for a multi-target install of just it.
+    Per-report `notes` are propagated (deduped) so an advisory caveat surfaced by one target
+    (e.g. the Copilot memory-capture note) is not lost in the aggregate.
     """
     seen = {r.assistant for r in reports if getattr(r, "assistant", None)}
     agg = InstallReport(
-        target=str(target_root), capability="all",
+        target=str(target_root), capability=capability,
         assistant=(next(iter(seen)) if len(seen) == 1 else None), op=op,
     )
     for r in reports:
         for o in r.outcomes:
             agg.add(o)
+        for note in getattr(r, "notes", []):
+            agg.note(note)
     return agg
 
 

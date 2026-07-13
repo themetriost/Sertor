@@ -205,6 +205,17 @@ _COPILOT_MEMORY_NOTE = (
 )
 
 
+# E2-FEAT-010: advisory, non-fatal note emitted when the host is NOT a Python project (no
+# pyproject.toml/setup.py and no `.py` sources). The install is UNCHANGED (non-destructive, sources
+# untouched): `sertor-rag` still indexes the available files, but the runtime itself needs Python.
+# Advisory-only (Principio XII) — sets the user's expectation instead of proceeding in silence.
+NON_PYTHON_HOST_NOTE = (
+    "this host does not look like a Python project (no pyproject.toml/setup.py and no .py sources "
+    "found): `sertor-rag` will still index the available files (docs, config, other languages), "
+    "but the Sertor runtime itself requires Python (installed under .sertor/)."
+)
+
+
 def _copilot_memory_hook_specs() -> list[HookEntrySpec]:
     """Logical SessionEnd entry for the Copilot memory-capture wiring (FEAT-009, FR-014).
 
@@ -671,8 +682,16 @@ def _apply_deps(profile: RagHostProfile, runner: CommandRunner) -> ArtifactOutco
     Checks for `uv` BEFORE creating `.sertor/` (REQ-214: avoids partial state). Never indexes.
     """
     if not runner.is_available(_UV):
+        # E2-FEAT-010: honest, actionable guidance (Principio XII). `uv` is the supported path;
+        # `--no-deps` scaffolds config only; a pip-based install is NOT yet available because
+        # Sertor's packages are unpublished workspace members (real pip fallback → E2-FEAT-006,
+        # go-public). Never imply pip works today.
         raise DependencyError(
-            "`uv` is not available on the PATH: install it (https://docs.astral.sh/uv/) and re-run"
+            "`uv` is not available on the PATH. Install uv (https://docs.astral.sh/uv/) and re-run "
+            "— it is the supported way to set up the .sertor/ runtime. To scaffold the "
+            "configuration WITHOUT installing dependencies, re-run with `--no-deps`. (A pip-based "
+            "install is not available yet: Sertor's packages are not published to a package index; "
+            "this is planned for a future public release.)"
         )
     sertor_dir = profile.sertor_dir
     sertor_dir.mkdir(parents=True, exist_ok=True)

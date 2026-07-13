@@ -57,6 +57,31 @@ class AssistantId(Enum):
                 f"unknown assistant '{value}': valid values are {valid}", key="--assistant"
             ) from exc
 
+    @classmethod
+    def from_csv(cls, value: str) -> list[AssistantId]:
+        """Parses one OR MORE assistant ids for a multi-target install (E2-FEAT-010).
+
+        Accepts a CSV (`claude,copilot-cli`) or the alias `all` (every supported assistant). Order
+        is preserved and duplicates are collapsed. A single value (e.g. the default `claude`) yields
+        a one-element list → the caller behaves exactly as before (backward compatible). An unknown
+        token raises `ConfigError` naming it (parity with `from_str`); an empty selection is an
+        error (Principio IV/XII: never a silent no-op).
+        """
+        raw = value.strip()
+        if raw.lower() == "all":
+            return list(cls)
+        selected: list[AssistantId] = []
+        for part in raw.split(","):
+            token = part.strip()
+            if not token:
+                continue
+            assistant = cls.from_str(token)
+            if assistant not in selected:
+                selected.append(assistant)
+        if not selected:
+            raise ConfigError("no assistant selected (empty --assistant)", key="--assistant")
+        return selected
+
 
 class Surface(Enum):
     """Logical category of a distributable artifact, independent of the assistant (data-model §2).

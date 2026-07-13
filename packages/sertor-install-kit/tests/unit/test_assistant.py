@@ -47,6 +47,47 @@ def test_copilot_legacy_value_raises():
     assert "copilot-cli" in str(exc.value)
 
 
+# ------------------------------------------------------ from_csv (E2-FEAT-010 multi-target)
+
+def test_from_csv_single_value_backward_compatible():
+    # REQ-005/SC-7: a single value (incl. the default `claude`) → one-element list, unchanged.
+    assert AssistantId.from_csv("claude") == [AssistantId.CLAUDE]
+    assert AssistantId.from_csv("copilot-cli") == [AssistantId.COPILOT_CLI]
+
+
+def test_from_csv_comma_separated_preserves_order():
+    assert AssistantId.from_csv("claude,copilot-cli") == [
+        AssistantId.CLAUDE, AssistantId.COPILOT_CLI
+    ]
+    assert AssistantId.from_csv("copilot-cli,claude") == [
+        AssistantId.COPILOT_CLI, AssistantId.CLAUDE
+    ]
+
+
+def test_from_csv_all_alias_returns_every_assistant():
+    assert AssistantId.from_csv("all") == list(AssistantId)
+    assert AssistantId.from_csv("ALL") == list(AssistantId)  # case-insensitive alias
+
+
+def test_from_csv_dedups_and_tolerates_whitespace():
+    assert AssistantId.from_csv(" claude , claude ,copilot-cli") == [
+        AssistantId.CLAUDE, AssistantId.COPILOT_CLI
+    ]
+
+
+def test_from_csv_unknown_token_fails_loud():
+    with pytest.raises(ConfigError) as exc:
+        AssistantId.from_csv("claude,codex")
+    assert "codex" in str(exc.value)
+
+
+def test_from_csv_empty_selection_fails_loud():
+    with pytest.raises(ConfigError):
+        AssistantId.from_csv("")
+    with pytest.raises(ConfigError):
+        AssistantId.from_csv(" , ")
+
+
 # ---------------------------------------------------------------- claude mapping (non-regression)
 
 def test_claude_profile_targets():
