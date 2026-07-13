@@ -113,7 +113,8 @@ def test_freshness_start_noop_on_malformed(tmp_path: Path):
 
 # --- version-check-start (SessionStart, update notice) -------------------------------------------
 
-def _write_vc(root: Path, verdict: str, installed="0.1.0", latest="9.9.9", dims=None) -> None:
+def _write_vc(root: Path, verdict: str, installed="0.1.0", latest="9.9.9", dims=None,
+              unknown_notified=False) -> None:
     d = root / ".sertor"
     d.mkdir(parents=True, exist_ok=True)
     from datetime import datetime
@@ -122,7 +123,13 @@ def _write_vc(root: Path, verdict: str, installed="0.1.0", latest="9.9.9", dims=
              "latest": latest, "checked_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")}
     if dims:
         state["dimensions"] = dims
+    if unknown_notified:
+        state["unknown_notified"] = True
     (d / ".version-check.json").write_text(json.dumps(state), encoding="utf-8")
+
+
+def _read_vc(root: Path) -> dict:
+    return json.loads((root / ".sertor" / ".version-check.json").read_text(encoding="utf-8"))
 
 
 def test_version_check_start_notice_on_behind(tmp_path: Path):
@@ -138,6 +145,44 @@ def test_version_check_start_noop_when_up_to_date(tmp_path: Path):
     _write_vc(tmp_path, "up-to-date")
     r = _run("version-check-start", event="{}", root=tmp_path)
     assert r.returncode == 0 and r.stdout.strip() == ""
+
+
+# --- E2-FEAT-017: honest one-time "unknown" cue --------------------------------------------------
+
+def test_version_check_start_unknown_cue_once_and_marks_notified(tmp_path: Path):
+    _write_vc(tmp_path, "unknown", installed="", latest="")
+    r = _run("version-check-start", event="{}", root=tmp_path)
+    assert r.returncode == 0
+    assert "SERTOR UPDATE CHECK UNAVAILABLE" in r.stdout
+    # the flag is persisted so it does not repeat
+    assert _read_vc(tmp_path).get("unknown_notified") is True
+
+
+def test_version_check_start_unknown_silent_when_already_notified(tmp_path: Path):
+    _write_vc(tmp_path, "unknown", installed="", latest="", unknown_notified=True)
+    r = _run("version-check-start", event="{}", root=tmp_path)
+    assert r.returncode == 0 and r.stdout.strip() == ""  # no nag
+
+
+def test_version_check_end_preserves_unknown_notified_while_unknown(tmp_path: Path):
+    # Fresh cache + no installed stamp → verdict stays `unknown`; the flag must be carried forward.
+    _write_vc(tmp_path, "unknown", installed="", latest="", unknown_notified=True)
+    r = _run("version-check", event="{}", root=tmp_path)
+    assert r.returncode == 0
+    state = _read_vc(tmp_path)
+    assert state["verdict"] == "unknown"
+    assert state.get("unknown_notified") is True
+
+
+def test_version_check_end_clears_unknown_notified_on_resolved_verdict(tmp_path: Path):
+    # Previously unknown+notified, but now a resolved verdict (behind) → the flag resets.
+    _write_vc(tmp_path, "unknown", latest="0.2.0", unknown_notified=True)  # fresh cache reused
+    (tmp_path / ".sertor" / ".sertor-version").write_text("0.1.0\n", encoding="utf-8")
+    r = _run("version-check", event="{}", root=tmp_path)
+    assert r.returncode == 0
+    state = _read_vc(tmp_path)
+    assert state["verdict"] == "behind"
+    assert "unknown_notified" not in state
 
 
 # --- version-check (SessionEnd) — cache-reuse path, no network -----------------------------------

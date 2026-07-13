@@ -104,6 +104,18 @@ def main() -> None:
         else:
             verdict = "ahead"
 
+    # E2-FEAT-017: carry forward the one-time "unknown" notice flag WHILE the verdict stays
+    # `unknown` — a persistently unverifiable check (offline / private repo → GET fails) must be
+    # surfaced ONCE by the SessionStart hook, not every session. Any RESOLVED verdict omits the
+    # flag → it resets, so a future unknown episode notifies once again.
+    prev_unknown_notified = False
+    if state_path.is_file():
+        try:
+            prev_state = json.loads(state_path.read_text(encoding="utf-8"))
+            prev_unknown_notified = bool(prev_state.get("unknown_notified"))
+        except Exception:
+            prev_unknown_notified = False
+
     sertor_dir.mkdir(parents=True, exist_ok=True)
     state = {
         "schema": "version.check/1",
@@ -114,6 +126,8 @@ def main() -> None:
     }
     if dimensions:
         state["dimensions"] = dimensions
+    if verdict == "unknown" and prev_unknown_notified:
+        state["unknown_notified"] = True
     state_path.write_text(json.dumps(state, indent=2), encoding="utf-8")
 
 
