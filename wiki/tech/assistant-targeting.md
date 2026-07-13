@@ -1,9 +1,9 @@
 ---
 title: Targeting per-assistente (AssistantProfile / Surface)
 type: tech
-tags: [installer, sertor-install-kit, copilot, copilot-cli, claude, host-agnostico, principio-x, feat-007]
+tags: [installer, sertor-install-kit, copilot, copilot-cli, claude, host-agnostico, principio-x, feat-007, feat-010, multi-target]
 created: 2026-06-15
-updated: 2026-07-11
+updated: 2026-07-13
 sources: ["packages/sertor-install-kit/src/sertor_install_kit/assistant.py", "packages/sertor/src/sertor_installer/install_wiki.py", "packages/sertor/src/sertor_installer/install_rag.py", "specs/044-distribuzione-copilot/plan.md", "requirements/sertor-cli/distribuzione-copilot/requirements.md"]
 ---
 
@@ -50,6 +50,10 @@ all'**assistente ospite**: l'assistente si **configura**, non si presume nel cor
 I plan-builder `build_install_plan`/`build_rag_plan` ([[sertor-installer]]) sono **parametrici**:
 chiedono i target al profilo invece di cablare `.claude/...`. `--assistant claude` resta byte-identico
 al comportamento storico (non-regressione).
+
+### Multi-target install — installa su più assistenti in una sola invocazione (FEAT-010, 2026-07-13)
+
+**`AssistantId.from_csv()`** estende la capacità di scelta: accetta un CSV (`claude,copilot-cli` oppure la keyword `all`) e itera sui target **in un'unica invocazione** di `sertor install`. I handler `_cmd_install_wiki`/`_cmd_install_rag` depositano gli artefatti nei **container disgiunti** (`.claude/**` su Claude, `.github/**` su Copilot), mentre il **runtime `.sertor/` è inizializzato una sola volta** (dipendenze, `.env`, `.mcp.json` condiviso): elimina la necessità di ripetere il comando per ogni assistente. Report aggregato via `_aggregate` preserva il campo `capability` (stesso per tutti i target) e propaga le `notes` per-target (es. avviso non-Python). Fail-fast se un target erra; single-value (default `claude`) invariato. Implementazione: `packages/sertor/src/sertor_installer/__main__.py`; record datato in wiki/log/2026-07-13.md.
 
 ## De-binarizzazione del seam — `select_for` (A-19, 2026-07-11)
 

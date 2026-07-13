@@ -14,7 +14,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > `requirements → spec → plan → tasks → implement`.
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-07-12)
+## ⚡ Executive summary (stato al 2026-07-13)
 
 ### ✅ Capacità consegnate (feature su `master`)
 
@@ -49,6 +49,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **Self-host di SpecLift** (E14-FEAT-001, merge `bbfb74d`/PR #136, 2026-07-01) — `diff → requisiti EARS ancorati` (handoff da Sinthari) vendorato come `packages/speclift`; retrieval via **MCP** (Adapter B pluggable, esito della collaborazione agent-to-agent feedback CLI→MCP); dogfood e2e verde; core invariato, 122 test | `speclift` |
 | **Doc utente MVP** (E13-FEAT-001+002, merge `6e40ccc`/PR #172, 2026-07-11, item A-18) — **`docs/getting-started.md`** (percorso unico host-agnostico «dal nulla al primo valore», varianti CLI Claude+Copilot affiancate, esempio finale di **fusione code+doc** via `search_combined`) + **README valore-first** (apre col differenziatore code+doc + esempio, fatti preservati, ingresso unico). Prima consegna di E13; authoring puro (core/CLI/installer invariati) | `documentazione-marketing` |
 | **Doc utente Fase 1 COMPLETA** (E13-FEAT-003..008, merge `3bcb8b1`/PR #175, 2026-07-12) — batch: **`docs/why-sertor.md`** (cos'è e perché, non-tecnici) · **`docs/README.md`** (indice «dove andare per cosa») · **`docs/tutorial.md`** (end-to-end guidato) · **`docs/troubleshooting.md`** (symptom→cause→fix, complemento statico di `doctor`) · **`CHANGELOG.md`** (release notes utente, onesto sull'interim) · **`docs/reference.md`** (comandi+manopole, punta a install.md). Host-agnostici, comandi verbatim dagli asset reali, 0 link a `wiki/`/`specs/` (corretto anche 1 drift CS-5 in install.md). Chiude tutta la **Fase 1** di E13 | `documentazione-marketing` |
+| **Ergonomia installer — multi-target · avviso non-Python · guida uv-assente** (E2-FEAT-010 residuo, merge `eb1f7a3`/PR #179, 2026-07-13) — `sertor install --assistant` accetta **CSV/`all`** → un comando installa più assistenti in **container disgiunti** (deps runtime `.sertor/` una volta, report aggregato + note propagate, fail-fast; single-value invariato) · nuovo `host_env.is_python_host` (kit) → **nota advisory** su host non-Python (sorgenti intatti) · messaggio **uv-assente onesto** (installa uv · `--no-deps` · pip non ancora disponibile). Pip fallback reale rinviato a **FEAT-006**/go-public. `sertor-core` invariato; kit 178 · sertor 523 · suite 1180 verdi | `sertor-cli` |
 
 *Dettaglio (PR, date, numeri) nella sezione ✅ DONE in fondo alla pagina.*
 
@@ -64,7 +65,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | # | Epica | Stato | Residuo / 1° passo |
 |---|---|---|---|
 | **E1** | [`sertor-core`](../../requirements/sertor-core/epic.md) | ✅ completa (FEAT-011 ✅ merge `34b599a`) | **Nessun residuo Should aperto** — FEAT-011 embedder locale consegnata (2026-06-21). Resta solo il debito P2 **TASK-D04** (rinomina flag installer `--backend`→`--provider`). *(agenzia incorporata ❌ abbandonata by design)* |
-| **E2** | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | ergonomia installer · Codex · PyPI · `configure --check` (probe live, deferred) *(packaging ✅ + lifecycle ✅ + hardening Copilot FEAT-011 ✅ + wizard config ✅ + Copilot CLI-only ✅ + verifica empirica Copilot LIVE ✅ + **version-update check FEAT-013 ✅** PR #113 2026-06-26)* |
+| **E2** | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | **residuo:** pip fallback reale (→FEAT-006) · multi-target `sertor-flow` (follow-up) · reviewer clean-code · Codex · PyPI · `configure --check` (deferred) · **FEAT-017 onestà auto-updater** (in corso) *(packaging ✅ + lifecycle ✅ + hardening Copilot ✅ + wizard config ✅ + Copilot CLI-only ✅ + version-check FEAT-013 ✅ + **FEAT-010 multi-target/non-Python/uv ✅** `eb1f7a3`/#179 + **FEAT-016 ❌ Won't** spike 2026-07-13)* |
 | **E3** | [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | **export OTel FEAT-005 ✅** + arricchimento span FEAT-013 ✅ + TUI tabella FEAT-014 ✅ + **visibilità RAG/dimostrabilità FEAT-015 ✅** (PR #88) · drift FEAT-012 · metriche aggregate · stima € (Should) · web · CSV/MD |
 | **E4** | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso + **distribuibile** + **semantico** + **multi-assistente** · **🐛 bug cattura auto** | **🐛 DA INVESTIGARE (2026-07-09):** la **cattura automatica** non popolava l'archivio (`memory list` vuoto benché `SERTOR_MEMORY=true`); il motore è sano (archive manuale = 58 sessioni · full-text+semantica ok). Ipotesi: hook `memory-capture` era `.ps1` (**migrato a `.py` con A-09, ✅ su `master`** — il fix ipotizzato è ora in place) → **verificare al prossimo SessionEnd**; se archivia da solo, chiudere il 🐛 (rischio R-1 cattura host-specifica). · remember-this · retention (Could) · parità MCP `show`/`list` (FEAT-010) *(cattura Copilot CLI FEAT-008 ✅ + ricerca semantica FEAT-004 ✅ + distribuzione installer FEAT-009 ✅)* |
 | **E5** | 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | 🔄 FEAT-001+011 ✅ · FEAT-003 T1+T2 ✅ su master | **eval IR ✅** (PR #92) + **graph-eval ✅** (FEAT-011) + skill live ✅ + **FEAT-003 misura fusione + `search_combined` strutturato (tupla, metrica OR) ✅** (merge `42aceaf`+`908bd92`). **Scoperta:** lo «0.17» era artefatto dell'AND; a OR union=1.00, il vero debole è **`search_docs` MRR 0.55** (leva futura). Restano FEAT-002/004/005-007 |
@@ -175,8 +176,32 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   dichiarazione**. + **dichiarazione forzata** a fine step nel blocco host-facing + playbook. Confine D↔N (tool
   trova, agente giudica); gemella lato-giudizio di FEAT-011. SpecKit completo; +9 test; suite 1180 verde, ruff
   clean; `sertor-core` engine invariato. **Fuori scope:** parte 2 (wiki-curator) + parte 4 (moduli derivati).
-- **Prossimo passo aperto:** scegliere il candidato a valore qui sotto (E5-FEAT-003 `search_docs`) o un
-  altro item di backlog.
+- **E2-FEAT-010 (residuo ergonomia installer) — ✅ CONSEGNATA (merge `eb1f7a3`/PR #179, 2026-07-13).**
+  Scelta utente «procedi con tutte le rimanenti di sertor-cli a partire da 010». MVP: **multi-target**
+  (`--assistant` CSV/`all` → un comando, container disgiunti, deps runtime una volta, report aggregato +
+  note propagate, fail-fast; single-value invariato) · **avviso non-Python** (`host_env.is_python_host`
+  nel kit → nota advisory, sorgenti intatti) · **guida uv-assente onesta** (installa uv · `--no-deps` ·
+  pip non ancora disponibile). Pip fallback reale **rinviato a FEAT-006/go-public** (deps workspace non
+  pubblicate — decisione utente). `sertor-core` invariato; kit 178 · sertor 523 · suite 1180 verdi, ruff
+  clean; smoke CLI reale + smoke MCP fresco. Post-merge: re-lock `9b5b842→eb1f7a3` · re-index incrementale
+  (1353doc/14778chunk, +4/~5) · smoke MCP verde (`find_symbol("is_python_host")`→`host_env.py:23`).
+  *Fuori scope tracciato:* multi-target `sertor-flow` (follow-up) · reviewer clean-code (feature a sé).
+- **E2-FEAT-016 (model policy speckit su Copilot CLI) — ❌ WON'T / non-applicabile (spike 2026-07-13).**
+  La doc ufficiale Copilot CLI **non consuma i prompt-file** (`.github/prompts/*.prompt.md` = costrutto
+  VS Code Chat); gli `speckit.*` sono prompt-file → sulla CLI **nessuna superficie li invoca**, quindi
+  nessun meccanismo per `model:`. Sertor è copilot-cli-only (FEAT-012); la model-policy CLI utile è già
+  FEAT-015. Chiusa; riaprire solo se la CLI aggiunge il consumo dei prompt-file. [Issue #1195].
+- **E2-FEAT-017 (fetta onestà auto-updater) — ✅ IMPLEMENTATA (branch `099`, 2026-07-13).** Il SessionStart
+  emette un cenno **una-tantum** «SERTOR UPDATE CHECK UNAVAILABLE» quando `verdict=unknown` (GET `/VERSION`
+  fallita — offline o repo privato), con flag persistente `unknown_notified` (no nag; reset a verdetto
+  risolto); parità Copilot via prompt statico. Prima l'updater era **muto** su `unknown`. `sertor-core`
+  invariato, +4 test parity. **Resta gated sul go-public** il pezzo strutturale (repo pubblico → 200 invece
+  di 404) = FEAT-006.
+- **🧭 Prossimo bivio — FEAT-006 / go-public (decisione di PRODOTTO, non tecnica).** Aprire il repo + PyPI
+  sblocca in blocco: **pip fallback reale** (FEAT-010 residuo), **onestà auto-updater piena** (FEAT-017:
+  fetch 200 + `/VERSION` bumpato), **E13 Fase 2** (marketing). È una scelta dell'utente su se/quando aprire
+  Sertor all'esterno. Finché resta chiuso, questi restano correttamente dormienti.
+- **Prossimo passo aperto (dopo il tail sertor-cli):** E5-FEAT-003 `search_docs` (leva profonda) o altro.
 
 **Candidati a valore = Should aperti:**
 

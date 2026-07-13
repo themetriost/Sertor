@@ -337,8 +337,11 @@ def _copilot_version_check_start_specs() -> list[HookEntrySpec]:
             "If verdict=behind, surface the update notice (installed version, latest version, "
             "the update command `sertor upgrade` / `uvx --refresh ...`); "
             "if dimensions are present, name which dimensions are behind. "
+            "If verdict=unknown and unknown_notified is not set, surface ONCE a brief notice that "
+            "the update check could not verify (offline, or the source repository is private) and "
+            "avoid repeating it in later turns. "
             "Do not apply any update yourself. "
-            "If up-to-date/ahead/unknown/absent, proceed without a notice.",
+            "If up-to-date/ahead/absent, proceed without a notice.",
             10,
         )
     ]
