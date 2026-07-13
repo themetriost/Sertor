@@ -197,16 +197,18 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   risolto); parità Copilot via prompt statico. Prima l'updater era **muto** su `unknown`. `sertor-core`
   invariato, +4 test parity. **Pezzo strutturale ora SBLOCCATO dal go-public** (repo pubblico → GET `/VERSION`
   = **200**, verificato 2026-07-13) — l'updater ora *può* verificare; rileverà `behind` alla prima release+bump.
-- **🌐 GO-PUBLIC — DECISO E AVVIATO (2026-07-13).** Scelta utente «io andrei pubblico», sequenza «repo public
-  ora, PyPI a CI verde». **✅ FATTO:** audit segreti/history **CLEAN** (912 commit, 0 segreti, no rewrite) →
-  **repo `themetriost/Sertor` reso PUBBLICO**; auto-updater sbloccato (fetch 200 verificato); hardening
-  `.gitignore` (`*.pem`/`*.pfx`/`*.p12`). **⏳ GATED al 1° ago (CI ferma per billing fino ad allora):** publish
-  **PyPI** dei 4 pacchetti (= **E2-FEAT-006**, riclassificata Won't→planned) + **prima release** + **bump
-  `/VERSION`** (attiva `behind`) + **pip fallback reale** (FEAT-010 residuo, ora possibile con deps pubblicate).
-  **🔓 Sbloccato ora (repo pubblico, non PyPI-dipendente):** **E13 Fase 2** (marketing/posizionamento/demo).
-  Requirements del passo PyPI+release: [`requirements/sertor-cli/go-public-pypi/`](../../requirements/sertor-cli/go-public-pypi/requirements.md).
-- **Prossimo passo aperto:** al 1° ago (CI verde) → PyPI+release (go-public-pypi). Nel frattempo: E13 Fase 2
-  (sbloccata) · E5-FEAT-003 `search_docs` · 🐛 E4 cattura-auto memoria.
+- **🌐 GO-PUBLIC — DECISO ED ESEGUITO (2026-07-13).** Scelta utente «io andrei pubblico», sequenza «repo public
+  ora, PyPI a CI verde». **✅ FATTO E VALIDATO:** audit segreti/history **CLEAN** (912 commit, 0 segreti, no
+  rewrite) → **repo `themetriost/Sertor` PUBBLICO** · **prima release `v0.1.0`** (GitHub Release + tag su
+  `00dcd62`, *latest*) · **auto-updater live** (3 scenari validati: up-to-date `/VERSION`=200 reale · behind ·
+  unknown-una-tantum FEAT-017) · **install esterno provato** (`uvx` dal tag pubblico, fuori dal checkout, 85 pkg,
+  `sertor --help` ok) · hardening `.gitignore` (`*.pem`/`*.pfx`/`*.p12`). **⏳ GATED al 1° ago (CI ferma per
+  billing):** **publish PyPI** dei 4 pacchetti (= **E2-FEAT-006**, Won't→planned; darà `pip install sertor`) +
+  **pip fallback reale** (FEAT-010 residuo, possibile con deps pubblicate) + eventuale **bump `/VERSION`** che
+  accende `behind` in produzione (la v0.1.0 è baseline, nessun bump). **🔓 Sbloccato ora:** **E13 Fase 2**
+  (marketing). Casa del residuo: [`requirements/sertor-cli/go-public-pypi/`](../../requirements/sertor-cli/go-public-pypi/requirements.md).
+- **Prossimo passo aperto:** al 1° ago (CI verde) → PyPI publish + pip fallback (go-public-pypi). Nel frattempo:
+  **E13 Fase 2** (sbloccata) · E5-FEAT-003 `search_docs` · 🐛 E4 cattura-auto memoria.
 
 **Candidati a valore = Should aperti:**
 
