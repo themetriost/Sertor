@@ -2,6 +2,9 @@
 .env
 .env.local
 *.key
+*.pem
+*.pfx
+*.p12
 
 # Python / ambienti
 .venv/

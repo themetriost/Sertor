@@ -191,17 +191,22 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   VS Code Chat); gli `speckit.*` sono prompt-file → sulla CLI **nessuna superficie li invoca**, quindi
   nessun meccanismo per `model:`. Sertor è copilot-cli-only (FEAT-012); la model-policy CLI utile è già
   FEAT-015. Chiusa; riaprire solo se la CLI aggiunge il consumo dei prompt-file. [Issue #1195].
-- **E2-FEAT-017 (fetta onestà auto-updater) — ✅ IMPLEMENTATA (branch `099`, 2026-07-13).** Il SessionStart
+- **E2-FEAT-017 (fetta onestà auto-updater) — ✅ CONSEGNATA (merge `00dcd62`/PR #180, 2026-07-13).** Il SessionStart
   emette un cenno **una-tantum** «SERTOR UPDATE CHECK UNAVAILABLE» quando `verdict=unknown` (GET `/VERSION`
   fallita — offline o repo privato), con flag persistente `unknown_notified` (no nag; reset a verdetto
   risolto); parità Copilot via prompt statico. Prima l'updater era **muto** su `unknown`. `sertor-core`
-  invariato, +4 test parity. **Resta gated sul go-public** il pezzo strutturale (repo pubblico → 200 invece
-  di 404) = FEAT-006.
-- **🧭 Prossimo bivio — FEAT-006 / go-public (decisione di PRODOTTO, non tecnica).** Aprire il repo + PyPI
-  sblocca in blocco: **pip fallback reale** (FEAT-010 residuo), **onestà auto-updater piena** (FEAT-017:
-  fetch 200 + `/VERSION` bumpato), **E13 Fase 2** (marketing). È una scelta dell'utente su se/quando aprire
-  Sertor all'esterno. Finché resta chiuso, questi restano correttamente dormienti.
-- **Prossimo passo aperto (dopo il tail sertor-cli):** E5-FEAT-003 `search_docs` (leva profonda) o altro.
+  invariato, +4 test parity. **Pezzo strutturale ora SBLOCCATO dal go-public** (repo pubblico → GET `/VERSION`
+  = **200**, verificato 2026-07-13) — l'updater ora *può* verificare; rileverà `behind` alla prima release+bump.
+- **🌐 GO-PUBLIC — DECISO E AVVIATO (2026-07-13).** Scelta utente «io andrei pubblico», sequenza «repo public
+  ora, PyPI a CI verde». **✅ FATTO:** audit segreti/history **CLEAN** (912 commit, 0 segreti, no rewrite) →
+  **repo `themetriost/Sertor` reso PUBBLICO**; auto-updater sbloccato (fetch 200 verificato); hardening
+  `.gitignore` (`*.pem`/`*.pfx`/`*.p12`). **⏳ GATED al 1° ago (CI ferma per billing fino ad allora):** publish
+  **PyPI** dei 4 pacchetti (= **E2-FEAT-006**, riclassificata Won't→planned) + **prima release** + **bump
+  `/VERSION`** (attiva `behind`) + **pip fallback reale** (FEAT-010 residuo, ora possibile con deps pubblicate).
+  **🔓 Sbloccato ora (repo pubblico, non PyPI-dipendente):** **E13 Fase 2** (marketing/posizionamento/demo).
+  Requirements del passo PyPI+release: [`requirements/sertor-cli/go-public-pypi/`](../../requirements/sertor-cli/go-public-pypi/requirements.md).
+- **Prossimo passo aperto:** al 1° ago (CI verde) → PyPI+release (go-public-pypi). Nel frattempo: E13 Fase 2
+  (sbloccata) · E5-FEAT-003 `search_docs` · 🐛 E4 cattura-auto memoria.
 
 **Candidati a valore = Should aperti:**
 
