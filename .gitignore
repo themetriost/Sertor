@@ -89,3 +89,6 @@ prototype/raw/*
 .sertor/.sertor-version
 .sertor/.sertor-flow-version
 .sertor/.last-hook-error
+
+# Acta per-node config (host-specific, not shared)
+.acta/
