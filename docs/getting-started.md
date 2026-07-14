@@ -45,6 +45,11 @@ uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sert
 uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install rag --assistant copilot-cli --backend local
 ```
 
+> **Latest vs pinned release.** The commands above install from the repository's `master` (latest). To
+> install a specific **stable release** instead, pin the tag — use
+> `git+https://github.com/themetriost/Sertor@v0.1.0#subdirectory=packages/sertor` (`v0.1.0` is the first
+> public release). A `pip install sertor` from **PyPI** is coming next.
+
 `--backend local` selects the zero-config `glove` embedder — **no secrets needed**. To use **Azure**
 embeddings instead, pass `--backend azure` and then fill the credentials (guided, no editor):
 

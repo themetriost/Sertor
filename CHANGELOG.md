@@ -13,11 +13,13 @@ and Sertor aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 _Changes land here before the next version bump._
 
-## [0.1.0]
+## [0.1.0] — 2026-07-13
 
-The first baseline of Sertor: an installable, portable, local-first framework that gives any
-project a queryable knowledge of itself, fusing **code and documentation** into a single
-corpus. Everything below is available today (interim `git+url` distribution).
+The **first public release** of Sertor: an installable, portable, local-first framework that gives any
+project a queryable knowledge of itself, fusing **code and documentation** into a single corpus.
+Published as a **GitHub release** (tag `v0.1.0`) on the now-public repository; installable today via
+`git+url` (pin `@v0.1.0` for this exact version). A **PyPI package** (`pip install sertor`) is coming
+next. Everything below is available in this release.
 
 ### Indexing
 
