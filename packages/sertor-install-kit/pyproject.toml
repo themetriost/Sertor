@@ -2,6 +2,7 @@
 name = "sertor-install-kit"
 dynamic = ["version"]
 description = "Motore di installazione condiviso (stdlib-only): artifact/plan/executor non distruttivi, merge additivi, blocco a marker, risorse bundled. Nessuna dipendenza da sertor-core. Riusato da `sertor` (wiki/rag) e `sertor-flow` (governance)."
+readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]

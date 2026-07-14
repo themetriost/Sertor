@@ -2,6 +2,7 @@
 name = "sertor-flow"
 dynamic = ["version"]
 description = "Installer del metodo di sviluppo (SDLC) di Sertor: flusso SpecKit, gestione requisiti, delega git, costituzione-starter, blocco rituale CLAUDE.md. Pacchetto separato e ortogonale al RAG, senza dipendenza da sertor-core."
+readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -14,7 +15,7 @@ classifiers = [
     "Intended Audience :: Developers",
 ]
 dependencies = [
-    "sertor-install-kit",
+    "sertor-install-kit>=0.1.0",
 ]
 
 [project.urls]

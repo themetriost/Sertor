@@ -7,6 +7,15 @@ requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Sertor" }]
+keywords = ["rag", "retrieval", "embeddings", "code-graph", "llm", "wiki", "sertor"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Text Processing :: Indexing",
+]
 dependencies = [
     "httpx>=0.27",
     "python-dotenv>=1.0",
@@ -16,6 +25,10 @@ dependencies = [
     # Indice lessicale del motore ibrido (FEAT-004): puro Python, numpy già transitiva da chromadb.
     "rank-bm25>=0.2",
 ]
+
+[project.urls]
+Repository = "https://github.com/themetriost/Sertor"
+Documentation = "https://github.com/themetriost/Sertor/blob/master/docs/getting-started.md"
 
 [project.scripts]
 sertor-wiki-tools = "sertor_core.wiki_tools.__main__:main"

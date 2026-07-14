@@ -11,9 +11,9 @@ the RAG, **with no dependency on `sertor-core`** (the installer machinery comes 
 sertor-flow install [--assistant claude|copilot] [--target <path>] [--json]
 ```
 
-- `--assistant` (default `claude`): target AI assistant. `claude` writes under `.claude/**` +
-  `CLAUDE.md`; `copilot` writes under `.github/**` (prompts, agents, `copilot-instructions.md`).
-  An unknown value is rejected with an explicit error.
+- `--assistant` (default `claude`): target AI assistant (`claude` | `copilot-cli`). `claude` writes
+  under `.claude/**` + `CLAUDE.md`; `copilot-cli` writes under `.github/**` (agents,
+  `copilot-instructions.md`). An unknown value is rejected with an explicit error.
 - `--target` (default cwd): the host repo root.
 - `--json`: emit the install report as JSON.
 
