@@ -49,7 +49,12 @@ principio del gate pre-merge esteso alla pubblicazione: niente artefatto irrever
 ## 3. Ambito
 
 ### In ambito
-- **Validazione packaging per PyPI**: nome disponibile (verifica `sertor` su PyPI), metadati completi
+- **Publish SOLO i 4 pacchetti Sertor** (`sertor`, `sertor-core`, `sertor-install-kit`, `sertor-flow`).
+  **Escludere `speclift`/`specaudit`** dal publish: sono membri workspace vendored (E14) e la loro casa è
+  `sertor-flow` (fold, decisione 2026-07-14, E14-FEAT-002) — non pacchetti PyPI a nostro nome. Il workflow
+  di release deve selezionare i 4, non `--all-packages` (che builda anche speclift/specaudit). *(Nomi PyPI dei 4
+  verificati liberi 2026-07-13; `uv build` + `twine check` dei 4 = PASSED puliti dopo la rifinitura metadati.)*
+- **Validazione packaging per PyPI**: nome disponibile (verifica `sertor` su PyPI ✅), metadati completi
   (classifiers, `project.urls`, long-description = README), `uv build` dei 4 pacchetti, check `twine`/`uv
   publish --dry-run`.
 - **Pipeline di publish in CI** (release workflow: tag → build → publish, trusted publishing OIDC se possibile).

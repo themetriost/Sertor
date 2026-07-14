@@ -1,7 +1,8 @@
 [project]
 name = "sertor"
 dynamic = ["version"]
-description = "Installer del sistema-wiki (LLM Wiki) su qualunque repo ospite: console-script `sertor` e sottocomando `sertor install wiki`. Consumatore sottile di sertor-core."
+description = "Installer delle capacità di Sertor (RAG + LLM Wiki) su qualunque repo ospite: console-script `sertor` e sottocomandi `sertor install rag|wiki`. Consumatore sottile di sertor-core."
+readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -14,8 +15,8 @@ classifiers = [
     "Intended Audience :: Developers",
 ]
 dependencies = [
-    "sertor-core",
-    "sertor-install-kit",
+    "sertor-core>=0.1.0",
+    "sertor-install-kit>=0.1.0",
 ]
 
 [project.urls]
