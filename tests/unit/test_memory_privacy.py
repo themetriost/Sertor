@@ -17,6 +17,9 @@ class FakeAdapter:
         self.kind = "fake"
         self._text = text
 
+    def source_available(self) -> bool:
+        return True
+
     def list_sessions(self) -> list[SessionRef]:
         return [SessionRef(session_key="s", project_id="proj", source_path="/x/s")]
 

@@ -19,6 +19,9 @@ class FakeAdapter:
         self.kind = "fake"
         self._keys = keys
 
+    def source_available(self) -> bool:
+        return True
+
     def list_sessions(self):
         return [SessionRef(session_key=k, project_id="proj", source_path=f"/x/{k}")
                 for k in self._keys]

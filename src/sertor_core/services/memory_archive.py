@@ -29,6 +29,11 @@ class ArchiveRunReport:
     archived: int = 0
     skipped: int = 0
     errors: int = 0
+    # E4-FEAT-011: memory is enabled but the adapter's session source directory does not exist
+    # (a path-encoding mismatch, or a project never opened with this adapter). Lets the CLI surface
+    # a VISIBLE warning instead of a silent `archived=0` (fail-loud, Principio XII). Additive:
+    # default False → existing renderings/consumers unchanged.
+    source_absent: bool = False
 
 
 class MemoryArchiveService:
@@ -51,6 +56,11 @@ class MemoryArchiveService:
     def archive_all(self) -> ArchiveRunReport:
         """Discover, scrub, archive sessions. Idempotent; degrades non-fatally (guard clauses)."""
         report = ArchiveRunReport()
+        # E4-FEAT-011: this service is built ONLY when memory is enabled (composition gate). If the
+        # source directory is absent, `list_sessions()` yields nothing and the run archives 0 — flag
+        # it so the CLI warns VISIBLY (fail-loud) instead of a silent `archived=0`. Host-agnostic:
+        # the port reports availability; the service never checks the adapter's identity (FR-005).
+        report.source_absent = not self._adapter.source_available()
         for ref in self._adapter.list_sessions():
             if self._archive.exists(ref.session_key):
                 log_event(logging.INFO, "memory_session_skipped",

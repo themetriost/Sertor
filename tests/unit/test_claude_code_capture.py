@@ -27,6 +27,39 @@ def test_encode_project_path():
     assert encode_project_path("/home/me/proj") == "-home-me-proj"
 
 
+def test_encode_project_path_collapses_spaces_and_dots_e4_feat011():
+    # E4-FEAT-011: Claude Code collapses EVERY non-alphanumeric char to `-` — INCLUDING spaces and
+    # dots. The old `:`/`\`/`/`-only encoding missed them, so a path with a space/dot mapped to a
+    # folder that does not exist and the capture archived nothing silently. These are REAL
+    # `~/.claude/projects` folder names verified on the machine (2026-07-15).
+    real = {
+        # space → -
+        "C:\\Workspace\\Git\\Nunzio-Tools\\Nunzio Summaries":
+            "C--Workspace-Git-Nunzio-Tools-Nunzio-Summaries",
+        "C:\\Workspace\\Git\\Obsidian\\Personal Vault":
+            "C--Workspace-Git-Obsidian-Personal-Vault",
+        # space → -, existing dash kept
+        "C:\\Workspace\\Virtual Machines\\VM-WorkingFolder":
+            "C--Workspace-Virtual-Machines-VM-WorkingFolder",
+        # dot → - (yields `--`)
+        "C:\\Workspace\\Git\\Sinthari\\.claude\\skills\\skill-creator":
+            "C--Workspace-Git-Sinthari--claude-skills-skill-creator",
+    }
+    for path, folder in real.items():
+        assert encode_project_path(path) == folder
+    assert " " not in encode_project_path("a b")   # no space survives
+    assert "." not in encode_project_path("a.b")    # no dot survives
+    assert encode_project_path("a-b") == "a-b"      # an existing dash is preserved
+
+
+def test_source_available(tmp_path):
+    # E4-FEAT-011: reports whether the session source dir exists (feeds the fail-loud warning).
+    present = tmp_path / "present"
+    present.mkdir()
+    assert _adapter(present).source_available() is True
+    assert _adapter(tmp_path / "missing").source_available() is False
+
+
 def test_user_string_content_yields_one_turn(tmp_path):
     f = tmp_path / "sess.jsonl"
     _write_jsonl(f, [

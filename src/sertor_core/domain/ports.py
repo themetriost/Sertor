@@ -243,3 +243,13 @@ class TranscriptCaptureAdapter(Protocol):
         returns `turns=()` (the service skips it).
         """
         ...
+
+    def source_available(self) -> bool:
+        """True if the session source exists (E4-FEAT-011).
+
+        Lets the host-agnostic archiving service surface a **visible warning** when memory is
+        enabled but the source is absent (a path-encoding mismatch, or a project never opened with
+        this adapter) instead of a silent `archived=0` — without the service checking the adapter
+        identity. `list_sessions` keeps its contract (absent → `[]`).
+        """
+        ...

@@ -133,3 +133,27 @@ def test_list_human_and_json_carry_same_keys():
     human = output.format_session_list(summaries, json=False)
     arr = json.loads(output.format_session_list(summaries, json=True))
     assert arr[0]["session_key"] in human
+
+
+def test_format_archive_report_source_absent_warns_human_and_json():
+    # E4-FEAT-011: a source-absent run surfaces a VISIBLE warning in BOTH views (not a silent `0`).
+    from sertor_core.services.memory_archive import ArchiveRunReport
+
+    report = ArchiveRunReport(archived=0, skipped=0, errors=0, source_absent=True)
+    human = output.format_archive_report(report, json=False)
+    assert "archived=0" in human
+    assert "WARNING" in human and "memory is enabled" in human
+    payload = json.loads(output.format_archive_report(report, json=True))
+    assert payload["source_absent"] is True
+    assert "memory is enabled" in payload["warning"]
+
+
+def test_format_archive_report_present_source_has_no_warning():
+    # Present source (default) → no warning, unchanged output/JSON shape.
+    from sertor_core.services.memory_archive import ArchiveRunReport
+
+    report = ArchiveRunReport(archived=2, skipped=1, errors=0)
+    human = output.format_archive_report(report, json=False)
+    assert "WARNING" not in human
+    payload = json.loads(output.format_archive_report(report, json=True))
+    assert "source_absent" not in payload and "warning" not in payload
