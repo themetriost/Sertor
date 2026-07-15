@@ -163,25 +163,39 @@ def _indent(block: str) -> str:
     return "\n".join(f"  {line}" if line else line for line in block.split("\n"))
 
 
+_ARCHIVE_SOURCE_ABSENT_WARNING = (
+    "memory is enabled but no session source was found for this project — nothing was captured. "
+    "The project may never have been opened with the configured adapter, or the project-path "
+    "encoding does not match the source folder."
+)
+
+
 def format_archive_report(report: ArchiveRunReport, *, json: bool) -> str:
     """Formats the outcome of `memory archive` (035, FR-002/003, SC-001).
 
     Counts only, never secrets. Human/JSON informational equivalence is the invariant (FR-003):
-    both report `archived`/`skipped`/`errors`.
+    both report `archived`/`skipped`/`errors`. E4-FEAT-011: a `source_absent` run (memory ON but no
+    session source found) surfaces a VISIBLE warning in BOTH views — not a silent `archived=0`
+    (fail-loud, Principio XII); the exit code stays 0 (fail-safe for the SessionEnd hook).
     """
     if json:
-        return _json.dumps(
-            {
-                "archived": report.archived,
-                "skipped": report.skipped,
-                "errors": report.errors,
-            }
-        )
-    return (
+        payload = {
+            "archived": report.archived,
+            "skipped": report.skipped,
+            "errors": report.errors,
+        }
+        if report.source_absent:
+            payload["source_absent"] = True
+            payload["warning"] = _ARCHIVE_SOURCE_ABSENT_WARNING
+        return _json.dumps(payload)
+    line = (
         f"archived={report.archived} "
         f"skipped={report.skipped} "
         f"errors={report.errors}"
     )
+    if report.source_absent:
+        line += f"\nWARNING: {_ARCHIVE_SOURCE_ABSENT_WARNING}"
+    return line
 
 
 def _iso_utc(epoch: float) -> str:

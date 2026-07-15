@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -27,11 +28,16 @@ _TEXT_BLOCK_KINDS = ("text", "thinking")
 def encode_project_path(project_path: str) -> str:
     """Encode an absolute project path the way Claude Code names its project folder.
 
-    Separators (`\\`, `/`) and the drive colon collapse to `-`, e.g.
-    `C:\\Workspace\\Git\\Sertor` → `C--Workspace-Git-Sertor`. Confined here (Principio X): the
-    composition root passes the project's cwd, this module knows the encoding.
+    Claude Code collapses **every non-alphanumeric character** to `-` — the separators (`\\`, `/`),
+    the drive colon, **and spaces and dots** — e.g. `C:\\Workspace\\Git\\Sertor` →
+    `C--Workspace-Git-Sertor`, `C:\\…\\Nunzio Summaries` → `C--…-Nunzio-Summaries`, and
+    `…\\Sinthari\\.claude\\…` → `…-Sinthari--claude-…`. The previous `:`/`\\`/`/`-only replacement
+    MISSED spaces and dots, so a path containing them mapped to a folder that does not exist and the
+    capture silently archived nothing (E4-FEAT-011). Rule verified empirically against the real
+    `~/.claude/projects` folder names. Confined here (Principio X): composition passes the project's
+    cwd, this module knows the encoding.
     """
-    return project_path.replace(":", "-").replace("\\", "-").replace("/", "-")
+    return re.sub(r"[^A-Za-z0-9]", "-", project_path)
 
 
 class ClaudeCodeCaptureAdapter:
@@ -42,6 +48,16 @@ class ClaudeCodeCaptureAdapter:
     def __init__(self, project_source_dir: Path | str, project_id: str):
         self._dir = Path(project_source_dir)
         self._project_id = project_id
+
+    def source_available(self) -> bool:
+        """True if the session source directory exists (E4-FEAT-011).
+
+        Lets the host-agnostic archiving service surface a *visible* warning when memory is enabled
+        but the source is absent (a path-encoding mismatch, or a project never opened with this
+        adapter) instead of a silent `archived=0` — without the service inspecting the adapter's
+        identity. `list_sessions` still returns `[]` on absence (port contract unchanged).
+        """
+        return self._dir.is_dir()
 
     def list_sessions(self) -> list[SessionRef]:
         """`SessionRef` per `*.jsonl` in the project folder (`session_key` = filename stem).

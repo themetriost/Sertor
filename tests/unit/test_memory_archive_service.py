@@ -17,10 +17,14 @@ class FakeAdapter:
     """Structural `TranscriptCaptureAdapter`: serves a fixed map of session_key → turns."""
 
     def __init__(self, sessions: dict[str, list[TranscriptTurn]], *, kind: str = "fake",
-                 project_id: str = "proj"):
+                 project_id: str = "proj", source_available: bool = True):
         self.kind = kind
         self._sessions = sessions
         self._project_id = project_id
+        self._source_available = source_available
+
+    def source_available(self) -> bool:
+        return self._source_available
 
     def list_sessions(self) -> list[SessionRef]:
         return [
@@ -123,6 +127,22 @@ def test_two_distinct_adapters_same_behaviour(tmp_path):
     # adapter_kind flows through from each adapter (host-agnostic, not hardcoded).
     assert archive_a.get("a1").adapter_kind == "adapter-a"
     assert archive_b.get("b1").adapter_kind == "adapter-b"
+
+
+def test_source_absent_sets_report_flag_and_archives_zero(tmp_path):
+    # E4-FEAT-011: memory ON but the adapter source is absent → source_absent flag True + archives 0
+    # (host-agnostic: the port reports it, the service never checks the adapter identity).
+    adapter = FakeAdapter({}, source_available=False)
+    report = MemoryArchiveService(adapter, MemoryArchive(tmp_path), _settings()).archive_all()
+    assert report.source_absent is True
+    assert report.archived == 0
+
+
+def test_source_present_leaves_flag_false(tmp_path):
+    # Present source (default) → source_absent stays False, unchanged behaviour.
+    adapter = FakeAdapter({"s": [_turn("hi")]})
+    report = MemoryArchiveService(adapter, MemoryArchive(tmp_path), _settings()).archive_all()
+    assert report.source_absent is False
 
 
 def test_archived_event_carries_size_not_raw_content(tmp_path, caplog):

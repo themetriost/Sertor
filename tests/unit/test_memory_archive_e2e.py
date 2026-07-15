@@ -91,6 +91,9 @@ class _MockAdapter:
     def __init__(self, kind):
         self.kind = kind
 
+    def source_available(self):
+        return True
+
     def list_sessions(self):
         return [SessionRef(session_key=f"{self.kind}-1", project_id="p", source_path="/x")]
 

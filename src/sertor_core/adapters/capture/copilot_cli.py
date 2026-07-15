@@ -41,6 +41,10 @@ class CopilotCliCaptureAdapter:
         self._dir = Path(session_dir)
         self._project_id = project_id
 
+    def source_available(self) -> bool:
+        """True if the Copilot session-state directory exists (E4-FEAT-011, parità claude-code)."""
+        return self._dir.is_dir()
+
     def list_sessions(self) -> list[SessionRef]:
         """`SessionRef` per UUID subfolder whose session belongs to the current project.
 
