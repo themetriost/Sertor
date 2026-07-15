@@ -7,7 +7,7 @@
             "type": "command",
             "timeout": 10,
             "statusMessage": "Verifico la disponibilità di aggiornamenti Sertor",
-            "command": "uv run --no-project python .claude/hooks/version-check-start.py --assistant claude"
+            "command": "uv run --no-project python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/version-check-start.py\" --assistant claude"
           }
         ]
       }
