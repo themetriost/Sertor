@@ -135,7 +135,11 @@ _COPILOT_RAG_WIRING_SENTINEL = "(generated: copilot rag-usage hooks)"
 _COPILOT_HOOK_WIRING = ".github/hooks/sertor-hooks.json"
 # Portable invocation (A-09 / E2-FEAT-010): every hook is a Python script run via
 # `uv run --no-project python <relpath>.py` — OS-independent (no `pwsh`, no `"shell"`).
-# `--no-project` isolates from any host `pyproject.toml`; the path is relative to the host root.
+# `--no-project` isolates from any host `pyproject.toml`. The script path must be ANCHORED to the
+# repo root so it survives a session `cd` (a bare relative path breaks the moment the CWD drifts —
+# the A-09 regression): Claude wires `${CLAUDE_PROJECT_DIR}/<relpath>` (Claude Code substitutes the
+# placeholder as a plain string, cross-platform); Copilot sets `cwd="."` on the command entry (it
+# has no such placeholder; `cwd` resolves relative to the repo root — see HookEntrySpec.cwd).
 _PY = "uv run --no-project python"
 _RAG_MATCHER = "Bash|Write|Edit|MultiEdit"
 
@@ -172,7 +176,7 @@ def _copilot_rag_hook_specs() -> list[HookEntrySpec]:
         HookEntrySpec(
             "PreToolUse", "command",
             f"{_PY} {_RAG_HOOK_TARGET_COPILOT} --assistant copilot", 10,
-            matcher=_RAG_MATCHER,
+            matcher=_RAG_MATCHER, cwd=".",
         )
     ]
 
@@ -226,6 +230,7 @@ def _copilot_memory_hook_specs() -> list[HookEntrySpec]:
         HookEntrySpec(
             "SessionEnd", "command",
             f"{_PY} {_MEMORY_HOOK_TARGET_COPILOT} --assistant copilot", 15,
+            cwd=".",
         )
     ]
 
@@ -262,6 +267,7 @@ def _copilot_freshness_end_specs() -> list[HookEntrySpec]:
             # Claude `settings.rag-freshness.json` (15s).
             "SessionEnd", "command",
             f"{_PY} {_FRESHNESS_HOOK_TARGET_COPILOT} --assistant copilot", 15,
+            cwd=".",
         )
     ]
 
@@ -320,6 +326,7 @@ def _copilot_version_check_end_specs() -> list[HookEntrySpec]:
         HookEntrySpec(
             "SessionEnd", "command",
             f"{_PY} {_VERSION_CHECK_HOOK_TARGET_COPILOT} --assistant copilot", 15,
+            cwd=".",
         )
     ]
 

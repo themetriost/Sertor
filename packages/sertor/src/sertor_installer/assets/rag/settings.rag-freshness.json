@@ -6,7 +6,7 @@
           {
             "type": "command",
             "timeout": 15,
-            "command": "uv run --no-project python .claude/hooks/rag-freshness.py --assistant claude"
+            "command": "uv run --no-project python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/rag-freshness.py\" --assistant claude"
           }
         ]
       }

@@ -160,6 +160,12 @@ class HookEntrySpec:
     command: str
     timeout_sec: int
     matcher: str | None = None
+    # Working directory for a `command` entry, resolved by Copilot CLI relative to the repository
+    # root (or absolute). Set to `"."` to PIN execution at the repo root so a relative script path
+    # survives a session `cd` (Copilot exposes no project-root placeholder like Claude's
+    # `${CLAUDE_PROJECT_DIR}`, and its default CWD is undocumented). `None` → omitted (prompt
+    # entries have no command, so they never carry it).
+    cwd: str | None = None
 
 
 def render_copilot_hooks(events: list[HookEntrySpec]) -> dict:
@@ -172,8 +178,8 @@ def render_copilot_hooks(events: list[HookEntrySpec]) -> dict:
     MUST rules enforced by construction:
       - R1: top-level `"version": 1` is always present.
       - R2: each event maps to a FLAT list of entries (no nested `hooks[]`).
-      - R3: entries carry only Copilot schema fields (`type`/`command`/`timeoutSec`/`matcher`) — no
-        `shell`/`statusMessage`/nested wrapper.
+      - R3: entries carry only Copilot schema fields (`type`/`command`/`timeoutSec`/`matcher`/`cwd`)
+        — no `shell`/`statusMessage`/nested wrapper.
       - R4: the timeout uses `timeoutSec`, never `timeout`.
     The logical PascalCase event name is kept verbatim (R5: the tests treat the documented aliases
     `agentStop`/`sessionEnd`/… as equivalent). `matcher` is emitted only when present.
@@ -189,5 +195,9 @@ def render_copilot_hooks(events: list[HookEntrySpec]) -> dict:
         entry: dict = {"type": spec.type, payload_key: spec.command, "timeoutSec": spec.timeout_sec}
         if spec.matcher is not None:
             entry["matcher"] = spec.matcher
+        # `cwd` pins the command's working directory to the repo root (CWD-robustness — a relative
+        # script path must survive a session `cd`). Emitted only when set; never on prompt entries.
+        if spec.cwd is not None:
+            entry["cwd"] = spec.cwd
         hooks.setdefault(spec.event, []).append(entry)
     return {"version": 1, "hooks": hooks}

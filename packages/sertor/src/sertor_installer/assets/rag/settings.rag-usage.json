@@ -7,7 +7,7 @@
           {
             "type": "command",
             "timeout": 10,
-            "command": "uv run --no-project python .claude/hooks/sertor-rag-usage-check.py --assistant claude"
+            "command": "uv run --no-project python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/sertor-rag-usage-check.py\" --assistant claude"
           }
         ]
       }

@@ -127,7 +127,9 @@ _RENDER_AGENT_SUFFIX = ".agent.md"
 
 # Native Copilot hook commands (the script invocation; `--assistant copilot` selects the native
 # output). Portable invocation (A-09): `uv run --no-project python <relpath>.py` — OS-independent,
-# no `pwsh`; the path is relative to the host root (cwd on hook fire).
+# no `pwsh`. The relative script path is anchored to the repo root via `cwd="."` on each command
+# entry (below), so it survives a session `cd` — Copilot has no `${CLAUDE_PROJECT_DIR}` equivalent
+# and its default hook CWD is undocumented (see HookEntrySpec.cwd).
 _PY = "uv run --no-project python"
 
 
@@ -141,10 +143,12 @@ def _copilot_wiki_hook_specs(assistant: AssistantId) -> list[HookEntrySpec]:
     stop = HookEntrySpec(
         "Stop", "command",
         f"{_PY} {_WIKI_HOOK_SCRIPT_DST} --mode Stop --assistant copilot", 10,
+        cwd=".",
     )
     session_end = HookEntrySpec(
         "SessionEnd", "command",
         f"{_PY} {_WIKI_HOOK_SCRIPT_DST} --mode SessionEnd --assistant copilot", 10,
+        cwd=".",
     )
     # CLI: SessionStart is a static prompt (the directive). No script invocation.
     session_start = HookEntrySpec(

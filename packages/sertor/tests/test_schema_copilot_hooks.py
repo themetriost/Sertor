@@ -41,6 +41,14 @@ def assert_valid_copilot_hook_file(data: dict) -> None:
             assert "type" in entry
             payload_key = "prompt" if entry.get("type") == "prompt" else "command"
             assert payload_key in entry, f"{event}: payload field '{payload_key}' missing"
+            # CWD-robustness (E10-FEAT-029): a `command` entry MUST pin its working directory to the
+            # repo root (`cwd="."`) so the relative script path survives a session `cd` (Copilot has
+            # no `${CLAUDE_PROJECT_DIR}` placeholder and its default hook CWD is undocumented). A
+            # `prompt` entry has no command, so it must NOT carry `cwd`.
+            if entry.get("type") == "command":
+                assert entry.get("cwd") == ".", f"{event}: command entry must pin cwd='.'"
+            else:
+                assert "cwd" not in entry, f"{event}: prompt entry must not carry cwd"
 
 
 # --- the real plans produce valid files -------------------------------------------------------
@@ -78,7 +86,7 @@ def test_real_rag_wiring_is_schema_valid(tmp_path: Path, make_runner, assistant:
 
 
 def _valid_sample() -> dict:
-    return render_copilot_hooks([HookEntrySpec("Stop", "command", "pwsh stop", 10)])
+    return render_copilot_hooks([HookEntrySpec("Stop", "command", "pwsh stop", 10, cwd=".")])
 
 
 def test_anti_pattern_missing_version_fails():
@@ -112,5 +120,13 @@ def test_anti_pattern_status_message_fails():
 def test_anti_pattern_timeout_instead_of_timeoutsec_fails():
     broken = _valid_sample()
     broken["hooks"]["Stop"][0]["timeout"] = 10  # Claude name (and keep timeoutSec to isolate R3/R4)
+    with pytest.raises(AssertionError):
+        assert_valid_copilot_hook_file(broken)
+
+
+def test_anti_pattern_command_without_cwd_fails():
+    """A `command` entry that drops the repo-root `cwd` pin (the A-09 regression) → rejected."""
+    broken = _valid_sample()
+    del broken["hooks"]["Stop"][0]["cwd"]
     with pytest.raises(AssertionError):
         assert_valid_copilot_hook_file(broken)
