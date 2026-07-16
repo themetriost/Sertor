@@ -702,18 +702,29 @@ uvx --refresh --from "git+https://github.com/themetriost/Sertor#subdirectory=pac
 uvx --refresh --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install rag --assistant bogus
 ```
 
-Then refresh the **index** (the runtime package itself is updated inside `.sertor/` by re-running
-the install, which does `uv add` again):
+> **Re-running `install` is NOT how you refresh a host — use [`upgrade`](#102-lifecycle-commands-upgrade-and-uninstall-recommended).**
+> `sertor install` is **idempotent and non-destructive** by contract: it never overwrites your edits
+> and never *removes* anything. On a host that already has Sertor that contract means it **skips**
+> — your assets, instruction block and hook wiring stay at the version you installed, and the report
+> says `skipped … 0 errors`, which reads like success. To actually refresh Sertor-authored content
+> (a renamed hook, a changed instruction block, a re-wired hook) and prune what a new version
+> dropped, use the dedicated **`sertor upgrade`** verb — it updates Sertor-owned files/blocks and
+> leaves your content alone.
+
+**The runtime is a third thing, and neither verb updates it.** `install` and `upgrade` refresh the
+**assets**; the `sertor-core` package inside `.sertor/.venv` is pinned by `.sertor/uv.lock`, and
+`uv add` does not move a lock that is already satisfied. So after an upgrade you can have new assets
+on an old engine — the tell-tale is a freshly-deposited doc mentioning a command your CLI rejects
+(`invalid choice: 'doctor'`). Refresh the runtime explicitly, then the index:
 
 ```powershell
+uv sync --project .sertor --upgrade           # move the runtime to the latest sertor-core
 uv run --project .sertor sertor-rag index .   # rebuild the corpus with the new code
+uv run --project .sertor sertor-rag doctor    # verify
 ```
 
-> `sertor install` is **idempotent and non-destructive**: re-running never overwrites your edits and
-> never *removes* a previously written artifact. To refresh asset content that Sertor authored (a
-> renamed hook, an updated instruction block) **and** remove artifacts that a new version dropped
-> from the bundle, use the dedicated **`sertor upgrade`** verb (below) — it updates changed
-> Sertor-owned files/blocks and prunes obsolete ones, while leaving your content alone.
+*(The full refresh sequence — `upgrade` → `uv sync --upgrade` → `index` → `doctor` — was established
+empirically on a host that upgraded, 2026-07-16.)*
 
 ### 10.2 Lifecycle commands: `upgrade` and `uninstall` (recommended)
 

@@ -360,13 +360,21 @@ def _wiki_hook_fragment(art: Artifact, assistant: AssistantId) -> dict:
 
 
 def _apply_settings(
-    target_root: Path, art: Artifact, assistant: AssistantId = AssistantProfile.DEFAULT
+    target_root: Path,
+    art: Artifact,
+    assistant: AssistantId = AssistantProfile.DEFAULT,
+    *,
+    replace_stale: bool = False,
 ) -> ArtifactOutcome:
-    """`MERGE_DEDUP`: additive merge of the hook fragment (D5). Copilot wiring is generated."""
+    """`MERGE_DEDUP`: additive merge of the hook fragment (D5). Copilot wiring is generated.
+
+    `replace_stale` carries the caller's contract (E10-FEAT-032): install leaves an older rendering
+    of a Sertor hook in place and reports it; upgrade re-wires it.
+    """
     dest = _resolve(target_root, art.target_rel)
     dest.parent.mkdir(parents=True, exist_ok=True)
     fragment = _wiki_hook_fragment(art, assistant)
-    outcome, detail = settings_merge.merge_settings(dest, fragment)
+    outcome, detail = settings_merge.merge_settings(dest, fragment, replace_stale=replace_stale)
     return ArtifactOutcome(art.target_rel, outcome, detail)
 
 
@@ -564,7 +572,7 @@ def _apply_wiki_upgrade(
         remove_hook_entries_by_command_substring(
             dest, _LEGACY_WIKI_PS1_BASENAMES, delete_if_empty=(dest.name == "sertor-hooks.json")
         )
-        return _apply_settings(target_root, art, assistant)  # additive idempotent
+        return _apply_settings(target_root, art, assistant, replace_stale=True)  # re-wires stale
     raise ConfigError(f"unhandled artifact kind: {art.kind}")  # pragma: no cover
 
 
