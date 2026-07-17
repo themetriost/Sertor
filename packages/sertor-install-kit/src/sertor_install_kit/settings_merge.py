@@ -1,18 +1,39 @@
 """Additive merge of `.claude/settings.json` (D5, FR-015).
 
-**Additive merge with deduplication by `command`**: absent → create with the fragment's hook
-entries; valid → add only entries whose `command` is not already present in the same event;
-malformed → `ConfigError` (fail-fast, file not touched). The events are derived from the fragment
-itself (any Claude Code event, e.g. `PreToolUse`), not a fixed list. Preservation is **semantic**
-(no user entry lost), not byte-for-byte: `settings.json` is structured config, not user prose (D5).
+**Additive merge, deduplicated by hook IDENTITY**: absent → create with the fragment's hook entries;
+valid → add only entries whose hook is not already wired for the same event; malformed →
+`ConfigError` (fail-fast, file not touched). The events are derived from the fragment itself (any
+Claude Code event, e.g. `PreToolUse`), not a fixed list. Preservation is **semantic** (no user entry
+lost), not byte-for-byte: `settings.json` is structured config, not user prose (D5).
+
+**Identity is the hook SCRIPT, not the command string (E10-FEAT-032).** Sertor re-wires the same
+hook over time — PowerShell → portable Python (A-09), relative path → anchored on
+`${CLAUDE_PROJECT_DIR}` (FEAT-031), added `cwd` for Copilot — so the raw command string is a MUTABLE
+rendering detail. Keying identity on it made every re-wiring look like a NEW hook: the stale entry
+was never recognised, so it **survived** and the new one was **appended** (Claude → the same hook
+wired twice, the broken copy still firing) or, when only a sibling key changed, the incoming entry
+was discarded as a duplicate (Copilot → the fix never landed, silently). Keying on the script stem
+(`rag-freshness`) makes all three transitions the same hook, so a re-wiring is seen as such:
+
+- `merge_settings(..., replace_stale=False)` — the INSTALL contract (idempotent, non-destructive):
+  never removes, and now never DUPLICATES either. A stale form is left untouched and REPORTED, so
+  the host is told to run `upgrade` instead of being silently left with two wirings.
+- `merge_settings(..., replace_stale=True)` — the UPGRADE contract: the stale form is replaced in
+  place (Sertor-owned wiring only; the user's own entries are never matched).
 """
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from sertor_install_kit.artifacts import Outcome
 from sertor_install_kit.errors import ConfigError
+
+# A hook command references its script: `… python .claude/hooks/x.py --assistant claude`,
+# `… python "${CLAUDE_PROJECT_DIR}/.claude/hooks/x.py" …`, `pwsh -File .github/hooks/x.ps1`,
+# `& (Join-Path $d 'hooks/x.ps1')`. The STEM (`x`) is what survives every re-wiring → the identity.
+_SCRIPT_RE = re.compile(r"([\w][\w.-]*)\.(?:py|ps1)\b")
 
 
 def _inner_commands(entry: dict) -> set[str]:
@@ -38,9 +59,31 @@ def _inner_commands(entry: dict) -> set[str]:
     return commands
 
 
-def _dedup_hooks(existing: dict, fragment: dict) -> tuple[dict, int]:
-    """Merges the fragment into the existing entries (dedup by `command`); returns
-    (merged, n_added).
+def _entry_identities(entry: dict) -> set[str]:
+    """Logical identity of a hook entry: the STEM of each script it runs (E10-FEAT-032).
+
+    `python .claude/hooks/rag-freshness.py`, `python "${CLAUDE_PROJECT_DIR}/.claude/hooks/
+    rag-freshness.py"` and `pwsh -File .github/hooks/rag-freshness.ps1` all yield `rag-freshness`:
+    ONE hook, three renderings. An entry that runs no script (a Copilot SessionStart `prompt`) has
+    no script identity — `_inner_commands` stays its identity, so its behaviour is unchanged.
+    """
+    return {m.group(1) for cmd in _inner_commands(entry) for m in _SCRIPT_RE.finditer(cmd)}
+
+
+def _dedup_hooks(
+    existing: dict, fragment: dict, *, replace_stale: bool = False
+) -> tuple[dict, int, int, list[str]]:
+    """Merges the fragment into the existing entries; returns (merged, n_added, n_replaced, stale).
+
+    Per event, an incoming entry is matched against the existing ones by identity (script stem, with
+    the command string as the fallback for script-less `prompt` entries):
+
+    - an existing entry EQUAL to the incoming one → already wired, nothing to do;
+    - an existing entry with the SAME identity but a different rendering → a STALE form of the same
+      hook (re-wired since it was installed). `replace_stale` decides: `True` (upgrade) replaces it
+      in place; `False` (install) leaves it and reports it — never appending a second wiring of the
+      same hook, which is what produced the duplicates (E10-FEAT-032);
+    - no match → appended (the genuinely new hook).
 
     Does not mutate `existing` in place: operates on a deep copy of the `hooks` section.
     """
@@ -52,42 +95,73 @@ def _dedup_hooks(existing: dict, fragment: dict) -> tuple[dict, int]:
         merged["version"] = fragment["version"]
     hooks = merged.setdefault("hooks", {})
     added = 0
+    replaced = 0
+    stale: list[str] = []
 
     # Events are derived from the union of existing + fragment hook keys (not a fixed list): a
     # consumer may bring any Claude Code event (e.g. `PreToolUse`), and the merge stays additive +
-    # dedup-by-command on whatever events appear. Sorted for deterministic output.
+    # dedup-by-identity on whatever events appear. Sorted for deterministic output.
     events = sorted(set(fragment.get("hooks", {}).keys()) | set(hooks.keys()))
     for event in events:
         frag_entries = fragment.get("hooks", {}).get(event, [])
         if not frag_entries:
             continue
         event_entries = hooks.setdefault(event, [])
-        existing_commands: set[str] = set()
-        for entry in event_entries:
-            if isinstance(entry, dict):
-                existing_commands |= _inner_commands(entry)
         for entry in frag_entries:
-            entry_commands = _inner_commands(entry)
-            # add only if NONE of the entry's commands are already present in the event
-            if entry_commands & existing_commands:
+            ids = _entry_identities(entry)
+            cmds = _inner_commands(entry)
+            # ALL the entries wiring this hook — not just the first. A host can carry SEVERAL stale
+            # renderings at once (a `.ps1` AND a relative `.py`, or the duplicates a pre-fix install
+            # already created); collapsing only the first would leave the rest behind — or, when the
+            # first is stale and a good one follows, produce two identical entries. One hook = ONE
+            # wiring per event, whatever the host arrived with (E10-FEAT-032).
+            matches = [
+                i
+                for i, cur in enumerate(event_entries)
+                if isinstance(cur, dict)
+                and (
+                    (ids & _entry_identities(cur))
+                    if (ids and _entry_identities(cur))
+                    else (cmds & _inner_commands(cur))
+                )
+            ]
+            if not matches:
+                event_entries.append(entry)
+                added += 1
                 continue
-            event_entries.append(entry)
-            existing_commands |= entry_commands
-            added += 1
+            if all(event_entries[i] == entry for i in matches) and len(matches) == 1:
+                continue  # already wired, byte-for-byte → nothing to do
+            # At least one rendering differs (or the hook is wired more than once): replace
+            # (upgrade) or report (install) — install NEVER appends a second wiring (that is what
+            # produced the duplicates), and NEVER rewrites the host's entries (its contract).
+            label = sorted(ids)[0] if ids else event
+            if replace_stale:
+                event_entries[matches[0]] = entry
+                for i in reversed(matches[1:]):
+                    del event_entries[i]
+                replaced += 1
+            else:
+                stale.append(label)
 
-    return merged, added
+    return merged, added, replaced, stale
 
 
-def merge_settings(settings_path: Path, hooks_fragment: dict) -> tuple[Outcome, str]:
-    """Applies the dedup merge (D5). Returns `(outcome, detail)`.
+def merge_settings(
+    settings_path: Path, hooks_fragment: dict, *, replace_stale: bool = False
+) -> tuple[Outcome, str]:
+    """Applies the identity merge (D5). Returns `(outcome, detail)`.
 
     - absent → create the file with the fragment entries → `(CREATED, "+N hook entries")`;
-    - present and valid → additive merge → `(MERGED, "+N hook entries" | "no new entries")`;
+    - present and valid → merge → `(MERGED, detail)`;
     - present and malformed → `ConfigError` (file not touched).
+
+    `replace_stale=False` (INSTALL) never removes and never duplicates: a hook already wired in an
+    older rendering is left alone and named in the detail, pointing at `upgrade` — the honest report
+    the host needs to know it is NOT up to date (Principio XII). `replace_stale=True` (UPGRADE)
+    replaces the stale rendering in place.
     """
     if not settings_path.exists():
-        _, added = _dedup_hooks({}, hooks_fragment)
-        merged, _ = _dedup_hooks({}, hooks_fragment)
+        merged, added, _, _ = _dedup_hooks({}, hooks_fragment, replace_stale=replace_stale)
         settings_path.write_text(
             json.dumps(merged, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
         )
@@ -103,12 +177,21 @@ def merge_settings(settings_path: Path, hooks_fragment: dict) -> tuple[Outcome, 
     if not isinstance(existing, dict):
         raise ConfigError("settings.json is not a JSON object", key=str(settings_path))
 
-    merged, added = _dedup_hooks(existing, hooks_fragment)
+    merged, added, replaced, stale = _dedup_hooks(
+        existing, hooks_fragment, replace_stale=replace_stale
+    )
     settings_path.write_text(
         json.dumps(merged, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
-    detail = f"+{added} hook entries" if added else "no new entries"
-    return Outcome.MERGED, detail
+    bits = []
+    if added:
+        bits.append(f"+{added} hook entries")
+    if replaced:
+        bits.append(f"~{replaced} re-wired")
+    if stale:
+        # Named, not counted: the host must know WHICH hook is stale to act on it.
+        bits.append(f"{len(stale)} stale ({', '.join(sorted(stale))}) — run `sertor upgrade`")
+    return Outcome.MERGED, " · ".join(bits) if bits else "no new entries"
 
 
 def _fragment_commands(fragment: dict) -> set[str]:

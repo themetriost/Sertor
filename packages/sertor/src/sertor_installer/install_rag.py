@@ -803,13 +803,19 @@ def _rag_hook_fragment(art: Artifact) -> dict:
     return json.loads(read_asset_text(art.source))
 
 
-def _apply_rag_settings(profile: RagHostProfile, art: Artifact) -> ArtifactOutcome:
-    """`MERGE_DEDUP` (042, group C): additive merge of the PreToolUse hook entry into the wiring
-    file (dedup by command → preserves the user's existing hooks). Copilot wiring is generated."""
+def _apply_rag_settings(
+    profile: RagHostProfile, art: Artifact, *, replace_stale: bool = False
+) -> ArtifactOutcome:
+    """`MERGE_DEDUP` (042, group C): additive merge of the hook entry into the wiring file (dedup by
+    hook identity → preserves the user's existing hooks). Copilot wiring is generated.
+
+    `replace_stale` carries the caller's contract (E10-FEAT-032): install leaves an older rendering
+    of a Sertor hook in place and reports it; upgrade re-wires it.
+    """
     dest = profile.target_root / art.target_rel
     dest.parent.mkdir(parents=True, exist_ok=True)
     fragment = _rag_hook_fragment(art)
-    outcome, detail = merge_settings(dest, fragment)
+    outcome, detail = merge_settings(dest, fragment, replace_stale=replace_stale)
     return ArtifactOutcome(art.target_rel, outcome, detail)
 
 
@@ -1063,15 +1069,17 @@ def _apply_rag_upgrade(
     if art.kind is ArtifactKind.GITIGNORE_APPEND:
         return _apply_gitignore(profile)
     if art.kind is ArtifactKind.SETTINGS_MERGE:
-        # A-09 migration: strip any legacy `.ps1` hook entries BEFORE the additive `.py` merge, so
-        # an upgrading host is left single-impl (no orphan wiring pointing at the removed `.ps1`).
-        # Idempotent (no-op once none remain / on a fresh host); safe across the per-hook artifacts
-        # that all target the same settings file.
+        # A-09 migration: strip any legacy `.ps1` hook entry that the CURRENT plan does not re-wire
+        # (an assistant's dropped hook), so no orphan wiring points at a removed `.ps1`. Idempotent.
+        # NB: a `.ps1` whose hook still exists as `.py` is NOT an orphan — it is a stale RENDERING,
+        # and `replace_stale` below re-wires it in place (E10-FEAT-032). This strip is the narrower
+        # net it always was; it is no longer the only thing standing between an upgrading host and a
+        # duplicate, which is why relative-vs-anchored slipped through it.
         dest = root / art.target_rel
         remove_hook_entries_by_command_substring(
             dest, _LEGACY_PS1_BASENAMES, delete_if_empty=(dest.name == "sertor-hooks.json")
         )
-        return _apply_rag_settings(profile, art)
+        return _apply_rag_settings(profile, art, replace_stale=True)
     raise ConfigError(f"unhandled artifact kind: {art.kind}")  # pragma: no cover
 
 
