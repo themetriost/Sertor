@@ -8,7 +8,7 @@
             "type": "command",
             "timeout": 10,
             "statusMessage": "Checking RAG freshness",
-            "command": "uv run --no-project python .claude/hooks/rag-freshness-start.py --assistant claude"
+            "command": "uv run --no-project python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/rag-freshness-start.py\" --assistant claude"
           }
         ]
       },
@@ -18,7 +18,7 @@
             "type": "command",
             "timeout": 10,
             "statusMessage": "Verifico la disponibilità di aggiornamenti Sertor",
-            "command": "uv run --no-project python .claude/hooks/version-check-start.py --assistant claude"
+            "command": "uv run --no-project python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/version-check-start.py\" --assistant claude"
           }
         ]
       },
@@ -28,7 +28,7 @@
             "type": "command",
             "timeout": 15,
             "statusMessage": "Carico lo stato del wiki",
-            "command": "uv run --no-project python .claude/hooks/wiki-session-start.py --assistant claude"
+            "command": "uv run --no-project python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/wiki-session-start.py\" --assistant claude"
           }
         ]
       }
@@ -40,7 +40,7 @@
           {
             "type": "command",
             "timeout": 10,
-            "command": "uv run --no-project python .claude/hooks/sertor-rag-usage-check.py --assistant claude"
+            "command": "uv run --no-project python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/sertor-rag-usage-check.py\" --assistant claude"
           }
         ]
       }
@@ -51,7 +51,7 @@
           {
             "type": "command",
             "timeout": 15,
-            "command": "uv run --no-project python .claude/hooks/memory-capture.py --assistant claude"
+            "command": "uv run --no-project python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/memory-capture.py\" --assistant claude"
           }
         ]
       },
@@ -60,7 +60,7 @@
           {
             "type": "command",
             "timeout": 15,
-            "command": "uv run --no-project python .claude/hooks/rag-freshness.py --assistant claude"
+            "command": "uv run --no-project python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/rag-freshness.py\" --assistant claude"
           }
         ]
       },
@@ -69,7 +69,7 @@
           {
             "type": "command",
             "timeout": 15,
-            "command": "uv run --no-project python .claude/hooks/version-check.py --assistant claude"
+            "command": "uv run --no-project python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/version-check.py\" --assistant claude"
           }
         ]
       },
@@ -78,7 +78,7 @@
           {
             "type": "command",
             "timeout": 10,
-            "command": "uv run --no-project python .claude/hooks/wiki-pending-check.py --mode SessionEnd --assistant claude"
+            "command": "uv run --no-project python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/wiki-pending-check.py\" --mode SessionEnd --assistant claude"
           }
         ]
       }
@@ -90,7 +90,7 @@
             "type": "command",
             "timeout": 10,
             "statusMessage": "Verifico lo stato del wiki",
-            "command": "uv run --no-project python .claude/hooks/wiki-pending-check.py --mode Stop --assistant claude"
+            "command": "uv run --no-project python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/wiki-pending-check.py\" --mode Stop --assistant claude"
           }
         ]
       }
