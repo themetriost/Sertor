@@ -15,6 +15,10 @@ esisteva solo l'install (additivo, idempotente, `CREATE_IF_ABSENT`/`MERGE_*`): a
 dopo un avanzamento su `master` lasciava i file già presenti `SKIPPED` e gli artefatti obsoleti
 orfani; rimuovere Sertor era una procedura manuale (`docs/install.md §10.3`). Ora è un comando.
 
+**Nota sugli hook e il merge:** quando `upgrade` ri-cabla un hook, deve dedurre se è «lo stesso» hook
+o uno nuovo. Vedi [[identita-hook-nel-merge]] per il meccanismo di identità e il bug scoperto.
+Vedi anche [[esito-sull-host-vs-forma-dell-asset]] per la lezione sul testing.
+
 ## I comandi
 
 - **`sertor upgrade [capacità…]`** — rinfresca gli asset standalone cambiati, aggiorna i blocchi a
