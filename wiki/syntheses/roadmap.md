@@ -68,7 +68,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | # | Epica | Stato | Residuo / 1° passo |
 |---|---|---|---|
 | **E1** | [`sertor-core`](../../requirements/sertor-core/epic.md) | ✅ completa (FEAT-011 ✅ merge `34b599a`) | **Nessun residuo Should aperto** — FEAT-011 embedder locale consegnata (2026-06-21). Resta solo il debito P2 **TASK-D04** (rinomina flag installer `--backend`→`--provider`). *(agenzia incorporata ❌ abbandonata by design)* |
-| **E2** | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | **residuo:** pip fallback reale (→FEAT-006) · multi-target `sertor-flow` (follow-up) · reviewer clean-code · Codex · PyPI · `configure --check` (deferred) *(packaging ✅ + lifecycle ✅ + hardening Copilot ✅ + wizard config ✅ + Copilot CLI-only ✅ + version-check FEAT-013 ✅ + **FEAT-010 multi-target/non-Python/uv ✅** `eb1f7a3`/#179 + **FEAT-016 ❌ Won't** spike 2026-07-13 + **FEAT-017 onestà auto-updater ✅** `00dcd62`/#180)*. **PyPI/pip: gate CI caduto 2026-07-16 → eseguibile ora** |
+| **E2** | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | **residuo:** **FEAT-019 granularità bundle `sertor-flow` + blocco `CLAUDE.md` opzionale (Should P1, richiesta Noetix — attesa esterna)** · **FEAT-018 log telemetria di ciò che l'installer fa davvero (Should P1, richiesta utente 2026-07-16)** · pip fallback reale (→FEAT-006) · multi-target `sertor-flow` (follow-up) · reviewer clean-code · Codex · PyPI · `configure --check` (deferred) *(packaging ✅ + lifecycle ✅ + hardening Copilot ✅ + wizard config ✅ + Copilot CLI-only ✅ + version-check FEAT-013 ✅ + **FEAT-010 multi-target/non-Python/uv ✅** `eb1f7a3`/#179 + **FEAT-016 ❌ Won't** spike 2026-07-13 + **FEAT-017 onestà auto-updater ✅** `00dcd62`/#180)*. **PyPI/pip: gate CI caduto 2026-07-16 → eseguibile ora** |
 | **E3** | [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | **export OTel FEAT-005 ✅** + arricchimento span FEAT-013 ✅ + TUI tabella FEAT-014 ✅ + **visibilità RAG/dimostrabilità FEAT-015 ✅** (PR #88) · drift FEAT-012 · metriche aggregate · stima € (Should) · web · CSV/MD |
 | **E4** | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso + **distribuibile** + **semantico** + **multi-assistente** · **🐛 bug cattura auto** | **🐛 CAUSA IDENTIFICATA (2026-07-16), non ancora chiuso:** la **cattura automatica** non popola l'archivio. **Evidenza:** ultima sessione archiviata = **2026-07-09**, nulla dal 10 al 15 (il motore è sano: archive manuale = 58 sessioni · full-text+semantica ok). **La data coincide con A-09** (`69d527c`, 2026-07-09, migrazione hook `.ps1`→`.py`): quella migrazione ha introdotto il **path relativo** → l'hook `memory-capture` fallisce con CWD ≠ radice **e esce 0** (fallimento muto). **Riprodotto dal vivo:** l'hook lanciato da una sottocartella dà `can't open file …memory-capture.py` con exit 0. ⇒ **stessa causa di E10-FEAT-031**, che quindi lo chiude — **ma solo quando il fix arriva davvero all'host** (→ E10-FEAT-032). Non è il rischio R-1 (cattura host-specifica): è il wiring. · remember-this · retention (Could) · parità MCP `show`/`list` (FEAT-010) *(cattura Copilot CLI FEAT-008 ✅ + ricerca semantica FEAT-004 ✅ + distribuzione installer FEAT-009 ✅)* |
 | **E5** | 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | 🔄 FEAT-001+011 ✅ · FEAT-003 T1+T2 ✅ su master | **eval IR ✅** (PR #92) + **graph-eval ✅** (FEAT-011) + skill live ✅ + **FEAT-003 misura fusione + `search_combined` strutturato (tupla, metrica OR) ✅** (merge `42aceaf`+`908bd92`). **Scoperta:** lo «0.17» era artefatto dell'AND; a OR union=1.00, il vero debole è **`search_docs` MRR 0.55** (leva futura). Restano FEAT-002/004/005-007 |
@@ -245,11 +245,12 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   consegna reale del wiring ancorato (FEAT-031 **+** FEAT-032, ora entrambe su `master` e installate sul
   dogfood) dovrebbe averla risolta → **controllo empirico:** dopo il prossimo SessionEnd, `memory list` deve
   mostrare sessioni **> 2026-07-09**; (4) **E13 Fase 2** (marketing) · E5-FEAT-003 `search_docs`.
-  (5) **Noetix — bundle governance divisibile:** richiesta **presa in carico** (risposta affissa su Acta,
-  `2026-07-17-sertor-presa-in-carico-bundle-governance-divisibile`); **dobbiamo ancora l'analisi nel merito**
-  (5 domande: divisibilità, blocco `CLAUDE.md` opzionale, superficie del `configuration-manager`, parti neutre
-  della costituzione, se un nodo che si ferma sopra gli EARS è in bersaglio). Debito verso un altro nodo, non
-  verso noi stessi.
+  (5) **Noetix — bundle governance divisibile = `E2-FEAT-019`** (Should P1, già a backlog: *«granularità
+  bundle `sertor-flow`, blocco `CLAUDE.md` opzionale»*, da decomporre). Richiesta **presa in carico** (risposta
+  affissa su Acta, `2026-07-17-sertor-presa-in-carico-bundle-governance-divisibile`); **dobbiamo ancora
+  l'analisi nel merito** delle 5 domande (divisibilità, blocco opzionale, superficie del
+  `configuration-manager`, parti neutre della costituzione, se un nodo che si ferma sopra gli EARS è in
+  bersaglio). **Debito verso un altro nodo**, non verso noi stessi — è l'unico item con un'attesa esterna.
 
 **Candidati a valore = Should aperti:**
 
