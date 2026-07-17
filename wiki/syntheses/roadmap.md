@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-07-10
+updated: 2026-07-16
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md", "requirements/memoria-conversazioni/epic.md"]
 ---
 
@@ -14,7 +14,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > `requirements → spec → plan → tasks → implement`.
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-07-13)
+## ⚡ Executive summary (stato al 2026-07-16)
 
 ### ✅ Capacità consegnate (feature su `master`)
 
@@ -50,12 +50,14 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **Doc utente MVP** (E13-FEAT-001+002, merge `6e40ccc`/PR #172, 2026-07-11, item A-18) — **`docs/getting-started.md`** (percorso unico host-agnostico «dal nulla al primo valore», varianti CLI Claude+Copilot affiancate, esempio finale di **fusione code+doc** via `search_combined`) + **README valore-first** (apre col differenziatore code+doc + esempio, fatti preservati, ingresso unico). Prima consegna di E13; authoring puro (core/CLI/installer invariati) | `documentazione-marketing` |
 | **Doc utente Fase 1 COMPLETA** (E13-FEAT-003..008, merge `3bcb8b1`/PR #175, 2026-07-12) — batch: **`docs/why-sertor.md`** (cos'è e perché, non-tecnici) · **`docs/README.md`** (indice «dove andare per cosa») · **`docs/tutorial.md`** (end-to-end guidato) · **`docs/troubleshooting.md`** (symptom→cause→fix, complemento statico di `doctor`) · **`CHANGELOG.md`** (release notes utente, onesto sull'interim) · **`docs/reference.md`** (comandi+manopole, punta a install.md). Host-agnostici, comandi verbatim dagli asset reali, 0 link a `wiki/`/`specs/` (corretto anche 1 drift CS-5 in install.md). Chiude tutta la **Fase 1** di E13 | `documentazione-marketing` |
 | **Ergonomia installer — multi-target · avviso non-Python · guida uv-assente** (E2-FEAT-010 residuo, merge `eb1f7a3`/PR #179, 2026-07-13) — `sertor install --assistant` accetta **CSV/`all`** → un comando installa più assistenti in **container disgiunti** (deps runtime `.sertor/` una volta, report aggregato + note propagate, fail-fast; single-value invariato) · nuovo `host_env.is_python_host` (kit) → **nota advisory** su host non-Python (sorgenti intatti) · messaggio **uv-assente onesto** (installa uv · `--no-deps` · pip non ancora disponibile). Pip fallback reale rinviato a **FEAT-006**/go-public. `sertor-core` invariato; kit 178 · sertor 523 · suite 1180 verdi | `sertor-cli` |
+| **Fix cattura memoria — encoding path + fail-loud** (E4-FEAT-011, merge `5d30635`/PR #189, 2026-07-15) — `encode_project_path` collassava solo `:`/`\`/`/`, mentre Claude Code collassa **ogni** carattere non-alfanumerico (spazi **e** punti) → su path con spazi la cartella calcolata non esisteva → **0 sessioni archiviate in silenzio**. Regola derivata dai 15 nomi reali della macchina; validata dal vivo (**22 sessioni** recuperate su `VM-WorkingFolder`). + **fail-loud** host-agnostico: `source_available()` sul port + `ArchiveRunReport.source_absent` + WARNING visibile (human+JSON), exit 0 preservato (l'hook SessionEnd non si rompe). Adapter `copilot-cli` non affetto. Fonte: handoff Nunzio | `memoria-conversazioni` |
+| **Hook wiring ancorato alla repo root** (E10-FEAT-031, merge `e3c2a97`/PR #190, 2026-07-15) — regressione di A-09: la migrazione `.ps1`→`.py` aveva perso l'ancoraggio `$env:CLAUDE_PROJECT_DIR`, e con CWD ≠ radice ogni hook falliva prima del comando (su `PreToolUse` **bloccando** Bash/Write/Edit). Fix **nativo** per assistente: `${CLAUDE_PROJECT_DIR}` nei 7 asset `settings*.json` (Claude) · campo `HookEntrySpec.cwd` → `cwd="."` sui 6 command entry (Copilot). Guardie anti-regressione; `sertor-core` invariato. **⚠️ Consegna agli ospiti esistenti INCOMPLETA → E10-FEAT-032** (vedi IN PROGRESS) | `debito-tecnico` |
 
 *Dettaglio (PR, date, numeri) nella sezione ✅ DONE in fondo alla pagina.*
 
 > **Governance:** Costituzione **v1.4.0** — **Missione & stella polare (North Star)** (differenziatore = **fusione code+doc**; gate «Allineamento alla missione» nel Constitution Check) + **Principio XII «Fail Loud, Fix the Cause»** (v1.3.0: riparare la causa, non disattivare/silenziare per schivare un errore). Distribuita agli ospiti via `sertor-flow` (starter neutro + blocco SDLC).
 
-### 📋 Le 15 epiche (per stato) — stato al 2026-07-12
+### 📋 Le 15 epiche (per stato) — stato al 2026-07-16
 
 > **⚠️ Nessuna epica è "finita" finché TUTTE le sue feature non sono consegnate.** Le 4 storiche hanno
 > il **nucleo su `master`** ma residui aperti (tranne `sertor-core`, ormai completa); le altre sono
@@ -65,15 +67,15 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | # | Epica | Stato | Residuo / 1° passo |
 |---|---|---|---|
 | **E1** | [`sertor-core`](../../requirements/sertor-core/epic.md) | ✅ completa (FEAT-011 ✅ merge `34b599a`) | **Nessun residuo Should aperto** — FEAT-011 embedder locale consegnata (2026-06-21). Resta solo il debito P2 **TASK-D04** (rinomina flag installer `--backend`→`--provider`). *(agenzia incorporata ❌ abbandonata by design)* |
-| **E2** | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | **residuo:** pip fallback reale (→FEAT-006) · multi-target `sertor-flow` (follow-up) · reviewer clean-code · Codex · PyPI · `configure --check` (deferred) · **FEAT-017 onestà auto-updater** (in corso) *(packaging ✅ + lifecycle ✅ + hardening Copilot ✅ + wizard config ✅ + Copilot CLI-only ✅ + version-check FEAT-013 ✅ + **FEAT-010 multi-target/non-Python/uv ✅** `eb1f7a3`/#179 + **FEAT-016 ❌ Won't** spike 2026-07-13)* |
+| **E2** | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 🔄 nucleo su master | **residuo:** pip fallback reale (→FEAT-006) · multi-target `sertor-flow` (follow-up) · reviewer clean-code · Codex · PyPI · `configure --check` (deferred) *(packaging ✅ + lifecycle ✅ + hardening Copilot ✅ + wizard config ✅ + Copilot CLI-only ✅ + version-check FEAT-013 ✅ + **FEAT-010 multi-target/non-Python/uv ✅** `eb1f7a3`/#179 + **FEAT-016 ❌ Won't** spike 2026-07-13 + **FEAT-017 onestà auto-updater ✅** `00dcd62`/#180)*. **PyPI/pip: gate CI caduto 2026-07-16 → eseguibile ora** |
 | **E3** | [`osservabilita`](../../requirements/osservabilita/epic.md) | 🔄 MVP su master | **export OTel FEAT-005 ✅** + arricchimento span FEAT-013 ✅ + TUI tabella FEAT-014 ✅ + **visibilità RAG/dimostrabilità FEAT-015 ✅** (PR #88) · drift FEAT-012 · metriche aggregate · stima € (Should) · web · CSV/MD |
-| **E4** | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso + **distribuibile** + **semantico** + **multi-assistente** · **🐛 bug cattura auto** | **🐛 DA INVESTIGARE (2026-07-09):** la **cattura automatica** non popolava l'archivio (`memory list` vuoto benché `SERTOR_MEMORY=true`); il motore è sano (archive manuale = 58 sessioni · full-text+semantica ok). Ipotesi: hook `memory-capture` era `.ps1` (**migrato a `.py` con A-09, ✅ su `master`** — il fix ipotizzato è ora in place) → **verificare al prossimo SessionEnd**; se archivia da solo, chiudere il 🐛 (rischio R-1 cattura host-specifica). · remember-this · retention (Could) · parità MCP `show`/`list` (FEAT-010) *(cattura Copilot CLI FEAT-008 ✅ + ricerca semantica FEAT-004 ✅ + distribuzione installer FEAT-009 ✅)* |
+| **E4** | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 🔄 MVP acceso + **distribuibile** + **semantico** + **multi-assistente** · **🐛 bug cattura auto** | **🐛 CAUSA IDENTIFICATA (2026-07-16), non ancora chiuso:** la **cattura automatica** non popola l'archivio. **Evidenza:** ultima sessione archiviata = **2026-07-09**, nulla dal 10 al 15 (il motore è sano: archive manuale = 58 sessioni · full-text+semantica ok). **La data coincide con A-09** (`69d527c`, 2026-07-09, migrazione hook `.ps1`→`.py`): quella migrazione ha introdotto il **path relativo** → l'hook `memory-capture` fallisce con CWD ≠ radice **e esce 0** (fallimento muto). **Riprodotto dal vivo:** l'hook lanciato da una sottocartella dà `can't open file …memory-capture.py` con exit 0. ⇒ **stessa causa di E10-FEAT-031**, che quindi lo chiude — **ma solo quando il fix arriva davvero all'host** (→ E10-FEAT-032). Non è il rischio R-1 (cattura host-specifica): è il wiring. · remember-this · retention (Could) · parità MCP `show`/`list` (FEAT-010) *(cattura Copilot CLI FEAT-008 ✅ + ricerca semantica FEAT-004 ✅ + distribuzione installer FEAT-009 ✅)* |
 | **E5** | 🆕 [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | 🔄 FEAT-001+011 ✅ · FEAT-003 T1+T2 ✅ su master | **eval IR ✅** (PR #92) + **graph-eval ✅** (FEAT-011) + skill live ✅ + **FEAT-003 misura fusione + `search_combined` strutturato (tupla, metrica OR) ✅** (merge `42aceaf`+`908bd92`). **Scoperta:** lo «0.17» era artefatto dell'AND; a OR union=1.00, il vero debole è **`search_docs` MRR 0.55** (leva futura). Restano FEAT-002/004/005-007 |
 | **E6** | 🆕 [`backend-store-scala`](../../requirements/backend-store-scala/epic.md) | 📋 aperta | adapter PGVector (Should) |
 | **E7** | 🆕 [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 📋 aperta | chunking SQL → **sblocca** schema-SQL |
 | **E8** | 🆕 [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | 📋 aperta | bloccata a monte da `ingestione-estesa` |
 | **E9** | 🆕 [`second-brain`](../../requirements/second-brain/epic.md) | 📋 da espandere | decidere bivi §9 prima di decomporre |
-| **E10** | 🆕 [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 🔄 in progress | **FEAT-011 hook freschezza RAG ✅ (merge `29dd30e`, 2026-06-25)** + **FEAT-019 fail-loud breadcrumb hook + fallback STOP agent ✅ (merge `629481b`/PR #125, 2026-06-29)** + **FEAT-018 portabilità OS hook (guardia pwsh) + onestà surface ✅ (merge `8257fd3`/PR #127, 2026-06-30)**; resta Could (FEAT-014 stdin guard + **FEAT-015 refresh non disinstalla bene** + FEAT-004/005/006/007/008/021/022) *(**FEAT-009 distribuzione costituzione neutra ✅ 2026-06-19** — PR #82 · **FEAT-003 CI GitHub Actions ✅ 2026-06-23** — Windows + Linux verdi su PR #96, prima CI del progetto · **FEAT-013 allineamento config dogfood↔ospite ✅ 2026-06-23** — dogfood su `.sertor/.env`+`.sertor/.index`, resolver host-agnostico · **FEAT-012 governance nel corpus ✅ 2026-06-23** — costituzione+plan-template indicizzati · unif. venv ✅ · host-agnosticità asset **FEAT-001/009/010 ✅** · disciplina MCP-first agli ospiti ✅, 2026-06-19)* · **audit asset first-party 2026-06-26** ([[sertor-strumenti-audit]]) → FEAT-016..024 (P0 ✅ tutti mergiati; P1 FEAT-019 ✅) |
+| **E10** | 🆕 [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 🔄 in progress | **FEAT-011 hook freschezza RAG ✅ (merge `29dd30e`, 2026-06-25)** + **FEAT-019 fail-loud breadcrumb hook + fallback STOP agent ✅ (merge `629481b`/PR #125, 2026-06-29)** + **FEAT-018 portabilità OS hook (guardia pwsh) + onestà surface ✅ (merge `8257fd3`/PR #127, 2026-06-30)**; + **FEAT-031 hook wiring ancorato ✅ (merge `e3c2a97`/PR #190, 2026-07-15)** — *ma la consegna agli ospiti esistenti è incompleta* → **FEAT-032 🔎 ipotesi in verifica (Noetix)**; resta Could (FEAT-014 stdin guard + **FEAT-015 refresh non disinstalla bene** + FEAT-004/005/006/007/008/021/022) + Should aperti **FEAT-029** (hook wiki path hardcoded) / **FEAT-030** (emendamento costituzione Product-vs-Fixture Plane) *(**FEAT-009 distribuzione costituzione neutra ✅ 2026-06-19** — PR #82 · **FEAT-003 CI GitHub Actions ✅ 2026-06-23** — Windows + Linux verdi su PR #96, prima CI del progetto · **FEAT-013 allineamento config dogfood↔ospite ✅ 2026-06-23** — dogfood su `.sertor/.env`+`.sertor/.index`, resolver host-agnostico · **FEAT-012 governance nel corpus ✅ 2026-06-23** — costituzione+plan-template indicizzati · unif. venv ✅ · host-agnosticità asset **FEAT-001/009/010 ✅** · disciplina MCP-first agli ospiti ✅, 2026-06-19)* · **audit asset first-party 2026-06-26** ([[sertor-strumenti-audit]]) → FEAT-016..024 (P0 ✅ tutti mergiati; P1 FEAT-019 ✅) |
 | **E11** | [`multiutente`](../../requirements/multiutente/epic.md) | 📋 differita | finché il caso d'uso team non è concreto |
 | **E12** | 🆕 [`usabilità`](../../requirements/usabilita/epic.md) | 🔄 **MVP completo** (FEAT-001/002/010 ✅ su `master`) | **owner del layer UX** (skill agentiche + agente *concierge* + poche primitive deterministiche, D↔N). **FEAT-001 `doctor` ✅** (PR #100, fix freschezza #102) + **FEAT-002 guided-setup ✅** (skill + agente `concierge` model-pinned, PR #101) + **FEAT-010 discoverability CLI ✅** (`uv run --project .sertor`, PR #103/#104) + **FEAT-012 install host-aware ✅** (PR #115, fix dogfooding + NRT, 2026-06-26). MVP (doctor + guida + invocazione robusta) coperto. Restano Should: config-recommender (FEAT-004), explain (FEAT-005), search-diagnose (FEAT-007), concierge pieno (FEAT-009, **stub avviato**), progress GloVe (FEAT-003). Assorbe item UX-facing da E2/E3/E10 (cross-ref) · **FEAT-013 description trigger-rich EN** (da audit, P0) |
 | **E13** | 🆕 [`documentazione-marketing`](../../requirements/documentazione-marketing/epic.md) | 🔄 **Fase 1 COMPLETA** (FEAT-001..008 ✅) | **owner della documentazione ESTERNA + marketing** (confine netto: E12 = UX in-product · `wiki/` = doc interna · meccanismi nelle epiche d'origine — E13 li *racconta*, cross-ref). **Fase 1 — doc utente ✅ TUTTA CONSEGNATA:** getting-started + README valore (A-18, PR #172) · why-sertor + indice docs + tutorial + troubleshooting + CHANGELOG + reference (batch 2026-07-12). **Fase 2 — marketing pubblico** (posizionamento, demo/screencast, landing/sito) resta **gated sul go-public** (apertura repo/PyPI, oggi E2/FEAT-006 = Won't) |
@@ -204,13 +206,35 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   rewrite) → **repo `themetriost/Sertor` PUBBLICO** · **prima release `v0.1.0`** (GitHub Release + tag su
   `00dcd62`, *latest*) · **auto-updater live** (3 scenari validati: up-to-date `/VERSION`=200 reale · behind ·
   unknown-una-tantum FEAT-017) · **install esterno provato** (`uvx` dal tag pubblico, fuori dal checkout, 85 pkg,
-  `sertor --help` ok) · hardening `.gitignore` (`*.pem`/`*.pfx`/`*.p12`). **⏳ GATED al 1° ago (CI ferma per
-  billing):** **publish PyPI** dei 4 pacchetti (= **E2-FEAT-006**, Won't→planned; darà `pip install sertor`) +
+  `sertor --help` ok) · hardening `.gitignore` (`*.pem`/`*.pfx`/`*.p12`). **⏳ era GATED al 1° ago (CI ferma per
+  billing) → 🔓 GATE CADUTO il 2026-07-16: la CI è tornata verde in anticipo (8/8 su PR #190), il residuo è
+  eseguibile ORA:** **publish PyPI** dei 4 pacchetti (= **E2-FEAT-006**, Won't→planned; darà `pip install sertor`) +
   **pip fallback reale** (FEAT-010 residuo, possibile con deps pubblicate) + eventuale **bump `/VERSION`** che
   accende `behind` in produzione (la v0.1.0 è baseline, nessun bump). **🔓 Sbloccato ora:** **E13 Fase 2**
   (marketing). Casa del residuo: [`requirements/sertor-cli/go-public-pypi/`](../../requirements/sertor-cli/go-public-pypi/requirements.md).
-- **Prossimo passo aperto:** al 1° ago (CI verde) → PyPI publish + pip fallback (go-public-pypi). Nel frattempo:
-  **E13 Fase 2** (sbloccata) · E5-FEAT-003 `search_docs` · 🐛 E4 cattura-auto memoria.
+- **✅ CI TORNATA VERDE (verificato 2026-07-16)** — il blocco per billing («CI ferma fino al 1° ago») **non è più
+  vero**: la PR #190 ha girato con **8/8 check SUCCESS** (test Windows+Ubuntu py3.11/3.12, smoke Claude+Copilot).
+  **Conseguenza:** il gate del residuo go-public **è caduto in anticipo** → PyPI publish + pip fallback sono
+  eseguibili **ora**, non dal 1° agosto. Riprende anche l'auto-merge/uso normale della CI come gate pre-merge.
+- **🔎 E10-FEAT-032 — consegna incompleta di FEAT-031 agli ospiti (IPOTESI, verifica in corso).** Il re-install
+  reale sul dogfood ha mostrato che il merge di `settings.json` usa **la stringa del comando come identità**
+  dell'hook: cambiare il wiring **non aggiorna, duplica** (Claude: vecchia rotta + nuova, la vecchia **ancora
+  attiva** → FEAT-031 non arriva a chi aggiorna) oppure **non atterra affatto** (Copilot: `cwd` aggiunto ma
+  command invariato → dedup scarta la nuova, in silenzio). *Dove:* `settings_merge.py` (`_dedup_hooks`); la
+  primitiva di rimedio `remove_hook_entries_by_command_substring` **esiste già** (scritta per A-09) ma copre solo
+  i `.ps1` ed è chiamata solo in `_apply_rag_upgrade`. *Blocco/decisione aperta:* **nessun fix prima della
+  verifica indipendente** (decisione utente 2026-07-16) — il dogfood è teste contaminato (bug prodotto sul nodo
+  che ha scritto il fix). **Chiesto al nodo Noetix** via Acta (canale Generale, `2026-07-16-sertor-risposta-noetix-…`)
+  di fare il refresh **da HEAD** e riportare quale forma vede. *Prossimo passo concreto:* attendere l'esito Noetix
+  → se confermato, fix + guardia sull'**esito d'upgrade** (oggi le guardie coprono solo la forma dell'asset).
+  *Stato dogfood:* `.claude/settings.json` ha ora le voci duplicate, **non committato** (non si versiona lo stato
+  buggato); si ripulisce col re-install dopo il fix.
+- **Prossimo passo aperto:** (1) esito Noetix → E10-FEAT-032; (2) **go-public/PyPI ORA sbloccato** (CI verde):
+  publish dei 4 pacchetti + pip fallback ([`go-public-pypi`](../../requirements/sertor-cli/go-public-pypi/requirements.md));
+  (3) **E13 Fase 2** (marketing) · E5-FEAT-003 `search_docs` · 🐛 E4 cattura-auto memoria (**evidenza nuova
+  2026-07-16:** ultima sessione archiviata = **2026-07-09**, nulla dal 10 al 15 → la cattura automatica **non
+  gira**; l'hook `memory-capture` fallisce in silenzio con CWD ≠ radice — **stessa causa di FEAT-031**, quindi
+  probabilmente si chiude con la consegna reale di quel fix, cioè FEAT-032).
 
 **Candidati a valore = Should aperti:**
 
