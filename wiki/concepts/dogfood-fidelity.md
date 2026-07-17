@@ -31,6 +31,9 @@ La fedeltà non è monolitica: si rompe su due assi indipendenti.
 La distinzione conta perché un asset può essere identico (asset-fidelity ✅) pur non essendo mai passato per
 l'installer (process-fidelity ✗): il secondo è ciò che verifica davvero il percorso che l'ospite vive.
 
+**Lezione complementare:** vedi anche [[esito-sull-host-vs-forma-dell-asset]] — anche un asset
+process-fedele si controlla male se testiamo solo la *forma* e non l'*esito sull'host che aggiorna*.
+
 ## Il runtime: `.sertor/` installato, che traccia HEAD
 
 Il cuore del modello (E15-FEAT-001/F1): il **runtime dell'agente** — MCP, hook, skill, la macchina che

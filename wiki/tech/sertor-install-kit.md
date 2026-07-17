@@ -69,7 +69,9 @@ necessaria:
   presente-con-marker → skip (idempotente, byte-per-byte fuori dai marker).
 
 **`merge.py` (suite)** — Merge intelligenti per formati comuni:
-- `settings_merge()`: unisce JSON dict mantenendo structure profonda.
+- `settings_merge()`: unisce JSON dict mantenendo structure profonda. Caso critico: deduplicazione
+  intelligente degli hook per lo **stem dello script** (vedi [[identita-hook-nel-merge]]), non per
+  la stringa del comando (che è resa mutabile).
 - `env_merge()`: accomoda `.env` senza sovrascrivere chiavi esitenti.
 - `mcp_merge()`: preserva altri server MCP, aggiunge il nuovo senza duplicare.
 - `gitignore_append()`: dedup per-linea, append inerte se già presente.
