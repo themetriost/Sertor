@@ -45,16 +45,41 @@ def _link_aliases(rel_path: str) -> set[str]:
     return {rel_path, no_ext, stem}
 
 
+def _default_base_candidates(config_dir: Path) -> list[str]:
+    """Ordered, existing refs to use as the diff base — the repo's default branch, NOT a hardcoded
+    name (E10-FEAT-033, Principio X). First the remote's DECLARED default (`origin/HEAD`), then
+    existing mainline refs (remote before local, `main` before `master`), deduped. Empty list →
+    no default resolvable (caller fails loud).
+    """
+    candidates: list[str] = []
+    # remote's declared default, e.g. `origin/main`
+    rc, out = _git(["symbolic-ref", "--short", "refs/remotes/origin/HEAD"], config_dir)
+    if rc == 0 and out.strip():
+        candidates.append(out.strip())
+    for cand in ("origin/main", "origin/master", "main", "master"):
+        if cand not in candidates:
+            rc, _ = _git(["rev-parse", "--verify", "--quiet", cand], config_dir)
+            if rc == 0:
+                candidates.append(cand)
+    return candidates
+
+
 def _resolve_base(config_dir: Path, base: str | None) -> str:
-    """Resolve the diff base: explicit `base`, else merge-base with `master` (fail-loud if none)."""
+    """Resolve the diff base: explicit `base`, else merge-base with the repo's DEFAULT branch,
+    detected at runtime (never a hardcoded `master` — E10-FEAT-033). Tries each default candidate in
+    order and returns the first with a merge-base; fail-loud if none (Principio XII).
+    """
     if base:
         return base
-    rc, out = _git(["merge-base", "HEAD", "master"], config_dir)
-    if rc == 0 and out.strip():
-        return out.strip()
+    tried = _default_base_candidates(config_dir)
+    for ref in tried:
+        rc, out = _git(["merge-base", "HEAD", ref], config_dir)
+        if rc == 0 and out.strip():
+            return out.strip()
+    tried_note = f"; tried: {', '.join(tried)}" if tried else ""
     raise ConfigError(
-        "cannot determine a git diff base (no merge-base with 'master'); pass --base <ref> or "
-        "--pages <a.md,...>",
+        "cannot determine a git diff base (no merge-base with the repo's default branch"
+        f"{tried_note}); pass --base <ref> or --pages <a.md,...>",
         key="--base",
     )
 
