@@ -6,6 +6,7 @@ NON-git, `git show`/`rev-parse` falliscono in modo grazioso → i link correnti 
 """
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -58,6 +59,19 @@ def _page(p, rel: str, body: str) -> None:
     f = p.root_path / rel
     f.parent.mkdir(parents=True, exist_ok=True)
     f.write_text(body, encoding="utf-8")
+
+
+def _run_git(cwd: Path, *args: str) -> None:
+    subprocess.run(["git", *args], cwd=str(cwd), check=True, capture_output=True, text=True)
+
+
+def _git_repo(cwd: Path, default_branch: str) -> None:
+    """Init a git repo at `cwd` with `default_branch`, an identity, and one initial commit."""
+    _run_git(cwd, "-c", f"init.defaultBranch={default_branch}", "init")
+    _run_git(cwd, "config", "user.email", "t@example.test")
+    _run_git(cwd, "config", "user.name", "Test")
+    _run_git(cwd, "add", "-A")
+    _run_git(cwd, "commit", "-m", "init", "--no-gpg-sign")
 
 
 # ------------------------------------------------------------------ distill candidates (US1)
@@ -173,3 +187,49 @@ def test_read_only_no_page_modified(tmp_path):
     assert before == after                        # sola lettura (SC-003)
     assert res.schema == "wiki.ritual_check/1"
     assert "record" in res.declaration_scaffold and "distill" in res.declaration_scaffold
+
+
+# ------------------------------------------------ default-branch detection (E10-FEAT-033, US1/US2)
+
+def _feature_commit(tmp_path, p):
+    """From the current default branch, branch off and commit a wiki change (gives base...HEAD)."""
+    _run_git(tmp_path, "checkout", "-b", "feat")
+    _page(p, "concepts/x.md", "---\ntitle: X\ntype: concept\n---\nbody\n")
+    _run_git(tmp_path, "add", "-A")
+    _run_git(tmp_path, "commit", "-m", "add x", "--no-gpg-sign")
+
+
+@pytest.mark.parametrize("default_branch", ["main", "master"])
+def test_resolve_base_detects_default_branch(tmp_path, default_branch):
+    """`ritual-check` resolves the diff base on a repo whose default is `main` OR `master`, no flag.
+
+    The bug: `master` was hardcoded, so a `main`-default repo raised ConfigError. Now the default is
+    detected (SC-001 for `main`, SC-002 unchanged for `master`).
+    """
+    p = _wiki(tmp_path)
+    _git_repo(tmp_path, default_branch)
+    _feature_commit(tmp_path, p)
+    res = ritual_check(p)                          # no --pages, no --base → detect default
+    assert res.schema == "wiki.ritual_check/1"     # did NOT raise (base resolved)
+    assert res.scope.startswith("git:")            # scope came from the git diff, not --pages
+
+
+def test_resolve_base_explicit_base_wins(tmp_path):
+    """`--base <ref>` is honored and skips detection (SC-003)."""
+    p = _wiki(tmp_path)
+    _git_repo(tmp_path, "main")
+    _feature_commit(tmp_path, p)
+    # HEAD~1 is the initial commit; passing it explicitly must be accepted verbatim.
+    res = ritual_check(p, base="HEAD~1")
+    assert res.schema == "wiki.ritual_check/1"
+
+
+def test_resolve_base_fail_loud_no_mergebase(tmp_path):
+    """Candidate default exists but has NO merge-base with HEAD (orphan) → fail loud (SC-004)."""
+    p = _wiki(tmp_path)
+    _git_repo(tmp_path, "main")
+    _run_git(tmp_path, "checkout", "--orphan", "isolated")
+    _run_git(tmp_path, "add", "-A")
+    _run_git(tmp_path, "commit", "-m", "orphan", "--no-gpg-sign")
+    with pytest.raises(ConfigError):              # no merge-base with 'main' → no silent scope
+        ritual_check(p)
