@@ -31,6 +31,15 @@
             "command": "uv run --no-project python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/wiki-session-start.py\" --assistant claude"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 20,
+            "command": "uv run --no-project python $CLAUDE_PROJECT_DIR/.claude/hooks/acta-session-start.py --assistant claude"
+          }
+        ]
       }
     ],
     "PreToolUse": [
