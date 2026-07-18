@@ -27,7 +27,11 @@ _FRESH = _State({"a.py": (100.0, "h", "v")})
 @pytest.fixture
 def wired(monkeypatch):
     """Wire the handler to a healthy installation by default; each test overrides as needed."""
-    settings = Settings(corpus="default", embed_provider="hash", store_backend="local")
+    # A healthy install has a resolvable project root (038): `doctor` fails loud without one.
+    settings = Settings(
+        corpus="default", embed_provider="hash", store_backend="local",
+        project_root=Path("."),
+    )
     monkeypatch.setattr(cli.Settings, "load", classmethod(lambda c, env_file=".env": settings))
     monkeypatch.setattr(cli, "enable_observability", lambda s: None)
     # default-healthy signals
@@ -327,3 +331,59 @@ def test_cmd_doctor_read_only(wired):
     # The handler never calls index/upsert factories — only read helpers are wired. Running it
     # twice yields the same exit code with no state change (idempotent, read-only).
     assert _run(["doctor"]) == _run(["doctor"]) == 0
+
+
+# --- E10-FEAT-038: verdict anchored to the project root, not the CWD -----------------------------
+
+
+def test_cmd_doctor_anchors_helpers_to_project_root_not_cwd(monkeypatch, capsys):
+    """The freshness/registration helpers receive `settings.project_root`, NOT `Path.cwd()`.
+
+    The root passed in must be the CWD-independent project root; otherwise the same index yields
+    `index: pass` from the root and `index: warn` from a subfolder (the bug). We set a project root
+    distinct from any plausible CWD and assert both helpers receive exactly it.
+    """
+    anchored = Path("/anchored/project/root").resolve()
+    settings = Settings(
+        corpus="default", embed_provider="hash", store_backend="local", project_root=anchored
+    )
+    monkeypatch.setattr(cli.Settings, "load", classmethod(lambda c, env_file=".env": settings))
+    monkeypatch.setattr(cli, "enable_observability", lambda s: None)
+    monkeypatch.setattr(Settings, "validate_backend", lambda self: [])
+    monkeypatch.setattr(cli, "load_manifest_state", lambda s: _FRESH)
+    monkeypatch.setattr(
+        cli, "build_provider_probe", lambda s: ProviderProbe(ProbeStatus.reachable, "")
+    )
+    captured: dict = {}
+    monkeypatch.setattr(
+        cli, "current_source_stats",
+        lambda st, root: captured.__setitem__("stats_root", root) or [],
+    )
+    monkeypatch.setattr(
+        cli, "read_mcp_registration",
+        lambda root: captured.__setitem__("mcp_root", root) or True,
+    )
+    code = _run(["doctor"])
+    capsys.readouterr()
+    assert code == 0
+    assert captured["stats_root"] == anchored  # NOT Path.cwd()
+    assert captured["mcp_root"] == anchored
+
+
+def test_cmd_doctor_fails_loud_when_root_unresolvable(monkeypatch, capsys):
+    """Unresolvable project root → fail loud (exit 1, actionable message), NO verdict table."""
+    settings = Settings(
+        corpus="default", embed_provider="hash", store_backend="local", project_root=None
+    )
+    monkeypatch.setattr(cli.Settings, "load", classmethod(lambda c, env_file=".env": settings))
+    monkeypatch.setattr(cli, "enable_observability", lambda s: None)
+    # If the guard is missing, these would run and the test would not catch the regression.
+    monkeypatch.setattr(
+        cli, "current_source_stats",
+        lambda st, root: (_ for _ in ()).throw(AssertionError("must fail loud before stats")),
+    )
+    code = _run(["doctor"])
+    captured = capsys.readouterr()
+    assert code == 1
+    assert "cannot resolve the project root" in captured.err
+    assert "doctor:" not in captured.out  # no verdict emitted on an unanchored run

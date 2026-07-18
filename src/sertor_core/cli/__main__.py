@@ -571,7 +571,16 @@ def _cmd_doctor(args) -> None:
         if args.area == "all"
         else (AreaName(args.area),)
     )
-    root = Path.cwd()
+    # Project root — CWD-independent (E10-FEAT-038): the same self-located anchor as the index, NOT
+    # `Path.cwd()` (which made the verdict depend on the invocation dir: `index: pass` from the root
+    # but `index: warn` from `src/`). Unresolvable → fail loud (Principio XII), never a CWD guess.
+    root = settings.project_root
+    if root is None:
+        raise ConfigError(
+            "cannot resolve the project root (.sertor/ not found from the runtime, and "
+            "CLAUDE_PROJECT_DIR is unset): run doctor inside an installed Sertor project, or set "
+            "CLAUDE_PROJECT_DIR to the project root"
+        )
     areas: list = []
 
     # The config/provider areas share the SINGLE source `validate_backend()` (no duplicated list).
