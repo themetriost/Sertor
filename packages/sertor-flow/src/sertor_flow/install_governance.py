@@ -40,6 +40,7 @@ from sertor_install_kit import (
     SharedEditKind,
     Surface,
     WriteStrategy,
+    content_matches,
     project_removal,
     project_update,
     read_asset_text,
@@ -230,10 +231,15 @@ def _apply_file(target_root: Path, art: Artifact) -> ArtifactOutcome:
     """`CREATE_IF_ABSENT`: byte-for-byte copy (or rendered, for Copilot) of the asset; exists →
     skip."""
     dest = _resolve(target_root, art.target_rel)
+    rendered = _render_for_target(art)
     if dest.exists():
-        return ArtifactOutcome(art.target_rel, Outcome.SKIPPED, "already present")
+        # E2-FEAT-018: content-identical → SKIPPED; present-but-different → PRESENT_DIVERGENT
+        # (left untouched, non-destructive), not conflated into a mute "already present".
+        if content_matches(dest, rendered):
+            return ArtifactOutcome(art.target_rel, Outcome.SKIPPED, "already present")
+        return ArtifactOutcome(art.target_rel, Outcome.PRESENT_DIVERGENT, "present but modified")
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(_render_for_target(art), encoding="utf-8")
+    dest.write_text(rendered, encoding="utf-8")
     return ArtifactOutcome(art.target_rel, Outcome.CREATED)
 
 

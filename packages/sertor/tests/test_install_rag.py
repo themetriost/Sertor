@@ -549,3 +549,56 @@ def test_skill_no_claude_container_leak():  # RNF-2 / R-1
     assert "/wiki" not in body
     for name in ("Claude Code", "Opus", "Haiku", "$ARGUMENTS"):
         assert name not in body
+
+
+# --- E2-FEAT-018: honest outcomes (present-divergent) + inspectable install log ----------------
+
+def _first_file_target(profile) -> str:
+    """The target_rel of the first CREATE_IF_ABSENT FILE artifact in the rag plan."""
+    plan = build_rag_plan(
+        profile, with_deps=False, mcp_scope="project", assistant=AssistantId.CLAUDE
+    )
+    for art in plan:
+        if art.kind is ArtifactKind.FILE:
+            return art.target_rel
+    raise AssertionError("no FILE artifact in the rag plan")
+
+
+def test_rag_present_divergent_on_user_modified_file(tmp_path: Path, make_runner):
+    """A pre-existing owned FILE with different content → PRESENT_DIVERGENT, left untouched."""
+    runner = make_runner()
+    _, profile = _run(tmp_path, runner, backend="azure", with_deps=False)
+    rel = _first_file_target(profile)
+    dest = tmp_path / rel
+    dest.write_text("USER MODIFIED CONTENT\n", encoding="utf-8")     # diverge from deposit
+    report2, _ = _run(tmp_path, runner, backend="azure", with_deps=False)
+    outcome = next(o for o in report2.outcomes if o.target_rel == rel)
+    assert outcome.outcome.value == "present_divergent"
+    assert dest.read_text(encoding="utf-8") == "USER MODIFIED CONTENT\n"   # preserved
+    assert report2.present_divergent >= 1
+
+
+def test_rag_identical_reinstall_stays_skipped(tmp_path: Path, make_runner):
+    """An identical re-install keeps FILE outcomes SKIPPED (backward-compat, REQ-006)."""
+    runner = make_runner()
+    _, profile = _run(tmp_path, runner, backend="azure", with_deps=False)
+    report2, _ = _run(tmp_path, runner, backend="azure", with_deps=False)
+    rel = _first_file_target(profile)
+    outcome = next(o for o in report2.outcomes if o.target_rel == rel)
+    assert outcome.outcome.value == "skipped"
+    assert report2.present_divergent == 0
+
+
+def test_rag_install_writes_inspectable_log(tmp_path: Path, make_runner):
+    """`install rag` appends `install.event/1` lines to `.sertor/.install-log.jsonl` (FR-004)."""
+    import json
+
+    runner = make_runner()
+    _run(tmp_path, runner, backend="azure", with_deps=False)
+    log = tmp_path / ".sertor" / ".install-log.jsonl"
+    assert log.is_file()
+    events = [json.loads(x) for x in log.read_text(encoding="utf-8").strip().splitlines()]
+    assert events, "the install log must have at least one event"
+    assert all(e["schema"] == "install.event/1" for e in events)
+    assert all(e["op"] == "install" and e["capability"] == "rag" for e in events)
+    assert all("target" in e and "outcome" in e for e in events)

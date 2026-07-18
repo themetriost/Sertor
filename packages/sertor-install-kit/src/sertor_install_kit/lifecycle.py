@@ -94,6 +94,21 @@ class SertorOwnedPaths:
 # --- standalone lifecycle primitives ------------------------------------------------------------
 
 
+def content_matches(dest: Path, expected: str) -> bool:
+    """Whether `dest`'s text equals `expected`, line-ending insensitive (E2-FEAT-018).
+
+    The shared 'present but identical?' test: `\\r\\n` is normalized to `\\n` so a host written with
+    platform newlines is not spuriously flagged as divergent (mirrors the install write path). Used
+    by the non-destructive install path (SKIPPED vs PRESENT_DIVERGENT) and the uninstall guard.
+    A missing/unreadable `dest` → False (the caller treats it as not-matching).
+    """
+    try:
+        current = dest.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    return current.replace("\r\n", "\n") == expected.replace("\r\n", "\n")
+
+
 def update_file_if_changed(dest: Path, content: bytes | str) -> Outcome:
     """Writes `content` to `dest` only if it differs — for standalone (FILE) assets.
 
@@ -159,8 +174,7 @@ def remove_file_if_owned(
     if not dest.exists() and not dest.is_symlink():
         return Outcome.SKIPPED, "absent"
     if dest.is_file() and not dest.is_symlink():
-        current = dest.read_text(encoding="utf-8").replace("\r\n", "\n")
-        if current != expected_content.replace("\r\n", "\n"):
+        if not content_matches(dest, expected_content):
             return Outcome.SKIPPED, "preserved: modified since install"
     if dry_run:
         return Outcome.REMOVED, None

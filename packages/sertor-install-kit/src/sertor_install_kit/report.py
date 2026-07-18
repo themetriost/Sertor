@@ -48,6 +48,7 @@ class InstallReport:
     block: int = 0
     updated: int = 0  # feature 048
     removed: int = 0  # feature 048
+    present_divergent: int = 0  # E2-FEAT-018: present at owned path, content differs (left as-is)
     errors: int = 0
     failed_step: str | None = None
 
@@ -66,6 +67,8 @@ class InstallReport:
             self.updated += 1
         elif outcome.outcome is Outcome.REMOVED:
             self.removed += 1
+        elif outcome.outcome is Outcome.PRESENT_DIVERGENT:
+            self.present_divergent += 1
         elif outcome.outcome is Outcome.ERROR:
             self.errors += 1
             if self.failed_step is None:
@@ -93,11 +96,14 @@ class InstallReport:
                 f"Aborted: failed step = {self.failed_step}. Fix it and re-run."
             )
         else:
-            lines.append(
+            summary = (
                 f"Summary: {self.created} created · {self.skipped} skipped · "
                 f"{self.merged} merged · {self.block} block · {self.updated} updated · "
                 f"{self.removed} removed · {self.errors} errors"
             )
+            if self.present_divergent:  # additive: only when a divergence was left (E2-FEAT-018)
+                summary += f" · {self.present_divergent} present-divergent"
+            lines.append(summary)
         for note in self.notes:
             lines.append(f"Note: {note}")
         return "\n".join(lines)
@@ -123,6 +129,8 @@ class InstallReport:
             },
             "failed_step": self.failed_step,
         }
+        if self.present_divergent:  # additive: only when a divergence was left (E2-FEAT-018)
+            payload["summary"]["present_divergent"] = self.present_divergent
         if self.notes:  # additive: present only when there are gap declarations (FEAT-011)
             payload["notes"] = list(self.notes)
         return json.dumps(payload, ensure_ascii=False, sort_keys=False)
