@@ -10,9 +10,9 @@ sources: ["requirements/sertor-cli/epic.md", "requirements/debito-tecnico/epic.m
 # Il setup dichiara ciò che presume, non ciò che è successo
 
 > **Stato:** analisi completata 2026-07-17; **decisioni di scope SCIOLTE 2026-07-18** (vedi in fondo).
-> Coda derivata: **FEAT-038 doctor ancorato ✅ (`7075a0f`/PR #198) → FEAT-033 ritual-check default branch ✅
-> (`546cb22`/PR #200) → E2-018 (036 folded, **prossimo**) → FEAT-034**. Ricognizione via 4 subagent (requisiti
-> · storia · feedback esterni · codice) + verifica empirica in prima persona.
+> Coda derivata: **FEAT-038 ✅ (`7075a0f`/#198) → FEAT-033 ✅ (`546cb22`/#200) → E2-018 ✅ (`0b45c24`/#202,
+> 036 assorbita) → FEAT-034 (`rag-freshness` rimisura, **prossimo/ultimo**)**. Ricognizione via 4 subagent
+> (requisiti · storia · feedback esterni · codice) + verifica empirica in prima persona.
 
 ## La tesi (una malattia, non quattro bug)
 
@@ -124,7 +124,10 @@ Ogni volta che troviamo un silenzio **aggiungiamo un canale nuovo e nessuno li a
 **Tracciamento durevole (fatto 2026-07-18):** il bug doctor-ancorato → **nuova E10-FEAT-038 (P0)**; **E10-FEAT-037** marcata investigata (last_index non-letto = non-bug; swing = FEAT-034; cwd-bug → 038); **E10-FEAT-036** folded in **E2-FEAT-018**, il cui scope è stato allargato a P1 (esito-azione) + P2 (log). Coda risultante nell'EXEC:
 > **1. FEAT-038 doctor ancorato → 2. FEAT-033 ritual-check default branch → 3. E2-018 (esito-azione + log, 036 folded) → 4. FEAT-034 rag-freshness rimisura.**
 
-**Stato operativo:** **FEAT-038 ✅** (`7075a0f`/PR #198) e **FEAT-033 ✅** (`546cb22`/PR #200) CONSEGNATE (SpecKit completo, verificate LIVE). **Prossimo: E2-FEAT-018 allargata** (esito-descrive-azione + log `.install-log.jsonl`, con **E10-FEAT-036 folded**).
+**Stato operativo:** **FEAT-038 ✅ · FEAT-033 ✅ · E2-FEAT-018 ✅** (`0b45c24`/PR #202, assorbe E10-FEAT-036;
+P2-log wiki/flow/lifecycle → follow-up E2-FEAT-020) — tutte CONSEGNATE, SpecKit completo, verificate LIVE.
+**Prossimo e ULTIMO della coda: E10-FEAT-034** (`rag-freshness` misura → ripara → **rimisura** → persiste,
+ora sbloccata dal doctor ancorato).
 
 ## Vincoli già scritti da rispettare (non partire da zero)
 Principio XII (Fail Loud) · `InstallReport.notes` (canale già usato, «primo uso reale» E10-018) ·
