@@ -32,8 +32,13 @@ def test_preexisting_agent_preserved(tmp_path: Path):
     )
 
     assert report.errors == 0
-    assert agent.read_text(encoding="utf-8") == user_content
-    assert _outcome_for(report, ".claude/agents/requirements-analyst.md").outcome.value == "skipped"
+    assert agent.read_text(encoding="utf-8") == user_content        # preserved (non-destructive)
+    # E2-FEAT-018: the outcome now HONESTLY says the present content diverges (left untouched),
+    # instead of the misleading "skipped" that conflated identical with user-modified.
+    assert (
+        _outcome_for(report, ".claude/agents/requirements-analyst.md").outcome.value
+        == "present_divergent"
+    )
 
 
 def test_preexisting_constitution_preserved(tmp_path: Path):

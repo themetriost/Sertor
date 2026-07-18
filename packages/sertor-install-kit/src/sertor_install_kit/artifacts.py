@@ -73,6 +73,10 @@ class Outcome(Enum):
     # keep their value, so install reports stay byte-identical.
     UPDATED = "updated"
     REMOVED = "removed"
+    # E2-FEAT-018: an owned path is present but its content DIFFERS from what we would deposit —
+    # left untouched (non-destructive), NOT the same as SKIPPED "identical". Additive: existing
+    # outcomes keep their value; the state SKIPPED used to silently conflate (FEAT-031/032 hole).
+    PRESENT_DIVERGENT = "present_divergent"
 
 
 @dataclass(frozen=True)

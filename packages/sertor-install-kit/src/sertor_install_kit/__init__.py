@@ -42,6 +42,7 @@ from sertor_install_kit.lifecycle import (
     SertorOwnedPaths,
     SharedEdit,
     SharedEditKind,
+    content_matches,
     deregister_mcp_client,
     execute_lifecycle,
     project_removal,
@@ -53,7 +54,7 @@ from sertor_install_kit.lifecycle import (
 )
 from sertor_install_kit.mcp_merge import merge_mcp, remove_mcp_server
 from sertor_install_kit.model_policy import IN_SCOPE_AGENTS, MODEL_POLICY_VERSION, resolve_model
-from sertor_install_kit.observability import log_event
+from sertor_install_kit.observability import log_event, log_install_event
 from sertor_install_kit.report import InstallReport
 from sertor_install_kit.resources import asset_path, iter_asset_dir, read_asset_text
 from sertor_install_kit.settings_merge import merge_settings, remove_settings_entries
@@ -106,6 +107,7 @@ __all__ = [
     "SharedEdit",
     "SharedEditKind",
     "update_file_if_changed",
+    "content_matches",
     "prune_empty_dirs",
     "remove_file_if_owned",
     "remove_path",
@@ -125,6 +127,7 @@ __all__ = [
     "SubprocessRunner",
     # observability
     "log_event",
+    "log_install_event",
     # surfaces renderer (feature 045: shared sertor/sertor-flow; FEAT-011 copilot hooks)
     "render_prompt_file",
     "render_custom_agent",

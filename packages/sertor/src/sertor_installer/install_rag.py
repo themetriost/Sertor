@@ -35,6 +35,7 @@ from sertor_install_kit.lifecycle import (
     SertorOwnedPaths,
     SharedEdit,
     SharedEditKind,
+    content_matches,
     deregister_mcp_client,
     project_removal,
     project_update,
@@ -714,7 +715,10 @@ def _apply_deps(profile: RagHostProfile, runner: CommandRunner) -> ArtifactOutco
     res = runner.run([_UV, "add", spec], cwd=sertor_dir)
     if not res.ok:
         raise DependencyError(f"`uv add` failed: {res.stderr.strip() or res.returncode}")
-    outcome = Outcome.SKIPPED if already else Outcome.CREATED
+    # E2-FEAT-018: `uv add` ALWAYS ran (above) — report the ACTION, not the precondition. A
+    # pre-existing runtime → UPDATED (deps re-applied/ensured), a new one → CREATED. Never SKIPPED,
+    # which would claim nothing was done while a command actually executed.
+    outcome = Outcome.UPDATED if already else Outcome.CREATED
     return ArtifactOutcome(".sertor", outcome, f"uv add {spec}")
 
 
@@ -773,10 +777,15 @@ def _apply_rag_file(profile: RagHostProfile, art: Artifact) -> ArtifactOutcome:
     regression on the hook scripts or the eval skills.
     """
     dest = profile.target_root / art.target_rel
+    rendered = _render_rag_file(art)
     if dest.exists():
-        return ArtifactOutcome(art.target_rel, Outcome.SKIPPED, "already present")
+        # E2-FEAT-018: describe what IS there, not just "present". Content-identical → SKIPPED;
+        # present-but-different → PRESENT_DIVERGENT (left untouched), NOT a mute skip.
+        if content_matches(dest, rendered):
+            return ArtifactOutcome(art.target_rel, Outcome.SKIPPED, "already present")
+        return ArtifactOutcome(art.target_rel, Outcome.PRESENT_DIVERGENT, "present but modified")
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(_render_rag_file(art), encoding="utf-8")
+    dest.write_text(rendered, encoding="utf-8")
     return ArtifactOutcome(art.target_rel, Outcome.CREATED)
 
 
@@ -871,8 +880,10 @@ def execute_rag_plan(
     """
 
     apply = make_rag_apply(profile, runner, assistant)
+    # E2-FEAT-018: log each outcome to the inspectable `.sertor/.install-log.jsonl` (runtime home).
     report = _kit_execute_plan(
-        plan, apply, target=str(profile.target_root), capability="rag", assistant=assistant.value
+        plan, apply, target=str(profile.target_root), capability="rag", assistant=assistant.value,
+        runtime_dir=profile.sertor_dir,
     )
     # Honest, non-fatal install-time note (Principio XII): the Copilot `memory-capture` adapter
     # caveat. (The former `pwsh`-unavailability note is gone — A-09 made the hooks portable Python,

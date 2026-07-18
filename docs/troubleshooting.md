@@ -171,5 +171,27 @@ uv run --project .sertor sertor-rag doctor --online --json
 
 ---
 
+## "What did the installer actually do?" — the install log
+
+**Symptom.** After `sertor install rag` you are not sure what was created, left untouched, or skipped —
+or the summary line mentions `present-divergent` and you want to know which file.
+
+**Cause.** The on-screen report is a summary; you want the per-artifact truth.
+
+**Fix.** The RAG install appends an inspectable, append-only log — one JSON line per artifact — to
+`.sertor/.install-log.jsonl`. Each line records the operation, capability, target, outcome, and a
+reason (schema `install.event/1`). Read it to see exactly what happened:
+
+```powershell
+Get-Content .sertor/.install-log.jsonl
+```
+
+An outcome of **`present_divergent`** means a file Sertor owns already existed on your host with
+**different content** — it was **left untouched** (non-destructive), not overwritten. That is by
+design: your customization wins. If you want Sertor's version instead, move your file aside and
+re-run, or use `upgrade`.
+
+---
+
 *For the full reference — every flag, config knob, refresh and clean uninstall — see
 [install.md](install.md).*
