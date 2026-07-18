@@ -96,3 +96,54 @@ def test_rag_backend_residual_warns(monkeypatch, tmp_path, caplog):
         s = Settings.load()
     assert s.embed_provider == "glove"  # unchanged
     assert any("config_rag_backend_ignored" in r.getMessage() for r in caplog.records)
+
+
+# --- E10-FEAT-038: project root anchored to `.sertor/`, CWD-independent ---------------------------
+
+
+def test_project_root_anchored_from_any_cwd(monkeypatch, tmp_path):
+    """`project_root` is the parent of `.sertor/`, resolved from the runtime — NOT the cwd.
+
+    Same self-location as the index: run from a deep subfolder, the root is still the project root.
+    """
+    sertor_dir = tmp_path / ".sertor"
+    (sertor_dir / ".venv").mkdir(parents=True)
+    (sertor_dir / ".env").write_text("SERTOR_EMBED_PROVIDER=hash\n", encoding="utf-8")
+    sub = tmp_path / "src" / "sertor_core"
+    sub.mkdir(parents=True)
+    monkeypatch.chdir(sub)                                 # deep subfolder, NOT the project root
+    monkeypatch.setattr(os, "environ", dict(os.environ))
+    monkeypatch.delenv("SERTOR_EMBED_PROVIDER", raising=False)
+    monkeypatch.delenv("CLAUDE_PROJECT_DIR", raising=False)
+    monkeypatch.setattr("sertor_core.config.settings.sys.prefix", str(sertor_dir / ".venv"))
+
+    s = Settings.load()
+    assert s.index_dir == sertor_dir / ".index"
+    assert s.project_root == tmp_path.resolve()            # parent of `.sertor/`, cwd-independent
+
+
+def test_project_root_claude_project_dir_wins(monkeypatch, tmp_path):
+    """`CLAUDE_PROJECT_DIR` (parity with the hooks) overrides the `.sertor/` derivation."""
+    sertor_dir = tmp_path / ".sertor"
+    (sertor_dir / ".venv").mkdir(parents=True)
+    (sertor_dir / ".env").write_text("SERTOR_EMBED_PROVIDER=hash\n", encoding="utf-8")
+    explicit = tmp_path / "explicit-root"
+    explicit.mkdir()
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(os, "environ", dict(os.environ))
+    monkeypatch.delenv("SERTOR_EMBED_PROVIDER", raising=False)
+    monkeypatch.setenv("CLAUDE_PROJECT_DIR", str(explicit))
+    monkeypatch.setattr("sertor_core.config.settings.sys.prefix", str(sertor_dir / ".venv"))
+
+    s = Settings.load()
+    assert s.project_root == explicit.resolve()            # env override beats the derivation
+
+
+def test_project_root_none_without_sertor_layout(monkeypatch, tmp_path):
+    """No `.sertor/` anchor and no `CLAUDE_PROJECT_DIR` → `None` (caller fails loud)."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(os, "environ", dict(os.environ))
+    monkeypatch.delenv("CLAUDE_PROJECT_DIR", raising=False)
+    s = Settings.load(env_file=None)                       # no .env → relative `.index`, no anchor
+    assert s.index_dir == Path(".index")
+    assert s.project_root is None

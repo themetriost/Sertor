@@ -57,6 +57,31 @@ def _resolve_env_path(env_file: str | os.PathLike[str] | None) -> Path | None:
     return None
 
 
+def _resolve_project_root(resolved_index_dir: Path) -> Path | None:
+    """The project root that owns the runtime, independent of the CWD (E10-FEAT-038).
+
+    `doctor` (and any root-relative freshness/registration check) must anchor to the directory the
+    sources were indexed against, NOT the process CWD — otherwise the same index yields a `pass`
+    from the root and a `warn` from a subfolder. Precedence, mirroring `_resolve_env_path`'s
+    self-location so the CLI has a SINGLE root semantics:
+
+    1. `CLAUDE_PROJECT_DIR` if set to an existing directory — parity with the installed hooks (031);
+    2. else the parent of the `.sertor/` directory that owns the resolved index
+       (`<root>/.sertor/.index` → `<root>`), CWD-independent because `resolved_index_dir` is
+       anchored via the venv location (`Path(sys.prefix).parent`), not the CWD;
+    3. else `None` — the caller fails loud (Principio XII) rather than guessing the CWD.
+    """
+    env_root = os.environ.get("CLAUDE_PROJECT_DIR")
+    if env_root:
+        candidate = Path(env_root)
+        if candidate.is_dir():
+            return candidate.resolve()
+    parent = resolved_index_dir.parent
+    if parent.name == ".sertor":
+        return parent.parent.resolve()
+    return None
+
+
 def _split_env(name: str) -> list[str] | None:
     raw = os.getenv(name)
     if raw is None:
@@ -212,6 +237,9 @@ class Settings:
 
     # vector store
     index_dir: Path = field(default_factory=lambda: Path(".index"))
+    # Project root that owns the runtime (`.sertor/`), CWD-independent (E10-FEAT-038). Resolved in
+    # `load()` via `_resolve_project_root`; `None` when it cannot be determined (caller fails loud).
+    project_root: Path | None = None
     azure_search_endpoint: str = ""
     azure_search_api_key: str = ""
 
@@ -350,6 +378,8 @@ class Settings:
             resolved_index_dir = env_path.parent / ".index"
         else:
             resolved_index_dir = Path(".index")
+        # Project root anchor (E10-FEAT-038): CWD-independent, same self-location as the index.
+        resolved_project_root = _resolve_project_root(resolved_index_dir)
         return cls(
             # Provider and store are INDEPENDENT knobs (068, DA-1): the embedding provider from
             # SERTOR_EMBED_PROVIDER (default glove), the vector store from SERTOR_STORE_BACKEND
@@ -397,6 +427,7 @@ class Settings:
                 else Path.home() / ".copilot" / "session-state"
             ),
             index_dir=resolved_index_dir,
+            project_root=resolved_project_root,
             azure_search_endpoint=os.getenv("AZURE_SEARCH_ENDPOINT", ""),
             azure_search_api_key=os.getenv("AZURE_SEARCH_API_KEY", ""),
             chunk_size=_int_env("CHUNK_SIZE", 1600),
