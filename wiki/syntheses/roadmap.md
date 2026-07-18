@@ -233,9 +233,13 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
   aggiorna**, non la forma dell'asset — il buco da cui era passato tutto. `sertor-core` invariato.
   **Prova sul campo:** il re-install sul dogfood ha collassato le voci duplicate → `.claude/settings.json` ora
   ha **9 hook, uno per stem, tutti ancorati** (lo stato «duplicato da non versionare» non esiste più).
-- **Prossimo passo aperto:** (1) **E10-FEAT-033** (`ritual-check` default branch) — **primo della coda**, scelta
-  utente 2026-07-17: piccolo, isolato, sblocca ospiti reali con default `main`; poi **FEAT-034** (falso allarme
-  freshness) come feature separata. (2) **go-public/PyPI: FERMO — decisione utente 2026-07-17 «non ancora»**.
+- **Prossimo passo aperto — CODA RIORDINATA (decisioni utente 2026-07-18, analisi [[setup-dichiara-presunzione-non-azione]]):**
+  (1) **E10-FEAT-038 `doctor` ancorato alla root** *(P0 bug, PRIMO)* — `cli/__main__.py:574` usa `Path.cwd()` → stesso
+  indice, `pass` dalla root / `warn` da `src/` (provato); stesso difetto di FEAT-031 mai corretto per `doctor`;
+  prerequisito di FEAT-034. → poi **(2) E10-FEAT-033** (`ritual-check` default branch) → **(3) E2-FEAT-018 allargata**
+  (esito-descrive-azione + log `.install-log.jsonl`; **E10-FEAT-036 folded qui**) → **(4) E10-FEAT-034** (`rag-freshness`
+  rimisura post-riparazione, dopo il doctor). *Tesi unificante:* «il setup dichiara ciò che presume, non ciò che è
+  successo» (Principio XII). (2-bis) **go-public/PyPI: FERMO — decisione utente 2026-07-17 «non ancora»**.
   È *tecnicamente* sbloccato (CI verde, gate 1° ago caduto) ma **non si procede**: il repo resta pubblico con
   `v0.1.0`, niente `pip install sertor`, gli ospiti installano via `uvx` dal tag, l'auto-updater resta dormiente
   fino al primo bump di `/VERSION`. Casa del residuo:

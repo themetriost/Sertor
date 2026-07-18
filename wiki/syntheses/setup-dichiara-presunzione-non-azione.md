@@ -9,10 +9,10 @@ sources: ["requirements/sertor-cli/epic.md", "requirements/debito-tecnico/epic.m
 
 # Il setup dichiara ciò che presume, non ciò che è successo
 
-> **Stato:** analisi di dettaglio completata 2026-07-17 (richiesta utente: «E2 F17-F18 e E10 036-037 fanno
-> parte dello stesso problema, analizza e proponi soluzioni»). **Nessuna implementazione ancora** — due
-> decisioni di scope aperte in fondo. Ricognizione via 4 subagent (requisiti · storia · feedback esterni ·
-> codice) + verifica empirica in prima persona.
+> **Stato:** analisi completata 2026-07-17; **decisioni di scope SCIOLTE 2026-07-18** (vedi in fondo).
+> Coda derivata: **FEAT-038 doctor ancorato → FEAT-033 → E2-018 (036 folded) → FEAT-034**. Implementazione
+> **non ancora avviata** (parte da FEAT-038). Ricognizione via 4 subagent (requisiti · storia · feedback
+> esterni · codice) + verifica empirica in prima persona.
 
 ## La tesi (una malattia, non quattro bug)
 
@@ -116,10 +116,15 @@ Ogni volta che troviamo un silenzio **aggiungiamo un canale nuovo e nessuno li a
 2. **E2-018 allargata** a P1+P2 (esito-azione + log) — **E10-036 vi si fold dentro**, si chiude senza codice proprio.
 3. **P3 + E2-017** — lettore unico + onestà updater.
 
-## DUE DECISIONI UTENTE APERTE (da sciogliere alla ripresa)
-1. **Accetti il riordino** «doctor ancorato PRIMA di 033/034» (contro la coda del 2026-07-17 che metteva 033 primo)?
-2. **036 si chiude per assorbimento in 018** (invece di restare riga a sé)?
-- (sub-domanda: E10-034 va fatta *insieme* al doctor-ancorato, visto che ne dipende?)
+## DECISIONI UTENTE — SCIOLTE (2026-07-18)
+1. **Riordino accettato:** «doctor ancorato PRIMA di 033/034». Il doctor-non-ancorato è l'unico **P0** (verdetti inaffidabili + prerequisito di 034); 033 non ha scadenza esterna dura.
+2. **036 assorbita in E2-018** (folded, non cancellata — traccia mantenuta in E10 con rimando a E2-018).
+3. **034 sequenziale, non fusa** col doctor-ancorato: doctor come fix P0 a sé (shippabile/testabile), 034 come feature separata (asset host-facing → guardia esito-upgrade + sync bundle + doc utente).
+
+**Tracciamento durevole (fatto 2026-07-18):** il bug doctor-ancorato → **nuova E10-FEAT-038 (P0)**; **E10-FEAT-037** marcata investigata (last_index non-letto = non-bug; swing = FEAT-034; cwd-bug → 038); **E10-FEAT-036** folded in **E2-FEAT-018**, il cui scope è stato allargato a P1 (esito-azione) + P2 (log). Coda risultante nell'EXEC:
+> **1. FEAT-038 doctor ancorato → 2. FEAT-033 ritual-check default branch → 3. E2-018 (esito-azione + log, 036 folded) → 4. FEAT-034 rag-freshness rimisura.**
+
+**Prossimo passo operativo:** avviare **FEAT-038** — casa (spec/requisiti) e implementazione del fix d'ancoraggio.
 
 ## Vincoli già scritti da rispettare (non partire da zero)
 Principio XII (Fail Loud) · `InstallReport.notes` (canale già usato, «primo uso reale» E10-018) ·
