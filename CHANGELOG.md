@@ -13,17 +13,49 @@ and Sertor aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 _Changes land here before the next version bump._
 
+## [0.1.1] — 2026-07-20
+
+A **reliability release**: correctness fixes across the parts of Sertor a host actually touches —
+the installed **hooks**, the **`doctor`** health check, the **freshness** loop, conversation
+**memory** capture, and the **installer** report. No breaking changes; update is a drop-in refresh
+(see the "How to update" note in the release announcement). Everything here lands on top of `0.1.0`.
+
 ### Fixed
 
 - **Trustworthy index-freshness alarm.** The end-of-session freshness hook now **re-indexes first,
   then measures health**, and records that post-repair verdict — so the routine case (a stale index
-  the re-index fixes) no longer raises a `degraded` alarm at the next session start. The alarm now
-  appears only when a problem **survives** the repair, and lists **every** degraded area instead of
-  just the first (E10-FEAT-034).
-- **Self-healing index lock.** If the background re-index worker is killed mid-run, the index lock it
-  leaves behind no longer blocks every future `sertor-rag index` — the next run detects the dead
-  owner and reclaims the stale lock automatically (a live indexing run is still respected), with no
-  manual clean-up (E10-FEAT-035).
+  the re-index fixes) no longer raises a spurious `degraded` alarm at the next session start. The
+  alarm now appears only when a problem **survives** the repair, and lists **every** degraded area
+  instead of just the first (E10-FEAT-034).
+- **Self-healing index lock.** If the background re-index worker is ever killed mid-run, the index
+  lock it leaves behind no longer blocks every future `sertor-rag index` — the next run detects the
+  dead owner and reclaims the stale lock automatically (a live indexing run is still respected), with
+  no manual clean-up (E10-FEAT-035).
+- **`doctor` verdict no longer depends on your working directory.** `sertor-rag doctor` could report
+  `index: pass` from the project root and `index: warn` from a subfolder (same index). It now anchors
+  to the project root, so the health verdict is the same from anywhere (E10-FEAT-038).
+- **Installed hooks work from any working directory.** Hooks were wired with a path relative to the
+  script, so if the agent changed directory they failed before running — on `PreToolUse` this could
+  block `Bash`/`Write`/`Edit`. They are now anchored to the project root (E10-FEAT-031).
+- **Hook updates actually reach hosts that upgrade.** A changed hook could be duplicated (leaving the
+  old, broken copy active) or silently dropped on `upgrade`. A hook's identity is now the script
+  itself, so `sertor upgrade` delivers hook changes cleanly — no duplicates, no stale copies
+  (E10-FEAT-032).
+- **`ritual-check` works on `main`-default repositories.** It assumed the default branch was `master`
+  and errored on hosts whose default is `main`; it now detects the default branch at runtime
+  (E10-FEAT-033).
+- **Conversation-memory capture on paths containing spaces.** The session-path encoding didn't match
+  the assistant's, so on a project path with spaces **no** sessions were archived — silently. Fixed,
+  and it now warns out loud when the capture source is absent instead of failing quietly
+  (E4-FEAT-011).
+
+### Changed
+
+- **The installer reports the ACTION, not just the precondition.** The report said `skipped` both
+  when an artifact was already identical and when it was present-but-**different**. A new
+  `present-divergent` outcome now names the divergence (and leaves your file untouched), dependency
+  steps report honestly, and `sertor install rag` writes an inspectable `.sertor/.install-log.jsonl`
+  (E2-FEAT-018).
 
 ## [0.1.0] — 2026-07-13
 
