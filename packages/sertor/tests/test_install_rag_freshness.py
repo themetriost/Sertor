@@ -129,6 +129,12 @@ def test_freshness_hook_content(tmp_path: Path, make_runner):
     assert '"sertor-rag", "doctor"' in text  # health verdict via the vehicle (list argv)
     assert "rag.health/1" in text            # writes the contract schema
     assert "_hooklib.run" in text            # non-fatal fail-safe runner (always exit 0)
+    # E10-FEAT-034: `reason` accumulates ALL degraded areas (not just the first), and a failed
+    # re-index forces `degraded` — the old `if not reason` first-wins logic must be gone.
+    assert "degraded.append(" in text
+    assert '"; ".join(' in text
+    assert "reindex_failed" in text
+    assert "if not reason:" not in text
 
 
 def test_freshness_hook_non_blocking_design(tmp_path: Path, make_runner):
@@ -178,15 +184,17 @@ def test_freshness_foreground_does_not_run_doctor_or_index_synchronously(
     assert worker_func < first_vehicle < worker_dispatch
 
 
-def test_freshness_worker_doctor_before_state_before_index(tmp_path: Path, make_runner):
-    """E10-FEAT-016 (REQ-004/005, DA-6): inside the WORKER, the verdict is computed and the state
-    written BEFORE the re-index, so `.rag-health.json` is never torn/absent."""
+def test_freshness_worker_reindex_before_doctor_before_state(tmp_path: Path, make_runner):
+    """E10-FEAT-034: inside the WORKER the order is re-index (repair) → doctor (REMEASURE) → atomic
+    state write, so the persisted verdict reflects health AFTER the repair (not the pre-repair
+    measure that made the normal case cry wolf). The never-torn/absent invariant (DA-6) is preserved
+    by the ATOMIC write (`os.replace`), not by writing early."""
     _run(tmp_path, make_runner(), backend="azure", with_deps=False)
     body = _script_body((tmp_path / _FRESHNESS_HOOK_REL).read_text(encoding="utf-8"))
-    doctor_pos = body.index('"sertor-rag", "doctor"')   # doctor vehicle argv
-    state_write_pos = body.index("os.replace(")          # the atomic state write
-    index_pos = body.index('"sertor-rag", "index"')     # index vehicle argv
-    assert doctor_pos < state_write_pos < index_pos
+    index_pos = body.index('"sertor-rag", "index"')     # index vehicle argv (the repair, first)
+    doctor_pos = body.index('"sertor-rag", "doctor"')   # doctor vehicle argv (the remeasure)
+    state_write_pos = body.index("os.replace(")          # the atomic post-repair state write
+    assert index_pos < doctor_pos < state_write_pos
 
 
 def test_freshness_start_content(tmp_path: Path, make_runner):
@@ -347,6 +355,25 @@ def test_upgrade_updates_freshness_script(tmp_path: Path, make_runner):
     )
     refreshed = hook.read_text(encoding="utf-8")
     assert '"sertor-rag", "index"' in refreshed   # upgraded to the bundled body (list argv)
+
+
+def test_upgrade_delivers_postrepair_order(tmp_path: Path, make_runner):
+    """E10-FEAT-034 (REQ-011): a host that UPGRADES receives the post-repair order (re-index BEFORE
+    doctor BEFORE state write) — the guard asserts the upgrade OUTCOME, not just the asset form, so
+    the fix actually reaches updating hosts (lesson E10-FEAT-032)."""
+    _run(tmp_path, make_runner(), backend="azure", with_deps=False)
+    hook = tmp_path / _FRESHNESS_HOOK_REL
+    hook.write_text("# stale, pre-FEAT-034 body\n", encoding="utf-8")
+
+    profile = _profile(tmp_path, backend="azure", with_deps=False)
+    plan = build_rag_plan(profile, with_deps=False, assistant=AssistantId.CLAUDE)
+    execute_rag_lifecycle(
+        plan, profile, make_runner(), op=LifecycleOp.UPGRADE, assistant=AssistantId.CLAUDE
+    )
+    body = hook.read_text(encoding="utf-8")
+    assert body.index('"sertor-rag", "index"') < body.index('"sertor-rag", "doctor"') < body.index(
+        "os.replace("
+    )
 
 
 def test_freshness_install_idempotent(tmp_path: Path, make_runner):

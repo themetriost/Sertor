@@ -328,13 +328,55 @@ class IndexingService:
         return _IndexLock(self._settings.index_dir)
 
 
-class _IndexLock:
-    """Single-writer lock via an exclusive lockfile in `index_dir` (046, FR-020).
+def _pid_alive(pid: int) -> bool:
+    """True if a process with `pid` is currently running. Stdlib-only, cross-OS (FEAT-035, REQ-010).
 
-    A second concurrent run finds the lockfile already present (`O_CREAT | O_EXCL`) and raises
-    `IndexLockedError`. The lock is released on exit even on error. Stdlib only (`os.open`); the
-    lockfile is gitignored and rigenerabile (a stale file left by a crash can be removed by hand,
-    the error message says so).
+    The check must NEVER perturb the inspected process. On POSIX `os.kill(pid, 0)` sends no signal
+    (ESRCH → dead, EPERM → alive-but-not-ours). On Windows `os.kill(pid, 0)` would **terminate** the
+    process (any non-CTRL signal calls TerminateProcess), so we query via `OpenProcess` +
+    `GetExitCodeProcess` through `ctypes` instead.
+    """
+    if pid <= 0:
+        return False
+    if os.name == "nt":
+        import ctypes
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+        STILL_ACTIVE = 259
+        ERROR_ACCESS_DENIED = 5
+        handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+        if not handle:
+            # Access-denied means the process EXISTS (alive); other errors → no such process.
+            return ctypes.get_last_error() == ERROR_ACCESS_DENIED
+        try:
+            code = ctypes.c_ulong()
+            if not kernel32.GetExitCodeProcess(handle, ctypes.byref(code)):
+                return True  # exists but can't read exit code → assume alive (conservative)
+            return code.value == STILL_ACTIVE
+        finally:
+            kernel32.CloseHandle(handle)
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True  # exists, owned by another user
+    except OSError:
+        return False
+    return True
+
+
+class _IndexLock:
+    """Single-writer lock via an exclusive lockfile in `index_dir` (046, FR-020; auto-heal 035).
+
+    A second concurrent run finds the lockfile already present (`O_CREAT | O_EXCL`). If the PID
+    recorded in it is no longer alive — a crashed run left a **stale** lock — the lock is reclaimed
+    (removed) and the run proceeds; otherwise it raises `IndexLockedError` as before. The reclaim is
+    conservative: only a lockfile holding a decimal PID **confirmed dead** is stolen — an empty or
+    unreadable one (possibly a live run between `create` and the PID `write`) is NOT, so we never
+    steal a lock mid-acquisition. Reclaiming emits an observable `index.lock.reclaimed` warning
+    (Principio XII: no silent healing). The lock is released on exit even on error. Stdlib only.
     """
 
     def __init__(self, index_dir: Path | str):
@@ -342,12 +384,46 @@ class _IndexLock:
         self._path = self._dir / ".index.lock"
         self._fd: int | None = None
 
+    def _create_exclusive(self) -> int:
+        return os.open(self._path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+
+    def _try_reclaim_stale(self) -> bool:
+        """Reclaim the lock ONLY if it holds a decimal PID confirmed dead (FEAT-035, REQ-007/008).
+
+        Conservative on ambiguity: an empty/garbage/unreadable lockfile is NOT reclaimed.
+        """
+        try:
+            holder = self._path.read_text(encoding="utf-8").strip()
+        except OSError:
+            return False
+        if not holder.isdigit():
+            return False  # empty or garbage → ambiguous (maybe a live run mid-acquisition) → keep
+        pid = int(holder)
+        if pid <= 0 or _pid_alive(pid):
+            return False  # a live process holds it → genuinely locked
+        try:
+            self._path.unlink()
+        except FileNotFoundError:
+            pass  # holder released it in the meantime → we can retry the create
+        except OSError:
+            return False  # couldn't remove → be conservative, report locked
+        log_event(
+            logging.WARNING, "index.lock.reclaimed", index_dir=str(self._dir), dead_pid=pid
+        )
+        return True
+
     def __enter__(self) -> _IndexLock:
         self._dir.mkdir(parents=True, exist_ok=True)
         try:
-            self._fd = os.open(self._path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            self._fd = self._create_exclusive()
         except FileExistsError as exc:
-            raise IndexLockedError(str(self._dir)) from exc
+            if not self._try_reclaim_stale():
+                raise IndexLockedError(str(self._dir)) from exc
+            try:
+                self._fd = self._create_exclusive()
+            except FileExistsError as exc2:
+                # A live process re-created it in the race window → genuinely locked.
+                raise IndexLockedError(str(self._dir)) from exc2
         os.write(self._fd, str(os.getpid()).encode("utf-8"))
         return self
 
