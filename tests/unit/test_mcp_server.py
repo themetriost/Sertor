@@ -12,7 +12,11 @@ import logging
 import pytest
 
 import sertor_mcp.server as srv
+from sertor_core.adapters.memory.archive import MemoryArchive
+from sertor_core.config.settings import Settings
 from sertor_core.domain.entities import EmbeddedChunk
+from sertor_core.domain.memory import ArchivedSession, TranscriptTurn
+from sertor_core.services.episodic_search import EpisodicSearch
 from sertor_core.services.retrieval import RetrievalFacade
 from tests.fixtures.mocks import FakeEmbedder, InMemoryStore
 
@@ -300,3 +304,122 @@ def test_internal_error_propagates_then_server_recovers(monkeypatch):
         assert isinstance(srv.search_code("x"), list)
     finally:
         srv._facade.cache_clear()
+
+
+# --- E4-FEAT-010: conversation-memory read parity (memory_list / memory_show / memory_search) ----
+
+def _seed_archive(index_dir) -> None:
+    """Write two archived sessions into <index_dir>/memory.sqlite (recency: s2 newer than s1)."""
+    archive = MemoryArchive(index_dir)
+    archive.upsert(ArchivedSession(
+        session_key="s1", project_id="proj", captured_at=1000.0, adapter_kind="claude-code",
+        turns=(TranscriptTurn(0, "user", "we discussed alpha retrieval"),
+               TranscriptTurn(1, "assistant", "yes, the alpha plan")),
+    ))
+    archive.upsert(ArchivedSession(
+        session_key="s2", project_id="proj", captured_at=2000.0, adapter_kind="claude-code",
+        turns=(TranscriptTurn(0, "user", "beta topic only"),),
+    ))
+
+
+def _use_memory(monkeypatch, reader, search) -> None:
+    """Wire the memory builders + a fixed defaults Settings, clearing the memoized caches."""
+    defaults = Settings.load(env_file=None)  # captured BEFORE patching (avoid self-recursion)
+    monkeypatch.setattr(srv, "build_memory_reader", lambda *a, **k: reader)
+    monkeypatch.setattr(srv, "build_episodic_search", lambda *a, **k: search)
+    monkeypatch.setattr(srv.Settings, "load", lambda *a, **k: defaults)
+    srv._memory_reader.cache_clear()
+    srv._episodic.cache_clear()
+
+
+def _clear_memory() -> None:
+    srv._memory_reader.cache_clear()
+    srv._episodic.cache_clear()
+
+
+def test_memory_tools_registered():
+    tools = asyncio.run(srv.mcp.list_tools())
+    names = {t.name for t in tools}
+    assert {"memory_list", "memory_show", "memory_search"} <= names
+
+
+def test_memory_tools_disabled_when_memory_off(monkeypatch):
+    """Gate off (builders return None) → explicit `disabled` on all three (not [] / not error)."""
+    _use_memory(monkeypatch, reader=None, search=None)
+    try:
+        assert srv.memory_list()["status"] == "disabled"
+        assert srv.memory_show("s1")["status"] == "disabled"
+        assert srv.memory_search("alpha")["status"] == "disabled"
+        assert "SERTOR_MEMORY" in srv.memory_list()["hint"]
+    finally:
+        _clear_memory()
+
+
+def test_memory_list_returns_sessions_recency_first(monkeypatch, tmp_path):
+    _seed_archive(tmp_path)
+    _use_memory(monkeypatch, reader=MemoryArchive(tmp_path), search=None)
+    try:
+        out = srv.memory_list()
+        assert out["status"] == "ok"
+        keys = [s["session_key"] for s in out["sessions"]]
+        assert keys == ["s2", "s1"]                        # recency-first (parity with list_recent)
+        assert set(out["sessions"][0]) == {"session_key", "captured_at", "turn_count"}
+        assert out["sessions"][1]["turn_count"] == 2       # s1 has two turns
+    finally:
+        _clear_memory()
+
+
+def test_memory_show_returns_turns_or_null(monkeypatch, tmp_path):
+    _seed_archive(tmp_path)
+    _use_memory(monkeypatch, reader=MemoryArchive(tmp_path), search=None)
+    try:
+        out = srv.memory_show("s1")
+        assert out["status"] == "ok"
+        sess = out["session"]
+        assert sess["session_key"] == "s1" and sess["adapter_kind"] == "claude-code"
+        assert [t["index"] for t in sess["turns"]] == [0, 1]      # ordered
+        assert sess["turns"][0]["text"] == "we discussed alpha retrieval"  # full text, not preview
+        # unknown key → explicit null session, still status ok (not disabled, not error)
+        assert srv.memory_show("nope") == {"status": "ok", "session": None}
+    finally:
+        _clear_memory()
+
+
+def test_memory_search_full_text_hits(monkeypatch, tmp_path):
+    _seed_archive(tmp_path)
+    _use_memory(monkeypatch, reader=None, search=EpisodicSearch(tmp_path))
+    try:
+        out = srv.memory_search("alpha")
+        assert out["status"] == "ok"
+        assert out["hits"], "expected a full-text hit for 'alpha'"
+        hit = out["hits"][0]
+        assert hit["session_key"] == "s1"
+        assert set(hit) == {"session_key", "captured_at", "role", "turn_index", "snippet", "score"}
+        # a non-matching query → explicit empty hits (not disabled, not error)
+        assert srv.memory_search("zzznomatch")["hits"] == []
+    finally:
+        _clear_memory()
+
+
+def test_memory_search_does_not_log_query_in_clear(monkeypatch, tmp_path, caplog):
+    """The query text must never appear in the observability events (EpisodicSearch hashes it)."""
+    _seed_archive(tmp_path)
+    _use_memory(monkeypatch, reader=None, search=EpisodicSearch(tmp_path))
+    try:
+        with caplog.at_level(logging.INFO, logger="sertor_core"):
+            srv.memory_search("alpha")
+        blob = " ".join(r.getMessage() for r in caplog.records)
+        assert "alpha" not in blob                      # query hashed, never in clear
+    finally:
+        _clear_memory()
+
+
+def test_memory_tools_degrade_on_absent_archive(monkeypatch, tmp_path):
+    """Memory ON but no archive file yet → status ok with empty collections, no crash."""
+    _use_memory(monkeypatch, reader=MemoryArchive(tmp_path), search=EpisodicSearch(tmp_path))
+    try:
+        assert srv.memory_list() == {"status": "ok", "sessions": []}
+        assert srv.memory_search("alpha") == {"status": "ok", "hits": []}
+        assert srv.memory_show("s1") == {"status": "ok", "session": None}
+    finally:
+        _clear_memory()
