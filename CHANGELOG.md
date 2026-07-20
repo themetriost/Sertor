@@ -13,6 +13,18 @@ and Sertor aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 _Changes land here before the next version bump._
 
+### Fixed
+
+- **Trustworthy index-freshness alarm.** The end-of-session freshness hook now **re-indexes first,
+  then measures health**, and records that post-repair verdict — so the routine case (a stale index
+  the re-index fixes) no longer raises a `degraded` alarm at the next session start. The alarm now
+  appears only when a problem **survives** the repair, and lists **every** degraded area instead of
+  just the first (E10-FEAT-034).
+- **Self-healing index lock.** If the background re-index worker is killed mid-run, the index lock it
+  leaves behind no longer blocks every future `sertor-rag index` — the next run detects the dead
+  owner and reclaims the stale lock automatically (a live indexing run is still respected), with no
+  manual clean-up (E10-FEAT-035).
+
 ## [0.1.0] — 2026-07-13
 
 The **first public release** of Sertor: an installable, portable, local-first framework that gives any

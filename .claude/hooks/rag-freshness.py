@@ -3,8 +3,10 @@
 Two modes (SessionEnd, E10-FEAT-011):
   - FOREGROUND (default): resolve the project root, spawn THIS SAME SCRIPT **detached** in worker
     mode, return immediately (< 1-2s) so the session close is never blocked.
-  - WORKER (`--worker`): health verdict via `sertor-rag doctor --json` → atomic write of
-    `.sertor/.rag-health.json` → **unconditional** re-index via the vehicle. Breadcrumb on failure.
+  - WORKER (`--worker`): **unconditional** re-index via the vehicle (the repair) → health verdict
+    via `sertor-rag doctor --json` (the REMEASURE, post-repair) → atomic write of the resulting
+    verdict to `.sertor/.rag-health.json` (E10-FEAT-034: measure AFTER repairing). Breadcrumb on
+    failure.
 
 Cross-OS detach (FR-006): `subprocess.Popen` with `start_new_session` (POSIX) or
 `DETACHED_PROCESS|CREATE_NEW_PROCESS_GROUP` (Windows), stdio → DEVNULL. Always exit 0; consumes the
@@ -28,14 +30,33 @@ def _now() -> str:
 
 
 def _worker(root_str: str) -> None:
-    """Detached worker body: doctor → verdict → atomic state write → unconditional re-index."""
+    """Detached worker body: re-index (repair) → doctor (REMEASURE) → atomic state write.
+
+    Order matters (E10-FEAT-034): the persisted verdict must reflect health AFTER the repair, not
+    before. Measuring first (the old order) meant the NORMAL case — a stale index at session end,
+    which the re-index then fixes — still persisted `degraded`, so the next session start cried wolf
+    for a problem this very hook had already repaired, training the reader to ignore the alarm. Now
+    the re-index runs first, `doctor` measures the result, and THAT post-repair verdict is stored —
+    so a `degraded` alarm only appears when a problem survives the repair, and is worth believing.
+    """
     from pathlib import Path
 
     root = Path(root_str or ".")
     runtime = root / ".sertor"
     reason = ""
     try:
-        # 1. health verdict via the vehicle (doctor --json)
+        # 1. THE REPAIR: unconditional re-index via the vehicle (synchronous inside the worker).
+        reindex_failed = False
+        try:
+            rc = subprocess.run(
+                ["uv", "run", "--project", str(runtime), "sertor-rag", "index", "."],
+                cwd=str(root), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=1800,
+            ).returncode
+            reindex_failed = rc != 0
+        except Exception:
+            reindex_failed = True
+
+        # 2. REMEASURE: health verdict via the vehicle (doctor --json), AFTER the repair.
         doctor_exit = 0
         doctor_out = ""
         try:
@@ -47,8 +68,8 @@ def _worker(root_str: str) -> None:
         except Exception:
             doctor_out, doctor_exit = "", 1
 
-        # 2. derive verdict + reason + per-area map
-        verdict, areas = "healthy", {}
+        # 3. derive verdict + reason (ALL degraded areas, not just the first) + per-area map
+        verdict, areas, degraded = "healthy", {}, []
         report = None
         if doctor_out and doctor_out.strip():
             try:
@@ -63,14 +84,18 @@ def _worker(root_str: str) -> None:
                     areas[str(name)] = str(status)
                     if status in ("fail", "warn"):
                         verdict = "degraded"
-                        if not reason:
-                            reason = f"{name} area: {status}"
+                        degraded.append(f"{name} area: {status}")
         if doctor_exit != 0:
             verdict = "degraded"
-            if not reason:
-                reason = f"doctor reported failure (exit {doctor_exit})"
+            degraded.append(f"doctor reported failure (exit {doctor_exit})")
+        if reindex_failed:
+            verdict = "degraded"
+            degraded.append("re-index failed")
+        reason = "; ".join(degraded)
 
-        # 3. persist the state under .sertor/ ATOMICALLY (temp + replace)
+        # 4. persist the POST-REPAIR state under .sertor/ ATOMICALLY (temp + replace).
+        # Atomic write preserves the never-torn invariant (DA-6): during the re-index window a reader
+        # sees at worst the previous session's state, never a partial file.
         runtime.mkdir(parents=True, exist_ok=True)
         state_path = runtime / ".rag-health.json"
         state = {
@@ -90,17 +115,6 @@ def _worker(root_str: str) -> None:
             print(f"[sertor-rag] RAG health DEGRADED: {reason}", file=sys.stderr)
             print("[sertor-rag] At next session start you will be prompted to run "
                   "'sertor-rag index .' and/or reconnect the MCP server.", file=sys.stderr)
-
-        # 4. unconditional re-index via the vehicle (synchronous inside the worker)
-        try:
-            rc = subprocess.run(
-                ["uv", "run", "--project", str(runtime), "sertor-rag", "index", "."],
-                cwd=str(root), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=1800,
-            ).returncode
-            if rc != 0:
-                reason = "re-index failed after health write"
-        except Exception:
-            reason = "re-index failed after health write"
 
         if reason:
             _hooklib.write_breadcrumb("rag-freshness", reason)

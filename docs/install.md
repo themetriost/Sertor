@@ -642,12 +642,17 @@ on anyone remembering to re-index**:
 - **SessionEnd — `rag-freshness.py`**: at the end of every agent session it returns **immediately**
   (it does **not** stall the session close, even on a large repo — E10-FEAT-016) by launching a
   **detached background worker**. The worker, through the CLI vehicles only (it never imports the
-  library), runs `sertor-rag doctor` → writes the verdict to **`.sertor/.rag-health.json`** (schema
-  `rag.health/1`; `healthy` when `doctor` passes, otherwise `degraded` with the reason) → then an
-  **unconditional** `sertor-rag index .`. The re-index is incremental (FEAT-009 manifest + embedding
-  cache), so when nothing changed it is **near-free**; there is deliberately no change-detection
-  inside the hook. Because the work runs in the background, the recorded verdict can be **at most one
-  session behind**. The hook is **non-fatal** (always exits 0) and **invokes no LLM**.
+  library), first runs an **unconditional** `sertor-rag index .` (the *repair*) → then runs
+  `sertor-rag doctor` to **re-measure** the result → and writes **that post-repair verdict** to
+  **`.sertor/.rag-health.json`** (schema `rag.health/1`; `healthy` when `doctor` passes, otherwise
+  `degraded` listing every degraded area). Measuring *after* repairing (E10-FEAT-034) is deliberate:
+  the common case — a stale index that the re-index then fixes — records `healthy`, so the next
+  session's alarm only fires when a problem **survives** the repair and is therefore worth believing.
+  The re-index is incremental (FEAT-009 manifest + embedding cache), so when nothing changed it is
+  **near-free**; there is deliberately no change-detection inside the hook. The hook is **non-fatal**
+  (always exits 0) and **invokes no LLM**. If that worker is ever killed mid-re-index, the index lock
+  it leaves behind **auto-heals** (E10-FEAT-035): the next `sertor-rag index` detects the dead owner
+  and reclaims the stale lock instead of failing — no manual clean-up needed.
 - **SessionStart — `rag-freshness-start.py`** (Claude; on the Copilot CLI it is a static startup
   prompt instead of a script): it re-reads `.sertor/.rag-health.json` and, **only if the last verdict
   was `degraded`**, tells the agent to run `sertor-rag index .` and/or reconnect the MCP server
