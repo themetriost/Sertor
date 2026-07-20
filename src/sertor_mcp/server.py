@@ -23,11 +23,18 @@ from typing import TypeVar
 
 from mcp.server.fastmcp import FastMCP
 
-from sertor_core.composition import build_facade, build_graph_service, enable_observability
+from sertor_core.composition import (
+    build_episodic_search,
+    build_facade,
+    build_graph_service,
+    build_memory_reader,
+    enable_observability,
+)
 from sertor_core.config.settings import Settings
 from sertor_core.domain.entities import RetrievalResult, SymbolHit
 from sertor_core.observability.logging import log_event
 from sertor_core.observability.scrub import scrub_text
+from sertor_core.services.episodic_search import SearchQuery
 
 mcp = FastMCP(
     "sertor-rag",
@@ -35,7 +42,10 @@ mcp = FastMCP(
         "Retrieval over an indexed corpus (code + documentation) with the Sertor engine. "
         "Use search_code for implementations/symbols, search_docs for conceptual explanations, "
         "search_combined when both are needed (it returns the two labelled flows "
-        "{\"docs\": [...], \"code\": [...]}). Always cite the file (path#chunk)."
+        "{\"docs\": [...], \"code\": [...]}). Always cite the file (path#chunk). "
+        "For episodic memory of past sessions ('did we discuss X before?'), use memory_search "
+        "(full-text), memory_list and memory_show — opt-in, off unless SERTOR_MEMORY is set (they "
+        "return {\"status\": \"disabled\"} when off)."
     ),
 )
 
@@ -54,6 +64,22 @@ def _facade():
 def _graph():
     """Code-graph service (FEAT-005), memoized like the facade — orthogonal to the engine."""
     return build_graph_service(Settings.load())
+
+
+@lru_cache(maxsize=1)
+def _memory_reader():
+    """Memory archive read surface, or `None` when memory is off (E4-FEAT-010, gate SERTOR_MEMORY).
+
+    `lru_cache` memoizes `None` too: with the privacy gate off (default) the builder opens no file
+    and the memory tools stay disabled at zero startup cost (they are not exercised in the warm-up).
+    """
+    return build_memory_reader(Settings.load())
+
+
+@lru_cache(maxsize=1)
+def _episodic():
+    """Episodic full-text search, or `None` when memory is off (E4-FEAT-010, gate SERTOR_MEMORY)."""
+    return build_episodic_search(Settings.load())
 
 
 def _fmt(r: RetrievalResult) -> dict:
@@ -196,6 +222,107 @@ def get_context(name: str) -> dict:
         log_event(logging.INFO, "mcp.get_context", results=len(out["definitions"]))
         return out
     return _guard("get_context", _body)
+
+
+# --- Conversation memory (E4-FEAT-010): read-only parity with the CLI memory read commands --------
+#
+# Three thin tools over the SAME core services the CLI uses (MemoryArchive.list_recent/get,
+# EpisodicSearch.search), gated by SERTOR_MEMORY exactly like the CLI. When memory is OFF (the
+# privacy default) the builders return None and the tool returns an explicit `disabled` state —
+# never an empty list (which would masquerade as "no results") and never a raised error (which would
+# flood mcp.*.error for the default config). Read-only: no capture/write path here.
+
+_MEMORY_DISABLED = {
+    "status": "disabled",
+    "hint": "set SERTOR_MEMORY=true in .sertor/.env to enable conversation memory",
+}
+
+
+def _turn_dict(turn) -> dict:
+    """A `TranscriptTurn` -> dict (full text: this is 'show the session', not a preview)."""
+    return {"index": turn.index, "role": turn.role, "ts": turn.ts, "text": turn.text}
+
+
+@mcp.tool()
+def memory_list(limit: int = 0) -> dict:
+    """List recent archived conversation sessions (most recent first).
+
+    Returns `{"status": "ok", "sessions": [{session_key, captured_at, turn_count}, ...]}`, or
+    `{"status": "disabled", ...}` when conversation memory is off (opt-in, SERTOR_MEMORY). Use a
+    `session_key` from here with `memory_show`. `limit <= 0` uses the configured default.
+    """
+    def _body() -> dict:
+        reader = _memory_reader()
+        if reader is None:
+            return _MEMORY_DISABLED
+        lim = limit if limit and limit > 0 else Settings.load().memory_list_limit
+        sessions = [
+            {"session_key": s.session_key, "captured_at": s.captured_at,
+             "turn_count": s.turn_count}
+            for s in reader.list_recent(lim)
+        ]
+        log_event(logging.INFO, "mcp.memory_list", results=len(sessions))
+        return {"status": "ok", "sessions": sessions}
+    return _guard("memory_list", _body)
+
+
+@mcp.tool()
+def memory_show(session_key: str) -> dict:
+    """Show one archived conversation session by its key: its turns (index, role, ts, text).
+
+    Returns `{"status": "ok", "session": {...turns...}}`, `{"status": "ok", "session": null}` when
+    the key is unknown, or `{"status": "disabled", ...}` when memory is off. Get a key from
+    `memory_list` or `memory_search`.
+    """
+    def _body() -> dict:
+        reader = _memory_reader()
+        if reader is None:
+            return _MEMORY_DISABLED
+        session = reader.get(session_key)
+        if session is None:
+            log_event(logging.INFO, "mcp.memory_show", found=0)
+            return {"status": "ok", "session": None}
+        out = {
+            "session_key": session.session_key,
+            "project_id": session.project_id,
+            "captured_at": session.captured_at,
+            "adapter_kind": session.adapter_kind,
+            "turns": [_turn_dict(t) for t in session.turns],
+        }
+        log_event(logging.INFO, "mcp.memory_show", found=1, turns=len(out["turns"]))
+        return {"status": "ok", "session": out}
+    return _guard("memory_show", _body)
+
+
+@mcp.tool()
+def memory_search(query: str, k: int = 0) -> dict:
+    """Full-text search the conversation archive: 'have we talked about X before? how did it end?'.
+
+    Local FTS5 (no cloud, no LLM). Returns `{"status": "ok", "hits": [{session_key, captured_at,
+    role, turn_index, snippet, score}, ...]}` (most relevant first), or `{"status": "disabled"}`
+    when memory is off. Open a hit's session with `memory_show`. `k <= 0` uses the default.
+    """
+    def _body() -> dict:
+        search = _episodic()
+        if search is None:
+            return _MEMORY_DISABLED
+        settings = Settings.load()
+        results = search.search(
+            SearchQuery(
+                text=query,
+                limit=k if k and k > 0 else settings.episodic_limit,
+                snippet_tokens=settings.episodic_snippet_tokens,
+            )
+        )
+        hits = [
+            {"session_key": h.session_key, "captured_at": h.captured_at, "role": h.role,
+             "turn_index": h.turn_index, "snippet": h.snippet, "score": round(h.score, 4)}
+            for h in results.hits
+        ]
+        # EpisodicSearch already emits `episodic_search` with the query HASHED (never in clear).
+        log_event(logging.INFO, "mcp.memory_search", results=len(hits))
+        return {"status": "ok", "hits": hits}
+    return _guard("memory_search", _body)
 
 
 def _self_test() -> bool:

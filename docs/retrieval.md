@@ -6,7 +6,8 @@ code). They answer different kinds of question, and the point is to **combine** 
 **discovers** (finds things by meaning when you don't know their name), the graph **navigates** (given
 a name, it gives exact facts about definitions and relationships).
 
-Both run locally and are served by the same `sertor-rag` MCP server — **7 tools = 3 search + 4 graph**.
+Both run locally and are served by the same `sertor-rag` MCP server — **10 tools = 3 search + 4 graph
++ 3 memory** (the memory tools are opt-in; see *Conversation memory* below).
 
 > **Not installed yet?** Get to a working RAG first with the single *"from nothing to first value"* path:
 > **[getting-started.md](getting-started.md)**. This page is about querying *well* once it is running.
@@ -25,6 +26,15 @@ A **deterministic** AST graph (nodes: symbols/docs; edges: `calls`, `contains`, 
 `get_context`. Answers are **exact and relational**, not similarity-based. Query cost: **zero tokens**
 (no embedding at query time).
 
+### Conversation memory — "did we discuss this before?" (opt-in)
+If **conversation memory** is enabled (`SERTOR_MEMORY=true`, off by default for privacy — see the
+memory section of the install guide), the same `sertor-rag` MCP server also exposes three **read-only**
+tools over the local session archive, so the agent can recall past work **natively** instead of shelling
+out to the CLI: `memory_search` (local full-text over past turns — "have we talked about X?"),
+`memory_list` (recent archived sessions) and `memory_show` (one session's turns by key). They run fully
+locally (no cloud, no LLM). When memory is **off**, each returns `{"status": "disabled"}` — never a
+misleading empty result. Same data as the `sertor-rag memory` CLI commands.
+
 ## The rule of thumb: discover → navigate
 
 | Your question | Surface | Tool |
@@ -35,6 +45,8 @@ A **deterministic** AST graph (nodes: symbols/docs; edges: `calls`, `contains`, 
 | "who uses X / what breaks if I change it" | **graph** | `who_calls` |
 | "which docs explain X" | **graph** | `related_docs` |
 | "full context of X (code + docs)" | **graph** | `get_context` |
+| "did we discuss X in a past session?" | **memory** (opt-in) | `memory_search` |
+| "list / open a past session" | **memory** (opt-in) | `memory_list` / `memory_show` |
 
 The typical flow:
 
