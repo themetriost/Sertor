@@ -37,6 +37,13 @@ update is a drop-in refresh. Everything here lands on top of `0.1.1`.
 
 ### Fixed
 
+- **Memory search no longer chokes on punctuation.** A query containing a version number (`0.1.1`),
+  a path (`a/b.py`), a `tipo:esito`-style tag or a hyphenated word used to hit FTS5's query syntax
+  and fail — and the failure was **masked as "no results"**, so you'd conclude "we never discussed
+  this" when the search had not even run. The free-text query is now sanitized (each token matched
+  as a literal) before it reaches FTS5, so ordinary input just works; this covers both the CLI
+  `memory search` and the `memory_search` MCP tool. *(Reported by the Acta node, verified against the
+  code and the live archive.)*
 - **Automatic conversation-memory capture actually runs.** The end-of-session capture hook checked
   its privacy gate against the process environment, but the `SERTOR_MEMORY` switch lives in
   `.sertor/.env` (read by the CLI, not exported into the hook) — so on every host that enables

@@ -19,6 +19,7 @@ from sertor_core.services.episodic_search import (
     EpisodicResults,
     EpisodicSearch,
     SearchQuery,
+    _to_fts_match,
 )
 
 # --- helpers -------------------------------------------------------------------------------------
@@ -383,3 +384,46 @@ def test_latency_field_present_on_empty(tmp_path):
     """Latency is always measured, even on the empty-state paths (FR-017 plumbing)."""
     results = EpisodicSearch(tmp_path / "nope").search(SearchQuery(text="x"))
     assert isinstance(results.latency_ms, float)
+
+
+# --- FTS5 punctuation safety (bug from Acta 2026-07-21) ------------------------------------------
+
+
+def test_to_fts_match_quotes_each_token():
+    """The pure sanitizer wraps each whitespace token in a double-quoted FTS5 string literal."""
+    assert _to_fts_match("Sertor 0.1.1") == '"Sertor" "0.1.1"'
+    assert _to_fts_match("a/b.py") == '"a/b.py"'
+    assert _to_fts_match('say "hi"') == '"say" """hi"""'   # inner quote escaped by doubling
+    assert _to_fts_match("   ") == ""                       # no tokens → empty state
+
+
+def test_query_with_version_number_does_not_crash(tmp_path):
+    """REGRESSION (Acta): a version-number token (`0.1.1`) used to raise `fts5: syntax error`,
+    masked as "no results". It must now match the turn that contains it."""
+    _archive(
+        tmp_path, "s1", captured_at=1000.0,
+        turns=(_turn(0, "aggiornata la RAG capability alla 0.1.1"),),
+    )
+    results = EpisodicSearch(tmp_path).search(SearchQuery(text="0.1.1"))
+    assert len(results.hits) == 1
+    assert results.hits[0].session_key == "s1"
+
+
+@pytest.mark.parametrize("query", ["a/b.py", "tipo:esito", "v0.3.1", "hy-phen", "10:30", "C()"])
+def test_punctuation_queries_never_raise(tmp_path, query):
+    """A whole class of ordinary inputs (paths, tags, versions, hyphenated, times, parens) must
+    degrade to a clean empty state, NEVER an OperationalError masked as no-results."""
+    _archive(tmp_path, "s1", captured_at=1000.0, turns=(_turn(0, "contenuto senza quei token"),))
+    results = EpisodicSearch(tmp_path).search(SearchQuery(text=query))
+    assert results.hits == ()          # no match, but no crash and no masked error
+
+
+def test_multi_token_query_is_and(tmp_path):
+    """Space-joined tokens keep implicit-AND semantics: both must be present."""
+    _archive(
+        tmp_path, "s1", captured_at=1000.0,
+        turns=(_turn(0, "abbiamo scelto Azure per il backend"),
+               _turn(1, "Azure da solo senza l'altra parola"),),
+    )
+    both = EpisodicSearch(tmp_path).search(SearchQuery(text="Azure backend"))
+    assert [h.turn_index for h in both.hits] == [0]     # only the turn with BOTH tokens
