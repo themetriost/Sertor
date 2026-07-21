@@ -11,7 +11,15 @@ and Sertor aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ## [Unreleased]
 
-_Changes land here before the next version bump._
+### Fixed
+
+- **Automatic conversation-memory capture actually runs.** The end-of-session capture hook checked
+  its privacy gate against the process environment, but the `SERTOR_MEMORY` switch lives in
+  `.sertor/.env` (read by the CLI, not exported into the hook) — so on every host that enables
+  memory via the file, auto-capture silently never fired. The hook now reads the switch from the
+  same `.env` the CLI does, so enabling memory in `.sertor/.env` is enough for sessions to be
+  captured at session end (manual `sertor-rag memory archive` was, and remains, unaffected). Memory
+  stays **off by default**; nothing is captured unless you opt in (E4-FEAT-012).
 
 ## [0.1.1] — 2026-07-20
 

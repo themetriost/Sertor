@@ -256,3 +256,63 @@ def test_hooklib_is_identical_in_both_bundles():
     rag = (_HOOKS / "_hooklib.py").read_text(encoding="utf-8")
     wiki = (_WIKI_HOOKS / "_hooklib.py").read_text(encoding="utf-8")
     assert rag == wiki, "the two `_hooklib.py` copies (rag/ and claude/) have drifted"
+
+
+# --- memory gate: reads the real config source, not just os.environ (E4 capture regression) ------
+
+
+def _load_hooklib():
+    """Import the bundled `_hooklib.py` as a module (offline, no subprocess)."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("_hooklib_under_test", _HOOKS / "_hooklib.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _write_env(path: Path, body: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(body, encoding="utf-8")
+
+
+def test_memory_enabled_reads_sertor_env(tmp_path: Path, monkeypatch):
+    """REGRESSION (2026-07): the gate value `SERTOR_MEMORY` lives in `.sertor/.env`, loaded by the
+    CLI (Settings), NOT in the hook's process environment. `memory_enabled()` MUST consult that file
+    — else capture silently never fires on every host that enables memory via the file (the A-09
+    `.ps1`→`.py` migration read only `os.environ`, disabling auto-capture)."""
+    monkeypatch.setenv("CLAUDE_PROJECT_DIR", str(tmp_path))
+    monkeypatch.delenv("SERTOR_MEMORY", raising=False)
+    _write_env(tmp_path / ".sertor" / ".env", "SERTOR_MEMORY=true\n")
+    assert _load_hooklib().memory_enabled() is True
+
+
+def test_memory_enabled_false_when_absent(tmp_path: Path, monkeypatch):
+    # No `.env` on disk, no exported flag → off (privacy default preserved).
+    monkeypatch.setenv("CLAUDE_PROJECT_DIR", str(tmp_path))
+    monkeypatch.delenv("SERTOR_MEMORY", raising=False)
+    assert _load_hooklib().memory_enabled() is False
+
+
+def test_memory_enabled_env_file_wins_over_process_env(tmp_path: Path, monkeypatch):
+    """Mirror `Settings.load(override=True)`: the resolved `.env` wins over a stale `os.environ`."""
+    monkeypatch.setenv("CLAUDE_PROJECT_DIR", str(tmp_path))
+    monkeypatch.setenv("SERTOR_MEMORY", "false")
+    _write_env(tmp_path / ".sertor" / ".env", "SERTOR_MEMORY=true\n")
+    assert _load_hooklib().memory_enabled() is True
+
+
+def test_memory_enabled_falls_back_to_process_env(tmp_path: Path, monkeypatch):
+    # No `.env` file → honor an exported `SERTOR_MEMORY` (a host that exports it directly).
+    monkeypatch.setenv("CLAUDE_PROJECT_DIR", str(tmp_path))
+    monkeypatch.setenv("SERTOR_MEMORY", "true")
+    assert _load_hooklib().memory_enabled() is True
+
+
+def test_memory_enabled_explicit_cwd_env_consulted_first(tmp_path: Path, monkeypatch):
+    # An explicit `./.env` under the root is consulted before `.sertor/.env`, matching Settings.
+    monkeypatch.setenv("CLAUDE_PROJECT_DIR", str(tmp_path))
+    monkeypatch.delenv("SERTOR_MEMORY", raising=False)
+    _write_env(tmp_path / ".sertor" / ".env", "SERTOR_MEMORY=false\n")
+    _write_env(tmp_path / ".env", "SERTOR_MEMORY=true\n")
+    assert _load_hooklib().memory_enabled() is True

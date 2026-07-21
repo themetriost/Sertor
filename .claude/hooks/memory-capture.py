@@ -16,13 +16,6 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import _hooklib  # noqa: E402
 
-_TRUE = {"true", "1", "yes", "on"}
-
-
-def _memory_enabled() -> bool:
-    val = os.environ.get("SERTOR_MEMORY", "")
-    return val.strip().lower() in _TRUE if val else False
-
 
 def _archive(cmd: list[str], cwd) -> int:
     """Run an archive command, suppress its output, return its exit code (raises if the exe is absent)."""
@@ -33,7 +26,7 @@ def _archive(cmd: list[str], cwd) -> int:
 
 def main() -> None:
     _hooklib.read_event()  # drain stdin (stdin-guard)
-    if not _memory_enabled():
+    if not _hooklib.memory_enabled():
         return  # memory off → silent no-op (privacy, FR-015)
 
     root = _hooklib.project_root().resolve()
