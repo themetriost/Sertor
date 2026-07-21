@@ -17,6 +17,7 @@ from sertor_core.config.settings import Settings
 from sertor_core.domain.entities import EmbeddedChunk
 from sertor_core.domain.memory import ArchivedSession, TranscriptTurn
 from sertor_core.services.episodic_search import EpisodicSearch
+from sertor_core.services.memory_semantic import SemanticMemoryHit, SemanticMemoryResults
 from sertor_core.services.retrieval import RetrievalFacade
 from tests.fixtures.mocks import FakeEmbedder, InMemoryStore
 
@@ -423,3 +424,114 @@ def test_memory_tools_degrade_on_absent_archive(monkeypatch, tmp_path):
         assert srv.memory_show("s1") == {"status": "ok", "session": None}
     finally:
         _clear_memory()
+
+
+# --- E4-FEAT-013: semantic memory search via MCP (memory_search semantic=true) --------------------
+
+class _FakeSemanticIndex:
+    """Stand-in for SemanticMemorySearch: returns fixed hits, records the query text it received."""
+
+    def __init__(self, hits=()):
+        self._hits = tuple(hits)
+        self.queries: list[str] = []
+
+    def search(self, query):
+        self.queries.append(query.text)
+        return SemanticMemoryResults(hits=self._hits, latency_ms=0.0)
+
+
+def _use_semantic(monkeypatch, index, *, memory_on: bool) -> None:
+    """Wire the semantic builder + a Settings whose SERTOR_MEMORY gate matches `memory_on`."""
+    if memory_on:
+        monkeypatch.setenv("SERTOR_MEMORY", "true")
+    else:
+        monkeypatch.delenv("SERTOR_MEMORY", raising=False)
+    defaults = Settings.load(env_file=None)  # captured with the gate set as requested
+    monkeypatch.setattr(srv, "build_memory_semantic_index", lambda *a, **k: index)
+    monkeypatch.setattr(srv.Settings, "load", lambda *a, **k: defaults)
+    srv._memory_semantic.cache_clear()
+
+
+def test_memory_search_semantic_disabled_when_memory_off(monkeypatch):
+    """semantic=true, SERTOR_MEMORY off → disabled naming SERTOR_MEMORY (not the semantic knob)."""
+    _use_semantic(monkeypatch, index=None, memory_on=False)
+    try:
+        out = srv.memory_search("alpha", semantic=True)
+        assert out["status"] == "disabled"
+        assert "SERTOR_MEMORY" in out["hint"] and "SEMANTIC" not in out["hint"]
+    finally:
+        srv._memory_semantic.cache_clear()
+
+
+def test_memory_search_semantic_disabled_when_semantic_off(monkeypatch):
+    """semantic=true, memory ON but SERTOR_MEMORY_SEMANTIC off (builder → None) → names the semantic
+    knob + the backfill command, NEVER a silent fallback to full-text (parity with the CLI)."""
+    _use_semantic(monkeypatch, index=None, memory_on=True)
+    try:
+        out = srv.memory_search("alpha", semantic=True)
+        assert out["status"] == "disabled"
+        assert "SERTOR_MEMORY_SEMANTIC" in out["hint"]
+        assert "index-semantic" in out["hint"]
+    finally:
+        srv._memory_semantic.cache_clear()
+
+
+def test_memory_search_semantic_hits(monkeypatch):
+    """semantic=true, both gates on → delegates to the semantic index; hit shape == full-text."""
+    hit = SemanticMemoryHit(session_key="s1", turn_index=1, captured_at=1000.0,
+                            role="assistant", snippet="the alpha plan", score=0.9123)
+    fake = _FakeSemanticIndex(hits=(hit,))
+    _use_semantic(monkeypatch, index=fake, memory_on=True)
+    try:
+        out = srv.memory_search("alpha meaning", semantic=True)
+        assert out["status"] == "ok"
+        assert fake.queries == ["alpha meaning"]          # routed to the semantic index
+        h = out["hits"][0]
+        assert set(h) == {"session_key", "captured_at", "role", "turn_index", "snippet", "score"}
+        assert h["session_key"] == "s1" and h["score"] == 0.9123
+    finally:
+        srv._memory_semantic.cache_clear()
+
+
+def test_memory_search_semantic_empty_is_explicit(monkeypatch):
+    """No match → explicit empty hits (status ok), not disabled and not an error."""
+    _use_semantic(monkeypatch, index=_FakeSemanticIndex(hits=()), memory_on=True)
+    try:
+        assert srv.memory_search("x", semantic=True) == {"status": "ok", "hits": []}
+    finally:
+        srv._memory_semantic.cache_clear()
+
+
+def test_memory_search_semantic_does_not_log_query_in_clear(monkeypatch, caplog):
+    """The MCP tool's own event must not carry the query text (semantic branch)."""
+    _use_semantic(monkeypatch, index=_FakeSemanticIndex(hits=()), memory_on=True)
+    try:
+        with caplog.at_level(logging.INFO, logger="sertor_core"):
+            srv.memory_search("secretquery", semantic=True)
+        blob = " ".join(r.getMessage() for r in caplog.records) + str(
+            [getattr(r, "args", "") for r in caplog.records]
+        )
+        assert "secretquery" not in blob
+    finally:
+        srv._memory_semantic.cache_clear()
+
+
+def test_memory_search_default_is_full_text(monkeypatch, tmp_path):
+    """semantic defaults to false → full-text path runs, the semantic builder is NEVER called."""
+    _seed_archive(tmp_path)
+    calls = {"n": 0}
+
+    def _boom(*a, **k):
+        calls["n"] += 1
+        return None
+
+    monkeypatch.setattr(srv, "build_memory_semantic_index", _boom)
+    _use_memory(monkeypatch, reader=None, search=EpisodicSearch(tmp_path))
+    srv._memory_semantic.cache_clear()
+    try:
+        out = srv.memory_search("alpha")                  # no semantic arg → full-text
+        assert out["status"] == "ok" and out["hits"]
+        assert calls["n"] == 0                             # semantic builder untouched
+    finally:
+        _clear_memory()
+        srv._memory_semantic.cache_clear()

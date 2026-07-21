@@ -52,7 +52,9 @@ The **MCP server** (`sertor-rag`, added to `.mcp.json`) exposes the same retriev
 `search_code` / `search_docs` / `search_combined` + the graph tools `find_symbol` / `who_calls` /
 `related_docs` / `get_context` + — when conversation memory is enabled (`SERTOR_MEMORY=true`, opt-in) —
 the read-only memory tools `memory_search` / `memory_list` / `memory_show` (same data as the `memory`
-CLI commands; they return `{"status": "disabled"}` when memory is off). See
+CLI commands; they return `{"status": "disabled"}` when memory is off). `memory_search` accepts
+`semantic=true` (search by meaning; needs `SERTOR_MEMORY_SEMANTIC` too), mirroring `memory search
+--semantic`. See
 [searching a project](retrieval.md) for when to use which.
 
 ## Configuration knobs (`.sertor/.env`)
