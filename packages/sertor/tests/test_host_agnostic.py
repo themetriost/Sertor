@@ -16,6 +16,9 @@ to the Sertor *project*:
   byte-identical to every host (a product-name mention, not a dogfood reference);
 - `sertor_dir` — the portable-hook (A-09) code identifier for the `.sertor` runtime directory,
   identical in every installed hook (a variable name, not a project reference).
+- `SERTOR_MEMORY` — the conversation-memory privacy-gate env var, read by the portable hook's
+  `memory_enabled()` (A-09 / E4-FEAT-012). A host knob every host sets in `.sertor/.env` (identical
+  everywhere), not a reference to the Sertor project.
 Everything else is considered a reference to the Sertor project → the test fails.
 """
 from __future__ import annotations
@@ -34,6 +37,7 @@ _WHITELIST = (
     "sertor-wiki-tools",
     "sertor-rag",
     "Sertor hooks",   # A-09 portable-hook subsystem description (host-agnostic, in _hooklib.py)
+    "SERTOR_MEMORY",  # E4-FEAT-012 memory-gate env var, read in _hooklib.py (host knob)
     "sertor_dir",     # A-09 portable-hook identifier for the `.sertor` runtime dir (host-agnostic)
     ".sertor",
     "SERTOR:WIKI-RITUAL",
