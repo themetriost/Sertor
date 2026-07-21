@@ -11,6 +11,15 @@ and Sertor aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ## [Unreleased]
 
+### Added
+
+- **Semantic conversation-memory search from the MCP server.** The `memory_search` MCP tool now takes
+  `semantic=true` to search past sessions **by meaning** rather than by keyword — the MCP mirror of
+  `sertor-rag memory search --semantic`, so an agent can do semantic recall over the native MCP surface
+  instead of shelling out to the CLI. It stays behind the same two opt-ins (`SERTOR_MEMORY` +
+  `SERTOR_MEMORY_SEMANTIC`); with the semantic layer off it returns an explicit `disabled` state naming
+  that knob, never a silent fall back to full-text (E4-FEAT-013).
+
 ### Fixed
 
 - **Automatic conversation-memory capture actually runs.** The end-of-session capture hook checked

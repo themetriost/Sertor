@@ -35,6 +35,11 @@ out to the CLI: `memory_search` (local full-text over past turns — "have we ta
 locally (no cloud, no LLM). When memory is **off**, each returns `{"status": "disabled"}` — never a
 misleading empty result. Same data as the `sertor-rag memory` CLI commands.
 
+`memory_search` also takes `semantic=true` to search **by meaning** rather than by keyword — the MCP
+mirror of `sertor-rag memory search --semantic`. It needs the second opt-in `SERTOR_MEMORY_SEMANTIC=true`
+(and a one-time backfill, `sertor-rag memory index-semantic`); until then it returns `{"status":
+"disabled"}` naming that knob, never a silent fall back to full-text.
+
 ## The rule of thumb: discover → navigate
 
 | Your question | Surface | Tool |
