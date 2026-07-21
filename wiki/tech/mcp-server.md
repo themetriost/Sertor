@@ -3,7 +3,7 @@ title: Server MCP sertor-rag
 type: tech
 tags: [mcp, server, sertor-mcp, thin-consumer, retrieval, dogfooding, sertor-core]
 created: 2026-06-08
-updated: 2026-06-19
+updated: 2026-07-21
 sources: ["src/sertor_mcp/server.py", ".mcp.json"]
 ---
 
@@ -109,11 +109,12 @@ Quando una chiamata MCP sembra appesa o il server pare morto:
    `InternalError` mentre `search_combined` regge, il client Chroma del server è divergente dallo store
    riscritto su disco (il process mantiene in memoria una connessione che non vede le modifiche). Sintomo
    gemello: `find_symbol` ritorna righe obsolete. **Rimedio immediato:** riconnettere il server (nuova
-   sessione o comando `/mcp` + riconnessione). **Dal 2026-06-19:** il client si auto-guarisce su entrambi
-   i fronti — `ChromaStore.query()` ricrea il client su errore e riprova una volta; il **code-graph** è
-   cachiato per artefatto su `(mtime_ns, size)` e si ricarica se il disco lo aggiorna, senza riavvio del
-   server. Così la staleness non dovrebbe più accadere. Se persiste: riconnetti il server o avvia una nuova
-   sessione.
+   sessione o comando `/mcp` + riconnessione). **Il client si auto-guarisce** — è il pattern
+   [[auto-heal-staleness]], oggi su **quattro** fronti: `ChromaStore.query()` ricrea il client su errore e
+   riprova (PR #89); il **code-graph** è cachiato su `(mtime_ns, size)` e si ricarica a cambio disco (PR
+   #90); l'**indice lessicale BM25** ricarica i token su cambio disco (A-03); il **lock d'indice** stantio
+   con PID morto viene reclamato (FEAT-035). Così la staleness non dovrebbe più accadere. Se persiste:
+   riconnetti il server o avvia una nuova sessione.
 4. **Probe fuori sessione:** pilotare il server con un driver JSON-RPC su stdio (initialize →
    initialized → tools/call) misurando i tempi, tenendo stdin aperto; se la risposta arriva solo
    chiudendo stdin, l'esecuzione era parcheggiata nell'event loop (la firma dell'episodio
