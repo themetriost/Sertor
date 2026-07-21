@@ -11,8 +11,23 @@ and Sertor aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ## [Unreleased]
 
+_Changes land here before the next version bump._
+
+## [0.1.2] — 2026-07-21
+
+A **conversation-memory release**: the agent can now reach its session memory through the native MCP
+surface — both full-text and by-meaning — and the automatic end-of-session capture that had quietly
+stopped working is fixed. Conversation memory stays **off by default** (opt-in). No breaking changes;
+update is a drop-in refresh. Everything here lands on top of `0.1.1`.
+
 ### Added
 
+- **Read your conversation memory from the MCP server.** The `sertor-rag` MCP server now exposes three
+  read-only memory tools — `memory_search` (full-text over past turns — "have we talked about X?"),
+  `memory_list` (recent archived sessions) and `memory_show` (one session's turns) — so an agent can
+  recall past work over its native MCP surface instead of shelling out to the CLI. Same data as the
+  `sertor-rag memory` CLI commands, same opt-in gate (`SERTOR_MEMORY`, off by default); when memory is
+  off each returns an explicit `disabled` state, never a misleading empty result (E4-FEAT-010).
 - **Semantic conversation-memory search from the MCP server.** The `memory_search` MCP tool now takes
   `semantic=true` to search past sessions **by meaning** rather than by keyword — the MCP mirror of
   `sertor-rag memory search --semantic`, so an agent can do semantic recall over the native MCP surface
