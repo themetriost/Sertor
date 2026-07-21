@@ -369,7 +369,10 @@ def _add_memory_parser(sub) -> None:
         description="Delegates to EpisodicSearch.search(); cites session/role/turn/snippet/score. "
                     "Read-only.",
     )
-    p_msearch.add_argument("query", help="FTS5 query text (empty → honest empty state)")
+    p_msearch.add_argument(
+        "query",
+        help="free-text query — punctuation-safe (versions, paths, tags); empty → empty state",
+    )
     p_msearch.add_argument("--since", type=_parse_time, default=None,
                            help="lower time bound on captured_at (ISO-8601 or epoch)")
     p_msearch.add_argument("--until", type=_parse_time, default=None,

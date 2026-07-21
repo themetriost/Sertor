@@ -35,7 +35,9 @@ _LOGGER = logging.getLogger(__name__)
 class SearchQuery:
     """Input of an episodic search: text + optional constraints (data-model.md).
 
-    `text` uses FTS5 MATCH syntax; empty/whitespace → explicit empty state (not an error).
+    `text` is free text — each whitespace token is matched as a punctuation-safe literal, tokens
+    implicitly AND-ed (`_to_fts_match`); empty/whitespace/no-token → explicit empty state (not an
+    error). Raw FTS5 operators are NOT interpreted (memory search is not a boolean-query surface).
     `since`/`until` are epoch-UTC bounds on the parent session's `captured_at` (`None` = open).
     `since > until` → `InvalidTimeWindowError`. `limit`/`snippet_tokens` default to `Settings`
     (the caller passes the resolved values; the bare dataclass uses the same documented defaults).
@@ -96,6 +98,24 @@ _CREATE_TRIGGERS = (
     "INSERT INTO turns_fts(turns_fts, rowid, content) VALUES('delete', old.rowid, old.content); "
     "INSERT INTO turns_fts(rowid, content) VALUES (new.rowid, new.content); END",
 )
+
+
+def _to_fts_match(text: str) -> str:
+    """Turn free user text into a SAFE FTS5 MATCH expression (pure, stdlib only).
+
+    FTS5 parses the MATCH value as a *query expression*, so ordinary input — version numbers
+    (`0.1.1`), paths (`a/b.py`), `tipo:esito` tags, hyphenated words — hits special syntax
+    (`.`, `-`, `:`, `"`, `*`, parentheses) and raises `fts5: syntax error`, which the search then
+    masks as "no results" (the opposite of Fail Loud). The cure: split on whitespace and wrap EACH
+    token in a double-quoted FTS5 **string literal** (an inner `"` is escaped by doubling it), so
+    punctuation is CONTENT, not operator. Tokens are space-joined = implicit AND (the prior
+    behaviour for multi-word queries). Returns `''` when there are no tokens (caller → empty state).
+
+    Trade-off: raw FTS5 operators (AND/OR/NEAR/prefix `*`) are no longer honoured — memory search is
+    free text, not a boolean-query surface (the common case never types them). A `--raw` escape
+    hatch is a possible follow-up, not needed for the bug.
+    """
+    return " ".join('"' + token.replace('"', '""') + '"' for token in text.split())
 
 
 class EpisodicSearch:
@@ -185,7 +205,10 @@ class EpisodicSearch:
         if conn is None:
             return ()  # P-NOARCH / P-NOINDEX: explicit empty state, never an error.
         try:
-            sql, params = self._build_sql(query)
+            match = _to_fts_match(query.text)
+            if not match:
+                return ()  # no tokens (all punctuation/whitespace) → explicit empty state
+            sql, params = self._build_sql(query, match)
             rows = conn.execute(sql, params).fetchall()
         except sqlite3.Error as exc:
             log_event(logging.WARNING, "episodic_search_unavailable", reason=type(exc).__name__)
@@ -195,15 +218,16 @@ class EpisodicSearch:
         return self._rows_to_hits(rows)
 
     @staticmethod
-    def _build_sql(query: SearchQuery) -> tuple[str, list[object]]:
+    def _build_sql(query: SearchQuery, match: str) -> tuple[str, list[object]]:
         """Build the SQL + params: JOIN turns_fts ↔ turns ↔ sessions, optional time window, order.
 
-        `snippet(turns_fts, 0, ...)` gives the contextual excerpt; `bm25(turns_fts)` the relevance
-        (lower = more relevant → natural ASC). Time window filters on `sessions.captured_at`.
-        Params are built in the exact `?` order of the final SQL: snippet_tokens, MATCH text,
-        then the optional since/until, then the limit.
+        `match` is the sanitized FTS5 MATCH expression (`_to_fts_match`, punctuation-safe), NOT the
+        raw user text. `snippet(turns_fts, 0, ...)` gives the contextual excerpt; `bm25(turns_fts)`
+        the relevance (lower = more relevant → natural ASC). Time window filters on
+        `sessions.captured_at`. Params are built in the exact `?` order of the final SQL:
+        snippet_tokens, MATCH expression, then the optional since/until, then the limit.
         """
-        params: list[object] = [query.snippet_tokens, query.text]
+        params: list[object] = [query.snippet_tokens, match]
         window = ""
         if query.since is not None:
             window += " AND s.captured_at >= ?"
