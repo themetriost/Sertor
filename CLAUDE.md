@@ -362,7 +362,12 @@ chi dovrebbe?* Corollari operativi:
    wiki-craft); il record `experiment` resta **magro** e vi *punta*. È l'operazione `distill` del playbook
    (N2). **È giudizio → resta nel flusso principale (Opus), non a Haiku**, come il lint semantico. Il **caso
    tipico** è una **feature appena implementata** (il record nasce magro, le entità in pagine). Calibra al
-   valore: uno step che non tocca entità durevoli non la innesca.
+   valore: uno step che non tocca entità durevoli non la innesca. **Pavimento hard (E10-FEAT-039, distribuito):**
+   il distill non è più saltabile in silenzio — l'hook host-facing `distill-floor` (`PreToolUse`) **BLOCCA il
+   merge** di consegna (`git merge <feature>`/`gh pr merge`) finché la giornata non ha una voce `distill` nel
+   log (una distillazione reale **o** un «no» *costato* che nomina i candidati, via `append-log --entry-op
+   distill`). Se lo step non tocca entità durevoli, **dichiara il «no», non ometterlo**. Scoperta cross-sessione
+   dei candidati: `sertor-wiki-tools distill-audit` (contesto advisory, non gate).
 3. **Lint semantico di allineamento** — verifica che il wiki **non sia andato alla deriva** rispetto
    alla realtà del progetto (codice in `src/`, `specs/`, `requirements/`, stato git): **segnala
    esplicitamente ogni claim che il repo contraddice**; correggi su conferma. Va **oltre** il `lint`
@@ -558,7 +563,7 @@ cresce a ogni sessione, invece di ricostruire la conoscenza ogni volta.
 > lint, collect, index, structure) è la CLI `sertor-wiki-tools` (host-agnostica, da `wiki.config.toml`).
 
 - **record** — registra lavoro/decisioni svolti: crea/aggiorna le pagine, backlink e `index.md`, voce di log (file del giorno via `append-log`).
-- **distill** — estrae le **entità/concetti durevoli** che un lavoro fa emergere in pagine proprie (`concepts/`/`tech/`), assottigliando i record datati che le contenevano. Giudizio → flusso principale; parte del rituale di step (punto 2).
+- **distill** — estrae le **entità/concetti durevoli** che un lavoro fa emergere in pagine proprie (`concepts/`/`tech/`), assottigliando i record datati che le contenevano. Giudizio → flusso principale; parte del rituale di step (punto 2). **Con pavimento hard (E10-FEAT-039):** ≥1 voce `distill` per giornata attiva, imposto al merge dall'hook `distill-floor`; scoperta candidati via `distill-audit` (advisory).
 - **ingest** — acquisisci una fonte esterna (file/PDF/URL) → riassunto in `sources/`, integra nelle pagine collegate, segnala contraddizioni.
 - **query** — rispondi citando le pagine; se l'esplorazione è preziosa, archiviala come nuova pagina.
 - **lint** — verifica di coerenza a tre livelli: A strutturale (CLI: frontmatter/wikilink rotti/orfani/naming), B semantico (claim ↔ realtà del repo), C organizzativo (collocazione/atomicità/link). Report con severità; non auto-corregge.
@@ -582,15 +587,20 @@ cresce a ogni sessione, invece di ricostruire la conoscenza ogni volta.
 Per innescare manualmente un consolidamento usa il comando **`/wiki`** (lavora nel flusso
 principale) oppure delega all'agente `wiki-curator` (in background).
 
-**Hook (trigger automatici, vedi `.claude/hooks/wiki-pending-check.py`):**
+**Hook (trigger automatici, vedi `.claude/hooks/wiki-pending-check.py` e `distill-floor.py`):**
 - `SessionStart` — carica indice + coda log a inizio sessione (contesto iniettato).
 - `Stop` — a fine turno, se rileva lavoro non ancora registrato (file di `src/specs/requirements/.claude`
   più recenti dell'ultima voce di log), inietta un **promemoria non bloccante** a delegare al
   `wiki-curator`. Non intrappola il turno; si auto-silenzia appena il wiki è aggiornato.
 - `SessionEnd` — riepilogo finale del lavoro non registrato, come rete di sicurezza tra sessioni.
+- `PreToolUse` (`distill-floor`, E10-FEAT-039) — **pavimento del distill: BLOCCA il merge** di consegna
+  (`git merge <feature>`/`gh pr merge`) finché la giornata non ha una voce `distill` nel log. Gate = sola
+  presenza (host-agnostico via `wiki.config.toml`), anti-deadlock, fail-open se indeterminabile. È l'unico
+  hook **bloccante** del wiki (i trigger `record` restano non-bloccanti).
 
-I trigger **non orchestrano da soli** (un hook non può avviare un subagent): rendono *automatica* la
-delega che resta affidata al `wiki-curator`.
+I trigger `record` (SessionStart/Stop/SessionEnd) **non orchestrano da soli** (un hook non può avviare un
+subagent): rendono *automatica* la delega che resta affidata al `wiki-curator`. Il `PreToolUse` del distill,
+invece, **è enforcement deterministico** (nega il merge, non delega).
 
 ## Blocchi installati vs prosa dogfood (come leggere questo file)
 
@@ -610,19 +620,19 @@ dogfood sopra. *(Non riconciliare cancellando la prosa: i blocchi sono rigenerat
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/097-rituale-anti-skip/plan.md` (**E10 / FEAT-026** epica **debito-tecnico** — *rituale wiki
-resistente allo skip silenzioso di distill/lint*). MVP parte 1+3: (1) **nuovo sottocomando deterministico**
-`ritual-check` in `sertor-wiki-tools` (`src/sertor_core/wiki_tools/`) che, dato lo scope dello step
-(**git-diff vs base**, fallback `--pages`/fail-loud), elenca **candidati a distillazione** (gruppi di pagine
-changed con ≥2 nuovi backlink incrociati e 0 nuove pagine `concepts/`/`tech/`) + **candidati a drift**
-(`stale-updated` · `neighbor-of-change` · `capability-exec` config-driven) + emette lo **scaffold di
-dichiarazione** `Rituale: record · distill · lint`; output JSON `wiki.ritual_check/1` + summary. (2)
-**contratto di dichiarazione forzata** a fine step nel blocco host-facing `SERTOR:WIKI-RITUAL` + playbook
-(verdetto esplicito, «non serve» incluso), distribuito via installer + guardia sync. **Confine D↔N:** il
-tool **trova** (deterministico, zero-LLM, sola lettura), l'agente **giudica** (Principio XI). Host-agnostico
-(config da `wiki.config.toml`, no path hardcodati — Principio X); fail-loud su scope indeterminabile
-(Principio XII). Gemella lato-giudizio di FEAT-011. **Fuori scope:** parte 2 (wiki-curator) + parte 4
-(propagazione `ops/*.md`). Constitution **12/12 + missione PASS**. Branch `097-rituale-anti-skip`.
+`specs/116-daily-distill-floor/plan.md` (**E10 / FEAT-039** epica **debito-tecnico** — *daily distill
+floor: dare al passo `distill` una rete hard*). Soluzione: un hook host-facing `distill-floor`
+(`PreToolUse`) che **BLOCCA il merge di consegna** (`git merge <feature>`/`gh pr merge`) finché la giornata
+non ha una voce `distill` nel log (una distillazione reale **o** un «no» *costato* che nomina i candidati).
+**Gate = sola presenza** (c'è una voce distill oggi? sì/no), letto dalla partizione datata del log
+(host-agnostico via `wiki.config.toml`); anti-deadlock (distillare non richiede un merge); `git merge
+<mainline>` non bloccato; **fail-open** se indeterminabile (no config / log non ruotato). Parte deterministica
+= nuovo sottocomando `sertor-wiki-tools distill-audit` (`wiki.distill_audit/1`, cross-sessione: wikilink
+penzolanti + identificatori composti in backtick) usato come **CONTESTO advisory** allegato al blocco, **mai
+come gate** (sul dogfood il segnale-prosa è rumore-dominato: 228 vs 9 wikilink). **Confine D↔N:** il tool
+**trova** (zero-LLM, sola lettura), l'agente **giudica**, l'hook **esige+blocca** (Principio XI). Distribuito
+via installer con parità Claude/Copilot. Gemella lato-**enforcement** di FEAT-026 (`ritual-check`, git-diff
+per-step). Constitution **12/12 + missione PASS**. Branch `116-daily-distill-floor` (PR #216).
 
 <!-- SPECKIT END -->
 
@@ -785,6 +795,14 @@ judgment step; "not needed" is fine but MUST be **declared, never omitted** (a s
 this prevents). To keep candidate *discovery* off memory, run `sertor-wiki-tools ritual-check` first: it
 lists the step's distill/drift candidates (via git diff) + a declaration scaffold — the **tool finds, you
 judge** (read-only, zero-LLM).
+
+**Daily distill floor (enforced at merge).** A day that logged work MUST also log a `distill` — a real
+distillation OR a reasoned "no" recorded as a distill entry that NAMES the candidates considered — before
+you may **merge** to the mainline. A `PreToolUse` hook BLOCKS a delivery merge (`git merge <branch>` /
+`gh pr merge`) when today's log has no `distill` entry: it is a hard gate, not a nudge. To satisfy it,
+perform the distill (or run `sertor-wiki-tools append-log --entry-op distill --title "no: <why>"`), then
+merge. The `distill-audit` operation lists candidate entities (referenced from ≥k points, no page) as a
+deterministic hint attached to the block — the tool finds, you judge.
 
 **Delegation.** That these actions happen is the main flow's responsibility; executing or delegating them
 is merely a choice to avoid blocking. The `record` (structured transcription) is delegatable to the

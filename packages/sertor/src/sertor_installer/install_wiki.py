@@ -80,6 +80,9 @@ _COPILOT_HOOK_WIRING = ".github/hooks/sertor-hooks.json"
 # Hook scripts are REUSED byte-for-byte from the Claude asset (FR-014); only the wiring differs.
 _WIKI_HOOK_SCRIPT_SRC = "claude/hooks/wiki-pending-check.py"
 _WIKI_HOOK_SCRIPT_DST = ".github/hooks/wiki-pending-check.py"
+# Daily distill floor (E10-FEAT-039): PreToolUse merge-gate script, reused byte-for-byte on Copilot.
+_DISTILL_HOOK_SCRIPT_SRC = "claude/hooks/distill-floor.py"
+_DISTILL_HOOK_SCRIPT_DST = ".github/hooks/distill-floor.py"
 # Shared hook helper (A-09): imported by the portable `.py` hook; must be deposited alongside it.
 _WIKI_HOOKLIB_SRC = "claude/hooks/_hooklib.py"
 _WIKI_HOOKLIB_DST = ".github/hooks/_hooklib.py"
@@ -150,6 +153,13 @@ def _copilot_wiki_hook_specs(assistant: AssistantId) -> list[HookEntrySpec]:
         f"{_PY} {_WIKI_HOOK_SCRIPT_DST} --mode SessionEnd --assistant copilot", 10,
         cwd=".",
     )
+    # Daily distill floor (E10-FEAT-039): PreToolUse gate that blocks a delivery merge until the day
+    # has a distill entry. `matcher="Bash"` limits it to shell commands (where the merge runs).
+    distill_floor = HookEntrySpec(
+        "PreToolUse", "command",
+        f"{_PY} {_DISTILL_HOOK_SCRIPT_DST} --mode PreToolUse --assistant copilot", 95,
+        cwd=".", matcher="Bash",
+    )
     # CLI: SessionStart is a static prompt (the directive). No script invocation.
     session_start = HookEntrySpec(
         "SessionStart", "prompt",
@@ -159,7 +169,7 @@ def _copilot_wiki_hook_specs(assistant: AssistantId) -> list[HookEntrySpec]:
         "<!-- EXEC:END -->.",
         15,
     )
-    return [session_start, stop, session_end]
+    return [session_start, stop, session_end, distill_floor]
 
 
 def build_install_plan(assistant: AssistantId = AssistantProfile.DEFAULT) -> list[Artifact]:
@@ -286,6 +296,11 @@ def _build_copilot_wiki_plan(assistant: AssistantId) -> list[Artifact]:
     )
     plan.append(
         Artifact(ArtifactKind.FILE, _WIKI_HOOK_SCRIPT_SRC, _WIKI_HOOK_SCRIPT_DST,
+                 WriteStrategy.CREATE_IF_ABSENT)
+    )
+    # Daily distill floor (E10-FEAT-039): the PreToolUse merge-gate script (byte-for-byte reuse).
+    plan.append(
+        Artifact(ArtifactKind.FILE, _DISTILL_HOOK_SCRIPT_SRC, _DISTILL_HOOK_SCRIPT_DST,
                  WriteStrategy.CREATE_IF_ABSENT)
     )
     # HOOK wiring: GENERATED natively (sentinel source → apply builds it via render_copilot_hooks).

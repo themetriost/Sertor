@@ -14,13 +14,14 @@ from sertor_installer.settings_merge import merge_settings
 _FRAGMENT = json.loads(read_asset_text("settings.hooks.json"))
 
 
-def test_absent_creates_with_three_entries(tmp_path: Path):
+def test_absent_creates_with_the_wiki_entries(tmp_path: Path):
     p = tmp_path / "settings.json"
     outcome, detail = merge_settings(p, _FRAGMENT)
     assert outcome is Outcome.CREATED
-    assert detail == "+3 hook entries"
+    # SessionStart + Stop + SessionEnd + PreToolUse (E10-FEAT-039 distill-floor merge-gate).
+    assert detail == "+4 hook entries"
     data = json.loads(p.read_text(encoding="utf-8"))
-    assert set(data["hooks"].keys()) == {"SessionStart", "Stop", "SessionEnd"}
+    assert set(data["hooks"].keys()) == {"SessionStart", "Stop", "SessionEnd", "PreToolUse"}
 
 
 def test_present_with_user_hook_merges_additively(tmp_path: Path):
@@ -65,4 +66,4 @@ def test_present_without_hooks_section_creates_it(tmp_path: Path):
     assert outcome is Outcome.MERGED
     data = json.loads(p.read_text(encoding="utf-8"))
     assert "hooks" in data
-    assert set(data["hooks"].keys()) == {"SessionStart", "Stop", "SessionEnd"}
+    assert set(data["hooks"].keys()) == {"SessionStart", "Stop", "SessionEnd", "PreToolUse"}

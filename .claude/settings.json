@@ -52,6 +52,17 @@
             "command": "uv run --no-project python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/sertor-rag-usage-check.py\" --assistant claude"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 95,
+            "statusMessage": "Pavimento distill: gate sul merge",
+            "command": "uv run --no-project python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/distill-floor.py\" --mode PreToolUse --assistant claude"
+          }
+        ]
       }
     ],
     "SessionEnd": [

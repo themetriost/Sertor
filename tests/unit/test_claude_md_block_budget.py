@@ -18,7 +18,7 @@ from sertor_install_kit import resources as _kit
 # DA-1: soglie differenziate per blocco, non uniforme a 75 (blocchi pre-FEAT-021 erano
 # wiki 71 / RAG 72 -> una soglia >= 71 permetterebbe di tornare ai valori pre-riduzione).
 _BUDGETS: dict[tuple[str, str], int] = {
-    ("sertor_installer", "claude-md-block.md"):               60,  # wiki  (attuale 52)
+    ("sertor_installer", "claude-md-block.md"):               68,  # wiki  (+distill floor)
     ("sertor_installer", "rag/claude-md-block-rag-usage.md"): 58,  # RAG   (attuale 49)
     ("sertor_flow",      "claude-md-block-sdlc.md"):          70,  # SDLC  (attuale 64)
 }

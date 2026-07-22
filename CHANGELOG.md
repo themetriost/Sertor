@@ -13,6 +13,29 @@ and Sertor aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 _Changes land here before the next version bump._
 
+## [0.1.3] — 2026-07-22
+
+A **wiki-governance release**: the `distill` step of the wiki ritual — turning the day's scattered
+knowledge into durable pages instead of leaving it buried in the dated log — now has a **hard floor**.
+No breaking changes to your code; the new enforcement arrives only when you install/upgrade the wiki
+capability. Everything here lands on top of `0.1.2`.
+
+### Added
+
+- **Daily distill floor — the merge is gated on a distill.** A new host-facing hook (`distill-floor`,
+  `PreToolUse`) BLOCKS a delivery merge (`git merge <branch>` / `gh pr merge`) when today's wiki log
+  has no `distill` entry: a day that logged work must also log a distillation — a real one, or a
+  reasoned "no" that names the candidates considered — before it can ship. The gate reads today's dated
+  log partition from `wiki.config.toml` (host-agnostic), never deadlocks (distilling needs no merge),
+  leaves mainline-update merges (`git merge master`) untouched, and fails open when the floor cannot be
+  determined (no config / single-file log). Distributed with Claude/Copilot parity via
+  `sertor install/upgrade wiki` (E10-FEAT-039).
+- **`distill-audit` — find undistilled entities across the whole wiki.** A new deterministic
+  `sertor-wiki-tools distill-audit` (contract `wiki.distill_audit/1`, zero-LLM, read-only) scans the
+  whole corpus for entities referenced from many points that still have no page (dangling wikilinks +
+  compound backtick identifiers), with a debt count. It is an **advisory hint** attached to the floor's
+  block message — the tool finds, the agent judges — never itself a gate.
+
 ## [0.1.2] — 2026-07-21
 
 A **conversation-memory release**: the agent can now reach its session memory through the native MCP
