@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-07-21
+updated: 2026-07-22
 sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md", "specs/**", ".specify/memory/constitution.md", "requirements/memoria-conversazioni/epic.md"]
 ---
 
@@ -101,246 +101,59 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 | **E12** | 🆕 [`usabilità`](../../requirements/usabilita/epic.md) | 🔄 **MVP completo** (FEAT-001/002/010 ✅ su `master`) | **owner del layer UX** (skill agentiche + agente *concierge* + poche primitive deterministiche, D↔N). **FEAT-001 `doctor` ✅** (PR #100, fix freschezza #102) + **FEAT-002 guided-setup ✅** (skill + agente `concierge` model-pinned, PR #101) + **FEAT-010 discoverability CLI ✅** (`uv run --project .sertor`, PR #103/#104) + **FEAT-012 install host-aware ✅** (PR #115, fix dogfooding + NRT, 2026-06-26). MVP (doctor + guida + invocazione robusta) coperto. Restano Should: config-recommender (FEAT-004), explain (FEAT-005), search-diagnose (FEAT-007), concierge pieno (FEAT-009, **stub avviato**), progress GloVe (FEAT-003). Assorbe item UX-facing da E2/E3/E10 (cross-ref) · **FEAT-013 description trigger-rich EN** (da audit, P0) |
 | **E13** | 🆕 [`documentazione-marketing`](../../requirements/documentazione-marketing/epic.md) | 🔄 **Fase 1 COMPLETA** (FEAT-001..008 ✅) | **owner della documentazione ESTERNA + marketing** (confine netto: E12 = UX in-product · `wiki/` = doc interna · meccanismi nelle epiche d'origine — E13 li *racconta*, cross-ref). **Fase 1 — doc utente ✅ TUTTA CONSEGNATA:** getting-started + README valore (A-18, PR #172) · why-sertor + indice docs + tutorial + troubleshooting + CHANGELOG + reference (batch 2026-07-12). **Fase 2 — marketing pubblico** (posizionamento, demo/screencast, landing/sito) **SBLOCCATA dal go-public** (repo pubblico dal 2026-07-13); non più bloccata dalla privacy del repo. Resta interim `git+url` (PyPI FEAT-006, espansione go-public/PyPI congelata utente 2026-07-17) ma è distribuzione, non blocco marketing → Fase 2 avviabile quando si vuole |
 | **E14** | 🆕 [`speclift`](../../requirements/speclift/epic.md) | 🔄 FEAT-001 ✅ su master | **`diff → requisiti EARS ancorati`** (handoff da Sinthari, sandwich deterministico + moat). **FEAT-001 self-host ✅** (vendoring Adapter B/MCP, merge `bbfb74d`/PR #136, 2026-07-01). **FEAT-003 SpecAudit 🔄 self-host/dogfood vendorato ✅ (2026-07-02)** — verdetto per-requisito top-down; vendorato in `packages/specaudit` (stampo speclift, 59 test verdi 3.11+3.12, skill dogfood in `.claude/`); resta distribuzione esterna (gemella FEAT-002). Restano: **FEAT-002 distribuzione su ospiti** (casa **decisa 2026-07-14: `sertor-flow`**, fold) · **FEAT-004 Debrief / FEAT-005 Guida-al-test** (Could). Nato dalla collaborazione agent-to-agent (feedback CLI→MCP recepito upstream) |
-| **E15** | 🆕 [`fedelta-dogfood`](../../requirements/fedelta-dogfood/epic.md) | 🔄 nuova (2026-07-03) · FEAT-027 ✅ · **FEAT-002 ✅** (sync+guardie RAG; assorbe F3-file, chiude E10-FEAT-025) · **⚠️ MODELLO RIORIENTATO (direttiva utente 2026-07-03):** dogfood = **real-install, traccia HEAD** (FEAT-001 self-install), NON sandbox; ospiti = versioni+auto-updater; sync/script (F2/FEAT-027) → **interim**. **FEAT-005 ✅** (installer preservante `plan-template`, sblocca la governance del self-install) · **FEAT-001/F1 ✅ + F7** (runtime `.sertor/` installato da git HEAD, #150; CI-fix guardia venv #151) · **FEAT-008/F8 ✅ MERGED (#152, b849a1f)** (re-lock runtime a HEAD dogfood-only; post-merge eseguito sul proprio merge 879b688→b849a1f) · **asset-install (FEAT-001 scope B) ✅ IMPLEMENTATA su branch `089` (2026-07-06)** — i 3 veri installer eseguiti sul dogfood: **process-fidelity raggiunta**. `.env`/costituzione/`.mcp.json`/`wiki.config` preservati, core invariato, idempotenza provata (2° giro `block:0`). **FEAT-010 ✅** (`.gitattributes` LF: dogfood+bundle+`sertor install rag` lo deposita create-if-absent → azzera churn CRLF su ogni host Windows). CLAUDE.md riconciliato via **ownership-note** (blocchi=contratto client-form · prosa IT=applicazione dogfood autoritativa; nessuna prosa dogfood persa). Sync/script retrocessi a **guardia-non-fonte**. `wiki/log.md` legacy scartato → **FEAT-006** (staleness template, promossa). Gate verde: root 1156·sertor 492·flow 142·kit 151·speclift 122·specaudit 59, ruff clean. [[asset-install-installer-dry-run-2026-07-04]] · **FEAT-009 ❌ CHIUSA not-a-bug** (`.mcp.json --directory` era misdiagnosi: `registered=False` = artefatto cwd del *doctor*, non del template; `Settings.load` self-localizing). [[feedback_dogfood_solo_via_install_versionbump]] | **Il dogfood prodotto e verificato dai veri installer** — fedeltà a **due livelli**: asset-fidelity (stessi file, oggi parziale via sync) + **process-fidelity** (prodotto dagli installer, oggi **assente ovunque**). Da audit 2026-07-03 ([[audit-fedelta-dogfood-2026-07-03]]): FEAT-001 harness process-fidelity (Must) · FEAT-002 sync completo+guardie (Must) · FEAT-003 artefatti RAG mancanti · FEAT-004 divergenze dev↔client · FEAT-005 installer preservante `plan-template` (≡E10-FEAT-028) · FEAT-006 staleness inversa template. **Correzione empirica:** `specify init --force` preserva la costituzione, clobbera solo `plan-template.md` |
+| **E15** | 🆕 [`fedelta-dogfood`](../../requirements/fedelta-dogfood/epic.md) | 🔄 nuova (2026-07-03) · FEAT-027 ✅ · **FEAT-002 ✅** (sync+guardie RAG; assorbe F3-file, chiude E10-FEAT-025) · **⚠️ MODELLO RIORIENTATO (direttiva utente 2026-07-03):** dogfood = **real-install, traccia HEAD** (FEAT-001 self-install), NON sandbox; ospiti = versioni+auto-updater; sync/script (F2/FEAT-027) → **interim**. **FEAT-005 ✅** (installer preservante `plan-template`, sblocca la governance del self-install) · **FEAT-001/F1 ✅ + F7** (runtime `.sertor/` installato da git HEAD, #150; CI-fix guardia venv #151) · **FEAT-008/F8 ✅ MERGED (#152, b849a1f)** (re-lock runtime a HEAD dogfood-only; post-merge eseguito sul proprio merge 879b688→b849a1f) · **asset-install (FEAT-001 scope B) ✅ IMPLEMENTATA su branch `089` (2026-07-06)** — i 3 veri installer eseguiti sul dogfood: **process-fidelity raggiunta**. `.env`/costituzione/`.mcp.json`/`wiki.config` preservati, core invariato, idempotenza provata (2° giro `block:0`). **FEAT-010 ✅** (`.gitattributes` LF: dogfood+bundle+`sertor install rag` lo deposita create-if-absent → azzera churn CRLF su ogni host Windows). CLAUDE.md riconciliato via **ownership-note** (blocchi=contratto client-form · prosa IT=applicazione dogfood autoritativa; nessuna prosa dogfood persa). Sync/script retrocessi a **guardia-non-fonte**. `wiki/log.md` legacy scartato → **FEAT-006** (staleness template, promossa). Gate verde: root 1156·sertor 492·flow 142·kit 151·speclift 122·specaudit 59, ruff clean. [[asset-install-installer-dry-run-2026-07-04]] · **FEAT-009 ❌ CHIUSA not-a-bug** (`.mcp.json --directory` era misdiagnosi: `registered=False` = artefatto cwd del *doctor*, non del template; `Settings.load` self-localizing). (cfr. memoria `feedback_dogfood_solo_via_install_versionbump`) | **Il dogfood prodotto e verificato dai veri installer** — fedeltà a **due livelli**: asset-fidelity (stessi file, oggi parziale via sync) + **process-fidelity** (prodotto dagli installer, oggi **assente ovunque**). Da audit 2026-07-03 ([[audit-fedelta-dogfood-2026-07-03]]): FEAT-001 harness process-fidelity (Must) · FEAT-002 sync completo+guardie (Must) · FEAT-003 artefatti RAG mancanti · FEAT-004 divergenze dev↔client · FEAT-005 installer preservante `plan-template` (≡E10-FEAT-028) · FEAT-006 staleness inversa template. **Correzione empirica:** `specify init --force` preserva la costituzione, clobbera solo `plan-template.md` |
 
 *Legenda:* ✅ completa · 🔄 nucleo consegnato, residui aperti · 📋 da fare · 🆕 nuova. *Numerazione `E1`..`E15`: vista standing per epica (E1 nucleo `sertor-core`, E11 `multiutente` differita, E12 `usabilità`, E13 `documentazione-marketing`, E14 `speclift`, E15 `fedelta-dogfood` nuova 2026-07-03 da audit fedeltà); E1–E4 storiche, E5–E10 dal backlog audit 2026-06-16, E12 dall'esplorazione UX 2026-06-23, E13 dalla richiesta 2026-06-24, E15 dalla domanda «abbiamo fatto su tutto Sertor?».*
 
 ### 🔄 IN PROGRESS (dettaglio)
 
-> **✅ CONSEGNATA (2026-06-25, merge `29dd30e` su `master`): E10-FEAT-011 enforcement freschezza RAG.**
-> SpecKit completo specify→plan→tasks→implement, Constitution
-> **12/12 + missione**, ruff clean; test: sertor **395** · kit **131** · root non-cloud **1128** (3 skip
-> packaging noti); `sertor-core` **INVARIATO** (Principio XI). *Cosa:* due hook host-facing distribuiti via
-> `sertor install rag`, parità Claude/Copilot — `rag-freshness.ps1` (SessionEnd: re-index incondizionato via
-> vehicle + `doctor` + persiste `.sertor/.rag-health.json` `rag.health/1`; exit 0 sempre, no LLM) +
-> `rag-freshness-start.ps1` (SessionStart Claude: ripesca lo stato e **induce** la correzione se `degraded`;
-> Copilot = prompt statico). + reclass `CLAUDE.md` step 5/8 «enforced via hook» + `RUNTIME_IGNORES` esteso.
-> *Dove:* branch `076`, commit spec `e89dcf6` · plan `abf507f` · tasks `f7b05ca` · impl `5f06cbd` · +FEAT-014
-> `913a824`. *Test funzionale (dogfooding) ✅:* hook eseguito a mano → re-index reale (indice riscritto) +
-> `rag-health.json` `verdict: healthy` 4/4 aree pass. *Prossimo passo concreto:* smoke MCP + `gh run list`
-> (CI Win/Linux sul merge) + distill entità wiki. *Follow-up non-bloccante:* prova LIVE su ospite reale
-> (quickstart §6); **FEAT-014 (Could, tracciata)** = fix stdin-hang dell'hook in invocazione manuale
-> (`IsInputRedirected` guard) — emerso in dogfooding, non si manifesta in produzione.
->
-> *(E12-FEAT-002 `guided-setup` ✅ e E12-FEAT-001 `doctor` ✅ già su `master` — vedi ✅ Capacità consegnate.)*
->
-> **🔎 Verifica backlog 2026-06-25 (feature-per-feature, 13 epiche, via RAG+grafo+git).** Stato dichiarato
-> accurato **~96%**, le ✅ tutte con evidenza concreta (file:symbol + commit/merge), le 📋 assenze pulite.
-> Drift corretto nelle fonti durevoli: **E5-FEAT-008/009** (genesi/feedback eval) erano dati 📋 ma sono ✅
-> skill bundlate (`eval-suite-author`/`eval-feedback`, vehicle presenti); **E12-FEAT-001/002/010**
-> (doctor/guided-setup/discoverability) marcate in-corso negli `epic.md` ma ✅ su `master` (gli `epic.md`
-> **lag** dietro l'EXEC); ripulito il residuo inerte `.venv-core/`. Sfumature: E11-FEAT-M01 ha bozza EARS
-> congelata; E13-FEAT-001/002 parzialmente pre-coperte da README/`docs/` (delta = consolidamento). Finding
-> collaterale (non roadmap): `.env` dogfood ha `SERTOR_OBSERVABILITY_OTEL` attivo senza collector su
-> `localhost:4318` → rumore di connessione a ogni comando.
+> **Nessun lavoro attivamente in corso.** L'ultima consegna è **E10-FEAT-039 «daily distill floor»**
+> (v0.1.3, 2026-07-22 — merge-gate bloccante del distill; vedi ✅ Capacità consegnate). Il flusso è
+> **fermo alla scelta della prossima direzione** (vedi PLANNED e la vista per epica sopra).
 
-**🔄 In pipeline ora:** **Backlog dall'audit indipendente SWOT (2026-07-02).**
+**Item standing aperti (non in corso, ma da non perdere):**
 
-- **Audit SWOT + backlog azionabile — ✅ COMPLETO (2026-07-11).** 🎉 **Tutti i 20 item A-01..A-20 consegnati su `master`.**
-  *Cosa:* audit completo del workspace (5 subagent paralleli: core · packages/CI · governance · backlog ·
-  doc/wiki) → SWOT + **20 item prioritizzati P0–P2** (tabella sotto, dettaglio/evidenze in
-  [[audit-swot-2026-07-02]]). Attaccati **in ordine da A-01 in giù**, con checkpoint a fine di ogni item.
-  *Consegnato (su master):* **A-01 → A-20 ✅ TUTTI** (merge `e6096e4`/PR #174 chiude A-19, l'ultimo) → **🎉 backlog audit COMPLETO** — dettaglio nella tabella SWOT sotto. A-11 folded in E6
-  FEAT-007; A-12/A-13 riconciliazione `epic.md`↔EXEC + `updated:`=data secca (PR #166); A-14 hardening
-  `sertor-core` (parse guardato + scrub `detail` MCP, PR #167); A-15 policy `/VERSION` bump manuale a
-  release (PR #168); **A-16** lifecycle robusto (content-guard uninstall + marker fail-loud, PR #169).
-  **Finding auto-updater** (PR #170): inerte su **repo privato** (fetch `/VERSION` 404) → macchina validata
-  live → **E2-FEAT-017** (gated sul go-public). **A-17 ✅** (merge `064c5eb`/PR #171) — sync/orfani
-  installer: (1) `--check` **exit-code** sul `sync` (gate drift locale); (2) uninstall **senza orfani** —
-  `settings.json` vuoto cancellato (`delete_if_empty` sul condiviso) + **dir vuote pruned**
-  (`prune_empty_dirs`, i 3 consumer). **Chiude il bug tracciato «`.claude/` orfano».**
-  - **A-18 — ✅ CONSEGNATA (merge `6e40ccc`/PR #172, 2026-07-11).** E13 Fase 1 Musts (doc utente MVP):
-    **nuovo `docs/getting-started.md`** (percorso unico host-agnostico «dal nulla al primo valore»,
-    entrambe le varianti CLI Claude+Copilot affiancate, esempio finale di fusione code+doc via
-    `search_combined`) + **riscrittura `README.md`** valore-first (apre col differenziatore code+doc +
-    esempio, fatti preservati, punta al getting-started come ingresso unico) + rimandi di convergenza in
-    `install-claude`/`install-copilot`/`retrieval`. Pipeline SpecKit completa (requirements→specify→
-    clarify→plan→tasks→implement); Constitution **12/12 + missione PASS** (authoring, `sertor-core`/CLI/
-    installer **invariati**, D↔N); ruff clean + CI verde (1171 test). Post-merge: re-lock `064c5eb→6e40ccc`
-    · re-index 1330doc/14536chunk (9+7) · smoke MCP verde (`getting-started.md` servito). **Chiude
-    E13-FEAT-001+002.** *Prossimo:* **A-19** (o differirlo, vedi caveat YAGNI Codex).
-
-- **E14-FEAT-001 — self-host di SpecLift (vendoring Adapter B) — ✅ CONSEGNATA (merge `bbfb74d`/PR #136, 2026-07-01) su `master`.**
-  *Cosa:* SpecLift (capacità `diff → requisiti EARS ancorati`, **handoff da Sinthari**) vendorato come membro
-  workspace `packages/speclift` per il dogfooding. **Storia collaborativa agent-to-agent:** handoff → nostro
-  feedback «i consumatori esterni usano l'**MCP**, non la CLI» → Sinthari ha reso l'`EvidenceLocator` **pluggable**
-  (Adapter B: agente+MCP) e mergiato su `master` (`5ee6fc1`) → noi **adottiamo l'Adapter B via vendoring puro**
-  (zero fork, convergenza). Retrieval via MCP `search_code` (three-gear flow); Adapter A CLI dormiente;
-  `sertor-core` INVARIATO. 2 divergenze di packaging (Python `>=3.11`, `jsonschema`→dev) + LICENSE MIT.
-  *Test:* speclift **122** (su 3.11 e 3.12) · non-regressione sertor 487 / kit 151 / flow 140 / core-root 1064;
-  Constitution **12/12 + missione**. **Dogfood e2e verde** (moat: anchor `verified`). Post-merge: re-index
-  (1186 doc) + smoke MCP verde (code-graph auto-reload sui simboli nuovi). *Follow-up:* distribuzione su ospiti =
-  **E14-FEAT-002** (casa **DECISA 2026-07-14: `sertor-flow` — fold**; speclift/specaudit zero-deps+MCP →
-  nessun conflitto d'ortogonalità; esclusi dal publish PyPI; impl = feature media da decomporre);
-  famiglia SpecAudit/Debrief = E14-FEAT-003/004/005.
-
-- **E2-FEAT-015 — default model-policy subagent Copilot CLI — ✅ CONSEGNATA (merge `4e30d00`/PR #135, 2026-07-01) su `master`.**
-  I 5 agenti Sertor-authored su Copilot CLI ricevono un `model:` di default da una fonte unica versionata
-  (`sertor_install_kit/model_policy.py`), fail-loud install-time su profilo incompleto; path Claude byte-identico,
-  `sertor-core` invariato. Meccanismo verificato = `model:` nel frontmatter `.agent.md` (non un blocco settings).
-  Constitution 12/12 + missione; kit 151 · sertor 487 · flow 140 · root 1134/3-skip. *Scope out promosso:*
-  modello per gli `speckit.*` → **E2-FEAT-016** (Could, previa spike).
-
-- **E10-FEAT-019 ✅ CONSEGNATA (merge `629481b`/PR #125, 2026-06-29) su `master`.** SpecKit completo
-  specify→plan→tasks→implement, Constitution **12/12 + missione**, ruff clean; test: sertor **443** ·
-  sertor-flow **137** · kit **132** · root **1131 passed** (3 skip packaging `git+url`); `sertor-core`
-  **INVARIATO** (Principio XI). Post-merge: re-index dogfood OK (1021 doc/11598 chunk, +17/~22) + smoke MCP
-  verde (filtro `where` sano, indice fresco). *Follow-up non-bloccante:* prova LIVE su ospite Claude/Copilot
-  reale (comportamento runtime del fallback agent = giudizio LLM, verificabile solo live — confine D↔N
-  dichiarato). Dettaglio in ✅ Capacità consegnate sopra.
-- **E10-FEAT-018 ✅ CONSEGNATA (merge `8257fd3`/PR #127, 2026-06-30) su `master`.** Portabilità OS degli
-  hook (guardia `pwsh` + gap dichiarato, no gemello bash) + onestà sui surface inerti via `InstallReport.notes`;
-  modulo puro `host_env.py` nel kit; detect-only (wiring invariato). Constitution **12/12 + missione**; test
-  sertor **451** · kit **139** · root **1131 passed**; `sertor-core` invariato, schema `install.report/1`
-  invariato. *Follow-up non-bloccante:* prova LIVE su ospite mac/Linux senza `pwsh`; fix wiring Claude portabile.
-- **E10-FEAT-026 — rituale wiki anti-skip — ✅ CONSEGNATA (merge `e906e34`/PR #176, 2026-07-12).**
-  MVP parte 1+3 (Should P1, dai 2 feedback ospiti convergenti). **Nuovo sottocomando `sertor-wiki-tools
-  ritual-check`** (deterministico, zero-LLM, sola lettura): scope via git-diff-vs-base (fail-loud/`--pages`),
-  elenca candidati **distill** (≥2 pagine changed con ≥2 nuovi backlink incrociati, 0 nuove `concepts/`/`tech/`)
-  + **drift** (`stale-updated`/`neighbor-of-change`-non-hub/`capability-exec` config-driven) + **scaffold di
-  dichiarazione**. + **dichiarazione forzata** a fine step nel blocco host-facing + playbook. Confine D↔N (tool
-  trova, agente giudica); gemella lato-giudizio di FEAT-011. SpecKit completo; +9 test; suite 1180 verde, ruff
-  clean; `sertor-core` engine invariato. **Fuori scope:** parte 2 (wiki-curator) + parte 4 (moduli derivati).
-- **E2-FEAT-010 (residuo ergonomia installer) — ✅ CONSEGNATA (merge `eb1f7a3`/PR #179, 2026-07-13).**
-  Scelta utente «procedi con tutte le rimanenti di sertor-cli a partire da 010». MVP: **multi-target**
-  (`--assistant` CSV/`all` → un comando, container disgiunti, deps runtime una volta, report aggregato +
-  note propagate, fail-fast; single-value invariato) · **avviso non-Python** (`host_env.is_python_host`
-  nel kit → nota advisory, sorgenti intatti) · **guida uv-assente onesta** (installa uv · `--no-deps` ·
-  pip non ancora disponibile). Pip fallback reale **rinviato a FEAT-006/go-public** (deps workspace non
-  pubblicate — decisione utente). `sertor-core` invariato; kit 178 · sertor 523 · suite 1180 verdi, ruff
-  clean; smoke CLI reale + smoke MCP fresco. Post-merge: re-lock `9b5b842→eb1f7a3` · re-index incrementale
-  (1353doc/14778chunk, +4/~5) · smoke MCP verde (`find_symbol("is_python_host")`→`host_env.py:23`).
-  *Fuori scope tracciato:* multi-target `sertor-flow` (follow-up) · reviewer clean-code (feature a sé).
-- **E2-FEAT-016 (model policy speckit su Copilot CLI) — ❌ WON'T / non-applicabile (spike 2026-07-13).**
-  La doc ufficiale Copilot CLI **non consuma i prompt-file** (`.github/prompts/*.prompt.md` = costrutto
-  VS Code Chat); gli `speckit.*` sono prompt-file → sulla CLI **nessuna superficie li invoca**, quindi
-  nessun meccanismo per `model:`. Sertor è copilot-cli-only (FEAT-012); la model-policy CLI utile è già
-  FEAT-015. Chiusa; riaprire solo se la CLI aggiunge il consumo dei prompt-file. [Issue #1195].
-- **E2-FEAT-017 (fetta onestà auto-updater) — ✅ CONSEGNATA (merge `00dcd62`/PR #180, 2026-07-13).** Il SessionStart
-  emette un cenno **una-tantum** «SERTOR UPDATE CHECK UNAVAILABLE» quando `verdict=unknown` (GET `/VERSION`
-  fallita — offline o repo privato), con flag persistente `unknown_notified` (no nag; reset a verdetto
-  risolto); parità Copilot via prompt statico. Prima l'updater era **muto** su `unknown`. `sertor-core`
-  invariato, +4 test parity. **Pezzo strutturale ora SBLOCCATO dal go-public** (repo pubblico → GET `/VERSION`
-  = **200**, verificato 2026-07-13) — l'updater ora *può* verificare; rileverà `behind` alla prima release+bump.
-- **🌐 GO-PUBLIC — DECISO ED ESEGUITO (2026-07-13).** Scelta utente «io andrei pubblico», sequenza «repo public
-  ora, PyPI a CI verde». **✅ FATTO E VALIDATO:** audit segreti/history **CLEAN** (912 commit, 0 segreti, no
-  rewrite) → **repo `themetriost/Sertor` PUBBLICO** · **prima release `v0.1.0`** (GitHub Release + tag su
-  `00dcd62`, *latest*) · **auto-updater live** (3 scenari validati: up-to-date `/VERSION`=200 reale · behind ·
-  unknown-una-tantum FEAT-017) · **install esterno provato** (`uvx` dal tag pubblico, fuori dal checkout, 85 pkg,
-  `sertor --help` ok) · hardening `.gitignore` (`*.pem`/`*.pfx`/`*.p12`). **⏳ era GATED al 1° ago (CI ferma per
-  billing) → 🔓 GATE CADUTO il 2026-07-16: la CI è tornata verde in anticipo (8/8 su PR #190), il residuo è
-  eseguibile ORA:** **publish PyPI** dei 4 pacchetti (= **E2-FEAT-006**, Won't→planned; darà `pip install sertor`) +
-  **pip fallback reale** (FEAT-010 residuo, possibile con deps pubblicate) + eventuale **bump `/VERSION`** che
-  accende `behind` in produzione (la v0.1.0 è baseline, nessun bump). **🔓 Sbloccato ora:** **E13 Fase 2**
-  (marketing). Casa del residuo: [`requirements/sertor-cli/go-public-pypi/`](../../requirements/sertor-cli/go-public-pypi/requirements.md).
-- **✅ CI TORNATA VERDE (verificato 2026-07-16)** — il blocco per billing («CI ferma fino al 1° ago») **non è più
-  vero**: la PR #190 ha girato con **8/8 check SUCCESS** (test Windows+Ubuntu py3.11/3.12, smoke Claude+Copilot).
-  **Conseguenza:** il gate del residuo go-public **è caduto in anticipo** → PyPI publish + pip fallback sono
-  eseguibili **ora**, non dal 1° agosto. Riprende anche l'auto-merge/uso normale della CI come gate pre-merge.
-- **✅ E10-FEAT-032 — identità hook per script stem — CONSEGNATA (merge `ddbfb27`/PR #192, 2026-07-17).**
-  **Confermata dalla verifica indipendente del nodo Noetix** (il dogfood era teste contaminato: bug prodotto
-  sul nodo che ha scritto il fix), poi corretta. *Il bug:* `settings_merge.py` usava **la stringa del comando
-  come identità** dell'hook → cambiare il wiring **non aggiornava, duplicava** (Claude: vecchia rotta + nuova,
-  la vecchia **ancora attiva** → FEAT-031 non arrivava a chi aggiorna) oppure **non atterrava affatto**
-  (Copilot: `cwd` aggiunto ma command invariato → dedup scartava la nuova, in silenzio). *Il fix:* l'identità
-  è ora lo **stem dello script** (`rag-freshness` da `.py` o `.ps1`) — un solo cambio chiude **tutte e tre**
-  le transizioni insieme (`.ps1`→`.py`, relativo→ancorato, `cwd` aggiunto) invece di rincorrerle una per una.
-  I due contratti sono espliciti: `install` (`replace_stale=False`) non rimuove **e non duplica più** — lascia
-  la forma stantia e la **nomina** nel report puntando a `upgrade` (Principio XII: prima taceva); `upgrade`
-  (`replace_stale=True`) sostituisce in place e **collassa** le rese multiple (un hook = un wiring per evento).
-  *Deliberatamente NON* si è delegato `install`→`upgrade`: romperebbe la non-distruttività che definisce
-  `install`. **+10 guardie** (`test_settings_merge_identity.py`) che asseriscono l'**esito su un host che
-  aggiorna**, non la forma dell'asset — il buco da cui era passato tutto. `sertor-core` invariato.
-  **Prova sul campo:** il re-install sul dogfood ha collassato le voci duplicate → `.claude/settings.json` ora
-  ha **9 hook, uno per stem, tutti ancorati** (lo stato «duplicato da non versionare» non esiste più).
-- **Prossimo passo aperto — CODA (decisioni utente 2026-07-18, analisi [[setup-dichiara-presunzione-non-azione]]):**
-  **✅ (1) FEAT-038 `doctor` ancorato — CONSEGNATA** (`7075a0f`/PR #198) + **✅ (2) FEAT-033 `ritual-check` rileva il default
-  branch — CONSEGNATA** (`546cb22`/PR #200, 2026-07-18): `_resolve_base` non assume più `master` — rileva il default a
-  runtime (`origin/HEAD` → candidati ordinati esistenti → fail-loud invariato); `--base` invariato; dogfood `master` non
-  regredisce (verificato LIVE); 4 test (main/master/--base/orphan). Sblocca la forced declaration del rituale sugli ospiti `main`.
-  + **✅ (3) E2-FEAT-018 — installer esito-azione + log — CONSEGNATA** (`0b45c24`/PR #202, 2026-07-18): nuovo esito additivo
-  `Outcome.PRESENT_DIVERGENT` (presente-ma-diverso → non toccato, non più «skipped» muto) su sertor+flow, **assorbe
-  E10-FEAT-036**; deps oneste; log `.sertor/.install-log.jsonl` (`install.event/1`) sul rag install — **provato LIVE**.
-  P2-log per wiki/flow/lifecycle = follow-up **E2-FEAT-020**.
-  + **✅ (4) E10-FEAT-034 (+ FEAT-035 fusa) — `rag-freshness` post-riparazione + auto-heal del lock — CONSEGNATA**
-  (`5add90d`/PR #205, 2026-07-20): l'hook ora ripara-poi-misura (re-index → doctor → verdetto post-riparazione,
-  `reason` completo); `_IndexLock` auto-guarisce il lock con PID morto (helper `_pid_alive` cross-OS, reclamo
-  osservabile). **Provato LIVE** (PID morto→procede / PID vivo→locked); SpecKit completo, Constitution 12/12.
-  → **🎉 La coda «analisi setup» è CHIUSA** (tutti e 4 gli item consegnati).
-  *Tesi unificante:* «il setup dichiara ciò che presume, non ciò che è successo» (Principio XII).
-  **Prossimi candidati (nessuno deciso — da scegliere con l'utente):** E13 Fase 2 (marketing, gated go-public) ·
-  E5-FEAT-003 (`search_docs`) · E2-FEAT-020 (P2-log wiki/flow/lifecycle) · verifica empirica E4 cattura-auto (sotto).
-  (2-bis) **go-public/PyPI: FERMO — decisione utente 2026-07-17 «non ancora»**.
-  È *tecnicamente* sbloccato (CI verde, gate 1° ago caduto) ma **non si procede**: il repo resta pubblico con
-  `v0.1.0`, niente `pip install sertor`, gli ospiti installano via `uvx` dal tag, l'auto-updater resta dormiente
-  fino al primo bump di `/VERSION`. Casa del residuo:
-  [`go-public-pypi`](../../requirements/sertor-cli/go-public-pypi/requirements.md). **Non riproporlo come
-  «prossimo passo» finché l'utente non lo riapre.** (3) 🐛 **E4 cattura-auto memoria — ✅ CHIUSO (FEAT-012, 2026-07-21):**
-  il controllo empirico ha **smentito** l'ipotesi «chiusa da sé»: `memory list` mostrava ancora `2026-07-09` come ultima
-  sessione **nonostante** FEAT-031/032 installate → il wiring ancorato NON bastava. **Causa reale = gate su `os.environ`**
-  invece che su `.sertor/.env` (fonte del valore, letta solo dalla CLI) → no-op silenzioso; corretto in FEAT-012
-  (`_hooklib.memory_enabled()`). (4) **E13 Fase 2** (marketing) · E5-FEAT-003 `search_docs`.
-  (5) **Noetix — bundle governance divisibile = `E2-FEAT-019`** (Should P1, già a backlog: *«granularità
-  bundle `sertor-flow`, blocco `CLAUDE.md` opzionale»*, da decomporre). Richiesta **presa in carico** (risposta
-  affissa su Acta, `2026-07-17-sertor-presa-in-carico-bundle-governance-divisibile`); **dobbiamo ancora
-  l'analisi nel merito** delle 5 domande (divisibilità, blocco opzionale, superficie del
-  `configuration-manager`, parti neutre della costituzione, se un nodo che si ferma sopra gli EARS è in
-  bersaglio). **Debito verso un altro nodo**, non verso noi stessi — è l'unico item con un'attesa esterna.
-
-**Candidati a valore = Should aperti:**
-
-- **FEAT-003 → dedup dei risultati near-duplicate ✅ (2026-07-07, merge `67b4177`)** — la leva `search_docs`
-  è stata affrontata: la causa misurata era la **duplicazione di contenuto** (blocchi `CLAUDE.md` ↔ copie
-  bundle `assets/**`) che saturava il top-k. Dedup fuzzy (shingle+containment) a query-time → `search_docs`
-  @5 0.75→0.88, union solida, `search_code` intatto; baseline eval ri-registrato al corpus 1302 (dedup on).
-  **Leva profonda residua tracciata (nuova):** **competizione tra doc *correlati* (non duplicati)** al
-  confine k=3 — il `search_docs` hit@3 oscilla con la crescita del corpus perché contenuto *diverso* ma
-  affine (spec/log della stessa feature) compete con la pagina-concetto attesa. Il dedup non lo tocca (non
-  sono duplicati); serve una leva distinta (contextual retrieval / re-ranking di diversità / gestione query),
-  **solo se** mostra lift misurato. *(HyDE escluso: niente LLM nel run, RNF-3.)*
+- **go-public / PyPI — FERMO per decisione utente (2026-07-17).** Il repo è **pubblico dal 2026-07-13**
+  con release fino a `v0.1.3`; l'espansione (PyPI `pip install sertor`, pip fallback = **E2-FEAT-006**) è
+  tecnicamente sbloccata (CI verde) ma **non si procede** finché l'utente non la riapre. Gli ospiti
+  installano via `git+url`/`uvx` dal tag; l'auto-updater li avvisa. Casa:
+  [`go-public-pypi`](../../requirements/sertor-cli/go-public-pypi/requirements.md).
+- **E2-FEAT-019 — bundle governance divisibile (debito esterno Noetix).** Richiesta presa in carico
+  (risposta su Acta 2026-07-17); resta **l'analisi nel merito** delle 5 domande (divisibilità bundle
+  `sertor-flow`, blocco `CLAUDE.md` opzionale, superficie del `configuration-manager`). **Unico item con
+  attesa esterna.** Parcheggiato per scelta utente («un altro momento»).
+- **E5-FEAT-003 — leva profonda `search_docs` (residuo tracciato).** Il dedup fuzzy ha risolto la
+  duplicazione (`search_docs` hit@3 0.62→0.75); resta la **competizione tra doc *correlati* (non
+  duplicati)** al confine k=3 — leva distinta (contextual retrieval / re-ranking di diversità),
+  **solo se** mostra lift misurato (niente LLM nel run, RNF-3).
 
 *(Le capacità già consegnate stanno in ✅ Capacità consegnate sopra e in ✅ DONE in fondo.)*
 
 ### 📋 PLANNED (per priorità)
 
-> **Riorganizzato il 2026-06-16 dal [backlog audit](backlog-audit-2026-06-15.md):** tutto il non-fatto è
-> ora raggruppato in epiche con casa durevole. Sei **nuove epiche** danno casa al materiale orfano; le
-> epiche esistenti restano sotto.
+> **La tabella «Le 15 epiche (per stato)» sopra è la fonte dello stato aperto/chiuso per epica.** Qui
+> solo le **direzioni aperte a maggior valore**, senza duplicare lo stato delle singole feature (regola
+> A-12: l'EXEC è fonte unica; gli `epic.md` puntano).
 
-**Nuove epiche (aperte, da decomporre quando prioritarie):**
-- **Qualità del retrieval** (`retrieval-qualita`) — *primo passo a valore:* ground-truth + metriche
-  (Must). Poi search_code architetturale, calibrazione soglie, eval `cloud` (Should); tecniche avanzate
-  HyDE/filtro-metadata/contextual-retrieval (Could, ex `hardening-produzione` H7/H8/H11).
-- **Backend store & scala** (`backend-store-scala`) — *primo passo:* adapter PGVector (Should). Poi
-  Mongo/Atlas, indici multi-provider, fan-out su >2 corpora, scala del code-graph (Could).
-- **Ingestione estesa** (`ingestione-estesa`) — repo remoti via URL, formati non-testo (PDF/DOCX/notebook),
-  chunking PS/T-SQL/PL-SQL/Bash, no-code-first (Could). **Sblocca** la conoscenza-schema SQL.
-- **Conoscenza-schema SQL** (`conoscenza-schema-sql`) — schema nel corpus (Should) + schema-graph + fusione
-  col codice applicativo (Could). **Bloccata a monte** dal chunking SQL di `ingestione-estesa`.
-- **Second-brain / Meta-Sertor** (`second-brain`) — **da espandere:** MVP = catalogo flotta + query
-  federata (quasi solo wiring); poi harvest/promote, trust, asset-registry. Bivi §9 (solo/team, meta-corpus
-  vs fan-out, meta-grafo, nome) **da decidere prima di decomporre**.
-- **Debito tecnico & igiene** (`debito-tecnico`, interna) — host-agnosticità asset residui, unif. venv,
-  CI Linux (Should); plugin rituale portabile, igiene wiki, selettività bundle `sertor-flow` (Could).
+**Direzioni aperte (nessuna iniziata — da scegliere con l'utente):**
 
-**Epiche esistenti, in attesa:**
-- **Sertor-core — ✅ nessun residuo aperto** — l'**agenzia incorporata** è **❌ abbandonata by design**
-  (2026-06-16, «non ci serve»; l'agentic RAG è già ✅ composito via MCP+agente). *(FEAT-009 ✅ DONE merge
-  `3ec47f1`; FEAT-008 Wiki↔RAG ✅ composita.)* L'epica primaria del prodotto è sostanzialmente **completa**.
-- **Memoria — Should/Could** — FEAT-004 (ricerca semantica opt-in), FEAT-005 (remember-this), FEAT-006
-  (retention), FEAT-007 (ponte second-brain), **FEAT-009 distribuzione via installer (Must/debito)**,
-  FEAT-008 (cattura multi-assistente), FEAT-010 (parità MCP `show`/`list`). *(FEAT-003 ✅ DONE.)*
-- **Osservabilità 2 — Should/Could** — export OTel (FEAT-005), metriche aggregate (FEAT-006), **stima €
-  (FEAT-007, Should, non fatto)**, web mode, trend qualità, metriche graph/wiki, export CSV/MD (FEAT-011).
-- **Distribuzione/CLI — Could (Must chiuso)** — *packaging del pacchetto ✅ FEAT-001 DONE (PR #68) e
-  lifecycle upgrade/uninstall ✅ FEAT-008 DONE (PR #71), entrambi 2026-06-17*;
-  restano: wizard config (FEAT-003, Should), ergonomia installer (FEAT-010), **Codex** (FEAT-007/009
-  Could, non avviato per scelta utente), PyPI (Won't) — gating sulla **licenza MIT scelta** per i
-  pacchetti (PyPI pubblico resta da aprire).
-- **Multiutente** — epica differita finché il caso d'uso team non è concreto.
-- **Agenzia RAG incorporata** — ❌ **abbandonata by design (2026-06-16, decisione utente)**: l'agentic RAG
-  è già ✅ composito (MCP+agente) e un agente nel core con modello minore non lo migliorerebbe; i 36 REQ in
-  `sertor-core/motore-agentico/` restano **elicitazione storica**, non pianificata.
+- **Debito E10** *(piccolo, host-facing)* — FEAT-029 🐛 hook wiki SessionStart path hardcoded (viola
+  Principio X) · FEAT-030 emendamento costituzione «Product-vs-Fixture Plane» (accolto, via constitution-flow)
+  · FEAT-015/014 (residui robustezza hook).
+- **Chiudere E4** *(a un passo dal ✅)* — i 3 Could: remember-this (005) · retention (006) · ponte
+  second-brain (007).
+- **E14 — distribuzione SpecLift/SpecAudit agli ospiti** (FEAT-002, casa `sertor-flow`) — capacità
+  costruite ma non ancora *installabili* dagli ospiti (definizione di «feature non completa»).
+- **E13 Fase 2 — marketing** (posizionamento/demo/landing) — **sbloccata dal go-public** (repo pubblico);
+  da avviare se l'obiettivo è **adozione**.
+- **E3 osservabilità** — stima costi € (FEAT-007) · metriche aggregate (FEAT-006) · drift indice (FEAT-012).
+- **E12 usabilità** — config-recommender (FEAT-004) · progress GloVe (FEAT-003) · concierge pieno (FEAT-009).
+- **Scommesse grandi** — E7 ingestione estesa → **sblocca E8** (schema SQL) · E6 PGVector (scala) · E9
+  second-brain (prima i bivi §9) · E5 leve retrieval residue (**solo** con lift misurato, no LLM nel run).
+
+**Differita:** E11 `multiutente` (finché il caso team non è concreto). **❌ Abbandonata by design**
+(2026-06-16): agenzia RAG incorporata — l'agentic RAG è già ✅ composito via MCP+agente; i 36 REQ in
+`sertor-core/motore-agentico/` restano elicitazione storica, non pianificata.
 
 <!-- EXEC:END -->
 
@@ -707,10 +520,10 @@ riproducibile e production-grade. **Una sola verità interrogabile**: sorgenti (
 
 ## 🔍 Backlog dall'audit indipendente (SWOT 2026-07-02)
 
-> Esito dell'audit richiesto dall'utente (prompt in `wiki/sources/Human/`). Dettaglio, evidenze
-> (file:riga) e criteri d'accettazione in **[[audit-swot-2026-07-02]]**. Si affronta **in ordine, da A-01
-> in giù**, con **checkpoint a fine di ogni item** (decisione utente 2026-07-02). Stato: 📋 da attaccare ·
-> 🔄 in corso · ✅ fatto. La promozione a `FEAT-NNN` d'epica si decide item-per-item.
+> **✅ BACKLOG COMPLETO (2026-07-11): tutti i 20 item A-01..A-20 consegnati su `master`.** Tabella-archivio
+> qui sotto (esito per item); dettaglio, evidenze (file:riga) e criteri d'accettazione in
+> **[[audit-swot-2026-07-02]]**. Affrontato in ordine da A-01 in giù con checkpoint a fine item (decisione
+> utente 2026-07-02); ogni item promosso a `FEAT-NNN` d'epica dove pertinente.
 
 | ID | Tipo | P | Titolo | Casa d'epica candidata | Stato |
 |---|---|---|---|---|---|
@@ -725,8 +538,8 @@ riproducibile e production-grade. **Una sola verità interrogabile**: sorgenti (
 | A-09 | FIX | P1 | Hook POSIX story (promuovere E2-FEAT-010 da Could) | `sertor-cli` E2-FEAT-010 | ✅ **DONE (merge `0ffe904`/PR #161 + hotfix smoke `9e85f70`/PR #162)** — 8 hook riscritti in **Python portabile** (`uv run --no-project python`, zero dip `pwsh`); parità coi `.ps1` provata (gate) + smoke CI matrice ubuntu+windows (test **e** smoke E2E verdi); `.ps1` **ritirati** (single-impl DA-1); `upgrade` migra host legacy (file+wiring, helper `remove_hook_entries_by_command_substring`); **E10-FEAT-018 superata** (`host_env.py`/nota pwsh rimossi — fix, non mitigazione); doc utente aggiornata. `sertor-core` invariato. **Migrazione live del dogfood eseguita** via `sertor upgrade` (8 `.ps1` rimossi, `settings.json` riwirato a `.py`, 0 residui) — valida T022 dal vivo. Dettaglio [[feat-010-hook-portabili]] |
 | A-10 | FIX | P1 | CI: smoke E2E su PR + job 3.11 + (opz.) leg cloud | `debito-tecnico` (E10) | ✅ **DONE (merge `c9e5140`/PR #164)** — lo smoke E2E ora è un **gate pre-merge**: job `changes` (`dorny/paths-filter`, permesso `pull-requests:read`) lo attiva sui PR che toccano la superficie install/smoke, e `SERTOR_SMOKE_REF=github.head_ref` fa installare dal **branch del PR** (testa il diff, non master) → avrebbe colto la regressione di #161. + leg **Python 3.11** (ubuntu, via `include`). Leg `cloud` opzionale non fatto. Il PR #164 si è auto-validato (tocca `ci.yml`). |
 | ~~A-11~~ | — | — | Azure Search experimental/test → **spostata in E6** `backend-store-scala` **FEAT-007** (store cloud online); riferimento A ritirato | `backend-store-scala` (E6) | ➡️ promossa a E6-FEAT-007 (2026-07-10) |
-| A-12 | FIX | P1 | Riconciliazione epic.md↔EXEC enforced + pulizia fondo-roadmap zombie | `debito-tecnico` (E10) | 🔄 **implementata, pre-merge (2026-07-10)** — *enforcement per costruzione* (opzione A): EXEC = fonte unica, `epic.md` puntano. Fatto: blocco fossile «Mappa delle feature» eliminato (~85 righe) · 6 righe `epic.md` allineate (sertor-cli/fedelta-dogfood×3/debito-tecnico/speclift + osservabilità) · idee promosse/consegnate rimosse dalle *Nuove funzionalità* · licenza «DA APRIRE»→MIT · «riavvio MCP»→auto-heal · regola fonte-unica nel rituale (CLAUDE.md item 4) + «Come mantenere» |
-| A-13 | FIX | P1 | `updated:` = data secca; storia solo nel log | `debito-tecnico` (E10) | 🔄 **implementata, pre-merge (2026-07-10)** — regola «`updated:`/`created:` = data secca, storia nel log» nel playbook (dogfood+bundle, parità verde) + CLAUDE.md convenzioni; **25 pagine** ripulite (changelog nel frontmatter → data secca; `roadmap.md` da ~13KB → `2026-07-10`) |
+| A-12 | FIX | P1 | Riconciliazione epic.md↔EXEC enforced + pulizia fondo-roadmap zombie | `debito-tecnico` (E10) | ✅ **CONSEGNATA (merge PR #166, 2026-07-10)** — *enforcement per costruzione* (opzione A): EXEC = fonte unica, `epic.md` puntano. Fatto: blocco fossile «Mappa delle feature» eliminato (~85 righe) · 6 righe `epic.md` allineate (sertor-cli/fedelta-dogfood×3/debito-tecnico/speclift + osservabilità) · idee promosse/consegnate rimosse dalle *Nuove funzionalità* · licenza «DA APRIRE»→MIT · «riavvio MCP»→auto-heal · regola fonte-unica nel rituale (CLAUDE.md item 4) + «Come mantenere» |
+| A-13 | FIX | P1 | `updated:` = data secca; storia solo nel log | `debito-tecnico` (E10) | ✅ **CONSEGNATA (merge PR #166, 2026-07-10)** — regola «`updated:`/`created:` = data secca, storia nel log» nel playbook (dogfood+bundle, parità verde) + CLAUDE.md convenzioni; **25 pagine** ripulite (changelog nel frontmatter → data secca; `roadmap.md` da ~13KB → `2026-07-10`) |
 | A-14 | FIX | P1 | Settings: parsing numerico guardato + scrub `detail` MCP | `sertor-core` (E1) | ✅ **(merge `c859a19`/PR #167)** — `Settings.load`: 24 parse `int/float(os.getenv)` → helper guardati `_int_env`/`_float_env` (+ `_*_or_none` guardati); valore non-numerico → `ConfigError(key=…)` invece di `ValueError` crudo (Principio XII). `server.py`: `detail=scrub_text(str(exc))` ai 3 siti d'errore (`_guard`/`_self_test`/`warmup`) → no leak segreti nello store. +5 test; ruff clean |
 | A-15 | FIX | P2 | VERSION policy (E2-FEAT-014): decidere il bump o version-check resta morto | `sertor-cli` E2-FEAT-014 | ✅ **decisa (merge `192c629`/PR #168)** — scelta utente: **bump MANUALE a ogni release user-facing** (`/VERSION` SemVer, non a ogni merge — il per-merge è il dogfood via HEAD). Zero codice; bump automatico scartato (YAGNI). Regola in CLAUDE.md §Git & versionamento + E2-FEAT-014 risolta. **Caveat (finding 2026-07-10):** l'avvisatore è inerte anche per un 2° motivo — il fetch di `/VERSION` **404** su repo **privato** → `verdict:"unknown"`; macchina **validata live** (override → `behind` → avviso). Entrambi sciolti al **go-public** → **E2-FEAT-017** |
 | A-16 | FIX | P2 | Lifecycle edge: uninstall di file pre-esistenti + trappola marker corrotto | `sertor-cli` (E2) | ✅ **(merge `87ac1da`/PR #169)** — scelta utente **content-guard** (no manifest, rispetta D3): (1) `remove_file_if_owned` nel kit — un FILE owned si cancella solo se combacia con l'asset deposto, altrimenti **preserva+warn**; wirato nei 3 consumer (rag/wiki/gov, split FILE/CONFIG). (2) `MarkerBlockCorruptError` + `_assert_not_corrupt` in `claude_md.py` — START-xor-END → **fail-loud** (non più SKIPPED silenzioso) su write/remove/update. Solo installer package (no `sertor-core`); +8 test; kit 157·sertor 510·flow 142 verdi, ruff clean |
@@ -747,7 +560,7 @@ riproducibile e production-grade. **Una sola verità interrogabile**: sorgenti (
 
 | Idea | Valore / perché | Note / vincoli | Stato |
 |------|-----------------|----------------|-------|
-| **Rilevamento attivo dei gap di documentazione** (codice→wiki generativo) | Il residuo *genuino* di FEAT-008: oggi il legame codice↔doc è **passivo** (lo interroghi con `get_context`/`related_docs`), manca il **generativo** — il RAG/code-graph che rileva **entità di codice senza pagina wiki** e le **propone** al `wiki-author` | Scorporato dalla chiusura di FEAT-008 (✅ composita, verificata live 2026-06-16). Casa candidata: feature wiki dedicata o `debito-tecnico` FEAT-005 (igiene-wiki). Riusa il [[code-graph]] (`find_symbol`/`related_docs`) + lint C | 💡 **idea, scorporata da FEAT-008** (2026-06-16) |
+| **Rilevamento attivo dei gap di documentazione** (codice→wiki generativo) | Il residuo *genuino* di FEAT-008: oggi il legame codice↔doc è **passivo** (lo interroghi con `get_context`/`related_docs`), manca il **generativo** — il RAG/code-graph che rileva **entità senza pagina wiki** e le **propone** | **Parzialmente consegnata da `distill-audit`** (E10-FEAT-039, v0.1.3): trova le entità referenziate da ≥k punti senza pagina (wikilink penzolanti + backtick composti) e le propone come candidati. Residuo: gap *dal code-graph* (simboli di codice senza pagina, non solo wiki-interni). Riusa [[code-graph]] + lint C | 🔄 **parziale (distill-audit 2026-07-22)**; residuo code→wiki |
 | **Misurare nella TUI *quando si usa il grafo* vs *il vettoriale/ibrido*** (epica `osservabilita`, estende FEAT-015) | Vedere a runtime **quale metodo di retrieval** serve ogni risposta: quando si scende sul code-graph (`find_symbol`/`who_calls`) e quando si resta sulla ricerca densa/ibrida. Oggi la scheda RAG (FEAT-015) mostra query/verdetto/op-MCP ma **non distingue grafo vs ricerca** | Gli eventi distinti **già esistono** (`hybrid_query`/`retrieve` vs i tool grafo via `mcp.<tool>`): serve **aggregarli/etichettarli per metodo** nella TUI. Si lega al fatto che il "routing" del metodo vive **nell'agente** (nessun router nel core, vedi A/B del 2026-06-20) → la TUI lo renderebbe **visibile** | 💡 **idea (utente, 2026-06-20)** |
 | **Timeout espliciti su embed/query (server MCP e adapter)** | L'hang della prima query MCP è stato diagnosticato e **risolto** (causa vera: init pigro di Chroma nella prima tool call parcheggiava il task su Windows → warm-up eager in `main()`, **hotfix PR #23**, vedi [[mcp-server]]); i timeout generici restano una rifinitura di robustezza | Timeout configurabile in `Settings` + eccezione di dominio | 💡 idea ridimensionata (hang risolto 2026-06-12) |
 | **Misurare quanto il core D↔N viene *aggirato*** (dato-prima-del-codice) | Rilievo più grave dell'handoff Nunzio: in una sessione reale `index.md` è stato scritto **a mano** invece che via `upsert-index` (0 invocazioni del core). Le garanzie valgono solo se il core è *attraversato*. Prima il **dato** (quante sessioni bypassano il core), poi eventualmente un lint che rileva un `index.md` non-conforme a `upsert-index` | **Fonte: handoff Nunzio 2026-07-09 (§1).** Gemella di E10-FEAT-026 (anti-skip): stesso pattern di skip silenzioso del confine D↔N | 💡 idea esterna (alto valore) |
@@ -764,11 +577,11 @@ riproducibile e production-grade. **Una sola verità interrogabile**: sorgenti (
 - **Server MCP & codice nuovo**: il server **auto-guarisce** da indice/dati *stantii* dopo un re-index (ChromaStore auto-refresh + code-graph auto-reload, PR #89/#90 — **nessun riavvio**). Resta necessario un **riavvio** del subprocess MCP solo per servire **codice nuovo del server** (`sertor_mcp`).
 - **Processo: `requirements.md` ↔ `spec.md` si sovrappongono?** (riflessione di metodo, 2026-06-20) — la fase
   `requirements` (skill, EARS) e la `specify` SpecKit (user-story + accettazione) coprono entrambe il
-  *cosa/perché* e in FEAT-001 si sono sovrapposte parecchio. **Da fare:** confrontare i due artefatti di
-  `specs/065-ground-truth-valutazione/` e decidere — per le prossime feature conviene sempre entrambe, o a
-  volte saltarne una (es. `requirements`→`plan` diretto come feature 064)? **Nota emersa:** la skill
-  `speckit-specify` e il template `spec-template.md` **non sono nel repo** (l'agente ha proceduto per
-  convenzione) → eventuale debito di tooling. Casa possibile dell'esito: epica `debito-tecnico` o questa nota.
+  *cosa/perché*. **In pratica risolta:** la convenzione consolidata è **requirements → specify → clarify →
+  plan → tasks → implement** per feature ben caratterizzate (vedi FEAT-039, `specs/116`); l'una o l'altra si
+  salta solo per lavori piccoli/meccanici. *(Aggiornamento 2026-07-22: la nota storica «`speckit-specify`/
+  `spec-template.md` non sono nel repo» è **superata** — la machinery SpecKit è materializzata via
+  E10-FEAT-027 / E15 `fedelta-dogfood` e usata regolarmente.)*
 
 ## Come mantenere questa pagina
 
