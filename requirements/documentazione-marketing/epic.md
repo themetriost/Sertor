@@ -147,10 +147,12 @@ duplicazione — solo cross-reference e narrazione fedele).
   tantum e lasciata divergere (Principio XII, anti-drift).
 - **Separazione interna/esterna:** il `wiki/` resta **interno**; la doc esterna è un **corpus distinto**,
   autosufficiente, senza dipendenze dal repo di Sertor.
-- **Dipendenza/gate verso E2 (go-public):** la **Fase 2 (marketing pubblico)** è **gated** su un cambio
-  di strategia di distribuzione (apertura del repo / **PyPI**). Oggi Sertor è un repo **PRIVATO**, niente
-  PyPI ([`sertor-cli` FEAT-006 = Won't](../sertor-cli/epic.md), distribuzione interim `git+url`). Finché
-  quel gate non è sciolto, i materiali Fase 2 si **progettano/abbozzano** ma **non si pubblicano**.
+- **Dipendenza/gate verso E2 (go-public) — AGGIORNATO 2026-07-22:** il gate «apertura del repo» è
+  **SCIOLTO**: il repo Sertor è **PUBBLICO dal 2026-07-13** (go-public deciso ed eseguito). La **Fase 2
+  (marketing pubblico) non è più bloccata dalla privacy del repo** — i materiali possono puntare a un repo
+  pubblico. Resta la distribuzione **interim `git+url`** (niente PyPI ancora: `sertor-cli` FEAT-006), e
+  l'**espansione go-public/PyPI è congelata per decisione utente (2026-07-17)** — ma è una scelta di
+  distribuzione, **non** un blocco al marketing. La Fase 2 è quindi **sbloccabile** quando si vuole.
 - **Complementarità con E12:** la doc *statica* (E13) e la guida *agentica* (E12) condividono i contenuti
   ma non i veicoli; vanno **cross-referenziate**, non duplicate.
 - **Host-agnostico (Principio X):** la doc Fase 1 vale su qualunque ospite e su entrambi gli assistenti
