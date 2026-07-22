@@ -200,19 +200,76 @@ def test_version_check_verdict_behind_from_cache(tmp_path: Path):
     assert state["dimensions"]["sertor"] == "0.1.0"
 
 
-# --- wiki-session-start (SessionStart) -----------------------------------------------------------
+# --- wiki-session-start (SessionStart) — host-agnostic, config-driven (E10-FEAT-029) --------------
+
+def _wiki_host(tmp_path: Path, root: str = "wiki", *, exec_page: str | None = None,
+               partition: str | None = "2026-07-08.md", index: bool = True) -> Path:
+    """A host root with `wiki.config.toml` + (optionally) index/log-partition/exec_page files."""
+    content = tmp_path / root
+    (content / "log").mkdir(parents=True)
+    cfg = ('profile = "code+doc"\nlanguage = "en"\n'
+           f'root = "{root}"\nindex_file = "index.md"\nlog_dir = "log"\n'
+           '[[taxonomy]]\nname = "concepts"\ndir = "concepts"\ntype = "concept"\n')
+    if exec_page:
+        cfg += f'[ritual]\nexec_page = "{exec_page}"\n'
+    # config at the host root (discovered by wiki_config); `root` field points to the content dir.
+    (tmp_path / "wiki.config.toml").write_text(cfg, encoding="utf-8")
+    if index:
+        (content / "index.md").write_text("# index\n", encoding="utf-8")
+    if partition:
+        (content / "log" / partition).write_text("x", encoding="utf-8")
+    if exec_page:
+        f = content / exec_page
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text("<!-- EXEC:START -->\nx\n<!-- EXEC:END -->\n", encoding="utf-8")
+    return tmp_path
+
 
 def test_wiki_session_start_claude_directive(tmp_path: Path):
-    (tmp_path / "wiki" / "log").mkdir(parents=True)
-    (tmp_path / "wiki" / "log" / "2026-07-08.md").write_text("x", encoding="utf-8")
-    r = _run("wiki-session-start", event="{}", root=tmp_path, assistant="claude")
+    root = _wiki_host(tmp_path)
+    r = _run("wiki-session-start", event="{}", root=root, assistant="claude")
     assert r.returncode == 0
     assert r.stdout.startswith("SESSION START")
-    assert "wiki/log/2026-07-08.md" in r.stdout  # latest partition computed
+    assert "wiki/index.md" in r.stdout
+    assert "wiki/log/2026-07-08.md" in r.stdout  # latest partition computed from config
+
+
+def test_wiki_session_start_host_agnostic_root(tmp_path: Path):
+    # A host whose wiki root is NOT "wiki" → the directive must use its real root (Principio X).
+    root = _wiki_host(tmp_path, root="docs")
+    r = _run("wiki-session-start", event="{}", root=root, assistant="claude")
+    assert r.returncode == 0
+    assert "docs/index.md" in r.stdout and "docs/log/2026-07-08.md" in r.stdout
+    assert "wiki/" not in r.stdout  # no hardcoded literal
+
+
+def test_wiki_session_start_exec_page_opt_in(tmp_path: Path):
+    # With [ritual].exec_page configured AND present → roadmap + EXEC directive.
+    root = _wiki_host(tmp_path, exec_page="syntheses/roadmap.md")
+    r = _run("wiki-session-start", event="{}", root=root, assistant="claude")
+    assert "wiki/syntheses/roadmap.md" in r.stdout
+    assert "EXEC:START" in r.stdout and "executive summary" in r.stdout
+    # Without exec_page → no roadmap/EXEC directive (generic host).
+    r2 = _run("wiki-session-start", event="{}", root=_wiki_host(tmp_path / "b"), assistant="claude")
+    assert "roadmap" not in r2.stdout.lower() and "EXEC:START" not in r2.stdout
+
+
+def test_wiki_session_start_degrades_on_fresh_wiki(tmp_path: Path):
+    # Fresh wiki: config present but no index/log/roadmap yet → no failed read (no directive).
+    root = _wiki_host(tmp_path, partition=None, index=False)
+    r = _run("wiki-session-start", event="{}", root=root, assistant="claude")
+    assert r.returncode == 0 and r.stdout.strip() == ""
+
+
+def test_wiki_session_start_noop_without_config(tmp_path: Path):
+    # No wiki.config.toml → nothing to load (fail-safe), like wiki-pending-check.
+    r = _run("wiki-session-start", event="{}", root=tmp_path, assistant="claude")
+    assert r.returncode == 0 and r.stdout.strip() == ""
 
 
 def test_wiki_session_start_copilot_json(tmp_path: Path):
-    r = _run("wiki-session-start", event="{}", root=tmp_path, assistant="copilot")
+    root = _wiki_host(tmp_path)
+    r = _run("wiki-session-start", event="{}", root=root, assistant="copilot")
     assert r.returncode == 0
     out = json.loads(r.stdout)
     assert "additionalContext" in out and out["additionalContext"].startswith("SESSION START")

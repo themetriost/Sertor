@@ -160,13 +160,14 @@ def _copilot_wiki_hook_specs(assistant: AssistantId) -> list[HookEntrySpec]:
         f"{_PY} {_DISTILL_HOOK_SCRIPT_DST} --mode PreToolUse --assistant copilot", 95,
         cwd=".", matcher="Bash",
     )
-    # CLI: SessionStart is a static prompt (the directive). No script invocation.
+    # CLI: SessionStart is a static prompt (the directive). No script invocation, so it cannot read
+    # the host config at runtime; it stays generic and host-agnostic (E10-FEAT-029) — the wiki index
+    # + latest log, which every wiki has. The roadmap/EXEC directive is dogfood-specific (opt-in
+    # `[ritual].exec_page`, served by the Claude runtime hook), so it is NOT hardcoded here.
     session_start = HookEntrySpec(
         "SessionStart", "prompt",
-        "SESSION START - load the project context BEFORE replying: read "
-        "wiki/syntheses/roadmap.md, wiki/index.md and the latest file in wiki/log/, then show "
-        "the user the executive summary between the markers <!-- EXEC:START --> and "
-        "<!-- EXEC:END -->.",
+        "SESSION START - load the wiki context BEFORE replying: read the wiki index and the latest "
+        "file in the wiki log directory (see wiki/wiki.config.toml for the paths) to orient.",
         15,
     )
     return [session_start, stop, session_end, distill_floor]
