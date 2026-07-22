@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import tomllib
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
@@ -87,6 +88,37 @@ def memory_enabled() -> bool:
             return value.strip().lower() in _TRUE
     ambient = os.environ.get("SERTOR_MEMORY")
     return ambient.strip().lower() in _TRUE if ambient else False
+
+
+def wiki_config(root: Path) -> dict | None:
+    """The host's wiki layout from `wiki.config.toml` (host-agnostic — Principio X, E10-FEAT-029).
+
+    Returns `{root, index_file, log_file, log_dir, exec_page}` — the fields a hook needs to build its
+    directive from CONFIG, never from hardcoded `wiki/...` literals. `exec_page` (`[ritual].exec_page`,
+    e.g. `syntheses/roadmap.md`) is **opt-in**: absent on a generic host → no roadmap/EXEC directive;
+    present on the dogfood → the roadmap is loaded. Returns `None` if no config or it is unreadable.
+    """
+    for candidate in (root / "wiki" / "wiki.config.toml", root / "wiki.config.toml"):
+        try:
+            if not candidate.is_file():
+                continue
+            with candidate.open("rb") as fh:
+                data = tomllib.load(fh)
+        except (OSError, tomllib.TOMLDecodeError):
+            return None
+        wroot = data.get("root")
+        if not isinstance(wroot, str) or not wroot:
+            return None
+        ritual = data.get("ritual") if isinstance(data.get("ritual"), dict) else {}
+        exec_page = ritual.get("exec_page")
+        return {
+            "root": wroot,
+            "index_file": str(data.get("index_file") or "index.md"),
+            "log_file": str(data.get("log_file") or "log.md"),
+            "log_dir": data.get("log_dir") if isinstance(data.get("log_dir"), str) else "",
+            "exec_page": exec_page if isinstance(exec_page, str) and exec_page else None,
+        }
+    return None
 
 
 def read_event() -> dict:

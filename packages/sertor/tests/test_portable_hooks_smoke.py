@@ -124,6 +124,15 @@ def test_rag_freshness_foreground_detaches_and_returns(tmp_path: Path):
 # --- wiki hooks (per-assistant native output) ---------------------------------------------------
 
 def test_wiki_session_start_runs_per_assistant(tmp_path: Path):
+    # E10-FEAT-029: the directive is config-driven — provide a minimal wiki config + log partition.
+    (tmp_path / "wiki" / "log").mkdir(parents=True)
+    (tmp_path / "wiki.config.toml").write_text(
+        'profile = "code+doc"\nlanguage = "en"\nroot = "wiki"\nindex_file = "index.md"\n'
+        'log_dir = "log"\n[[taxonomy]]\nname = "concepts"\ndir = "concepts"\ntype = "concept"\n',
+        encoding="utf-8")
+    (tmp_path / "wiki" / "index.md").write_text("# index\n", encoding="utf-8")
+    (tmp_path / "wiki" / "log" / "2026-07-08.md").write_text("x", encoding="utf-8")
+
     r_claude = _run("wiki-session-start", event="{}", root=tmp_path, args=["--assistant", "claude"])
     assert r_claude.returncode == 0
     assert "SESSION START" in r_claude.stdout          # claude: directive on stdout

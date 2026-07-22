@@ -81,3 +81,8 @@ corpus = "wiki"
 [strings]
 pending = "Work not yet recorded in the wiki: {n} files newer than the last log entry."
 clean = "Wiki aligned: no files newer than the last log entry."
+
+[ritual]
+# Opt-in (E10-FEAT-029): the page the SessionStart hook loads first and shows the EXEC summary of.
+# A generic host omits this → the hook degrades to loading index + latest log only.
+exec_page = "syntheses/roadmap.md"
