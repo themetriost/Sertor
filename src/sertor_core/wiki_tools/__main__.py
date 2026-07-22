@@ -22,7 +22,7 @@ from sertor_core.wiki_tools.scan import scan
 from sertor_core.wiki_tools.structure import init_structure, validate
 
 _OPS = ("scan", "structure", "validate", "lint", "collect", "index", "append-log", "migrate",
-        "upsert-index", "move", "reconcile", "ritual-check")
+        "upsert-index", "move", "reconcile", "ritual-check", "distill-audit")
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -88,6 +88,11 @@ def _build_parser() -> argparse.ArgumentParser:
         "--pages", default=None,
         help="explicit comma-separated page list (rel to wiki root) for 'ritual-check' "
              "(overrides git diff; use on non-git hosts)",
+    )
+    parser.add_argument(
+        "--threshold", type=int, default=None,
+        help="min distinct points for a distill-audit candidate (default: [ritual].audit_threshold "
+             "or 2)",
     )
     return parser
 
@@ -225,6 +230,10 @@ def _run(args, profile):
 
         pages = [p.strip() for p in args.pages.split(",") if p.strip()] if args.pages else None
         return ritual_check(profile, base=args.base, pages=pages)
+    if op == "distill-audit":
+        from sertor_core.wiki_tools.distill_audit import distill_audit
+
+        return distill_audit(profile, threshold=args.threshold)
     raise ConfigError(f"unsupported operation: {op}")  # pragma: no cover
 
 
@@ -272,6 +281,13 @@ def _human(op: str, result) -> str:
             f"scope={data['scope']} pages={len(data['pages_in_scope'])} "
             f"distill={len(data['distill_candidates'])} drift={len(data['drift_candidates'])}\n"
             f"  {data['declaration_scaffold']}"
+        )
+    if op == "distill-audit":
+        top = ", ".join(c["name"] for c in data["candidates"][:5])
+        tail = f" :: top: {top}" if top else ""
+        return (
+            f"debt={data['debt']} threshold={data['threshold']} "
+            f"corpus_files={data['corpus_files']}{tail}"
         )
     return result.to_json()  # pragma: no cover
 

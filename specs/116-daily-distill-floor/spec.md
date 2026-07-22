@@ -10,6 +10,17 @@
 rituale wiki una **soluzione definitiva** con un pavimento di **almeno un distill al giorno**. Requisiti
 EARS: `requirements/debito-tecnico/daily-distill-floor/requirements.md`.
 
+> **⚑ DESIGN FINALE (2026-07-22, supera le sezioni sotto scritte per la prima ipotesi).** In corso di
+> implementazione l'utente ha ricalibrato due volte: (1) *«non uno strumento che indovina i candidati con
+> un debito, ma un OBBLIGO giornaliero»* → il debito `distill-audit` NON è il gate, è **contesto advisory**
+> allegato; (2) *«bloccante: senza almeno un distill non si può fare merge»* → l'enforcement è un **hook
+> `PreToolUse` che BLOCCA il merge di consegna** (`git merge <feature>` / `gh pr merge`) finché la giornata
+> non ha una voce `distill` nel log. **Gate = solo presenza** («c'è una voce `distill` oggi? sì/no»), non
+> un conteggio. Il segnale-prosa dell'audit, misurato sul dogfood reale, è rumore-dominato (228 vs 9
+> wikilink) → confermato che l'audit vale solo come *hint*, non come cancello. Le User Story / FR / SC qui
+> sotto restano validi per il TOOL (US1) e il concetto di pavimento, ma la *forma dell'enforcement* è il
+> merge-block (non il nudge persistente della prima stesura). Vedi [[feedback_distill_floor_obbligo_non_scoperta]].
+
 ## User Scenarios & Testing *(mandatory)*
 
 Il rituale wiki chiude ogni step significativo con `record → distill → lint → explainer`. Di questi,

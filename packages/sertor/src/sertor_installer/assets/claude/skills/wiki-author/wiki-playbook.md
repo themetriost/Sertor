@@ -96,6 +96,7 @@ session.
 | `migrate` | retroactively splits the monolithic log into daily partitions | `wiki.migrate/1` |
 | `upsert-index` | inserts/updates the `- [[page]] — summary` line in the index (LLM-authored summary) | `wiki.upsert_index/1` |
 | `ritual-check` | lists distill/drift candidates for the step (git diff) + a declaration scaffold; the tool finds, the agent judges (anti-silent-skip, read-only) | `wiki.ritual_check/1` |
+| `distill-audit` | lists cross-session distill candidates over the WHOLE corpus (entities referenced from ≥k points with no page: dangling wikilinks + prose identifiers) + a debt count; a HINT for the daily distill floor (read-only, tool finds / agent judges) | `wiki.distill_audit/1` |
 
 Invocation: `uv run --project .sertor sertor-wiki-tools <op> --config wiki/wiki.config.toml --root .
 [--json]` (or, from the host root, just `uv run --project .sertor sertor-wiki-tools <op>`: the CLI

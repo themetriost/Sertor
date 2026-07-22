@@ -226,6 +226,31 @@ class RitualCheckResult:
 
 
 @dataclass(frozen=True)
+class DistillAuditResult:
+    """`wiki.distill_audit/1` — cross-session distill debt (read-only, E10-FEAT-039).
+
+    The tool FINDS (deterministic structural signals), the agent JUDGES durability (D↔N). Unlike
+    `ritual_check` (git-diff of ONE step), this audits the WHOLE corpus so entities made durable BY
+    ACCUMULATION surface regardless of when they were introduced. `candidates`: list of
+    `{"name", "points", "signal", "sample_refs"}` — entities referenced from ≥`threshold` distinct
+    points with no dedicated page (`signal` ∈ `wikilink` | `prose` | `both`). `debt`: the count N of
+    such candidates (a lightweight, rising wiki-health metric). NEVER a durability verdict.
+    """
+
+    debt: int
+    threshold: int
+    corpus_files: int
+    candidates: list[dict] = field(default_factory=list)
+    schema: str = "wiki.distill_audit/1"
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    def to_json(self) -> str:
+        return _to_json(self.to_dict())
+
+
+@dataclass(frozen=True)
 class ErrorResult:
     """`wiki.error/1` — explicit error (Principio IV); no partial state."""
 
