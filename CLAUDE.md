@@ -786,6 +786,14 @@ this prevents). To keep candidate *discovery* off memory, run `sertor-wiki-tools
 lists the step's distill/drift candidates (via git diff) + a declaration scaffold — the **tool finds, you
 judge** (read-only, zero-LLM).
 
+**Daily distill floor (enforced at merge).** A day that logged work MUST also log a `distill` — a real
+distillation OR a reasoned "no" recorded as a distill entry that NAMES the candidates considered — before
+you may **merge** to the mainline. A `PreToolUse` hook BLOCKS a delivery merge (`git merge <branch>` /
+`gh pr merge`) when today's log has no `distill` entry: it is a hard gate, not a nudge. To satisfy it,
+perform the distill (or run `sertor-wiki-tools append-log --entry-op distill --title "no: <why>"`), then
+merge. The `distill-audit` operation lists candidate entities (referenced from ≥k points, no page) as a
+deterministic hint attached to the block — the tool finds, you judge.
+
 **Delegation.** That these actions happen is the main flow's responsibility; executing or delegating them
 is merely a choice to avoid blocking. The `record` (structured transcription) is delegatable to the
 `wiki-curator` agent; distillation and semantic lint, being judgment, stay in the main flow.
