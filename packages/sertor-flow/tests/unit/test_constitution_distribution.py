@@ -142,4 +142,4 @@ def test_starter_has_no_sertor_or_rag_specifics():
 
 
 def test_starter_version_bumped():
-    assert "0.3.0" in _starter()
+    assert "0.4.0" in _starter()

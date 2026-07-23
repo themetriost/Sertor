@@ -91,6 +91,23 @@ a feature off to avoid confronting its error. Removing or gating a capability is
 legitimate only as an explicit, recorded decision — never as a reflex to dodge an
 error.
 
+### XII. Product Plane vs. Fixture Plane (NON-NEGOTIABLE)
+
+When a product is exercised against fixtures inside its own repository (dogfooding),
+keep two planes distinct. The **product plane** is how the product behaves for a real
+user on a real asset: where its state lives, how two assets are isolated from each
+other, the lifecycle and ownership of what it produces. The **fixture plane** is the
+in-repo test fixtures and the state a dogfood session writes onto them. Product and
+behavior decisions are justified ONLY by the general real-asset case, NEVER by fixture
+convenience; and a repo-hygiene decision about dogfood byproducts (version them, ignore
+them) NEVER silently becomes product behavior — decisions carry the provenance of their
+plane. Above all: when a fixture-plane workaround compensates for a product-plane gap,
+that gap is recorded as an OPEN PRODUCT QUESTION, never hidden by the workaround (this
+is Principle XI applied to dogfooding — the papered-over gap must surface). The ceremony
+scales with how much the product mutates the asset in place: a product that only reads
+the asset and emits an external artifact needs almost none; a product that writes state
+INTO the asset it operates on needs it acutely.
+
 ## Security & Secrets
 
 - Secrets (API keys, tokens, credentials) live ONLY in environment files (e.g.
@@ -112,4 +129,4 @@ error.
   backward-incompatible principle change, MINOR for a new principle/section, PATCH
   for clarifications. Record the version and dates below on every amendment.
 
-**Version**: 0.3.0 | **Ratified**: TODO | **Last Amended**: TODO
+**Version**: 0.4.0 | **Ratified**: TODO | **Last Amended**: TODO
