@@ -107,6 +107,19 @@ def _legacy_wiki_ps1_targets(assistant: AssistantId) -> tuple[str, ...]:
         ),
         AssistantId.COPILOT_CLI: (".github/hooks/wiki-pending-check.ps1",),
     })
+
+
+# E10-FEAT-041: wiki-guard (FEAT-040) SUPERSEDES the Stop role of wiki-pending-check. On UPGRADE
+# the additive stem-merge appends wiki-guard but cannot know the OLD wiki-pending-check Stop entry
+# is now obsolete (a different script stem) → both would fire at stop. Strip ONLY that Stop entry;
+# its SessionEnd wiring stays. The Stop command's rendering differs per assistant (a quoted
+# `${CLAUDE_PROJECT_DIR}` path on Claude, a relative one on Copilot), so the substring is
+# assistant-specific — precise enough to match Stop without touching SessionEnd or wiki-guard.
+def _superseded_wiki_stop_substrings(assistant: AssistantId) -> tuple[str, ...]:
+    return select_for(assistant, {
+        AssistantId.CLAUDE: ('wiki-pending-check.py" --mode Stop',),
+        AssistantId.COPILOT_CLI: ("wiki-pending-check.py --mode Stop",),
+    })
 # FEAT-011: the Copilot hook wiring is GENERATED natively (render_copilot_hooks), no longer read
 # from a static Claude-format asset. The sentinel source marks the GENERATED-wiki wiring so the
 # apply callback builds it instead of reading a file (no new ArtifactKind, data-model §4).
@@ -590,11 +603,14 @@ def _apply_wiki_upgrade(
     if art.kind is ArtifactKind.CONFIG:
         return _apply_config(target_root, art, profile)  # create-if-absent, preserves user config
     if art.kind is ArtifactKind.SETTINGS_MERGE:
-        # A-09 migration: strip legacy `.ps1` wiki-hook entries BEFORE the additive `.py` merge, so
-        # an upgrading host is left single-impl (no orphan wiring pointing at the removed `.ps1`).
+        # BEFORE the additive `.py` merge, strip superseded wirings so an upgrading host is left
+        # single-impl: (A-09) legacy `.ps1` wiki-hook entries, and (E10-FEAT-041) the OLD
+        # wiki-pending-check *Stop* entry that wiki-guard replaces (its SessionEnd wiring is kept).
         dest = _resolve(target_root, art.target_rel)
         remove_hook_entries_by_command_substring(
-            dest, _LEGACY_WIKI_PS1_BASENAMES, delete_if_empty=(dest.name == "sertor-hooks.json")
+            dest,
+            (*_LEGACY_WIKI_PS1_BASENAMES, *_superseded_wiki_stop_substrings(assistant)),
+            delete_if_empty=(dest.name == "sertor-hooks.json"),
         )
         return _apply_settings(target_root, art, assistant, replace_stale=True)  # re-wires stale
     raise ConfigError(f"unhandled artifact kind: {art.kind}")  # pragma: no cover

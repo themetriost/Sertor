@@ -57,10 +57,13 @@ hardcoded, lezione [[sessionstart-hook|FEAT-029]]).
 
 Distribuito dall'installer con **parità Claude/Copilot** (`settings.hooks.json` per Claude; `HookEntrySpec`
 `agentStop` in `install_wiki.py` per Copilot). **Rimpiazza il nudge Stop** di [[wiki-pending-check]] (che
-resta su `SessionEnd` per il riepilogo cross-sessione). **Debito di completamento tracciato** (FEAT-041):
-su `upgrade` di un host già installato il vecchio wiring Stop non viene ancora rimosso → doppio-fire
-finché non lo si toglie (gemello di [[feat-032-hook-stem-identity|FEAT-031→032]]); fresh install e dogfood
-sono corretti.
+resta su `SessionEnd` per il riepilogo cross-sessione). **Supersessione pulita sull'`upgrade` (FEAT-041,
+✅ 2026-07-23):** `_apply_wiki_upgrade` rimuove la vecchia entry `--mode Stop` di `wiki-pending-check`
+**prima** del merge additivo (substring assistant-specifico via `remove_hook_entries_by_command_substring`),
+così un host che aggiorna resta single-impl (solo `wiki-guard` allo Stop, SessionEnd intatta) — niente
+doppio-fire. Gemello di [[feat-032-hook-stem-identity|FEAT-031→032]]. *(Il difetto emerse dal dogfooding
+via installer: l'`upgrade` reale sul dogfood produsse il doppio-fire, colto e corretto nella stessa
+sessione — insieme al finding FEAT-042: `upgrade --dry-run` non proietta i settings-merge.)*
 
 ## Vedi anche
 - [[daily-distill-floor]] — la rete gemella lato-merge; insieme coprono consegna + fine-turno.
