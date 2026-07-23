@@ -16,6 +16,38 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 <!-- EXEC:START -->
 ## ⚡ Executive summary (stato al 2026-07-23)
 
+### 🔄 In progress
+Niente attivo. Ultima consegna: **E10-FEAT-030** (costituzione v1.5.0 — Principio XIII «Product/Fixture Plane» + convergenza EN, #221), preceduta da **FEAT-029** (hook wiki host-agnostico, #220) e dalla release **v0.1.3** «daily distill floor» (FEAT-039). Flusso **fermo alla scelta della prossima direzione**.
+
+### ✅ Consegnato (digest per epica)
+- **core (E1):** retrieval ibrido+baseline · code-graph · embedder locale (GloVe default) · refresh incrementale — *completa*
+- **cli (E2):** packaging `git+url` · lifecycle install/upgrade/uninstall · distribuzione Copilot · `doctor` · auto-updater
+- **memoria (E4):** cattura→archivio→full-text→semantico · lettura+semantico via MCP — *quasi completa (3 Could)*
+- **osservabilità (E3):** MVP F1–F4 · export OTel · visibilità RAG nella TUI
+- **qualità retrieval (E5):** `eval`/`graph-eval` · fusione code+doc misurata (`search_combined` strutturato)
+- **debito-tecnico (E10):** hook portabili/ancorati · fail-loud breadcrumb · `distill-floor` merge-gate (v0.1.3) — *nessuno Should aperto*
+- **usabilità (E12):** MVP — `doctor` · guided-setup/concierge · install host-aware
+- **doc utente (E13):** Fase 1 completa (getting-started · tutorial · troubleshooting · reference · CHANGELOG)
+- **speclift (E14):** self-host SpecLift + SpecAudit (vendorati) — *distribuzione ospiti aperta*
+- **fedeltà-dogfood (E15):** runtime `.sertor/` install-based che traccia HEAD · process-fidelity asset
+
+*Stato per epica, una riga:* E1 ✅ · E2 🔄 · E3 🔄 · E4 🔄 (quasi) · E5 🔄 · E6–E9 📋 · E10 🔄 · E11 differita · E12 🔄 · E13 🔄 · E14 🔄 · E15 🔄.
+
+### 📋 Prossime direzioni (da scegliere)
+- **Chiudere E4** — i 3 Could: remember-this · retention · ponte second-brain.
+- **E14** — distribuire SpecLift/SpecAudit agli ospiti (FEAT-002, casa `sertor-flow`).
+- **E13 Fase 2** — marketing (posizionamento/demo/landing), sbloccata dal go-public.
+- **go-public / PyPI** — *FERMO* per decisione utente (2026-07-17); ospiti via `git+url`/`uvx`.
+- **Scommesse** — E7 ingestione → sblocca E8 (schema SQL) · E6 PGVector · E9 second-brain.
+- *In attesa esterna:* E2-FEAT-019 (bundle governance divisibile, Noetix) · feedback Acta Noetix da triageare · E5-FEAT-003 (leva `search_docs`, solo con lift misurato).
+
+> **Dettaglio completo (non iniettato a ogni sessione):** le tabelle per-feature e per-epica qui sotto + i singoli `epic.md`.
+<!-- EXEC:END -->
+
+---
+
+## 📊 Dettaglio — stato completo (non iniettato, leggibile su richiesta)
+
 ### ✅ Capacità consegnate (feature su `master`)
 
 | Capacità (feature) | Epica |
@@ -157,8 +189,6 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 **Differita:** E11 `multiutente` (finché il caso team non è concreto). **❌ Abbandonata by design**
 (2026-06-16): agenzia RAG incorporata — l'agentic RAG è già ✅ composito via MCP+agente; i 36 REQ in
 `sertor-core/motore-agentico/` restano elicitazione storica, non pianificata.
-
-<!-- EXEC:END -->
 
 ### ✅ DONE (su `master`, le rilevanti)
 
