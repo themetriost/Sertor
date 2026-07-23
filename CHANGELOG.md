@@ -13,6 +13,33 @@ and Sertor aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 _Changes land here before the next version bump._
 
+## [0.1.4] — 2026-07-23
+
+A **wiki-governance release** that completes the pair started in `0.1.3`: where the daily distill floor
+gates the *merge*, this release gates the *end of every turn*. **All hosts are asked to update to this
+version** — the wiki-freshness net only takes effect once the wiki capability is installed/upgraded. No
+breaking changes to your code; the enforcement arrives with `sertor install/upgrade wiki`. Lands on top
+of `0.1.3`.
+
+### Added
+
+- **Wiki freshness guard — stopping is gated on a recorded wiki.** A new host-facing hook (`wiki-guard`,
+  `Stop`/`agentStop`) BLOCKS the end of a turn when the session changed indexed files
+  (`src`/`specs`/`requirements`/`.claude`) that are **not yet recorded in the wiki**, telling the agent to
+  close the step ritual first — record the work, distill durable entities, and run the semantic lint —
+  then stop again. It reuses `sertor-wiki-tools scan` for detection (no reinvention), never traps a turn
+  (anti-loop via `stop_hook_active`; fails open with no wiki config or an unreachable scan; read-only /
+  question sessions close normally), and ships with full **Claude / Copilot parity** (`Stop` /
+  `agentStop`, both `{"decision":"block","reason":…}`). It is the stop-time sibling of the merge-time
+  distill floor, and replaces the non-blocking `Stop` nudge of `wiki-pending-check` (which stays on
+  `SessionEnd`). Distributed via `sertor install/upgrade wiki` (E10-FEAT-040).
+
+### Known limitations
+
+- On an **already-installed** host, `upgrade` does not yet remove the superseded non-blocking `Stop`
+  entry of `wiki-pending-check`, so both the guard and the old nudge may fire at stop until a follow-up
+  (E10-FEAT-041) lands. **Fresh installs are unaffected.**
+
 ## [0.1.3] — 2026-07-22
 
 A **wiki-governance release**: the `distill` step of the wiki ritual — turning the day's scattered

@@ -46,6 +46,14 @@ perform the distill (or run `sertor-wiki-tools append-log --entry-op distill --t
 merge. The `distill-audit` operation lists candidate entities (referenced from ≥k points, no page) as a
 deterministic hint attached to the block — the tool finds, you judge.
 
+**Wiki freshness guard (enforced at stop).** The Stop-time sibling of the distill floor: when a turn ends
+and this session did indexed work that is NOT yet recorded in the wiki, a `Stop` hook (`agentStop` on
+Copilot) BLOCKS the stop with `{"decision":"block","reason":…}` and tells you to CLOSE the ritual first —
+record the work, distill durable entities (or log a reasoned "no"), and run the semantic lint against what
+you changed. It is a hard gate, not a nudge; read-only / question turns (nothing pending) close normally.
+Detection reuses `sertor-wiki-tools scan`; the hook only demands the ritual — the judgment stays with you
+(the tool finds, you judge). Resolve by recording + judging, then stop again.
+
 **Delegation.** That these actions happen is the main flow's responsibility; executing or delegating them
 is merely a choice to avoid blocking. The `record` (structured transcription) is delegatable to the
 `wiki-curator` agent; distillation and semantic lint, being judgment, stay in the main flow.
