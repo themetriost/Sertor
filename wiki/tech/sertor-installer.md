@@ -46,7 +46,7 @@ isola `uv` (testabile senza rete). Decisione di collocazione: il **runtime vive 
 |---|---|---|
 | Progetto Python + dipendenze (`uv init --bare --name sertor-runtime` + `uv add sertor-core[azure,mcp,graph,rerank] @ git+url`) | `.sertor/` | idempotente (`uv add` no-op; `init` saltato se già fatto); `--no-deps` salta il passo |
 | `.env` (template per backend, **segreti vuoti**, `SERTOR_EXCLUDE_PATTERNS` con `.sertor`) | `.sertor/.env` | merge additivo per-chiave (mai sovrascrive); `.sertor` garantito negli excludes |
-| `.mcp.json` (server `sertor-rag` via `uv run --directory .sertor`) | **radice host** | merge additivo (preserva gli altri server MCP) |
+| `.mcp.json` (server `sertor-rag` via `uv run --project .sertor`) | **radice host** | merge additivo (preserva gli altri server MCP) |
 | `.gitignore` (`.sertor/.venv/`, `.sertor/.index*`, `.sertor/.env`) | **radice host** | append dedup |
 
 Flag: `--backend azure|local`, `--corpus` (default = nome dir sanitizzato), `--no-graph`/`--no-rerank`

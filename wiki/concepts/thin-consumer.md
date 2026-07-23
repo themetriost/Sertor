@@ -38,7 +38,7 @@ Il consumatore:
 2. ottiene l'oggetto pronto da una `build_*` (che cabla adapter concreti dal [[retrieval-core|composition root]]);
 3. chiama i metodi della facade e **mappa** il risultato sul proprio protocollo (argomenti CLI, tool MCP, …).
 
-Non conosce gli adapter concreti né gli SDK: quelli restano dietro le porte, scelti da `Settings.backend`.
+Non conosce gli adapter concreti né gli SDK: quelli restano dietro le porte, scelti in `composition.py` da `Settings.embed_provider` (l'embedder) e `Settings.store_backend` (lo store) — manopole distinte.
 
 ## Esempi (profilo Sertor)
 

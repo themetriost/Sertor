@@ -144,7 +144,7 @@ non un difetto del grafo.
 
 ## Misura della fusione code+doc (union hit-rate) — FEAT-003 Tempo 2
 
-La **stella polare** della mission è la **fusione di codice e documenti in un unico corpus** (Principio XII).
+La **stella polare** della mission è la **fusione di codice e documenti in un unico corpus** (sezione *Missione & stella polare* della costituzione — non un principio numerato; il Principio XII è «Fail Loud, Fix the Cause»).
 I due strumenti — `search_code` (per il codice) e `search_docs` (per la documentazione) — sono misurati
 *separatamente* dalle metriche IR precedenti. Un caso significativo come «passare da **requisito a
 implementazione**» è un **test di integrazione**: il retrieval è **completo** quando ALMENO UNA delle due

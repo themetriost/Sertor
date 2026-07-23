@@ -59,13 +59,20 @@ cartelle-sorgente vengono da `wiki.config.toml`, non sono assunti.
 
 ## Lo strato automatico: gli hook
 
-Tre hook in `.claude/settings.json` (non orchestrano da soli — un hook non avvia un agente — ma rendono
-*automatica la delega*):
-- **SessionStart** — inietta lo stato del wiki a inizio sessione ([[sessionstart-hook]]).
-- **Stop** e **SessionEnd** — invocano `.claude/hooks/wiki-pending-check.py` (`--mode Stop`/`--mode SessionEnd`):
-  euristica `mtime` che confronta `src/`/`specs/`/`requirements/`/`.claude/` con l'ultima voce di log e, se
-  c'è lavoro non registrato, inietta un **promemoria non bloccante** a delegare al `wiki-curator` (guardia
-  `stop_hook_active` anti-loop).
+Quattro hook wiki in `.claude/settings.json` — due **non bloccanti** (delega automatica) e due
+**bloccanti** (le reti hard del rituale, che non orchestrano un agente ma *esigono* l'azione):
+- **SessionStart** *(non bloccante)* — inietta lo stato del wiki a inizio sessione ([[sessionstart-hook]]).
+- **SessionEnd** *(non bloccante)* — `.claude/hooks/wiki-pending-check.py --mode SessionEnd`: euristica
+  `mtime` (confronta `src/`/`specs/`/`requirements/`/`.claude/` con l'ultima voce di log) → **promemoria**
+  cross-sessione a delegare al `wiki-curator` (guardia `stop_hook_active` anti-loop).
+- **Stop** *(bloccante, [[wiki-guard]] E10-FEAT-040)* — `wiki-guard.py`: se la sessione ha fatto lavoro
+  indicizzato non registrato, **blocca la chiusura del turno** esigendo record + distill + lint semantico.
+  Ha rimpiazzato allo Stop il vecchio nudge `wiki-pending-check` (che resta solo su SessionEnd).
+- **PreToolUse** *(bloccante, [[daily-distill-floor]] E10-FEAT-039)* — `distill-floor.py`: **blocca il merge
+  di consegna** finché la giornata non ha una voce `distill` nel log.
+
+Le due reti bloccanti danno al rituale — prima affidato alla sola diligenza dell'agente — un **pavimento
+deterministico**: `distill-floor` al merge, `wiki-guard` a fine turno.
 
 ## Convenzioni e vincoli stabili
 
