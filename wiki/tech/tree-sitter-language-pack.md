@@ -3,7 +3,7 @@ title: tree-sitter-language-pack (binding e wrapper _Node)
 type: tech
 tags: [tree-sitter, parsing, ast, binding, multi-language, chunking, sertor-core]
 created: 2026-06-03
-updated: 2026-06-08
+updated: 2026-07-23
 sources: ["https://pypi.org/project/tree-sitter-language-pack/", "src/sertor_core/services/chunking/code.py"]
 ---
 
@@ -55,7 +55,7 @@ Il wrapper porta in `src` i **byte** del sorgente (`text.encode("utf-8")`), perc
 - **Righe 1-based a valle.** tree-sitter dà righe/colonne 0-indexed; i metadati dei chunk le riportano
   1-based (`start_row + 1`).
 - **Wheel legato alla versione di Python** — essendo precompilato, la versione del wheel deve combaciare con
-  l'interprete (Sertor: Python 3.12).
+  l'interprete (Sertor: Python >=3.11).
 - **Fallback su qualunque errore** — se la grammatica non c'è o il parse fallisce, `code_chunks` ritorna
   `None` e il dispatcher passa al fallback dimensionale (degradazione sicura, mai un crash).
 

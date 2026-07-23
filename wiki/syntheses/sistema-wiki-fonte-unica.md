@@ -3,8 +3,8 @@ title: Sistema Wiki — Fonte Unica + Tre Interfacce
 type: synthesis
 tags: [wiki, governance, tooling, fonte-unica, architecture]
 created: 2026-06-04
-updated: 2026-06-09
-sources: [".claude/skills/wiki-author/wiki-playbook.md", ".claude/skills/wiki-author/SKILL.md", ".claude/commands/wiki.md", ".claude/agents/wiki-curator.md", ".claude/hooks/wiki-pending-check.ps1", ".claude/settings.json", "wiki.config.toml", "CLAUDE.md"]
+updated: 2026-07-23
+sources: [".claude/skills/wiki-author/wiki-playbook.md", ".claude/skills/wiki-author/SKILL.md", ".claude/commands/wiki.md", ".claude/agents/wiki-curator.md", ".claude/hooks/wiki-pending-check.py", ".claude/settings.json", "wiki.config.toml", "CLAUDE.md"]
 ---
 
 # Sistema Wiki — Fonte Unica + Tre Interfacce Sottili
@@ -62,7 +62,7 @@ cartelle-sorgente vengono da `wiki.config.toml`, non sono assunti.
 Tre hook in `.claude/settings.json` (non orchestrano da soli — un hook non avvia un agente — ma rendono
 *automatica la delega*):
 - **SessionStart** — inietta lo stato del wiki a inizio sessione ([[sessionstart-hook]]).
-- **Stop** e **SessionEnd** — invocano `.claude/hooks/wiki-pending-check.ps1` (`-Mode Stop`/`SessionEnd`):
+- **Stop** e **SessionEnd** — invocano `.claude/hooks/wiki-pending-check.py` (`--mode Stop`/`--mode SessionEnd`):
   euristica `mtime` che confronta `src/`/`specs/`/`requirements/`/`.claude/` con l'ultima voce di log e, se
   c'è lavoro non registrato, inietta un **promemoria non bloccante** a delegare al `wiki-curator` (guardia
   `stop_hook_active` anti-loop).

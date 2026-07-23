@@ -4,7 +4,7 @@ type: experiment
 tags: [feature, portabilità, hook, principio-x, principio-xii, sertor-cli, python, uv]
 created: 2026-07-09
 updated: 2026-07-09
-sources: ["specs/095-portable-hooks-09/", "requirements/sertor-cli/epic.md", ".claude/hooks/", "packages/sertor/sertor_installer/assets/"]
+sources: ["specs/095-portable-hooks-09/", "requirements/sertor-cli/epic.md", ".claude/hooks/", "packages/sertor/src/sertor_installer/assets/"]
 ---
 
 # A-09 / E2-FEAT-010 — Portabilità POSIX degli hook

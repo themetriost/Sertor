@@ -3,14 +3,14 @@ title: "SpecLift — pipeline deterministica diff→requisiti ancorati"
 type: concept
 tags: [speclift, valutazione, requisiti, deterministic, moat, plugin-architecture, sandwich]
 created: 2026-07-01
-updated: 2026-07-01
-sources: ["https://github.com/Sinthari/speclift", "packages/speclift/"]
+updated: 2026-07-23
+sources: ["https://github.com/Sinthari/speclift", "packages/speclift/", "requirements/speclift/epic.md"]
 ---
 
 # SpecLift — framework di estrazione requisiti da diff con verifica moat
 
 **SpecLift** è una pipeline **deterministica** che trasforma un diff di codice in **requisiti EARS ancorati**, con verifica di realtà (moat).
-Il suo valore: separazione netta tra i **9 stadi meccanici** (ingest→parse→filter→locate→bundle→verify→render) e il **giudizio agentico** (stesura EARS).
+Il suo valore: separazione netta tra gli **8 stadi meccanici** (ingest→parse→filter→locate→bundle→verify→lift→render) e il **giudizio agentico** (stesura EARS).
 Sinthari lo ha progettato, Sertor lo adotta via MCP nel 2026-07-01.
 
 ## Architettura — il "sandwich"
@@ -26,8 +26,9 @@ Sinthari lo ha progettato, Sertor lo adotta via MCP nel 2026-07-01.
 │ Stadio 4: Locate (evidence finder)          │ ← Pluggable adapters
 │ Stadio 5: Bundle (changeset structure)      │
 │ Stadio 6: Verify (moat: filesystem re-check)│
-│ Stadio 7: Render (template EARS)            │
-│ Output: `located.json` (requisiti grezzz    │
+│ Stadio 7: Lift (assembla requisiti ancorati)│
+│ Stadio 8: Render (template EARS)            │
+│ Output: `located.json` (requisiti grezzi    │
 │         con metadata + verifica)            │
 └─────────────────────────────────────────────┘
         ↓ (fatto, non discussione)
@@ -49,7 +50,7 @@ SpecLift non conosce **come** cercare evidence: delega a un adapter scelto a run
 
 ### Adapter A: SertorRagLocator (CLI)
 - **Quando:** consumo interno (Sertor sul suo corpus).
-- **Come:** invoca `sertor-rag search-code --query <...> --type code` via subprocess.
+- **Come:** invoca `sertor-rag search <...>` via subprocess.
 - **Pro:** autorità direta sul corpus indicizzato.
 - **Contro:** vincolo esterno (Sertor deve essere installato + reachable).
 
@@ -79,7 +80,7 @@ for located_file in located:
 
 ## Template EARS — output deterministico
 
-La resa in formato EARS è **template puro** (stadio 7), no logica:
+La resa in formato EARS è **template puro** (stadio 8), no logica:
 
 ```toml
 [[requirement]]
@@ -115,7 +116,7 @@ L'agente legge `verified=true`, scarta `false`. L'attributo è **dichiarativo**,
 
 ## Concetto correlato
 
-- [[deterministic-vs-judgment]] — il confine tra tier deterministico (9 stadi) e tier agentico (stesura).
+- [[deterministic-vs-judgment]] — il confine tra tier deterministico (8 stadi) e tier agentico (stesura).
 - [[valutazione-e-non-regressione]] — entrambe ancorano qualità al codice reale (vedi/graph vs moat).
 - [[mcp-server]] — il veicolo di integrazione esterna (Sertor come backend di ricerca per SpecLift).
 - [[dogfooding]] — Sertor usa se stesso (via MCP) per alimentare SpecLift che a sua volta valuta Sertor.
@@ -125,3 +126,7 @@ L'agente legge `verified=true`, scarta `false`. L'attributo è **dichiarativo**,
 - **Creazione:** Sinthari, 2026.
 - **Adopzione:** Sertor, FEAT-084, 2026-07-01 (vendoring + Adapter B via MCP).
 - **Versione:** upstream hash `5ee6fc1` (SpecLift master), cambio packaging minimal (niente fork).
+- **Distribuzione esterna (RISOLTA 2026-07-14, E14-FEAT-002):** la casa di distribuzione di
+  SpecLift/SpecAudit su ospiti terzi è **`sertor-flow`** (*fold* nel pacchetto governance). Scelta
+  coerente perché `speclift`/`specaudit` sono **zero-deps** e consumano il RAG **via MCP** (Adapter B),
+  senza importare `sertor-core` — come `sertor-flow`. Vedi `requirements/speclift/epic.md` (FEAT-002).

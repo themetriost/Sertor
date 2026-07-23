@@ -3,7 +3,7 @@ title: Scegliere — ricerca ibrida vs code-graph (scopri → naviga)
 type: concept
 tags: [retrieval, code-graph, hybrid, mcp, usage, decisione]
 created: 2026-06-14
-updated: 2026-06-14
+updated: 2026-07-23
 sources: ["wiki/concepts/hybrid-retrieval.md", "wiki/concepts/code-graph.md", "wiki/tech/mcp-server.md", "src/sertor_mcp/server.py"]
 ---
 
@@ -57,11 +57,12 @@ somiglianza di argomento non risponde a una relazione esatta — o il grafo per 
 Il motore di ricerca (`SERTOR_ENGINE`: `baseline` | `hybrid`, default `hybrid`) sceglie **come si
 cerca per pertinenza**; il grafo (`SERTOR_GRAPH`, default on) è una capacità **a parte**, costruita
 nello stesso `index()` e interrogata dai suoi 4 tool a prescindere dal motore. Convivono nello stesso
-server MCP `sertor-rag` ([[mcp-server]]): **7 tool = 3 di ricerca + 4 di grafo**, entrambi locali.
+server MCP `sertor-rag` ([[mcp-server]]): **10 tool = 3 di ricerca + 4 di grafo + 3 di memoria**
+(`memory_list`/`memory_show`/`memory_search`, memoria episodica opt-in), tutti locali.
 
 ## Vedi anche
 - [[hybrid-retrieval]] — il motore di pertinenza (default).
 - [[code-graph]] — la mappa strutturale e i 4 tool.
 - [[vector-retrieval]] — la baseline vettoriale (il «solo significato» del punto 1).
-- [[mcp-server]] — la superficie a 7 tool che le espone entrambe.
+- [[mcp-server]] — la superficie a 10 tool che le espone entrambe (più la memoria).
 - [[i-modi-di-cercare]] — la versione in parole semplici (explainer).

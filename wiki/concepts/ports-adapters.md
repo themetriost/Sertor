@@ -3,7 +3,7 @@ title: Porte e adapter (boundary del retrieval-core)
 type: concept
 tags: [ports, adapters, protocol, hexagonal, clean-architecture, sertor-core, composition]
 created: 2026-06-08
-updated: 2026-06-21
+updated: 2026-07-23
 sources: ["src/sertor_core/domain/ports.py", "src/sertor_core/composition.py", "src/sertor_core/adapters/**", "requirements/sertor-core/epic.md"]
 ---
 
@@ -13,9 +13,11 @@ Le **porte** del [[retrieval-core]] sono i **boundary astratti** dietro cui vivo
 nucleo dipende **solo** da esse (Principio I/II della [[constitution|Costituzione]]), gli **adapter** in
 `adapters/` le implementano importando gli SDK esterni. Vivono in `domain/ports.py`, definite come
 **`Protocol`** (structural typing): un adapter è conforme se ha i metodi giusti, **senza ereditare nulla** —
-così è banale da mockare nei test (tutte `@runtime_checkable`). Le porte sono **sette**: le due
+così è banale da mockare nei test (tutte `@runtime_checkable`). Le porte sono **otto**: le due
 fondative qui sotto, le tre della FEAT-004 ([[hybrid-retrieval]]), la `CodeGraph` della
-FEAT-005 ([[code-graph]]) e la `ObservabilityStore` della feature 020 (osservabilità).
+FEAT-005 ([[code-graph]]), la `ObservabilityStore` della feature 020 (osservabilità) e la
+`TranscriptCaptureAdapter` della [[memoria-conversazioni|memoria episodica]] (feature 031, cattura
+host-specifica dei transcript).
 
 ## Le due porte fondative
 
@@ -23,7 +25,7 @@ FEAT-005 ([[code-graph]]) e la `ObservabilityStore` della feature 020 (osservabi
   ordine preservato, `[]` per input vuoto) + attributi `name`, `dim` (dimensione del vettore, scoperta al
   primo batch se inizialmente `None`), `batch_size`. **Quattro adapter deterministici e combinabili:**
   `GloveEmbedder` (FEAT-011, 6B 300d PDDL, lazy numpy, cache XDG) = nuovo default;
-  `HashEmbedder` (FEAT-011, char-n-gram blake2b 512d stdlib, zero-download, pavimento airgapped/CI);
+  `HashingEmbedder` (FEAT-011, char-n-gram blake2b 512d stdlib, zero-download, pavimento airgapped/CI);
   `OllamaEmbedder` (Ollama locale, openai-compatible API);
   `AzureEmbedder` (Azure OpenAI Service embeddings v1).
   Gli adapter ritentano gli errori transitori (retry+backoff, 018) ed emettono un evento di log
@@ -83,7 +85,7 @@ nucleo.
 
 | Porta | Adapter locale (default) | Adapter Azure |
 |---|---|---|
-| `EmbeddingProvider` | `adapters/embeddings/glove.py` (`GloveEmbedder`, **default FEAT-011**) · `adapters/embeddings/hash.py` (`HashEmbedder`) · `adapters/embeddings/ollama.py` (`OllamaEmbedder`) | `adapters/embeddings/azure.py` (`AzureEmbedder`) |
+| `EmbeddingProvider` | `adapters/embeddings/glove.py` (`GloveEmbedder`, **default FEAT-011**) · `adapters/embeddings/hashing.py` (`HashingEmbedder`) · `adapters/embeddings/ollama.py` (`OllamaEmbedder`) | `adapters/embeddings/azure.py` (`AzureEmbedder`) |
 | `VectorStore` | `adapters/vectorstores/chroma.py` (`ChromaStore`) | `adapters/vectorstores/azure_search.py` (`AzureSearchStore`) |
 | `LexicalIndex` | `adapters/lexical/bm25.py` (`Bm25LexicalIndex`, sidecar JSON) | — (delega nativa per-store = Could, Gruppo E) |
 | `Reranker` | `adapters/rerank/flashrank.py` (`FlashRankReranker`, extra `rerank`) | — |

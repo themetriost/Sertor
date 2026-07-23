@@ -3,7 +3,7 @@ title: Server MCP sertor-rag
 type: tech
 tags: [mcp, server, sertor-mcp, thin-consumer, retrieval, dogfooding, sertor-core]
 created: 2026-06-08
-updated: 2026-07-21
+updated: 2026-07-23
 sources: ["src/sertor_mcp/server.py", ".mcp.json"]
 ---
 
@@ -15,10 +15,12 @@ Il **server MCP `sertor-rag`** (`src/sertor_mcp/server.py`) è la **superficie**
 sottile]] — delega tutto alla facade del core, non reimplementa retrieval — e **sostituisce** il vecchio
 server del prototipo come superficie attiva (FEAT-MCP, record: [[server-mcp-produzione-feat-mcp]]).
 
-## I sette tool
+## I dieci tool
 
-Istanza `FastMCP("sertor-rag")` con `instructions` che guidano la scelta del tool. Ogni tool delega al
-metodo omonimo della [[indexing-and-retrieval|facade]]:
+Istanza `FastMCP("sertor-rag")` con `instructions` che guidano la scelta del tool. Il server espone
+**10 tool**: i **3 di ricerca** + i **4 di navigazione** sul [[code-graph]] + i **3 di memoria**
+conversazionale (E4, gated). I tool di ricerca/grafo delegano al metodo omonimo della
+[[indexing-and-retrieval|facade]] / `build_graph_service()`:
 
 | Tool | Filtro | Default `k` |
 |---|---|---|
@@ -42,6 +44,22 @@ Dal 2026-06-12 (FEAT-005, PR #25) sono **tornati i 4 tool di navigazione struttu
 Delegano al servizio `build_graph_service()` del core (memoizzato come la facade); risposte
 citabili `ref = path#qualname`; simbolo assente → liste vuote; grafo non costruito o extra
 `graph` assente → errore strutturato azionabile (mai crash).
+
+Dal 2026 (E4-FEAT-010/013) ci sono i **3 tool di memoria conversazionale** — parità sola-lettura con i
+comandi `memory` della [[sertor-rag-cli|CLI]], sugli stessi servizi del core (`MemoryArchive`,
+`EpisodicSearch`, indice semantico):
+
+| Tool | Domanda a cui risponde |
+|---|---|
+| `memory_list(limit)` | quali sessioni passate sono archiviate (recency-first) |
+| `memory_show(session_key)` | mostra i turni di una sessione (index, role, ts, text) |
+| `memory_search(query, k, semantic)` | «ne abbiamo già parlato?» — full-text FTS5 (default) o per **significato** (`semantic=true`) |
+
+Sono **opt-in per privacy** (gate `SERTOR_MEMORY`; il semantico richiede anche
+`SERTOR_MEMORY_SEMANTIC`): con la leva spenta — il default — i builder ritornano `None` e il tool
+risponde `{"status": "disabled"}` con l'hint della leva giusta (mai una lista vuota che fingerebbe
+«nessun risultato», mai un errore che inonderebbe `mcp.*.error`). Sola lettura: nessun path di
+cattura/scrittura nel server (la `archive` resta sulla CLI e sul session-end).
 
 La facade è costruita **una volta** con `build_facade(Settings.load())` memoizzata via `@lru_cache(maxsize=1)`
 e riusata da tutti i tool. Dal 2026-06-12 (PR #23) il warm-up è **eager**: `main()` costruisce la facade
@@ -67,8 +85,11 @@ presentazione del server, non di dominio). Pensato per essere **citato** dal cli
 
 ## Avvio e binding
 
-Trasporto **stdio**: lo lancia il client MCP via `.mcp.json` (`python -m sertor_mcp.server`) con env
-`SERTOR_CORPUS=sertor` → fa **[[dogfooding]]** sul corpus di produzione. Le promesse del 2026-06-08
+Trasporto **stdio**: lo lancia il client MCP via `.mcp.json`
+(`uv run --project .sertor python -m sertor_mcp.server`) con env `SERTOR_CORPUS=sertor` → fa
+**[[dogfooding]]** sul corpus di produzione. Dal 2026-07-03 (E15) il server gira dal **runtime
+install-based `.sertor/`** (il pacchetto installato via `sertor install rag`, che segue HEAD e viene
+re-locked a ogni merge), **non** più dall'editable del workspace. Le promesse del 2026-06-08
 sono state mantenute entrambe il 2026-06-12: il retrieval **ibrido** arriva gratis dalla facade
 ([[hybrid-retrieval]], PR #24) e i tool di **grafo** sono registrati (FEAT-005, PR #25). Il warm-up
 di `main()` copre facade E grafo (tollerante ad assenze).
@@ -88,11 +109,14 @@ strati** (vedi record nel log del 2026-06-14):
    in `CLAUDE.md` impongono di **segnalare esplicitamente gli errori MCP** invece di degradare silenziosamente
    a fallback (Read/Grep manuale).
 
-**Nota operativa:** dal 2026-06-18 (E10-FEAT-002) c'è **un solo venv** `.venv` e `.mcp.json` lo punta
-(`.venv/Scripts/python.exe`). Si mantiene coerente con `uv sync --all-packages --extra dev` (+ `--extra
-azure` per il dogfood): l'extra `dev` include ora `mcp` e `graph`, quindi lo stesso comando che prepara
-test e lint prepara anche il server. Il vecchio `.venv-core` (costruito a mano, sorgente della divergenza
-silenziosa) è stato eliminato.
+**Nota operativa (runtime install-based, dal 2026-07-03, E15):** `.mcp.json` **non** punta più a un
+interprete di venv (`command: "uv"`, `args: ["run", "--project", ".sertor", "python", "-m",
+"sertor_mcp.server"]`): `uv run --project .sertor` risolve il server dentro il **runtime `.sertor/`**,
+il pacchetto `sertor-core` **installato** via `sertor install rag` (da `git=<repo>` HEAD, re-locked a
+ogni merge — è il dogfood come client fedele). Supera il modello precedente (E10-FEAT-002, 2026-06-18)
+in cui c'era **un solo venv** `.venv` puntato direttamente da `.mcp.json` (`.venv/Scripts/python.exe`);
+quel `.venv` resta l'ambiente di **sviluppo** (test/lint via `uv sync --all-packages --extra dev`), ma
+il **server servito ai client gira dal `.sertor/`**, non dall'editable del workspace.
 
 ## Troubleshooting (metodo collaudato, 2026-06-12; aggiornato 2026-06-19)
 
@@ -120,12 +144,14 @@ Quando una chiamata MCP sembra appesa o il server pare morto:
    chiudendo stdin, l'esecuzione era parcheggiata nell'event loop (la firma dell'episodio
    2026-06-12). Per bisezionare: server FastMCP minimo + un tool per componente (Settings / Chroma /
    embed / facade). Driver usati: `%TEMP%\mcp_probe.py`, `mcp_probe2.py`, `mini_mcp*.py`.
-5. **Ricordare:** il server gira da `.venv` (editable su `src/`) → serve il codice del **branch
-   correntemente checked-out**; va riavviato (nuova sessione o riconnessione) per servire codice nuovo.
-   L'artefatto del code-graph è ora auto-refreshed su cambio disco (mtime/size), quindi nessuna staleness
-   del grafo nemmeno tra re-index e riavvio — solo il codice del server rimane stantio.
+5. **Ricordare:** il server gira dal **runtime `.sertor/`** (pacchetto installato, `git=<repo>` HEAD)
+   → serve il codice del **commit su cui il runtime è lockato**, non l'editable del workspace. Dopo un
+   merge su `master` va **re-locked** (`scripts/dev/relock-runtime.ps1`) e il server **riavviato** (nuova
+   sessione o riconnessione) per servire codice nuovo. L'artefatto del code-graph è invece auto-refreshed
+   su cambio disco (mtime/size), quindi nessuna staleness del grafo nemmeno tra re-index e riavvio — solo
+   il codice del server resta stantio finché non si re-locka + riavvia.
 
 ## Vedi anche
 - Il pattern che incarna: [[thin-consumer]]. Cosa consuma: [[indexing-and-retrieval]] · [[retrieval-core]].
-- Guida ai 7 tool: [[retrieval-vs-graph]] — quando usare ricerca (scopri) vs grafo (naviga).
+- Guida ai tool di ricerca vs grafo: [[retrieval-vs-graph]] — quando usare ricerca (scopri) vs grafo (naviga).
 - A cosa serve: [[dogfooding]]. Naming del corpus: [[corpus-index-naming]].

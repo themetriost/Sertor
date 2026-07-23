@@ -3,7 +3,7 @@ title: Ricerca episodica FTS5 — Motore full-text locale
 type: tech
 tags: [sqlite, fts5, full-text-search, indice, trigger-synced, episodico, ricerca-episodica]
 created: 2026-06-14
-updated: 2026-06-14
+updated: 2026-07-23
 sources: ["src/sertor_core/services/episodic_search.py", "src/sertor_core/domain/memory.py", "https://www.sqlite.org/fts5.html"]
 ---
 
@@ -101,7 +101,7 @@ class EpisodicResults:
 
 class EpisodicSearch:
     """Servizio di ricerca."""
-    async def search(query: SearchQuery) -> EpisodicResults:
+    def search(self, query: SearchQuery) -> EpisodicResults:
         """Esegui ricerca full-text con vincoli opzionali."""
 ```
 

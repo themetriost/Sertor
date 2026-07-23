@@ -3,8 +3,8 @@ title: SessionStart hook
 type: tech
 tags: [hook, claude-code, wiki, contesto, da-w1]
 created: 2026-05-31
-updated: 2026-07-09
-sources: [".claude/settings.json", ".claude/hooks/wiki-session-start.py"]
+updated: 2026-07-23
+sources: [".claude/settings.json", ".claude/hooks/wiki-session-start.py", "wiki/wiki.config.toml"]
 ---
 
 # SessionStart hook
@@ -19,14 +19,20 @@ modello in modalità *push*, prima di qualunque query e senza passare dal RAG.
 ## Cosa fa (hook sottile: innesca, non trasporta)
 
 Si esegue all'**avvio** della sessione e — come si osserva dai `system-reminder` — anche su **resume** e
-**compact**. **Non trasporta più il contenuto**: emette una **direttiva breve** (~630 byte) che istruisce il
-flusso principale a caricare il contesto *di propria iniziativa* con il tool `Read` —
-`wiki/syntheses/roadmap.md`, `wiki/index.md`, l'ultimo file di `wiki/log/` — e poi a **mostrare all'utente
+**compact**. **Non trasporta più il contenuto**: emette una **direttiva breve** che istruisce il flusso
+principale a caricare il contesto *di propria iniziativa* con il tool `Read`, e poi a **mostrare all'utente
 l'executive summary** della roadmap (il blocco tra i marker `<!-- EXEC:START -->` / `<!-- EXEC:END -->`).
-L'unica computazione che fa è risolvere la radice da `CLAUDE_PROJECT_DIR` (con fallback alla cwd, via
-`_hooklib`) e calcolare il **nome** della partizione di log più recente (vedi sotto), da nominare nella
-direttiva. Il wiring esatto vive in `.claude/settings.json` (non trascritto qui: una copia nel wiki
-divergerebbe al primo ritocco).
+
+**Config-driven & host-agnostico (E10-FEAT-029, dal 2026-07-22).** L'hook **non hardcoda più i path**: li
+costruisce leggendo `wiki.config.toml` (via `_hooklib.wiki_config`) — `root`, `index_file`, `log_dir`, e
+l'**opt-in `[ritual].exec_page`** (sul dogfood = `syntheses/roadmap.md`). La direttiva **degrada**: include
+solo i file che **esistono** (un wiki appena creato non riceve l'ordine di leggere una roadmap inesistente),
+e la voce roadmap+EXEC compare **solo se** l'ospite ha configurato `exec_page` (un ospite generico riceve
+index + ultima partizione di log, senza roadmap). Prima l'hook citava i letterali `wiki/syntheses/roadmap.md`
+/ `wiki/index.md` / `wiki/log/`, che rompevano su un ospite con `root`/tassonomia diversi — bug corretto da
+FEAT-029 (gemella di FEAT-031/032). Risolve la radice da `CLAUDE_PROJECT_DIR` (fallback cwd, via `_hooklib`).
+Il wiring esatto vive in `.claude/settings.json` (non trascritto qui: una copia nel wiki divergerebbe al
+primo ritocco).
 
 La catena è: **l'hook *innesca*, il `Read` *trasporta*, il rituale tiene il *contenuto* vero**.
 
@@ -41,11 +47,12 @@ cap; l'hook resta ben sotto i 10 K perché porta solo istruzioni. *(Ridisegnato 
 
 ## Compatibilità con la rotazione del log
 
-Il log del wiki è **partizionato per giorno** in `wiki/log/<data>.md` (rotazione FEAT-008): non esiste più
-un `wiki/log.md` unico. L'hook seleziona quindi la **partizione più recente** di `wiki/log/` (elenca i
-`*.md`, esclude `index.md`, ordina per nome — che per il formato `YYYY-MM-DD` è anche ordine cronologico —
-e prende l'ultimo) e ne **mette il path nella direttiva**, perché sia il `Read` del flusso principale a
-caricarne il contenuto; con fallback al vecchio `wiki/log.md` se la cartella non c'è.
+Il log del wiki è **partizionato per giorno** in `<root>/<log_dir>/<data>.md` (rotazione FEAT-008): non
+esiste più un `log.md` unico. L'hook prende `root` e `log_dir` **dalla config** e seleziona la **partizione
+più recente** (elenca i `*.md`, esclude `index.md`, ordina per nome — che per il formato `YYYY-MM-DD` è
+anche ordine cronologico — e prende l'ultimo), mettendone il path nella direttiva perché sia il `Read` del
+flusso principale a caricarne il contenuto. Se `log_dir` non è configurato (log single-file), ripiega sul
+`log_file` della config; se non esiste nessun log, la voce viene **omessa** (degradazione, FEAT-029).
 
 ## Perché è rilevante per DA-W1
 

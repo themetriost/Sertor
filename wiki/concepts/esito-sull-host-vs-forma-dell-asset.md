@@ -4,7 +4,7 @@ type: concept
 tags: [testing, guardie, installer, asset, upgrade, fedelta, principio-xii, e10]
 created: 2026-07-17
 updated: 2026-07-17
-sources: ["packages/sertor-install-kit/tests/unit/test_settings_merge_identity.py", "packages/sertor/tests/unit/test_claude_hook_wiring_anchored.py", "requirements/debito-tecnico/epic.md", "wiki/log/2026-07-16.md", "wiki/log/2026-07-17.md"]
+sources: ["packages/sertor-install-kit/tests/unit/test_settings_merge_identity.py", "packages/sertor/tests/test_claude_hook_wiring_anchored.py", "requirements/debito-tecnico/epic.md", "wiki/log/2026-07-16.md", "wiki/log/2026-07-17.md"]
 ---
 
 # L'esito sull'host, non la forma dell'asset

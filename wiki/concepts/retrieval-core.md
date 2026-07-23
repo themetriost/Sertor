@@ -3,7 +3,7 @@ title: Retrieval core
 type: concept
 tags: [retrieval-core, sertor-core, clean-architecture, porte-adapter, retrieval, architettura]
 created: 2026-06-07
-updated: 2026-06-09
+updated: 2026-07-23
 sources: ["src/sertor_core/composition.py", "src/sertor_core/**", "CLAUDE.md", "specs/001-nucleo-retrieval/**"]
 ---
 
@@ -24,8 +24,9 @@ negoziabile): **le dipendenze puntano verso l'interno**.
 src/sertor_core/
 ├─ domain/         entità (Document, Chunk, RetrievalResult), porte (Protocol), errori — NESSUN import di SDK
 ├─ services/       ingestion · chunking (code/markdown/fallback + dispatch) · indexing · retrieval (facade)
-├─ adapters/       embeddings/{ollama, azure} · vectorstores/{chroma, azure_search}
-├─ engines/        baseline (1ª modalità RAG) + evaluation (hit_rate@k, MRR)
+├─ adapters/       embeddings/{glove, hashing, ollama, azure} · vectorstores/{chroma, azure_search}
+│                  · lexical/{bm25} · rerank/{flashrank} · graph/{networkx}
+├─ engines/        hybrid (BM25+RRF+rerank, DEFAULT SERTOR_ENGINE) · baseline (vettoriale) + evaluation (hit_rate@k, MRR)
 ├─ config/         Settings — unica fonte di default (legge env + .env)
 ├─ observability/  logging strutturato
 └─ composition.py  composition root: l'UNICO posto che conosce gli adapter concreti
@@ -34,14 +35,18 @@ src/sertor_core/
 - **`domain/` è puro.** Entità (`entities.py`), errori (`errors.py`, gerarchia `SertorError`) e le **porte**
   come `Protocol` in `ports.py` (`EmbeddingProvider`, `VectorStore`). Lo *structural typing* le rende
   mockabili senza ereditarietà: nessun SDK esterno entra nel dominio.
-- **`adapters/` implementa le porte.** I provider concreti — Ollama/Azure per gli embedding, Chroma/Azure
-  AI Search per il vector store — vivono qui dietro le porte. Gli SDK pesanti sono importati **lazy** nelle
-  factory, così l'extra `azure` non serve in locale.
-- **`composition.py` è l'unico cablaggio.** Sceglie le implementazioni da **due manopole distinte** di
-  `Settings`: l'**embedder** da `embed_provider` (`azure` → Azure OpenAI · altrimenti Ollama) e lo **store**
-  da `store_backend` (`azure` → Azure AI Search · altrimenti Chroma). Le due sono **combinabili** — es.
-  embeddings Azure + store Chroma locale, la combinazione del dogfood `sertor`. Per aggiungere un provider si
-  estendono composition root e adapters, **non** i servizi. Vedi [[ports-adapters]].
+- **`adapters/` implementa le porte.** I provider concreti — glove/hashing/Ollama/Azure per gli embedding,
+  Chroma/Azure AI Search per il vector store, BM25 lessicale, FlashRank reranker, networkx code-graph —
+  vivono qui dietro le porte. Gli SDK pesanti sono importati **lazy** nelle factory, così l'extra `azure`
+  non serve in locale.
+- **`composition.py` è l'unico cablaggio.** Sceglie le implementazioni da **manopole distinte** di
+  `Settings`: l'**embedder** da `embed_provider` (`SERTOR_EMBED_PROVIDER`, **quattro provider**
+  `glove|hash|ollama|azure`, default **`glove`** — vettori statici NL local-first; `hash` = pavimento
+  lessicale airgapped/CI; `ollama`/`azure` = remoti) e lo **store** da `store_backend`
+  (`azure` → Azure AI Search · altrimenti Chroma). Le due sono **combinabili** — es. embeddings Azure +
+  store Chroma locale, la combinazione del dogfood `sertor`. Il **motore** si sceglie con `SERTOR_ENGINE`
+  (default **`hybrid`** = BM25+RRF+rerank opzionale; `baseline` = solo vettoriale). Per aggiungere un
+  provider si estendono composition root e adapters, **non** i servizi. Vedi [[ports-adapters]].
 
 ## Principi che lo governano
 

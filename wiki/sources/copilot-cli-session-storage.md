@@ -13,6 +13,14 @@ Ricognizione tecnica della **struttura di memorizzazione** delle sessioni in **G
 (forma a riga di comando). Fonte per il progetto dell'adapter di cattura **FEAT-008** (epica
 memoria-conversazioni), che renderà l'archivio episodico operativo anche su Copilot.
 
+> ⚠️ **Correzione (verifica empirica FEAT-008, 2026-06-22):** questa ricognizione — basata sui docs
+> GitHub — è **contraddetta dalla realtà** su un punto chiave. L'adapter consegnato
+> (`src/sertor_core/adapters/capture/copilot_cli.py`) associa la sessione al progetto via **`cwd`/`gitRoot`
+> dall'evento `session.start` dentro `events.jsonl`**, NON via `workspace.yaml` / `vscode.metadata.json.origin`,
+> e legge i turni da **`events.jsonl`**, non da un `session.db`: sulla macchina reale `workspace.yaml`/
+> `session.db` **non risultano presenti** (vedi [[feat-008-cattura-copilot-cli]]). Le sezioni sotto sono lo
+> stato dei docs-al-2026-06-22; il meccanismo di Sertor è quello empirico appena descritto.
+
 ## Dove Copilot CLI conserva le sessioni
 
 ### Cartella principale

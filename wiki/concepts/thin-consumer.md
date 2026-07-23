@@ -3,7 +3,7 @@ title: Thin consumer
 type: concept
 tags: [thin-consumer, architettura, sertor-core, cli, mcp, host-agnostico, composition-root]
 created: 2026-06-07
-updated: 2026-06-07
+updated: 2026-07-23
 sources: ["src/sertor_mcp/server.py", "src/sertor_core/__init__.py", "src/sertor_core/composition.py", "CLAUDE.md"]
 ---
 
@@ -43,8 +43,9 @@ Non conosce gli adapter concreti né gli SDK: quelli restano dietro le porte, sc
 ## Esempi (profilo Sertor)
 
 - **[[mcp-server|Server MCP `sertor-rag`]]** — l'esempio canonico già realizzato: ottiene la facade con
-  `build_facade(Settings.load())` (memoizzata) ed espone 3 tool (`search_code`/`search_docs`/`search_combined`)
-  mappando i `RetrievalResult` sul protocollo MCP. Nessuna logica di retrieval propria. *(Record datato:
+  `build_facade(Settings.load())` (memoizzata) ed espone **10 tool** (3 di ricerca
+  `search_code`/`search_docs`/`search_combined` + 4 di grafo + 3 di memoria — conteggio corrente in
+  [[mcp-server]]) mappando i `RetrievalResult` sul protocollo MCP. Nessuna logica di retrieval propria. *(Record datato:
   [[server-mcp-produzione-feat-mcp]].)*
 - **[[sertor-rag-cli|CLI `sertor-rag`]]** — il secondo esempio realizzato (feature 011, PR #21,
   2026-06-11): `index`/`search` dal terminale via `build_indexer()`/`build_facade()`/

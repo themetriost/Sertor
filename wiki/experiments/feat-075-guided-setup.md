@@ -4,7 +4,7 @@ type: experiment
 tags: [usabilita, guided-setup, skill, agente, agentico, setup, onboarding, deterministic, principio-x, principio-xi]
 created: 2026-06-23
 updated: 2026-06-23
-sources: ["specs/075-guided-setup/plan.md", "packages/sertor/src/sertor/installer/assets/rag/skills/guided-setup/SKILL.md", "packages/sertor/src/sertor/installer/assets/rag/agents/concierge.md"]
+sources: ["specs/075-guided-setup/plan.md", "packages/sertor/src/sertor_installer/assets/rag/skills/guided-setup/SKILL.md", "packages/sertor/src/sertor_installer/assets/rag/agents/concierge.md"]
 ---
 
 # E12-FEAT-002 guided-setup — guida agentica install→configure→verify
@@ -45,7 +45,7 @@ Entrambi gli asset (skill + agente) viaggiano via `sertor install rag` standard 
 
 #### Skill `guided-setup` (host-agnostica)
 
-File: `packages/sertor/src/sertor/installer/assets/rag/skills/guided-setup/SKILL.md`
+File: `packages/sertor/src/sertor_installer/assets/rag/skills/guided-setup/SKILL.md`
 
 **Istruzioni a 6 step (body puro, no hardcoded path/comandi Claude/assistente):**
 
@@ -82,7 +82,7 @@ File: `packages/sertor/src/sertor/installer/assets/rag/skills/guided-setup/SKILL
 
 #### Agente `concierge` (host-agnostico, un ramo per MVP)
 
-File: `packages/sertor/src/sertor/installer/assets/rag/agents/concierge.md`
+File: `packages/sertor/src/sertor_installer/assets/rag/agents/concierge.md`
 
 **Profilo:** **Helper specializzato di setup per Sertor** (disambiguazione dal main assistant). Riceve richieste user come «ho scaricato Sertor, come installo?» e decide il **target skill** (oggi: skill `guided-setup`, ramo unico).
 
@@ -164,13 +164,13 @@ Niente query, niente credenziali, niente path.
 ### File
 
 Nuovi:
-- `packages/sertor/src/sertor/installer/assets/rag/skills/guided-setup/SKILL.md` (istruzioni)
-- `packages/sertor/src/sertor/installer/assets/rag/agents/concierge.md` (agente + model pinning)
+- `packages/sertor/src/sertor_installer/assets/rag/skills/guided-setup/SKILL.md` (istruzioni)
+- `packages/sertor/src/sertor_installer/assets/rag/agents/concierge.md` (agente + model pinning)
 - `tests/unit/test_guided_setup_parity.py` (guardia parità `model: sonnet` leak)
 - `tests/unit/test_guided_setup_closure.py` (verifica closure skill+agent references)
 
 Modificati:
-- `packages/sertor/src/sertor/installer/install_rag.py` → deposita skill + agente, `render_custom_agent` preso da `AssistantProfile`
+- `packages/sertor/src/sertor_installer/install_rag.py` → deposita skill + agente, `render_custom_agent` preso da `AssistantProfile`
 - `packages/sertor/tests/unit/test_assets_copilot_parity.py` → esteso (nuovo agente + check model field)
 
 ## Backlink

@@ -3,7 +3,7 @@ title: Memoria episodica — Cattura delle conversazioni (il tier grezzo)
 type: concept
 tags: [memoria, episodico, conversazioni, hermes, tier-grezzo, archive, host-agnostico, feat-001, feat-008]
 created: 2026-06-14
-updated: 2026-06-22
+updated: 2026-07-23
 sources: ["requirements/memoria-conversazioni/epic.md", "requirements/memoria-conversazioni/cattura-copilot-cli/requirements.md", "src/sertor_core/domain/memory.py", "src/sertor_core/adapters/capture/copilot_cli.py", "https://github.com/nous-research/hermesresearch"]
 ---
 
@@ -94,7 +94,11 @@ Verificato in test: logica di archivio e contratto di cattura passano con ≥2 a
 - ✅ **FEAT-003 (Aggancio alla distillazione)**: implementata (PR #51, 2026-06-14). Comandi `sertor-rag memory show <key>` (transcript intero) / `memory list` (sessioni recenti) → la modalità «from conversation» di `distill` ([[diary-vs-graph]]) attinge all'archivio invece di un brief a mano: **loop cattura→distillazione chiuso**. Thin consumer additivo (riuso `MemoryArchive.get` + `list_recent`, nessuna nuova porta). **Vincolo FR-013:** sempre sessione mirata su invocazione esplicita, mai automatica/intero archivio.
 - ✅ **FEAT-004 (Ricerca episodica semantica)**: implementata (branch 072, 2026-06-22). Opt-in separato via `memory search --semantic`, store vettoriale dedicato, indicizzazione incrementale append-only (marker = collezione ChromaStore). Gap chiuso: aggiunto `contains_ids` per backfill Chroma. Privacy stratificato: `SERTOR_MEMORY_SEMANTIC=true` + provider locale. 998 test verdi, Constitution 12/12. Vedi [[feat-004-ricerca-semantica-memoria]].
 - ✅ **FEAT-008 (Cattura transcript Copilot CLI)**: implementata (branch 073, 2026-06-22). Secondo adapter `CopilotCliTranscriptAdapter` dietro porta `TranscriptCaptureAdapter` — legge `events.jsonl` da `~/.copilot/session-state/`, identico parser Copilot CLI. Associazione progetto via `cwd`/`gitRoot` in session.start. Privacy offline (niente cloud-sync). 1039 test verdi, Constitution 12/12. Gap dichiarato: manopole `SERTOR_MEMORY_ADAPTER=copilot-cli` + `SERTOR_MEMORY_COPILOT_SESSION_DIR` non ancora nei template `.env` installer (FEAT-009 P2). Vedi [[feat-008-cattura-copilot-cli]].
-- 📋 **FEAT-005/006/007/010**: estensioni (remember-this, retention, second-brain, MCP).
+- ✅ **FEAT-010 (Parità MCP per la lettura della memoria)**: consegnata (PR #208, 2026-07-20). 3 tool read-only nel server `sertor-rag`: `memory_search` (full-text FTS5), `memory_list`, `memory_show` — thin sopra gli stessi servizi core della CLI (`MemoryArchive.list_recent`/`get`, `EpisodicSearch.search`), gated da `SERTOR_MEMORY` (spenta → `{"status":"disabled"}` esplicito). Memoria interrogabile nativamente dall'agente, non solo da terminale. `sertor-core` invariato (solo `sertor_mcp`).
+- ✅ **FEAT-012 (Fix cattura-auto — gate privacy sull'ambiente sbagliato)**: consegnata (PR #210, 2026-07-21). L'hook `memory-capture` (SessionEnd) gata su `os.environ["SERTOR_MEMORY"]`, ma il valore vive in `.sertor/.env` → gate sempre `None` → cattura mai eseguita. `_hooklib.memory_enabled()` ora legge `./.env`→`.sertor/.env` (ancorato a `CLAUDE_PROJECT_DIR`, `.env` vince su `os.environ`), byte-copiato Claude/Copilot. `sertor-core` invariato (solo asset hook).
+- ✅ **FEAT-013 (Ricerca semantica della memoria via MCP)**: consegnata (PR #212, 2026-07-21). Il tool MCP `memory_search` accetta `semantic=true` (ricerca per significato), mirror di `sertor-rag memory search --semantic`, dietro il doppio gate `SERTOR_MEMORY` + `SERTOR_MEMORY_SEMANTIC`. Chiude il residuo «semantico via MCP» rinviato da FEAT-010. `sertor-core` invariato (solo `sertor_mcp`).
+- ✅ **FEAT-014 (Fix FTS5 punteggiatura in `memory search`)**: consegnata (2026-07-21). Il testo grezzo andava nel `MATCH` FTS5 senza quoting → un token tipo `0.1.1` causava `fts5: syntax error` mascherato a `(no results)` (anti-Fail-Loud). Funzione pura `_to_fts_match` (quoting per-token, AND preservato) a monte di `_build_sql`; colpiva CLI + tool MCP `memory_search`.
+- 📋 **FEAT-005/006/007**: estensioni (remember-this, retention, second-brain).
 
 ---
 

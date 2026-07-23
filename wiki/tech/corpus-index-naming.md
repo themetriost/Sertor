@@ -3,7 +3,7 @@ title: Corpus & index naming (RAG)
 type: tech
 tags: [architettura, corpus, indice, naming, prodotto, prototipo]
 created: 2026-06-04
-updated: 2026-06-10
+updated: 2026-07-23
 sources: ["CLAUDE.md", "prototype/shared/config.py", ".mcp.json", "src/sertor_core/config/settings.py", "src/sertor_core/composition.py"]
 ---
 
@@ -79,8 +79,9 @@ DA-7 dell'epica `sertor-cli`) → è già **parte del corpus primario** `sertor`
 ### File di configurazione
 - **`.env`** (gitignored) — il prodotto: `SERTOR_CORPUS=sertor`, `SERTOR_INDEX_DIR=.index-sertor`, più i
   selettori di backend `RAG_BACKEND` / `SERTOR_STORE_BACKEND`.
-- **`.mcp.json`** (root) — il server `sertor-rag` per il dogfood: imposta `SERTOR_CORPUS` sul corpus da
-  servire e il `PYTHONPATH` corrispondente.
+- **`.mcp.json`** (root) — il server `sertor-rag` per il dogfood: avvia il server MCP via
+  `uv run --project .sertor` (dal runtime installato `.sertor/`) e imposta il solo `env.SERTOR_CORPUS`
+  sul corpus da servire (nessun `PYTHONPATH`: il runtime `.sertor/` risolve il pacchetto).
 
 ### Legge e loaders
 - **`prototype/shared/config.py`:** selettore `SERTOR_CORPUS` (`fastapi` | `prototype`); percorsi indici funzione del corpus.
