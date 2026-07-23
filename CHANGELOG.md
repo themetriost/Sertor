@@ -13,6 +13,26 @@ and Sertor aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 _Changes land here before the next version bump._
 
+## [0.1.5] — 2026-07-23
+
+A **fix release** completing v0.1.4's wiki-guard: an `upgrade` now cleanly hands the `Stop` slot from the
+old nudge to the guard, instead of leaving both wired. **Recommended for any host that upgrades the wiki
+capability.** No breaking changes; lands on top of `0.1.4`.
+
+### Fixed
+
+- **`upgrade` no longer double-wires the `Stop` hook.** v0.1.4 shipped `wiki-guard` at `Stop` but, on an
+  already-installed host, `sertor upgrade wiki` added it WITHOUT removing the superseded
+  `wiki-pending-check` `Stop` entry (a different script stem) — so both fired at stop. The upgrade now
+  strips that superseded Stop entry before the additive merge (its `SessionEnd` wiring is kept), leaving an
+  upgrading host single-wired. Fresh installs were never affected. (E10-FEAT-041)
+
+### Known limitations
+
+- **`upgrade --dry-run` does not yet project settings/config merges** — it reports them as unchanged even
+  when the real upgrade would change them (e.g. re-wiring a hook). Trust the real `upgrade` output, not the
+  `--dry-run`, for settings changes until a follow-up lands. (E10-FEAT-042, surfaced by dogfooding v0.1.4.)
+
 ## [0.1.4] — 2026-07-23
 
 A **wiki-governance release** that completes the pair started in `0.1.3`: where the daily distill floor
