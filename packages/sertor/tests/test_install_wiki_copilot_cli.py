@@ -131,7 +131,8 @@ def test_wiki_stop_command_passes_assistant_copilot(tmp_path: Path):
     stop = _wiring(tmp_path)["hooks"]["Stop"][0]
     assert "--assistant copilot" in stop["command"]
     assert "--mode Stop" in stop["command"]
-    assert stop["timeoutSec"] == 10
+    assert "wiki-guard.py" in stop["command"]  # E10-FEAT-040: blocking Stop gate
+    assert stop["timeoutSec"] == 20
 
 
 def test_cli_session_start_is_prompt_not_command(tmp_path: Path):  # FR-006 / SC-003

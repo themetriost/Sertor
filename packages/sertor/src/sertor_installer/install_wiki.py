@@ -83,6 +83,9 @@ _WIKI_HOOK_SCRIPT_DST = ".github/hooks/wiki-pending-check.py"
 # Daily distill floor (E10-FEAT-039): PreToolUse merge-gate script, reused byte-for-byte on Copilot.
 _DISTILL_HOOK_SCRIPT_SRC = "claude/hooks/distill-floor.py"
 _DISTILL_HOOK_SCRIPT_DST = ".github/hooks/distill-floor.py"
+# Wiki freshness guard (E10-FEAT-040): Stop/agentStop gate script, reused byte-for-byte on Copilot.
+_WIKIGUARD_HOOK_SCRIPT_SRC = "claude/hooks/wiki-guard.py"
+_WIKIGUARD_HOOK_SCRIPT_DST = ".github/hooks/wiki-guard.py"
 # Shared hook helper (A-09): imported by the portable `.py` hook; must be deposited alongside it.
 _WIKI_HOOKLIB_SRC = "claude/hooks/_hooklib.py"
 _WIKI_HOOKLIB_DST = ".github/hooks/_hooklib.py"
@@ -140,12 +143,12 @@ def _copilot_wiki_hook_specs(assistant: AssistantId) -> list[HookEntrySpec]:
     """Logical hook entries for the Copilot CLI wiki wiring (FEAT-011, US3).
 
     SessionStart is a static `prompt` (Q1=b): the directive IS the prompt — no script to run.
-    Stop/SessionEnd reuse the shared `wiki-pending-check.ps1` with `-Assistant copilot` (native
-    agentStop/sessionEnd output).
+    Stop (agentStop) is the BLOCKING wiki-freshness gate (`wiki-guard`, E10-FEAT-040); SessionEnd
+    reuses `wiki-pending-check` for the non-blocking cross-session summary.
     """
     stop = HookEntrySpec(
         "Stop", "command",
-        f"{_PY} {_WIKI_HOOK_SCRIPT_DST} --mode Stop --assistant copilot", 10,
+        f"{_PY} {_WIKIGUARD_HOOK_SCRIPT_DST} --mode Stop --assistant copilot", 20,
         cwd=".",
     )
     session_end = HookEntrySpec(
@@ -302,6 +305,11 @@ def _build_copilot_wiki_plan(assistant: AssistantId) -> list[Artifact]:
     # Daily distill floor (E10-FEAT-039): the PreToolUse merge-gate script (byte-for-byte reuse).
     plan.append(
         Artifact(ArtifactKind.FILE, _DISTILL_HOOK_SCRIPT_SRC, _DISTILL_HOOK_SCRIPT_DST,
+                 WriteStrategy.CREATE_IF_ABSENT)
+    )
+    # Wiki freshness guard (E10-FEAT-040): the Stop/agentStop gate script (byte-for-byte reuse).
+    plan.append(
+        Artifact(ArtifactKind.FILE, _WIKIGUARD_HOOK_SCRIPT_SRC, _WIKIGUARD_HOOK_SCRIPT_DST,
                  WriteStrategy.CREATE_IF_ABSENT)
     )
     # HOOK wiring: GENERATED natively (sentinel source → apply builds it via render_copilot_hooks).

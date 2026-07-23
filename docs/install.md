@@ -802,13 +802,15 @@ everything is `skipped`), `1` domain error (fail-fast, the failed step is named)
 - **Claude assets (B):** `.claude/skills/wiki-author/`, `.claude/skills/requirements/`,
   `.claude/commands/wiki.md`, `.claude/commands/speckit.*.md`, `.claude/agents/wiki-curator.md`,
   `.claude/agents/requirements-analyst.md`, `.claude/agents/configuration-manager.md`,
-  `.claude/hooks/wiki-pending-check.py`, `.claude/hooks/sertor-rag-usage-check.py`,
+  `.claude/hooks/wiki-pending-check.py`, `.claude/hooks/wiki-guard.py`,
+  `.claude/hooks/distill-floor.py`, `.claude/hooks/sertor-rag-usage-check.py`,
   `.claude/hooks/_hooklib.py`
 - **Copilot CLI assets (B):** `.github/agents/wiki.agent.md`, `.github/agents/wiki-author.agent.md`,
   `.github/agents/wiki-curator.agent.md`, `.github/agents/requirements.agent.md`,
   `.github/agents/requirements-analyst.agent.md`, `.github/agents/configuration-manager.agent.md`,
   `.github/prompts/speckit.*.prompt.md` (these SpecKit prompts come from the upstream installer),
-  `.github/hooks/wiki-pending-check.py`, `.github/hooks/sertor-rag-usage-check.py`,
+  `.github/hooks/wiki-pending-check.py`, `.github/hooks/wiki-guard.py`,
+  `.github/hooks/distill-floor.py`, `.github/hooks/sertor-rag-usage-check.py`,
   `.github/hooks/_hooklib.py`,
   `.github/hooks/sertor-hooks.json`. **Legacy VS Code residue** (if you ever installed the removed
   `copilot` target): `.vscode/mcp.json` and `.github/prompts/{wiki,wiki-author,requirements}.prompt.md`
@@ -830,12 +832,12 @@ reference. Review before running — it is **destructive**.
 Remove-Item -Recurse -Force .sertor -ErrorAction SilentlyContinue
 # 2. B — standalone assets:
 Remove-Item -Recurse -Force wiki, .specify -ErrorAction SilentlyContinue
-Remove-Item -Force .claude\commands\wiki.md, .claude\agents\wiki-curator.md, .claude\agents\requirements-analyst.md, .claude\agents\configuration-manager.md, .claude\hooks\wiki-pending-check.py, .claude\hooks\sertor-rag-usage-check.py, .claude\hooks\_hooklib.py -ErrorAction SilentlyContinue
+Remove-Item -Force .claude\commands\wiki.md, .claude\agents\wiki-curator.md, .claude\agents\requirements-analyst.md, .claude\agents\configuration-manager.md, .claude\hooks\wiki-pending-check.py, .claude\hooks\wiki-guard.py, .claude\hooks\distill-floor.py, .claude\hooks\sertor-rag-usage-check.py, .claude\hooks\_hooklib.py -ErrorAction SilentlyContinue
 Remove-Item -Recurse -Force .claude\skills\wiki-author, .claude\skills\requirements -ErrorAction SilentlyContinue
 Get-ChildItem .claude\commands\speckit.*.md -ErrorAction SilentlyContinue | Remove-Item -Force
 # Copilot CLI layout (if you installed for copilot-cli) — delete ONLY Sertor's files, not the
 # whole .github/{agents,hooks} dirs (they may hold your own content):
-Remove-Item -Force .github\agents\wiki.agent.md, .github\agents\wiki-author.agent.md, .github\agents\wiki-curator.agent.md, .github\agents\requirements.agent.md, .github\agents\requirements-analyst.agent.md, .github\agents\configuration-manager.agent.md, .github\hooks\wiki-pending-check.py, .github\hooks\sertor-rag-usage-check.py, .github\hooks\_hooklib.py, .github\hooks\sertor-hooks.json -ErrorAction SilentlyContinue
+Remove-Item -Force .github\agents\wiki.agent.md, .github\agents\wiki-author.agent.md, .github\agents\wiki-curator.agent.md, .github\agents\requirements.agent.md, .github\agents\requirements-analyst.agent.md, .github\agents\configuration-manager.agent.md, .github\hooks\wiki-pending-check.py, .github\hooks\wiki-guard.py, .github\hooks\distill-floor.py, .github\hooks\sertor-rag-usage-check.py, .github\hooks\_hooklib.py, .github\hooks\sertor-hooks.json -ErrorAction SilentlyContinue
 Get-ChildItem .github\prompts\speckit.*.prompt.md -ErrorAction SilentlyContinue | Remove-Item -Force
 # Legacy VS Code residue (if you ever used the removed `copilot` target):
 Remove-Item -Force .github\prompts\wiki.prompt.md, .github\prompts\wiki-author.prompt.md, .github\prompts\requirements.prompt.md -ErrorAction SilentlyContinue

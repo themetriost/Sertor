@@ -30,9 +30,9 @@
         "hooks": [
           {
             "type": "command",
-            "timeout": 10,
-            "statusMessage": "Verifico lo stato del wiki",
-            "command": "uv run --no-project python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/wiki-pending-check.py\" --mode Stop --assistant claude"
+            "timeout": 20,
+            "statusMessage": "Gate wiki: registra prima di chiudere",
+            "command": "uv run --no-project python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/wiki-guard.py\" --mode Stop --assistant claude"
           }
         ]
       }
