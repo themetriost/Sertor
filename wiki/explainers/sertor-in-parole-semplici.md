@@ -44,6 +44,7 @@ consulente che tira a indovinare e uno che ti mostra la pagina del manuale.
 | **Cercare nel progetto** | Il bibliotecario che trova le pagine giuste | [[ricerca-codice-e-documenti]] |
 | **I modi di cercare** | Quattro tecniche, dalla più semplice alla più furba | [[i-modi-di-cercare]] |
 | **Il quaderno che cresce** | Una memoria scritta che si arricchisce a ogni sessione | [[wiki-che-cresce]] |
+| **La memoria della conversazione** | Un registratore delle sessioni: ritrovi cosa avevate deciso, anche settimane dopo | [[memoria-negli-agenti]] |
 | **Il collegamento con l'assistente** | La presa a cui l'AI si attacca per usare Sertor | [[collegamento-con-l-assistente]] |
 | **Metterlo su un progetto** | Installazione con un comando, senza disordine | [[installare-su-un-progetto]] |
 | **Robusto ed economico** | Non si pianta e non spreca soldi | [[robusto-ed-economico]] |

@@ -17,7 +17,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 ## ⚡ Executive summary (stato al 2026-07-23)
 
 ### 🔄 In progress
-Niente attivo. Ultima consegna: **E10-FEAT-040 `wiki-guard`** (gate Stop bloccante per record + lint semantico — gemello lato-Stop di FEAT-039), preceduta da FEAT-030 (costituzione v1.5.0 + Principio XIII), FEAT-029 (hook wiki host-agnostico) e dalla release **v0.1.3** «daily distill floor» (FEAT-039). Flusso **fermo alla scelta della prossima direzione**.
+Niente attivo. Ultima release: **v0.1.5** (fix `upgrade` double-wire Stop, E10-FEAT-041), preceduta da **v0.1.4** «wiki-guard» (E10-FEAT-040 — gate Stop bloccante per record + lint semantico, gemello lato-Stop del distill floor) e **v0.1.3** «daily distill floor» (FEAT-039). Governance: costituzione **v1.5.0** (EN, Principio XIII), hook wiki host-agnostici (FEAT-029). Flusso **fermo alla scelta della prossima direzione**.
 
 ### ✅ Consegnato (digest per epica)
 - **core (E1):** retrieval ibrido+baseline · code-graph · embedder locale (GloVe default) · refresh incrementale — *completa*
@@ -25,7 +25,7 @@ Niente attivo. Ultima consegna: **E10-FEAT-040 `wiki-guard`** (gate Stop bloccan
 - **memoria (E4):** cattura→archivio→full-text→semantico · lettura+semantico via MCP — *quasi completa (3 Could)*
 - **osservabilità (E3):** MVP F1–F4 · export OTel · visibilità RAG nella TUI
 - **qualità retrieval (E5):** `eval`/`graph-eval` · fusione code+doc misurata (`search_combined` strutturato)
-- **debito-tecnico (E10):** hook portabili/ancorati · fail-loud breadcrumb · `distill-floor` merge-gate (v0.1.3) · **`wiki-guard` Stop-gate (2026-07-23)** — *residuo: FEAT-041 (migrazione upgrade)*
+- **debito-tecnico (E10):** hook portabili/ancorati · fail-loud breadcrumb · `distill-floor` merge-gate (v0.1.3) · `wiki-guard` Stop-gate (v0.1.4) · fix upgrade double-wire Stop (FEAT-041, v0.1.5) — *residuo: FEAT-042 (dry-run non proietta i settings-merge)*
 - **usabilità (E12):** MVP — `doctor` · guided-setup/concierge · install host-aware
 - **doc utente (E13):** Fase 1 completa (getting-started · tutorial · troubleshooting · reference · CHANGELOG)
 - **speclift (E14):** self-host SpecLift + SpecAudit (vendorati) — *distribuzione ospiti aperta*

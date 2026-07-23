@@ -1,3 +1,12 @@
+---
+title: "Handoff Nunzio — verifica del modello wiki di Sertor (OpenWiki e wiki-compiler)"
+type: source
+tags: [handoff, nunzio, modello-wiki, openwiki, wiki-compiler, memoria-conversazioni, processed]
+created: 2026-07-09
+updated: 2026-07-09
+sources: ["wiki/sources/usersfeedback/processed/evoluzione-modello-wiki-lezioni-da-openwiki-e-wiki-compiler.md", "wiki/sources/usersfeedback/processed/memory-archive-silenzioso-path-con-spazi.md"]
+---
+
 # Handoff: verifica del modello wiki di Sertor alla luce di OpenWiki e wiki-compiler (dal vault Nunzio Summaries)
 
 Handoff dall'agente del vault **Nunzio Summaries** (2026-07-09). Nasce da un dogfooding reale: in una sessione abbiamo costruito da zero un wiki di 33 pagine da un corpus di 34 documenti, usando `sertor-wiki-tools` e il playbook. Nello stesso giorno abbiamo analizzato **sul codice** due sistemi concorrenti. Ne è uscito un rilievo che vi riguarda direttamente e due bug riproducibili.

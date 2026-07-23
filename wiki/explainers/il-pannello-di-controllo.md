@@ -3,15 +3,15 @@ title: Il pannello di controllo (in parole semplici)
 type: explainer
 tags: [non-tecnici, osservabilita, pannello, costo, cache, spiegazione]
 created: 2026-06-14
-updated: 2026-06-14 (MVP F1→F4 ✅ su master — `sertor-rag observe`)
+updated: 2026-07-23
 sources: ["requirements/osservabilita/epic.md"]
 ---
 
 # Il pannello di controllo
 
-> **Stato: fatto (MVP).** Il pannello c'è ed è usabile: `sertor-rag observe`. Restano migliorie
-> opzionali (il costo in **euro**, l'invio dei dati a strumenti esterni). La pagina lo racconta in
-> parole semplici.
+> **Stato: fatto (MVP + export).** Il pannello c'è ed è usabile (`sertor-rag observe`), e l'**invio dei
+> dati a strumenti esterni** (export OpenTelemetry) è **fatto** (FEAT-005). Restano migliorie opzionali
+> (la **stima anticipata dei costi** in euro, le metriche aggregate). La pagina lo racconta in parole semplici.
 
 ## Il problema
 

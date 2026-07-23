@@ -72,14 +72,14 @@ E lo fa **senza rifare ogni volta tutto il lavoro**: ogni conversazione viene "t
 
 ## Quello che succede dietro le quinte
 
-1. **Cattura automatica (FEAT-001)** — quando chiudi una conversazione con Claude Code, un **hook automatico** cattura il transcript SENZA che tu debba far nulla. È silenzioso e non blocca il flusso (se qualcosa fallisce, continua comunque).
+1. **Cattura automatica (FEAT-001)** — quando chiudi una conversazione con l'assistente (Claude Code **o** GitHub Copilot CLI, FEAT-008), un **hook automatico** cattura il transcript SENZA che tu debba far nulla. È silenzioso e non blocca il flusso (se qualcosa fallisce, continua comunque).
 2. **Ripulitura** — prima di mettere la conversazione nell'archivio, il sistema scandisce il testo e sostituisce i segreti con marcatori (`sk-abc → [SEGRETO: openai_key]`). Non resta nulla in chiaro.
 3. **Archiviazione** — la conversazione ripulita finisce in una tabella SQL locale. Non va su cloud, resta sul tuo computer, esclusa da git.
 4. **Ricerca da terminale (FEAT-002)** — quando fai una domanda come "trovami una conversazione su X", usi il comando da terminale:
    ```bash
    sertor-rag memory search "X"
    ```
-   Il sistema esegue una ricerca **testuale locale** (senza rete, senza IA) nell'archivio e restituisce i turni che corrispondono, con la sessione e il momento.
+   Il sistema esegue una ricerca **testuale locale** (senza rete, senza IA) nell'archivio e restituisce i turni che corrispondono, con la sessione e il momento. *(Dal 2026-07-20 l'assistente può anche interrogare l'archivio **direttamente**, senza terminale, tramite i suoi strumenti nativi — i tool MCP `memory_search`/`memory_list`/`memory_show`, FEAT-010.)*
 
 ## Privacy
 
@@ -123,7 +123,9 @@ E lo fa **senza rifare ogni volta tutto il lavoro**: ogni conversazione viene "t
 
 - **Marcare i turni importanti** (FEAT-005) — dire "ricorda questo turno" per segnalarlo come importante.
 - **Retention** (FEAT-006) — governance dell'archivio: decidere quando i turni vanno in scadenza.
-- **Multi-assistente** (FEAT-008) — il registratore funzionerà anche con altri assistenti, non solo Claude Code.
+
+*(Il **multi-assistente** non è più «futuro»: dal 2026-06-22 il registratore cattura anche su **GitHub
+Copilot CLI**, non solo Claude Code — FEAT-008 consegnata.)*
 
 ---
 
