@@ -70,10 +70,13 @@ il runtime dell'agente semplicemente non lo usa.
 | **F5** installer preservante `plan-template.md` attraverso `specify init --force` | ✅ (#149) |
 | **F8** re-lock post-merge del runtime a HEAD (script dogfood-only + gitignore lock + rituale/gate) | ✅ (#152) |
 | **F2** asset-fidelity RAG (sync esteso + guardie) — *interim, via sync non install* | ✅ (#146) |
-| **F4 / asset-install** gli asset prodotti dai **veri** `sertor install`/`sertor-flow install`, non dal sync | 🔜 (ultima crepa reale) |
+| **F4 / asset-install** gli asset prodotti dai **veri** `sertor install`/`sertor-flow install`, non dal sync | ✅ (branch 089, 2026-07-06 — E15-FEAT-001 scope B) |
 
-**La crepa che resta:** F1 ha chiuso il *runtime* (process-fidelity del motore); gli **asset** viaggiano
-ancora via sync (asset-fidelity, non process-fidelity). F4 la chiude facendoli produrre dagli installer reali.
+**Entrambi i livelli chiusi (2026-07-06):** F1 ha chiuso il *runtime* (process-fidelity del motore);
+l'**asset-install** (F4, E15-FEAT-001 scope B) fa produrre gli asset dai **veri** installer eseguiti sul
+dogfood → **process-fidelity raggiunta** (`.env`/costituzione/`.mcp.json`/`wiki.config` preservati, core
+invariato, idempotenza provata). Il sync resta come **guardia anti-drift**, non più come *fonte* degli asset.
+Vedi [[asset-install-installer-dry-run-2026-07-04]].
 
 ## Vedi anche
 - La pratica di base che questo modello rende fedele: [[dogfooding]].

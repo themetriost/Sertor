@@ -3,7 +3,7 @@ title: La memoria della conversazione (in parole semplici)
 type: explainer
 tags: [non-tecnici, memoria, conversazioni, archivio, privacy, spiegazione]
 created: 2026-06-14
-updated: 2026-06-22
+updated: 2026-07-23
 sources: ["wiki/concepts/memoria-conversazioni.md", "wiki/tech/transcript-capture-adapter-e-storage.md", "requirements/memoria-conversazioni/epic.md", "requirements/memoria-conversazioni/ricerca-semantica/requirements.md"]
 ---
 
@@ -72,10 +72,10 @@ E lo fa **senza rifare ogni volta tutto il lavoro**: ogni conversazione viene "t
 
 ## Quello che succede dietro le quinte
 
-1. **Cattura automatica (FEAT-035)** — quando chiudi una conversazione con Claude Code, un **hook automatico** cattura il transcript SENZA che tu debba far nulla. È silenzioso e non blocca il flusso (se qualcosa fallisce, continua comunque).
+1. **Cattura automatica (FEAT-001)** — quando chiudi una conversazione con Claude Code, un **hook automatico** cattura il transcript SENZA che tu debba far nulla. È silenzioso e non blocca il flusso (se qualcosa fallisce, continua comunque).
 2. **Ripulitura** — prima di mettere la conversazione nell'archivio, il sistema scandisce il testo e sostituisce i segreti con marcatori (`sk-abc → [SEGRETO: openai_key]`). Non resta nulla in chiaro.
 3. **Archiviazione** — la conversazione ripulita finisce in una tabella SQL locale. Non va su cloud, resta sul tuo computer, esclusa da git.
-4. **Ricerca da terminale (FEAT-035)** — quando fai una domanda come "trovami una conversazione su X", usi il comando da terminale:
+4. **Ricerca da terminale (FEAT-002)** — quando fai una domanda come "trovami una conversazione su X", usi il comando da terminale:
    ```bash
    sertor-rag memory search "X"
    ```

@@ -1,10 +1,11 @@
 """MCP server `sertor-rag` built on `sertor-core`.
 
-Exposes the core retrieval as **7 MCP tools**: the 3 search tools (code / doc / combined —
-using the engine selected by `SERTOR_ENGINE`, default hybrid BM25+RRF, FEAT-004) and the 4
+Exposes the core retrieval as **10 MCP tools**: the 3 search tools (code / doc / combined —
+using the engine selected by `SERTOR_ENGINE`, default hybrid BM25+RRF, FEAT-004), the 4
 structural navigation tools over the code-graph (`find_symbol`/`who_calls`/`related_docs`/
-`get_context`, FEAT-005). Centralised configuration (`.env`: embeddings provider, store backend,
-corpus, engine).
+`get_context`, FEAT-005), and the 3 read-only conversation-memory tools (`memory_list`/
+`memory_show`/`memory_search`, gated by `SERTOR_MEMORY`, E4-FEAT-010/013). Centralised
+configuration (`.env`: embeddings provider, store backend, corpus, engine).
 
 **Thin** consumer (Principio I): tools delegate to the `sertor_core` facade and format the
 results; no retrieval logic is reimplemented. Retrieval observability is already emitted by the

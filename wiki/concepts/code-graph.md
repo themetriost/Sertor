@@ -50,13 +50,13 @@ metodi di query → extra assente = `ConfigError` azionabile). **Due semantiche 
 grafo non costruito → `GraphNotFoundError` esplicito; simbolo assente → **vuoto esplicito**
 (legittimo) — mai silenzi.
 
-## Le quattro operazioni (e i 7 tool del server MCP)
+## Le quattro operazioni (e i 10 tool del server MCP)
 
 `find_symbol` (definizioni con path/riga/kind/qualname) · `who_calls` (chiamanti diretti) ·
 `related_docs` (doc che menzionano il simbolo) · `get_context` (bundle multi-hop: definizioni +
 chiamanti + chiamate + basi + doc, sezioni limitate dai knob). Risposte **citabili**
 (`ref = path#qualname`). I 4 tool storici sono **tornati nel [[mcp-server]]** (promessa
-dell'epica mantenuta): superficie a 7 tool, con warm-up eager esteso al grafo (lezione PR #23).
+dell'epica mantenuta): superficie a 10 tool (3 ricerca + 4 grafo + 3 memoria), con warm-up eager esteso al grafo (lezione PR #23).
 
 ## Qualità misurata
 

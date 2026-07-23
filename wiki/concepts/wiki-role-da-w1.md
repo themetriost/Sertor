@@ -3,7 +3,7 @@ title: Wiki role (DA-W1) — corpus × surface
 type: concept
 tags: [wiki, rag, da-w1, prodotto, requisiti]
 created: 2026-05-31
-updated: 2026-06-09
+updated: 2026-07-23
 sources: [requirements/sertor-core/epic.md, wiki.config.toml, .claude/skills/wiki-author/ops/rag-sync.md]
 ---
 
@@ -122,7 +122,8 @@ o manutenzione automatica.
 L'hook `SessionStart` che prepara il contesto è implementato dall'**HOST** (es. Claude Code),
 **non** da Sertor nel MVP.
 
-Sertor espone il wiki ben strutturato (`wiki/index.md`, `wiki/log.md`, pagine interlinkate).
+Sertor espone il wiki ben strutturato (`wiki/index.md`, la directory `wiki/log/` con rotazione
+per-giorno — FEAT-008, pagine interlinkate).
 L'host decide **cosa/quando iniettare** per preparare le sessioni.
 
 Non preclude un futuro *"context payload"* generato direttamente da Sertor.

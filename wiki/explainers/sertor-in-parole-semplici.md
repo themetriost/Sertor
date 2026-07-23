@@ -3,7 +3,7 @@ title: Sertor in parole semplici (panoramica per non tecnici)
 type: explainer
 tags: [non-tecnici, panoramica, prodotto, spiegazione]
 created: 2026-06-14
-updated: 2026-06-14
+updated: 2026-07-23
 sources: ["wiki/syntheses/roadmap.md", "wiki/concepts/retrieval-core.md", "README.md"]
 ---
 
@@ -47,7 +47,7 @@ consulente che tira a indovinare e uno che ti mostra la pagina del manuale.
 | **Il collegamento con l'assistente** | La presa a cui l'AI si attacca per usare Sertor | [[collegamento-con-l-assistente]] |
 | **Metterlo su un progetto** | Installazione con un comando, senza disordine | [[installare-su-un-progetto]] |
 | **Robusto ed economico** | Non si pianta e non spreca soldi | [[robusto-ed-economico]] |
-| **Il pannello di controllo** 🚧 | Vederci dentro: costo, risparmio, salute (in sviluppo) | [[il-pannello-di-controllo]] |
+| **Il pannello di controllo** ✅ | Vederci dentro: costo, risparmio, salute (MVP `sertor-rag observe`) | [[il-pannello-di-controllo]] |
 
 ## Due parole sul "come ci fidiamo"
 

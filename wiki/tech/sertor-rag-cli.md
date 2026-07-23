@@ -3,8 +3,8 @@ title: sertor-rag — la CLI di esecuzione RAG
 type: tech
 tags: [cli, retrieval, thin-consumer, dogfooding, produzione]
 created: 2026-06-11
-updated: 2026-06-11
-sources: ["src/sertor_core/cli/", "specs/011-cli-esecuzione-rag/", "requirements/sertor-cli/esecuzione/requirements.md"]
+updated: 2026-07-23
+sources: ["src/sertor_core/cli/__main__.py", "specs/011-cli-esecuzione-rag/", "requirements/sertor-cli/esecuzione/requirements.md"]
 ---
 
 # `sertor-rag` — la CLI di esecuzione RAG
@@ -23,17 +23,65 @@ console-script del core:
 
 | Comando | Ruolo |
 |---|---|
-| `sertor-rag` | chiamate RAG: `index` / `search` (questa pagina) |
+| `sertor-rag` | chiamate RAG: `index` / `search` / `doctor` / `observe` / `memory` / `eval` / `graph-eval` (questa pagina) |
 | `sertor-wiki-tools` | nucleo wiki deterministico ([[wiki-tools]]) |
 | `sertor` *(futuro)* | installazione/setup sull'ospite |
 
 ## Superficie
 
-- **`sertor-rag index <path> [--corpus X] [--json]`** — indice vettoriale del repository via
-  `build_indexer()` (full rebuild atomico); report `documents/chunks/embedding_dim/elapsed_ms`.
+I comandi del `sertor-rag` (subparser in `src/sertor_core/cli/__main__.py`):
+
+### Retrieval — `index` / `search`
+
+- **`sertor-rag index <path> [--full] [--corpus X] [--json]`** — indice vettoriale del repository via
+  `build_indexer()`; **incrementale di default** (solo i file cambiati sono ri-processati),
+  `--full` forza un **rebuild atomico** da zero; report `documents/chunks/embedding_dim/elapsed_ms`.
 - **`sertor-rag search <query> [-k N] [--type code|doc|both] [--json] [--full] [--corpus X]`** —
   top-k con path, tipo, chunk id, score e **anteprima troncata** (`Settings.preview_chars`,
   `SERTOR_PREVIEW_CHARS`, default 240); `--full` per il testo integrale.
+
+### `doctor` — health check deterministico (FEAT-074)
+
+- **`sertor-rag doctor [--online] [--area config|provider|index|mcp|all] [--json]`** — verifica di
+  salute **sola lettura, senza LLM** delle quattro aree (config/env, provider di embedding, indice,
+  registrazione MCP): per ciascuna `pass`/`warn`/`fail` con causa + rimedio, **exit non-zero su un
+  problema critico**. `--online` opta per il probe di raggiungibilità del provider (rete); senza, solo
+  statico. `--json` emette il contratto stabile `doctor.report/1`. È il comando «ha funzionato?»
+  citato in `CLAUDE.md`.
+
+### `observe` — pannello di osservabilità (TUI)
+
+- **`sertor-rag observe [--corpus X]`** — apre il **pannello live** (ultimo index, cache, costo,
+  eventi recenti), auto-refresh. Richiede l'extra `tui` e `SERTOR_OBSERVABILITY=true`.
+
+### `memory` — memoria episodica delle conversazioni (E4, gate `SERTOR_MEMORY`)
+
+Gruppo di sotto-comandi, **opt-in** (silente finché `SERTOR_MEMORY=true`), locale, sola lettura tranne
+`archive`/`index-semantic`:
+
+- **`memory archive`** — archivia ogni sessione scopribile (idempotente); report archived/skipped/errors.
+- **`memory search <query> [--semantic] [--since/--until] [--order relevance|recency] [-k N]`** —
+  ricerca full-text FTS5 (default, no rete/no LLM); `--semantic` cerca per **significato** (FEAT-013,
+  richiede `SERTOR_MEMORY_SEMANTIC=true`, **mai** fallback silenzioso al full-text).
+- **`memory index-semantic`** — backfill incrementale dell'indice semantico sulle sessioni archiviate.
+- **`memory show <session_key>`** — trascrizione integrale di una sessione (not-found → exit 1).
+- **`memory list [-k N]`** — sessioni recenti (recency-first). `memory`/`doctor` sono i due gruppi
+  user-facing citati in `CLAUDE.md`.
+
+### `eval` / `graph-eval` — valutazione della qualità (ground-truth)
+
+- **`sertor-rag eval run [--compare a,b] [--fused] [--by-kind] [--record-baseline] [-k 1,3,5,10]`** —
+  misura hit-rate@k/MRR contro la suite versionata `eval/suite.toml` e **gate di non-regressione** su
+  `eval/baseline.toml` (exit 1 sulla regressione oltre tolleranza). Sotto-comandi di authoring:
+  `add-case` / `amend-case` (persistono un caso *query → path attesi*, validato contro l'indice) e
+  `validate-path` (primitiva per le skill di authoring, exit 0 sempre).
+- **`sertor-rag graph-eval run [--exact] [--record-baseline]`** — valutazione **set-based** della
+  navigazione del [[code-graph]] (precision/recall/F1 di `who_calls`/`defines`) con baseline distinta
+  `eval/graph_baseline.toml`. Authoring: `add-case` / `amend-case` / `validate-ref`. Il run è un
+  **vehicle deterministico** (Principio XI): mai un LLM.
+
+### Osservabilità ed exit code (comuni)
+
 - **Osservabilità**: `-v` (eventi INFO strutturati), `--log-json` (un record JSON per evento),
   `--log-config` (dictConfig JSON/YAML per appender esterni; YAML solo se `pyyaml` presente).
 - **Exit code**: 0 successo · 1 errore di dominio (`SertorError` → messaggio leggibile su stderr) ·

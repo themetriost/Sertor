@@ -3,7 +3,7 @@ title: sertor-install-kit — il toolkit di installazione condiviso
 type: tech
 tags: [installer, toolkit, stdlib, host-agnostico, deterministic, packages]
 created: 2026-06-15
-updated: 2026-06-15
+updated: 2026-07-23
 sources: ["packages/sertor-install-kit/", "specs/037-governance-sertor-flow/research.md", "specs/037-governance-sertor-flow/plan.md"]
 ---
 
@@ -51,12 +51,19 @@ necessaria:
 ### Core components
 
 **`artifacts.py`** — Tassonomia degli artefatti:
-- `ArtifactKind` enum: `FILE`, `MERGE_JSON`, `MERGE_ENV`, `MERGE_MCP`, `APPEND_GITIGNORE`,
-  `MARKER_BLOCK`, `MCP_REGISTER` (specifico di `sertor install rag`).
-- `WriteStrategy`: `CREATE_IF_ABSENT`, `MERGE`, `SKIP_IF_EXISTS`, `REPLACE`, `APPEND`.
-- `Artifact`: namedtuple `(kind, path, source_asset, target_path, strategy)` con validazione
-  path-traversal.
-- `ArtifactOutcome` enum: `created`/`skipped`/`merged`/`block`/`error`.
+- `ArtifactKind` enum: `FILE`, `SETTINGS_MERGE`, `MARKER_BLOCK`, `STRUCTURE`, `CONFIG`,
+  `DEPENDENCIES`, `ENV_MERGE`, `MCP_MERGE`, `GITIGNORE_APPEND` (feature 015, runtime RAG in
+  `.sertor/`) e `MCP_REGISTER` (feature 016, registra il server nel client — nessun file nel repo).
+- `WriteStrategy` enum: `CREATE_IF_ABSENT`, `MERGE_DEDUP`, `APPEND_BLOCK`, `INIT_STRUCTURE`,
+  `GENERATE_CONFIG`, `BOOTSTRAP_DEPS`, `MERGE_ENV`, `MERGE_JSON`, `APPEND_LINES`, `REGISTER_CLI`.
+- `LifecycleOp` (StrEnum, feature 048): `INSTALL`, `UPGRADE`, `UNINSTALL` — verbo del ciclo di vita,
+  **ortogonale** a `ArtifactKind` (lo stesso piano è percorso con verbi diversi; `INSTALL` è il default).
+- `Artifact`: dataclass `frozen` `(kind, source, target_rel, strategy)` con validazione
+  path-traversal in `__post_init__` (`target_rel` sempre relativo, mai `..`).
+- `Outcome` enum: `CREATED`/`SKIPPED`/`MERGED`/`BLOCK`/`ERROR` + `UPDATED`/`REMOVED` (feature 048,
+  upgrade/uninstall) + `PRESENT_DIVERGENT` (E2-FEAT-018: path posseduto presente ma con contenuto
+  divergente, lasciato intatto — distinto da `SKIPPED` "identico"). `ArtifactOutcome` è la dataclass
+  che accoppia `(target_rel, outcome, detail)`.
 
 **`resources.py`** — Accesso a package-data:
 - `iter_asset_dir(anchor_module, asset_root)`: scansiona ricorsivamente gli asset dentro un
@@ -105,23 +112,24 @@ necessaria:
 # Esperienza d'uso (da sertor o sertor-flow)
 
 from sertor_install_kit import (
-    Artifact, ArtifactKind, WriteStrategy,
+    Artifact, ArtifactKind, WriteStrategy, ArtifactOutcome, Outcome,
     execute_plan, log_event, InstallerError
 )
 
 # Costruire il piano (il consumatore lo fa, il kit non conosce i dettagli)
+# `target_rel` è SEMPRE relativo a --target (mai assoluto, mai `..`).
 plan = [
     Artifact(
         kind=ArtifactKind.FILE,
-        source_asset=".claude/skills/my-skill/skill.md",
-        target_path=target_root / ".claude" / "skills" / "my-skill" / "skill.md",
-        strategy=WriteStrategy.CREATE_IF_ABSENT
+        source=".claude/skills/my-skill/skill.md",
+        target_rel=".claude/skills/my-skill/skill.md",
+        strategy=WriteStrategy.CREATE_IF_ABSENT,
     ),
     Artifact(
-        kind=ArtifactKind.MERGE_JSON,
-        source_asset=".specify/init-options.json",
-        target_path=target_root / ".specify" / "init-options.json",
-        strategy=WriteStrategy.MERGE
+        kind=ArtifactKind.SETTINGS_MERGE,
+        source=".claude/settings.json",
+        target_rel=".claude/settings.json",
+        strategy=WriteStrategy.MERGE_DEDUP,
     ),
     # …
 ]
@@ -132,7 +140,7 @@ def apply_artifact(artifact: Artifact) -> ArtifactOutcome:
     # (legge da resources, chiama merge_*, write_marker_block, …)
     try:
         # apply logic
-        return ArtifactOutcome.created
+        return ArtifactOutcome(target_rel=artifact.target_rel, outcome=Outcome.CREATED)
     except InstallerError as e:
         log_event(logging.ERROR, operation="install", error=str(e))
         raise

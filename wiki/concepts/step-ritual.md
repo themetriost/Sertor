@@ -3,8 +3,8 @@ title: Step ritual & wiki anti-drift
 type: concept
 tags: [wiki, automazione, hook, governance, processo, delega, fonte-unica, rituale-di-step]
 created: 2026-06-04
-updated: 2026-06-19
-sources: ["CLAUDE.md", ".claude/skills/wiki-author/wiki-playbook.md", ".claude/agents/wiki-curator.md", ".claude/agents/configuration-manager.md", ".claude/settings.json", ".claude/hooks/wiki-pending-check.ps1"]
+updated: 2026-07-23
+sources: ["CLAUDE.md", ".claude/skills/wiki-author/wiki-playbook.md", ".claude/agents/wiki-curator.md", ".claude/agents/configuration-manager.md", ".claude/settings.json", ".claude/hooks/wiki-pending-check.py", "src/sertor_core/wiki_tools/ritual_check.py"]
 ---
 
 # Step ritual & wiki anti-drift
@@ -27,7 +27,7 @@ Ogni controllo di coerenza ha **due nature**, e separarle è la chiave dell'inte
 Il vincolo di piattaforma che vincola tutto il resto: un hook è una *shell command fuori dal loop del
 modello*. Esegue script (natura 1) ma **non può invocare una skill/subagent in-loop** (natura 2); al
 massimo inietta un promemoria, o lancia un processo `claude -p` headless separato (con costi e latenza).
-Per questo l'hook esistente `wiki-pending-check.py`, basato su `mtime` e git-blind, non può cogliere la
+Per questo l'hook esistente `wiki-pending-check.py` (migrato da `.ps1` a `.py`, A-09), basato su `mtime` e git-blind, non può cogliere la
 deriva semantica: non ragiona.
 
 ## Standing behavior batte unattended
@@ -96,9 +96,34 @@ Codificato in `CLAUDE.md`. A fine di ogni step significativo, di propria iniziat
    strumento sia usabile. Esecuzione meccanica, ma l'esito («fresco?») è giudizio → flusso principale. Calibra
    al valore: gli step che non toccano il corpus possono saltarlo; **obbligatorio dopo un re-index / merge su
    `master`**.
-9. **\<altre azioni\>** — lista estendibile: ciò che l'utente chiede di rendere standing si aggiunge qui.
+9. **Archivia le richieste da altri agenti processate** — quando una richiesta arrivata nel canale
+   `wiki/sources/input-other-agents/` (handoff/feedback/reply da un altro agente o progetto) è stata
+   **elaborata** (letta e portata a una casa durevole o a una decisione), **spostala** in
+   `wiki/sources/input-other-agents/processed/`, così non la si rielabora in una sessione futura
+   (gemella di `usersfeedback/ → processed/`). Regola **locale** di Sertor: **non** va nei blocchi
+   `claude-md-block` distribuiti agli ospiti (governance dogfood, non pratica dell'ospite).
+10. **\<altre azioni\>** — lista estendibile: ciò che l'utente chiede di rendere standing si aggiunge qui.
 
 La voce di log **non è posticipabile**: si scrive **nello stesso momento del commit** dello step.
+
+## Dichiarazione forzata a fine step (anti-skip)
+
+Il rischio del rituale è lo **skip silenzioso** dei passi di giudizio (`distill`, `lint semantico`):
+condizionali + auto-eseguiti, si omettono senza lasciare traccia. Il contratto anti-skip (E10-FEAT-026,
+branch `097-rituale-anti-skip`) chiude questo buco: la chiusura di ogni step significativo **deve
+emettere una dichiarazione esplicita** — `Rituale: record <verdetto> · distill: <verdetto> · lint:
+<verdetto>` — con un verdetto per ciascun passo di giudizio; «non serve» è ammesso ma **va dichiarato,
+mai omesso** (è proprio lo skip in silenzio il fallimento che previene). Il contratto vive nel blocco
+host-facing `SERTOR:WIKI-RITUAL` + playbook, distribuito via installer.
+
+Per tenere la **scoperta** dei candidati fuori dalla memoria, il sottocomando deterministico
+`sertor-wiki-tools ritual-check` (in `src/sertor_core/wiki_tools/ritual_check.py`) si esegue **prima**:
+dato lo scope dello step (**git-diff vs base**, fallback `--pages`/fail-loud), elenca i **candidati a
+distillazione** (gruppi di pagine changed con ≥2 nuovi backlink incrociati e 0 nuove pagine
+`concepts/`/`tech/`) + i **candidati a drift** (`stale-updated` · `neighbor-of-change` ·
+`capability-exec`) + lo **scaffold di dichiarazione**. Confine D↔N: il tool **trova** (deterministico,
+zero-LLM, sola lettura), l'agente **giudica** (Principio XI). Output JSON `wiki.ritual_check/1` + summary.
+È la gemella lato-giudizio dell'enforcement meccanico via hook (FEAT-011).
 
 ## Confine di delega: trascrizione vs giudizio
 
