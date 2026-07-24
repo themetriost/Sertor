@@ -145,8 +145,11 @@ def _fan_out_enabled() -> bool:
     """Whether the structural fan-out is on — read ONCE, like the facade.
 
     Reading the configuration on every query would re-parse `.env` per call for a value that cannot
-    change while the process lives. The conservative default (off) also applies when the setting is
-    not resolvable, which keeps the capability inert rather than half-on.
+    change while the process lives.
+
+    The default is ON, but the FALLBACK here stays off on purpose: "the setting says yes" and "the
+    setting could not be read at all" are different situations, and only the first is a decision.
+    An unresolvable configuration leaves the capability inert rather than half-on.
     """
     return bool(getattr(Settings.load(), "combined_graph_enabled", False))
 
@@ -155,8 +158,8 @@ def _fan_out_enabled() -> bool:
 def _agent_context():
     """Similarity + structural composition (118), memoized like the facade.
 
-    Built lazily and ONLY when the fan-out is on: with the switch off (the default until the gate is
-    measured) nothing here is constructed, so the capability costs literally nothing.
+    Built lazily and only when the fan-out is on, so turning the switch off leaves nothing
+    constructed and the capability costs literally nothing.
     """
     return build_agent_context(Settings.load())
 

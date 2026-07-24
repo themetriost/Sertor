@@ -281,10 +281,14 @@ class Settings:
     graph_limit_relations: int = 8
     graph_limit_docs: int = 8
 
-    # structural fan-out into combined search (118, FEAT-012). OFF by default: the delivery gate
-    # (does it help structural questions without diluting the others?) has not been measured yet,
-    # so the capability ships inert — turning it on is an explicit choice, never inherited.
-    combined_graph_enabled: bool = False       # SERTOR_COMBINED_GRAPH
+    # structural fan-out into combined search (118, FEAT-012). ON by default (decisione utente
+    # 2026-07-24, che sostituisce FR-019): il grafo è costruito a ogni indicizzazione e caricato a
+    # ogni avvio, ma senza questo raggiunge l'agente solo se lui si ricorda di chiederlo — e
+    # sulle domande strutturali la sola similarità è documentata come scarsa (hit@1 ≈ 0.18 contro
+    # 0.64). Il costo è auto-correlato alla rilevanza: una domanda che non implica alcun simbolo
+    # non interroga il grafo. Il gate di misura NON è stato eseguito: il rischio accettato è la
+    # diluizione del contesto sulle domande non strutturali, e si rispegne con una variabile.
+    combined_graph_enabled: bool = True        # SERTOR_COMBINED_GRAPH
     combined_graph_max_symbols: int = 3        # SERTOR_COMBINED_GRAPH_MAX_SYMBOLS
     combined_match_min_overlap: int = 2        # SERTOR_COMBINED_MATCH_MIN_OVERLAP
 
@@ -454,7 +458,7 @@ class Settings:
             graph_limit_definitions=_int_env("SERTOR_GRAPH_LIMIT_DEFS", 10),
             graph_limit_relations=_int_env("SERTOR_GRAPH_LIMIT_RELS", 8),
             graph_limit_docs=_int_env("SERTOR_GRAPH_LIMIT_DOCS", 8),
-            combined_graph_enabled=_bool_env("SERTOR_COMBINED_GRAPH", False),
+            combined_graph_enabled=_bool_env("SERTOR_COMBINED_GRAPH", True),
             combined_graph_max_symbols=_int_env("SERTOR_COMBINED_GRAPH_MAX_SYMBOLS", 3),
             combined_match_min_overlap=_int_env("SERTOR_COMBINED_MATCH_MIN_OVERLAP", 2),
             index_incremental=_bool_env("SERTOR_INDEX_INCREMENTAL", True),

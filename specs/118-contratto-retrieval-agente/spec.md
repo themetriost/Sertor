@@ -234,7 +234,15 @@ l'interruttore, la risposta è identica a quella odierna.
   etichettato con il risultato strutturale, accanto ai due esistenti.
 - **FR-018**: Quando l'interruttore è spento, la ricerca combinata MUST restituire esattamente ciò che
   restituisce oggi.
-- **FR-019**: L'interruttore MUST essere spento di default finché il gate non è superato.
+- **FR-019**: ~~L'interruttore MUST essere spento di default finché il gate non è superato.~~
+  **SUPERATO da decisione utente (2026-07-24): l'interruttore è ACCESO di default.** Il gate di
+  misura (FR-034..038) è stato **spostato** in una feature propria dell'epica — l'harness di
+  valutazione agent-facing — e la capacità è consegnata **senza attenderlo**. *Rischio accettato,
+  dichiarato:* la diluizione del contesto sulle domande non strutturali non è stata misurata, quindi
+  un eventuale peggioramento su quelle domande non è noto. È mitigato dal fatto che il costo è
+  auto-correlato alla rilevanza (una domanda che non implica alcun simbolo non interroga il grafo) e
+  che si rispegne con `SERTOR_COMBINED_GRAPH=false`. La misura resta desiderabile: quando l'harness
+  esisterà, questa decisione andrà verificata a posteriori invece che assunta.
 - **FR-020**: Il flusso strutturale MUST raggruppare i risultati per simbolo e, dentro ciascun
   simbolo, per tipo di relazione.
 - **FR-021**: Il flusso MUST dichiarare, per ogni punto d'ingresso, come è stato ricavato.

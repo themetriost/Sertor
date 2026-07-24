@@ -35,6 +35,21 @@ Due hook host-facing, depositati da `sertor install rag` e **portabili** (Python
   applied automatically»). **Mai auto-upgrade**: il confine D↔N è netto, l'agente non applica nulla,
   l'utente decide. Idempotente: stato assente o verdetto ≠ `behind` → no-op.
 
+> 🔴 **Il comando suggerito da questo avviso NON funziona** (segnalazione del nodo *Kaelen*,
+> 2026-07-24, confermata sul codice: `version-check-start.py:48`). `uvx --refresh sertor` risolve il
+> pacchetto **root** `sertor-core`, che **non fornisce** la console-script `sertor` —
+> *«An executable named `sertor` is not provided by package `sertor-core`»*. La forma corretta,
+> presente in `docs/` e nell'annuncio v0.1.0 ma **persa** nelle release notes successive, richiede il
+> frammento di sottodirectory:
+>
+> ```
+> uvx --refresh --from "git+https://github.com/themetriost/Sertor.git@<tag>#subdirectory=packages/sertor" sertor upgrade
+> ```
+>
+> **Ironia da non perdere:** l'avvisatore che esiste per far aggiornare gli ospiti pubblica il
+> comando che glielo impedisce. È [[esito-sull-host-vs-forma-dell-asset]] applicato al messaggio: il
+> testo è stato scritto e revisionato, mai **eseguito** su un host. Fix non ancora applicato.
+
 ### Lo stato `version.check/1`
 
 Il file `.sertor/.version-check.json` è il contratto tra i due hook:
