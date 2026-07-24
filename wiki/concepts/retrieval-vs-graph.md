@@ -28,19 +28,26 @@ embedding** (la query) — i chunk sono già indicizzati.
 ### Code-graph — «naviga per struttura»
 Grafo AST **deterministico** (nodi: simboli/doc; archi: `calls`, `contains`, `imports`, `inherits`,
 `mentions`) ([[code-graph]]). Backing dei 4 tool MCP `find_symbol` / `who_calls` / `related_docs` /
-`get_context`. Risposte **esatte e relazionali**, non per somiglianza. Costo a query: **zero token**
-(nessun embedding a query-time).
+`get_context`, **e** — dal 2026-07-24 — del terzo flusso di `search_combined`. Risposte **esatte e
+relazionali**, non per somiglianza. Costo a query: **zero token** (nessun embedding a query-time).
 
 ## La regola pratica: scopri → naviga
 
-| Domanda | Superficie | Tool |
-|---|---|---|
-| «trova qualcosa per argomento» (non so il nome) | **ibrida** | `search_code` |
-| «spiegami / dove si parla di X» (concetto) | **ibrida** | `search_docs` / `search_combined` |
-| «dov'è definito X» (so il nome) | **grafo** | `find_symbol` |
-| «chi usa X / cosa rompo se lo cambio» | **grafo** | `who_calls` |
-| «quali doc spiegano X» | **grafo** | `related_docs` |
-| «contesto completo di X (codice+doc)» | **grafo** | `get_context` |
+I quattro tool restano la via **mirata**: si usano quando si sa già cosa si vuole e si vuole solo
+quello. `search_combined` porta lo stesso segnale **senza doverlo chiedere**, ma insieme al resto.
+
+| Domanda | Superficie | Tool mirato | Arriva anche da `search_combined`? |
+|---|---|---|---|
+| «trova qualcosa per argomento» (non so il nome) | **ibrida** | `search_code` | — |
+| «spiegami / dove si parla di X» (concetto) | **ibrida** | `search_docs` | — |
+| «dov'è definito X» (so il nome) | **grafo** | `find_symbol` | ✅ se il nome compare nella domanda |
+| «chi usa X / cosa rompo se lo cambio» | **grafo** | `who_calls` | ✅ blocco `callers` |
+| «quali doc spiegano X» | **grafo** | `related_docs` | ✅ blocco `docs` |
+| «contesto completo di X (codice+doc)» | **grafo** | `get_context` | ✅ è la forma del flusso |
+
+**Quando conviene ancora il tool mirato:** quando il simbolo lo conosci e vuoi l'insieme **completo**
+(il fan-out applica i limiti per relazione e dichiara il troncamento, es. `callers 8/47`), oppure
+quando la domanda non contiene abbastanza per far scattare la risoluzione degli ingressi.
 
 Il flusso tipico dell'agente (e di chi lavora sul codice):
 
