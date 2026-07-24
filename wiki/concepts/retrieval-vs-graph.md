@@ -60,24 +60,19 @@ L'errore da evitare è usare la ricerca ibrida per domande **strutturali** («ch
 somiglianza di argomento non risponde a una relazione esatta — o il grafo per domande **concettuali**
 («come funziona il chunking») quando non si conosce ancora il simbolo da cui partire.
 
-> 🆕 **Dal 2026-07-24 il grafo non aspetta più di essere chiamato** (E5-FEAT-012, `SERTOR_COMBINED_GRAPH`,
-> **acceso di default**). `search_combined` restituisce un **terzo flusso etichettato** col segnale
-> strutturale, accanto a `docs` e `code`: definizioni, chiamanti, chiamati e documenti collegati,
-> raggruppati per simbolo. Gli ingressi si ricavano dalla domanda in modo **deterministico** (identificatori
-> scritti nella query · confronto lessicale con la tabella dei simboli), e se non se ne ricava nessuno il
-> grafo **non viene interrogato** — costo auto-correlato alla rilevanza.
->
-> **L'ortogonalità resta vera**: il fan-out **non fonde** i due segnali in una classifica sola (sarebbe un
-> errore di categoria — una classifica e un insieme non hanno una scala comune) e **non è un router**: non
-> sceglie per l'agente, gli consegna entrambi. Cambia solo *chi deve ricordarsi di chiedere*. Il perché sta
-> in [[llm-facing-retrieval-contract]]; i 4 tool dedicati restano per la navigazione mirata.
-
 ## Perché ortogonali, non alternative
 Il motore di ricerca (`SERTOR_ENGINE`: `baseline` | `hybrid`, default `hybrid`) sceglie **come si
 cerca per pertinenza**; il grafo (`SERTOR_GRAPH`, default on) è una capacità **a parte**, costruita
-nello stesso `index()` e interrogata dai suoi 4 tool a prescindere dal motore. Convivono nello stesso
-server MCP `sertor-rag` ([[mcp-server]]): **10 tool = 3 di ricerca + 4 di grafo + 3 di memoria**
+nello stesso `index()` e interrogabile a prescindere dal motore. Convivono nello stesso server MCP
+`sertor-rag` ([[mcp-server]]): **10 tool = 3 di ricerca + 4 di grafo + 3 di memoria**
 (`memory_list`/`memory_show`/`memory_search`, memoria episodica opt-in), tutti locali.
+
+**Che il grafo entri anche in `search_combined` non intacca l'ortogonalità**, e vale la pena dire
+perché: il fan-out **non fonde** i due segnali in una classifica sola — sarebbe un errore di
+categoria, una classifica e un insieme non hanno una scala comune — e **non è un router**, perché non
+sceglie per l'agente ma gli consegna entrambi i flussi etichettati. Cambia una cosa sola: **chi deve
+ricordarsi di chiedere**. Prima l'agente, ora nessuno. Il ragionamento completo sta in
+[[llm-facing-retrieval-contract]].
 
 ## Vedi anche
 - [[hybrid-retrieval]] — il motore di pertinenza (default).

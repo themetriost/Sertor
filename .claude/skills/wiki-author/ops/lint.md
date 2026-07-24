@@ -57,8 +57,19 @@ Repeatable procedure:
    things in the project not yet documented).
 5. **Report with severity** (High/Medium/Low/Info) + proposed correction for each finding. **Discard false
    positives** (e.g. a reader flagging "missing" links already disproved by the CLI).
-6. **Correct on confirmation.** Update **only active pages** (current state); **do not rewrite** the historical
-   log or dated artifacts. Append a log entry `lint`.
+6. **Correct on confirmation — by REWRITING the contradicted text, not by annotating it.** Update
+   **only active pages** (current state); **do not rewrite** the historical log or dated artifacts.
+   Append a log entry `lint`.
+
+   > ⛔ **A banner is not a correction.** Adding *«note: what follows is out of date»* on top of text
+   > you leave in place puts two versions of the truth on one page — and the reader acts on the
+   > **body**. Worse, it reads as done, so nobody comes back.
+   >
+   > **Closing test, apply it to every finding you mark corrected:** re-read the body **alone**, with
+   > the banner covered. If it still contradicts the repo, the finding is **still open**. Check the
+   > operative parts especially — tables, command examples, decision lists: those are what a reader
+   > acts on, and they are the ones most often left behind when only the intro is touched.
+
 7. **When the finding is a superseded page** (not a typo to fix: the page as a whole is
    contradicted by the authority — code/tests on behavior, recorded decision on why), apply the
    **explicit supersession** from playbook §4 (*Truth, authority and obsolescence*): `status: superseded` +

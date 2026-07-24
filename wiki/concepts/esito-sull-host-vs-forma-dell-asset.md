@@ -12,30 +12,6 @@ sources: ["packages/sertor-install-kit/tests/unit/test_settings_merge_identity.p
 Una guardia può essere **verde e cieca**. È la lezione che E10-FEAT-031/032 hanno pagato sul campo, ed
 è più generale degli hook: vale per **ogni artefatto che distribuiamo a un ospite**.
 
-> 🔴 **Tre istanze nuove, dal campo (2026-07-24).** Quattro nodi della federazione — *VM-WorkingFolder*,
-> *Sinthari*, *Kaelen*, *Acta* — hanno segnalato indipendentemente lo stesso schema, e stavolta il punto
-> cieco non è una guardia ma **l'installer stesso**:
->
-> 1. **Il runtime non si muove, l'upgrade dichiara successo.** Su *Sinthari*: stamp `.sertor-version` a
->    0.1.5, `sertor-core` nel lock fermo a **0.1.0** — un solo commit, quello d'installazione del 24
->    giugno, attraverso **tre** upgrade riusciti. Causa: dipendenza senza vincolo di versione + sorgente
->    git **senza ref**, quindi `uv` non ha ragione di ri-risolvere. L'upgrade sposta gli **asset** e crede
->    di aver spostato tutto. *«Non è un incidente della 0.1.5: è il comportamento normale dell'upgrade su
->    host già installati, che non era stato visto perché niente lo dichiara.»*
-> 2. **Il comando pubblicato non è mai stato eseguito.** L'avviso dell'auto-updater suggerisce
->    `uvx --refresh sertor`, che fallisce (`sertor-core` non fornisce quella console-script). Vedi
->    [[auto-update-version-check]].
-> 3. **Una configurazione rotta sopravvive a ogni upgrade.** Su *Kaelen*, `.mcp.json` con `--directory`
->    invece di `--project` ha reso il RAG **cieco per un mese** — ogni query `[]`, indistinguibile da un
->    corpus povero — e l'installer **salta** il file perché «già registrato»: ragiona per **presenza**,
->    non per **contenuto**.
->
-> **Il filo comune, e il motivo per cui stanno qui:** in tutti e tre i casi qualcosa di *nostro* era
-> formalmente corretto — l'asset, il testo, la registrazione — e l'**esito sull'host** era sbagliato.
-> Nessuna delle tre sarebbe emersa da un test sulla forma; tutte e tre sono emerse da nodi che hanno
-> **eseguito** ciò che spediamo. Il rimedio proposto da *Sinthari* è il principio in una riga: l'upgrade
-> deve riportare **la versione effettivamente risultante letta dal runtime**, non «ho fatto».
-
 ## Il buco
 
 Testare un asset distribuito ha due punti d'osservazione possibili, e **non sono lo stesso**:
@@ -69,6 +45,37 @@ Concretamente, le 10 guardie di `test_settings_merge_identity.py` partono tutte 
 cablato in una forma precedente** e asseriscono lo stato **finale**: `.ps1`→`.py`, relativo→ancorato,
 `cwd` aggiunto, host già duplicato che si **ricompatta**, tre generazioni che collassano, hook
 dell'utente **preservato**, idempotenza al secondo giro.
+
+## Tre istanze dal campo (2026-07-24) — dove il punto cieco è l'installer
+
+Quattro nodi della federazione — *VM-WorkingFolder*, *Sinthari*, *Kaelen*, *Acta* — hanno segnalato
+indipendentemente lo stesso schema in tre forme. Non riguardano una guardia: riguardano **l'installer
+stesso**, che è l'asset più host-facing che abbiamo.
+
+**1. Il runtime non si muove, e l'upgrade dichiara successo.** Su *Sinthari*: stamp `.sertor-version`
+a `0.1.5`, `sertor-core` nel lock fermo a **`0.1.0`** — un solo commit, quello d'installazione del 24
+giugno, sopravvissuto a **tre** upgrade tutti riusciti. Causa: dipendenza senza vincolo di versione e
+sorgente git **senza ref**, quindi `uv` non ha alcuna ragione di ri-risolvere il commit. L'upgrade
+sposta gli **asset** e conclude di aver spostato tutto. Come lo riassume Sinthari: *«non è un
+incidente della 0.1.5, è il comportamento normale dell'upgrade su host già installati, che non era
+stato visto perché niente lo dichiara»*.
+
+**2. Il comando pubblicato non è mai stato eseguito.** L'avviso dell'auto-updater suggerisce
+`uvx --refresh sertor`, che fallisce perché risolve il pacchetto root, il quale non fornisce quella
+console-script. Il testo è stato scritto e revisionato, mai **lanciato** su un host. Vedi
+[[auto-update-version-check]].
+
+**3. Una configurazione rotta sopravvive a ogni upgrade.** Su *Kaelen*, un `.mcp.json` con
+`--directory` invece di `--project` ha reso il RAG **cieco per un mese** — ogni query `[]`,
+indistinguibile da un corpus povero — e l'installer **salta** quel file perché «già registrato»:
+ragiona per **presenza**, non per **contenuto**. La configurazione sbagliata è quindi *immune* agli
+aggiornamenti.
+
+**Il filo comune.** In tutti e tre i casi qualcosa di nostro era **formalmente corretto** — l'asset,
+il testo, la registrazione — e l'**esito sull'host** era sbagliato. Nessuna sarebbe emersa da un test
+sulla forma; tutte sono emerse da nodi che hanno **eseguito** ciò che spediamo. Il rimedio proposto da
+*Sinthari* è la regola di questa pagina in una riga: l'upgrade deve riportare **la versione
+effettivamente risultante, letta dal runtime**, non «ho fatto».
 
 ## Parentele
 

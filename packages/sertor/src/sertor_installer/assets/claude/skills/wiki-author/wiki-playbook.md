@@ -214,14 +214,37 @@ on **behavior**, **code + tests** win; on **why**, **recorded decisions** win
 (log, requirements, process decisions). The wiki is **derived**: in conflict the default hierarchy applies
 (behavior → code/tests · why → recorded decision); a hierarchy configured by the host can replace it (optional).
 
-**A page is stale when it contradicts its authority.** The answer is NOT to correct silently,
-nor to delete: it is **explicit supersession** —
+**A page is stale when it contradicts its authority.** There are TWO answers, and picking the wrong
+one is a common failure — so decide with this test first:
+
+> **Can the stale claim be rewritten so the page becomes true?**
+> **Yes → REWRITE IT (the default, by far the common case).** **No → supersede it.**
+
+**A. Correct in place — the default.** The page is still *about* the right thing; some claim in it
+has simply become false. Rewrite the claim, refresh `updated`, done. **The history is not lost: it
+lives in the log** (`record`/`lint` entries), which is the diary. That is exactly why the graph is
+allowed to be rewritten — the two memories divide the work.
+
+**B. Supersede — rare, for when rewriting cannot save the page.** Its *subject* has been replaced, or
+its thesis was wrong in a way that is instructive to preserve:
 
 1. **frontmatter**: `status: superseded` (the `status` field is among the optional ones in the config);
 2. **banner at the top** with date, *what* supersedes the page and the **link** to the current truth
    (`> ⚠️ **Superseded (YYYY-MM-DD):** <claim> is contradicted by <authority> → see [[current-page]]`);
 3. the **content remains** (as testimony; deleted errors get repeated): the page is pruned or merged into
    its successor only in a confirmed `reorg`, never automatically.
+
+> ⛔ **The anti-pattern: a banner instead of a correction.** Adding a note that says *«the text below
+> is out of date»* while leaving that text in place is **a correction not made**. It puts two versions
+> of the truth on one page, and the reader acts on the **body** — the part you did not fix. It also
+> reads as done, so nobody comes back to it.
+>
+> A banner is legitimate only when it says something the body **cannot**: *«this page is superseded,
+> the truth is elsewhere»* (case B above), or an urgent warning that must be seen **before** acting on
+> the content (*«this command fails»*). *«What follows is stale»* is neither.
+>
+> **Closing test for a level-B finding:** re-read the body alone, with the banner covered. If it still
+> contradicts the repo, the finding is **open**.
 
 For the **diary** (log, dated records) supersession is natural: the correction is a **new entry**,
 never an edit. For the **graph** the convention above is the equivalent. **No numeric confidence scores**:
