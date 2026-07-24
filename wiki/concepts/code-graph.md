@@ -58,6 +58,25 @@ chiamanti + chiamate + basi + doc, sezioni limitate dai knob). Risposte **citabi
 (`ref = path#qualname`). I 4 tool storici sono **tornati nel [[mcp-server]]** (promessa
 dell'epica mantenuta): superficie a 10 tool (3 ricerca + 4 grafo + 3 memoria), con warm-up eager esteso al grafo (lezione PR #23).
 
+### Il grafo non aspetta più di essere chiamato (E5-FEAT-012, 2026-07-24)
+
+Fino a qui il grafo era costruito a ogni indicizzazione e caricato a ogni avvio, ma raggiungeva
+l'agente **solo se lui si ricordava di interrogarlo** — e sulle domande strutturali la sola
+similarità è documentata come scarsa (hit@1 ≈ 0.18 contro 0.64, vedi *Qualità misurata* sotto). Ora
+`search_combined` restituisce un **terzo flusso etichettato** col segnale strutturale, acceso di
+default (`SERTOR_COMBINED_GRAPH`).
+
+Gli ingressi si ricavano dalla domanda in modo **deterministico** — identificatori scritti nella
+query, confronto lessicale con la tabella dei simboli (`list_symbols()` sulla porta) — e se non se ne
+ricava nessuno il grafo **non viene interrogato affatto**: il costo è auto-correlato alla rilevanza.
+
+**Ciò che NON cambia:** l'ortogonalità. Il fan-out **non fonde** i due segnali in una classifica sola
+(una classifica e un insieme non hanno una scala comune) e **non è un router** — consegna entrambi e
+lascia la scelta all'agente. Le tre cause di indisponibilità del grafo restano distinte nel payload,
+perché un vuoto non tipizzato farebbe affermare all'agente *«nessuno chiama questa funzione»* mentre
+lo strumento è rotto. Contratto: [[llm-facing-retrieval-contract]] · guida di scelta:
+[[retrieval-vs-graph]].
+
 ## Qualità misurata
 
 Senza rete: ground-truth reale (6 simboli di `src/sertor_core`) — definizioni esatte, caller

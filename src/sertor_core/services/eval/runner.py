@@ -16,6 +16,15 @@ from sertor_core.engines.evaluation import EvalReport, QueryableEngine, evaluate
 from sertor_core.observability.logging import log_event
 from sertor_core.services.eval.models import EvalSuite, PathValidation, RegressionVerdict
 
+# Placeholder score carried by graph results routed into the IR metric (118, FR-015).
+# It is NOT a measure: the code-graph answers with a SET, not a ranking, so no score exists to
+# report. `evaluate` consumes only `.path` (engines/evaluation.py), and the routing is TOTAL — a
+# symbol case never mixes graph hits with similarity hits — so the value is never compared against
+# anything. Both conditions are pinned by tests/unit/test_eval_routing_invariants.py: if a metric
+# ever started reading it, the evaluation would silently measure a fusion policy that does not
+# exist in production.
+_GRAPH_SCORE_SENTINEL = 1.0
+
 
 def run_evaluation(
     engine: QueryableEngine,
@@ -77,7 +86,11 @@ class RoutedEvalEngine:
         if self._kind_by_query.get(query) == "symbol":
             return [
                 RetrievalResult(
-                    text="", path=hit.path, chunk_id=hit.ref, doc_type=DocType.CODE, score=1.0
+                    text="",
+                    path=hit.path,
+                    chunk_id=hit.ref,
+                    doc_type=DocType.CODE,
+                    score=_GRAPH_SCORE_SENTINEL,
                 )
                 for hit in self._graph.find_symbol(query)
             ]

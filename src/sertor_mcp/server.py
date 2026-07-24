@@ -25,6 +25,7 @@ from typing import TypeVar
 from mcp.server.fastmcp import FastMCP
 
 from sertor_core.composition import (
+    build_agent_context,
     build_episodic_search,
     build_facade,
     build_graph_service,
@@ -39,6 +40,75 @@ from sertor_core.observability.scrub import scrub_text
 from sertor_core.services.episodic_search import SearchQuery
 from sertor_core.services.memory_semantic import SemanticMemoryQuery
 
+
+def score_contract(settings: Settings) -> str:
+    """The comparability scope of the `score` field, WORDED FOR THE ACTIVE ENGINE (118, FR-005/012).
+
+    The scope is a property of the TOOL, constant across responses — so it belongs here, read once,
+    not in a field repeated in every payload and paid for in tokens on every call.
+
+    Its meaning is not the same under every engine, and saying so matters: under rank fusion the
+    number is derived from POSITIONS, so it adds little beyond the order the list already carries;
+    under a pure vector engine it is a similarity, whose distribution shape does carry information.
+    A single static sentence would be false in one of the two configurations.
+
+    It also declares an asymmetry that is otherwise invisible: the value the system thresholds on to
+    ABSTAIN is computed on the dense pool BEFORE fusion, while the value exposed here is produced
+    AFTER it. They are different scales; presenting them side by side without saying so would invite
+    exactly the false comparison this contract exists to prevent.
+    """
+    common = (
+        "Scores are comparable ONLY within their own list: never across flows, never across "
+        "queries, never as an absolute measure of quality. "
+    )
+    if settings.engine == "hybrid":
+        return common + (
+            "With the active engine the score is a RANK-FUSION value derived from positions in the "
+            "source lists, not a similarity: it adds little beyond the ordering you already see. "
+            "Note also that the value used to decide abstention is computed on the dense pool "
+            "BEFORE fusion, so it lives on a different scale from the score shown here."
+        )
+    return common + (
+        "With the active engine the score is a cosine SIMILARITY, so the shape of the distribution "
+        "within one list is informative (a top result that stands well clear of the rest means "
+        "something a flat distribution does not). Note that the value used to decide abstention is "
+        "applied to the same similarity, but a threshold on it is configured separately."
+    )
+
+
+def _score_contract_for_active_config() -> str:
+    """Resolve the contract from the live configuration; degrade LOUDLY, never silently.
+
+    A configuration that cannot be read must not prevent the server from starting (that was the
+    `-32000 Connection closed` failure mode). But it must not produce a description that quietly
+    claims something the instance does not honour either: the fallback says so.
+    """
+    try:
+        return score_contract(Settings.load())
+    except Exception as exc:  # noqa: BLE001 — must never block startup, must never be silent
+        log_event(logging.WARNING, "mcp.score_contract.unresolved", error=type(exc).__name__)
+        return (
+            "Scores are comparable ONLY within their own list. The active engine could not be "
+            "determined, so the precise meaning of the value is unknown here — treat it as an "
+            "ordering hint only."
+        )
+
+
+_SCORE_CONTRACT = _score_contract_for_active_config()
+
+_SEARCH_CODE_DESC = (
+    "Search the source CODE: implementations, functions, classes, usages. " + _SCORE_CONTRACT
+)
+_SEARCH_DOCS_DESC = (
+    "Search the Markdown DOCUMENTATION: explanations, guides, decisions, specs, wiki. "
+    + _SCORE_CONTRACT
+)
+_SEARCH_COMBINED_DESC = (
+    "Search CODE + DOCS together: when both implementation and explanation are needed. "
+    "Returns the two labelled flows {\"docs\": [...], \"code\": [...]}, each with its OWN top-k. "
+    + _SCORE_CONTRACT
+)
+
 mcp = FastMCP(
     "sertor-rag",
     instructions=(
@@ -49,7 +119,7 @@ mcp = FastMCP(
         "For episodic memory of past sessions ('did we discuss X before?'), use memory_search "
         "(full-text by default; semantic=true searches by meaning), memory_list and memory_show — "
         "opt-in, off unless SERTOR_MEMORY is set (semantic needs SERTOR_MEMORY_SEMANTIC too); they "
-        "return {\"status\": \"disabled\"} when off."
+        "return {\"status\": \"disabled\"} when off. " + _SCORE_CONTRACT
     ),
 )
 
@@ -68,6 +138,30 @@ def _facade():
 def _graph():
     """Code-graph service (FEAT-005), memoized like the facade — orthogonal to the engine."""
     return build_graph_service(Settings.load())
+
+
+@lru_cache(maxsize=1)
+def _fan_out_enabled() -> bool:
+    """Whether the structural fan-out is on — read ONCE, like the facade.
+
+    Reading the configuration on every query would re-parse `.env` per call for a value that cannot
+    change while the process lives.
+
+    The default is ON, but the FALLBACK here stays off on purpose: "the setting says yes" and "the
+    setting could not be read at all" are different situations, and only the first is a decision.
+    An unresolvable configuration leaves the capability inert rather than half-on.
+    """
+    return bool(getattr(Settings.load(), "combined_graph_enabled", False))
+
+
+@lru_cache(maxsize=1)
+def _agent_context():
+    """Similarity + structural composition (118), memoized like the facade.
+
+    Built lazily and only when the fan-out is on, so turning the switch off leaves nothing
+    constructed and the capability costs literally nothing.
+    """
+    return build_agent_context(Settings.load())
 
 
 @lru_cache(maxsize=1)
@@ -143,19 +237,19 @@ def _run(
     return _guard(tool, _body)
 
 
-@mcp.tool()
+@mcp.tool(description=_SEARCH_CODE_DESC)
 def search_code(query: str, k: int = 5) -> list[dict]:
     """Search the source CODE: implementations, functions, classes, usages."""
     return _run("search_code", _facade().search_code, query, k)
 
 
-@mcp.tool()
+@mcp.tool(description=_SEARCH_DOCS_DESC)
 def search_docs(query: str, k: int = 5) -> list[dict]:
     """Search the Markdown DOCUMENTATION: explanations, guides, decisions, specs, wiki."""
     return _run("search_docs", _facade().search_docs, query, k)
 
 
-@mcp.tool()
+@mcp.tool(description=_SEARCH_COMBINED_DESC)
 def search_combined(query: str, k: int = 6) -> dict:
     """Search CODE + DOCS together: when both implementation and explanation are needed.
 
@@ -165,10 +259,26 @@ def search_combined(query: str, k: int = 6) -> dict:
     citable `path#chunk` form (`_fmt`).
     """
     def _body() -> dict:
-        docs, code = _facade().search_combined(query, k)
+        if not _fan_out_enabled():
+            docs, code = _facade().search_combined(query, k)
+            out = {
+                "docs": [_fmt(r) for r in docs],
+                "code": [_fmt(r) for r in code],
+            }
+            log_event(
+                logging.INFO,
+                "mcp.search_combined",
+                k=k,
+                docs=len(out["docs"]),
+                code=len(out["code"]),
+            )
+            return out
+
+        context = _agent_context().search(query, k)
         out = {
-            "docs": [_fmt(r) for r in docs],
-            "code": [_fmt(r) for r in code],
+            "docs": [_fmt(r) for r in context.docs],
+            "code": [_fmt(r) for r in context.code],
+            "graph": _fmt_graph(context.graph),
         }
         log_event(
             logging.INFO,
@@ -176,12 +286,54 @@ def search_combined(query: str, k: int = 6) -> dict:
             k=k,
             docs=len(out["docs"]),
             code=len(out["code"]),
+            graph_status=context.graph.status,
         )
         return out
     return _guard("search_combined", _body)
 
 
 # --- Structural navigation (FEAT-005): thin surfaces over the code-graph -----------------------
+
+def _fmt_block(block) -> dict:
+    """A relation block, with its OWN outcome and its truncation declared (118, FR-030).
+
+    `shown`/`total` live here and NOT on the similarity flows: a graph relation is an exhaustive
+    set, so showing part of it without saying so passes a subset off as the whole. A top-k over a
+    corpus is constitutive instead — everything has a similarity, and the list claims nothing.
+    """
+    out: dict = {
+        "status": block.status,
+        "shown": block.shown,
+        "total": block.total,
+        "items": [_hit_dict(h) for h in block.items],
+    }
+    if block.reason is not None:
+        out["reason"] = block.reason
+    return out
+
+
+def _fmt_graph(branch) -> dict:
+    """The structural flow: entry points WITH provenance, per-symbol blocks, derived status."""
+    out: dict = {
+        "status": branch.status,
+        "entry_points": [
+            {"symbol": e.symbol, "source": e.source} for e in branch.entry_points
+        ],
+        "symbols": [
+            {
+                "qualname": s.qualname,
+                "definitions": _fmt_block(s.definitions),
+                "callers": _fmt_block(s.callers),
+                "callees": _fmt_block(s.callees),
+                "docs": _fmt_block(s.docs),
+            }
+            for s in branch.symbols
+        ],
+    }
+    if branch.unavailable_reason is not None:
+        out["reason"] = branch.unavailable_reason
+    return out
+
 
 def _hit_dict(hit: SymbolHit) -> dict:
     """`SymbolHit` -> citable dict (`ref = path#qualname`, consistent with path#chunk)."""

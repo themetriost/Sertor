@@ -33,6 +33,17 @@ class EventPersistenceHandler(logging.Handler):
         self._store = store
         self._in_emit = False  # re-entrancy guard (RNF-006): the store's warnings are events too
 
+    @property
+    def store(self) -> ObservabilityStore:
+        """The store this handler writes to — the handler's IDENTITY, not just its payload.
+
+        Exposed because "is a handler attached?" is the wrong question for the composition root to
+        ask: two handlers of this class can point at two different stores, and one attached to the
+        wrong one is worse than none — it writes somewhere nobody is reading. See
+        `enable_observability`.
+        """
+        return self._store
+
     def emit(self, record: logging.LogRecord) -> None:
         # Only structured events carry `operation` (set by log_event via extra); skip plain logs.
         operation = getattr(record, "operation", None)

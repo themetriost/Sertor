@@ -281,6 +281,17 @@ class Settings:
     graph_limit_relations: int = 8
     graph_limit_docs: int = 8
 
+    # structural fan-out into combined search (118, FEAT-012). ON by default (decisione utente
+    # 2026-07-24, che sostituisce FR-019): il grafo è costruito a ogni indicizzazione e caricato a
+    # ogni avvio, ma senza questo raggiunge l'agente solo se lui si ricorda di chiederlo — e
+    # sulle domande strutturali la sola similarità è documentata come scarsa (hit@1 ≈ 0.18 contro
+    # 0.64). Il costo è auto-correlato alla rilevanza: una domanda che non implica alcun simbolo
+    # non interroga il grafo. Il gate di misura NON è stato eseguito: il rischio accettato è la
+    # diluizione del contesto sulle domande non strutturali, e si rispegne con una variabile.
+    combined_graph_enabled: bool = True        # SERTOR_COMBINED_GRAPH
+    combined_graph_max_symbols: int = 3        # SERTOR_COMBINED_GRAPH_MAX_SYMBOLS
+    combined_match_min_overlap: int = 2        # SERTOR_COMBINED_MATCH_MIN_OVERLAP
+
     # incremental indexing (046, FEAT-009): refresh only the changed files instead of rebuilding
     # from scratch. Default ON — when a valid manifest exists `index()` runs incrementally; `--full`
     # (rebuild=True) or `index_incremental=False` forces the full path; a missing/incompatible
@@ -447,6 +458,9 @@ class Settings:
             graph_limit_definitions=_int_env("SERTOR_GRAPH_LIMIT_DEFS", 10),
             graph_limit_relations=_int_env("SERTOR_GRAPH_LIMIT_RELS", 8),
             graph_limit_docs=_int_env("SERTOR_GRAPH_LIMIT_DOCS", 8),
+            combined_graph_enabled=_bool_env("SERTOR_COMBINED_GRAPH", True),
+            combined_graph_max_symbols=_int_env("SERTOR_COMBINED_GRAPH_MAX_SYMBOLS", 3),
+            combined_match_min_overlap=_int_env("SERTOR_COMBINED_MATCH_MIN_OVERLAP", 2),
             index_incremental=_bool_env("SERTOR_INDEX_INCREMENTAL", True),
             index_reconcile_every=_int_env("SERTOR_INDEX_RECONCILE_EVERY", 0),
             eval_dir=Path(os.getenv("SERTOR_EVAL_DIR", "eval")),

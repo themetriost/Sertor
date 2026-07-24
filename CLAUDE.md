@@ -620,19 +620,23 @@ dogfood sopra. *(Non riconciliare cancellando la prosa: i blocchi sono rigenerat
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/116-daily-distill-floor/plan.md` (**E10 / FEAT-039** epica **debito-tecnico** — *daily distill
-floor: dare al passo `distill` una rete hard*). Soluzione: un hook host-facing `distill-floor`
-(`PreToolUse`) che **BLOCCA il merge di consegna** (`git merge <feature>`/`gh pr merge`) finché la giornata
-non ha una voce `distill` nel log (una distillazione reale **o** un «no» *costato* che nomina i candidati).
-**Gate = sola presenza** (c'è una voce distill oggi? sì/no), letto dalla partizione datata del log
-(host-agnostico via `wiki.config.toml`); anti-deadlock (distillare non richiede un merge); `git merge
-<mainline>` non bloccato; **fail-open** se indeterminabile (no config / log non ruotato). Parte deterministica
-= nuovo sottocomando `sertor-wiki-tools distill-audit` (`wiki.distill_audit/1`, cross-sessione: wikilink
-penzolanti + identificatori composti in backtick) usato come **CONTESTO advisory** allegato al blocco, **mai
-come gate** (sul dogfood il segnale-prosa è rumore-dominato: 228 vs 9 wikilink). **Confine D↔N:** il tool
-**trova** (zero-LLM, sola lettura), l'agente **giudica**, l'hook **esige+blocca** (Principio XI). Distribuito
-via installer con parità Claude/Copilot. Gemella lato-**enforcement** di FEAT-026 (`ritual-check`, git-diff
-per-step). Constitution **12/12 + missione PASS**. Branch `116-daily-distill-floor` (PR #216).
+`specs/118-contratto-retrieval-agente/plan.md` (**E5 / FEAT-012** epica **retrieval-qualita** —
+*contratto di retrieval verso l'agente: fan-out del grafo, misurato*). Porta il segnale **strutturale**
+del code-graph dentro `search_combined` come **terzo flusso etichettato** (dietro `SERTOR_COMBINED_GRAPH`,
+**spento di default**), e **prima** costruisce l'**harness di valutazione agent-facing** che ne è il gate.
+**Ordine invertito rispetto al valore, deliberatamente:** la macchina di valutazione esistente misura il
+*retrieval* (hit@k/MRR su ciò che viene recuperato), **non il comportamento dell'agente** che quel
+materiale lo legge — quindi le affermazioni empiriche del contratto non erano verificabili. **Assenza
+tipizzata** (non tentato / vuoto legittimo / non tentabile con **3 cause distinte**: `graph_not_built` ·
+`navigation_library_missing` · `graph_artifact_unusable`) perché un vuoto non tipizzato fa **fabbricare
+all'agente un'affermazione falsa**. `status` del ramo grafo è una **property derivata**, mai impostabile.
+Vie d'ingresso **deterministiche** (identificatori nella query · confronto lessicale con la tabella dei
+nomi qualificati); la via per espansione semantica è **rinviata** (i risultati solo-lessicali non portano
+`qualname`, `hybrid.py:200-203`). **Gate duplice vincolante** e con **due soglie**: consegna se il calo
+sulle domande non strutturali ≤ 5 punti percentuali, attivazione di default solo se **nessun calo**.
+L'harness vive in `eval_ab/`, **fuori** da `src/` e da `tests/` (non è prodotto, non è deterministico).
+Constitution **13/13 + missione PASS**. Design note: `wiki/concepts/llm-facing-retrieval-contract.md`
+(4 giri di revisione esterna). Branch `118-contratto-retrieval-agente`.
 
 <!-- SPECKIT END -->
 

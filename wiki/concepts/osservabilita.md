@@ -44,7 +44,12 @@ mai al chiamante — un guasto dell'export non può far fallire un index/una sea
 Tutti i sink si attaccano in **un solo punto**: `enable_observability(settings)` in `composition.py`.
 Legge `Settings`, aggancia `EventPersistenceHandler` se `observability_enabled`, e
 `OtelExportHandler` se `observability_otel_enabled` (che richiede l'extra `[otel]`; assente+richiesto →
-`ConfigError` azionabile, non silenzioso). È **idempotente**: non duplica un handler già presente.
+`ConfigError` azionabile, non silenzioso). È **idempotente per TARGET**, non per presenza: se trova un
+handler già attaccato **a uno store diverso** lo stacca e ne aggancia uno sul nuovo, invece di non far
+nulla. La versione precedente chiedeva solo *«c'è già un handler di questa classe?»* — e con uno
+puntato altrove ogni evento continuava a finire nello **store sbagliato**, in silenzio, perché un
+handler che scrive nel posto sbagliato è indistinguibile da uno che funziona. Vedi
+[[identita-per-presenza-o-per-contenuto]].
 
 Questo è il legame diretto col **Principio XI** (accesso solo via vehicles): la CLI e il server MCP
 chiamano `enable_observability` **per te**, cablando l'osservabilità come cross-cutting concern. Chi

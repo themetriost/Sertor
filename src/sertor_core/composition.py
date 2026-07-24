@@ -201,6 +201,20 @@ def build_graph_service(settings: Settings | None = None):
     )
 
 
+def build_agent_context(settings: Settings | None = None):
+    """Build the agent-facing composition: similarity flows + structural flow (118, FEAT-012).
+
+    Reuses `build_facade` and `build_graph_service` rather than reaching for adapters: this factory
+    is a composition of compositions, and stays the only place that knows the concrete pieces.
+    """
+    from sertor_core.services.agent_context import AgentContextService
+
+    settings = settings or Settings.load()
+    return AgentContextService(
+        build_facade(settings), build_graph_service(settings), settings
+    )
+
+
 def build_observability_store(settings: Settings | None = None):
     """Build the persistent observability store (feature 020) — the seam for FEAT-002.
 
@@ -281,8 +295,20 @@ def enable_observability(settings: Settings | None = None) -> bool:
     if settings.observability_enabled:
         from sertor_core.observability.capture import EventPersistenceHandler
 
-        if not any(isinstance(h, EventPersistenceHandler) for h in logger.handlers):
-            logger.addHandler(EventPersistenceHandler(build_observability_store(settings)))
+        # Idempotence is by TARGET, not by presence. Asking only "is a handler attached?" makes the
+        # first wiring win forever: a later call with a different `index_dir` finds a handler, does
+        # nothing, and every event keeps flowing into the PREVIOUS store — silently, because a
+        # handler that writes to the wrong place looks exactly like one that works. Same failure
+        # shape as identifying a hook by its command string instead of its script: identity taken
+        # from presence rather than from content.
+        store = build_observability_store(settings)
+        target = getattr(store, "path", None)
+        attached = [h for h in logger.handlers if isinstance(h, EventPersistenceHandler)]
+        stale = [h for h in attached if getattr(getattr(h, "store", None), "path", None) != target]
+        for handler in stale:
+            logger.removeHandler(handler)
+        if len(stale) == len(attached):  # none was already pointing at this store
+            logger.addHandler(EventPersistenceHandler(store))
 
     if settings.observability_otel_enabled:
         from sertor_core.observability.otel import OtelExportHandler, build_otel_handler

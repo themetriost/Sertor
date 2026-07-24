@@ -160,6 +160,15 @@ class CodeGraph(Protocol):
         """Definitions with an exact name match (class/function/method); empty if absent."""
         ...
 
+    def list_symbols(self) -> list[str]:
+        """Every qualified name known to the graph (118, FR-024).
+
+        Feeds the deterministic lexical entry way: matching a natural-language question against the
+        symbol table needs the table. Same absence semantics as the rest of the port — graph not
+        built raises, an empty graph returns an empty list.
+        """
+        ...
+
     def who_calls(self, name: str) -> list[SymbolHit]:
         """Nodes with an outgoing `calls` edge to the symbol."""
         ...

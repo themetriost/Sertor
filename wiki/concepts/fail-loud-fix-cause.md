@@ -25,6 +25,12 @@ più a valle. Non contraddice il [[constitution|Principio IV]] (errori espliciti
 (core tollerante con warning ↔ motore baseline strict): la degradazione che **segnala** è conforme; ciò che il
 principio vieta è il **silenzio** o il **disattivare per non vedere**.
 
+> **Da non confondere con [[default-masked-defect]]** (il difetto mascherato dal default). Questo
+> principio riguarda ciò che **facciamo noi** a un errore che si è già manifestato: non silenziarlo, non
+> spegnere la capacità per schivarlo. Là l'errore **non si manifesta affatto**, perché una manopola
+> spenta di default chiude il percorso che lo attraverserebbe — e nessuno l'ha nascosto. Sono parenti,
+> non la stessa cosa: il primo chiede *non tacere*, il secondo *esercita ciò che il default chiude*.
+
 ## Origine
 
 Episodio **OTel** (2026-06-20): l'export di telemetria falliva perché il collector non c'era; la mossa

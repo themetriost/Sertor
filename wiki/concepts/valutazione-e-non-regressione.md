@@ -13,6 +13,17 @@ La capacità che trasforma «il RAG funziona» in «il RAG è **misurato e presi
 su **qualunque progetto ospite** (non solo il dogfood Sertor). È la prima feature consegnata dell'epica
 [[roadmap|retrieval-qualita]] (E5, FEAT-001), branch `065-ground-truth-valutazione`.
 
+> ⚠️ **Confine da tenere presente (2026-07-24): questa capacità misura il *retrieval*, non il
+> *comportamento dell'agente*.** `hit@k`/`MRR`/`F1` valutano **cosa viene recuperato**; non dicono
+> nulla su come l'agente **usi** quel materiale una volta ricevuto — se citi le fonti giuste, se
+> inventi path, se ti lasci fuorviare da un punteggio non calibrato. Sono due piani distinti, e fra
+> loro **non c'è ponte**: nessuno strumento attuale sa dire «l'agente ha risposto meglio». Il divario
+> è emerso scrivendo [[llm-facing-retrieval-contract]], che ha prodotto quattro affermazioni empiriche
+> sulla **forma** del risultato — tutte non verificabili con questa macchina. Colmarlo è
+> **E5-FEAT-012** ([`contratto-retrieval-agente/`](../../requirements/retrieval-qualita/contratto-retrieval-agente/requirements.md)),
+> che costruisce un **harness agent-facing** (stessa domanda, due varianti di payload, differenza
+> nella risposta) come prerequisito di ogni decisione di contratto.
+
 ## Il problema che chiude
 
 Una misura di pertinenza **esisteva già** ma **sepolta nei test**: la funzione pura

@@ -14,17 +14,19 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > `requirements → spec → plan → tasks → implement`.
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-07-23)
+## ⚡ Executive summary (stato al 2026-07-24)
 
 ### 🔄 In progress
-Niente attivo. Ultima release: **v0.1.5** (fix `upgrade` double-wire Stop, E10-FEAT-041), preceduta da **v0.1.4** «wiki-guard» (E10-FEAT-040 — gate Stop bloccante per record + lint semantico, gemello lato-Stop del distill floor) e **v0.1.3** «daily distill floor» (FEAT-039). Governance: costituzione **v1.5.0** (EN, Principio XIII), hook wiki host-agnostici (FEAT-029). Flusso **fermo alla scelta della prossima direzione**.
+Niente attivo. **Rilasciata v0.2.0** «feature + repair» (merge del branch `118-contratto-retrieval-agente`, 16 commit): il **code-graph entra in `search_combined`** come terzo flusso etichettato acceso di default (E5-FEAT-012), e i **tre fix dell'installer** — il pin si muove davvero, il comando d'aggiornamento funziona, il report dichiara la versione effettiva letta dal runtime — che sbloccano gli ospiti fermi (segnalazioni federazione). Annuncio su Acta con le istruzioni corrette. Flusso **fermo alla scelta della prossima direzione**.
+
+Release precedenti: **v0.1.5** (fix `upgrade` double-wire Stop) · **v0.1.4** «wiki-guard» · **v0.1.3** «daily distill floor». Governance: costituzione **v1.5.0** (EN, Principio XIII).
 
 ### ✅ Consegnato (digest per epica)
 - **core (E1):** retrieval ibrido+baseline · code-graph · embedder locale (GloVe default) · refresh incrementale — *completa*
 - **cli (E2):** packaging `git+url` · lifecycle install/upgrade/uninstall · distribuzione Copilot · `doctor` · auto-updater
 - **memoria (E4):** cattura→archivio→full-text→semantico · lettura+semantico via MCP — *quasi completa (3 Could)*
 - **osservabilità (E3):** MVP F1–F4 · export OTel · visibilità RAG nella TUI
-- **qualità retrieval (E5):** `eval`/`graph-eval` · fusione code+doc misurata (`search_combined` strutturato)
+- **qualità retrieval (E5):** `eval`/`graph-eval` · fusione code+doc misurata · **grafo nel retrieval** (`search_combined` a 3 flussi, v0.2.0) — *residuo: harness agent-facing FEAT-013*
 - **debito-tecnico (E10):** hook portabili/ancorati · fail-loud breadcrumb · `distill-floor` merge-gate (v0.1.3) · `wiki-guard` Stop-gate (v0.1.4) · fix upgrade double-wire Stop (FEAT-041, v0.1.5) — *residuo: FEAT-042 (dry-run non proietta i settings-merge)*
 - **usabilità (E12):** MVP — `doctor` · guided-setup/concierge · install host-aware
 - **doc utente (E13):** Fase 1 completa (getting-started · tutorial · troubleshooting · reference · CHANGELOG)
