@@ -181,7 +181,8 @@ def migrate_log(profile: WikiProfile) -> MigrateResult:
     if created:
         update_log_index(profile)
     log_event(logging.INFO, "registry", profile=profile.profile, target="log", action="migrate",
-              created=len(created), skipped=len(skipped), migrated=migrated)
+              # `created` is a RESERVED LogRecord attribute — see structure.py for the full note.
+              created_count=len(created), skipped=len(skipped), migrated=migrated)
     return MigrateResult(migrated_entries=migrated, created=created, skipped=skipped)
 
 

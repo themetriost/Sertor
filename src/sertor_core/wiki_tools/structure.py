@@ -84,7 +84,11 @@ def init_structure(profile: WikiProfile) -> StructureResult:
         logging.INFO,
         "structure",
         profile=profile.profile,
-        created=len(created),
+        # `created` is a RESERVED LogRecord attribute (the record timestamp): passing it as an
+        # extra field makes `logging.makeRecord` raise KeyError. Latent until the logger reaches
+        # INFO — which `enable_observability` does on purpose — so with observability on this call
+        # used to crash. The JSON contract is unaffected: it is built from `StructureResult`.
+        created_count=len(created),
         skipped_existing=len(skipped),
     )
     return result
