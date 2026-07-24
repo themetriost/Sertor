@@ -71,7 +71,14 @@ indistinguibile da un corpus povero — e l'installer **salta** quel file perch�
 ragiona per **presenza**, non per **contenuto**. La configurazione sbagliata è quindi *immune* agli
 aggiornamenti.
 
-**Il filo comune.** In tutti e tre i casi qualcosa di nostro era **formalmente corretto** — l'asset,
+**Una quarta istanza, trovata correggendo le prime tre (2026-07-24).** Il test che presidiava
+l'avviso d'aggiornamento asseriva `"​`sertor upgrade`" in r.stdout`: cioè che il messaggio
+**contenesse quella stringa**, non che il comando **funzionasse**. È rimasto verde per mesi mentre il
+comando falliva su ogni host. Una guardia sulla forma del messaggio non poteva accorgersene — e quel
+test era, formalmente, la copertura di quel comportamento. Ora pinna il frammento
+`#subdirectory=packages/sertor` e **vieta** la forma nuda.
+
+**Il filo comune.** In tutti e quattro i casi qualcosa di nostro era **formalmente corretto** — l'asset,
 il testo, la registrazione — e l'**esito sull'host** era sbagliato. Nessuna sarebbe emersa da un test
 sulla forma; tutte sono emerse da nodi che hanno **eseguito** ciò che spediamo. Il rimedio proposto da
 *Sinthari* è la regola di questa pagina in una riga: l'upgrade deve riportare **la versione

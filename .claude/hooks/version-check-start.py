@@ -17,6 +17,35 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import _hooklib  # noqa: E402
 
+# Fallback when the runtime's own source cannot be read. Deliberately NOT the bare `uvx sertor`:
+# that resolves the root package, which does not provide the `sertor` console script — the exact
+# command this notice used to publish, and the reason a node following it could not update at all.
+_FALLBACK_URL = "https://github.com/themetriost/Sertor.git"
+
+
+def _upgrade_command(sertor_dir) -> str:
+    """The upgrade command that actually WORKS on this host.
+
+    Reads the git URL from the runtime's own `pyproject.toml` (`[tool.uv.sources]`), so the notice
+    is correct for whichever repository this host installed from — host-agnostic by construction
+    rather than by hardcoding ours.
+
+    The `#subdirectory=packages/sertor` fragment is the load-bearing part: without it `uvx` resolves
+    the ROOT package (`sertor-core`), which provides `sertor-rag` and `sertor-wiki-tools` but NOT
+    `sertor`, and the command fails with "An executable named `sertor` is not provided".
+    """
+    url = _FALLBACK_URL
+    try:
+        text = (sertor_dir / "pyproject.toml").read_text(encoding="utf-8")
+        for line in text.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("sertor-core") and "git = " in stripped:
+                url = stripped.split("git = ", 1)[1].strip().strip("}").strip().strip('"').strip()
+                break
+    except OSError:
+        pass
+    return f'uvx --refresh --from "git+{url}#subdirectory=packages/sertor" sertor upgrade'
+
 
 def main() -> None:
     argparse.ArgumentParser().parse_known_args()  # accept/ignore --assistant (wiring symmetry)
@@ -45,7 +74,7 @@ def main() -> None:
         # Update notice (stdout = SessionStart context). Only WARNS; the user decides (FR-005/CS-4).
         print(
             f"SERTOR UPDATE AVAILABLE: installed {installed}, latest {latest}.{dim_text} "
-            "To update, run `sertor upgrade` (or `uvx --refresh sertor` if installed via uvx). "
+            f"To update, run: {_upgrade_command(_hooklib.sertor_dir())} "
             "This is only a notice — no update is applied automatically."
         )
         return

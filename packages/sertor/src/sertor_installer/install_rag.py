@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import logging
+from pathlib import Path
 
 from sertor_install_kit.artifacts import LifecycleOp
 from sertor_install_kit.assistant import AssistantId, AssistantProfile, Surface
@@ -687,10 +688,52 @@ def build_rag_plan(
     return plan
 
 
+def read_runtime_pin(sertor_dir: Path) -> tuple[str, str] | None:
+    """The version and commit `sertor-core` is ACTUALLY resolved to, read from `.sertor/uv.lock`.
+
+    Pure and read-only. Returns `(version, short_commit)`, or `None` when the lock is absent or does
+    not mention the package.
+
+    This exists because "the upgrade ran" and "the runtime moved" are different facts, and only the
+    second one matters. The lock is the ground truth: it carries the resolved git commit, which is
+    what a stuck pin fails to change.
+    """
+    lock = sertor_dir / "uv.lock"
+    try:
+        text = lock.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    # Find the `[[package]]` block for sertor-core and read its version + git commit.
+    version = commit = None
+    for block in text.split("[[package]]"):
+        if 'name = "sertor-core"' not in block:
+            continue
+        for line in block.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("version = ") and version is None:
+                version = stripped.split("=", 1)[1].strip().strip('"')
+            if stripped.startswith("source = ") and "git = " in stripped and "#" in stripped:
+                tail = stripped.rsplit("#", 1)[1]
+                commit = tail.strip().strip('"').rstrip("}").strip().strip('"')
+        if version:
+            break
+    if not version:
+        return None
+    return version, (commit or "?")[:7]
+
+
 def _apply_deps(profile: RagHostProfile, runner: CommandRunner) -> ArtifactOutcome:
     """`BOOTSTRAP_DEPS`: `uv init --bare` (if pyproject is missing) + `uv add` inside `.sertor/`.
 
     Checks for `uv` BEFORE creating `.sertor/` (REQ-214: avoids partial state). Never indexes.
+
+    **On an EXISTING runtime the pin must be forced.** `uv add` is idempotent with respect to the
+    *requirement*, and the requirement we write is unconstrained (`sertor-core[extras]`) against a
+    git source with no ref. A lock that already contains the package therefore satisfies it, and uv
+    has no reason to re-resolve the commit — so every upgrade re-ran this step, reported success,
+    and left the runtime exactly where it was. Confirmed in the field by three federation nodes: a
+    pin stuck at the original install for a month, across three "successful" upgrades. The fix is
+    uv explicitly to re-resolve this one package.
     """
     if not runner.is_available(_UV):
         # E2-FEAT-010: honest, actionable guidance (Principio XII). `uv` is the supported path;
@@ -711,15 +754,39 @@ def _apply_deps(profile: RagHostProfile, runner: CommandRunner) -> ArtifactOutco
         res = runner.run([_UV, "init", "--bare", "--name", _RUNTIME_NAME], cwd=sertor_dir)
         if not res.ok:
             raise DependencyError(f"`uv init` failed: {res.stderr.strip() or res.returncode}")
+    before = read_runtime_pin(sertor_dir) if already else None
     spec = profile.dep_spec()
     res = runner.run([_UV, "add", spec], cwd=sertor_dir)
     if not res.ok:
         raise DependencyError(f"`uv add` failed: {res.stderr.strip() or res.returncode}")
-    # E2-FEAT-018: `uv add` ALWAYS ran (above) — report the ACTION, not the precondition. A
-    # pre-existing runtime → UPDATED (deps re-applied/ensured), a new one → CREATED. Never SKIPPED,
-    # which would claim nothing was done while a command actually executed.
+    if already:
+        # Force the re-resolution `uv add` has no reason to perform (see the docstring).
+        res = runner.run([_UV, "lock", "--upgrade-package", "sertor-core"], cwd=sertor_dir)
+        if not res.ok:
+            raise DependencyError(
+                f"`uv lock --upgrade-package sertor-core` failed: "
+                f"{res.stderr.strip() or res.returncode}"
+            )
+        res = runner.run([_UV, "sync"], cwd=sertor_dir)
+        if not res.ok:
+            raise DependencyError(f"`uv sync` failed: {res.stderr.strip() or res.returncode}")
+
+    # E2-FEAT-018: report the ACTION, not the precondition. And report the RESULT: the version and
+    # commit the runtime actually resolves to now, read back from the lock. "The command ran" and
+    # "the runtime moved" are different facts — reporting only the first is how a stuck pin stayed
+    # invisible for a month. `Fail Loud` applied to the installer's own report.
+    after = read_runtime_pin(sertor_dir)
     outcome = Outcome.UPDATED if already else Outcome.CREATED
-    return ArtifactOutcome(".sertor", outcome, f"uv add {spec}")
+    if after is None:
+        detail = f"uv add {spec} — runtime version UNKNOWN (lock unreadable)"
+    elif before is not None and before == after:
+        # Not an error: a host already at the latest commit re-runs to a no-op. But say so, instead
+        # of letting "updated" imply movement that did not happen.
+        detail = f"sertor-core {after[0]} ({after[1]}) — unchanged, already current"
+    else:
+        moved = f" (was {before[0]} {before[1]})" if before is not None else ""
+        detail = f"sertor-core {after[0]} ({after[1]}){moved}"
+    return ArtifactOutcome(".sertor", outcome, detail)
 
 
 def _apply_env(profile: RagHostProfile) -> ArtifactOutcome:

@@ -218,7 +218,7 @@ on **behavior**, **code + tests** win; on **why**, **recorded decisions** win
 one is a common failure — so decide with this test first:
 
 > **Can the stale claim be rewritten so the page becomes true?**
-> **Yes → REWRITE IT (the default, by far the common case).** **No → supersede it.**
+> **Yes → rewrite it** (the default, by far the common case). **No → supersede it.**
 
 **A. Correct in place — the default.** The page is still *about* the right thing; some claim in it
 has simply become false. Rewrite the claim, refresh `updated`, done. **The history is not lost: it

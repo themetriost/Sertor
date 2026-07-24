@@ -30,25 +30,32 @@ Due hook host-facing, depositati da `sertor install rag` e **portabili** (Python
   override `SERTOR_VERSION_CHECK_URL` è onorato **solo su https** (A-08, security).
 - **SessionStart — `version-check-start.py`.** **Zero rete** (la GET è già avvenuta a SessionEnd):
   legge lo stato e, **se e solo se** il verdetto è `behind`, stampa su stdout un avviso che
-  l'assistente riceve come contesto d'apertura sessione («SERTOR UPDATE AVAILABLE: installed X,
-  latest Y … `sertor upgrade` / `uvx --refresh sertor`. This is only a notice — no update is
-  applied automatically»). **Mai auto-upgrade**: il confine D↔N è netto, l'agente non applica nulla,
-  l'utente decide. Idempotente: stato assente o verdetto ≠ `behind` → no-op.
+  l'assistente riceve come contesto d'apertura sessione. **Mai auto-upgrade**: il confine D↔N è
+  netto, l'agente non applica nulla, l'utente decide. Idempotente: stato assente o verdetto ≠
+  `behind` → no-op.
 
-> 🔴 **Il comando suggerito da questo avviso NON funziona** (segnalazione del nodo *Kaelen*,
-> 2026-07-24, confermata sul codice: `version-check-start.py:48`). `uvx --refresh sertor` risolve il
-> pacchetto **root** `sertor-core`, che **non fornisce** la console-script `sertor` —
-> *«An executable named `sertor` is not provided by package `sertor-core`»*. La forma corretta,
-> presente in `docs/` e nell'annuncio v0.1.0 ma **persa** nelle release notes successive, richiede il
-> frammento di sottodirectory:
->
-> ```
-> uvx --refresh --from "git+https://github.com/themetriost/Sertor.git@<tag>#subdirectory=packages/sertor" sertor upgrade
-> ```
->
-> **Ironia da non perdere:** l'avvisatore che esiste per far aggiornare gli ospiti pubblica il
-> comando che glielo impedisce. È [[esito-sull-host-vs-forma-dell-asset]] applicato al messaggio: il
-> testo è stato scritto e revisionato, mai **eseguito** su un host. Fix non ancora applicato.
+### Il comando dell'avviso è derivato dall'ospite (dal 2026-07-24)
+
+Il messaggio non contiene più un comando fisso: `_upgrade_command()` legge l'URL del repository dal
+**`pyproject.toml` del runtime dell'ospite stesso** (`[tool.uv.sources]`) e compone
+
+```
+uvx --refresh --from "git+<url-dell-ospite>#subdirectory=packages/sertor" sertor upgrade
+```
+
+Il frammento **`#subdirectory=packages/sertor` è la parte portante**: senza, `uvx` risolve il
+pacchetto **root** `sertor-core`, che fornisce `sertor-rag` e `sertor-wiki-tools` ma **non** `sertor`
+— e il comando fallisce con *«An executable named `sertor` is not provided»*.
+
+**Perché è cambiato.** Il messaggio precedente suggeriva `uvx --refresh sertor`, cioè proprio la
+forma che non funziona: **l'avvisatore che esiste per far aggiornare gli ospiti pubblicava il comando
+che glielo impediva**. Segnalato dal nodo *Kaelen* (2026-07-24) dopo averlo copiato alla lettera dalle
+nostre release notes. La forma corretta era nell'annuncio v0.1.0 e si era persa nelle note successive.
+
+Derivare l'URL invece di scriverlo è ciò che rende l'avviso corretto **per qualunque ospite**, incluso
+chi ha installato da un fork o da un mirror — host-agnostico per costruzione (Principio X) anziché per
+coincidenza. Pinnato da `test_version_check_start_notice_on_behind`, che ora **vieta esplicitamente**
+la forma nuda.
 
 ### Lo stato `version.check/1`
 

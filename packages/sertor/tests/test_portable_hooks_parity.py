@@ -138,7 +138,14 @@ def test_version_check_start_notice_on_behind(tmp_path: Path):
     assert r.returncode == 0
     assert "SERTOR UPDATE AVAILABLE: installed 0.1.0, latest 0.2.0" in r.stdout
     assert "Installed dimensions: sertor 0.1.0." in r.stdout
-    assert "`sertor upgrade`" in r.stdout
+    # L'avviso deve dare un comando che FUNZIONA. La versione precedente suggeriva
+    # `uvx --refresh sertor`, che risolve il pacchetto root — il quale non fornisce la
+    # console-script `sertor` — e falliva con «An executable named `sertor` is not provided». Il
+    # frammento di sottodirectory è la parte portante, e questo test la pinna: era l'avvisatore a
+    # pubblicare il comando che impediva di aggiornarsi (segnalazione del nodo Kaelen, 2026-07-24).
+    assert "#subdirectory=packages/sertor" in r.stdout
+    assert "sertor upgrade" in r.stdout
+    assert "uvx --refresh sertor" not in r.stdout, "la forma nuda risolve il pacchetto sbagliato"
 
 
 def test_version_check_start_noop_when_up_to_date(tmp_path: Path):
