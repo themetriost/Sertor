@@ -77,6 +77,12 @@ sulla forma; tutte sono emerse da nodi che hanno **eseguito** ciò che spediamo.
 *Sinthari* è la regola di questa pagina in una riga: l'upgrade deve riportare **la versione
 effettivamente risultante, letta dal runtime**, non «ho fatto».
 
+> **La causa ricorrente, generalizzata:** in due delle tre istanze qui sopra il meccanismo che
+> avrebbe dovuto aggiornare non ha fatto nulla perché *«c'era già qualcosa»* — l'installer salta la
+> `.mcp.json` registrata, l'upgrade non tocca un pin che esiste. È un pattern a sé, con una terza
+> istanza fuori dall'installer (l'idempotenza dell'osservabilità): vedi
+> [[identita-per-presenza-o-per-contenuto]].
+
 ## Parentele
 
 - È il complemento di [[dogfood-fidelity]]: quella chiede *«giriamo su ciò che gira un ospite?»*,
