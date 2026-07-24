@@ -13,6 +13,66 @@ and Sertor aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 _Changes land here before the next version bump._
 
+## [0.2.0] — 2026-07-24
+
+A **feature + repair** release. The code-graph now reaches the agent inside `search_combined` without
+being asked, and — just as important — the **installer actually updates the runtime** and tells you the
+truth about what it did. **All hosts are asked to update.**
+
+> **⚠️ How to update (read this).** A previous notice suggested `uvx --refresh sertor`, which **does not
+> work**: it resolves the root package, which does not provide the `sertor` command. Use the form with the
+> subdirectory fragment:
+>
+> ```
+> uvx --refresh --from "git+https://github.com/themetriost/Sertor.git@v0.2.0#subdirectory=packages/sertor" sertor upgrade
+> ```
+>
+> If your runtime has been stuck at an old commit across earlier "successful" upgrades (see *Fixed*
+> below), this release is the one that unsticks it — and the upgrade report now prints the exact
+> `sertor-core X.Y.Z (commit)` you end up on, so you can see it moved.
+
+### Added
+
+- **The code-graph enters `search_combined`.** Alongside the `docs` and `code` similarity flows, the
+  combined search now returns a third labelled `graph` flow — definitions, callers, callees and linked
+  docs, grouped per symbol — **without the agent having to call a graph tool**. Entry points are derived
+  from the query **deterministically** (identifiers written in the query · lexical match against the
+  symbol table), and a query that names no symbol never touches the graph, so the cost is proportional to
+  relevance. Absence is **typed**: "not attempted" vs "empty" vs "unavailable" (with three distinct
+  causes), so the agent never mistakes "the tool is unavailable" for "there are no callers". Toggle:
+  `SERTOR_COMBINED_GRAPH` (**on by default**). (E5-FEAT-012)
+
+### Changed
+
+- **`search_combined` returns a third key, `graph`, by default.** A consumer that read only `docs`/`code`
+  is unaffected (the two keys are unchanged); one that treats extra keys as an error should set
+  `SERTOR_COMBINED_GRAPH=false` or handle the new key.
+- **The search tools now declare the meaning of their `score`** in their description, worded for the
+  active engine: under the default rank-fusion engine the score adds little beyond the list order, and it
+  is never comparable across flows or across queries.
+
+### Fixed
+
+- **`upgrade` now moves the runtime pin.** On an already-installed host, `sertor upgrade` re-ran its
+  dependency step, reported success, and left `sertor-core` at the commit it was first installed at —
+  because the dependency it writes is unconstrained against a ref-less git source, which any existing lock
+  already satisfies. It now forces the re-resolution, so "updated" means the runtime actually moved.
+  Confirmed in the field by hosts stuck for a month across three "successful" upgrades. (E2)
+- **The upgrade report tells you what you ended up on.** It now prints `sertor-core X.Y.Z (commit)` read
+  from the runtime lock — or says plainly "unchanged, already current" / "version unknown" — instead of
+  implying movement that may not have happened. (E2)
+- **The update notice now prints a command that works.** It is derived from your own runtime's repository
+  URL and includes the `#subdirectory=packages/sertor` fragment. (E2, reported by a federation node)
+- **Observability wiring is idempotent by target, not by presence.** Re-wiring to a different store now
+  re-points the handler instead of silently leaving events flowing to the previous one. (internal)
+
+### Known limitations
+
+- **`upgrade --dry-run` still does not project the dependency or settings/config steps** — it reports them
+  as unchanged even when the real upgrade would change them. Trust the real `upgrade` output. (E10-FEAT-042)
+- **The runtime dependency is still ref-less** (tracks the default branch, not a tag). This release
+  unsticks it, but pinning the runtime to a tag for reproducibility is a separate, later decision.
+
 ## [0.1.5] — 2026-07-23
 
 A **fix release** completing v0.1.4's wiki-guard: an `upgrade` now cleanly hands the `Stop` slot from the
