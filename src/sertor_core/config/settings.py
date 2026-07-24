@@ -281,6 +281,13 @@ class Settings:
     graph_limit_relations: int = 8
     graph_limit_docs: int = 8
 
+    # structural fan-out into combined search (118, FEAT-012). OFF by default: the delivery gate
+    # (does it help structural questions without diluting the others?) has not been measured yet,
+    # so the capability ships inert — turning it on is an explicit choice, never inherited.
+    combined_graph_enabled: bool = False       # SERTOR_COMBINED_GRAPH
+    combined_graph_max_symbols: int = 3        # SERTOR_COMBINED_GRAPH_MAX_SYMBOLS
+    combined_match_min_overlap: int = 2        # SERTOR_COMBINED_MATCH_MIN_OVERLAP
+
     # incremental indexing (046, FEAT-009): refresh only the changed files instead of rebuilding
     # from scratch. Default ON — when a valid manifest exists `index()` runs incrementally; `--full`
     # (rebuild=True) or `index_incremental=False` forces the full path; a missing/incompatible
@@ -447,6 +454,9 @@ class Settings:
             graph_limit_definitions=_int_env("SERTOR_GRAPH_LIMIT_DEFS", 10),
             graph_limit_relations=_int_env("SERTOR_GRAPH_LIMIT_RELS", 8),
             graph_limit_docs=_int_env("SERTOR_GRAPH_LIMIT_DOCS", 8),
+            combined_graph_enabled=_bool_env("SERTOR_COMBINED_GRAPH", False),
+            combined_graph_max_symbols=_int_env("SERTOR_COMBINED_GRAPH_MAX_SYMBOLS", 3),
+            combined_match_min_overlap=_int_env("SERTOR_COMBINED_MATCH_MIN_OVERLAP", 2),
             index_incremental=_bool_env("SERTOR_INDEX_INCREMENTAL", True),
             index_reconcile_every=_int_env("SERTOR_INDEX_RECONCILE_EVERY", 0),
             eval_dir=Path(os.getenv("SERTOR_EVAL_DIR", "eval")),

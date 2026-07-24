@@ -201,6 +201,20 @@ def build_graph_service(settings: Settings | None = None):
     )
 
 
+def build_agent_context(settings: Settings | None = None):
+    """Build the agent-facing composition: similarity flows + structural flow (118, FEAT-012).
+
+    Reuses `build_facade` and `build_graph_service` rather than reaching for adapters: this factory
+    is a composition of compositions, and stays the only place that knows the concrete pieces.
+    """
+    from sertor_core.services.agent_context import AgentContextService
+
+    settings = settings or Settings.load()
+    return AgentContextService(
+        build_facade(settings), build_graph_service(settings), settings
+    )
+
+
 def build_observability_store(settings: Settings | None = None):
     """Build the persistent observability store (feature 020) — the seam for FEAT-002.
 

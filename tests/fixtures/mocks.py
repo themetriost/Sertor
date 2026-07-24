@@ -244,6 +244,17 @@ class FakeCodeGraph:
     def find_symbol(self, name: str) -> list[SymbolHit]:
         return sorted((self._hit(n) for n in self._symbols(name)), key=lambda h: h.ref)
 
+    def list_symbols(self) -> list[str]:
+        """Names this graph can be LOOKED UP BY (118) — the same keys `find_symbol` matches on.
+
+        Mirrors the real adapter deliberately: returning qualified names here would let a caller
+        resolve an entry point the graph cannot answer, and the tests would never notice.
+        """
+        return sorted({
+            n.name for n in self._graph().nodes
+            if n.kind in ("class", "function", "method")
+        })
+
     def _by_id(self) -> dict:
         return {n.id: n for n in self._graph().nodes}
 

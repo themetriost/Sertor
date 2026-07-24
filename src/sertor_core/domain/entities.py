@@ -167,6 +167,18 @@ class ContextBundle:
     callees: tuple[SymbolHit, ...] = ()
     bases: tuple[SymbolHit, ...] = ()
     docs: tuple[str, ...] = ()
+    # Pre-cut counts per section (118, FR-030), additive with an empty default so existing
+    # consumers are untouched. The limits above discard the tail, and after the cut the total is
+    # NOT recoverable — so it is counted at the source. Without it a truncated set would pass for
+    # the whole, and the consumer would state "there are 8 callers" when there are 47.
+    totals: tuple[tuple[str, int], ...] = ()
+
+    def total_for(self, section: str) -> int:
+        """Pre-cut total for a section, falling back to what is present when unknown."""
+        for name, count in self.totals:
+            if name == section:
+                return count
+        return len(getattr(self, section, ()))
 
 
 @dataclass(frozen=True)

@@ -208,16 +208,42 @@ class NetworkxCodeGraph:
         self._logged("related_docs", name, len(docs), started)
         return docs
 
+    def list_symbols(self) -> list[str]:
+        """The names this graph can be LOOKED UP BY (118, FR-024).
+
+        Returns the keys of the name index — exactly what `find_symbol`, `who_calls` and
+        `get_context` accept. Returning qualified names instead would be a quiet trap: the caller
+        would resolve `CachingEmbedder.embed`, ask for it, and get empty blocks back — an answer
+        indistinguishable from "the symbol has no callers". A lookup surface must enumerate what it
+        can actually look up. *(Found by a live smoke test; the fakes had accepted anything.)*
+        """
+        _, _, name_index = self._load()
+        return sorted(name_index)
+
     def get_context(self, name: str) -> ContextBundle:
         started = time.perf_counter()
         defs_limit, rel_limit, docs_limit = self._limits
+        # Materialise the FULL sets first: the limits below discard the tail, and after the cut the
+        # pre-cut count is gone for good. Counting here is what lets a consumer say "8 of 47"
+        # instead of passing a truncated set off as the whole (118, FR-030).
+        definitions = self.find_symbol(name)
+        callers = self._incoming(name, "calls")
+        callees = self._outgoing(name, "calls")
+        bases = self._outgoing(name, "inherits")
+        docs = sorted(n.path for n in self._incoming(name, "mentions") if n.kind == "doc")
         bundle = ContextBundle(
-            definitions=tuple(self.find_symbol(name)[:defs_limit]),
-            callers=tuple(self._hit(n) for n in self._incoming(name, "calls")[:rel_limit]),
-            callees=tuple(self._hit(n) for n in self._outgoing(name, "calls")[:rel_limit]),
-            bases=tuple(self._hit(n) for n in self._outgoing(name, "inherits")[:rel_limit]),
-            docs=tuple(sorted(n.path for n in self._incoming(name, "mentions")
-                              if n.kind == "doc")[:docs_limit]),
+            definitions=tuple(definitions[:defs_limit]),
+            callers=tuple(self._hit(n) for n in callers[:rel_limit]),
+            callees=tuple(self._hit(n) for n in callees[:rel_limit]),
+            bases=tuple(self._hit(n) for n in bases[:rel_limit]),
+            docs=tuple(docs[:docs_limit]),
+            totals=(
+                ("definitions", len(definitions)),
+                ("callers", len(callers)),
+                ("callees", len(callees)),
+                ("bases", len(bases)),
+                ("docs", len(docs)),
+            ),
         )
         self._logged("get_context", name, len(bundle.definitions), started)
         return bundle

@@ -25,6 +25,7 @@ from typing import TypeVar
 from mcp.server.fastmcp import FastMCP
 
 from sertor_core.composition import (
+    build_agent_context,
     build_episodic_search,
     build_facade,
     build_graph_service,
@@ -140,6 +141,27 @@ def _graph():
 
 
 @lru_cache(maxsize=1)
+def _fan_out_enabled() -> bool:
+    """Whether the structural fan-out is on — read ONCE, like the facade.
+
+    Reading the configuration on every query would re-parse `.env` per call for a value that cannot
+    change while the process lives. The conservative default (off) also applies when the setting is
+    not resolvable, which keeps the capability inert rather than half-on.
+    """
+    return bool(getattr(Settings.load(), "combined_graph_enabled", False))
+
+
+@lru_cache(maxsize=1)
+def _agent_context():
+    """Similarity + structural composition (118), memoized like the facade.
+
+    Built lazily and ONLY when the fan-out is on: with the switch off (the default until the gate is
+    measured) nothing here is constructed, so the capability costs literally nothing.
+    """
+    return build_agent_context(Settings.load())
+
+
+@lru_cache(maxsize=1)
 def _memory_reader():
     """Memory archive read surface, or `None` when memory is off (E4-FEAT-010, gate SERTOR_MEMORY).
 
@@ -234,10 +256,26 @@ def search_combined(query: str, k: int = 6) -> dict:
     citable `path#chunk` form (`_fmt`).
     """
     def _body() -> dict:
-        docs, code = _facade().search_combined(query, k)
+        if not _fan_out_enabled():
+            docs, code = _facade().search_combined(query, k)
+            out = {
+                "docs": [_fmt(r) for r in docs],
+                "code": [_fmt(r) for r in code],
+            }
+            log_event(
+                logging.INFO,
+                "mcp.search_combined",
+                k=k,
+                docs=len(out["docs"]),
+                code=len(out["code"]),
+            )
+            return out
+
+        context = _agent_context().search(query, k)
         out = {
-            "docs": [_fmt(r) for r in docs],
-            "code": [_fmt(r) for r in code],
+            "docs": [_fmt(r) for r in context.docs],
+            "code": [_fmt(r) for r in context.code],
+            "graph": _fmt_graph(context.graph),
         }
         log_event(
             logging.INFO,
@@ -245,12 +283,54 @@ def search_combined(query: str, k: int = 6) -> dict:
             k=k,
             docs=len(out["docs"]),
             code=len(out["code"]),
+            graph_status=context.graph.status,
         )
         return out
     return _guard("search_combined", _body)
 
 
 # --- Structural navigation (FEAT-005): thin surfaces over the code-graph -----------------------
+
+def _fmt_block(block) -> dict:
+    """A relation block, with its OWN outcome and its truncation declared (118, FR-030).
+
+    `shown`/`total` live here and NOT on the similarity flows: a graph relation is an exhaustive
+    set, so showing part of it without saying so passes a subset off as the whole. A top-k over a
+    corpus is constitutive instead — everything has a similarity, and the list claims nothing.
+    """
+    out: dict = {
+        "status": block.status,
+        "shown": block.shown,
+        "total": block.total,
+        "items": [_hit_dict(h) for h in block.items],
+    }
+    if block.reason is not None:
+        out["reason"] = block.reason
+    return out
+
+
+def _fmt_graph(branch) -> dict:
+    """The structural flow: entry points WITH provenance, per-symbol blocks, derived status."""
+    out: dict = {
+        "status": branch.status,
+        "entry_points": [
+            {"symbol": e.symbol, "source": e.source} for e in branch.entry_points
+        ],
+        "symbols": [
+            {
+                "qualname": s.qualname,
+                "definitions": _fmt_block(s.definitions),
+                "callers": _fmt_block(s.callers),
+                "callees": _fmt_block(s.callees),
+                "docs": _fmt_block(s.docs),
+            }
+            for s in branch.symbols
+        ],
+    }
+    if branch.unavailable_reason is not None:
+        out["reason"] = branch.unavailable_reason
+    return out
+
 
 def _hit_dict(hit: SymbolHit) -> dict:
     """`SymbolHit` -> citable dict (`ref = path#qualname`, consistent with path#chunk)."""
