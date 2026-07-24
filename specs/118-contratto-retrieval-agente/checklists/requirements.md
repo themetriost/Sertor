@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,16 +31,21 @@
 
 ## Notes
 
+### Esito della validazione (giro 2 — dopo `clarify`, 2026-07-24)
+
+**16/16.** L'unico marker aperto è stato risolto: **FR-037** ora prescrive **due soglie distinte**
+anziché una. Il dilemma era che un'unica soglia costringe a sbagliare una delle due domande — severa
+⇒ la capacità non si consegna mai, permissiva ⇒ si accende per tutti sulla base del rumore. Separando
+«consegnabile» (calo ≤ 5 punti percentuali) da «attivabile di default» (nessun calo misurabile),
+entrambe le domande ricevono la soglia giusta.
+
+Le altre quattro decisioni di `clarify` (tetto di 3 punti d'ingresso · 2 parti distinte per il
+confronto lessicale · 3 ripetizioni per caso · unione anziché congiunzione sulle fonti attese) hanno
+reso **testabili** requisiti che prima erano solo direzionali («MUST limitare», «MUST ripetere»).
+
 ### Esito della validazione (giro 1)
 
-**Un marker [NEEDS CLARIFICATION] resta aperto, deliberatamente.**
-
-- **FR-037** — la soglia quantitativa oltre la quale la metà «non-regressione» del gate si considera
-  fallita. Non ha un default ragionevole: dire «nessun calo» rende la capacità quasi certamente non
-  consegnabile (qualunque materiale aggiuntivo produce un po' di rumore); dire «tolleranza libera»
-  svuota il gate. È una decisione di **scope** — determina se la capacità viene consegnata attiva,
-  consegnata opt-in, o non consegnata — e per la regola dei requisiti (SC-002/FR-005) va fissata
-  **prima** di eseguire la misura, non dopo averne visto l'esito. Va risolta in `/speckit-clarify`.
+Un marker [NEEDS CLARIFICATION] lasciato aperto deliberatamente su FR-037 — vedi sopra, ora risolto.
 
 ### Correzioni applicate durante la validazione
 

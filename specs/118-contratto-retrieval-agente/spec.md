@@ -11,6 +11,39 @@ terzo flusso etichettato (dietro interruttore, spento di default), e prima costr
 valutazione agent-facing che ne è il gate. Requisiti: `requirements/retrieval-qualita/contratto-retrieval-agente/requirements.md`.
 Design note: `wiki/concepts/llm-facing-retrieval-contract.md`.
 
+## Clarifications
+
+### Session 2026-07-24
+
+Risolte **senza interazione**, su autorizzazione esplicita a procedere fino all'implementazione
+fermandosi solo su dubbi genuini. Ogni decisione è motivata; nessuna è un default silenzioso.
+
+- Q: Quale calo sulle domande non strutturali fa fallire la metà «non-regressione» del gate?
+  → A: **Due gate separati.** La consegna in forma **opt-in** richiede che il calo non superi
+  **5 punti percentuali**; l'**attivazione di default** per tutti richiede **nessun calo misurabile**.
+  *Motivo:* «la capacità è utile» e «è abbastanza sicura da accenderla per tutti» sono due domande
+  diverse, e un'unica soglia costringe a sbagliarne una. Con una soglia sola: severa → la capacità non
+  si consegna mai; permissiva → si accende per tutti sulla base del rumore.
+- Q: Quanti punti d'ingresso al massimo per una singola domanda?
+  → A: **3.** *Motivo:* sopra i tre il materiale strutturale comincia a competere con i flussi di
+  somiglianza per lo spazio di contesto (il costo di §4 dei requisiti), e le domande reali che
+  riguardano più di tre simboli distinti sono rare. Il numero è una manopola, non una costante murata.
+- Q: Quando un simbolo è candidato per il confronto lessicale con la domanda?
+  → A: Quando la domanda **ne nomina per intero** il nome, **oppure** ne condivide **almeno due parti
+  distinte**. *Motivo:* una sola parte in comune aggancia troppo (una domanda che contiene «index»
+  pescherebbe ogni simbolo con «index» nel nome, pagando il costo dove il beneficio è nullo); tre
+  ricadono di fatto sul nome intero. Due è il primo valore che discrimina, ed è comunque da tarare
+  sulla misura.
+- Q: Quante ripetizioni per caso nell'harness?
+  → A: **3.** *Motivo:* è il minimo che permette di distinguere una differenza sistematica dal rumore
+  di una singola esecuzione (edge case dichiarato: varianza maggiore dell'effetto). Sotto le 3 non si
+  distingue; sopra, il costo cresce senza che la conclusione cambi per un gate a soglia.
+- Q: Cosa conta come «la risposta cita le fonti attese» quando le fonti attese sono più di una?
+  → A: **Almeno una** (unione, non congiunzione). *Motivo:* la congiunzione misurerebbe la
+  *coincidenza* di segnali indipendenti anziché la loro combinazione — è l'errore già commesso e
+  corretto in questo progetto, dove una metrica in AND diede 0.17 su un sistema che in OR risultava
+  pienamente coperto. La quota per-fonte resta disponibile come dettaglio diagnostico.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Sapere se una forma di risultato aiuta davvero l'agente (Priority: P1)
@@ -124,9 +157,11 @@ l'interruttore, la risposta è identica a quella odierna.
    **Then** vede quante ne sono mostrate e quante ne esistono.
 7. **Given** una posizione presente sia nella ricerca per somiglianza sia nel flusso strutturale,
    **When** l'agente esamina la risposta, **Then** ciascuno dei due flussi rimanda all'altro.
-8. **Given** la misura del gate eseguita, **When** le domande non strutturali risultano peggiorate,
-   **Then** l'interruttore resta spento di default; **e** se risultano peggiorate le strutturali, la
-   capacità non viene consegnata.
+8. **Given** la misura del gate eseguita, **When** sulle domande non strutturali il calo resta entro
+   5 punti percentuali ma è misurabile, **Then** la capacità viene consegnata **spenta**, attivabile
+   su richiesta; **When** il calo supera i 5 punti, **Then** la capacità non viene consegnata;
+   **When** non c'è calo misurabile e il beneficio sulle strutturali è confermato, **Then**
+   l'interruttore può essere attivo di default.
 
 ---
 
@@ -161,14 +196,18 @@ l'interruttore, la risposta è identica a quella odierna.
   nell'uso normale.
 - **FR-003**: La misura MUST registrare, per ogni domanda e ogni variante, se la risposta cita le
   fonti attese e se cita fonti assenti dal materiale fornito.
+- **FR-003a**: Quando le fonti attese di una domanda sono più di una, la risposta MUST contare come
+  «cita le fonti attese» se ne cita **almeno una**; la copertura per-fonte MUST restare disponibile
+  come dettaglio diagnostico.
 - **FR-004**: Le due varianti a confronto MUST essere identiche in tutto tranne l'aspetto in esame.
 - **FR-005**: La regola di decisione MUST essere registrata prima dell'esecuzione della misura.
 - **FR-006**: Se la regola di decisione non è stata registrata prima, il risultato MUST NOT essere
   usato per decidere.
 - **FR-007**: La misura MUST registrare per ogni caso la dimensione del materiale fornito e il tempo
   impiegato, così che beneficio e costo siano misurati insieme.
-- **FR-008**: La misura MUST ripetere ogni caso, così che la variazione fra esecuzioni sia
-  distinguibile dall'effetto in esame.
+- **FR-008**: La misura MUST ripetere ogni caso **3 volte**, così che la variazione fra esecuzioni sia
+  distinguibile dall'effetto in esame; se la variazione fra le ripetizioni supera l'effetto misurato,
+  la misura MUST essere dichiarata **non conclusiva** anziché riportata come risultato.
 - **FR-009**: Materiale, risposte e verdetti MUST restare consultabili dopo l'esecuzione.
 
 **Onestà del contratto attuale (US2)**
@@ -201,7 +240,11 @@ l'interruttore, la risposta è identica a quella odierna.
 - **FR-021**: Il flusso MUST dichiarare, per ogni punto d'ingresso, come è stato ricavato.
 - **FR-022**: I punti d'ingresso MUST essere ricavati dalla domanda con mezzi deterministici, senza
   interpellare un modello linguistico.
-- **FR-023**: Il sistema MUST limitare il numero di punti d'ingresso risolti per una singola domanda.
+- **FR-023**: Il sistema MUST limitare a **3** il numero di punti d'ingresso risolti per una singola
+  domanda, con il limite configurabile.
+- **FR-023a**: Un simbolo MUST essere candidato come punto d'ingresso quando la domanda ne nomina per
+  intero il nome, **oppure** ne condivide almeno **2 parti distinte**; la soglia MUST essere
+  configurabile.
 - **FR-024**: Se nessun punto d'ingresso è ricavabile, il flusso MUST dichiarare di non aver tentato e
   MUST NOT aggiungere altro materiale.
 
@@ -230,11 +273,16 @@ l'interruttore, la risposta è identica a quella odierna.
 
 - **FR-034**: Il flusso strutturale MUST essere misurato sia per il beneficio sulle domande
   strutturali sia per la non-regressione sulle domande non strutturali.
-- **FR-035**: Se la metà non-regressione fallisce, l'interruttore MUST NOT essere attivo di default.
+- **FR-035**: Se sulle domande non strutturali si misura un calo qualsiasi, l'interruttore MUST NOT
+  essere attivo di default, anche quando il calo resta entro la soglia di consegna.
 - **FR-036**: Se la metà beneficio fallisce, la capacità MUST NOT essere consegnata.
-- **FR-037**: La soglia oltre la quale la non-regressione si considera fallita MUST essere
-  [NEEDS CLARIFICATION: quale calo sulle domande non strutturali è accettabile — nessuno, oppure una
-  tolleranza dichiarata? La scelta decide se la capacità è consegnabile o resta opt-in].
+- **FR-037**: Il gate di non-regressione MUST avere **due soglie distinte**: la consegna della
+  capacità in forma **attivabile su richiesta** richiede che il calo della quota di risposte che
+  citano le fonti attese sulle domande non strutturali **non superi 5 punti percentuali**;
+  l'**attivazione di default** richiede **nessun calo misurabile**.
+- **FR-038**: Se il calo supera 5 punti percentuali, la capacità MUST NOT essere consegnata; se resta
+  entro i 5 punti ma è misurabile, la capacità MUST essere consegnata **spenta**, attivabile solo da
+  chi la richiede esplicitamente.
 
 ### Key Entities
 
@@ -263,8 +311,9 @@ l'interruttore, la risposta è identica a quella odierna.
   differenziata per configurazione: 2 configurazioni decise.
 - **SC-004**: Sulle domande strutturali, la quota di risposte che citano le fonti attese è **superiore**
   con il flusso strutturale rispetto a senza.
-- **SC-005**: Sulle domande non strutturali, la stessa quota **non cala** oltre la soglia dichiarata
-  quando il flusso strutturale arriva non richiesto.
+- **SC-005**: Sulle domande non strutturali, quando il flusso strutturale arriva non richiesto, la
+  stessa quota non cala **oltre 5 punti percentuali** (condizione per consegnare la capacità) e non
+  cala **affatto** (condizione, più stringente, per attivarla di default).
 - **SC-006**: Le tre cause di indisponibilità della mappa sono distinguibili nel risultato: 3 su 3.
 - **SC-007**: A interruttore spento, la risposta è indistinguibile da quella prodotta prima della
   feature: verificato su tutti i casi della suite esistente.
