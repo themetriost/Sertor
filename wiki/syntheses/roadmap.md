@@ -17,7 +17,10 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 ## ⚡ Executive summary (stato al 2026-07-23)
 
 ### 🔄 In progress
-Niente attivo. Ultima release: **v0.1.5** (fix `upgrade` double-wire Stop, E10-FEAT-041), preceduta da **v0.1.4** «wiki-guard» (E10-FEAT-040 — gate Stop bloccante per record + lint semantico, gemello lato-Stop del distill floor) e **v0.1.3** «daily distill floor» (FEAT-039). Governance: costituzione **v1.5.0** (EN, Principio XIII), hook wiki host-agnostici (FEAT-029). Flusso **fermo alla scelta della prossima direzione**.
+- **E5-FEAT-012 — Contratto di retrieval verso l'agente (fan-out del grafo, misurato).** *Cosa:* portare il segnale **strutturale** dentro `search_combined` (terzo flusso, dietro interruttore) senza che l'agente debba chiederlo, e prima costruire l'**harness di valutazione agent-facing** che ne è il gate. *Dove:* `requirements/retrieval-qualita/contratto-retrieval-agente/` (38 REQ EARS) + design note [[llm-facing-retrieval-contract]] (4 giri di revisione esterna). *Prossimo passo:* `specify`. *Blocchi:* **3 decisioni aperte** (criterio di giudizio dell'harness · rinvio della via-4 per copertura parziale · dove dichiarare le due scale del punteggio) **+ nessun commit fatto** — branch e commit richiedono un via libera esplicito.
+  **Scoperta abilitante:** la macchina di valutazione esistente misura il *retrieval*, non il *comportamento dell'agente* — le 4 affermazioni empiriche del contratto non erano misurabili con gli strumenti attuali.
+
+Ultima release: **v0.1.5** (fix `upgrade` double-wire Stop, E10-FEAT-041), preceduta da **v0.1.4** «wiki-guard» (E10-FEAT-040 — gate Stop bloccante per record + lint semantico, gemello lato-Stop del distill floor) e **v0.1.3** «daily distill floor» (FEAT-039). Governance: costituzione **v1.5.0** (EN, Principio XIII), hook wiki host-agnostici (FEAT-029).
 
 ### ✅ Consegnato (digest per epica)
 - **core (E1):** retrieval ibrido+baseline · code-graph · embedder locale (GloVe default) · refresh incrementale — *completa*
