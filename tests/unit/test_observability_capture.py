@@ -79,6 +79,59 @@ def test_enable_is_idempotent(tmp_path, clean_logger):
     assert len(attached) == 1
 
 
+def test_rewiring_to_another_store_repoints_the_handler(tmp_path, clean_logger):
+    """L'idempotenza è per TARGET, non per presenza (118, regressione trovata il 2026-07-24).
+
+    Prima: `enable_observability` chiedeva solo *«c'è già un handler di questa classe?»*. Con uno
+    attaccato a un altro store non faceva nulla — e ogni evento continuava a finire nello store
+    PRECEDENTE, in silenzio, perché un handler che scrive nel posto sbagliato è indistinguibile da
+    uno che funziona.
+
+    Nella suite si manifestava come 4 fallimenti in questo file: qualunque test che costruiva un
+    componente via factory attaccava un handler puntato allo store **reale** del progetto (il `.env`
+    del dogfood ha l'osservabilità accesa), e da lì in poi nessun test riusciva più a catturare i
+    propri eventi. Stessa forma del difetto degli hook identificati per stringa del comando anziché
+    per script: **identità presa dalla presenza invece che dal contenuto**.
+    """
+    first, second = tmp_path / "a", tmp_path / "b"
+
+    composition.enable_observability(_settings(first, on=True))
+    log_event(logging.INFO, "index", documents=1)
+
+    composition.enable_observability(_settings(second, on=True))
+    log_event(logging.INFO, "index", documents=2)
+
+    attached = [h for h in clean_logger.handlers if isinstance(h, EventPersistenceHandler)]
+    assert len(attached) == 1, "il ri-cablaggio non deve accumulare handler"
+
+    events_second = composition.build_observability_store(
+        _settings(second, on=True)
+    ).query_events("index", None, None)
+    assert [e.fields["documents"] for e in events_second] == [2], (
+        "dopo il ri-cablaggio gli eventi devono finire nel NUOVO store"
+    )
+
+    events_first = composition.build_observability_store(
+        _settings(first, on=True)
+    ).query_events("index", None, None)
+    assert [e.fields["documents"] for e in events_first] == [1], (
+        "lo store precedente non deve ricevere più nulla"
+    )
+
+
+def test_rewiring_to_the_same_store_stays_idempotent(tmp_path, clean_logger):
+    """Il fix non rompe l'idempotenza vera: stesso target ⇒ stesso handler, nessun doppione."""
+    settings = _settings(tmp_path, on=True)
+    composition.enable_observability(settings)
+    before = [h for h in clean_logger.handlers if isinstance(h, EventPersistenceHandler)]
+
+    composition.enable_observability(settings)
+    after = [h for h in clean_logger.handlers if isinstance(h, EventPersistenceHandler)]
+
+    assert len(after) == 1
+    assert after[0] is before[0], "un ri-cablaggio sullo stesso store non deve sostituire l'handler"
+
+
 def test_resilient_to_corrupt_store(tmp_path, clean_logger, caplog):
     # FR-007 / SC-004: a corrupt store during emit → the operation completes, only a warning.
     (tmp_path / "observability.sqlite").write_bytes(b"not a database")

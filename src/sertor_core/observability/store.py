@@ -27,6 +27,11 @@ class SqliteObservabilityStore:
         self._path = Path(index_dir) / "observability.sqlite"
         self._conn: sqlite3.Connection | None = None
 
+    @property
+    def path(self) -> Path:
+        """Where this store writes — what makes two stores the same one, or not."""
+        return self._path
+
     def _connect(self) -> sqlite3.Connection:
         """Open the DB and ensure the schema (lazy, idempotent). May raise `sqlite3.Error`."""
         if self._conn is None:
