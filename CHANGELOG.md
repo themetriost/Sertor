@@ -11,6 +11,24 @@ and Sertor aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ## [Unreleased]
 
+_Changes land here before the next version bump._
+
+## [0.2.1] — 2026-07-25
+
+A **repair** release, built entirely from field reports. Four federation nodes independently
+described the same class of defect — *an artifact declares one state, reality is another, and
+nothing compares the two* — and two instances of it are fixed here. **Hosts whose searches return
+nothing, or whose update notice never stops firing, should update.**
+
+> **How to update** (the form with the subdirectory fragment is required):
+>
+> ```
+> uvx --refresh --from "git+https://github.com/themetriost/Sertor.git@v0.2.1#subdirectory=packages/sertor" sertor upgrade
+> ```
+>
+> Then re-index and verify: `uv run --project .sertor sertor-rag index .` and `… sertor-rag doctor`.
+> **Restart your MCP server afterwards** — a re-wired `.mcp.json` only takes effect on restart.
+
 ### Fixed
 
 - **The MCP server is registered with `--project`, not `--directory`.** The installer had always
