@@ -20,13 +20,34 @@ INFO), non la forma del sorgente.
 from __future__ import annotations
 
 import logging
+import sys
 
 import pytest
 
 from sertor_core.observability.logging import get_logger, log_event
 
 # Attributi di `LogRecord` che `logging.makeRecord` rifiuta di far sovrascrivere da `extra`.
-RESERVED = {
+#
+# **Derivati dal runtime, non scritti a mano.** La prima versione elencava i nomi a mano, incluso
+# `taskName` — che esiste **solo da Python 3.12**: sotto 3.11 il test falliva chiedendo di
+# «aggiornare l'elenco», e la CI di `master` è rimasta rossa dal 2026-07-24 al 07-25. Un elenco
+# hardcoded è **la stessa classe di difetto** che questa guardia presidia (uno stato scritto a parte
+# invece che derivato dalla realtà, cfr. E2-FEAT-021): qui la realtà è l'interprete che gira.
+_SPECIAL = {"message", "asctime"}  # non attributi del record: li aggiunge la formattazione
+
+
+def _reserved_names() -> set[str]:
+    """I nomi che QUESTO interprete considera riservati, letti da un `LogRecord` reale."""
+    probe = logging.LogRecord("n", logging.INFO, "p", 1, "m", None, None)
+    return set(vars(probe)) | _SPECIAL
+
+
+RESERVED = _reserved_names()
+
+# I nomi che ci aspettiamo di trovare. Serve a scoprire il caso opposto: una versione di Python che
+# **aggiunge** un attributo riservato — cosa che 3.12 ha fatto con `taskName`. È un elenco di
+# riferimento, non la fonte del parametrizzato.
+KNOWN = {
     "name", "msg", "args", "levelname", "levelno", "pathname", "filename", "module",
     "exc_info", "exc_text", "stack_info", "lineno", "funcName", "created", "msecs",
     "relativeCreated", "thread", "threadName", "processName", "process", "taskName",
@@ -75,9 +96,24 @@ def test_structure_emits_its_event_at_info(logger_at_info, tmp_path):
 
 @pytest.mark.parametrize("field", sorted(RESERVED))
 def test_every_reserved_name_is_rejected_by_logging(logger_at_info, field):
-    """Documenta l'elenco: se una versione di Python ne aggiunge uno, il test lo scopre."""
+    """Ogni nome riservato DA QUESTO interprete deve essere rifiutato, non ignorato in silenzio."""
     try:
         log_event(logging.INFO, "probe", **{field: "x"})
     except KeyError:
         return  # atteso: il nome è riservato
-    pytest.fail(f"{field!r} non è più riservato: aggiornare l'elenco RESERVED e la guardia")
+    pytest.fail(f"{field!r} è riservato ma `log_event` lo accetta: la guardia non protegge più")
+
+
+def test_new_reserved_names_are_surfaced():
+    """Se una versione di Python **aggiunge** un attributo riservato, si deve sapere.
+
+    È il motivo per cui l'elenco `KNOWN` sopravvive alla derivazione: la lista non serve più a
+    guidare il parametrizzato (lo fa il runtime), ma a rendere **visibile** una novità
+    dell'interprete invece di assorbirla in silenzio — un nome nuovo diventa un campo che nessun
+    evento può più usare, e la scoperta non deve arrivare da un crash in produzione.
+    """
+    unexpected = RESERVED - KNOWN
+    assert not unexpected, (
+        f"Python {'.'.join(map(str, sys.version_info[:2]))} riserva nomi non previsti: "
+        f"{sorted(unexpected)} — verificare che nessun evento li usi e aggiornarli in KNOWN"
+    )
