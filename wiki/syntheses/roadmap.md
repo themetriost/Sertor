@@ -17,13 +17,17 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 ## ⚡ Executive summary (stato al 2026-07-25)
 
 ### 🔄 In progress
-**Giro di riparazione dal campo** (2026-07-25). Il triage della bacheca Acta — 5 segnalazioni da 4 nodi indipendenti — ha prodotto **9 nuove righe di backlog**; i **due P0 sono implementati e provati dal vivo** (branch `119-riparazione-installer-dal-campo`, **release v0.2.1** in preparazione):
+Niente attivo. **Rilasciata v0.2.1** «riparazione dal campo» (merge `3a3591e`/PR #228, tag + GitHub Release *latest*, annuncio e risposte su Acta). Il triage della bacheca — 5 segnalazioni da 4 nodi indipendenti — ha prodotto **9 righe di backlog**; i **due P0 sono consegnati e provati dal vivo attraverso il runtime installato**:
 - **E2-FEAT-021 ✅ — la versione installata è ora DERIVATA dal runtime** (`sertor-core` in `.sertor/uv.lock`), non letta dallo stamp che l'installer scrive con la *propria* versione. Divergeva in entrambe le direzioni: falso `behind` perpetuo sul nodo *Acta* (consuma `sertor-core` via `uv` senza installer, con un rimedio nemmeno eseguibile lì) e falso «aggiornato» dove il pin è fermo (*Sinthari*). Stamp = fallback; `installed_source` dichiara la provenienza; le `dimensions` mostrano **entrambe** le fonti, così lo skew è visibile. **Provato sul dogfood**, che subiva il difetto: banner `installed 0.1.0` con runtime a `0.2.0` → ora `up-to-date`, SessionStart muto.
 - **E2-FEAT-022 ✅ — e la radice era peggio del difetto tracciato.** Non era un residuo di installazioni vecchie: **`--directory` era la forma che il template spediva**, immutata dal primo commit, mentre **cinque punti della doc utente** (+ un asset che distribuiamo) dicono «usa `--project`, mai `--directory`» — e un test la **certificava** giusta. Fix a tre livelli: template → `--project` · `upgrade` riconcilia l'entry **per contenuto** mentre `install` resta non-distruttivo ma **dichiara** (`PRESENT_DIVERGENT`) · `doctor` verifica la **forma dell'invocazione** (`mcp_invocation_moves_cwd`). Il fix ha rischiato di reintrodurre il danno azzerando `SERTOR_CORPUS` a ogni upgrade — colto dalla prova su host usa-e-getta, non dai test: l'upgrade riscrive **l'invocazione** (nostra) e **preserva la configurazione** (dell'ospite).
 
 **La classe, nominata da tre nodi indipendentemente:** *l'artefatto dichiara uno stato, la realtà ne ha un altro, e niente confronta i due* — installer, marker di versione, **documentazione**. È [[identita-per-presenza-o-per-contenuto]] vista dal campo; la contromisura sull'ultimo fronte scoperto è **E13-FEAT-014** (guardia deterministica anti-drift della doc utente, richiesta di *Acta*).
 
-**Aperto:** risposte alla federazione (le 6 domande di *Acta* sulla documentazione + conferme a *Kaelen*/*Sinthari*/*Studium*) · coda tecnica appena tracciata (vedi *Prossime direzioni*).
+**Un difetto di CI trovato per strada:** `master` era **rosso dal merge di v0.2.0** (24/07) e nessuno aveva guardato — la guardia sui nomi riservati di `LogRecord` elencava a mano `taskName`, che esiste **solo da Python 3.12**. Ironia utile: un elenco hardcoded è **la stessa classe di difetto** che quella guardia presidia. Ora i nomi sono derivati a runtime; verificato su py3.11 **e** py3.12 reali.
+
+**Risposte alla federazione: pubblicate** (2026-07-25) — annuncio v0.2.1 nel canale *Releases* · risposta alle 4 segnalazioni · risposta alle 6 domande di *Acta* sulla struttura della documentazione, in cui dichiariamo apertamente che **una guardia deterministica anti-drift non ce l'abbiamo** e che oggi ci è costata.
+
+**Aperto:** coda tecnica appena tracciata (vedi *Prossime direzioni*) · **migrazione ad Acta v0.5.0** (breaking: il comando nudo `acta` non è più il contratto → `uv run --project .acta acta …`; la migrazione include un `uv tool uninstall acta` **machine-wide** che tocca gli altri nodi dell'host → decisione utente).
 
 **Rilasciata v0.2.0** «feature + repair»: il **code-graph entra in `search_combined`** come terzo flusso etichettato acceso di default (E5-FEAT-012), e i **tre fix dell'installer** — il pin si muove davvero, il comando d'aggiornamento funziona, il report dichiara la versione effettiva letta dal runtime. Confermata dal campo: *Studium* e *Kaelen* verificano il fix Stop di v0.1.5; *Sinthari* e *VM-WorkingFolder* confermano la diagnosi del pin.
 
@@ -45,7 +49,7 @@ Release precedenti: **v0.1.5** (fix `upgrade` double-wire Stop) · **v0.1.4** «
 
 ### 📋 Prossime direzioni (da scegliere)
 - **Coda della riparazione** (aperta dal triage 2026-07-25, dopo i due P0): E2-FEAT-023 (`upgrade` nudo non copre le capability, summary verde ingannevole) · E2-FEAT-024 (minori: `__pycache__`, lingua del config) · E10-FEAT-043 (breadcrumb mai ripulito) · E10-FEAT-044 (lo skew spegne in silenzio gli aiuti advisory) · E10-FEAT-045 (`ritual-check` vs `wiki-guard` misurano realtà diverse) · E10-FEAT-046 (`upsert-index` sezione+wikilink) · E12-FEAT-014 (prima query >2 min senza segnale) · **E13-FEAT-014 (guardia deterministica anti-drift della doc utente — la richiesta di fondo di *Acta*)**.
-- **Rispondere alla federazione** — le 6 domande di *Acta* sulla struttura della documentazione + conferma a *Sinthari*/*Studium*/*Kaelen* su cosa v0.2.0 chiude.
+- **Migrazione ad Acta v0.5.0** *(breaking, decisione utente)* — il comando nudo `acta` non è più il contratto; il passo `uv tool uninstall acta` è **machine-wide** e tocca gli altri nodi dell'host.
 - **Chiudere E4** — i 3 Could: remember-this · retention · ponte second-brain.
 - **E14** — distribuire SpecLift/SpecAudit agli ospiti (FEAT-002, casa `sertor-flow`).
 - **E13 Fase 2** — marketing (posizionamento/demo/landing), sbloccata dal go-public.
