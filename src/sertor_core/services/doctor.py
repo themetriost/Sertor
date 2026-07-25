@@ -249,13 +249,48 @@ def freshness_from_manifest(
     return AreaReport.of(AreaName.index, (), detail)
 
 
-def check_mcp(registered: bool, index_stale: bool) -> AreaReport:
+_CWD_MOVING_FLAGS = ("--directory", "-C")
+
+
+def check_mcp(
+    registered: bool, index_stale: bool, invocation: tuple[str, ...] = ()
+) -> AreaReport:
     """Diagnose the MCP area: registration in `.mcp.json` (FR-009, DA-D4/DA-D5).
 
-    Not registered → WARN `mcp_not_registered`, remedy `sertor install rag`; registered + index
-    stale → WARN best-effort `mcp_stale_after_reindex` (restart the server); registered + fresh →
-    pass. MCP NEVER has a critical outcome (DA-D4): the exit code is never driven by MCP.
+    Not registered → WARN `mcp_not_registered`, remedy `sertor install rag`; registered with a
+    working-directory-moving invocation → WARN `mcp_invocation_moves_cwd` (E2-FEAT-022); registered
+    + index stale → WARN best-effort `mcp_stale_after_reindex` (restart the server); registered +
+    fresh → pass. MCP NEVER has a critical outcome (DA-D4): the exit code is never driven by MCP.
+
+    `invocation` is the registered server's argument list. Checking it closes the gap between «the
+    server is registered» and «the server will read the right index»: `uv run --directory <dir>`
+    moves the working directory, so the server resolves the index relative to the runtime folder
+    instead of the project root and answers `[]` to everything — an absence, not an error. The
+    supported form is `--project`, which selects the environment WITHOUT moving cwd. Reported as a
+    warning per DA-D4 (MCP never gates the exit code) even though the field damage is severe: a node
+    ran a blind RAG for a month. Raising it to critical would reopen DA-D4, which is a separate
+    decision — so the message and remedy carry the weight instead.
     """
+    if registered:
+        moving = next((f for f in _CWD_MOVING_FLAGS if f in invocation), None)
+        if moving is not None:
+            problem = Problem(
+                severity=Severity.WARN,
+                code="mcp_invocation_moves_cwd",
+                message=(
+                    f"the MCP server `sertor-rag` is registered with `{moving}`, which moves the "
+                    "working directory: it will resolve the index relative to that directory, not "
+                    "the project root, and every search can silently return no results"
+                ),
+                remedy=(
+                    f"replace `{moving}` with `--project` in .mcp.json, or run "
+                    "`sertor upgrade rag` to re-wire the entry, then restart the MCP server"
+                ),
+            )
+            return AreaReport.of(
+                AreaName.mcp, (problem,), {"registered": True, "invocation_moves_cwd": True}
+            )
+
     if not registered:
         problem = Problem(
             severity=Severity.WARN,

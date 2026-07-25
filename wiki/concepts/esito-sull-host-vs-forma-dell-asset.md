@@ -3,7 +3,7 @@ title: L'esito sull'host, non la forma dell'asset
 type: concept
 tags: [testing, guardie, installer, asset, upgrade, fedelta, principio-xii, e10]
 created: 2026-07-17
-updated: 2026-07-24
+updated: 2026-07-25
 sources: ["packages/sertor-install-kit/tests/unit/test_settings_merge_identity.py", "packages/sertor/tests/test_claude_hook_wiring_anchored.py", "requirements/debito-tecnico/epic.md", "wiki/log/2026-07-16.md", "wiki/log/2026-07-17.md"]
 ---
 
@@ -45,6 +45,51 @@ Concretamente, le 10 guardie di `test_settings_merge_identity.py` partono tutte 
 cablato in una forma precedente** e asseriscono lo stato **finale**: `.ps1`→`.py`, relativo→ancorato,
 `cwd` aggiunto, host già duplicato che si **ricompatta**, tre generazioni che collassano, hook
 dell'utente **preservato**, idempotenza al secondo giro.
+
+## Il grado peggiore: la guardia che **benedice** il difetto (2026-07-25)
+
+Una guardia cieca non vede. Ce n'è una peggiore: quella che **asserisce la forma sbagliata come
+giusta**, con una motivazione scritta. Non tace il difetto — lo **certifica**, e chi passa dopo legge
+una scelta deliberata dove c'è un errore.
+
+Il caso (E2-FEAT-022). Il template `.mcp.json` spediva `uv run --directory .sertor`, che sposta la
+working directory: il server MCP risolveva l'indice **dentro** `.sertor/` invece che nel progetto e
+rispondeva `[]` a ogni query. A presidiarlo c'era questo test:
+
+```python
+def test_mcp_server_template_keeps_directory():
+    """Sanity: the MCP server template legitimately keeps `--directory` (no path argument)."""
+    assert '"--directory"' in body
+```
+
+Verde per mesi. La motivazione — «nessun argomento di path, quindi la cwd non conta» — è ragionata
+sul **testo del template**, non su cosa fa il server su un ospite: nessun path relativo passa dalla
+riga di comando, ma il server risolve comunque il corpus dal proprio ambiente, e prima che `Settings`
+diventasse self-localizing quella risoluzione seguiva la cwd. Il nodo *Kaelen* ha avuto un RAG cieco
+per un mese esattamente per quella entry.
+
+**Il segnale che avrebbe dovuto insospettire c'era, ed era enorme:** la nostra documentazione diceva
+in **cinque punti** — `getting-started`, `install`, `install-claude`, `troubleshooting`, `tutorial` e
+persino l'asset `sertor-cli-reference.md` che *spediamo* — «usa `--project`, **mai** `--directory`».
+Documentavamo il contrario di ciò che installavamo, e nessuna guardia confrontava i due.
+
+Da qui due regole che estendono quella sopra:
+
+> Una guardia che asserisce la **presenza** di una forma sta codificando una decisione. Scrivi
+> **perché quella forma è giusta in termini di esito sull'ospite** — se la motivazione parla del
+> contenuto del file e non di cosa succede a chi lo riceve, la guardia sta proteggendo sé stessa.
+
+> Quando la documentazione e l'asset dicono cose diverse, **uno dei due è un difetto** — e senza
+> qualcosa di deterministico che li confronti, vince quello che nessuno legge. *(È la richiesta del
+> nodo Acta → **E13-FEAT-014**, guardia anti-drift della doc utente.)*
+
+Corollario colto nello stesso lavoro: la correzione stessa ha rischiato di **reintrodurre il danno**.
+Riconciliare l'entry `.mcp.json` per contenuto azzerava `SERTOR_CORPUS` al nome della cartella su ogni
+upgrade — puntando il server a una collezione inesistente, cioè di nuovo un RAG che non risponde. Chi
+ripara un artefatto d'ospite deve separare **ciò che possiede** (l'invocazione) da **ciò che è
+dell'ospite** (la configurazione): falliscono in direzioni opposte, e una regola sola non può
+governarli. Trovato eseguendo l'installer vero su un host usa-e-getta, non dai test unitari — stessa lezione
+del «testa il componente reale, non solo il fake».
 
 ## Tre istanze dal campo (2026-07-24) — dove il punto cieco è l'installer
 

@@ -1,9 +1,9 @@
 ---
 title: Avviso di aggiornamento (version-check, notice-only)
 type: tech
-tags: [installer, auto-update, version-check, hook, feat-013, feat-017, dogfood]
+tags: [installer, auto-update, version-check, hook, feat-013, feat-017, feat-021, dogfood]
 created: 2026-07-21
-updated: 2026-07-21
+updated: 2026-07-25
 sources: ["specs/077-version-update-check/plan.md", "requirements/sertor-cli/version-update-check/requirements.md", "packages/sertor/src/sertor_installer/assets/rag/hooks/version-check.py", "packages/sertor/src/sertor_installer/assets/rag/hooks/version-check-start.py", "wiki/log/2026-06-26.md", "wiki/log/2026-07-10.md", "wiki/log/2026-07-13.md"]
 ---
 
@@ -21,9 +21,11 @@ questo i suoi buchi — vedi sotto — sono emersi da noi stessi).
 Due hook host-facing, depositati da `sertor install rag` e **portabili** (Python, non `.ps1` — A-09):
 
 - **SessionEnd — `version-check.py`.** Fa una **GET HTTPS** del file `/VERSION` su `master`
-  (`raw.githubusercontent.com/themetriost/Sertor/master/VERSION`), la confronta con lo **stamp
-  d'installazione** `.sertor/.sertor-version` (scritto all'install), e persiste il verdetto in
-  `.sertor/.version-check.json`. **Consuma zero vehicle CLI e zero LLM**: è un puro wrapper
+  (`raw.githubusercontent.com/themetriost/Sertor/master/VERSION`), la confronta con la versione
+  **derivata dal runtime** — quella a cui `sertor-core` è risolto in `.sertor/uv.lock` — e persiste
+  il verdetto in `.sertor/.version-check.json` *(fino al 2026-07-25 leggeva invece lo **stamp
+  d'installazione** `.sertor/.sertor-version` — vedi «Lo stato dichiarato va derivato» sotto)*.
+  **Consuma zero vehicle CLI e zero LLM**: è un puro wrapper
   HTTP+file, non importa mai `sertor_core`. **Non fatale**: exit 0 sempre; una GET/parse fallita →
   verdetto `unknown`, nessun errore. La GET è **cachata ~24h**: se `checked_at` è entro le 24 ore
   (e non c'è `SERTOR_VERSION_CHECK_FORCE`) riusa il `latest` in cache invece di rifetchare. L'env
@@ -63,13 +65,36 @@ Il file `.sertor/.version-check.json` è il contratto tra i due hook:
 
 ```json
 { "schema": "version.check/1", "verdict": "up-to-date",
-  "installed": "0.1.0", "latest": "0.1.0",
-  "checked_at": "2026-07-13T…Z", "dimensions": {"sertor": "0.1.0"} }
+  "installed": "0.2.0", "latest": "0.2.0", "installed_source": "runtime-lock",
+  "checked_at": "2026-07-25T…Z",
+  "dimensions": {"sertor-core (runtime)": "0.2.0", "sertor (installer stamp)": "0.1.0"} }
 ```
 
 `verdict` ∈ `{behind, up-to-date, ahead, unknown}`, calcolato da un confronto SemVer segmento-per-
-segmento (numerico, fallback lessicale). `dimensions` porta gli stamp per-pacchetto (`sertor`,
-`sertor-flow`) quando presenti.
+segmento (numerico, fallback lessicale). `installed_source` dichiara **da dove viene il numero**
+(`runtime-lock` o `stamp`); `dimensions` riporta **ogni** fonte osservabile — la versione del runtime
+e lo stamp dell'installer — così una loro divergenza è **visibile** invece di essere risolta in
+silenzio a favore di una delle due.
+
+## Lo stato dichiarato va derivato, non scritto a parte (E2-FEAT-021, 2026-07-25)
+
+Il confronto usava lo **stamp** `.sertor/.sertor-version`, che l'installer scrive con la propria
+versione (`importlib.metadata.version("sertor")`). Ma «quale installer ha girato» e «cosa il runtime
+esegue davvero» sono **due fatti diversi**, e divergono in **entrambe le direzioni**:
+
+- **Falso «da aggiornare».** Un nodo che consuma `sertor-core` via `uv` con un pin al tag, **senza mai
+  usare l'installer** (nodo *Acta*), ha uno stamp che non avanza mai: avviso `behind` **a ogni
+  sessione, per sempre** — e con un rimedio (`sertor upgrade`) che su quell'host **non è nemmeno
+  eseguibile**. Il costo non è il fastidio: è che ci si abitua a ignorare l'avviso, e quello vero un
+  domani non verrà letto.
+- **Falso «aggiornato».** Lo stamp scritto da un installer più nuovo del runtime che ha prodotto
+  dichiara un avanzamento che al runtime non è arrivato (il pin fermo, *Sinthari*/*VM-WorkingFolder*).
+
+Il fix è uno solo per entrambi: **derivare** la versione dal lock del runtime, tenendo lo stamp come
+**fallback** per gli host il cui lock non è leggibile. È lo stesso principio che governa
+[[identita-per-presenza-o-per-contenuto]] applicato ai marker di versione — e la classe che il nodo
+*Acta* ha nominato: *l'artefatto dichiara uno stato, la realtà ne ha un altro, e niente confronta i
+due*.
 
 ## Parità per-assistente
 
@@ -82,7 +107,7 @@ surfacciare il cenno — D↔N più lasco, best-effort. Editare il lato-bundle r
 ## Dormiente-fino-alla-release
 
 L'avvisatore **parla solo su `behind`**, e `behind` scatta solo quando `/VERSION` su `master`
-**supera** lo stamp installato. Ma `/VERSION` si bumpa **a mano, solo a una release user-facing**
+**supera** la versione installata (derivata dal runtime). Ma `/VERSION` si bumpa **a mano, solo a una release user-facing**
 (policy A-15 SemVer con bump manuale; vedi [[dogfood-fidelity]] e roadmap): un `/VERSION` fermo mentre i commit avanzano
 **non è drift**, è «nessuna release esterna ancora». Ne segue una proprietà voluta: l'avvisatore è
 **dormiente-fino-alla-release** — correttamente muto finché non arriva il primo bump. La prima

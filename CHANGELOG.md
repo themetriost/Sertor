@@ -11,7 +11,28 @@ and Sertor aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ## [Unreleased]
 
-_Changes land here before the next version bump._
+### Fixed
+
+- **The MCP server is registered with `--project`, not `--directory`.** The installer had always
+  deposited an entry that *moves the working directory*, so the server resolved its index inside the
+  `.sertor/` runtime instead of your project — and answered **nothing** to every query, with no
+  error, indistinguishable from a thin corpus. One node ran a blind RAG for about a month. Our own
+  documentation had warned against this form in five places while the installer shipped it.
+- **A broken `.mcp.json` is now repaired by `sertor upgrade rag`.** The entry used to be skipped
+  whenever a server named `sertor-rag` was already registered — identity by *presence* — so the
+  mechanism meant to fix your host preserved the broken version instead. Upgrade now reconciles the
+  entry **by content**, rewriting only the invocation: your `SERTOR_CORPUS` and any other MCP server
+  in the file are preserved. `install` stays non-destructive, but now **reports** a divergent entry
+  instead of silently calling it "already present".
+- **`doctor` checks how the MCP server is invoked, not just that it is registered.** A
+  working-directory-moving registration is reported as `mcp_invocation_moves_cwd`, with the remedy.
+  Previously `doctor` said `mcp pass` for exactly the configuration that made every search empty.
+- **The update notice no longer cries "behind" at hosts that are already current.** The installed
+  version is now **derived from the runtime** (`.sertor/uv.lock`) instead of read from the
+  install-time stamp, which records the version of the *installer that ran* — a different fact. A
+  host consuming `sertor-core` via `uv` without the installer was told to update at every session,
+  forever, by a command it could not even run. The stamp remains as a fallback, and both values are
+  reported so a divergence between them stays visible.
 
 ## [0.2.0] — 2026-07-24
 

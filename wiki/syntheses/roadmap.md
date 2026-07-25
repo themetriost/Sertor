@@ -14,10 +14,16 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > `requirements → spec → plan → tasks → implement`.
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-07-24)
+## ⚡ Executive summary (stato al 2026-07-25)
 
 ### 🔄 In progress
-Niente attivo. **Rilasciata v0.2.0** «feature + repair» (merge del branch `118-contratto-retrieval-agente`, 16 commit): il **code-graph entra in `search_combined`** come terzo flusso etichettato acceso di default (E5-FEAT-012), e i **tre fix dell'installer** — il pin si muove davvero, il comando d'aggiornamento funziona, il report dichiara la versione effettiva letta dal runtime — che sbloccano gli ospiti fermi (segnalazioni federazione). Annuncio su Acta con le istruzioni corrette. Flusso **fermo alla scelta della prossima direzione**.
+**Giro di riparazione dal campo** (scelto il 2026-07-25). Il triage della bacheca Acta — 5 segnalazioni da 4 nodi indipendenti — ha prodotto **9 nuove righe di backlog**, di cui **due P0** in corso:
+- **E2-FEAT-021 — `version-check` dice il falso.** Lo stamp `.sertor/.sertor-version` è scritto dall'installer (`importlib.metadata.version("sertor")`), **non derivato dal runtime**: diverge in entrambe le direzioni. Sul nodo *Acta* (che consuma `sertor-core` via `uv` col pin al tag, senza installer) → falso `behind` **a ogni sessione, per sempre**, con un rimedio nemmeno eseguibile lì. **Sul nostro dogfood**: stamp `0.1.0` vs runtime `0.2.0` — riproduce al SessionStart. Rimedio: derivare dal pacchetto installato / dal lock (`read_runtime_pin()`, già in casa), stamp solo come fallback.
+- **E2-FEAT-022 — `.mcp.json` rotta sopravvive a ogni upgrade.** L'installer la salta per **presenza**, non per contenuto: sul nodo *Kaelen* una `.mcp.json` con `--directory` ha reso il **RAG cieco per un mese** (ogni query `[]`, indistinguibile da un corpus povero). Due metà: riconciliare il file per contenuto su `upgrade` + far verificare a `doctor` la **forma dell'invocazione**, non solo `registered=True`.
+
+**La classe, nominata da tre nodi indipendentemente:** *l'artefatto dichiara uno stato, la realtà ne ha un altro, e niente confronta i due* — installer, marker di versione, documentazione. È [[identita-per-presenza-o-per-contenuto]] vista dal campo.
+
+**Rilasciata v0.2.0** «feature + repair»: il **code-graph entra in `search_combined`** come terzo flusso etichettato acceso di default (E5-FEAT-012), e i **tre fix dell'installer** — il pin si muove davvero, il comando d'aggiornamento funziona, il report dichiara la versione effettiva letta dal runtime. Confermata dal campo: *Studium* e *Kaelen* verificano il fix Stop di v0.1.5; *Sinthari* e *VM-WorkingFolder* confermano la diagnosi del pin.
 
 Release precedenti: **v0.1.5** (fix `upgrade` double-wire Stop) · **v0.1.4** «wiki-guard» · **v0.1.3** «daily distill floor». Governance: costituzione **v1.5.0** (EN, Principio XIII).
 
@@ -36,6 +42,8 @@ Release precedenti: **v0.1.5** (fix `upgrade` double-wire Stop) · **v0.1.4** «
 *Stato per epica, una riga:* E1 ✅ · E2 🔄 · E3 🔄 · E4 🔄 (quasi) · E5 🔄 · E6–E9 📋 · E10 🔄 · E11 differita · E12 🔄 · E13 🔄 · E14 🔄 · E15 🔄.
 
 ### 📋 Prossime direzioni (da scegliere)
+- **Coda della riparazione** (aperta dal triage 2026-07-25, dopo i due P0): E2-FEAT-023 (`upgrade` nudo non copre le capability, summary verde ingannevole) · E2-FEAT-024 (minori: `__pycache__`, lingua del config) · E10-FEAT-043 (breadcrumb mai ripulito) · E10-FEAT-044 (lo skew spegne in silenzio gli aiuti advisory) · E10-FEAT-045 (`ritual-check` vs `wiki-guard` misurano realtà diverse) · E10-FEAT-046 (`upsert-index` sezione+wikilink) · E12-FEAT-014 (prima query >2 min senza segnale) · **E13-FEAT-014 (guardia deterministica anti-drift della doc utente — la richiesta di fondo di *Acta*)**.
+- **Rispondere alla federazione** — le 6 domande di *Acta* sulla struttura della documentazione + conferma a *Sinthari*/*Studium*/*Kaelen* su cosa v0.2.0 chiude.
 - **Chiudere E4** — i 3 Could: remember-this · retention · ponte second-brain.
 - **E14** — distribuire SpecLift/SpecAudit agli ospiti (FEAT-002, casa `sertor-flow`).
 - **E13 Fase 2** — marketing (posizionamento/demo/landing), sbloccata dal go-public.

@@ -270,3 +270,45 @@ def test_area_status_rollup_critical():
         (Problem(Severity.CRITICAL, "x", "m", "r"), Problem(Severity.WARN, "y", "m", "r")),
     )
     assert area.status is AreaStatus.fail
+
+
+# --- E2-FEAT-022: registered is not the same as registered CORRECTLY ------------------------------
+#
+# Node Kaelen ran a RAG that answered `[]` to every query for about a month: `.mcp.json` invoked the
+# server with `uv run --directory .sertor`, which moves the working directory, so the server read an
+# empty index inside the runtime folder instead of the project's. `doctor` said `mcp pass
+# (registered=True)` because it only checked that an entry existed. These tests pin the difference.
+
+def test_check_mcp_flags_a_cwd_moving_invocation():
+    area = check_mcp(
+        registered=True,
+        index_stale=False,
+        invocation=("run", "--directory", ".sertor", "python", "-m", "sertor_mcp.server"),
+    )
+    assert area.status is AreaStatus.warn
+    problem = area.problems[0]
+    assert problem.code == "mcp_invocation_moves_cwd"
+    assert "--directory" in problem.message
+    assert "--project" in problem.remedy and "sertor upgrade rag" in problem.remedy
+    assert area.detail["invocation_moves_cwd"] is True
+
+
+def test_check_mcp_passes_on_the_supported_project_form():
+    area = check_mcp(
+        registered=True,
+        index_stale=False,
+        invocation=("run", "--project", ".sertor", "python", "-m", "sertor_mcp.server"),
+    )
+    assert area.status is AreaStatus.pass_
+    assert "invocation_moves_cwd" not in area.detail
+
+
+def test_check_mcp_unknown_invocation_is_not_an_accusation():
+    """No args recorded (or an unreadable file) must not be reported as a broken wiring."""
+    assert check_mcp(registered=True, index_stale=False, invocation=()).status is AreaStatus.pass_
+
+
+def test_check_mcp_cwd_flag_takes_precedence_over_staleness():
+    """A wrong index beats a stale one: report the cause that makes every answer empty."""
+    area = check_mcp(True, index_stale=True, invocation=("run", "-C", ".sertor"))
+    assert area.problems[0].code == "mcp_invocation_moves_cwd"
