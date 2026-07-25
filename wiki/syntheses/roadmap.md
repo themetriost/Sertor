@@ -14,10 +14,18 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > `requirements → spec → plan → tasks → implement`.
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-07-24)
+## ⚡ Executive summary (stato al 2026-07-25)
 
 ### 🔄 In progress
-Niente attivo. **Rilasciata v0.2.0** «feature + repair» (merge del branch `118-contratto-retrieval-agente`, 16 commit): il **code-graph entra in `search_combined`** come terzo flusso etichettato acceso di default (E5-FEAT-012), e i **tre fix dell'installer** — il pin si muove davvero, il comando d'aggiornamento funziona, il report dichiara la versione effettiva letta dal runtime — che sbloccano gli ospiti fermi (segnalazioni federazione). Annuncio su Acta con le istruzioni corrette. Flusso **fermo alla scelta della prossima direzione**.
+**Giro di riparazione dal campo** (2026-07-25). Il triage della bacheca Acta — 5 segnalazioni da 4 nodi indipendenti — ha prodotto **9 nuove righe di backlog**; i **due P0 sono implementati e provati dal vivo** (branch `119-riparazione-installer-dal-campo`, **release v0.2.1** in preparazione):
+- **E2-FEAT-021 ✅ — la versione installata è ora DERIVATA dal runtime** (`sertor-core` in `.sertor/uv.lock`), non letta dallo stamp che l'installer scrive con la *propria* versione. Divergeva in entrambe le direzioni: falso `behind` perpetuo sul nodo *Acta* (consuma `sertor-core` via `uv` senza installer, con un rimedio nemmeno eseguibile lì) e falso «aggiornato» dove il pin è fermo (*Sinthari*). Stamp = fallback; `installed_source` dichiara la provenienza; le `dimensions` mostrano **entrambe** le fonti, così lo skew è visibile. **Provato sul dogfood**, che subiva il difetto: banner `installed 0.1.0` con runtime a `0.2.0` → ora `up-to-date`, SessionStart muto.
+- **E2-FEAT-022 ✅ — e la radice era peggio del difetto tracciato.** Non era un residuo di installazioni vecchie: **`--directory` era la forma che il template spediva**, immutata dal primo commit, mentre **cinque punti della doc utente** (+ un asset che distribuiamo) dicono «usa `--project`, mai `--directory`» — e un test la **certificava** giusta. Fix a tre livelli: template → `--project` · `upgrade` riconcilia l'entry **per contenuto** mentre `install` resta non-distruttivo ma **dichiara** (`PRESENT_DIVERGENT`) · `doctor` verifica la **forma dell'invocazione** (`mcp_invocation_moves_cwd`). Il fix ha rischiato di reintrodurre il danno azzerando `SERTOR_CORPUS` a ogni upgrade — colto dalla prova su host usa-e-getta, non dai test: l'upgrade riscrive **l'invocazione** (nostra) e **preserva la configurazione** (dell'ospite).
+
+**La classe, nominata da tre nodi indipendentemente:** *l'artefatto dichiara uno stato, la realtà ne ha un altro, e niente confronta i due* — installer, marker di versione, **documentazione**. È [[identita-per-presenza-o-per-contenuto]] vista dal campo; la contromisura sull'ultimo fronte scoperto è **E13-FEAT-014** (guardia deterministica anti-drift della doc utente, richiesta di *Acta*).
+
+**Aperto:** risposte alla federazione (le 6 domande di *Acta* sulla documentazione + conferme a *Kaelen*/*Sinthari*/*Studium*) · coda tecnica appena tracciata (vedi *Prossime direzioni*).
+
+**Rilasciata v0.2.0** «feature + repair»: il **code-graph entra in `search_combined`** come terzo flusso etichettato acceso di default (E5-FEAT-012), e i **tre fix dell'installer** — il pin si muove davvero, il comando d'aggiornamento funziona, il report dichiara la versione effettiva letta dal runtime. Confermata dal campo: *Studium* e *Kaelen* verificano il fix Stop di v0.1.5; *Sinthari* e *VM-WorkingFolder* confermano la diagnosi del pin.
 
 Release precedenti: **v0.1.5** (fix `upgrade` double-wire Stop) · **v0.1.4** «wiki-guard» · **v0.1.3** «daily distill floor». Governance: costituzione **v1.5.0** (EN, Principio XIII).
 
@@ -36,6 +44,8 @@ Release precedenti: **v0.1.5** (fix `upgrade` double-wire Stop) · **v0.1.4** «
 *Stato per epica, una riga:* E1 ✅ · E2 🔄 · E3 🔄 · E4 🔄 (quasi) · E5 🔄 · E6–E9 📋 · E10 🔄 · E11 differita · E12 🔄 · E13 🔄 · E14 🔄 · E15 🔄.
 
 ### 📋 Prossime direzioni (da scegliere)
+- **Coda della riparazione** (aperta dal triage 2026-07-25, dopo i due P0): E2-FEAT-023 (`upgrade` nudo non copre le capability, summary verde ingannevole) · E2-FEAT-024 (minori: `__pycache__`, lingua del config) · E10-FEAT-043 (breadcrumb mai ripulito) · E10-FEAT-044 (lo skew spegne in silenzio gli aiuti advisory) · E10-FEAT-045 (`ritual-check` vs `wiki-guard` misurano realtà diverse) · E10-FEAT-046 (`upsert-index` sezione+wikilink) · E12-FEAT-014 (prima query >2 min senza segnale) · **E13-FEAT-014 (guardia deterministica anti-drift della doc utente — la richiesta di fondo di *Acta*)**.
+- **Rispondere alla federazione** — le 6 domande di *Acta* sulla struttura della documentazione + conferma a *Sinthari*/*Studium*/*Kaelen* su cosa v0.2.0 chiude.
 - **Chiudere E4** — i 3 Could: remember-this · retention · ponte second-brain.
 - **E14** — distribuire SpecLift/SpecAudit agli ospiti (FEAT-002, casa `sertor-flow`).
 - **E13 Fase 2** — marketing (posizionamento/demo/landing), sbloccata dal go-public.

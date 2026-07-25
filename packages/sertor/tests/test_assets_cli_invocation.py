@@ -254,8 +254,7 @@ def test_no_directory_footgun_in_agent_facing_assets():
 
     `--directory` changes the working directory to `.sertor`, so a relative path like
     `sertor-rag index .` would index `.sertor` itself instead of the host project. The cure is
-    `--project .sertor` (keeps the cwd). The MCP server template keeps `--directory` legitimately
-    (no path argument) and is not in this list.
+    `--project .sertor` (keeps the cwd).
     """
     offenders = [a for a in _FOOTGUN_BANNED_ASSETS if _FOOTGUN in read_asset_text(a)]
     assert not offenders, (
@@ -263,10 +262,21 @@ def test_no_directory_footgun_in_agent_facing_assets():
     )
 
 
-def test_mcp_server_template_keeps_directory():
-    """Sanity: the MCP server template legitimately keeps `--directory` (no path argument)."""
+def test_mcp_server_template_never_moves_the_working_directory():
+    """The shipped MCP entry must select the environment, NOT move the cwd (E2-FEAT-022).
+
+    This assertion used to say the OPPOSITE — it pinned `--directory` as "legitimate (no path
+    argument)". The rationale was reasoned from the template's own text rather than from what the
+    server does on a host: nothing relative is passed on the command line, but the server still
+    resolves the corpus from its environment, and before `Settings` became self-localizing that
+    resolution followed the cwd. Node Kaelen ran a RAG returning `[]` to every query for about a
+    month because of exactly this entry — while five places in our own docs told users never to use
+    `--directory`. The guard was green and pointed the wrong way, which is worse than absent: it
+    made the defect look deliberate.
+    """
     body = read_asset_text("rag/mcp.server.json.tmpl")
-    assert '"--directory"' in body
+    assert '"--project"' in body
+    assert '"--directory"' not in body, "the shipped MCP entry must not move the working directory"
 
 
 # --- meta: the ban regex is neither vacuous nor over-eager -------------------------------------

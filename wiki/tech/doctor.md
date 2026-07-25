@@ -3,7 +3,7 @@ title: "doctor — la diagnostica di salute deterministica"
 type: tech
 tags: [diagnostica, usabilita, sertor-rag, deterministic, vehicle, principio-x, principio-xi, principio-xii, feat-074, feat-038]
 created: 2026-07-21
-updated: 2026-07-21
+updated: 2026-07-25
 sources: ["src/sertor_core/cli/__main__.py", "src/sertor_core/services/doctor.py", "specs/074-doctor-salute/plan.md", "specs/106-feat-038-doctor-ancorato-root/plan.md", "wiki/experiments/feat-074-doctor-salute.md", "docs/troubleshooting.md"]
 ---
 
@@ -26,7 +26,7 @@ riempirla):
 | **config** (env/config) | var env obbligatoria mancante | — | presente e valida |
 | **provider** (embeddings) | key del provider mancante | irraggiungibile (probe fallita, solo con `--online`) | raggiungibile o probe non richiesta |
 | **index** (indice RAG) | assente o incompatibile (provider diverso, `logic_version` stantio) | stantio (mtime cambiato **e** content-hash diverso) | fresco e compatibile |
-| **mcp** (server MCP) | — | non registrato **o** richiede riavvio | registrato e funzionante |
+| **mcp** (server MCP) | — | non registrato · **invocato in una forma che sposta la cwd** · richiede riavvio | registrato con l'invocazione giusta |
 
 Il rollup è semplice e onesto: **exit 0** se tutte le aree sono ≥ WARN, **exit 1** se almeno una è
 CRITICA. L'exit-code è un **gate** — uno script (o il wizard `configure --check`) può ramificare sul
@@ -48,6 +48,17 @@ osservabile (il server MCP è out-of-process), quindi al più emette un WARN *de
 MCP registrato → «potrebbe servire un indice non fresco, riavvia il server») e, in assenza di segnale,
 riporta `unknown` invece di inventare uno stato (Principio XII, *fail-loud / non mentire*). Il self-check
 di freschezza *dentro* il server resta un debito promosso.
+
+**Registrato ≠ registrato bene** (E2-FEAT-022, 2026-07-25). L'area `mcp` non si limita più a chiedere
+«c'è una entry `sertor-rag` in `.mcp.json`?»: legge anche **come** il server viene invocato. Una entry
+che usa un flag che **sposta la working directory** (`--directory`, `-C`) fa risolvere al server
+l'indice relativo a quella cartella invece che alla radice del progetto → **ogni ricerca torna vuota,
+senza errori**, indistinguibile da un corpus povero. `doctor` lo nomina come
+`mcp_invocation_moves_cwd` col rimedio (`--project`, oppure `sertor upgrade rag` che ri-cabla la
+entry). Perché serviva: prima `doctor` diceva `mcp pass (registered=True)` **proprio** sulla
+configurazione che rendeva cieco il RAG — il nodo *Kaelen* c'è rimasto un mese. Resta **WARN** e non
+CRITICO: per DA-D4 l'area MCP non guida l'exit-code, e riaprirla è una decisione a sé. Vedi
+[[esito-sull-host-vs-forma-dell-asset]].
 
 ## Il contratto `doctor.report/1`
 

@@ -204,7 +204,88 @@ def test_version_check_verdict_behind_from_cache(tmp_path: Path):
     assert state["schema"] == "version.check/1"
     assert state["verdict"] == "behind"
     assert state["installed"] == "0.1.0" and state["latest"] == "0.2.0"
-    assert state["dimensions"]["sertor"] == "0.1.0"
+    assert state["dimensions"]["sertor (installer stamp)"] == "0.1.0"
+
+
+# --- E2-FEAT-021: the compared version is DERIVED from the runtime, not read from the stamp -------
+#
+# The stamp records the version of the *installer that ran*; the lock records what the host actually
+# resolved. Trusting the stamp produced a permanent false `behind` on nodes that consume
+# `sertor-core` via `uv` without ever running the installer (node Acta), and reproduced on Sertor's
+# own dogfood (stamp 0.1.0 vs runtime 0.2.0). These tests pin the precedence and the fallback.
+
+def _write_lock(root: Path, version: str, *, name: str = "sertor-core") -> None:
+    """A minimal `.sertor/uv.lock` carrying one resolved package, as `uv` writes it."""
+    d = root / ".sertor"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "uv.lock").write_text(
+        "version = 1\n\n"
+        "[[package]]\n"
+        'name = "anyio"\nversion = "4.4.0"\nsource = { registry = "https://pypi.org/simple" }\n\n'
+        "[[package]]\n"
+        f'name = "{name}"\nversion = "{version}"\n'
+        'source = { git = "https://github.com/themetriost/Sertor.git#4161131" }\n',
+        encoding="utf-8",
+    )
+
+
+def test_version_check_prefers_runtime_lock_over_stale_stamp(tmp_path: Path):
+    """The dogfood/Acta case: runtime IS current, only the stamp lags → must NOT say `behind`."""
+    _write_vc(tmp_path, "unknown", latest="0.2.0")  # fresh cache → no network
+    (tmp_path / ".sertor" / ".sertor-version").write_text("0.1.0\n", encoding="utf-8")
+    _write_lock(tmp_path, "0.2.0")
+    r = _run("version-check", event="{}", root=tmp_path)
+    assert r.returncode == 0
+    state = _read_vc(tmp_path)
+    assert state["installed"] == "0.2.0", "the version must come from the lock, not the stamp"
+    assert state["verdict"] == "up-to-date", "a host on the latest must not be told to update"
+    assert state["installed_source"] == "runtime-lock"
+
+
+def test_version_check_surfaces_the_skew_instead_of_hiding_it(tmp_path: Path):
+    """Both sources are reported, so a stamp/runtime divergence is visible (Principio XII)."""
+    _write_vc(tmp_path, "unknown", latest="0.2.0")
+    (tmp_path / ".sertor" / ".sertor-version").write_text("0.1.5\n", encoding="utf-8")
+    _write_lock(tmp_path, "0.1.0")  # the Sinthari case: stamp ahead, runtime stuck
+    r = _run("version-check", event="{}", root=tmp_path)
+    assert r.returncode == 0
+    dims = _read_vc(tmp_path)["dimensions"]
+    assert dims["sertor-core (runtime)"] == "0.1.0"
+    assert dims["sertor (installer stamp)"] == "0.1.5"
+
+
+def test_version_check_falls_back_to_stamp_without_a_lock(tmp_path: Path):
+    """No lock (or an unreadable one) → the stamp still answers; the source is declared."""
+    _write_vc(tmp_path, "unknown", latest="0.2.0")
+    (tmp_path / ".sertor" / ".sertor-version").write_text("0.1.0\n", encoding="utf-8")
+    r = _run("version-check", event="{}", root=tmp_path)
+    assert r.returncode == 0
+    state = _read_vc(tmp_path)
+    assert state["installed"] == "0.1.0" and state["installed_source"] == "stamp"
+    assert state["verdict"] == "behind"
+
+
+def test_version_check_malformed_lock_degrades_to_stamp_without_failing(tmp_path: Path):
+    """A corrupt lock must not break the hook: fall back, exit 0, never raise (fail-safe)."""
+    _write_vc(tmp_path, "unknown", latest="0.2.0")
+    d = tmp_path / ".sertor"
+    (d / ".sertor-version").write_text("0.1.0\n", encoding="utf-8")
+    (d / "uv.lock").write_text("this is not = valid toml [[[", encoding="utf-8")
+    r = _run("version-check", event="{}", root=tmp_path)
+    assert r.returncode == 0
+    state = _read_vc(tmp_path)
+    assert state["installed"] == "0.1.0" and state["installed_source"] == "stamp"
+    assert not (d / ".last-hook-error").exists(), "a malformed lock is handled, not an error"
+
+
+def test_version_check_lock_without_sertor_core_falls_back(tmp_path: Path):
+    """A lock that does not mention the package is not an answer — fall back to the stamp."""
+    _write_vc(tmp_path, "unknown", latest="0.2.0")
+    (tmp_path / ".sertor" / ".sertor-version").write_text("0.1.0\n", encoding="utf-8")
+    _write_lock(tmp_path, "9.9.9", name="something-else")
+    r = _run("version-check", event="{}", root=tmp_path)
+    assert r.returncode == 0
+    assert _read_vc(tmp_path)["installed_source"] == "stamp"
 
 
 # --- wiki-session-start (SessionStart) — host-agnostic, config-driven (E10-FEAT-029) --------------

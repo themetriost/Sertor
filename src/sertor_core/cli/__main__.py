@@ -35,6 +35,7 @@ from sertor_core.composition import (
     current_source_stats,
     enable_observability,
     load_manifest_state,
+    read_mcp_invocation,
     read_mcp_registration,
 )
 from sertor_core.config.settings import Settings
@@ -612,7 +613,9 @@ def _cmd_doctor(args) -> None:
         areas.append(index_area)
     if AreaName.mcp in wanted:
         registered = read_mcp_registration(root)
-        areas.append(check_mcp(registered, index_stale))
+        # E2-FEAT-022: also inspect HOW the server is invoked — a registration that moves the
+        # working directory reads the wrong index and answers `[]` to everything.
+        areas.append(check_mcp(registered, index_stale, read_mcp_invocation(root)))
 
     report = assemble(tuple(areas), online=bool(args.online))
     _emit_doctor_event(report)

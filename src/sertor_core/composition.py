@@ -858,6 +858,40 @@ def read_mcp_registration(root: Path) -> bool:
     return False
 
 
+def read_mcp_invocation(root: Path) -> tuple[str, ...]:
+    """The ARGUMENTS the registered `sertor-rag` MCP server is invoked with (E2-FEAT-022).
+
+    `read_mcp_registration` answers «is it registered?»; this answers «is it registered
+    *correctly*?»
+    — a different question, and the one that mattered: a server registered with `uv run --directory
+    .sertor` moves the working directory, so it resolves an index INSIDE the runtime folder instead
+    of the project's. Every query then returns `[]`: not an error, an absence — indistinguishable
+    from a thin corpus, which is why a node ran a blind RAG for a month without noticing.
+
+    Read-only, stdlib, non-fatal: absent file / invalid JSON / no entry → `()`. Never starts the
+    server.
+    """
+    import json
+
+    try:
+        data = json.loads((root / ".mcp.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return ()
+    if not isinstance(data, dict):
+        return ()
+    for key in ("mcpServers", "servers"):
+        section = data.get(key)
+        if not isinstance(section, dict):
+            continue
+        entry = section.get("sertor-rag")
+        if isinstance(entry, dict):
+            args = entry.get("args")
+            if isinstance(args, list):
+                return tuple(str(a) for a in args)
+            return ()
+    return ()
+
+
 def current_source_stats(manifest_state, root: Path) -> list[tuple[Path, float, str | None]]:
     """Current mtime (+ confirming content-hash) of each manifest file (074/076, FR-006). No rescan.
 

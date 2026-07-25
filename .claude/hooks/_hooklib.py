@@ -90,6 +90,36 @@ def memory_enabled() -> bool:
     return ambient.strip().lower() in _TRUE if ambient else False
 
 
+def runtime_core_version(runtime_dir: Path) -> str:
+    """The `sertor-core` version ACTUALLY resolved in the runtime, read from `<runtime>/uv.lock`.
+
+    The lock is the ground truth about what this host is running. It is read here — instead of
+    trusting the install-time stamp `.sertor/.sertor-version` — because the stamp records the version
+    of the *installer that ran*, which is a different fact and drifts from reality in **both**
+    directions (E2-FEAT-021): a host that consumes `sertor-core` via `uv` without ever running the
+    installer keeps a stamp that never advances (permanent false `behind`), and a host whose stamp
+    was written by a newer installer than the runtime it produced reports an upgrade that did not
+    reach the runtime. Declared state must be DERIVED from reality, not written alongside it.
+
+    Pure and read-only, stdlib only. Returns `""` when the lock is absent, unreadable, malformed, or
+    does not mention the package — never raises, so the caller can fall back to the stamp.
+    """
+    try:
+        with (runtime_dir / "uv.lock").open("rb") as fh:
+            data = tomllib.load(fh)
+    except (OSError, tomllib.TOMLDecodeError, ValueError):
+        return ""
+    packages = data.get("package")
+    if not isinstance(packages, list):
+        return ""
+    for entry in packages:
+        if not isinstance(entry, dict) or entry.get("name") != "sertor-core":
+            continue
+        version = entry.get("version")
+        return version.strip() if isinstance(version, str) else ""
+    return ""
+
+
 def wiki_config(root: Path) -> dict | None:
     """The host's wiki layout from `wiki.config.toml` (host-agnostic — Principio X, E10-FEAT-029).
 

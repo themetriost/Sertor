@@ -39,6 +39,9 @@ _WHITELIST = (
     "Sertor hooks",   # A-09 portable-hook subsystem description (host-agnostic, in _hooklib.py)
     "SERTOR_MEMORY",  # E4-FEAT-012 memory-gate env var, read in _hooklib.py (host knob)
     "sertor_dir",     # A-09 portable-hook identifier for the `.sertor` runtime dir (host-agnostic)
+    "sertor-core",    # E2-FEAT-021: the PACKAGE name the hook looks up in the runtime lock. Like
+                      # `SERTOR_MEMORY` and `.sertor`, it is product-specific but identical on every
+                      # host — the guard bans host-specific references, not the product's own name.
     ".sertor",
     "SERTOR:WIKI-RITUAL",
 )

@@ -46,7 +46,12 @@ from sertor_install_kit.lifecycle import (
 from sertor_install_kit.lifecycle import (
     execute_lifecycle as _kit_execute_lifecycle,
 )
-from sertor_install_kit.mcp_merge import merge_mcp, remove_mcp_server
+from sertor_install_kit.mcp_merge import (
+    merge_mcp,
+    reconcile_entry,
+    remove_mcp_server,
+    update_mcp_server,
+)
 from sertor_install_kit.model_policy import resolve_model
 from sertor_install_kit.observability import log_event
 from sertor_install_kit.settings_merge import (
@@ -362,6 +367,12 @@ def _write_version_stamp(profile: RagHostProfile) -> None:
     The version is read IN-PROCESS at install/upgrade time via `importlib.metadata.version`
     — NEVER by the hook at runtime (Principio XI: no Python in the hot path). Non-fatal: a failure
     to resolve the version must not break the install (the hook degrades to `verdict: unknown`).
+
+    **This stamp is no longer the version the update check compares (E2-FEAT-021).** It records the
+    version of the *installer that ran*, which is a different fact from what the runtime resolved:
+    the hook now derives the installed version from `.sertor/uv.lock` and keeps the stamp only as a
+    fallback. It is still written — it is the one place that records which installer produced this
+    layout, and the state file surfaces both so a skew between them stays visible.
     """
     try:
         import importlib.metadata as _imeta
@@ -813,6 +824,44 @@ def _apply_mcp(profile: RagHostProfile, art: Artifact) -> ArtifactOutcome:
     return ArtifactOutcome(art.target_rel, outcome, detail)
 
 
+def _mcp_entry(profile: RagHostProfile) -> dict:
+    """The `sertor-rag` server entry this installer ships, rendered for this host's corpus."""
+    return json.loads(read_asset_text("rag/mcp.server.json.tmpl").format(corpus=profile.corpus))
+
+
+def _apply_mcp_upgrade(
+    profile: RagHostProfile, art: Artifact, dry_run: bool = False
+) -> ArtifactOutcome:
+    """`MERGE_JSON` under UPGRADE: reconcile the `sertor-rag` entry BY CONTENT (E2-FEAT-022).
+
+    The install path is additive and skips a server that is already registered — correct for install
+    (non-destructive), fatal for upgrade: a `.mcp.json` carrying a broken invocation survived every
+    subsequent upgrade, and on node Kaelen that meant a RAG answering `[]` to every query for about
+    a month. Upgrade is the verb that repairs the host, so here the entry is replaced in place.
+    """
+    dest = profile.target_root / art.target_rel
+    entry = _mcp_entry(profile)
+    if dry_run:
+        return ArtifactOutcome(art.target_rel, _project_mcp(dest, entry), "MCP server entry")
+    outcome, detail = update_mcp_server(dest, entry, root_key="mcpServers")
+    return ArtifactOutcome(art.target_rel, outcome, detail)
+
+
+def _project_mcp(dest: Path, entry: dict) -> Outcome:
+    """Read-only projection of `update_mcp_server` for `--dry-run` (never writes)."""
+    if not dest.exists():
+        return Outcome.CREATED
+    try:
+        existing = json.loads(dest.read_text(encoding="utf-8"))
+        servers = existing.get("mcpServers") if isinstance(existing, dict) else None
+        previous = servers.get(_SERVER_NAME) if isinstance(servers, dict) else None
+    except (OSError, json.JSONDecodeError):
+        return Outcome.SKIPPED  # malformed → the real run raises ConfigError; do not claim a change
+    if previous is None:
+        return Outcome.MERGED
+    return Outcome.SKIPPED if previous == reconcile_entry(previous, entry) else Outcome.UPDATED
+
+
 def _apply_gitignore(profile: RagHostProfile) -> ArtifactOutcome:
     """`APPEND_LINES`: runtime entries in `.gitignore` (host root), dedup."""
     outcome, detail = append_gitignore(profile.target_root / ".gitignore")
@@ -1132,6 +1181,11 @@ def _apply_rag_upgrade(
             )
         outcome = update_marker_block(dest, content, MARKER_START_RAG, MARKER_END_RAG)
         return ArtifactOutcome(art.target_rel, outcome, "RAG-usage block")
+    if art.kind is ArtifactKind.MCP_MERGE:
+        # E2-FEAT-022: reconciled BY CONTENT, before the generic dry-run shortcut below — a broken
+        # registration is exactly what upgrade must repair, and projecting it as `idempotent` was
+        # part of how it stayed invisible.
+        return _apply_mcp_upgrade(profile, art, dry_run)
     if dry_run:
         # Idempotent additive steps: on an aligned host a re-apply changes nothing.
         return ArtifactOutcome(art.target_rel, Outcome.SKIPPED, "idempotent")
@@ -1140,8 +1194,6 @@ def _apply_rag_upgrade(
         return _apply_deps(profile, runner)
     if art.kind is ArtifactKind.ENV_MERGE:
         return _apply_env(profile)
-    if art.kind is ArtifactKind.MCP_MERGE:
-        return _apply_mcp(profile, art)
     if art.kind is ArtifactKind.MCP_REGISTER:
         return _apply_mcp_register(profile, runner)
     if art.kind is ArtifactKind.GITIGNORE_APPEND:

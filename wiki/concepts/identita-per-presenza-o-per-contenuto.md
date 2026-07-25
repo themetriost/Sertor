@@ -3,7 +3,7 @@ title: Identità per presenza o per contenuto
 type: concept
 tags: [idempotenza, installer, guardie, difetti, pattern-diagnostico, principio-vi, e10]
 created: 2026-07-24
-updated: 2026-07-24
+updated: 2026-07-25
 sources: ["src/sertor_core/composition.py", "src/sertor_core/observability/capture.py", "packages/sertor-install-kit/src/sertor_install_kit/", "wiki/log/2026-07-24.md"]
 ---
 
@@ -34,11 +34,22 @@ Il criterio per presenza è quasi sempre il più facile da scrivere, ed è per q
 assistente veniva **duplicato** (con la copia vecchia rotta ancora attiva), su un altro **scartato**.
 Identità corretta: lo **stem dello script**. Dettaglio in [[identita-hook-nel-merge]].
 
-**2. La registrazione del server MCP** (segnalazione del nodo *Kaelen*, 2026-07-24). L'installer salta
-`.mcp.json` quando il server è **già registrato**. Su quell'host la registrazione conteneva
+**2. La registrazione del server MCP** (segnalazione del nodo *Kaelen*, 2026-07-24). L'installer saltava
+`.mcp.json` quando il server era **già registrato**. Su quell'host la registrazione conteneva
 `--directory` invece di `--project`: il RAG risolveva l'indice nella cartella sbagliata e **ogni query
 tornava `[]`** — per **un mese**, indistinguibile da un corpus povero. La configurazione rotta era
 quindi **immune a tutti gli upgrade successivi**, proprio perché «c'era».
+
+> **Chiusa il 2026-07-25 (E2-FEAT-022) — e la radice era peggio della diagnosi.** Correggendo si è
+> scoperto che `--directory` non era un residuo di installazioni vecchie: era **la forma che il
+> template spediva**, mai cambiata dal primo commit, mentre cinque punti della nostra documentazione
+> dicevano di non usarla — con un test che la **certificava** giusta (vedi
+> [[esito-sull-host-vs-forma-dell-asset]]). Il fix è su tre livelli: il template passa a `--project`;
+> `upgrade` riconcilia l'entry **per contenuto** (`update_mcp_server`) mentre `install` resta
+> non-distruttivo ma **dichiara** la divergenza (`PRESENT_DIVERGENT`); `doctor` verifica la **forma
+> dell'invocazione** e non solo la presenza. Con una separazione che il primo tentativo non aveva:
+> l'upgrade riscrive **l'invocazione** (nostra) e **preserva la configurazione dell'ospite**
+> (`SERTOR_CORPUS`) — riscrivere tutto azzerava il corpus e riproduceva il RAG cieco.
 
 **3. L'idempotenza dell'osservabilità** (trovata il 2026-07-24). `enable_observability` chiedeva
 *«c'è già un `EventPersistenceHandler` attaccato?»*. Con uno puntato a un altro store non faceva

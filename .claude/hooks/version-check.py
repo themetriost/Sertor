@@ -2,7 +2,13 @@
 
 SessionEnd hook that checks whether the installed Sertor is older than the latest published version
 (E2-FEAT-013). Consumes NO CLI vehicle and NO LLM: a simple HTTPS GET of the remote `/VERSION`, reads
-the install-time stamp, compares them, persists the verdict. NEVER imports `sertor_core`.
+the version the runtime actually resolved, compares them, persists the verdict. NEVER imports
+`sertor_core`.
+
+The compared version is **derived from the runtime** (`.sertor/uv.lock`) rather than read from the
+install-time stamp (E2-FEAT-021): the stamp records the installer's own version, which drifts from
+what the host runs in both directions and produced a permanent false `behind` on nodes that consume
+`sertor-core` without the installer. The stamp remains only as a fallback.
 
 Orchestration: reuse `.version-check.json` if `checked_at` is within ~24h (unless forced) and re-confirm
 vs the current stamp; else GET the URL (env override honoured **only over https** — A-08 security),
@@ -58,10 +64,26 @@ def main() -> None:
     sertor_dir = root / ".sertor"
     state_path = sertor_dir / ".version-check.json"
 
-    installed = _read_stamp(sertor_dir / ".sertor-version")
+    # E2-FEAT-021: the compared version is DERIVED from the runtime (the `uv.lock` resolution of
+    # `sertor-core`), NOT read from the install-time stamp. The stamp records the version of the
+    # *installer that ran* — a different fact that drifts both ways: a host consuming `sertor-core`
+    # via `uv` without the installer keeps a stamp frozen forever (permanent false `behind`, with a
+    # suggested `sertor upgrade` that is not even executable there), and a stamp written by a newer
+    # installer than the runtime it produced claims an upgrade the runtime never received. The stamp
+    # survives only as a FALLBACK, for hosts whose lock cannot be read.
+    runtime = _hooklib.runtime_core_version(sertor_dir)
+    stamp = _read_stamp(sertor_dir / ".sertor-version")
+    installed = runtime or stamp
+    installed_source = "runtime-lock" if runtime else ("stamp" if stamp else "")
+
+    # Report every dimension we can observe, from its own source — so a skew between what the
+    # installer believes and what the runtime actually runs is VISIBLE in the state file instead of
+    # being resolved silently in favour of one of them (Principio XII).
     dimensions: dict[str, str] = {}
-    if installed:
-        dimensions["sertor"] = installed
+    if runtime:
+        dimensions["sertor-core (runtime)"] = runtime
+    if stamp:
+        dimensions["sertor (installer stamp)"] = stamp
     flow = _read_stamp(sertor_dir / ".sertor-flow-version")
     if flow:
         dimensions["sertor-flow"] = flow
@@ -124,6 +146,8 @@ def main() -> None:
         "latest": latest,
         "checked_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
+    if installed_source:
+        state["installed_source"] = installed_source
     if dimensions:
         state["dimensions"] = dimensions
     if verdict == "unknown" and prev_unknown_notified:

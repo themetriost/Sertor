@@ -49,6 +49,36 @@ uv run --project .sertor sertor-rag index .
 
 ---
 
+## Every search returns nothing, and there is no error
+
+**Symptom.** `sertor-rag search` or the MCP tools return an empty result for every query — including
+queries you know the corpus can answer. No error message: just nothing, which looks exactly like a
+thin corpus.
+
+**Cause.** The MCP server in `.mcp.json` is registered with `uv run --directory .sertor`, which moves
+the working directory: the server resolves its index inside the runtime folder instead of your
+project, and reads an empty one. Installations created before this was fixed carry that entry, and
+older versions skipped the file on upgrade — so it survived.
+
+**Diagnose.** `doctor` names it:
+
+```powershell
+uv run --project .sertor sertor-rag doctor
+```
+
+A registration that moves the working directory is reported as `mcp_invocation_moves_cwd`.
+
+**Fix.** Upgrade — the `sertor-rag` entry is reconciled in place (your `SERTOR_CORPUS` and any other
+MCP server in the file are preserved), then restart the MCP server:
+
+```powershell
+uvx --refresh --from "git+https://github.com/themetriost/Sertor.git#subdirectory=packages/sertor" sertor upgrade rag
+```
+
+You can also edit `.mcp.json` by hand, replacing `--directory` with `--project`.
+
+---
+
 ## Windows: `ModuleNotFoundError: No module named 'pywin32_bootstrap'`
 
 **Symptom.** Running `pip` / `python -m` prints
