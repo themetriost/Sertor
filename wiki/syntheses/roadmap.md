@@ -49,7 +49,7 @@ Release precedenti: **v0.1.5** (fix `upgrade` double-wire Stop) · **v0.1.4** «
 
 ### 📋 Prossime direzioni (da scegliere)
 - **Coda della riparazione** (aperta dal triage 2026-07-25, dopo i due P0): E2-FEAT-023 (`upgrade` nudo non copre le capability, summary verde ingannevole) · E2-FEAT-024 (minori: `__pycache__`, lingua del config) · E10-FEAT-043 (breadcrumb mai ripulito) · E10-FEAT-044 (lo skew spegne in silenzio gli aiuti advisory) · E10-FEAT-045 (`ritual-check` vs `wiki-guard` misurano realtà diverse) · E10-FEAT-046 (`upsert-index` sezione+wikilink) · E12-FEAT-014 (prima query >2 min senza segnale) · **E13-FEAT-014 (guardia deterministica anti-drift della doc utente — la richiesta di fondo di *Acta*)**.
-- **Rispondere alla federazione** — le 6 domande di *Acta* sulla struttura della documentazione + conferma a *Sinthari*/*Studium*/*Kaelen* su cosa v0.2.0 chiude.
+- **Migrazione ad Acta v0.5.0** *(breaking, decisione utente)* — il comando nudo `acta` non è più il contratto; il passo `uv tool uninstall acta` è **machine-wide** e tocca gli altri nodi dell'host.
 - **Chiudere E4** — i 3 Could: remember-this · retention · ponte second-brain.
 - **E14** — distribuire SpecLift/SpecAudit agli ospiti (FEAT-002, casa `sertor-flow`).
 - **E13 Fase 2** — marketing (posizionamento/demo/landing), sbloccata dal go-public.
