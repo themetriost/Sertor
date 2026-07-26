@@ -519,7 +519,7 @@ On top of the launched SpecKit, `sertor-flow` deposits its **own** Sertor-author
 | SpecKit commands/agents + `.specify/**` | launched via `specify init` (see above) | layout present → launch **skipped** (not relaunched) |
 | `requirements-analyst` + `configuration-manager` agents | `.claude/agents/*.md` · `.github/agents/*.agent.md` | per-file skip if present (non-destructive) |
 | `requirements` skill | `.claude/skills/requirements/SKILL.md` · `.github/prompts/requirements.prompt.md` | per-file skip if present |
-| Constitution **starter** (neutral, host-agnostic, assistant-agnostic) | `.specify/memory/constitution.md` | skip if present (never overwrites your constitution) |
+| Constitution **starter** (neutral, host-agnostic, assistant-agnostic) | `.specify/memory/constitution.md` | never overwrites your constitution — but if yours declares an **older starter version**, the report says so and points at the starter's `Amendments` section (see below) |
 | Per-host `init-options.json` / `integration.json` / manifests (generated from the profile) | `.specify/**` | skip if present |
 | `SERTOR:SDLC-RITUAL` block | `CLAUDE.md` · `.github/copilot-instructions.md` | idempotent marker block; coexists with the wiki block |
 
@@ -530,6 +530,19 @@ Claude (the body is reused verbatim, only the frontmatter/container is translate
 obtain SpecKit) — it never creates a feature, runs a git command, or indexes anything. Re-running is
 safe: the SpecKit launch is skipped when its layout is already on disk and every other artifact is
 reported `skipped`.
+
+**Your constitution is yours — and amendments are announced, never applied.** The starter is a
+**seed**: once you have a real constitution, `install` and `upgrade` both leave it untouched, because
+you are expected to personalize it. The consequence used to be that a later amendment could never
+reach you and nothing said so. Now the report compares the starter version declared inside your file
+(`**Version**: X.Y.Z`) with the one shipped, and when yours is older it tells you — naming both
+versions and pointing at the **`Amendments`** section of the starter, which lists every release and
+what it added, so a project several versions behind can see *everything* it missed rather than only
+the latest change.
+
+Nothing is written in that case. Integrating an amendment is a judgment call about your own
+principles: read the entry, decide whether it applies, and fold it in yourself (for example with your
+assistant's `speckit-constitution` capability), then bump the version line in your file.
 
 **Coexistence with the wiki.** The SDLC ritual block uses its own markers
 (`SERTOR:SDLC-RITUAL`), distinct from the wiki's `SERTOR:WIKI-RITUAL`: both blocks live in the same
