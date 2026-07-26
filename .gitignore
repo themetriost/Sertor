@@ -90,5 +90,7 @@ prototype/raw/*
 .sertor/.sertor-flow-version
 .sertor/.last-hook-error
 
-# Acta per-node config (host-specific, not shared)
-.acta/
+# Acta per-node: la dichiarazione di versione è versionata, il runtime no (FEAT-018)
+.acta/*
+!.acta/pyproject.toml
+!.acta/uv.lock

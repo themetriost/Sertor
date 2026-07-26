@@ -20,6 +20,30 @@ import argparse
 import json
 import subprocess
 import sys
+from pathlib import Path
+
+
+def node_root():
+    """La radice del nodo, dedotta **dalla posizione di questo file** (`<nodo>/.claude/hooks/…`).
+
+    Non da una variabile d'ambiente dell'ospite: l'hook deve restare host-agnostico e funzionare
+    qualunque sia la cwd da cui l'assistente lo lancia.
+    """
+    return Path(__file__).resolve().parents[2]
+
+
+def occasion_command():
+    """L'invocazione **node-scoped** (FR-RUN-06): dalla v0.5.0 la capability vive nel nodo, non nella
+    macchina, e il comando nudo `acta` non esiste più come contratto.
+
+    Duplica di proposito la forma definita in `acta.node_runtime.node_command`: questo hook gira con un
+    interprete nudo (`uv run --no-project python`) e **non può importare `acta`** — se potesse, dovrebbe
+    già essere dentro il runtime che sta cercando di raggiungere. Un test di parità tiene allineate le
+    due copie.
+    """
+    return [
+        "uv", "run", "--project", str(node_root() / ".acta"), "acta", "occasion", "--json",
+    ]
 
 
 def build_directive(outcome):
@@ -50,21 +74,40 @@ def build_directive(outcome):
                 f"- [{n.get('canale')}] {n.get('titolo')} — nodo {n.get('nodo')}, {n.get('data')}{tag_str}"
             )
         return "\n".join(lines)
+    if esito == "runtime-non-disponibile":
+        # FR-RUN-10: il runtime del nodo può mancare (non installato, non materializzato, `uv` assente).
+        # Si DICHIARA — mai si sopprime — ma non si blocca la sessione.
+        return (
+            "OCCASIONE ACTA — runtime del nodo non disponibile: la bacheca non è stata guardata. "
+            f"({outcome.get('dettaglio', '')}) "
+            "Rimedio: dalla radice del nodo esegui `acta install` (bootstrap: "
+            "`uvx --from git+https://github.com/themetriost/Acta acta install`)."
+        )
     # silenzio / prima-visita / esito ignoto → nessuna direttiva (nessun falso avviso, SC-005)
     return None
 
 
 def _run_occasion():
-    """Esegue `acta occasion --json` e ne restituisce l'esito come dict, o **None** se non disponibile.
-    Fail-soft: `acta` assente o in errore non deve rompere la sessione."""
+    """Esegue l'occasione **nel runtime del nodo** e ne restituisce l'esito come dict.
+
+    Fail-soft ma **fail-loud** (Cost. XI): un runtime assente o rotto non deve rompere la sessione, ma
+    non deve nemmeno passare per «nessuna novità» — sarebbe un silenzio che mente. Perciò si distingue
+    *non c'è niente di nuovo* (None) da *non ho potuto guardare* (esito dichiarato, FR-RUN-10).
+    """
     try:
-        result = subprocess.run(
-            ["acta", "occasion", "--json"], capture_output=True, text=True, timeout=30
-        )
-    except (OSError, subprocess.SubprocessError):
-        return None
+        result = subprocess.run(occasion_command(), capture_output=True, text=True, timeout=120)
+    except FileNotFoundError:
+        return {"esito": "runtime-non-disponibile", "dettaglio": "`uv` non trovato su questo host"}
+    except (OSError, subprocess.SubprocessError) as exc:
+        return {"esito": "runtime-non-disponibile", "dettaglio": f"{type(exc).__name__}"}
     out = (result.stdout or "").strip()
     if not out:
+        if result.returncode != 0:
+            detail = (result.stderr or "").strip().splitlines()
+            return {
+                "esito": "runtime-non-disponibile",
+                "dettaglio": detail[-1][:200] if detail else f"exit {result.returncode}",
+            }
         return None
     try:
         return json.loads(out)

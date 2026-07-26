@@ -1,0 +1,19 @@
+version = 1
+revision = 3
+requires-python = ">=3.11"
+
+[[package]]
+name = "acta"
+version = "0.5.1"
+source = { git = "https://github.com/themetriost/Acta?tag=v0.5.1#ef829ee46ab8b699ad27f212279c75d8a0fac901" }
+
+[[package]]
+name = "acta-runtime"
+version = "0.0.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "acta" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "acta", git = "https://github.com/themetriost/Acta?tag=v0.5.1" }]

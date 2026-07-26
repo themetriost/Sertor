@@ -3,7 +3,7 @@ title: L'esito sull'host, non la forma dell'asset
 type: concept
 tags: [testing, guardie, installer, asset, upgrade, fedelta, principio-xii, e10]
 created: 2026-07-17
-updated: 2026-07-25
+updated: 2026-07-26
 sources: ["packages/sertor-install-kit/tests/unit/test_settings_merge_identity.py", "packages/sertor/tests/test_claude_hook_wiring_anchored.py", "requirements/debito-tecnico/epic.md", "wiki/log/2026-07-16.md", "wiki/log/2026-07-17.md"]
 ---
 
@@ -90,6 +90,30 @@ ripara un artefatto d'ospite deve separare **ciò che possiede** (l'invocazione)
 dell'ospite** (la configurazione): falliscono in direzioni opposte, e una regola sola non può
 governarli. Trovato eseguendo l'installer vero su un host usa-e-getta, non dai test unitari — stessa lezione
 del «testa il componente reale, non solo il fake».
+
+## Il perimetro della guardia: chiudere un caso credendo di chiudere una classe (2026-07-26)
+
+Terzo modo di sbagliare una guardia, dopo il *cieca* e il *complice*: darle un **perimetro più stretto
+della regola che difende**. La guardia è corretta, verde e onesta — copre però **il file in cui
+l'errore è stato notato**, non l'insieme dei file che la regola tocca. Il caso si chiude, la classe no.
+
+**Formulato dal nodo Acta**, che ce l'ha girato dopo averlo pagato: una loro regola `.gitignore`
+versionava **due** file (`pyproject.toml` **e** `uv.lock`); un path assoluto della macchina di sviluppo
+era stato trovato nel primo e la guardia che ne era nata copriva **solo quello**. Il difetto è
+riemerso dal secondo. Come lo dicono loro: *«non era tornato — non era mai stato coperto per intero»*.
+
+> Una guardia va posata sul **perimetro della regola** che protegge, non sul **file** in cui l'errore
+> è stato notato.
+
+**Ed è la nostra stessa storia, vista da un'altra angolazione.** La guardia contro `--directory`
+esisteva già (`_FOOTGUN_BANNED_ASSETS`) e girava verde: il suo perimetro era una **lista di asset**, e
+il template `.mcp.json` non solo ne era fuori — ne era **esentato per iscritto**, con motivazione. Due
+difetti sovrapposti sullo stesso presidio: perimetro troppo stretto *e* l'esenzione che lo benediceva.
+Domanda operativa che ne segue, da porsi quando si scrive una guardia: *quali file tocca la regola che
+sto difendendo?* — e non: *dove ho visto il bug?*
+
+*Verificato sul nostro caso gemello (2026-07-26): i due file `.acta` che la stessa regola versiona da
+noi sono puliti, perché installiamo da git e non in editable. La classe non ci mordeva; la lezione sì.*
 
 ## Tre istanze dal campo (2026-07-24) — dove il punto cieco è l'installer
 

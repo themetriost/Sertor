@@ -1,0 +1,11 @@
+# Runtime del nodo — generato da `acta install` (FEAT-018).
+# Questo file DICHIARA quale versione di Acta esegue questo nodo, ed è versionato apposta:
+# senza, la versione sarebbe leggibile solo eseguendo qualcosa su questa macchina.
+[project]
+name = "acta-runtime"
+version = "0.0.0"
+requires-python = ">=3.11"
+dependencies = ["acta"]
+
+[tool.uv.sources]
+acta = { git = "https://github.com/themetriost/Acta", tag = "v0.5.1" }
