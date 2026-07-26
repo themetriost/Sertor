@@ -13,6 +13,7 @@ import argparse
 import json
 import os
 import sys
+import tomllib
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import _hooklib  # noqa: E402
@@ -23,28 +24,72 @@ import _hooklib  # noqa: E402
 _FALLBACK_URL = "https://github.com/themetriost/Sertor.git"
 
 
-def _upgrade_command(sertor_dir) -> str:
-    """The upgrade command that actually WORKS on this host.
+def _runtime_source(sertor_dir) -> tuple[str, str]:
+    """The `(url, ref)` this host installed `sertor-core` from, PARSED as TOML — never by hand.
 
-    Reads the git URL from the runtime's own `pyproject.toml` (`[tool.uv.sources]`), so the notice
-    is correct for whichever repository this host installed from — host-agnostic by construction
-    rather than by hardcoding ours.
+    Read from the runtime's own `pyproject.toml` (`[tool.uv.sources]`) so the notice is correct for
+    whichever repository this host installed from — host-agnostic by construction rather than by
+    hardcoding ours. `ref` is the `tag`/`rev`/`branch` the host pinned to, or `""` if unpinned.
+
+    **Parsed with `tomllib`, not with string surgery (E2, reported by the Acta node).** The previous
+    version did `split("git = ")[1].strip("}").strip('"')`, which happens to work on a ref-less
+    source and produces garbage on a pinned one — a host with `{ git = "…", tag = "v0.2.1" }` was
+    shown a command containing `…Sertor.git", tag = "v0.2.1#subdirectory=…`, which is not
+    executable. The defect **selected for hosts following the discipline**: only a host that pins to
+    an immutable ref got the broken command, which is why it never appeared here (our runtime tracks
+    HEAD by design, so the pinned branch is unreachable on this node) and reached us from outside.
+    `tomllib` is stdlib from 3.11 and this runtime requires ≥3.12: parsing by hand was never needed.
+    """
+    try:
+        with (sertor_dir / "pyproject.toml").open("rb") as fh:
+            data = tomllib.load(fh)
+    except (OSError, tomllib.TOMLDecodeError, ValueError):
+        return _FALLBACK_URL, ""
+    source = (data.get("tool") or {}).get("uv", {}).get("sources", {}).get("sertor-core")
+    if not isinstance(source, dict):
+        return _FALLBACK_URL, ""
+    url = source.get("git")
+    if not isinstance(url, str) or not url:
+        return _FALLBACK_URL, ""
+    for key in ("tag", "rev", "branch"):
+        ref = source.get(key)
+        if isinstance(ref, str) and ref:
+            return url, ref
+    return url, ""
+
+
+def _upgrade_command(sertor_dir, installed: str = "", latest: str = "") -> str:
+    """The upgrade command that actually WORKS on this host — and respects how it pins.
 
     The `#subdirectory=packages/sertor` fragment is the load-bearing part: without it `uvx` resolves
     the ROOT package (`sertor-core`), which provides `sertor-rag` and `sertor-wiki-tools` but NOT
     `sertor`, and the command fails with "An executable named `sertor` is not provided".
+
+    Three cases, and the distinction is the point (Principle XIV — derive where derivable, declare
+    where not):
+
+    - **unpinned host** → no ref, as before;
+    - **pinned to a tag naming its installed version** (`v0.2.1` / `0.2.1`) → the new ref is
+      DERIVABLE: the same style carrying `latest`. Carrying the OLD ref instead would tell a host
+      that is behind to reinstall the version it already has — well-formed and useless;
+    - **pinned to a rev/branch, or a tag we cannot map** → the new ref is NOT derivable from here,
+      so the command is emitted without one and the pin is NAMED, so the host moves it deliberately
+      instead of being silently upgraded off it.
     """
-    url = _FALLBACK_URL
-    try:
-        text = (sertor_dir / "pyproject.toml").read_text(encoding="utf-8")
-        for line in text.splitlines():
-            stripped = line.strip()
-            if stripped.startswith("sertor-core") and "git = " in stripped:
-                url = stripped.split("git = ", 1)[1].strip().strip("}").strip().strip('"').strip()
-                break
-    except OSError:
-        pass
-    return f'uvx --refresh --from "git+{url}#subdirectory=packages/sertor" sertor upgrade'
+    url, ref = _runtime_source(sertor_dir)
+    if not ref:
+        return f'uvx --refresh --from "git+{url}#subdirectory=packages/sertor" sertor upgrade'
+
+    prefix = "v" if ref.startswith("v") else ""
+    if installed and latest and ref in (installed, f"v{installed}"):
+        target = f"{prefix}{latest}"
+        return (
+            f'uvx --refresh --from "git+{url}@{target}#subdirectory=packages/sertor" sertor upgrade'
+        )
+    return (
+        f'uvx --refresh --from "git+{url}#subdirectory=packages/sertor" sertor upgrade '
+        f"(your runtime pins `{ref}`: point it at the new version instead of dropping the pin)"
+    )
 
 
 def main() -> None:
@@ -74,7 +119,7 @@ def main() -> None:
         # Update notice (stdout = SessionStart context). Only WARNS; the user decides (FR-005/CS-4).
         print(
             f"SERTOR UPDATE AVAILABLE: installed {installed}, latest {latest}.{dim_text} "
-            f"To update, run: {_upgrade_command(_hooklib.sertor_dir())} "
+            f"To update, run: {_upgrade_command(_hooklib.sertor_dir(), installed, latest)} "
             "This is only a notice — no update is applied automatically."
         )
         return

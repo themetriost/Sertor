@@ -11,7 +11,19 @@ and Sertor aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ## [Unreleased]
 
-_Changes land here before the next version bump._
+### Fixed
+
+- **The update notice now prints a command that works on a host that pins its runtime.** The command
+  was built by string surgery on the runtime's `pyproject.toml`; on a source pinned to a `tag` that
+  produced an unusable string (the rest of the TOML table leaked into the URL). It is now parsed with
+  `tomllib`. The defect only ever appeared on hosts pinned to an immutable ref — never here, where the
+  runtime tracks the default branch by design — so it was reported from outside.
+- **A pinned host is now pointed at the NEW version, and is never silently unpinned.** When the pin
+  names the installed version, the suggested command carries the *latest* one in the same style
+  (`v0.3.0` / `0.3.0`). When the pin is a commit or a branch — which we cannot map to a new ref — the
+  command is emitted without one and **the pin is named**, so the host moves it deliberately instead
+  of being upgraded off it. Previously the suggestion carried no ref at all: following it discarded
+  the pin.
 
 ## [0.3.0] — 2026-07-26
 
