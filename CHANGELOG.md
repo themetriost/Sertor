@@ -11,6 +11,26 @@ and Sertor aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ## [Unreleased]
 
+_Changes land here before the next version bump._
+
+## [0.3.1] — 2026-07-26
+
+A **repair** release for one defect in v0.3.0 — and it only ever hit the hosts that follow the
+discipline we recommend. **Update if your runtime is pinned** to a tag, a commit or a branch: the
+update notice printed at session start has been showing you a command that cannot be run.
+
+> ```
+> uvx --refresh --from "git+https://github.com/themetriost/Sertor.git@v0.3.1#subdirectory=packages/sertor" sertor upgrade
+> uvx --refresh --from "git+https://github.com/themetriost/Sertor.git@v0.3.1#subdirectory=packages/sertor-flow" sertor-flow upgrade
+> ```
+>
+> Then `uv run --project .sertor sertor-rag index .` and `… sertor-rag doctor`, and restart the MCP
+> server. Full install steps for all three components: see the v0.3.0 notes.
+>
+> **If you pin your runtime, `sertor upgrade` still resets your pin** to the default branch — a
+> separate, open defect. Re-apply the pin afterwards, or upgrade by editing `.sertor/pyproject.toml`
+> and running `uv sync --project .sertor`.
+
 ### Fixed
 
 - **The update notice now prints a command that works on a host that pins its runtime.** The command
