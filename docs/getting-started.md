@@ -16,7 +16,7 @@ detail is linked — not repeated.
 ## 1. Prerequisites
 
 - **Python ≥ 3.11** and **[`uv`](https://github.com/astral-sh/uv)** — the supported install path.
-- **Network access to GitHub** — Sertor ships via `git+url` (not PyPI yet).
+- **Network access to GitHub** — Sertor ships via `git+url`; there is no PyPI package.
 - **An embeddings provider** for the RAG. The default **`glove`** is **zero-config** (static GloVe
   vectors, downloaded once per machine — ~822 MB on the first index — then offline): nothing to install
   or run. You can opt into **Azure OpenAI** (`text-embedding-3-*`, best quality, needs credentials), a
@@ -45,10 +45,16 @@ uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sert
 uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install rag --assistant copilot-cli --backend local
 ```
 
-> **Latest vs pinned release.** The commands above install from the repository's `master` (latest). To
-> install a specific **stable release** instead, pin the tag — use
-> `git+https://github.com/themetriost/Sertor@v0.1.0#subdirectory=packages/sertor` (`v0.1.0` is the first
-> public release). A `pip install sertor` from **PyPI** is coming next.
+> **Latest vs pinned release.** The commands above install from the repository's default branch
+> (latest). To install a specific **stable release** instead, pin its tag — add `@<tag>` before the
+> fragment, e.g. `git+https://github.com/themetriost/Sertor@v0.3.1#subdirectory=packages/sertor`. The
+> current tags are listed on the
+> [releases page](https://github.com/themetriost/Sertor/releases); pinning is the recommended choice if
+> you want a reproducible setup.
+>
+> **There is no PyPI package**, and none is planned for now: Sertor is distributed exclusively via
+> `git+url`. If that changes it will be announced in a release — this page will not promise it in
+> advance.
 
 `--backend local` selects the zero-config `glove` embedder — **no secrets needed**. To use **Azure**
 embeddings instead, pass `--backend azure` and then fill the credentials (guided, no editor):

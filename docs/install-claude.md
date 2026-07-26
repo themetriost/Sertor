@@ -13,7 +13,7 @@ sections — install each on its own, or all three. Every installer is **non-des
 ## Prerequisites
 
 - **Python ≥ 3.11** and **[`uv`](https://github.com/astral-sh/uv)** (the supported install path).
-- Network access to GitHub (Sertor ships via `git+url`, not PyPI yet).
+- Network access to GitHub (Sertor ships via `git+url`; there is no PyPI package).
 - An **embeddings provider** for the RAG. The default **`glove`** is **zero-config** (static GloVe
   vectors, downloaded once per machine, offline afterwards) — **nothing to install or run**. Opt into
   **Azure OpenAI** (`text-embedding-3-*`, best quality, needs credentials) or a local
