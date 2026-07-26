@@ -11,6 +11,26 @@ and Sertor aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ## [Unreleased]
 
+_Changes land here before the next version bump._
+
+## [0.3.0] — 2026-07-26
+
+A **governance** release: a new binding principle — and, for the first time, a mechanism that carries
+constitutional amendments to projects that already have a constitution of their own.
+
+> **Installing all three components.** Order matters: only `install rag` provisions the `.sertor/`
+> runtime, and that runtime provides **both** console scripts (`sertor-rag` *and* `sertor-wiki-tools`).
+>
+> ```
+> uvx --from "git+https://github.com/themetriost/Sertor.git@v0.3.0#subdirectory=packages/sertor" sertor install rag
+> uvx --from "git+https://github.com/themetriost/Sertor.git@v0.3.0#subdirectory=packages/sertor" sertor install wiki
+> uvx --from "git+https://github.com/themetriost/Sertor.git@v0.3.0#subdirectory=packages/sertor-flow" sertor-flow install
+> ```
+>
+> Then: `sertor configure`, `uv run --project .sertor sertor-rag index .`, `… sertor-rag doctor`.
+> Already installed? Use `sertor upgrade` and `sertor-flow upgrade` instead, then re-index and
+> **restart the MCP server**. The `#subdirectory=…` fragment is mandatory in every form.
+
 ### Added
 
 - **Constitution amendments now reach projects that already have one.** The starter is a seed: once
