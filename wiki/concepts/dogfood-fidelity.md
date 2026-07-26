@@ -3,7 +3,7 @@ title: Fedeltà del dogfood (dogfood-fidelity)
 type: concept
 tags: [dogfooding, fedelta, runtime, installato, head-tracking, re-lock, e15]
 created: 2026-07-03
-updated: 2026-07-03
+updated: 2026-07-26
 sources: ["requirements/fedelta-dogfood/epic.md", "wiki/syntheses/audit-fedelta-dogfood-2026-07-03.md", "specs/088-relock-runtime/plan.md", ".sertor/pyproject.toml", "scripts/dev/relock-runtime.ps1", "CLAUDE.md"]
 ---
 
@@ -61,6 +61,53 @@ Il workspace **è** Sertor più il suo sviluppo, quindi porta cose che un client
 
 Sotto questa lente, `.venv` non è un «asset divergente» da eliminare — è l'ambiente di sviluppo del prodotto;
 il runtime dell'agente semplicemente non lo usa.
+
+## Il terzo limite: il dogfood è **una** configurazione, e la più favorevole (2026-07-26)
+
+Ai due livelli di fedeltà sopra — *asset* e *processo* — se ne aggiunge un terzo, che non è un grado
+minore ma un **limite di principio**: anche un dogfood perfettamente fedele occupa **una sola
+configurazione** fra quelle che gli ospiti realizzano. Prova che il codice **gira**; non prova che gira
+per le configurazioni che non abbiamo.
+
+E c'è un aggravante che rende il limite sistematico invece che casuale:
+
+> **La nostra configurazione è la più favorevole per costruzione**, perché la ripariamo di continuo e
+> informalmente. Ogni fix a mano sul dogfood **cancella una prova** di cosa provi un ospite vero. È un
+> canarino che si cura da solo.
+
+**Tre casi, tutti arrivati da fuori, tutti nello stesso senso:**
+
+| Difetto | Perché era invisibile da qui |
+|---|---|
+| `.mcp.json` con `--directory` (E2-FEAT-022) | il nostro `.mcp.json` aveva `--project`, **corretto a mano** prima che il template esistesse: eravamo l'unico nodo **non** colpito da ciò che spedivamo |
+| comando d'upgrade rotto per chi pinna (2026-07-26) | il nostro runtime è **ref-less per progetto** (segue HEAD): il ramo che rompe è **irraggiungibile** qui |
+| numero del principio nell'annuncio (E13-FEAT-015) | vero **solo dal punto di vista di chi legge lo starter**, e noi leggiamo la nostra costituzione |
+
+Il secondo caso ha la forma più istruttiva, e la formulazione è del nodo *Acta*:
+
+> **Il difetto seleziona chi segue la disciplina.** Solo l'ospite che pinna a un riferimento immutabile
+> riceveva il comando rotto; chi accettava il ref-less riceveva quello giusto.
+
+Un difetto così non è raro: è **anti-correlato** all'utente che ci interessa di più.
+
+### Cosa ne segue, operativamente
+
+La classe si divide in due, e le due metà vogliono strumenti diversi:
+
+- **La parte meccanizzabile** — esercitare il codice contro **configurazioni che non abbiamo**: un
+  runtime pinnato al tag, un ospite con la costituzione più vecchia dello starter, una skill più nuova
+  del runtime che invoca. Sono fixture, non un secondo dogfood; costano poco e chiudono i casi
+  derivabili. *(Esempio realizzato: le guardie del pin in `test_portable_hooks_parity.py`, scritte
+  esattamente per occupare la posizione che il nostro nodo non occupa.)*
+- **La parte non meccanizzabile** — ciò che è vero solo dal punto di vista di **chi legge**, o di chi
+  **adotta davvero** una cosa invece di archiviarla. Qui non esiste un test, e il rilevatore è un
+  **lettore esterno**: una federazione di nodi che pubblicano e si leggono non distribuisce solo
+  conoscenza, **è un rilevatore** per una classe di guasti che nessun test cattura. È la stessa ragione
+  per cui il [[constitution|Principio XIV]] è un **gate al `plan`** e non una guardia.
+
+Cfr. [[esito-sull-host-vs-forma-dell-asset]] (la guardia cieca / complice / dal perimetro stretto) e
+[[identita-per-presenza-o-per-contenuto]]: là il punto d'osservazione è sbagliato o il criterio è
+sbagliato; qui il punto d'osservazione è **giusto ma unico**.
 
 ## Stato (E15 `fedelta-dogfood`)
 

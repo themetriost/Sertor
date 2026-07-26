@@ -461,3 +461,108 @@ def test_memory_enabled_explicit_cwd_env_consulted_first(tmp_path: Path, monkeyp
     _write_env(tmp_path / ".sertor" / ".env", "SERTOR_MEMORY=false\n")
     _write_env(tmp_path / ".env", "SERTOR_MEMORY=true\n")
     assert _load_hooklib().memory_enabled() is True
+
+
+# --- E2: the upgrade notice must work on a host we do NOT have --------------------------------
+#
+# The command was built by string surgery on the runtime's `pyproject.toml`. It works on a
+# REF-LESS source and produces garbage on a PINNED one — a host with `{ git = "…", tag = "v0.2.1" }`
+# was shown `…Sertor.git", tag = "v0.2.1#subdirectory=…`, which is not executable.
+#
+# It never showed up here because our own runtime is ref-less BY DESIGN (it tracks HEAD), so the
+# pinned branch is literally unreachable on this node: the defect selected for hosts that follow
+# the discipline of pinning to an immutable ref, and reached us from the Acta node instead.
+# These tests exist to occupy the configurations we do not run.
+
+def _runtime(tmp_path: Path, source_line: str) -> Path:
+    """A `.sertor/` runtime whose pyproject declares `sertor-core` from the given source table."""
+    d = tmp_path / ".sertor"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "pyproject.toml").write_text(
+        "[project]\n"
+        'name = "sertor-runtime"\n'
+        'version = "0.0.0"\n'
+        'dependencies = ["sertor-core"]\n\n'
+        "[tool.uv.sources]\n"
+        f"{source_line}\n",
+        encoding="utf-8",
+    )
+    return tmp_path
+
+
+def _notice(root: Path, installed: str = "0.2.1", latest: str = "0.3.0") -> str:
+    _write_vc(root, "behind", installed=installed, latest=latest)
+    r = _run("version-check-start", event="{}", root=root)
+    assert r.returncode == 0
+    return r.stdout
+
+
+_URL = "https://github.com/themetriost/Sertor.git"
+
+
+def test_pinned_host_gets_an_executable_command(tmp_path: Path):
+    """The configuration we do not have: a runtime pinned to a tag."""
+    root = _runtime(tmp_path, f'sertor-core = {{ git = "{_URL}", tag = "v0.2.1" }}')
+    out = _notice(root, installed="0.2.1", latest="0.3.0")
+    # The old parse leaked the rest of the TOML table into the command:
+    assert "tag = " not in out, "the TOML table must not leak into the command"
+    assert '.git",' not in out, "a stray quote+comma means the URL was cut by hand"
+
+
+def test_pinned_host_is_moved_TO_the_new_version(tmp_path: Path):
+    """Carrying the OLD ref is well-formed and useless: it tells a host behind to reinstall itself.
+
+    The first fix did exactly that, and it looked right until the output was read.
+    """
+    root = _runtime(tmp_path, f'sertor-core = {{ git = "{_URL}", tag = "v0.2.1" }}')
+    out = _notice(root, installed="0.2.1", latest="0.3.0")
+    assert f'"git+{_URL}@v0.3.0#subdirectory=packages/sertor"' in out
+    assert "@v0.2.1" not in out, "suggesting the version already installed is a no-op"
+
+
+def test_tag_style_without_the_v_prefix_is_preserved(tmp_path: Path):
+    root = _runtime(tmp_path, f'sertor-core = {{ git = "{_URL}", tag = "0.2.1" }}')
+    out = _notice(root, installed="0.2.1", latest="0.3.0")
+    assert "@0.3.0#subdirectory=" in out and "@v0.3.0" not in out
+
+
+def test_rev_or_branch_pin_is_named_not_silently_dropped(tmp_path: Path):
+    """The new ref is NOT derivable from a rev/branch: say so instead of guessing or dropping it."""
+    for key, value in (("rev", "45db7b0"), ("branch", "next")):
+        root = _runtime(tmp_path / key, f'sertor-core = {{ git = "{_URL}", {key} = "{value}" }}')
+        out = _notice(root)
+        assert f"pins `{value}`" in out, f"the {key} pin must be named"
+        assert f"@{value}#subdirectory=" not in out, "must not re-suggest the pin it already has"
+
+
+def test_refless_host_is_unchanged(tmp_path: Path):
+    """Non-regression: the case that DID work must keep working, with no stray `@`."""
+    root = _runtime(tmp_path, f'sertor-core = {{ git = "{_URL}" }}')
+    out = _notice(root)
+    assert f'"git+{_URL}#subdirectory=packages/sertor"' in out
+    assert "@" not in out.split("--from ", 1)[1].split(" ", 1)[0]
+
+
+def test_extras_in_the_dependency_do_not_confuse_the_parse(tmp_path: Path):
+    """Real runtimes declare extras; the source table is what matters, and it is parsed as TOML."""
+    root = _runtime(
+        tmp_path, f'sertor-core = {{ git = "{_URL}", tag = "v0.2.1" }}\nother = {{ git = "x" }}'
+    )
+    out = _notice(root, installed="0.2.1", latest="0.3.0")
+    assert f"git+{_URL}@v0.3.0#subdirectory=packages/sertor" in out
+    assert "other" not in out, "a neighbouring source table must not leak in"
+
+
+def test_unreadable_or_malformed_runtime_falls_back(tmp_path: Path):
+    """Malformed TOML must not raise nor emit a half-built command: fall back to the known URL."""
+    d = tmp_path / ".sertor"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "pyproject.toml").write_text("[tool.uv.sources\nnot toml at all", encoding="utf-8")
+    out = _notice(tmp_path)
+    assert "#subdirectory=packages/sertor" in out
+    assert not (d / ".last-hook-error").exists(), "a malformed pyproject is handled, not an error"
+
+
+def test_missing_runtime_pyproject_falls_back(tmp_path: Path):
+    out = _notice(tmp_path)
+    assert "#subdirectory=packages/sertor" in out
