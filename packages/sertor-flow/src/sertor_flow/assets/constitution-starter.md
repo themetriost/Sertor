@@ -108,6 +108,30 @@ scales with how much the product mutates the asset in place: a product that only
 the asset and emits an external artifact needs almost none; a product that writes state
 INTO the asset it operates on needs it acutely.
 
+### XIII. Derived State, Not Declared (NON-NEGOTIABLE)
+
+When a fact exists in more than one place, one of them MUST be **derived** from the
+other. A value that is *copied* into a second location — a version stamp, a dependency
+pin, a cached verdict, a hardcoded list mirroring a runtime fact, prose describing a
+behavior — diverges from its source the moment either changes, and nothing notices.
+
+Where derivation is genuinely impossible (a user file you MUST NOT overwrite, a cache
+that exists to save cost, an artifact produced by another tool), the duplication is
+permitted ONLY if something **reconciles** the two and **reports** the divergence.
+Preserving a stale copy can be correct; preserving it **in silence** is not. "It will
+be kept in sync by discipline" is not a reconciler.
+
+The signature of this failure is constant: **a no-op that reports success** — and it
+strikes precisely the mechanism meant to update, which becomes the keeper of the old
+version. It is related to but distinct from two other principles: Principle VII governs
+whether re-running is *safe*, this one governs **on what identity** "already done" is
+decided; Principle XI governs an error already raised, this one governs a value that
+quietly stops being true.
+
+**Gate (at planning time).** For every new capability: *does it introduce a value that
+duplicates an existing source of truth?* If yes, derive it. If it cannot be derived,
+name the **reconciler** and the **report** that surfaces the divergence.
+
 ## Security & Secrets
 
 - Secrets (API keys, tokens, credentials) live ONLY in environment files (e.g.
@@ -115,6 +139,20 @@ INTO the asset it operates on needs it acutely.
 - `.gitignore` excludes secrets, virtual environments, caches, and regenerable
   artifacts (build output, logs, indexes).
 - No secret ever appears in logs, error messages, reports, or committed files.
+
+## Amendments
+
+Each release of this starter is listed here so that a project holding an older copy can
+see **everything it has missed**, not only the latest change. Integrate them into your
+own constitution when you choose — this file is yours, and nothing overwrites it.
+
+- **0.5.0** — added Principle XIII «Derived State, Not Declared»: a fact living in two
+  places must be derived, not copied; where it cannot be derived, a named reconciler
+  must report the divergence.
+- **0.4.0** — added Principle XII «Product Plane vs. Fixture Plane».
+- **0.3.0** — added Principle XI «Fail Loud, Fix the Cause».
+- **0.2.0** — refined the neutral principles (I–X).
+- **0.1.0** — first neutral starter.
 
 ## Governance
 
@@ -129,4 +167,4 @@ INTO the asset it operates on needs it acutely.
   backward-incompatible principle change, MINOR for a new principle/section, PATCH
   for clarifications. Record the version and dates below on every amendment.
 
-**Version**: 0.4.0 | **Ratified**: TODO | **Last Amended**: TODO
+**Version**: 0.5.0 | **Ratified**: TODO | **Last Amended**: TODO

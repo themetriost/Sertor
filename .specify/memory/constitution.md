@@ -1,7 +1,21 @@
 <!--
 SYNC IMPACT REPORT — Sertor Constitution
 ========================================
-Version: 1.4.0 → 1.5.0
+Version: 1.5.0 → 1.6.0
+Bump type: MINOR (new Principle XIV «Derived State, Not Declared»)
+
+Changes in this amendment (2026-07-26):
+  + Principle XIV — Derived State, Not Declared (NON-NEGOTIABLE): when a fact lives in more than one place,
+    one MUST be derived from the other; where derivation is impossible, the duplication is allowed only with
+    a named reconciler that REPORTS the divergence. Adds a plan-time gate question. Ratified after five
+    instances of the same class in five domains (version stamp, `.mcp.json` skipped by presence, unmoved
+    dependency pin, observability handler idempotent by presence, hardcoded `LogRecord` attribute list),
+    nearly all reported by downstream nodes rather than detected internally.
+  Distribution: also into the neutral starter of `sertor-flow` (there Principle XIII — the numeric
+    cross-references differ because there Idempotence is VII and Fail Loud is XI). Starter 0.4.0 → 0.5.0.
+  Gate: `plan-template` Constitution Check extended to XIV.
+
+PREVIOUS amendment — Version: 1.4.0 → 1.5.0
 Bump type: MINOR (new Principle XIII «Product Plane vs. Fixture Plane») + full English convergence
 
 Changes in this amendment (2026-07-22):
@@ -40,7 +54,7 @@ v1.1.0 → v1.1.1 (2026-06-14, PATCH): ~ Principle VII — clarified function st
 v1.0.0 → v1.1.0 (2026-06-05, MINOR): + Principle X — Host-agnostic capabilities (portability is a
   constraint, not an aspiration); intro scope widened from «core + CLI» to «all capabilities + vehicles».
 
-Principles (13):
+Principles (14):
   I.    Core with dependencies pointing inward (the library is the product)
   II.   Interchangeable providers and backends behind boundaries; local-first
   III.  Justified simplicity (YAGNI) and small units
@@ -55,12 +69,14 @@ Principles (13):
   XII.  Fail Loud, Fix the Cause — signal and remove the cause, do not suppress
   XIII. Product Plane vs. Fixture Plane — in dogfooding, product/fixture planes stay distinct; a
         product-plane gap papered over by a fixture-plane workaround = OPEN PRODUCT QUESTION, never hidden
+  XIV.  Derived State, Not Declared — a fact living in two places must be DERIVED, not copied; where it
+        cannot be derived, a named reconciler must REPORT the divergence (silence is the defect)
 
 Sections (1):
   «Mission & North Star» — binding orienting frame (added in v1.4.0)
 
 Dependent templates:
-  OK .specify/templates/plan-template.md  — gates for XI/XII/XIII + mission alignment; version ref → v1.5.0
+  OK .specify/templates/plan-template.md  — gates for XI/XII/XIII/XIV + mission alignment; version ref → v1.6.0
   OK .specify/templates/spec-template.md  — no change needed
   OK .specify/templates/tasks-template.md — no change needed
 
@@ -282,6 +298,36 @@ fixtures, dogfood vs real corpus, epic E15). **Proposed and already practiced by
 2026-07-12), accepted 2026-07-14; E10-FEAT-030. Source:
 `input-other-agents/processed/sinthari-proposta-principio-xii-product-vs-fixture-plane-2026-07-12.md`.
 
+### XIV. Derived State, Not Declared (NON-NEGOTIABLE)
+
+<!-- CANONICAL text: identical to what we release in the `sertor-flow` starter (there it is Principle XIII).
+     The only adaptation is the numeric cross-references (here Idempotence is VI and Fail Loud is XII). -->
+
+When a fact exists in more than one place, one of them MUST be **derived** from the other. A value that is
+*copied* into a second location — a version stamp, a dependency pin, a cached verdict, a hardcoded list
+mirroring a runtime fact, prose describing a behavior — diverges from its source the moment either changes,
+and nothing notices. Where derivation is genuinely impossible (a host file we MUST NOT overwrite, a cache
+that exists to save cost, an artifact produced by another tool), the duplication is permitted ONLY if
+something **reconciles** the two and **reports** the divergence. Preserving a stale copy can be correct;
+preserving it **in silence** is not. «It will be kept in sync by discipline» is not a reconciler.
+
+*Rationale:* this failure has a constant signature — **a no-op that reports success** — and it strikes
+precisely the mechanism meant to update, which becomes the keeper of the old version. Instances already
+lived, across five different domains: the install-time version stamp read instead of the runtime lock
+(E2-FEAT-021); a `.mcp.json` skipped because a server was «already registered», leaving a host with a blind
+RAG for a month (E2-FEAT-022); a dependency pin unmoved across three successful upgrades; an observability
+handler idempotent by presence instead of by target; a test guard hardcoding a list of `LogRecord` attributes
+that the interpreter already knows, which broke on another Python version. In nearly every case the defect
+was reported by someone downstream rather than detected here — the class has no internal detector, which is
+why it must be caught at design time. Related but distinct: Principle VI governs whether re-running is safe,
+this one governs **on what identity** «already done» is decided; Principle XII governs an error already
+raised, this one governs a value that quietly stops being true. See `wiki/concepts/identita-per-presenza-o-per-contenuto.md`
+and `wiki/concepts/esito-sull-host-vs-forma-dell-asset.md`.
+
+**Gate (plan time).** For every new capability: *does it introduce a value that duplicates an existing source
+of truth?* If yes, derive it. If it cannot be derived, the plan MUST name the **reconciler** and the **report**
+that surfaces the divergence.
+
 ## Security, Secrets and Provenance
 
 Secrets (API keys, credentials) MUST NOT be written into versioned files; they travel only via environment
@@ -308,4 +354,4 @@ principle wins (or the principle is first amended).
 - **Compliance:** the dogfooding RAG over the prototype is the reference of "what good looks like"; new
   capabilities are reviewed against these principles.
 
-**Version**: 1.5.0 | **Ratified**: 2026-05-31 | **Last Amended**: 2026-07-22
+**Version**: 1.6.0 | **Ratified**: 2026-05-31 | **Last Amended**: 2026-07-26

@@ -18,6 +18,7 @@ two blocks coexist in the same instruction file (D4).
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from sertor_flow import generate
@@ -255,19 +256,75 @@ def _apply_constitution(
       - real host constitution → preserve untouched (`SKIPPED`, Principle VI).
     Idempotent: a second run sees the starter (no sentinels) → preserved. `dry_run` projects the
     outcome without writing.
+
+    **Preserved is not the same as silent (Principle XIV).** Preserving the host's constitution is
+    correct — it is theirs to personalize — but a host whose copy predates an amendment would never
+    learn one exists: the starter version is written INSIDE the file, and until now nothing
+    compared it. The preserve branch therefore reports the divergence and points at the `Amendments`
+    section listing everything the host missed. It still writes nothing: the tool declares, the
+    host's agent integrates (deterministic vs judgment).
     """
     if not dest.exists():
         if not dry_run:
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_text(starter, encoding="utf-8")
         return ArtifactOutcome(target_rel, Outcome.CREATED, "constitution starter")
-    if _is_speckit_placeholder(dest.read_text(encoding="utf-8")):
+    current = dest.read_text(encoding="utf-8")
+    if _is_speckit_placeholder(current):
         if not dry_run:
             dest.write_text(starter, encoding="utf-8")
         return ArtifactOutcome(
             target_rel, Outcome.UPDATED, "replaced spec-kit placeholder with neutral starter"
         )
-    return ArtifactOutcome(target_rel, Outcome.SKIPPED, "host constitution preserved")
+    return ArtifactOutcome(target_rel, Outcome.SKIPPED, _preserved_detail(current, starter))
+
+
+_VERSION_RE = re.compile(r"^\*\*Version\*\*:\s*([0-9]+(?:\.[0-9]+)*)", re.MULTILINE)
+
+
+def starter_version(text: str) -> str | None:
+    """The starter version declared inside a constitution (`**Version**: X.Y.Z`), or `None`.
+
+    Read from the document itself rather than tracked alongside it: the file IS the record of which
+    starter a host holds, so the comparison must derive from it (Principle XIV). A host that has
+    personalized its constitution and dropped or rewritten the line simply yields `None` — unknown,
+    which is reported as unknown and never guessed.
+    """
+    match = _VERSION_RE.search(text)
+    return match.group(1) if match else None
+
+
+def _is_older(host: str, shipped: str) -> bool:
+    """Whether `host` is a strictly lower version than `shipped` (numeric, segment by segment)."""
+
+    def parts(value: str) -> list[int]:
+        out: list[int] = []
+        for segment in value.split("."):
+            if not segment.isdigit():
+                return []
+            out.append(int(segment))
+        return out
+
+    a, b = parts(host), parts(shipped)
+    if not a or not b:
+        return False  # unparsable → never claim the host is behind
+    width = max(len(a), len(b))
+    a += [0] * (width - len(a))
+    b += [0] * (width - len(b))
+    return a < b
+
+
+def _preserved_detail(current: str, starter: str) -> str:
+    """The detail line for a preserved host constitution — declaring any amendment gap."""
+    host_version = starter_version(current)
+    shipped_version = starter_version(starter)
+    if host_version and shipped_version and _is_older(host_version, shipped_version):
+        return (
+            f"host constitution preserved — but it declares starter {host_version} while "
+            f"{shipped_version} ships new principles; see the `Amendments` section of the starter "
+            f"and integrate what applies (nothing was written)"
+        )
+    return "host constitution preserved"
 
 
 def _apply_config(target_root: Path, art: Artifact) -> ArtifactOutcome:

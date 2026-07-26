@@ -40,7 +40,7 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-Gate derivati dalla costituzione (`.specify/memory/constitution.md`, v1.5.0). Marcare PASS/FAIL;
+Gate derivati dalla costituzione (`.specify/memory/constitution.md`, v1.6.0). Marcare PASS/FAIL;
 ogni FAIL va risolto o giustificato in "Complexity Tracking".
 
 - [ ] **I — Dipendenze verso l'interno (NON-NEGOZIABILE):** il design del core non importa SDK di
@@ -77,6 +77,12 @@ ogni FAIL va risolto o giustificato in "Complexity Tracking".
   col caso reale-utente, mai per comodità-fixture; un workaround-fixture che tappa un buco-prodotto è
   registrato come OPEN PRODUCT QUESTION, non nascosto. Cerimonia proporzionale a quanto il prodotto muta
   l'asset in place (stateless→~zero; scrive-stato-nell'asset→acuta). Marca PASS / N/A con motivo.
+- [ ] **XIV — Derived State, Not Declared:** questa feature introduce un valore che **duplica** una
+  fonte di verità già esistente (stamp di versione, pin, verdetto persistito, elenco hardcoded che
+  rispecchia un fatto di runtime, prosa che descrive un comportamento)? Se sì → **derivalo**. Se non è
+  derivabile (file dell'ospite da non sovrascrivere, cache, artefatto di un altro tool) → **nomina qui il
+  riconciliatore e il report** che rende visibile la divergenza. «Si terrà allineato con la disciplina»
+  non è una risposta. Marca PASS / N/A con motivo.
 - [ ] **Allineamento alla missione (fusione code+doc, qualità del retrieval reso all'agente):** il
   design serve la missione (auto-conoscenza portabile; fusione code+doc in un unico corpus
   interrogabile; qualità/precisione/recall/freschezza del retrieval restituito all'agente) e non

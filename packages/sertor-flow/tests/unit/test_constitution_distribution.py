@@ -143,3 +143,93 @@ def test_starter_has_no_sertor_or_rag_specifics():
 
 def test_starter_version_bumped():
     assert "0.4.0" in _starter()
+
+
+
+# --- Principle XIV: preserved is not the same as silent ------------------------------------------
+#
+# A host constitution is never overwritten — it is theirs to personalize. But the preserve branch
+# used to say only "host constitution preserved", so a host holding a copy older than an amendment
+# had no way to learn one existed: the starter version is written INSIDE the file, and nothing
+# compared it. That is the class Principle XIV forbids — a value duplicated onto the host and never
+# reconciled. The tool still writes nothing: it declares, the host's agent integrates.
+
+from sertor_flow.install_governance import starter_version  # noqa: E402
+
+_HOST_BODY = "# Our Own Constitution\n\n### I. Ours\n\nText.\n\n## Governance\n\n"
+
+
+def _host_constitution(tmp_path: Path, version: str | None) -> Path:
+    """A REAL host constitution (no spec-kit sentinels), optionally declaring a starter version."""
+    dest = _constitution(tmp_path)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    body = _HOST_BODY
+    if version is not None:
+        body += f"**Version**: {version} | **Ratified**: 2026-01-01\n"
+    dest.write_text(body, encoding="utf-8")
+    return dest
+
+
+def _starter_at(version: str) -> str:
+    return (
+        "# Project Constitution\n\n## Amendments\n\n"
+        f"- **{version}** - something\n\n"
+        f"**Version**: {version} | **Ratified**: TODO\n"
+    )
+
+
+def test_behind_host_is_told_which_version_it_holds_and_what_ships(tmp_path: Path):
+    dest = _host_constitution(tmp_path, "0.4.0")
+    before = dest.read_text(encoding="utf-8")
+
+    outcome = _apply_constitution(dest, "c.md", _starter_at("0.5.0"))
+
+    assert outcome.outcome is Outcome.SKIPPED, "the host constitution is still preserved"
+    assert "0.4.0" in outcome.detail and "0.5.0" in outcome.detail
+    assert "Amendments" in outcome.detail, "point at what it missed, not just at a number"
+    assert dest.read_text(encoding="utf-8") == before, "declaring must not write"
+
+
+def test_current_host_gets_no_noise(tmp_path: Path):
+    dest = _host_constitution(tmp_path, "0.5.0")
+    outcome = _apply_constitution(dest, "c.md", _starter_at("0.5.0"))
+    assert outcome.outcome is Outcome.SKIPPED
+    assert outcome.detail == "host constitution preserved"
+
+
+def test_ahead_host_is_not_told_to_go_back(tmp_path: Path):
+    """A host may amend beyond the starter — that is not a gap."""
+    dest = _host_constitution(tmp_path, "0.9.0")
+    outcome = _apply_constitution(dest, "c.md", _starter_at("0.5.0"))
+    assert outcome.detail == "host constitution preserved"
+
+
+def test_unknown_version_is_not_guessed(tmp_path: Path):
+    """A personalized constitution without the version line: unknown, never claimed to be behind."""
+    dest = _host_constitution(tmp_path, None)
+    outcome = _apply_constitution(dest, "c.md", _starter_at("0.5.0"))
+    assert outcome.detail == "host constitution preserved"
+
+
+def test_placeholder_still_wins_over_the_version_comparison(tmp_path: Path):
+    """The spec-kit placeholder is replaced, not "preserved but behind" (ordering matters)."""
+    dest = _constitution(tmp_path)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(_PLACEHOLDER, encoding="utf-8")
+    outcome = _apply_constitution(dest, "c.md", _starter_at("0.5.0"))
+    assert outcome.outcome is Outcome.UPDATED
+
+
+def test_starter_version_is_read_from_the_document_itself():
+    assert starter_version("**Version**: 1.2.3 | **Ratified**: TODO") == "1.2.3"
+    assert starter_version("no version line here") is None
+
+
+def test_shipped_starter_declares_a_version_and_lists_amendments():
+    """The reconciler is worthless if the shipped asset stops declaring what it is (XIV)."""
+    from sertor_flow.install_governance import _ANCHOR
+    from sertor_install_kit import read_asset_text
+
+    body = read_asset_text(_ANCHOR, "constitution-starter.md")
+    assert starter_version(body) is not None, "the starter must declare its own version"
+    assert "## Amendments" in body, "a host behind needs the list of what it missed"
