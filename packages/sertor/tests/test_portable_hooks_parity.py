@@ -463,106 +463,121 @@ def test_memory_enabled_explicit_cwd_env_consulted_first(tmp_path: Path, monkeyp
     assert _load_hooklib().memory_enabled() is True
 
 
-# --- E2: the upgrade notice must work on a host we do NOT have --------------------------------
+
+# --- E2: the update notice must be actionable on hosts we do NOT have ---------------------------
 #
-# The command was built by string surgery on the runtime's `pyproject.toml`. It works on a
-# REF-LESS source and produces garbage on a PINNED one — a host with `{ git = "…", tag = "v0.2.1" }`
-# was shown `…Sertor.git", tag = "v0.2.1#subdirectory=…`, which is not executable.
+# `sertor` is never a persistent command: `uvx --from "git+…#subdirectory=packages/sertor"` fetches
+# it on demand, so that form works on any host with `uv`. What the notice must not assume is **how
+# the host manages its runtime**, and it assumed it in two ways:
 #
-# It never showed up here because our own runtime is ref-less BY DESIGN (it tracks HEAD), so the
-# pinned branch is literally unreachable on this node: the defect selected for hosts that follow
-# the discipline of pinning to an immutable ref, and reached us from the Acta node instead.
-# These tests exist to occupy the configurations we do not run.
+#   1. **The parse.** The command was built by string surgery on the runtime's `pyproject.toml`:
+#      fine on a ref-less source, garbage on a pinned one (the TOML table leaked into the URL).
+#   2. **The remedy.** `sertor upgrade` currently RESETS a pin, so telling a pinned host to just run
+#      it discards a deliberate choice — and a suggestion carrying the OLD ref would tell a host
+#      that is behind to reinstall the version it already has.
+#
+# Neither shape exists on our own node: our runtime is ref-less by design, so the pinned branch is
+# unreachable here and both defects reached us from outside. These fixtures occupy that position.
+
+_URL = "https://github.com/themetriost/Sertor.git"
+
 
 def _runtime(tmp_path: Path, source_line: str) -> Path:
-    """A `.sertor/` runtime whose pyproject declares `sertor-core` from the given source table."""
+    """A `.sertor/` runtime declaring `sertor-core` from the given source table."""
     d = tmp_path / ".sertor"
     d.mkdir(parents=True, exist_ok=True)
     (d / "pyproject.toml").write_text(
-        "[project]\n"
-        'name = "sertor-runtime"\n'
-        'version = "0.0.0"\n'
-        'dependencies = ["sertor-core"]\n\n'
-        "[tool.uv.sources]\n"
-        f"{source_line}\n",
+        '[project]\nname = "r"\nversion = "0.0.0"\ndependencies = ["sertor-core"]\n\n'
+        f"[tool.uv.sources]\n{source_line}\n",
         encoding="utf-8",
     )
     return tmp_path
 
 
-def _notice(root: Path, installed: str = "0.2.1", latest: str = "0.3.0") -> str:
+def _notice(root: Path, installed: str = "0.2.1", latest: str = "0.3.1") -> str:
     _write_vc(root, "behind", installed=installed, latest=latest)
     r = _run("version-check-start", event="{}", root=root)
     assert r.returncode == 0
     return r.stdout
 
 
-_URL = "https://github.com/themetriost/Sertor.git"
+# --- the parse itself ---------------------------------------------------------------------------
 
-
-def test_pinned_host_gets_an_executable_command(tmp_path: Path):
-    """The configuration we do not have: a runtime pinned to a tag."""
-    root = _runtime(tmp_path, f'sertor-core = {{ git = "{_URL}", tag = "v0.2.1" }}')
-    out = _notice(root, installed="0.2.1", latest="0.3.0")
-    # The old parse leaked the rest of the TOML table into the command:
-    assert "tag = " not in out, "the TOML table must not leak into the command"
+def test_a_pinned_source_never_leaks_the_toml_table(tmp_path: Path):
+    """The original defect: `split("git = ")` dragged the rest of the table into the URL."""
+    out = _notice(_runtime(tmp_path, f'sertor-core = {{ git = "{_URL}", tag = "v0.2.1" }}'))
+    assert "tag = " not in out, "the TOML table must not leak into the notice"
     assert '.git",' not in out, "a stray quote+comma means the URL was cut by hand"
 
+
+def test_a_neighbouring_source_table_does_not_confuse_the_parse(tmp_path: Path):
+    root = _runtime(
+        tmp_path, f'sertor-core = {{ git = "{_URL}", tag = "v0.2.1" }}\nother = {{ git = "x" }}'
+    )
+    assert "other" not in _notice(root)
+
+
+def test_malformed_runtime_falls_back_without_erroring(tmp_path: Path):
+    d = tmp_path / ".sertor"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "pyproject.toml").write_text("[tool.uv.sources\nnot toml", encoding="utf-8")
+    out = _notice(tmp_path)
+    assert "#subdirectory=packages/sertor" in out
+    assert not (d / ".last-hook-error").exists(), "a malformed runtime is handled, not an error"
+
+
+# --- the remedy must EXIST on this host ---------------------------------------------------------
+
+def test_unpinned_host_keeps_the_uvx_command(tmp_path: Path):
+    """Non-regression: the shape that always worked must keep working."""
+    out = _notice(_runtime(tmp_path, f'sertor-core = {{ git = "{_URL}" }}'))
+    assert f'"git+{_URL}#subdirectory=packages/sertor" sertor upgrade' in out
+
+
+def test_the_command_is_never_the_bare_form(tmp_path: Path):
+    """`sertor` is fetched on demand by uvx; without the subdirectory fragment uvx resolves the ROOT
+    package, which does not provide it. That bare form is what a node could not run (Kaelen)."""
+    for source in (f'sertor-core = {{ git = "{_URL}" }}',
+                   f'sertor-core = {{ git = "{_URL}", tag = "v0.2.1" }}'):
+        out = _notice(_runtime(tmp_path / str(hash(source)), source))
+        assert "#subdirectory=packages/sertor" in out
+        assert "uvx --refresh sertor" not in out, "the bare form resolves the wrong package"
+
+
+def test_pinned_host_is_told_the_runtime_step_too(tmp_path: Path):
+    """`sertor upgrade` refreshes assets; a pinned runtime also needs `uv sync` after the move."""
+    out = _notice(_runtime(tmp_path, f'sertor-core = {{ git = "{_URL}", tag = "v0.2.1" }}'))
+    assert "uv sync --project .sertor" in out
+
+
+# --- a pin is a deliberate choice ---------------------------------------------------------------
 
 def test_pinned_host_is_moved_TO_the_new_version(tmp_path: Path):
     """Carrying the OLD ref is well-formed and useless: it tells a host behind to reinstall itself.
 
     The first fix did exactly that, and it looked right until the output was read.
     """
-    root = _runtime(tmp_path, f'sertor-core = {{ git = "{_URL}", tag = "v0.2.1" }}')
-    out = _notice(root, installed="0.2.1", latest="0.3.0")
-    assert f'"git+{_URL}@v0.3.0#subdirectory=packages/sertor"' in out
-    assert "@v0.2.1" not in out, "suggesting the version already installed is a no-op"
+    out = _notice(_runtime(tmp_path, f'sertor-core = {{ git = "{_URL}", tag = "v0.2.1" }}'))
+    assert "`v0.3.1`" in out, "the pin must be moved to the version the host is behind"
+    assert "`v0.2.1`" in out, "the current pin is named so the host knows what changes"
 
 
-def test_tag_style_without_the_v_prefix_is_preserved(tmp_path: Path):
-    root = _runtime(tmp_path, f'sertor-core = {{ git = "{_URL}", tag = "0.2.1" }}')
-    out = _notice(root, installed="0.2.1", latest="0.3.0")
-    assert "@0.3.0#subdirectory=" in out and "@v0.3.0" not in out
+def test_pin_style_without_the_v_prefix_is_preserved(tmp_path: Path):
+    out = _notice(_runtime(tmp_path, f'sertor-core = {{ git = "{_URL}", tag = "0.2.1" }}'))
+    assert "`0.3.1`" in out and "`v0.3.1`" not in out
 
 
-def test_rev_or_branch_pin_is_named_not_silently_dropped(tmp_path: Path):
-    """The new ref is NOT derivable from a rev/branch: say so instead of guessing or dropping it."""
+def test_pinned_host_is_warned_that_upgrade_resets_the_pin(tmp_path: Path):
+    """`sertor upgrade` refreshes the assets but resets the pin — say so, do not let it surprise."""
+    out = _notice(_runtime(tmp_path, f'sertor-core = {{ git = "{_URL}", tag = "v0.2.1" }}'))
+    assert "sertor upgrade" in out, "the assets still need refreshing"
+    assert "resets the pin" in out
+
+
+def test_commit_or_branch_pin_is_named_not_guessed(tmp_path: Path):
+    """The new ref is NOT derivable from a rev/branch: name the pin instead of inventing one."""
     for key, value in (("rev", "45db7b0"), ("branch", "next")):
         root = _runtime(tmp_path / key, f'sertor-core = {{ git = "{_URL}", {key} = "{value}" }}')
         out = _notice(root)
-        assert f"pins `{value}`" in out, f"the {key} pin must be named"
-        assert f"@{value}#subdirectory=" not in out, "must not re-suggest the pin it already has"
-
-
-def test_refless_host_is_unchanged(tmp_path: Path):
-    """Non-regression: the case that DID work must keep working, with no stray `@`."""
-    root = _runtime(tmp_path, f'sertor-core = {{ git = "{_URL}" }}')
-    out = _notice(root)
-    assert f'"git+{_URL}#subdirectory=packages/sertor"' in out
-    assert "@" not in out.split("--from ", 1)[1].split(" ", 1)[0]
-
-
-def test_extras_in_the_dependency_do_not_confuse_the_parse(tmp_path: Path):
-    """Real runtimes declare extras; the source table is what matters, and it is parsed as TOML."""
-    root = _runtime(
-        tmp_path, f'sertor-core = {{ git = "{_URL}", tag = "v0.2.1" }}\nother = {{ git = "x" }}'
-    )
-    out = _notice(root, installed="0.2.1", latest="0.3.0")
-    assert f"git+{_URL}@v0.3.0#subdirectory=packages/sertor" in out
-    assert "other" not in out, "a neighbouring source table must not leak in"
-
-
-def test_unreadable_or_malformed_runtime_falls_back(tmp_path: Path):
-    """Malformed TOML must not raise nor emit a half-built command: fall back to the known URL."""
-    d = tmp_path / ".sertor"
-    d.mkdir(parents=True, exist_ok=True)
-    (d / "pyproject.toml").write_text("[tool.uv.sources\nnot toml at all", encoding="utf-8")
-    out = _notice(tmp_path)
-    assert "#subdirectory=packages/sertor" in out
-    assert not (d / ".last-hook-error").exists(), "a malformed pyproject is handled, not an error"
-
-
-def test_missing_runtime_pyproject_falls_back(tmp_path: Path):
-    out = _notice(tmp_path)
-    assert "#subdirectory=packages/sertor" in out
+        assert f"`{value}`" in out, f"the {key} pin must be named"
+        assert "`v0.3.1`" not in out, "a ref we cannot map must not be invented"

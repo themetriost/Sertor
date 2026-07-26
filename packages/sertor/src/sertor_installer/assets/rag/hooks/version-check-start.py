@@ -59,36 +59,41 @@ def _runtime_source(sertor_dir) -> tuple[str, str]:
 
 
 def _upgrade_command(sertor_dir, installed: str = "", latest: str = "") -> str:
-    """The upgrade command that actually WORKS on this host — and respects how it pins.
+    """The remedy phrased for how THIS host is set up — never a command it cannot act on.
 
-    The `#subdirectory=packages/sertor` fragment is the load-bearing part: without it `uvx` resolves
-    the ROOT package (`sertor-core`), which provides `sertor-rag` and `sertor-wiki-tools` but NOT
-    `sertor`, and the command fails with "An executable named `sertor` is not provided".
+    `sertor` is never a persistent command: it is always fetched on demand by
+    `uvx --from "git+…#subdirectory=packages/sertor"`, so that form works on any host with `uv` and
+    network. The `#subdirectory` fragment is the load-bearing part — without it `uvx` resolves the
+    ROOT package, which does not provide `sertor`, and fails with "An executable named `sertor` is
+    not provided". That bare form is the one a node could not run (reported by Kaelen); it is pinned
+    against by the guards.
 
-    Three cases, and the distinction is the point (Principle XIV — derive where derivable, declare
-    where not):
+    What the notice must NOT assume is **how the host manages its runtime** (Principle XIV — derive
+    where derivable, declare where not):
 
-    - **unpinned host** → no ref, as before;
-    - **pinned to a tag naming its installed version** (`v0.2.1` / `0.2.1`) → the new ref is
-      DERIVABLE: the same style carrying `latest`. Carrying the OLD ref instead would tell a host
-      that is behind to reinstall the version it already has — well-formed and useless;
-    - **pinned to a rev/branch, or a tag we cannot map** → the new ref is NOT derivable from here,
-      so the command is emitted without one and the pin is NAMED, so the host moves it deliberately
-      instead of being silently upgraded off it.
+    - **unpinned** → `sertor upgrade` is the whole remedy;
+    - **pinned to a tag naming the installed version** → the new ref is DERIVABLE. The host is told
+      to MOVE the pin (carrying the old ref would tell a host that is behind to reinstall the version
+      it already has), and warned that `sertor upgrade` — which it still needs, for the assets —
+      currently resets the pin. A pin is a deliberate choice; discarding it silently is not a remedy.
+    - **pinned to a commit or a branch** → the new ref is NOT derivable from here, so it is not
+      invented: the pin is NAMED and the host decides where to move it.
     """
     url, ref = _runtime_source(sertor_dir)
+    upgrade = f'uvx --refresh --from "git+{url}#subdirectory=packages/sertor" sertor upgrade'
     if not ref:
-        return f'uvx --refresh --from "git+{url}#subdirectory=packages/sertor" sertor upgrade'
+        return upgrade
 
     prefix = "v" if ref.startswith("v") else ""
-    if installed and latest and ref in (installed, f"v{installed}"):
-        target = f"{prefix}{latest}"
-        return (
-            f'uvx --refresh --from "git+{url}@{target}#subdirectory=packages/sertor" sertor upgrade'
-        )
+    known = bool(installed and latest) and ref in (installed, f"v{installed}")
+    step = (
+        f"set the `sertor-core` pin in .sertor/pyproject.toml to `{prefix}{latest}`" if known
+        else f"point the `sertor-core` pin in .sertor/pyproject.toml (now `{ref}`) at the new version"
+    )
     return (
-        f'uvx --refresh --from "git+{url}#subdirectory=packages/sertor" sertor upgrade '
-        f"(your runtime pins `{ref}`: point it at the new version instead of dropping the pin)"
+        f"your runtime pins `{ref}`, so upgrading is two steps: {step}, then "
+        f"`uv sync --project .sertor` for the runtime; and {upgrade} for the installed assets "
+        "(that command currently resets the pin, so re-apply it afterwards)"
     )
 
 
@@ -119,7 +124,7 @@ def main() -> None:
         # Update notice (stdout = SessionStart context). Only WARNS; the user decides (FR-005/CS-4).
         print(
             f"SERTOR UPDATE AVAILABLE: installed {installed}, latest {latest}.{dim_text} "
-            f"To update, run: {_upgrade_command(_hooklib.sertor_dir(), installed, latest)} "
+            f"To update: {_upgrade_command(_hooklib.sertor_dir(), installed, latest)}. "
             "This is only a notice — no update is applied automatically."
         )
         return

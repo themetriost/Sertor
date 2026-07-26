@@ -32,8 +32,9 @@ Run from the **root of the target repository**. Add `--assistant copilot-cli` fo
 | `sertor upgrade` / `sertor uninstall` | refresh, or cleanly remove, an installed capability |
 | `sertor-flow install` | install the SDLC / SpecKit development method (separate package) |
 
-> Distribution is **interim via `git+url`** (not PyPI yet). To pull the latest build after Sertor's
-> `master` moves, add `--refresh` to the `uvx` command (it caches per git revision).
+> Distribution is **via `git+url`**; there is no PyPI package. To pull the latest build after Sertor's
+> default branch moves, add `--refresh` to the `uvx` command (it caches per git revision) — or pin a
+> release tag with `@<tag>` for a reproducible setup.
 
 ## Runtime CLI — `sertor-rag`
 

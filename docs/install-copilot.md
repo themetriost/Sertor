@@ -21,7 +21,7 @@ It writes the MCP server to `.mcp.json` (`mcpServers` root, where the CLI looks)
 ## Prerequisites
 
 - **Python ≥ 3.11** and **[`uv`](https://github.com/astral-sh/uv)** (the supported install path).
-- Network access to GitHub (Sertor ships via `git+url`, not PyPI yet).
+- Network access to GitHub (Sertor ships via `git+url`; there is no PyPI package).
 - An **embeddings provider** for the RAG. The **default is `glove`** — local static word vectors,
   **no credentials**, downloaded once per machine (~822 MB) on the first index. Alternatives:
   **Azure OpenAI** (`text-embedding-3-*`, cloud, billable), local **[Ollama](https://ollama.com)**
