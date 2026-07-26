@@ -109,6 +109,31 @@ Cfr. [[esito-sull-host-vs-forma-dell-asset]] (la guardia cieca / complice / dal 
 [[identita-per-presenza-o-per-contenuto]]: là il punto d'osservazione è sbagliato o il criterio è
 sbagliato; qui il punto d'osservazione è **giusto ma unico**.
 
+### Il corollario: un rilevatore esterno va anche *consumato* con disciplina
+
+Se la federazione è un rilevatore, allora ricevere un riscontro non basta: serve una regola per
+**leggerlo**, perché una segnalazione arriva sempre **datata a una versione**.
+
+> Prima di costruire il rimedio, verifica che la **causa** segnalata sia ancora viva nella versione
+> corrente. Il sintomo è vero *per chi l'ha visto*; la causa può essere già stata chiusa da un fix
+> nostro successivo, o essere diversa da quella ipotizzata da chi segnala.
+
+**Caso reale (2026-07-26).** Un nodo segnalava che l'avviso d'aggiornamento suggerisce un comando che
+sul suo host «non è nemmeno eseguibile, perché l'installer `sertor` non è presente». Sulla scorta di
+quella frase è stata scritta una **rilevazione della presenza dell'installer** per differenziare il
+messaggio. Verificando la premessa **dopo** averla implementata: `sertor` **non è mai** un comando
+persistente — `uvx --from "git+…"` lo preleva al volo, quindi la forma corretta funziona su qualunque
+host con `uv`. La segnalazione riguardava la forma **nuda** del comando, difetto già chiuso due
+versioni prima. Il codice è stato **rimosso**: era un'euristica fragile (si appoggiava a un file
+introdotto a fine giugno, quindi avrebbe classificato male ogni installazione più vecchia) costruita
+per un problema che non esisteva più.
+
+È lo stesso **errore d'ordine** già registrato il 2026-07-24 su un altro rilievo esterno — *«non un
+errore di ragionamento ma di ordine: decidere prima, verificare dopo»*. Due occorrenze in tre giorni,
+entrambe partite da un riscontro **corretto** a cui è stato applicato un rimedio **sbagliato**: è la
+firma del difetto, e la contromisura è banale quanto facile da saltare — **verificare la premessa
+prima di scrivere il rimedio, non dopo**.
+
 ## Stato (E15 `fedelta-dogfood`)
 
 | Fetta | Stato |
