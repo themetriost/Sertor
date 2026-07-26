@@ -3,17 +3,17 @@ title: Costituzione di Sertor
 type: concept
 tags: [costituzione, governance, clean-code, clean-architecture, produzione, principio-x, host-agnostico, principio-xi, principio-xii, principio-xiii, missione, fail-loud, product-fixture-plane]
 created: 2026-05-31
-updated: 2026-07-22
+updated: 2026-07-26
 sources: [".specify/memory/constitution.md", ".specify/templates/plan-template.md", "packages/sertor-flow/src/sertor_flow/assets/constitution-starter.md"]
 ---
 
 # Costituzione di Sertor
 
-La **Costituzione di Sertor** è il documento di governance che codifica i **13 principi vincolanti** del
+La **Costituzione di Sertor** è il documento di governance che codifica i **14 principi vincolanti** del
 progetto (Clean Architecture, qualità del codice, host-agnosticità del **Principio X**, consumo via vehicles
 del **Principio XI**, Fail Loud del **XII**, Product-vs-Fixture-Plane del **XIII**) sotto una **Missione &
 stella polare** vincolante; un **Constitution Check** ne fa da gate al design. Fonte unica:
-`.specify/memory/constitution.md`. Ratificata v1.0.0 il 2026-05-31; **corrente: v1.5.0 (2026-07-22)**.
+`.specify/memory/constitution.md`. Ratificata v1.0.0 il 2026-05-31; **corrente: v1.6.0 (2026-07-26)**.
 
 > **Lingua (dalla v1.5.0):** la costituzione dogfood è ora **in inglese** — la stessa lingua di ciò che
 > **rilasciamo** (lo starter neutro di `sertor-flow`). Prima era in italiano: una divergenza «dogfood ≠ ciò
@@ -35,7 +35,7 @@ Prima dei principi, la costituzione àncora la **missione**: Sertor dota qualsia
 decisione DEVE servire la missione e rafforzare la fusione code+doc; in conflitto vince la missione. Un gate
 di **allineamento alla missione** entra nel Constitution Check. Vedi [[mission-vision]].
 
-## I 13 principi (vincolanti)
+## I 14 principi (vincolanti)
 
 - **I. Core a dipendenze verso l'interno** (NON-NEGOZIABILE) — la libreria è il prodotto; il core non
   importa SDK provider né CLI. → REQ-E1, CS-5
@@ -67,6 +67,15 @@ di **allineamento alla missione** entra nel Constitution Check. Vedi [[mission-v
   e piano-fixture restano distinti; un buco di prodotto tappato da un workaround-fixture = **OPEN PRODUCT
   QUESTION**, mai nascosto (è il XII applicato al dogfooding). Proposto dal nodo Sinthari, accolto 2026-07-14.
   Vedi [[product-plane-vs-fixture-plane]].
+- **XIV. Derived State, Not Declared** (NON-NEGOZIABILE, dal 2026-07-26) — quando un fatto vive in **più
+  di un posto**, uno dei due va **derivato** dall'altro; dove derivarlo è davvero impossibile (un file
+  dell'ospite che non si sovrascrive, una cache, un artefatto di un altro tool) la duplicazione è ammessa
+  **solo** con un **riconciliatore nominato** che **dichiara** la divergenza. Conservare una copia stantia
+  può essere giusto; conservarla **in silenzio** no. Firma costante del difetto: **un no-op che riporta
+  successo**, che colpisce proprio il meccanismo destinato ad aggiornare. Confine: il VI dice se
+  *ri-eseguire è sicuro*, il XIV su **quale identità** si decide «già fatto»; il XII riguarda un errore già
+  manifestato, il XIV un valore che **smette in silenzio di essere vero**. Aggiunge una domanda al gate del
+  `plan`. Vedi [[identita-per-presenza-o-per-contenuto]] e [[esito-sull-host-vs-forma-dell-asset]].
 
 ## Sezioni aggiuntive nella Costituzione
 
@@ -100,12 +109,20 @@ I principi più recenti nascono anche dalla **federazione**: il XIII è una prop
 - **v1.4.0** — 2026-06-20, MINOR (+ sezione **Missione & stella polare** + gate di allineamento alla missione).
 - **v1.5.0** — 2026-07-22, MINOR (+ Principio XIII — Product Plane vs. Fixture Plane, proposta Sinthari; **+
   convergenza in inglese** dell'intera costituzione dogfood per fedeltà a ciò che rilasciamo — E10-FEAT-030).
+- **v1.6.0** — 2026-07-26, MINOR (+ Principio XIV — **Derived State, Not Declared**: un fatto che vive in
+  due posti va **derivato**, non copiato; dove derivarlo è impossibile serve un **riconciliatore nominato**
+  che **dichiari** la divergenza. Ratificato dopo **cinque istanze della stessa classe in cinque domini**
+  — stamp di versione, `.mcp.json` saltata per presenza, pin fermo, handler idempotente per presenza,
+  elenco `LogRecord` hardcoded — quasi tutte scoperte da nodi a valle, non da noi. Gate nuovo al `plan`.)
 
 ## Riferimenti
 
-- **Fonte unica:** [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md) (v1.5.0, EN)
-- **Starter neutro rilasciato:** `packages/sertor-flow/.../constitution-starter.md` (v0.4.0 — vi il XIII è il
-  Principio XII, dove l'XI è Fail Loud).
+- **Fonte unica:** [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md) (v1.6.0, EN)
+- **Starter neutro rilasciato:** `packages/sertor-flow/.../constitution-starter.md` (**v0.5.0** — lì il
+  nostro XIII è il Principio XII e il nostro XIV è il XIII, perché l'XI è Fail Loud). Dalla v0.5.0 lo
+  starter porta una sezione **`Amendments`** che elenca cosa ha aggiunto ogni versione, e
+  `sertor-flow install/upgrade` **dichiara** a un ospite la cui costituzione è indietro che esistono
+  emendamenti da integrare — senza toccarla.
 - **Template planning:** [`.specify/templates/plan-template.md`](../../.specify/templates/plan-template.md)
   (Constitution Check con gate I–XIII + allineamento alla missione).
 - [[product-plane-vs-fixture-plane]] · [[fail-loud-fix-cause]] · [[mission-vision]] · [[dogfood-fidelity]] ·

@@ -11,7 +11,19 @@ and Sertor aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ## [Unreleased]
 
-_Changes land here before the next version bump._
+### Added
+
+- **Constitution amendments now reach projects that already have one.** The starter is a seed: once
+  you have a real constitution, install and upgrade leave it untouched — which meant a later
+  amendment could never reach you, and nothing said so. `sertor-flow` now compares the starter
+  version declared inside your file with the one shipped and, when yours is older, **says so** in the
+  report, naming both versions and pointing at the new **`Amendments`** section of the starter, which
+  lists every release and what it added. Still non-destructive: nothing is written — integrating an
+  amendment is your judgment call.
+- **Constitution starter 0.4.0 → 0.5.0** — new Principle XIII «Derived State, Not Declared»: when a
+  fact lives in more than one place, one must be *derived* from the other; where derivation is
+  impossible, a named reconciler must **report** the divergence. Preserving a stale copy can be
+  correct; preserving it in silence is not.
 
 ## [0.2.1] — 2026-07-25
 
