@@ -181,7 +181,7 @@ convergevano nel top-k, inventando un gap finto: le metriche per-superficie rive
 problema reale. Su 6 query requisito→implementazione, la metrica AND dava **0.17** (solo 1 caso coperto),
 ma il retrieval funzionava: ogni query trovava materiale utile, solo in sorgenti diverse. A metrica OR:
 **union hit-rate = 1.00** (6/6 coperte). Il **segnale di qualità vero è per-superficie**: `search_code` MRR
-0.74 (sano), **`search_docs` MRR 0.55** (il punto debole, leva futura per qualità doc e indice).
+0.74 (sano), **`search_docs`** come metà debole. *Aggiornamento: quel MRR 0.55 è un numero di **giugno 2026**, superato dal dedup fuzzy — il pavimento registrato oggi è **hit@5 0.88 / hit@3 0.625**, gate PASS. E la superficie di prodotto è `search_combined` a **tre flussi** (docs · code · graph, quest'ultimo acceso di default dalla v0.2.0): `search_docs` isolato è un componente, non la misura del prodotto.*
 
 **Contratto di `search_combined` (Tempo 2):** il tool MCP (e la CLI) ritorna una **tupla `(docs, code)`**,
 due liste distinte etichettate per sorgente. L'agente e il consumatore ricevono i flussi separati, possono
@@ -195,7 +195,7 @@ Funzione pura `merge_fused(docs, code)` disponibile per l'interleaving.
 3. `search_combined` → `intent="both"`, hit-rate@k/MRR + **union_hit_rate** (azione: diagnostica: quale
    sorgente porta la risposta? → indirizza il lavoro di miglioramento sui sub-problemi per-superficie).
 
-**Baseline separata e gate di non-regressione:** un file `eval/fused_baseline.toml` (parallelo a
+**Baseline separata e gate di non-regressione:** una sezione `[fused_baseline]` dentro `eval/baseline.toml` (accanto a
 `baseline.toml` per i casi IR) registra il baseline di union hit-rate per i casi `both`. Manopola
 `SERTOR_EVAL_FUSION_TOLERANCE` (default 0.0, no tolleranza) per il gate: se mean union hit-rate degrada
 oltre il baseline, `sertor-rag eval run --fused` esce **non-zero** (fail-loud).
@@ -218,7 +218,7 @@ problema?) dal rumore (è proprio un problema, o è come misuro?).
 - **Autoraggio (TASK-C01):** genesi assistita via skill `eval-suite-author` estesa, propone candidati
   intent-typed dal corpus, utente approva.
 - **Baseline reale (C02):** run sul dogfood con i casi intent-typed reali, registrazione baseline.
-- **Adozione (D01/D02):** miglioramento doc/indice (la leva: elevare search_docs MRR da 0.55 a pari di
+- **Adozione (D01/D02):** miglioramento doc/indice (la leva: elevare la pertinenza di `search_docs` (allora MRR 0.55) a pari di
   search_code); misurazione dell'impatto.
 
 **Connessione alla mission:** il **Principio XII «Fail Loud»** fa sì che le lacune di fusione siano

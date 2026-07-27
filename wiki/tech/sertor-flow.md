@@ -125,7 +125,7 @@ Gli asset si dividono in tre categorie:
 
 ### Costituzione-starter neutra (D8)
 
-Derivata dalla costituzione Sertor v1.1.1 **de-RAGizzata**:
+Derivata dalla costituzione Sertor **de-RAGizzata** — allo starter **v0.5.0** (2026-07-26), che segue gli emendamenti del dogfood: ha ricevuto i Principi **XII** (Fail Loud), **XIII** (Product/Fixture Plane) e **XIV** (Derived State, Not Declared), più una sezione `Amendments` che elenca cosa ha aggiunto ogni versione. *(La prima derivazione fu dalla v1.1.1.)*
 - **Include:** Principi I (dipendenze verso astrazioni), III (no speculativo), IV (errori
   espliciti), V (test), VI (idempotenza), VII (leggibilità), VIII (config centralizzata), IX
   (log strutturati) + sezioni Sicurezza/segreti, Governance (branch+PR, Constitution Check).

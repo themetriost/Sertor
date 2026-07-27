@@ -79,7 +79,7 @@ sposta `last_index` **per costruzione**, non per bug. Lo swing warn/pass che Act
 ### Segnali che nessuno legge (il difetto che nessuna delle 4 chiede)
 | Segnale | Scrittore | Lettore |
 |---|---|---|
-| `install.report/1` | installer | stdout (perde `capability`/`op` nel JSON — `report.py:107`) |
+| `install.report/1` | installer | stdout + `.sertor/.install-log.jsonl` — *il difetto qui descritto (`capability`/`op` persi nel JSON) e' stato **corretto**: `capability` e' ora un argomento richiesto di `InstallReport`, e E2-FEAT-018 ha aggiunto il log ispezionabile per-artefatto. Il riferimento `report.py:107` non esiste piu': quel modulo e' oggi un re-export di 10 righe verso il kit* |
 | `rag.health/1` | rag-freshness (SessionEnd) | rag-freshness-start |
 | `version.check/1` | version-check | version-check-start |
 | `hook.error/1` (breadcrumb E10-019) | 3 hook | **NESSUNO (write-only)** |

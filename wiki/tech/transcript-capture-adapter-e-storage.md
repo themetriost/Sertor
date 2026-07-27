@@ -1,5 +1,5 @@
 ---
-title: Transcript Capture Adapter & Memory Archive (9ª porta + adapter + store)
+title: Transcript Capture Adapter & Memory Archive (8ª porta + adapter + store)
 type: tech
 tags: [memoria, capture, adapter, storage, sqlite, host-agnostico, principio-x, feat-001, feat-008, ports-adapters]
 created: 2026-06-14
@@ -11,7 +11,7 @@ sources: ["src/sertor_core/domain/ports.py", "src/sertor_core/domain/memory.py",
 
 La cattura e l'archiviazione dei transcript è costruita su tre livelli ortogonali: una **porta astratta** (host-agnostico), un **adapter** concreto (host-specifico), uno **store** locale (generico). Parallelo al pattern dei retriever ([[ports-adapters]]).
 
-## 9ª Porta: `TranscriptCaptureAdapter` (Principio X)
+## 8ª Porta: `TranscriptCaptureAdapter` (Principio X)
 
 Definita in `domain/ports.py` (15 righe di contratto), implementata come `@runtime_checkable` Protocol (structural typing).
 

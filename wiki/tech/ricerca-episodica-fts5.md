@@ -20,7 +20,7 @@ Componente concreto di FEAT-002: ricerca testuale a granularità di turno sull'a
 - **Locale-first**: tutta la logica nel database; niente server, niente rete.
 - **Perf attesa**: archivi di dimensione tipica (5k–50k turni) interrogabili in <200ms su hardware consumer, anche con i vincoli di finestra temporale.
 
-Alternativa scartata: il `LexicalIndex` BM25 già presente nel core (adapters/lexical/bm25.py) è basato su scikit-learn (dipendenza pesante + non adatta a query change-prone), non generico per la ricerca episodica standalone.
+Alternativa scartata: il `LexicalIndex` BM25 già presente nel core (`adapters/lexical/bm25.py`) è pensato per il **corpus di codice/doc** — sidecar per collezione, tokenizzazione orientata agli identificatori, nessuna nozione di turno o di finestra temporale — quindi riusarlo avrebbe richiesto di piegarlo a una granularità che non è la sua. *(La motivazione originale citava una dipendenza da scikit-learn: **non è più vera** — `bm25.py` è oggi stdlib puro e `scikit-learn` non è fra le dipendenze del core.)*
 
 ## Architettura del database
 
