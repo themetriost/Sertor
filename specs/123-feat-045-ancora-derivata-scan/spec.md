@@ -73,11 +73,37 @@ La capacità è installabile su qualunque progetto, anche su uno che non usa un 
 
 - **La cartella di giornale non è mai stata consegnata** (ospite nuovo, wiki appena creato): non esiste una consegna da cui derivare → nessuna ancora → *tutto* è in sospeso, che è il comportamento odierno a giornale assente. Nessuna regressione.
 - **Storia troncata** (clone superficiale): la consegna cercata può essere fuori dalla storia disponibile → ricaduta dichiarata sull'approssimazione, con motivo.
-- **La voce di giornale è stata scritta ma è di un giorno passato** e non consegnata: non conta come registrazione della sessione corrente — altrimenti un file dimenticato nell'albero di lavoro spegnerebbe il gate a tempo indeterminato, che è precisamente la via d'uscita che stiamo togliendo.
+- **La voce di giornale è stata scritta ma è di un giorno passato** e non consegnata: non conta come registrazione della sessione corrente — altrimenti un file dimenticato nell'albero di lavoro spegnerebbe il gate a tempo indeterminato, che è precisamente la via d'uscita che stiamo togliendo. **Il blocco però la nomina** (FR-004a): senza, il giornale sembrerebbe «già aggiornato» a fronte di un gate che blocca lo stesso, e la diagnosi tornerebbe a essere un'indagine.
 - **Lavoro consegnato dopo la voce di giornale, nella stessa sessione**: risulta in sospeso. Corretto: la registrazione non descrive quel lavoro.
 - **Ramo di lavoro non ancora consegnato**: l'ultima registrazione può trovarsi sulla mainline; tutto il lavoro del ramo successivo a essa risulta in sospeso finché non viene registrato. Corretto.
 - **Nessun cambiamento di alcun tipo** (sessione di sola lettura o di sole domande): zero in sospeso, il gate non si attiva. Invariante da non rompere.
 - **Le esclusioni configurate dall'ospite** continuano ad applicarsi in entrambe le modalità: la derivazione non le scavalca.
+
+## Clarifications
+
+### Sessione 2026-07-27
+
+- **Q — Una voce di giornale scritta ma non ancora consegnata vale come registrazione, e con quale scadenza?**
+  **A — Vale solo se è la voce del giorno corrente.** *(→ FR-004, FR-004a, A-2)*
+
+  La prima metà non era in discussione ed è un vincolo, non una scelta: il gate interviene **a fine
+  turno**, quando tipicamente **nulla è ancora consegnato** — il lavoro è scritto, la voce è scritta, e
+  la consegna è delegata e parte dopo. Se contasse solo una registrazione consegnata, il gate
+  pretenderebbe una consegna per potersi soddisfare: una richiesta che non gli compete e che
+  ricreerebbe un deadlock di forma diversa.
+
+  La scadenza, invece, era la scelta vera. **Senza scadenza, una voce dimenticata nell'albero di lavoro
+  diventa un interruttore permanente**: è la stessa via d'uscita in cui il nodo *Acta* è stata
+  costretta (chiudere lasciando il lavoro non consegnato), qui però **resa legittima** invece che
+  tolta — e senza che nulla lo segnali. Alternativa considerata e scartata: nessuna scadenza ma
+  dichiarazione dello stato nell'output; scartata perché quando il gate **non** blocca non stampa
+  nulla, quindi quella dichiarazione non la leggerebbe nessuno.
+
+  **Attrito accettato consapevolmente:** se un giorno non si consegna nulla e il giorno dopo non si
+  lavora, il gate chiede comunque una voce nuova per lavoro già descritto nella voce del giorno prima.
+  Costo giudicato inferiore a quello di una scappatoia permanente. **Contromisura:** FR-004a — il
+  blocco **nomina** la voce non consegnata e la sua data, invece di lasciare che il giornale sembri
+  «già aggiornato» mentre il gate blocca lo stesso.
 
 ## Requirements *(mandatory)*
 
@@ -88,7 +114,8 @@ La capacità è installabile su qualunque progetto, anche su uno che non usa un 
 - **FR-001**: La rilevazione MUST determinare l'ancora del lavoro registrato da un **fatto derivato dalla storia** del progetto — l'ultima consegna che ha toccato la cartella di giornale del wiki — ogni volta che il progetto è sotto controllo di versione e la storia è interrogabile.
 - **FR-002**: La risposta MUST essere **deterministica**: interrogazioni ripetute sullo stesso stato del progetto devono produrre lo stesso risultato, **indipendentemente dagli orari di modifica dei file**.
 - **FR-003**: L'insieme in sospeso MUST comprendere sia il lavoro **consegnato dopo** l'ultima registrazione, sia le modifiche **presenti nell'albero di lavoro e non ancora consegnate** (sia a file già noti al controllo di versione sia a file nuovi). *Senza la seconda metà il gate non vedrebbe mai il lavoro di una sessione in corso, che è il caso normale al momento in cui interviene.*
-- **FR-004**: Una registrazione **presente nell'albero di lavoro e non ancora consegnata** MUST valere come registrazione — il gate deve potersi soddisfare **senza obbligare a una consegna** — a condizione che sia una registrazione **del giorno corrente** (vedi Assumptions, A-2).
+- **FR-004**: Una registrazione **presente nell'albero di lavoro e non ancora consegnata** MUST valere come registrazione — il gate deve potersi soddisfare **senza obbligare a una consegna** — **a condizione che sia una registrazione del giorno corrente** (deciso in `clarify`, vedi Clarifications e A-2).
+- **FR-004a**: Quando esiste una registrazione non consegnata che **non** è del giorno corrente, l'output MUST **nominarla** (con la sua data) e dichiarare che **non vale** per il giorno corrente. *Senza questo, chi riceve il blocco vede un giornale «già modificato» e un gate che blocca lo stesso, senza modo di capire perché.*
 
 **Nominare e ignorare (assorbe E10-FEAT-048)**
 
@@ -132,11 +159,12 @@ La capacità è installabile su qualunque progetto, anche su uno che non usa un 
 - **SC-005**: La capacità continua a funzionare su un progetto **non** sotto controllo di versione, e in quel caso l'output **dichiara** di star stimando.
 - **SC-006**: Un ospite che aggiorna **solo** la libreria e non gli asset installati **non perde il gate** (nessuna disattivazione silenziosa dei consumatori).
 - **SC-007**: Il gate continua a mordere quando deve: lavoro reale non registrato produce un blocco in **tutti** gli scenari in cui lo produce oggi.
+- **SC-008**: Una registrazione non consegnata **di un giorno passato** non impedisce al gate di bloccare, e chi riceve il blocco **legge la sua data** senza eseguire altri comandi.
 
 ## Assumptions
 
 - **A-1 — L'ancora è la cartella di giornale, non l'intero wiki.** La registrazione si misura sul giornale, come oggi: aggiornare una pagina senza scrivere la voce di giornale non conta come registrazione. Preserva la semantica corrente e la disciplina del rituale («un passo non è chiuso finché commit e voce di log non sono entrambi fatti»).
-- **A-2 — Una registrazione non consegnata vale solo se è del giorno corrente.** Senza questo vincolo, una voce dimenticata nell'albero di lavoro spegnerebbe il gate a tempo indeterminato — reintroducendo per un'altra via la scappatoia che stiamo togliendo. Il giornale è già partizionato per giorno, e il gate gemello del merge usa già «la partizione di oggi» come criterio: la scelta è coerente con un meccanismo esistente, non nuova. **Da confermare in `clarify`.**
+- **A-2 — Una registrazione non consegnata vale solo se è del giorno corrente.** ✅ **Confermata in `clarify` (2026-07-27)** — vedi Clarifications. Senza questo vincolo, una voce dimenticata nell'albero di lavoro spegnerebbe il gate a tempo indeterminato, reintroducendo per un'altra via la scappatoia che stiamo togliendo. Il giornale è già partizionato per giorno e il gate gemello del merge usa già «la partizione di oggi»: la scelta è coerente con un meccanismo esistente, non nuova.
 - **A-3 — Ricaduta dichiarata, non fallimento.** Se la derivazione è impossibile su un progetto che pure è sotto controllo di versione (storia troncata, comando assente, giornale mai consegnato), si ricade sull'approssimazione **dichiarandolo**, invece di interrompere. Il consumatore principale è un gate che per progetto non deve mai intrappolare un turno; interrompere qui trasformerebbe un caso limite in un blocco. La dichiarazione soddisfa comunque «non degradare in silenzio».
 - **A-4 — Le esclusioni configurate restano.** La derivazione non scavalca le esclusioni dichiarate dall'ospite: si applicano a entrambe le modalità.
 - **A-5 — Il limite all'elenco dei nomi è una scelta di leggibilità**, non un vincolo tecnico; il numero totale resta sempre esatto.

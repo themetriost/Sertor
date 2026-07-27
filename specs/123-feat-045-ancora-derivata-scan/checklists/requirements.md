@@ -43,12 +43,12 @@ vizio: descriveva la **soluzione** invece del **bisogno**.
 - *Testable and unambiguous* — FR-004 non diceva **quando** una registrazione non consegnata valga.
   Aggiunto il vincolo del giorno corrente + assunzione **A-2** che ne porta il motivo.
 
-**Assunzione da confermare in `clarify` (non è un blocco, è una scelta con un'alternativa reale):**
-**A-2** — una registrazione presente nell'albero di lavoro ma non consegnata vale **solo se è del
-giorno corrente**. È la voce con più conseguenze pratiche: decide se il gate si può soddisfare in un
-turno (sì) e se una voce dimenticata lo può spegnere a tempo indeterminato (no). La scelta è coerente
-col gate gemello del merge, che già usa «la partizione di oggi» come criterio — ma l'alternativa
-(qualunque registrazione non consegnata vale) è difendibile ed è più permissiva.
+**✅ `clarify` chiuso (2026-07-27) — nessuna assunzione aperta resta.** **A-2** confermata: una
+registrazione presente nell'albero di lavoro ma non consegnata vale **solo se è del giorno corrente**.
+Alternativa scartata (nessuna scadenza + dichiarazione nell'output): quando il gate non blocca non
+stampa nulla, quindi la dichiarazione non la leggerebbe nessuno. Attrito accettato consapevolmente e
+mitigato da **FR-004a** (il blocco nomina la voce stantia e la sua data). Vedi la sezione
+*Clarifications* della spec per il ragionamento completo.
 
 **Vincolo di compatibilità da non perdere di vista nel `plan`:** FR-012. I due consumatori installati
 si **disattivano** se l'identificativo di schema non corrisponde: è un fail-open, quindi un errore qui

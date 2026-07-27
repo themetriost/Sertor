@@ -620,23 +620,23 @@ dogfood sopra. *(Non riconciliare cancellando la prosa: i blocchi sono rigenerat
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/118-contratto-retrieval-agente/plan.md` (**E5 / FEAT-012** epica **retrieval-qualita** —
-*contratto di retrieval verso l'agente: fan-out del grafo, misurato*). Porta il segnale **strutturale**
-del code-graph dentro `search_combined` come **terzo flusso etichettato** (dietro `SERTOR_COMBINED_GRAPH`,
-**spento di default**), e **prima** costruisce l'**harness di valutazione agent-facing** che ne è il gate.
-**Ordine invertito rispetto al valore, deliberatamente:** la macchina di valutazione esistente misura il
-*retrieval* (hit@k/MRR su ciò che viene recuperato), **non il comportamento dell'agente** che quel
-materiale lo legge — quindi le affermazioni empiriche del contratto non erano verificabili. **Assenza
-tipizzata** (non tentato / vuoto legittimo / non tentabile con **3 cause distinte**: `graph_not_built` ·
-`navigation_library_missing` · `graph_artifact_unusable`) perché un vuoto non tipizzato fa **fabbricare
-all'agente un'affermazione falsa**. `status` del ramo grafo è una **property derivata**, mai impostabile.
-Vie d'ingresso **deterministiche** (identificatori nella query · confronto lessicale con la tabella dei
-nomi qualificati); la via per espansione semantica è **rinviata** (i risultati solo-lessicali non portano
-`qualname`, `hybrid.py:200-203`). **Gate duplice vincolante** e con **due soglie**: consegna se il calo
-sulle domande non strutturali ≤ 5 punti percentuali, attivazione di default solo se **nessun calo**.
-L'harness vive in `eval_ab/`, **fuori** da `src/` e da `tests/` (non è prodotto, non è deterministico).
-Constitution **13/13 + missione PASS**. Design note: `wiki/concepts/llm-facing-retrieval-contract.md`
-(4 giri di revisione esterna). Branch `118-contratto-retrieval-agente`.
+`specs/123-feat-045-ancora-derivata-scan/plan.md` (**E10 / FEAT-045**, epica **debito-tecnico**, Must/P0 —
+*ancora derivata per la rilevazione del lavoro non registrato*). `scan` risponde a «c'è lavoro non
+registrato?» **stimando** con gli orologi dei file invece di **derivare** il fatto: dopo un merge git
+riscrive lavoro e giornale insieme, l'ordine diventa arbitrario e il gate bloccante `wiki-guard` può
+diventare **insoddisfacibile** — *una sessione non può chiudersi sul proprio ultimo merge*. **Il nostro
+`pending=0` è una corsa vinta, non correttezza.** Rimedio nella forma del **Principio XIV**: ancora
+**derivata** dall'ultima consegna che ha toccato la cartella di giornale + diff da lì, **unito alle
+modifiche non consegnate dell'albero di lavoro** (senza questa seconda metà il gate non vedrebbe mai il
+lavoro di una sessione in corso — il caso per cui esiste); **mtime dichiarato come proxy** dove l'ospite
+non è un repo, con **causa tipizzata** (`not_a_repository` · `git_unavailable` · `log_never_committed`),
+perché `scan` è host-agnostico *by design*. **Assorbe E10-FEAT-048**: esclusione dei file gitignorati e
+nomi dei file **cadono fuori gratis** dalla derivazione (verificato empiricamente). ⚠️ **Vincolo
+critico:** la stringa di schema `wiki.scan/1` **non si bumpa** — i due hook consumatori la confrontano
+per uguaglianza e vanno in **fail-open**, quindi un bump non romperebbe il gate: lo farebbe **sparire in
+silenzio** sugli ospiti non aggiornati (guardia dedicata, fase 2 del piano). **Fuori scope**, rinviato
+per decisione utente a **E10-FEAT-051**: chiudere il gate con un «giudizio registrato». Constitution
+**14/14 + missione PASS**. Branch `123-feat-045-ancora-derivata-scan`.
 
 <!-- SPECKIT END -->
 
