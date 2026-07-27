@@ -62,8 +62,8 @@ cartelle-sorgente vengono da `wiki.config.toml`, non sono assunti.
 Quattro hook wiki in `.claude/settings.json` — due **non bloccanti** (delega automatica) e due
 **bloccanti** (le reti hard del rituale, che non orchestrano un agente ma *esigono* l'azione):
 - **SessionStart** *(non bloccante)* — inietta lo stato del wiki a inizio sessione ([[sessionstart-hook]]).
-- **SessionEnd** *(non bloccante)* — `.claude/hooks/wiki-pending-check.py --mode SessionEnd`: euristica
-  `mtime` (confronta `src/`/`specs/`/`requirements/`/`.claude/` con l'ultima voce di log) → **promemoria**
+- **SessionEnd** *(non bloccante)* — `.claude/hooks/wiki-pending-check.py --mode SessionEnd`: rilevazione
+  del lavoro non registrato (confronta `src/`/`specs/`/`requirements/`/`.claude/` con l'ultima **registrazione**: ancora **derivata dalla storia** dove l'ospite è un repo, `mtime` **dichiarato come proxy** altrove — E10-FEAT-045) → **promemoria**
   cross-sessione a delegare al `wiki-curator` (guardia `stop_hook_active` anti-loop).
 - **Stop** *(bloccante, [[wiki-guard]] E10-FEAT-040)* — `wiki-guard.py`: se la sessione ha fatto lavoro
   indicizzato non registrato, **blocca la chiusura del turno** esigendo record + distill + lint semantico.

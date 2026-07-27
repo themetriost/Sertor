@@ -31,7 +31,7 @@ da hook/skill/agente senza parsing fragile.
 
 | Operazione | Cosa fa (meccanico) | Contratto |
 |---|---|---|
-| `scan` | conta i file delle `source_dirs` più recenti dell'ultima voce di log (lavoro pendente; anchor su **mtime**, non git → vale su ospiti senza git; in **rotazione** l'anchor è la **partizione più recente**) | `wiki.scan/1` |
+| `scan` | i file delle `source_dirs` non coperti dall'ultima **registrazione** (lavoro pendente). **Ancora DERIVATA dove l'ospite è un repo** (E10-FEAT-045, v0.3.2): ultima consegna che ha toccato il giornale + modifiche non consegnate dell'albero di lavoro — sopravvive a merge/pull, e i file ignorati dal VCS non entrano. Dove non lo è, **mtime dichiarato come proxy** con causa tipizzata (`anchor_kind`, `anchor_fallback_reason`), perché la capacità è host-agnostica. Nomina i file (`pending_paths`) | `wiki.scan/1` *(identificativo congelato: i consumatori vanno in fail-open su mismatch)* |
 | `structure init` | crea tassonomia + index + log (idempotente, non-distruttivo) | `wiki.structure/1` |
 | `validate` | frontmatter mancante + naming non kebab-case | `wiki.lint/1` |
 | `lint` | wikilink rotti + pagine orfane + frontmatter + stub | `wiki.lint/1` |

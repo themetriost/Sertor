@@ -27,8 +27,8 @@ Ogni controllo di coerenza ha **due nature**, e separarle è la chiave dell'inte
 Il vincolo di piattaforma che vincola tutto il resto: un hook è una *shell command fuori dal loop del
 modello*. Esegue script (natura 1) ma **non può invocare una skill/subagent in-loop** (natura 2); al
 massimo inietta un promemoria, o lancia un processo `claude -p` headless separato (con costi e latenza).
-Per questo l'hook esistente `wiki-pending-check.py` (migrato da `.ps1` a `.py`, A-09), basato su `mtime` e git-blind, non può cogliere la
-deriva semantica: non ragiona.
+Per questo l'hook esistente `wiki-pending-check.py` (migrato da `.ps1` a `.py`, A-09), non può cogliere la
+deriva semantica: non ragiona. *(Dalla v0.3.2 non è più nemmeno git-blind — l'ancora è **derivata** dalla storia dove l'ospite è un repo, E10-FEAT-045 — ma questo non cambia il punto: rileva **che** qualcosa è cambiato, non **se** il wiki lo contraddice.)*
 
 ## Standing behavior batte unattended
 
