@@ -50,7 +50,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 **Rilasciata v0.2.0** «feature + repair»: il **code-graph entra in `search_combined`** come terzo flusso etichettato acceso di default (E5-FEAT-012), e i **tre fix dell'installer** — il pin si muove davvero, il comando d'aggiornamento funziona, il report dichiara la versione effettiva letta dal runtime. Confermata dal campo: *Studium* e *Kaelen* verificano il fix Stop di v0.1.5; *Sinthari* e *VM-WorkingFolder* confermano la diagnosi del pin.
 
-Release precedenti: **v0.1.5** (fix `upgrade` double-wire Stop) · **v0.1.4** «wiki-guard» · **v0.1.3** «daily distill floor». Governance: costituzione **v1.5.0** (EN, Principio XIII).
+Release precedenti: **v0.1.5** (fix `upgrade` double-wire Stop) · **v0.1.4** «wiki-guard» · **v0.1.3** «daily distill floor». Governance: costituzione **v1.6.0** (EN, ultimo emendamento: Principio XIV «Derived State, Not Declared»).
 
 ### ✅ Consegnato (digest per epica)
 - **core (E1):** retrieval ibrido+baseline · code-graph · embedder locale (GloVe default) · refresh incrementale — *completa*
@@ -145,7 +145,7 @@ Release precedenti: **v0.1.5** (fix `upgrade` double-wire Stop) · **v0.1.4** «
 > (FEAT-014, da Acta). Annunciata su Acta (canale Releases) + risposta ad Acta sul fix. **E4 sostanzialmente
 > completa** (residui = solo Could 005/006/007). Auto-updater: gli host su v0.1.1 vedranno *behind*.
 
-> **Governance:** Costituzione **v1.5.0** (dogfood, ora **integralmente in inglese** — non deve divergere da ciò che si rilascia) — **Missione & stella polare (North Star)** (differenziatore = **fusione code+doc**; gate «Allineamento alla missione» nel Constitution Check) + **Principio XII «Fail Loud, Fix the Cause»** + **Principio XIII «Product Plane vs Fixture Plane»** (v1.5.0, E10-FEAT-030: due piani distinti nel dogfooding — proposta Sinthari). Distribuita agli ospiti via `sertor-flow` (starter **v0.4.0** neutro + blocco SDLC).
+> **Governance:** Costituzione **v1.6.0** (dogfood, **integralmente in inglese** — non deve divergere da ciò che si rilascia) — **Missione & stella polare (North Star)** (differenziatore = **fusione code+doc**; gate «Allineamento alla missione» nel Constitution Check) + **Principio XII «Fail Loud, Fix the Cause»** + **Principio XIII «Product Plane vs Fixture Plane»** (v1.5.0, E10-FEAT-030: due piani distinti nel dogfooding — proposta Sinthari). Distribuita agli ospiti via `sertor-flow` (starter **v0.4.0** neutro + blocco SDLC).
 
 ### 📋 Le 15 epiche (per stato) — stato al 2026-07-23
 
