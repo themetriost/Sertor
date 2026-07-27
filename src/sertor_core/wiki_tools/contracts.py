@@ -16,15 +16,38 @@ def _to_json(payload: dict) -> str:
     return json.dumps(payload, ensure_ascii=False, sort_keys=False)
 
 
+# The scan contract identifier. FROZEN — see `ScanResult` and `SCAN_SCHEMA` usage note below.
+SCAN_SCHEMA = "wiki.scan/1"
+
+
 @dataclass(frozen=True)
 class ScanResult:
-    """`wiki.scan/1` — outcome of the pending-work scan (FR-005)."""
+    """`wiki.scan/1` — outcome of the pending-work scan (FR-005).
+
+    **The schema string is frozen (E10-FEAT-045).** The installed hook consumers compare it for
+    EQUALITY and go *fail-open* when it does not match — so bumping it would not break the wiki
+    gate, it would make it **disappear** on every host that updated the library but not the assets:
+    no error, no breadcrumb, just sessions that always close. Absence looks like success, which is
+    the worst failure shape there is. While such consumers exist this contract evolves **by addition
+    only**: new fields, identifier untouched. Guarded by `test_scan_schema_frozen.py`.
+
+    The fields below the original four are additive; a consumer that ignores them keeps working.
+    `anchor` deliberately stays an ISO-8601 instant in BOTH modes (FR-013), so a reader parsing it
+    as a date is unaffected — `anchor_kind` is what says whether it was derived or estimated.
+    """
 
     pending: int
     anchor: str | None
     dirs_scanned: list[str]
     message: str
-    schema: str = "wiki.scan/1"
+    # --- additive (E10-FEAT-045) ---
+    anchor_kind: str | None = None            # "git" | "mtime" | None (no recording at all)
+    anchor_ref: str | None = None             # non-null iff anchor_kind == "git" (citable)
+    anchor_fallback_reason: str | None = None  # non-null iff kind == "mtime" (never a mute proxy)
+    pending_paths: list[str] = field(default_factory=list)  # WHICH files, not just how many
+    pending_truncated: int = 0                # how many are left out of the list
+    stale_recording: str | None = None        # uncommitted log partition from another day, if any
+    schema: str = SCAN_SCHEMA
 
     def to_dict(self) -> dict:
         return asdict(self)

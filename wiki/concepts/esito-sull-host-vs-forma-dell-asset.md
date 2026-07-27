@@ -3,7 +3,7 @@ title: L'esito sull'host, non la forma dell'asset
 type: concept
 tags: [testing, guardie, installer, asset, upgrade, fedelta, principio-xii, e10]
 created: 2026-07-17
-updated: 2026-07-26
+updated: 2026-07-27
 sources: ["packages/sertor-install-kit/tests/unit/test_settings_merge_identity.py", "packages/sertor/tests/test_claude_hook_wiring_anchored.py", "requirements/debito-tecnico/epic.md", "wiki/log/2026-07-16.md", "wiki/log/2026-07-17.md"]
 ---
 
@@ -114,6 +114,59 @@ sto difendendo?* — e non: *dove ho visto il bug?*
 
 *Verificato sul nostro caso gemello (2026-07-26): i due file `.acta` che la stessa regola versiona da
 noi sono puliti, perché installiamo da git e non in editable. La classe non ci mordeva; la lezione sì.*
+
+**Precisazione pagata scrivendo una guardia (2026-07-27): il perimetro va fatto combaciare in
+ENTRAMBE le direzioni.** Applicando la lezione sopra ho scritto una guardia che **scopre** i propri
+soggetti invece di elencarli — giusto contro il perimetro stretto — e l'ho fatta **troppo larga**: ha
+raccolto ogni confronto di `schema` fra gli hook, quindi anche `distill-floor`, che ne confronta
+legittimamente un altro (`wiki.distill_audit/1`). **Ha fallito su un file corretto.** Un perimetro
+troppo largo non è più prudente di uno troppo stretto: il primo accusa l'innocente, il secondo assolve
+il colpevole, e **entrambi fanno perdere fiducia nella guardia** — che è il vero danno, perché una
+guardia di cui ci si fida poco viene disattivata. La domanda giusta ha due metà: *quali file tocca la
+regola che sto difendendo* **e** *quali file NON tocca*.
+
+*Corollario adottato nella stessa guardia:* se la scoperta non trova **nessun** soggetto, il test deve
+**fallire**. Una guardia che ispeziona zero file passa a vuoto — ed è di nuovo *verde e cieca*, per la
+via più banale.
+
+## La guardia che si spegne da sola: quando *fail-open* rende invisibile il cambio di contratto (2026-07-27)
+
+Quarto modo, e il più difficile da vedere, perché **non c'è nessun errore**: la guardia si **disattiva
+da sola**, per una politica che è **giusta**, e il suo silenzio è indistinguibile dal via libera.
+
+Un presidio che non deve mai intrappolare l'utente si progetta **fail-open**: se non riesce a
+determinare la situazione, **lascia passare**. È la scelta corretta per i nostri hook — un gate di fine
+turno che si inceppasse bloccherebbe la sessione per sempre. Ma la stessa politica, applicata alla
+**negoziazione di contratto**, produce un esito che nessuno vorrebbe: i due consumatori installati
+verificano l'identificativo di schema **per uguaglianza** (`wiki-guard.py:101`, `schema !=
+"wiki.scan/1"` → `return`), quindi il giorno in cui il produttore bumpasse quell'identificativo, il
+gate **non si romperebbe: sparirebbe** — su ogni ospite che ha aggiornato la libreria ma non gli asset.
+Nessun errore, nessun breadcrumb, nessun `pending`. Solo una sessione che chiude sempre.
+
+> `fail-open` è una risposta corretta a **«non so»**. Diventa un difetto quando la stessa risposta
+> copre anche **«tu e io non parliamo più la stessa lingua»** — perché il secondo caso è un fatto
+> noto, e un fatto noto va **dichiarato**, non degradato in silenzio (Principio XII).
+
+**Distinzione da tenere ferma**, per non confondere questa sezione con le altre tre: là la guardia
+**gira** e non vede (cieca · complice · perimetro stretto); qui **non gira affatto**, e la ragione per
+cui non gira è la stessa che la rende sicura. Non è nemmeno il [[default-masked-defect]]: lì una
+manopola spenta chiude il percorso e **maschera un bug**; qui non c'è un bug mascherato — c'è una
+**capacità assente**, e l'assenza somiglia al successo.
+
+**Conseguenza operativa** (adottata come vincolo in `specs/123-feat-045-ancora-derivata-scan`, FR-012):
+finché esistono consumatori che si spengono su mismatch, l'evoluzione del contratto è **additiva** —
+campi nuovi, identificativo invariato — e questo va **verificato da una guardia**, non affidato
+all'attenzione di chi modifica. La domanda da porsi quando si tocca un contratto versionato è:
+*se un consumatore vecchio incontrasse questa versione, se ne accorgerebbe qualcuno?*
+
+**E la stessa domanda va posta al contrario**, perché libreria e asset **si aggiornano
+separatamente**: un ospite può ritrovarsi con il **consumatore nuovo e il produttore vecchio**. Quel
+consumatore non deve errare né tacere: deve **degradare al comportamento precedente**. Nel caso
+concreto, la resa che nomina i file restituisce stringa vuota quando i campi nuovi non ci sono, così
+un host non ancora ri-locckato vede il messaggio di prima invece di un errore — *verificato dal vivo,
+non dedotto*. Le due metà insieme sono la regola completa: **il produttore non rompe i consumatori
+vecchi, il consumatore tollera i produttori vecchi.** Presidiarne una sola lascia scoperta la metà
+delle transizioni reali.
 
 ## Tre istanze dal campo (2026-07-24) — dove il punto cieco è l'installer
 

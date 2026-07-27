@@ -221,6 +221,39 @@ An outcome of **`present_divergent`** means a file Sertor owns already existed o
 design: your customization wins. If you want Sertor's version instead, move your file aside and
 re-run, or use `upgrade`.
 
+## The wiki gate blocks the end of the session and I cannot tell why
+
+**Symptom.** Your assistant tries to stop and is blocked with *"the wiki was not updated for this
+session's work"*. You updated the wiki, or you cannot see what is missing.
+
+**Cause.** The gate compares your source files (`src`, `specs`, `requirements`, …) against the most
+recent **recording** — the latest entry in the wiki log. It blocks when work is not covered by one.
+
+**Fix.** Ask it directly; the answer names the files:
+
+```powershell
+uv run --project .sertor sertor-wiki-tools scan
+```
+
+Read the reply top to bottom:
+
+- **`pending=N` plus a file list** — those are the files not covered by a recording. Record them
+  (or, for genuinely mechanical changes, note that in the entry) and stop again.
+- **`kind=git`** — the answer is **derived** from your repository history: the anchor is the last
+  commit that touched the wiki log. Files your VCS **ignores never count**, so a scratch file left in
+  the working directory will not block you.
+- **`kind=mtime`** — your project is **not a git repository** (or history is unreadable), so the
+  answer is an **estimate** based on file modification times, and the reply says why. On such a host
+  the count can include files a VCS would have ignored. This is a declared limitation, not a bug.
+- **`note: uncommitted log entry … is not today's`** — you have an unsaved entry from a **previous
+  day**. It does not close the gate: write today's entry.
+
+**You do not need to commit to satisfy the gate.** An entry written today counts as soon as it is on
+disk — the gate asks whether you recorded, not whether you committed.
+
+**Still blocked with nothing pending?** The gate fails open when it cannot determine the answer, so a
+persistent block means it *did* find something. Check `.sertor/.last-hook-error` for a breadcrumb.
+
 ---
 
 *For the full reference — every flag, config knob, refresh and clean uninstall — see

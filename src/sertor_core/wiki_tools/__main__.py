@@ -240,7 +240,20 @@ def _run(args, profile):
 def _human(op: str, result) -> str:
     data = result.to_dict()
     if op == "scan":
-        return f"pending={data['pending']} anchor={data['anchor']} :: {data['message']}"
+        # Name the files (E10-FEAT-045): "how many" forces the reader to reconstruct "which ones".
+        # `message` itself stays the host's verbatim string — the naming belongs to the rendering.
+        line = (
+            f"pending={data['pending']} anchor={data['anchor']} "
+            f"kind={data.get('anchor_kind')} :: {data['message']}"
+        )
+        paths = data.get("pending_paths") or []
+        if paths:
+            more = data.get("pending_truncated") or 0
+            tail = f" (+{more} more)" if more else ""
+            line += "\n  " + "\n  ".join(paths) + tail
+        if data.get("stale_recording"):
+            line += f"\n  note: uncommitted log entry {data['stale_recording']} is not today's"
+        return line
     if op in ("lint", "validate"):
         return (
             f"broken_links={len(data['broken_links'])} orphans={len(data['orphans'])} "

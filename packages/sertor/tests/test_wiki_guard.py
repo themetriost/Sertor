@@ -46,9 +46,10 @@ def _with_config(tmp_path: Path) -> Path:
     return tmp_path
 
 
-def _fake_scan(pending: int, message: str = ""):
+def _fake_scan(pending: int, message: str = "", **extra):
     payload = {"schema": "wiki.scan/1", "pending": pending,
                "message": message or f"{pending} modified files not yet recorded"}
+    payload.update(extra)
 
     def run(*_a, **_k):
         return types.SimpleNamespace(stdout=json.dumps(payload) + "\n")
@@ -84,6 +85,54 @@ def test_reason_includes_scan_message(tmp_path, monkeypatch, capsys):
            scan_run=_fake_scan(2, message="2 files changed under src/ not recorded"))
     payload = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
     assert "src/ not recorded" in payload["reason"]
+
+
+# --- naming the files (E10-FEAT-045) --------------------------------------------------------------
+
+def test_reason_names_the_pending_files(tmp_path, monkeypatch, capsys):
+    """A block that says only HOW MANY forces the agent to reconstruct WHICH — the diagnosis gap
+    a federation node had to close by hand before it could act."""
+    mod = _load_module()
+    _drive(mod, monkeypatch, _with_config(tmp_path), event={},
+           scan_run=_fake_scan(2, pending_paths=["src/a.py", "specs/b.md"], pending_truncated=0))
+    reason = json.loads(capsys.readouterr().out.strip().splitlines()[-1])["reason"]
+    assert "src/a.py" in reason and "specs/b.md" in reason
+
+
+def test_reason_declares_truncation_instead_of_hiding_it(tmp_path, monkeypatch, capsys):
+    mod = _load_module()
+    _drive(mod, monkeypatch, _with_config(tmp_path), event={},
+           scan_run=_fake_scan(12, pending_paths=["src/a.py"], pending_truncated=11))
+    reason = json.loads(capsys.readouterr().out.strip().splitlines()[-1])["reason"]
+    assert "+11 more" in reason
+
+
+def test_reason_names_a_stale_uncommitted_entry(tmp_path, monkeypatch, capsys):
+    """Otherwise the journal looks already modified while the gate blocks anyway (FR-004a)."""
+    mod = _load_module()
+    _drive(mod, monkeypatch, _with_config(tmp_path), event={},
+           scan_run=_fake_scan(1, pending_paths=["src/a.py"],
+                               stale_recording="wiki/log/2026-07-24.md"))
+    reason = json.loads(capsys.readouterr().out.strip().splitlines()[-1])["reason"]
+    assert "wiki/log/2026-07-24.md" in reason and "not today" in reason.lower()
+
+
+def test_reason_declares_when_the_anchor_is_only_an_estimate(tmp_path, monkeypatch, capsys):
+    """Without version control the answer is a proxy, and it must say so (Principle XIV)."""
+    mod = _load_module()
+    _drive(mod, monkeypatch, _with_config(tmp_path), event={},
+           scan_run=_fake_scan(1, anchor_kind="mtime",
+                               anchor_fallback_reason="not_a_repository"))
+    reason = json.loads(capsys.readouterr().out.strip().splitlines()[-1])["reason"]
+    assert "estimate" in reason.lower() and "not_a_repository" in reason
+
+
+def test_older_payload_without_the_new_fields_still_blocks(tmp_path, monkeypatch, capsys):
+    """A host whose runtime is not upgraded yet must keep the previous behaviour, not an error."""
+    mod = _load_module()
+    _drive(mod, monkeypatch, _with_config(tmp_path), event={}, scan_run=_fake_scan(3))
+    payload = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert payload["decision"] == "block"
 
 
 # --- no-block paths ------------------------------------------------------------------------------

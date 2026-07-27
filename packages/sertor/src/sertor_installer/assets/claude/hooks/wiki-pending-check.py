@@ -78,12 +78,13 @@ def main() -> None:
         return
 
     pending = int(scan["pending"])
+    detail = _hooklib.pending_detail(scan)  # WHICH files, not just how many (E10-FEAT-045)
     if args.mode == "Stop":
-        msg = (f"{scan.get('message', '')} Per the golden rule: consider delegating to the "
+        msg = (f"{scan.get('message', '')}{detail} Per the golden rule: consider delegating to the "
                "wiki-curator agent (record operation) or triggering a wiki consolidation.")
     else:
-        msg = (f"Wiki: {pending} modified files are not yet recorded. At the next session, delegate "
-               "to the wiki-curator agent (record) or trigger a wiki consolidation.")
+        msg = (f"Wiki: {pending} modified files are not yet recorded.{detail} At the next session, "
+               "delegate to the wiki-curator agent (record) or trigger a wiki consolidation.")
 
     if args.assistant == "copilot":
         if args.mode == "Stop":
