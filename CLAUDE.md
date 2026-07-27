@@ -127,7 +127,7 @@ consumatore sottile.
 **Architettura (le dipendenze puntano verso l'interno):**
 
 ```
-domain/         entità (Document, Chunk, RetrievalResult, GraphNode, …), SEI porte Protocol
+domain/         entità (Document, Chunk, RetrievalResult, GraphNode, …), OTTO porte Protocol
                 (EmbeddingProvider, VectorStore, LexicalIndex, Reranker, CodeGraph,
                 RetrieverStrategy), errori — NESSUN import di SDK
 services/       ingestion · chunking (code/markdown/fallback + dispatch) · indexing · retrieval
@@ -143,9 +143,10 @@ composition.py  composition root: l'UNICO posto che conosce gli adapter concreti
 ```
 
 Regole architetturali da rispettare quando si estende il core:
-- **Il `domain` non importa SDK esterni.** I provider concreti vivono in `adapters/` dietro le SEI
+- **Il `domain` non importa SDK esterni.** I provider concreti vivono in `adapters/` dietro le OTTO
   porte `Protocol` di `domain/ports.py` (`EmbeddingProvider`, `VectorStore`, `LexicalIndex`,
-  `Reranker`, `CodeGraph`, `RetrieverStrategy`); structural typing → si mockano senza ereditarietà
+  `Reranker`, `CodeGraph`, `ObservabilityStore`, `RetrieverStrategy`, `TranscriptCaptureAdapter`);
+  structural typing → si mockano senza ereditarietà
   (vedi `tests/fixtures/mocks.py`).
 - **Si sceglie l'implementazione SOLO in `composition.py`**: l'embedder da `Settings.backend`
   (`local`→Ollama · `azure`→Azure OpenAI) e lo store da `Settings.store_backend` (`local`→Chroma ·
