@@ -38,6 +38,11 @@ def _run(cwd: Path, *args: str) -> None:
     subprocess.run(["git", *args], cwd=str(cwd), capture_output=True, check=True)
 
 
+def _run_out(cwd: Path, *args: str) -> str:
+    proc = subprocess.run(["git", *args], cwd=str(cwd), capture_output=True, text=True, check=True)
+    return proc.stdout
+
+
 def _host(tmp_path: Path, *, git: bool = True) -> Path:
     """A minimal wiki host; optionally a git repository."""
     (tmp_path / "wiki" / "log").mkdir(parents=True)
@@ -255,6 +260,29 @@ def test_non_repository_host_falls_back_and_says_so(tmp_path):
     assert result.anchor_kind == ANCHOR_MTIME
     assert result.anchor_fallback_reason == REASON_NOT_A_REPOSITORY  # never a mute proxy (C-3)
     assert result.pending >= 1
+
+
+def test_line_ending_only_change_is_not_work(tmp_path):
+    """A file whose ONLY difference is line-ending normalisation must not block a session.
+
+    Found on the very first real use of this gate: `git status` reports such a file as modified,
+    but nobody authored anything — there is nothing to record. `git diff` is content-aware and does
+    not report it, which is why the two halves of the work-tree scan use different commands.
+    """
+    host = _host(tmp_path)
+    _run(host, "config", "core.autocrlf", "input")
+    (host / ".gitattributes").write_text("* text=auto\n", encoding="utf-8")
+    target = host / "src" / "normalized.py"
+    target.write_bytes(b"a = 1\nb = 2\n")
+    _write_log(host, "2026-07-01")
+    _run(host, "add", "-A")
+    _run(host, "commit", "-qm", "seed with LF")
+
+    target.write_bytes(b"a = 1\r\nb = 2\r\n")  # same content, CRLF endings
+    assert "normalized.py" in _run_out(host, "status", "--porcelain")  # git DOES flag it
+
+    result = scan(_profile(host))
+    assert result.pending == 0, f"line-ending-only change counted as work: {result.pending_paths}"
 
 
 def test_proxy_mode_also_names_the_paths(tmp_path):
