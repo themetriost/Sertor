@@ -3,7 +3,7 @@ title: Identità per presenza o per contenuto
 type: concept
 tags: [idempotenza, installer, guardie, difetti, pattern-diagnostico, principio-vi, e10]
 created: 2026-07-24
-updated: 2026-07-25
+updated: 2026-07-27
 sources: ["src/sertor_core/composition.py", "src/sertor_core/observability/capture.py", "packages/sertor-install-kit/src/sertor_install_kit/", "wiki/log/2026-07-24.md"]
 ---
 
@@ -58,15 +58,42 @@ manifestava come **4 fallimenti apparentemente scorrelati**: bastava che un test
 un componente via factory perché si attaccasse un handler puntato allo store reale del progetto, e da
 lì in poi nessun test riusciva più a catturare i propri eventi.
 
+## La quarta istanza, con il segno invertito: **rilevare un cambiamento** (2026-07-27)
+
+Le tre sopra riguardano l'**idempotenza** — decidere se *rifare* qualcosa. La stessa distinzione
+governa la domanda opposta, *«è cambiato qualcosa?»*, e lì l'errore ha il **segno invertito**: non un
+no-op che sembra successo, ma **lavoro dichiarato dove non ce n'è**.
+
+Git offre due risposte, e non sono la stessa:
+
+| Comando | Risponde a | `.claude/settings.json` |
+|---|---|---|
+| `git status --porcelain` | «il file risulta **modificato**?» (presenza di una differenza, **fine-riga inclusi**) | **`M`** |
+| `git diff --name-only HEAD` | «il **contenuto** è cambiato?» (content-aware, normalizzazione esclusa) | **assente** |
+
+Il file aveva **zero righe aggiunte e zero rimosse**: differiva solo per i fine-riga, cioè per come
+git normalizza — **nessuno aveva scritto nulla**. Costruendo `scan` sull'ancora derivata avevo preso
+`status`, e il gate ha **bloccato la chiusura di sessione su un file che nessuno aveva toccato**.
+Trovato al **primo uso reale del gate appena consegnato**, contro il suo stesso autore.
+
+> Quando decidi se **c'è lavoro**, la domanda è sul **contenuto**, non sulla presenza di una
+> differenza. «Modificato» ha due significati, e uno dei due include cose che nessuno ha scritto.
+
+*Nota di metodo:* per tutta la sessione avevo chiamato quel file «rumore CRLF» **senza verificarlo**,
+escludendolo dai commit per abitudine. Era vero — ma lo sapevo per assunzione, non per misura, e
+finché resta un'assunzione non può diventare una **regola nel codice**. La verifica è costata un
+comando.
+
 ## Perché è insidioso
 
 **Il criterio sbagliato non fallisce mai.** Un'operazione che non fa nulla non solleva eccezioni, non
 degrada, non lascia tracce: riporta successo, e la verifica che chiede *«ha funzionato?»* risponde sì.
 Il difetto si vede solo chiedendo **«cosa c'è adesso?»**, che è una domanda diversa.
 
-**Colpisce esattamente ciò che dovrebbe ripararsi.** In tutti e tre i casi il meccanismo esisteva per
-**aggiornare** qualcosa — un hook, una configurazione, un sink — ed è il meccanismo d'aggiornamento a
-diventare il custode della versione vecchia.
+**Colpisce esattamente ciò che dovrebbe ripararsi.** Nelle istanze di idempotenza il meccanismo
+esisteva per **aggiornare** qualcosa — un hook, una configurazione, un sink — ed è il meccanismo
+d'aggiornamento a diventare il custode della versione vecchia. Nella variante a segno invertito vale
+il gemello: è il **presidio** a produrre l'allarme falso, e a pagarlo è la fiducia nel presidio.
 
 **Si nota tardi e altrove.** L'hook duplicato si è visto su un host che aggiornava, la `.mcp.json`
 rotta dopo un mese di risposte vuote, l'handler stantio come fallimenti in un file di test che non

@@ -166,13 +166,23 @@ def _worktree_changes(profile: WikiProfile) -> list[str]:
     committed**, so an anchor made of history alone would never see the very case the gate exists
     for. Files the VCS ignores never appear here — which is how E10-FEAT-048 is absorbed: not by
     filtering them out, but by never letting them in.
+
+    The two halves come from DIFFERENT commands on purpose. `git diff HEAD` is **content-aware**: a
+    file whose only difference is line-ending normalisation is *not* reported, because nothing was
+    authored. `git status` reports it, and counting it would block a session over a file nobody
+    edited — observed on the very first real use of this gate. `status` is therefore used only for
+    what `diff` cannot see: untracked files.
     """
+    tracked_rc, tracked_out = run_git(
+        ["diff", "--name-only", "-z", "HEAD"], profile.config_dir,
+    )
+    paths: list[str] = _split_z(tracked_out) if tracked_rc == 0 else []
+
     # `-uall` matters: by default git COLLAPSES an untracked directory into a single entry (`src/`),
     # which would name a folder where the point is to name the files inside it.
     rc, out = run_git(["status", "--porcelain", "-z", "-uall"], profile.config_dir)
     if rc != 0:
-        return []
-    paths: list[str] = []
+        return paths
     tokens = _split_z(out)
     index = 0
     while index < len(tokens):
@@ -183,7 +193,8 @@ def _worktree_changes(profile: WikiProfile) -> list[str]:
         status, path = entry[:2], entry[3:]
         if "R" in status or "C" in status:
             index += 1  # a rename/copy is followed by its ORIGINAL path; we keep the destination
-        paths.append(path)
+        if status == "??":
+            paths.append(path)
     return paths
 
 
