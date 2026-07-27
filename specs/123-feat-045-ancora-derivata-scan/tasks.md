@@ -31,26 +31,35 @@ Fase 6  Consegna ospiti + doc utente     ─┘   ← Definition of Done, NON op
 
 ---
 
-## Fase 1 — Estrazione degli helper git (base condivisa)
+## Fase 1 — Estrazione degli helper git (base condivisa) ✅ **FATTA**
 
 **Obiettivo:** una sola implementazione della macchina git nel pacchetto. **Si verifica da sola:** i
 test di `ritual-check` devono passare **senza essere toccati**.
 
-- [ ] T001 Creare `src/sertor_core/wiki_tools/vcs.py` con gli helper estratti da `ritual_check.py`: `run_git(args, cwd) -> (rc, stdout)` (non solleva mai, il chiamante decide), `is_repository(cwd) -> bool` (via `git rev-parse --is-inside-work-tree`), `repo_prefix(cwd) -> str` (via `git rev-parse --show-prefix`, mappa i path di git a quelli del progetto). Docstring che dichiara: stdlib-only, nessuna eccezione propagata, host-agnostico.
-- [ ] T002 Modificare `src/sertor_core/wiki_tools/ritual_check.py` per consumare `vcs.run_git` e `vcs.repo_prefix` al posto di `_git` e `_wiki_prefix`. **Comportamento invariato**: `_resolve_base`/`_default_base_candidates` restano in `ritual_check.py` (servono il diff verso il ramo di default, che `scan` non usa — R5).
-- [ ] T003 [P] Creare `tests/unit/test_wiki_tools_vcs.py`: `run_git` su comando inesistente → `(rc≠0, "")` senza sollevare · `is_repository` vero in un repo temporaneo, falso in una cartella semplice · `repo_prefix` vuoto alla radice e valorizzato in una sottocartella.
-- [ ] T004 Verificare che `tests/unit/test_ritual_check.py` passi **senza modifiche**. Se servisse toccarlo, l'estrazione ha cambiato comportamento: correggere l'estrazione, **non il test**.
+- [x] T001 Creare `src/sertor_core/wiki_tools/vcs.py` con gli helper estratti da `ritual_check.py`: `run_git(args, cwd) -> (rc, stdout)` (non solleva mai, il chiamante decide), `is_repository(cwd) -> bool` (via `git rev-parse --is-inside-work-tree`), `repo_prefix(cwd) -> str` (via `git rev-parse --show-prefix`, mappa i path di git a quelli del progetto). Docstring che dichiara: stdlib-only, nessuna eccezione propagata, host-agnostico.
+- [x] T002 Modificare `src/sertor_core/wiki_tools/ritual_check.py` per consumare `vcs.run_git` e `vcs.repo_prefix` al posto di `_git` e `_wiki_prefix`. **Comportamento invariato**: `_resolve_base`/`_default_base_candidates` restano in `ritual_check.py` (servono il diff verso il ramo di default, che `scan` non usa — R5).
+- [x] T003 [P] Creare `tests/unit/test_wiki_tools_vcs.py` — **8 test**: `run_git` su comando inesistente → `(rc≠0, "")` senza sollevare · fuori da un repo non solleva · `is_repository` vero/falso · `repo_prefix` vuoto alla radice, valorizzato in sottocartella, vuoto fuori da un repo.
+- [x] T004 Verificare che `tests/unit/test_ritual_check.py` passi **senza modifiche** → **13/13 verdi, file non toccato.**
 
 ---
 
-## Fase 2 — Contratto e guardia (BLOCCANTE: prima dell'implementazione)
+## Fase 2 — Contratto e guardia (BLOCCANTE: prima dell'implementazione) 🔨 **in corso**
 
 **Obiettivo:** rendere impossibile, per costruzione, che la feature spenga il gate sugli ospiti.
 
-- [ ] T005 Estendere `ScanResult` in `src/sertor_core/wiki_tools/contracts.py` con i campi **additivi**: `anchor_kind`, `anchor_ref`, `anchor_fallback_reason`, `pending_paths`, `pending_truncated`, `stale_recording`. Default che riproducono il comportamento odierno. **`schema` resta `"wiki.scan/1"`.**
-- [ ] T006 ⚠️ Creare `packages/sertor/tests/test_scan_schema_frozen.py`: la guardia legge **entrambe le fonti** — la costante emessa da `ScanResult` **e** la stringa confrontata nei 4 asset hook — e asserisce che coincidano. **Non ripetere la costante nel test**: sarebbe essa stessa un valore duplicato senza riconciliatore (Principio XIV). Il messaggio di fallimento deve spiegare *perché* (un bump non rompe il gate, lo fa sparire).
-- [ ] T007 [P] Creare `tests/unit/test_wiki_tools_scan_contract.py` con gli invarianti C-1..C-8 di `contracts/wiki.scan.v1.md`. **File nuovo, non un'aggiunta a `test_wiki_tools_scan.py`**: quello resta intatto perché è la guardia di non-regressione (T037).
-- [ ] T008 [P] Aggiungere al profilo (`src/sertor_core/wiki_tools/profile.py`) la manopola opzionale `[ritual].pending_paths_limit` con default 10, seguendo il pattern già in uso di `hub_threshold` (Principio VIII: nessun default hardcoded nel corpo).
+- [x] T005 Estendere `ScanResult` in `src/sertor_core/wiki_tools/contracts.py` con i campi **additivi**: `anchor_kind`, `anchor_ref`, `anchor_fallback_reason`, `pending_paths`, `pending_truncated`, `stale_recording`. Default che riproducono il comportamento odierno. **`schema` resta `"wiki.scan/1"`**, ora esportato come costante `SCAN_SCHEMA` (fonte unica) con il *perché* del congelamento nel docstring.
+- [x] T006 ⚠️ Creata `tests/unit/test_scan_schema_frozen.py` — **7 test**. *(Casa corretta: suite **root**, non `packages/sertor/tests/`, perché deve importare `sertor_core` **e** leggere gli asset.)* La guardia legge **entrambe le fonti** e non ripete mai la stringa. **Consumatori scoperti, non elencati** (un elenco darebbe alla guardia un perimetro più stretto della regola) + un test che fallisce se la scoperta non trova nulla, perché *una guardia che ispeziona zero file passa a vuoto*.
+- [ ] T007 [P] Creare `tests/unit/test_wiki_tools_scan_contract.py` con gli invarianti C-1..C-8 di `contracts/wiki.scan.v1.md`. **File nuovo, non un'aggiunta a `test_wiki_tools_scan.py`**: quello resta intatto perché è la guardia di non-regressione (T037). *(C-1 e parte di C-8 già coperti da T006; i restanti richiedono che `scan` produca i campi → dopo la fase 3.)*
+- [ ] ~~T008~~ **ANNULLATA — nessuna modifica a `profile.py` serve.** `load_profile` passa già `ritual=dict(ritual)` così com'è, quindi `profile.ritual.get("pending_paths_limit")` funziona senza toccare il profilo. La manopola si legge in `scan.py` con un helper che ricalca `_hub_threshold` (Principio VIII rispettato lo stesso: default nel lettore, non sparso nel corpo). → confluisce in **T023**.
+
+> **📌 Due correzioni emerse implementando** — registrate qui, non nella prosa di un commit:
+> 1. **Non esiste `assets/copilot/`.** Gli asset hook vivono solo sotto `assets/claude/`; la superficie
+>    Copilot è **prodotta dall'installer** dalla stessa fonte. Quindi **T031 va riscritta**: non
+>    «propagare con parità byte», ma *verificare che il percorso di resa Copilot prenda il cambiamento*.
+> 2. **Il perimetro di una guardia deve combaciare con la sua regola in ENTRAMBE le direzioni.** La
+>    prima versione di T006 scopriva *ogni* confronto di `schema` e falliva su `distill-floor.py`, che
+>    legittimamente ne confronta un altro (`wiki.distill_audit/1`). Troppo largo è un difetto quanto
+>    troppo stretto: fa fallire un file corretto. Ora lo scope è «i file che invocano `scan`».
 
 ---
 

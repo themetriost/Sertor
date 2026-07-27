@@ -115,6 +115,20 @@ sto difendendo?* — e non: *dove ho visto il bug?*
 *Verificato sul nostro caso gemello (2026-07-26): i due file `.acta` che la stessa regola versiona da
 noi sono puliti, perché installiamo da git e non in editable. La classe non ci mordeva; la lezione sì.*
 
+**Precisazione pagata scrivendo una guardia (2026-07-27): il perimetro va fatto combaciare in
+ENTRAMBE le direzioni.** Applicando la lezione sopra ho scritto una guardia che **scopre** i propri
+soggetti invece di elencarli — giusto contro il perimetro stretto — e l'ho fatta **troppo larga**: ha
+raccolto ogni confronto di `schema` fra gli hook, quindi anche `distill-floor`, che ne confronta
+legittimamente un altro (`wiki.distill_audit/1`). **Ha fallito su un file corretto.** Un perimetro
+troppo largo non è più prudente di uno troppo stretto: il primo accusa l'innocente, il secondo assolve
+il colpevole, e **entrambi fanno perdere fiducia nella guardia** — che è il vero danno, perché una
+guardia di cui ci si fida poco viene disattivata. La domanda giusta ha due metà: *quali file tocca la
+regola che sto difendendo* **e** *quali file NON tocca*.
+
+*Corollario adottato nella stessa guardia:* se la scoperta non trova **nessun** soggetto, il test deve
+**fallire**. Una guardia che ispeziona zero file passa a vuoto — ed è di nuovo *verde e cieca*, per la
+via più banale.
+
 ## La guardia che si spegne da sola: quando *fail-open* rende invisibile il cambio di contratto (2026-07-27)
 
 Quarto modo, e il più difficile da vedere, perché **non c'è nessun errore**: la guardia si **disattiva

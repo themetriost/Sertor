@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import fnmatch
 import logging
-import subprocess
 from pathlib import Path
 
 from sertor_core.domain.errors import ConfigError
@@ -25,17 +24,7 @@ from sertor_core.wiki_tools.collect import iter_pages
 from sertor_core.wiki_tools.contracts import RitualCheckResult
 from sertor_core.wiki_tools.frontmatter import extract_wikilinks, parse_frontmatter
 from sertor_core.wiki_tools.profile import WikiProfile
-
-
-def _git(args: list[str], cwd: Path) -> tuple[int, str]:
-    """Run `git <args>` at `cwd`; return (returncode, stdout). Never raises (caller decides)."""
-    try:
-        proc = subprocess.run(
-            ["git", *args], cwd=str(cwd), capture_output=True, text=True, encoding="utf-8",
-        )
-    except OSError:
-        return 1, ""
-    return proc.returncode, proc.stdout
+from sertor_core.wiki_tools.vcs import repo_prefix, run_git
 
 
 def _link_aliases(rel_path: str) -> set[str]:
@@ -53,12 +42,12 @@ def _default_base_candidates(config_dir: Path) -> list[str]:
     """
     candidates: list[str] = []
     # remote's declared default, e.g. `origin/main`
-    rc, out = _git(["symbolic-ref", "--short", "refs/remotes/origin/HEAD"], config_dir)
+    rc, out = run_git(["symbolic-ref", "--short", "refs/remotes/origin/HEAD"], config_dir)
     if rc == 0 and out.strip():
         candidates.append(out.strip())
     for cand in ("origin/main", "origin/master", "main", "master"):
         if cand not in candidates:
-            rc, _ = _git(["rev-parse", "--verify", "--quiet", cand], config_dir)
+            rc, _ = run_git(["rev-parse", "--verify", "--quiet", cand], config_dir)
             if rc == 0:
                 candidates.append(cand)
     return candidates
@@ -73,7 +62,7 @@ def _resolve_base(config_dir: Path, base: str | None) -> str:
         return base
     tried = _default_base_candidates(config_dir)
     for ref in tried:
-        rc, out = _git(["merge-base", "HEAD", ref], config_dir)
+        rc, out = run_git(["merge-base", "HEAD", ref], config_dir)
         if rc == 0 and out.strip():
             return out.strip()
     tried_note = f"; tried: {', '.join(tried)}" if tried else ""
@@ -86,15 +75,13 @@ def _resolve_base(config_dir: Path, base: str | None) -> str:
 
 def _wiki_prefix(config_dir: Path, profile: WikiProfile) -> str:
     """Repo-root-relative prefix of the wiki root (e.g. `wiki`), for mapping git paths to pages."""
-    rc, out = _git(["rev-parse", "--show-prefix"], config_dir)
-    show_prefix = out.strip() if rc == 0 else ""
-    parts = [p for p in (show_prefix.rstrip("/"), profile.root.strip("/")) if p and p != "."]
+    parts = [p for p in (repo_prefix(config_dir), profile.root.strip("/")) if p and p != "."]
     return "/".join(parts)
 
 
 def _changed_repo_paths(config_dir: Path, base: str) -> list[str]:
     """Repo-root-relative paths changed in `base...HEAD` (fail-loud if git is unavailable)."""
-    rc, out = _git(["diff", "--name-only", f"{base}...HEAD"], config_dir)
+    rc, out = run_git(["diff", "--name-only", f"{base}...HEAD"], config_dir)
     if rc != 0:
         raise ConfigError(
             f"git diff failed for base '{base}' (not a git repo, or bad ref); pass --pages instead",
@@ -105,7 +92,7 @@ def _changed_repo_paths(config_dir: Path, base: str) -> list[str]:
 
 def _links_at(config_dir: Path, base: str, repo_path: str) -> set[str]:
     """Wikilink targets of a page at revision `base` (empty if absent — i.e. a newly added page)."""
-    rc, out = _git(["show", f"{base}:{repo_path}"], config_dir)
+    rc, out = run_git(["show", f"{base}:{repo_path}"], config_dir)
     if rc != 0:
         return set()
     return extract_wikilinks(out)
@@ -266,7 +253,9 @@ def ritual_check(
             if rel.endswith(".md") and rel in all_pages:
                 changed_pages[rel] = all_pages[rel]
         # ADDED (new) pages in this diff, for the "0 new distill page" check.
-        rc, out = _git(["diff", "--name-only", "--diff-filter=A", f"{base_ref}...HEAD"], config_dir)
+        rc, out = run_git(
+            ["diff", "--name-only", "--diff-filter=A", f"{base_ref}...HEAD"], config_dir,
+        )
         if rc == 0:
             for repo_path in (line.strip() for line in out.splitlines() if line.strip()):
                 if prefix and repo_path.startswith(prefix):
