@@ -257,6 +257,53 @@ def test_non_repository_host_falls_back_and_says_so(tmp_path):
     assert result.pending >= 1
 
 
+def test_proxy_mode_also_names_the_paths(tmp_path):
+    """FR-006 is not conditional on the mode: only the "is it ignored?" filter is (A-6)."""
+    host = _host(tmp_path, git=False)
+    log = _write_log(host, "2026-07-01")
+    work = host / "src" / "wip.py"
+    work.write_text("z = 3\n", encoding="utf-8")
+    os.utime(log, (time.time() - 1000, time.time() - 1000))
+    os.utime(work, (time.time(), time.time()))
+
+    result = scan(_profile(host))
+    assert result.pending_paths == ["src/wip.py"]
+
+
+def test_host_template_without_files_placeholder_is_left_verbatim(tmp_path):
+    """FR-008: a host that knows nothing about this change must not have to do anything.
+
+    `message` is the HOST's localised string. Appending to it unconditionally would silently change
+    a contract the host owns — which is why the naming lives in the structured field instead.
+    """
+    host = _host(tmp_path)
+    (host / "wiki.config.toml").write_text(
+        _CONFIG + '\n[strings]\npending = "Pendenti: {n}"\n', encoding="utf-8",
+    )
+    _write_log(host, "2026-07-01")
+    _run(host, "add", "-A")
+    _run(host, "commit", "-qm", "log only")
+    (host / "src" / "wip.py").write_text("z = 3\n", encoding="utf-8")
+
+    result = scan(_profile(host))
+    assert result.message == "Pendenti: 1"
+    assert result.pending_paths == ["src/wip.py"]  # named, but not by mangling the host's string
+
+
+def test_host_template_with_files_placeholder_opts_in(tmp_path):
+    """A host that DOES want the names inline controls where they go."""
+    host = _host(tmp_path)
+    (host / "wiki.config.toml").write_text(
+        _CONFIG + '\n[strings]\npending = "Pendenti: {n} -> {files}"\n', encoding="utf-8",
+    )
+    _write_log(host, "2026-07-01")
+    _run(host, "add", "-A")
+    _run(host, "commit", "-qm", "log only")
+    (host / "src" / "wip.py").write_text("z = 3\n", encoding="utf-8")
+
+    assert scan(_profile(host)).message == "Pendenti: 1 -> src/wip.py"
+
+
 def test_repository_whose_log_was_never_committed_declares_the_reason(tmp_path):
     host = _host(tmp_path)
     (host / "src" / "wip.py").write_text("z = 3\n", encoding="utf-8")

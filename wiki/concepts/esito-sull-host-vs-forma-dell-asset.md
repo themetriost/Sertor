@@ -159,6 +159,15 @@ campi nuovi, identificativo invariato — e questo va **verificato da una guardi
 all'attenzione di chi modifica. La domanda da porsi quando si tocca un contratto versionato è:
 *se un consumatore vecchio incontrasse questa versione, se ne accorgerebbe qualcuno?*
 
+**E la stessa domanda va posta al contrario**, perché libreria e asset **si aggiornano
+separatamente**: un ospite può ritrovarsi con il **consumatore nuovo e il produttore vecchio**. Quel
+consumatore non deve errare né tacere: deve **degradare al comportamento precedente**. Nel caso
+concreto, la resa che nomina i file restituisce stringa vuota quando i campi nuovi non ci sono, così
+un host non ancora ri-locckato vede il messaggio di prima invece di un errore — *verificato dal vivo,
+non dedotto*. Le due metà insieme sono la regola completa: **il produttore non rompe i consumatori
+vecchi, il consumatore tollera i produttori vecchi.** Presidiarne una sola lascia scoperta la metà
+delle transizioni reali.
+
 ## Tre istanze dal campo (2026-07-24) — dove il punto cieco è l'installer
 
 Quattro nodi della federazione — *VM-WorkingFolder*, *Sinthari*, *Kaelen*, *Acta* — hanno segnalato

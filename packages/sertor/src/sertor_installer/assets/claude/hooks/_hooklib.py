@@ -178,6 +178,37 @@ def read_event() -> dict:
         return {}
 
 
+def pending_detail(scan: dict) -> str:
+    """Render WHICH files are pending, from a `wiki.scan/1` payload (E10-FEAT-045).
+
+    Telling the agent *how many* files are unrecorded forces it to reconstruct *which* — a node in
+    the federation had to rebuild the list by hand before it could act. The names come from the scan
+    contract, so this is rendering, not a second detection.
+
+    Returns "" when the payload has nothing extra to say, so older payloads (a host whose runtime is
+    not upgraded yet) simply produce the previous message instead of an error.
+    """
+    parts: list[str] = []
+    paths = scan.get("pending_paths")
+    if isinstance(paths, list) and paths:
+        truncated = scan.get("pending_truncated") or 0
+        more = f" (+{truncated} more)" if isinstance(truncated, int) and truncated else ""
+        parts.append("Files: " + ", ".join(str(p) for p in paths) + more + ".")
+    stale = scan.get("stale_recording")
+    if isinstance(stale, str) and stale:
+        parts.append(
+            f"NOTE: the log entry {stale} is uncommitted but is NOT today's, so it does not close "
+            "the gate — write today's entry."
+        )
+    if scan.get("anchor_kind") == "mtime":
+        reason = scan.get("anchor_fallback_reason") or "unknown"
+        parts.append(
+            f"(Anchor is an mtime ESTIMATE, not a derived fact — reason: {reason}. "
+            "On this host the count may include files your VCS would ignore.)"
+        )
+    return " " + " ".join(parts) if parts else ""
+
+
 def write_breadcrumb(hook: str, reason: str) -> None:
     """Write the fail-loud breadcrumb `.sertor/.last-hook-error` (schema `hook.error/1`).
 

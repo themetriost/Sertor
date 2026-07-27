@@ -50,11 +50,15 @@ def _scan(root: Path, config: str) -> dict | None:
         return None
 
 
-def _reason(pending: int, message: str) -> str:
-    """The block reason: specific enough to resolve the ritual in ONE turn (record + distill + lint)."""
-    lead = message.strip() or (
+def _reason(pending: int, message: str, detail: str = "") -> str:
+    """The block reason: specific enough to resolve the ritual in ONE turn (record + distill + lint).
+
+    `detail` NAMES the pending files (E10-FEAT-045). A block that says only *how many* leaves the
+    agent to reconstruct *which*, which turns a safety net into an obstacle to be worked around.
+    """
+    lead = (message.strip() or (
         f"{pending} modified file(s) from this session are not yet recorded in the wiki."
-    )
+    )) + detail
     return (
         f"BLOCKED: the wiki was not updated for this session's work. {lead} Before stopping, CLOSE the "
         "step ritual for what changed: (a) RECORD it in the wiki — create/update the impacted pages "
@@ -101,7 +105,9 @@ def main() -> None:
     if not scan or scan.get("schema") != "wiki.scan/1" or int(scan.get("pending", 0)) <= 0:
         return  # nothing pending (read-only / question session) → do not block
 
-    reason = _reason(int(scan["pending"]), str(scan.get("message", "")))
+    reason = _reason(
+        int(scan["pending"]), str(scan.get("message", "")), _hooklib.pending_detail(scan),
+    )
     # Same shape on both assistants: Claude top-level Stop decision + Copilot agentStop both continue.
     print(json.dumps({"decision": "block", "reason": reason}))
 

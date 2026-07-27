@@ -79,9 +79,15 @@ contratto, elencati dalla resa umana della CLI) e i file **ignorati dal controll
 contano più — non perché filtrati, ma perché la derivazione **non li fa mai entrare**. Su un ospite
 **senza** controllo di versione l'ancora resta l'orologio, **dichiarato come stima** (`anchor_kind`),
 perché la capacità è host-agnostica per progetto.
-🚧 **Non ancora consegnato:** il *motivo del blocco* dell'hook dice ancora solo **quanti** file —
-nominarli lì è la fase di consegna agli ospiti di E10-FEAT-045 (insieme alla doc utente). Finché non
-arriva, questa pagina lo dichiara invece di anticiparlo.
+**Il motivo del blocco nomina i file** (resa condivisa `_hooklib.pending_detail`, usata anche dal
+nudge `wiki-pending-check`): elenca i path, **dichiara** il troncamento, nomina l'eventuale
+registrazione stantia con la sua data e — su ospite non-git — avverte che l'ancora è **una stima**,
+con la causa. Prima diceva *quanti*, e chi lo riceveva doveva ricostruire *quali*.
+
+*Compatibilità nelle due direzioni*, perché libreria e asset si aggiornano separatamente: lo schema
+resta congelato per non spegnere i consumatori vecchi, **e** la resa restituisce stringa vuota sui
+payload privi dei campi nuovi, così un host con l'asset aggiornato ma la libreria no vede il messaggio
+di prima invece di un errore (verificato dal vivo). Vedi [[esito-sull-host-vs-forma-dell-asset]].
 
 ## Sicurezza & non-intrappolamento
 

@@ -58,6 +58,48 @@ CLI commands; they return `{"status": "disabled"}` when memory is off). `memory_
 --semantic`. See
 [searching a project](retrieval.md) for when to use which.
 
+## Runtime CLI — `sertor-wiki-tools`
+
+The deterministic half of the wiki capability (zero LLM, offline). Invoke as
+`uv run --project .sertor sertor-wiki-tools <command>`. The most useful ones day to day:
+
+| Command | What it does |
+|---|---|
+| `scan` | is there work not yet recorded in the wiki? Names the files (see below) |
+| `lint` / `validate` | structural checks: broken wikilinks, orphans, frontmatter, naming |
+| `append-log` | append a dated log entry (body from a file or stdin) |
+| `ritual-check` | list this step's distill/drift candidates + a declaration scaffold |
+| `distill-audit` | candidate entities referenced from several places but with no page |
+| `structure init` | create the wiki folder structure (idempotent) |
+
+### How `scan` decides — and why it tells you
+
+`scan` compares your source directories against the last **recording** (the most recent wiki log
+entry) and reports what is not covered. **It says how it reached that answer**, because the two ways
+are not equally reliable:
+
+| `anchor_kind` | Meaning | Consequences |
+|---|---|---|
+| `git` | **derived** from history — the anchor is the last commit that touched the wiki log | survives merge/pull/rebase/clone; files your VCS **ignores never count** |
+| `mtime` | an **estimate** from file modification times, with the reason stated | used when the project is not a repository (or history is unreadable); may count files a VCS would ignore |
+
+An entry written **today** counts as a recording as soon as it is on disk — **you do not have to
+commit** to satisfy the wiki gate. An uncommitted entry from a *previous* day does **not** count, and
+`scan` names it so the situation is diagnosable rather than puzzling.
+
+`scan --json` emits the `wiki.scan/1` contract: `pending`, `pending_paths`, `pending_truncated`,
+`anchor`, `anchor_kind`, `anchor_ref`, `anchor_fallback_reason`, `stale_recording`.
+
+### Wiki knobs (`wiki.config.toml`)
+
+Host-specific settings live in `wiki.config.toml` (wiki root, taxonomy, source dirs, language). Two
+optional `[ritual]` knobs:
+
+| Knob | Default | Effect |
+|---|---|---|
+| `pending_paths_limit` | `10` | how many file names `scan` lists (the **count** is always exact) |
+| `hub_threshold` | `8` | above this many outgoing links a page counts as a hub in `ritual-check` |
+
 ## Configuration knobs (`.sertor/.env`)
 
 Settings live in `.sertor/.env` (never committed). The most common ones:
