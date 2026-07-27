@@ -17,7 +17,7 @@ progettata mettendo il più possibile nel deterministico e riservando all'LLM **
 ## Come si traccia il confine
 
 La domanda discriminante: *posso calcolarlo senza interpretare il significato?*
-- **Sì → deterministico (codice).** Parsing, conteggi, link rotti, scansione mtime, re-index: hanno un
+- **Sì → deterministico (codice).** Parsing, conteggi, link rotti, rilevazione del lavoro non registrato, re-index: hanno un
   output ripetibile e verificabile, indipendente dal contenuto.
 - **No → giudizio (LLM).** Distillare il *perché*, decidere se due claim si contraddicono, scegliere l'area
   di una pagina per natura: dipendono dal *senso*, non dalla forma.
