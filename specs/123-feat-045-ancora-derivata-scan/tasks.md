@@ -63,20 +63,37 @@ test di `ritual-check` devono passare **senza essere toccati**.
 
 ---
 
-## Fase 3 — US1: ancora derivata (P1) 🎯 **MVP**
+## Fase 3 — US1: ancora derivata (P1) 🎯 **MVP** ✅ **FATTA**
 
 **Obiettivo:** la sequenza «registro → consegno → allineo → chiudo» si completa, e si completa
 **sempre**. **Test indipendente:** eseguire la sequenza reale su un repo di prova e ripeterla dopo aver
 alterato tutti gli orologi — stessa risposta (SC-002).
 
-- [ ] T009 [US1] Implementare in `src/sertor_core/wiki_tools/scan.py` la funzione `_derived_anchor(profile) -> Anchor | None`: ultima consegna che ha toccato `profile.log_dir_path` via `git log -1 --format=%H|%cI -- <log_dir>`; `None` se assente (→ `log_never_committed`).
-- [ ] T010 [US1] Implementare `_pending_from_git(profile, anchor)`: unione delle due metà (R2) — `git diff --name-only <sha> HEAD` **e** `git status --porcelain` (modificati + non tracciati; per i rinomini prendere la **destinazione**; le cancellazioni contano e si nominano, non si leggono).
-- [ ] T011 [US1] Mappare i path di git a quelli del progetto con `vcs.repo_prefix`, filtrare per `profile.source_dirs` e applicare `_is_excluded` con `profile.exclude` — le esclusioni dell'ospite valgono in **entrambe** le modalità (A-4, R9).
-- [ ] T012 [US1] Implementare il riconoscimento della **registrazione non consegnata**: la partizione di oggi (`profile.log_partition_path(date.today())`) risulta modificata o non tracciata ⇒ vale come registrazione (FR-004). Usare il metodo del profilo, **non** comporre il nome a mano.
-- [ ] T013 [US1] Cablare la scelta di modalità in `scan()`: repo ⇒ derivata, altrimenti proxy. Mantenere la firma e il resto del corpo invariati.
-- [ ] T014 [P] [US1] Creare `tests/unit/test_wiki_tools_scan_git.py` — casi: lavoro+voce nella stessa consegna ⇒ `pending 0` · lavoro consegnato senza voce ⇒ `pending > 0` · modifiche non consegnate senza voce ⇒ `pending > 0` · voce di oggi non consegnata ⇒ `pending 0` **senza commit** · file cancellato ⇒ contato.
-- [ ] T015 [US1] ⭐ Test di **determinismo** (SC-002): stesso stato, orologi alterati arbitrariamente su tutti i file coinvolti ⇒ risultato **identico**. *È il test che oggi fallisce e che definisce la feature.*
-- [ ] T016 [P] [US1] Test di **anti-deadlock**: simulare merge+pull (riscrittura di lavoro e giornale con lo stesso mtime) ⇒ `pending 0`. Riproduce le sette occorrenze del nodo *Acta*.
+- [x] T009 [US1] Implementare in `src/sertor_core/wiki_tools/scan.py` la funzione `_derived_anchor(profile) -> Anchor | None`: ultima consegna che ha toccato `profile.log_dir_path` via `git log -1 --format=%H|%cI -- <log_dir>`; `None` se assente (→ `log_never_committed`).
+- [x] T010 [US1] Implementare `_pending_from_git(profile, anchor)`: unione delle due metà (R2) — `git diff --name-only <sha> HEAD` **e** `git status --porcelain` (modificati + non tracciati; per i rinomini prendere la **destinazione**; le cancellazioni contano e si nominano, non si leggono).
+- [x] T011 [US1] Mappare i path di git a quelli del progetto con `vcs.repo_prefix`, filtrare per `profile.source_dirs` e applicare `_is_excluded` con `profile.exclude` — le esclusioni dell'ospite valgono in **entrambe** le modalità (A-4, R9).
+- [x] T012 [US1] Implementare il riconoscimento della **registrazione non consegnata**: la partizione di oggi (`profile.log_partition_path(date.today())`) risulta modificata o non tracciata ⇒ vale come registrazione (FR-004). Usare il metodo del profilo, **non** comporre il nome a mano.
+- [x] T013 [US1] Cablare la scelta di modalità in `scan()`: repo ⇒ derivata, altrimenti proxy. Mantenere la firma e il resto del corpo invariati.
+- [x] T014 [P] [US1] Creare `tests/unit/test_wiki_tools_scan_git.py` — casi: lavoro+voce nella stessa consegna ⇒ `pending 0` · lavoro consegnato senza voce ⇒ `pending > 0` · modifiche non consegnate senza voce ⇒ `pending > 0` · voce di oggi non consegnata ⇒ `pending 0` **senza commit** · file cancellato ⇒ contato.
+- [x] T015 [US1] ⭐ Test di **determinismo** (SC-002): stesso stato, orologi alterati arbitrariamente su tutti i file coinvolti ⇒ risultato **identico**. *È il test che oggi fallisce e che definisce la feature.*
+- [x] T016 [P] [US1] Test di **anti-deadlock**: simulare merge+pull (riscrittura di lavoro e giornale con lo stesso mtime) ⇒ `pending 0`. Riproduce le sette occorrenze del nodo *Acta*.
+
+> **📌 Tre correzioni emerse implementando** (le prime due colte da un test che falliva, non da revisione):
+> 1. **`git status` COLLASSA le directory non tracciate.** Senza `-uall` riportava `src/` invece dei
+>    file dentro — cioè avrebbe nominato una cartella proprio dove il punto è nominare i file. Sarebbe
+>    andato in produzione: a occhio l'output sembrava plausibile.
+> 2. **`message` NON si tocca.** R7 prevedeva di accodarvi i nomi; `test_wiki_tools_scan.py:61`
+>    asserisce quel campo **per uguaglianza esatta**, e T037 vieta di modificarlo. Il test ha ragione:
+>    `message` è la stringa localizzata **dell'ospite**. I nomi vanno in `pending_paths` (dato
+>    strutturato) e nella **resa umana** della CLI + nel motivo del blocco dell'hook; `{files}` resta
+>    un segnaposto **opt-in** per chi vuole controllarne la posizione. FR-006 soddisfatta senza
+>    violare FR-008.
+> 3. Il metodo del profilo è `partition_path`, non `log_partition_path` (il piano lo citava a memoria).
+>
+> **Determinismo provato anche DAL VIVO, non solo nei test:** spostando indietro di ~28h l'mtime del
+> giornale sul repo reale, il codice **vecchio** (runtime `.sertor/`) dice `pending=14`, il **nuovo**
+> `pending=4`, invariato. Stesso identico stato del filesystem, due risposte diverse: è la differenza
+> fra stimare e derivare, misurata.
 
 ---
 

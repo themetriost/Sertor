@@ -35,6 +35,18 @@ def run_git(args: list[str], cwd: Path) -> tuple[int, str]:
     return proc.returncode, proc.stdout
 
 
+def git_available() -> bool:
+    """True if a `git` binary can be executed at all.
+
+    Only meaningful in the fallback path: it separates "this host has no git installed" from "this
+    host has git but is not a repository". Both fall back to the mtime proxy, but they are different
+    facts and the contract reports which one — a proxy that cannot say *why* it is a proxy is the
+    defect this module exists to remove.
+    """
+    rc, _ = run_git(["--version"], Path.cwd())
+    return rc == 0
+
+
 def is_repository(cwd: Path) -> bool:
     """True if `cwd` sits inside a git work tree.
 
