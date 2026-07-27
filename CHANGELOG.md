@@ -13,6 +13,61 @@ and Sertor aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 _Changes land here before the next version bump._
 
+## [0.3.2] — 2026-07-27
+
+A **repair** release for the wiki capability. If your assistant is held back at the end of a session
+by *"the wiki was not updated for this session's work"* and you cannot see what is missing — or you
+cannot get past it at all — this is the release you want.
+
+> **Upgrade (name the capabilities explicitly).** The library fix travels with the `.sertor/` runtime,
+> which is provisioned by the **rag** capability; the improved messages travel with the **wiki**
+> assets. You need both:
+>
+> ```
+> uvx --refresh --from "git+https://github.com/themetriost/Sertor.git@v0.3.2#subdirectory=packages/sertor" sertor upgrade rag wiki
+> ```
+>
+> Then `uv run --project .sertor sertor-rag index .` and restart the MCP server.
+>
+> **If you pin your runtime, `sertor upgrade` still resets your pin** to the default branch — a
+> separate, open defect (unchanged since 0.3.1). Re-apply the pin afterwards, or upgrade by editing
+> `.sertor/pyproject.toml` and running `uv sync --project .sertor`.
+
+### Fixed
+
+- **The end-of-session wiki gate could become impossible to satisfy.** It decided whether your work
+  was recorded by comparing **file modification times** against the wiki log. Merging a branch and
+  pulling rewrites the merged files *and* the log together, so their order became arbitrary: the gate
+  could block, and satisfying it meant writing to the wiki again — which produced more work to
+  deliver, which reproduced the condition at the next merge. **A session could not close on its own
+  last merge**, and the only way out was to leave work uncommitted. One project hit this seven times
+  in a single day. The answer is now **derived from your repository history** (the last commit that
+  touched the wiki log, plus what is still uncommitted), so it no longer depends on clocks.
+- **Files your version control ignores no longer count as unrecorded work.** A scratch file left in
+  the working directory could block the end of a session. Ignored files are now never considered —
+  not filtered out, simply never collected.
+- **A change that only rewrites line endings no longer counts as work.** On hosts where git
+  normalises line endings, a file with identical content could be reported as modified and hold the
+  session open, with nothing to record.
+- **You no longer have to commit to satisfy the gate.** A log entry written **today** counts as soon
+  as it is on disk. An uncommitted entry from a *previous* day does not count — and is now **named**,
+  so you can see why an apparently updated journal did not close the gate.
+
+### Changed
+
+- **The block now tells you WHICH files are unrecorded**, not just how many, and says when the list
+  is truncated. Previously the number was all you got, and reconstructing the list was manual.
+- **On a project that is not under version control**, the gate still works from modification times —
+  but now **says so**, and gives the reason. On such a host the count can include files a version
+  control system would have ignored: a stated limitation rather than a silent difference in
+  behaviour.
+- `sertor-wiki-tools scan --json` gained additive fields (`pending_paths`, `pending_truncated`,
+  `anchor_kind`, `anchor_ref`, `anchor_fallback_reason`, `stale_recording`). The contract identifier
+  is unchanged, so existing consumers keep working.
+- **New documentation**: a *"the wiki gate blocks the end of the session and I cannot tell why"*
+  section in `docs/troubleshooting.md`, and `sertor-wiki-tools` is now covered in `docs/reference.md`
+  (it was missing entirely).
+
 ## [0.3.1] — 2026-07-26
 
 A **repair** release for one defect in v0.3.0 — and it only ever hit the hosts that follow the
