@@ -13,6 +13,47 @@ and Sertor aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 _Changes land here before the next version bump._
 
+## [0.3.3] — 2026-07-28
+
+A **trust** release for the wiki capability: the structural lint stops crying wolf, and the
+instruction blocks now say what to *do* with what a guard reports.
+
+> **Upgrade.** The library fix travels with the `.sertor/` runtime; the instruction blocks are
+> refreshed by `sertor upgrade wiki` and `sertor-flow upgrade` (they are replaced in place, not
+> duplicated). Nothing you configured is touched.
+
+### Fixed
+
+- **The structural lint no longer reports links that are not broken.** `sertor-wiki-tools lint`
+  extracted `[[...]]` targets from the **whole** page, including code. Two normal ways of writing
+  Markdown were flagged as broken links:
+  - `[[...]]`-shaped syntax **inside a code block or inline code span** — a TOML array-of-tables
+    (`[[requirement]]`) in an example, or the wikilink form named literally while explaining it;
+  - **aliased wikilinks inside a table** (`[[target\|alias]]`), where the pipe must be escaped or it
+    would split the cell.
+
+  On a real wiki this produced **21 false findings**. Because the same extractor feeds `collect`,
+  `distill-audit` and `ritual-check`, those false links also polluted the **distill candidates**
+  offered at the daily distill floor. A lint that reports the false teaches you to stop reading it —
+  that is the defect being fixed here. Nothing was blocked by this: the affected tooling is advisory.
+
+### Added
+
+- **Boy scout rule** in the wiki instruction block — when a guard reports something broken in an area
+  you are touching, fix it in the same pass, with three constraints: *first ask whether it is really
+  broken* (a guard can be wrong, and then the fix belongs in the guard), *the remedy is per class*
+  (the tool finds, you judge), and *never "resolve" by hiding* (excluding an area from a guard and
+  leaving it disconnected are two ways of making it unreachable).
+- **Where to start a semantic lint** — the same block now says that drift concentrates in the pages
+  that **summarise** (index, status/roadmap pages, CHANGELOG, instruction blocks), because a summary
+  is a copy whose source keeps moving and nothing compares the two. Detail pages drift far less.
+  Checking the summarising surfaces first is the cheapest way to spend a lint pass.
+- **Two git rules** in the SDLC block: *facing a conflict, ask what is actually **missing** rather
+  than how to resolve it* (content that reached the target by another route produces a conflict with
+  nothing to reconcile), and *"modified" has two meanings* — `git status` answers "does this appear
+  modified?", `git diff` answers "did the content change?"; they diverge on line endings, so anything
+  deciding **whether work happened** must ask the second question.
+
 ## [0.3.2] — 2026-07-27
 
 A **repair** release for the wiki capability. If your assistant is held back at the end of a session

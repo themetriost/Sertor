@@ -54,6 +54,16 @@ This block is the **owner** of git and commit discipline for the project.
 - **Never commit secrets or regenerable artifacts.** `.env`, key files, virtual
   environments, caches, build output, logs, and indexes stay out of version control
   (covered by `.gitignore`).
+- **Facing a conflict, ask what is actually MISSING — not how to resolve it.** A conflict shows you
+  two versions in collision; it does not tell you how much of it is real. Compare the branch against
+  the target first: content that reached the target by another route produces a conflict with
+  *nothing to reconcile*. Measure before you reach for a rebase, a merge strategy, or a reset — the
+  answer is often that a large conflict is missing one line, and finding that out costs two commands.
+- **"Modified" has two meanings — pick the one you mean.** `git status` answers *"does this appear
+  modified?"*; `git diff` answers *"did the content change?"*. They diverge on line endings, mode
+  bits, and whitespace: a file can be listed as modified with zero lines added or removed. Anything
+  that decides **whether work happened** must ask the second question, or it will report work where
+  there is none.
 - **Delegate git operations to the `configuration-manager` agent.** All version
   control actions (staging, commit, branch, merge, tag, push, pull) are delegated to
   the `configuration-manager` agent rather than performed inline, so the main flow is
