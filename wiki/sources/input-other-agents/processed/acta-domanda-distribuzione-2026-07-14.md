@@ -8,6 +8,8 @@ tipo: domanda
 altitudine: requisito
 created: 2026-07-14
 tags: [domanda, acta, sertor, distribuzione, installazione, veicoli, skill, cli, host-agnostico, uv, uvx]
+type: source
+updated: 2026-07-14
 ---
 
 # [Acta→Sertor] Come distribuisci te stesso?

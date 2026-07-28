@@ -26,15 +26,6 @@ resa all'agente, o deriva su concern periferici?** È la *stella polare* della c
 *Missione & stella polare*; fonte di verità `README.md`, sintesi [[mission-vision]]); il **Constitution
 Check** la verifica a ogni `plan`.
 
-## Approcci RAG del prototipo (riferimento, in `prototype/`)
-
-| Cartella | Approccio | Note |
-|----------|-----------|------|
-| `prototype/01-baseline/` | Baseline (vector retrieval) | chunking + embeddings + similarity search |
-| `prototype/02-hybrid-reranking/` | Hybrid + reranking | keyword/BM25 + dense + reranking |
-| `prototype/03-graphrag/` | GraphRAG | retrieval su knowledge graph |
-| `prototype/04-agentic-rag/` | Agentic RAG | retrieval iterativo / multi-agente, query planning |
-
 ## Riferirsi al prototipo (RAG di dogfooding)
 
 Il prototipo è **congelato**: per consultarlo **non** si leggono i file a mano, si **interroga il
@@ -66,52 +57,10 @@ ed errori; l'accesso diretto li **bypassa silenziosamente** (caso reale: un re-i
 v1.2.0) e nel gate del `plan-template`. Operativamente: per re-index usa `sertor-rag index .`, per query
 usa `sertor-rag search`/MCP, per il wiki `sertor-wiki-tools`.
 
-## Stack tecnologico
-
-Lo stack ha due "tracce" intercambiabili via config (vedi `RAG_BACKEND` sotto):
-
-- **Linguaggio:** Python >= 3.11.
-- **Orchestrazione:** LangChain (generale), **Semantic Kernel** (Microsoft),
-  **AutoGen** (multi-agente Microsoft).
-- **LLM / embeddings:**
-  - Locale / aperto: **Ollama** (es. `llama3.x`, `nomic-embed-text`), OpenAI pubblico.
-  - Azure: **Azure OpenAI Service** (deployment GPT + `text-embedding-3-*`).
-- **Retrieval / vector store:**
-  - Locale: **Chroma** (embedded) come default.
-  - Azure: **Azure AI Search** (hybrid search + semantic ranker + vector index) e
-    **Azure Cosmos DB for NoSQL** (vector search integrato).
-  - GraphRAG: store a grafo (`networkx` in-memory in locale; Neo4j opzionale).
-- **Reranking:** Azure AI Search semantic ranker (Azure); cross-encoder locale
-  (`sentence-transformers` / FlashRank) in locale.
-- **GraphRAG:** pacchetto **Microsoft GraphRAG** (`graphrag`).
-
-### Mappa approcci → tecnologie
-
-- **Baseline:** LangChain + Chroma + embeddings Ollama/OpenAI; variante Azure con
-  Azure OpenAI embeddings + Azure AI Search **o** Cosmos DB for NoSQL.
-- **Hybrid + reranking:** Azure AI Search (hybrid + semantic ranker) come riferimento;
-  variante locale BM25 + dense + cross-encoder.
-- **GraphRAG:** pacchetto Microsoft `graphrag` con Azure OpenAI o Ollama come backend LLM.
-- **Agentic RAG:** AutoGen e/o Semantic Kernel per orchestrazione multi-step/multi-agente;
-  agenti LangChain come alternativa.
-
 ## Struttura del progetto
 
-Confine netto **prototipo (congelato) ↔ produzione (attiva)**:
-
-```
-Sertor/
-├─ CLAUDE.md                # questa guida
-├─ requirements/           # PRODUZIONE: requisiti (epica sertor-cli, EARS) — fase a monte
-├─ wiki/                   # PRODUZIONE: wiki nuovo e attivo (LLM Wiki)
-├─ .claude/  .specify/     # governance: skill/agenti, SpecKit
-├─ .mcp.json               # server MCP `sertor-rag` → corpus dogfood (prototype)
-└─ prototype/              # PROTOTIPO CONGELATO (sola lettura, indicizzato nel RAG dogfood)
-   ├─ 01-baseline/ … 04-agentic-rag/   # i 4 motori RAG
-   ├─ shared/              # config, loaders, embeddings, retrieval (motore corpus-aware)
-   ├─ tests/  raw/         # smoke test + corpus FastAPI
-   └─ wiki/                # wiki storico del prototipo (congelato)
-```
+Confine netto **prototipo (congelato: `prototype/`) ↔ produzione (attiva: `src/`, `packages/`,
+`requirements/`, `specs/`, `wiki/`, `docs/`)**. Lo stack e le dipendenze sono in `pyproject.toml`.
 
 Il motore in `prototype/shared/` è **corpus-aware** (env `SERTOR_CORPUS`: `fastapi` = demo del
 prototipo · `prototype` = dogfooding sul prototipo stesso); gli indici sono namespaced per corpus
@@ -124,23 +73,9 @@ libreria di retrieval **importabile**, costruita in **Clean Architecture** sotto
 costituzione (`.specify/memory/constitution.md`). È **il prodotto** — il CLI/MCP ne sarà un
 consumatore sottile.
 
-**Architettura (le dipendenze puntano verso l'interno):**
-
-```
-domain/         entità (Document, Chunk, RetrievalResult, GraphNode, …), OTTO porte Protocol
-                (EmbeddingProvider, VectorStore, LexicalIndex, Reranker, CodeGraph,
-                RetrieverStrategy), errori — NESSUN import di SDK
-services/       ingestion · chunking (code/markdown/fallback + dispatch) · indexing · retrieval
-                (facade) · graph_extraction (code-graph multi-linguaggio, COVERAGE dichiarata)
-adapters/       embeddings/{ollama,azure} · vectorstores/{chroma,azure_search} · lexical/bm25
-                · rerank/flashrank (extra `rerank`) · graph/networkx (extra `graph`, lazy solo query)
-engines/        baseline (vettoriale) · hybrid (BM25+RRF+rerank opzionale, DEFAULT via
-                SERTOR_ENGINE) · evaluation (hit_rate@k, MRR)
-config/         Settings — config centralizzata (UNICA fonte di default; legge env + .env)
-observability/  logging strutturato
-composition.py  composition root: l'UNICO posto che conosce gli adapter concreti e li cabla da
-                Settings (build_facade/build_indexer/build_engine/build_graph_service/…)
-```
+**Architettura:** Clean Architecture in `src/sertor_core/` (`domain/` · `services/` · `adapters/` ·
+`engines/` · `config/` · `observability/` · `composition.py`) — **le dipendenze puntano verso
+l'interno**.
 
 Regole architetturali da rispettare quando si estende il core:
 - **Il `domain` non importa SDK esterni.** I provider concreti vivono in `adapters/` dietro le OTTO
@@ -183,8 +118,9 @@ uv run ruff check --fix .           # lint con autofix
 ```
 
 I marker pytest sono definiti in `pyproject.toml`: `cloud` (richiede credenziali Azure/servizi) e
-`integration` (end-to-end). La CI locale gira **senza cloud**: i test devono passare con
-`RAG_BACKEND=local` e adapter mock, senza rete. `pythonpath` include già `src` e root (nessun
+`integration` (end-to-end). La CI locale gira **senza cloud**: i test devono passare con un provider
+di embedding locale (`SERTOR_EMBED_PROVIDER=glove|hash`) e adapter mock, senza rete. `pythonpath`
+include già `src` e root (nessun
 `pip install -e` necessario per i test). **Un solo venv** `.venv/` (E10-FEAT-002): è il default del
 workspace `uv`, popolato da `uv sync --all-packages --extra dev` (+ `--extra azure` per il dogfood),
 e fa girare anche il server MCP (`.mcp.json` lo punta). Il vecchio `.venv-core/` è stato eliminato.
@@ -208,48 +144,20 @@ script lo richiedono.
 
 - **Ambiente / dipendenze:** preferire **`uv`** (fallback `venv` + `pip`). Usare
   ambienti **isolati per esperimento** per evitare conflitti di dipendenze (es. `graphrag`).
-- **Segreti:** sempre via file **`.env`** (mai committare). Variabili tipiche:
-
-  ```bash
-  # Locale / OpenAI pubblico
-  OPENAI_API_KEY=
-  OLLAMA_HOST=http://localhost:11434
-
-  # Azure OpenAI
-  AZURE_OPENAI_ENDPOINT=
-  AZURE_OPENAI_API_KEY=
-  AZURE_OPENAI_DEPLOYMENT=
-
-  # Azure AI Search
-  AZURE_SEARCH_ENDPOINT=
-  AZURE_SEARCH_API_KEY=
-
-  # Azure Cosmos DB for NoSQL
-  COSMOS_ENDPOINT=
-  COSMOS_KEY=
-
-  # Selettore backend: local | azure
-  RAG_BACKEND=local
-
-  # Motore di retrieval (FEAT-004): baseline | hybrid (default hybrid). Manopole opzionali:
-  # SERTOR_RRF_C, SERTOR_RRF_POOL, SERTOR_RERANK (richiede extra `rerank`), SERTOR_RERANK_POOL
-  SERTOR_ENGINE=hybrid
-
-  # Code-graph strutturale (FEAT-005): build dentro index() (default true). Navigazione = extra
-  # `graph`. Manopole: SERTOR_GRAPH_AMBIGUITY, SERTOR_GRAPH_LIMIT_{DEFS,RELS,DOCS}
-  SERTOR_GRAPH=true
-  ```
-
-- **Switch backend:** la variabile `RAG_BACKEND` (`local` | `azure`) alterna
-  local-first ↔ Azure senza modificare il codice.
+- **Segreti:** sempre via file **`.env`** (mai committare). L'elenco delle variabili sta in
+  **`.env.example`** (template versionato); la **fonte unica dei default** è
+  `src/sertor_core/config/settings.py`. Manopole non ovvie: `SERTOR_ENGINE` (`baseline` | `hybrid`,
+  default `hybrid`; + `SERTOR_RRF_C`, `SERTOR_RRF_POOL`, `SERTOR_RERANK` che richiede l'extra
+  `rerank`, `SERTOR_RERANK_POOL`) · `SERTOR_GRAPH` (code-graph dentro `index()`, default `true`;
+  + `SERTOR_GRAPH_AMBIGUITY`, `SERTOR_GRAPH_LIMIT_{DEFS,RELS,DOCS}`).
+- **Switch provider/store:** due manopole **distinte** (FEAT-009/FEAT-011) che si combinano —
+  `SERTOR_EMBED_PROVIDER` (`glove` default | `hash` | `ollama` | `azure`) sceglie l'embedder,
+  `SERTOR_STORE_BACKEND` (`local` default | `azure`) lo store. ⚠️ `RAG_BACKEND` **non è più
+  onorata**: se impostata, `Settings.load` la **ignora** (né letta né mappata) ed emette un WARNING
+  `config_rag_backend_ignored` che nomina le due manopole sostitutive — segnala, **non** migra in
+  silenzio e **non** solleva (Principio XII; `settings.py:373`).
 - **Ollama in locale:** avviare il servizio (`ollama serve`) e fare il pull dei modelli
   (es. `ollama pull llama3.1`, `ollama pull nomic-embed-text`) prima di lanciare gli esperimenti locali.
-
-## Convenzioni di codice
-
-- Codice leggibile; **config centralizzata** per lo switch provider/backend/modelli.
-- Nessuna over-engineering: aggiungere astrazioni solo quando un esperimento le richiede.
-- Mantenere ogni esperimento eseguibile in locale senza dipendere da Azure.
 
 ## Domande all'utente (regola SEMPRE attiva)
 
@@ -479,7 +387,28 @@ chi dovrebbe?* Corollari operativi:
    Aggiorna i riferimenti relativi che la citano; le nostre analisi derivate (recon, note di risposta
    in uscita) possono restare o seguirla, a giudizio. **Regola *locale* di Sertor: NON va nei blocchi
    `claude-md-block` distribuiti agli ospiti** (è dogfood/governance interna, non una pratica dell'ospite).
-10. **\<altre azioni\>** — questa lista è **estendibile**: ogni azione che l'utente chiede di rendere
+10. **Regola del boy scout — se il lint trova rotto, si aggiusta** *(direttiva utente 2026-07-28:
+   «lascio le cose migliori di come le ho trovate»)*. Quando il lint strutturale (o qualunque altra
+   guardia) **segnala qualcosa di rotto nell'area che stai toccando**, lo **ripari nello stesso
+   passaggio**, senza chiedere e senza parcheggiarlo come backlog. Vale per link rotti, frontmatter
+   mancante, orfani veri, riferimenti a pagine inesistenti. **Tre vincoli, imparati riparandone 40 in
+   una volta (2026-07-28):**
+   - **Prima chiedi se è rotto davvero.** 3 delle 14 segnalazioni erano **falsi positivi della
+     guardia** (`[[requirement]]` dentro un esempio TOML, `` `[[x]]` `` fra backtick): lì il rimedio
+     è **correggere lo strumento**, mai piegare il contenuto per far tacere il contatore.
+   - **Il rimedio è per classe, non uno solo.** Riferimento alla memoria privata dell'agente →
+     de-linkare; principio costituzionale → puntare a `[[constitution]]`; artefatto fuori dal wiki
+     (playbook, `requirements/`) → link markdown relativo. Un `--fix` unico avrebbe sbagliato quasi
+     ovunque: **il tool trova, tu giudichi**.
+   - **Non «risolvere» nascondendo.** Davanti a un archivio (`sources/**/processed/`) la tentazione è
+     escluderlo dalla guardia perché «è normale che sia orfano». **È sbagliato:** *archiviato non vuol
+     dire nascosto* — un documento processato resta **guardabile e collegato**, *in qualità di
+     processed* (direttiva utente 2026-07-28). Scollegarlo dal grafo o escluderlo dal lint sono due
+     modi di renderlo irraggiungibile. Il rimedio giusto è **catalogarlo** con il suo **esito**
+     ([[archivio-processati]]), che è anche la sola metà non derivabile dalla cartella. *Prova che
+     paga: catalogare i 18 ha fatto emergere **tre stati fermi** che l'esclusione avrebbe sepolto.*
+     Metà deterministica della regola: E10-FEAT-059.
+11. **\<altre azioni\>** — questa lista è **estendibile**: ogni azione che l'utente chiede di rendere
    *standing* va aggiunta qui, e da quel momento fa parte del rituale a ogni step.
 
 **Responsabilità & delega.** Che queste azioni **avvengano** a ogni step è responsabilità del flusso

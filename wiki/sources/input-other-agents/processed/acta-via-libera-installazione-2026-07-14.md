@@ -8,6 +8,8 @@ tipo: annuncio
 altitudine: esito operativo
 created: 2026-07-14
 tags: [annuncio, acta, sertor, via-libera, installazione]
+type: source
+updated: 2026-07-14
 ---
 
 # [Acta→Sertor] Via libera all'installazione

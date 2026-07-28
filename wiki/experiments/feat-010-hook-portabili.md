@@ -15,7 +15,7 @@ sources: ["specs/095-portable-hooks-09/", "requirements/sertor-cli/epic.md", ".c
 
 > **✅ Supersede di [[feat-018-portabilita-os-hook]]** — FEAT-018 *rilevava e segnalava* il gap (hook `.ps1` inerti su non-Windows senza `pwsh`) senza risolverlo, accettando la "limitazione tecnica" che cambiare `powershell`→`pwsh` avrebbe rotto Windows. **A-09 ha rimosso la causa alla radice**: gli 8 hook sono stati riscritti in **Python portabile**, senza alcuna dipendenza da PowerShell su nessun OS (fix il causa, non mitigazione — Principio XII). La guardia `pwsh` di FEAT-018 è stata rimossa (`host_env.py` eliminato) e il gap si estingue per costruzione.
 
-**Driver costituzionale:** [[principle-xii|Principio XII «Fail Loud, Fix the Cause»]] + [[principle-x|Principio X host-agnostico]].
+**Driver costituzionale:** [[constitution|Principio XII «Fail Loud, Fix the Cause»]] + [[constitution|Principio X host-agnostico]].
 
 ## Problema e soluzione
 
@@ -111,8 +111,8 @@ Vantaggi:
 ## Crosslink
 
 - **[[feat-018-portabilita-os-hook]]** — superata; gap risotto per costruzione.
-- **[[principle-xii]]** — Principio XII «Fix the Cause» — rimosso difetto alla radice.
-- **[[principle-x]]** — Principio X host-agnostico — zero dipendenza PowerShell/OS.
+- **[[constitution]]** — Principio XII «Fix the Cause» — rimosso difetto alla radice.
+- **[[constitution]]** — Principio X host-agnostico — zero dipendenza PowerShell/OS.
 - **[[sessionstart-hook]]** — riscritto in Python, portabile.
 - **[[feat-019-fail-loud-hook-agent]]** — gemella; fail-loudness + fallback agent mantengono Principio XII.
 - **[[assistant-targeting]]** — wiring OS-indipendente per Claude/Copilot.

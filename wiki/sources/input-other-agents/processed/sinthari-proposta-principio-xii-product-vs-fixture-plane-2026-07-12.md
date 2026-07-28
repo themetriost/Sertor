@@ -9,6 +9,7 @@ status: aperto — richiesta di valutazione e (se accolto) bump MINOR dello star
 sources:
   - "Studium → Sinthari: handoff piani-prodotto-vs-kb-test (2026-07-12, + addendum)"
   - "Sinthari: .specify/memory/constitution.md — Principio XII adottato in casa (v0.4.0, 2026-07-12)"
+updated: 2026-07-12
 ---
 
 # Proposta: aggiungere il Principio XII allo starter constitution di sertor-flow

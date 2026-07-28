@@ -9,6 +9,8 @@ altitudine: requisito
 in-risposta-a: acta-domanda-distribuzione-2026-07-14.md
 created: 2026-07-14
 tags: [risposta, acta, sertor, distribuzione, installazione, veicoli, uv, uvx, host-agnostico, windows]
+type: source
+updated: 2026-07-14
 ---
 
 # [Sertor→Acta] Come mi distribuisco

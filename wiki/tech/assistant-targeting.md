@@ -163,7 +163,7 @@ reintroduce `.claude/`, uno slash-command, un nome di assistente, **oppure** che
 payload **non depositato** (*closure dei riferimenti*). Un riferimento dangling fa fallisce nominando
 il file: un agente «rotto in silenzio» (playbook mancante) diventa un **fallimento esplicito** del
 test (Principio IV). La regola è codificata in tre sedi: questa pagina, la sezione *Host-agnostic
-authoring* del [[wiki-playbook]], e la **Definition of Done** del blocco rituale distribuito.
+authoring* del [wiki-playbook](../../.claude/skills/wiki-author/wiki-playbook.md), e la **Definition of Done** del blocco rituale distribuito.
 
 ## Default model-policy per-agente (Copilot CLI, FEAT-015)
 

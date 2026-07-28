@@ -11,7 +11,7 @@ sources: ["packages/sertor/src/sertor_installer/**", "packages/sertor-flow/src/s
 
 > Nato dalla domanda dell'utente dopo E10-FEAT-027 («il punto era su *tutto* Sertor — abbiamo fatto su
 > tutto?»). Metodo: 3 ricognitori paralleli (una superficie ciascuno) + verifica empirica diretta.
-> Deliverable azionabile: epica **[[../fedelta-dogfood/epic|fedeltà-dogfood]]** (E15).
+> Deliverable azionabile: epica **[fedeltà-dogfood](../../requirements/fedelta-dogfood/epic.md)** (E15).
 
 ## Verdetto in una riga
 
@@ -47,7 +47,7 @@ Quindi il rischio governance è **ristretto a `plan-template.md`** (il mission-g
 temuto: un vero `sertor-flow install` **preserverebbe** la v1.4.0. **E10-FEAT-028 è stata ri-scoperta e
 ristretta** di conseguenza (backup/restore del solo `plan-template.md`). *Lezione: l'assunzione stava nel
 mock dei test e nel docstring del mio script — l'ha smentita solo l'esecuzione reale (essenza del progetto:
-[[project_essenza_contesto_reale]]).*
+*impedire che un agente ragioni su contesto non reale*).*
 
 ## Sotto-finding trasversali (→ feature dell'epica)
 

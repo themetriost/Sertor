@@ -16,6 +16,15 @@ _FM_PAIR = re.compile(r"^(?P<key>[A-Za-z0-9_-]+)[ \t]*:[ \t]*(?P<value>.*)$")
 _FM_ITEM = re.compile(r"^[ \t]*-[ \t]+(?P<value>.*)$")
 # Wikilink `[[target]]` (optional alias `[[target|alias]]` → target is kept).
 _WIKILINK = re.compile(r"\[\[([^\[\]|#]+)(?:[#|][^\[\]]*)?\]\]")
+# Fenced code block (``` or ~~~, >=3 markers, optional info string), closed by the SAME marker run.
+# An UNTERMINATED fence is deliberately not matched: conservative, we prefer a false link to eating
+# the rest of the page.
+_FENCE = re.compile(
+    r"^[ \t]*(?P<f>`{3,}|~{3,})[^\n]*\n.*?^[ \t]*(?P=f)[ \t]*$",
+    re.DOTALL | re.MULTILINE,
+)
+# Inline code span: a backtick run closed by an identical run (CommonMark rule).
+_INLINE_CODE = re.compile(r"(?P<t>`+)(?:(?!(?P=t)).)*?(?P=t)", re.DOTALL)
 
 
 def _strip_scalar(value: str) -> str:
@@ -100,11 +109,29 @@ def body_after_frontmatter(text: str) -> str:
     return text[match.end():] if match else text
 
 
+def strip_code(text: str) -> str:
+    """Body without fenced blocks and inline code spans (fences first, then spans).
+
+    `[[..]]` inside code is NOT a link: it is sample syntax the page is quoting — TOML
+    array-of-tables (`[[requirement]]`), or the wikilink form named literally while explaining it
+    (`` `[[x]]` ``). Extracting from code produced *false* broken links, which is worse than noise:
+    a lint that cries wolf trains its reader to ignore it.
+    """
+    return _INLINE_CODE.sub(" ", _FENCE.sub("\n", text))
+
+
 def extract_wikilinks(text: str) -> list[str]:
-    """Outgoing `[[..]]` targets, deduplicated while preserving first-occurrence order."""
+    """Outgoing `[[..]]` targets, deduplicated while preserving first-occurrence order.
+
+    Code (fences and inline spans) is stripped first — see `strip_code`.
+    """
     seen: dict[str, None] = {}
-    for raw in _WIKILINK.findall(body_after_frontmatter(text)):
-        target = raw.strip()
+    for raw in _WIKILINK.findall(strip_code(body_after_frontmatter(text))):
+        # Inside a Markdown TABLE the alias pipe must be escaped (`[[target\|alias]]`) or it would
+        # split the cell — it is the Obsidian-compatible form, and our convention declares wikilinks
+        # Obsidian-compatible. Without this, the backslash rides along into the target and every
+        # aliased link in a table reads as broken.
+        target = raw.strip().rstrip("\\").strip()
         if target:
             seen.setdefault(target, None)
     return list(seen)
