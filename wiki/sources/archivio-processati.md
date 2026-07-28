@@ -36,7 +36,7 @@ di [[roadmap|E10-FEAT-047]] per `wiki/log/index.md`, e istanza di
 | [[sinthari-reply-specaudit-followup\|Reply — handoff SpecAudit recepito, LICENSE, output T049]] | *Sinthari* · 2026-07-02 | ✅ chiuso |
 | [[sinthari-proposta-principio-xii-product-vs-fixture-plane-2026-07-12\|Proposta — «Product Plane vs Fixture Plane» per lo starter]] | *Sinthari* · 2026-07-12 | ✅ **accolto e ratificato**, ma **come Principio XIII**, non XII come proposto (il XII era già *Fail Loud, Fix the Cause*). Vedi [[product-plane-vs-fixture-plane]]. ⚠️ *Il `status:` del documento dice ancora «aperto»* |
 | [[sertor-reply-product-vs-fixture-plane-2026-07-14\|Accolto: Product/Fixture Plane nello starter]] | *Sertor → Sinthari* · 2026-07-14 | ✅ chiuso (nostra risposta in uscita) |
-| [[nunzio-summaries-handoff-modello-wiki\|Handoff — modello wiki, lezioni da OpenWiki e wiki-compiler]] | *Nunzio* · 2026-07-09 | ⚠️ **da verificare**: il gemello in `usersfeedback/` dichiara `status: da elaborare`. Vedi la nota sotto |
+| [[nunzio-summaries-handoff-modello-wiki\|Handoff — modello wiki, lezioni da OpenWiki e wiki-compiler]] | *Nunzio* · 2026-07-09 | ✅ **elaborato per intero** → **epica E16 `evoluzione-modello-wiki`** (FEAT-001..004, 2026-07-28). Delle 7 richieste: 4 promosse a FEAT · 1 (connettori) → **E7** · 1 (dirlo fuori) → **E13 Fase 2** · 1 (hook `SessionStart` hard-coded) **già risolta** da E10-FEAT-029 + `.ps1`→`.py` |
 | [[acta-domanda-distribuzione-2026-07-14\|Domanda — come distribuisci/installi nei progetti consumatori?]] | *Acta* · 2026-07-14 | ✅ risposto (riga sotto) |
 | [[sertor-reply-to-acta-distribuzione-2026-07-14\|Risposta — come Sertor distribuisce/installa sé stesso]] | *Sertor → Acta* · 2026-07-14 | ✅ chiuso (nostra risposta in uscita) |
 | [[acta-via-libera-installazione-2026-07-14\|Via libera: puoi installare Acta]] | *Acta* · 2026-07-14 | ✅ **Acta installato** — skill `acta` attiva, canale usato con continuità (annunci di release, triage delle segnalazioni) |
@@ -49,7 +49,7 @@ di [[roadmap|E10-FEAT-047]] per `wiki/log/index.md`, e istanza di
 | [[wiki-ritual-distill-ignorato-noetix\|Passo `distill` ignorato per un'intera sessione]] (*Noetix*) | 2026-07-01 | ✅ **→ E10-FEAT-026**, poi la linea di enforcement `ritual-check` → [[daily-distill-floor]] → [[wiki-guard]] |
 | [[wiki-ritual-distill-lint-discrezionale\|`record→distill→lint` discrezionale, rischio skip silenzioso]] | 2026-07-01 | ✅ **→ E10-FEAT-026** (stessa linea; è la coppia che ha originato il pavimento del distill) |
 | [[memory-archive-silenzioso-path-con-spazi\|`memory archive` non cattura nulla (e tace) se il path ha uno spazio]] | 2026-07-09 | ✅ **RISOLTO** — E4-FEAT-011, `5d30635`/PR #189 (2026-07-15): `encode_project_path` collassava solo `:`/`\`/`/`, Claude Code collassa **ogni** carattere non alfanumerico → 22 sessioni recuperate su `VM-WorkingFolder`. ⚠️ *Il `status:` del documento dice ancora «da elaborare»* |
-| [[evoluzione-modello-wiki-lezioni-da-openwiki-e-wiki-compiler\|Evolvere il modello wiki da OpenWiki e wiki-compiler]] | 2026-07-09 | ⚠️ **`status: da elaborare`** — archiviato ma forse non elaborato. Vedi la nota sotto |
+| [[evoluzione-modello-wiki-lezioni-da-openwiki-e-wiki-compiler\|Evolvere il modello wiki da OpenWiki e wiki-compiler]] | 2026-07-09 | ✅ **elaborato** → **E16** (gemello del precedente: è il documento integrale, 7 richieste). ⚠️ *Il `status:` dice ancora «da elaborare»* |
 
 *(In `usersfeedback/processed/` stanno anche [[copilot-default-models]] → ✅ E2-FEAT-015 e
 [[sertor-strumenti-audit]], già raggiungibili da altre pagine.)*
@@ -57,18 +57,26 @@ di [[roadmap|E10-FEAT-047]] per `wiki/log/index.md`, e istanza di
 ## ⚠️ Tre stati fermi, trovati scrivendo questo catalogo
 
 Collegare l'archivio invece di nasconderlo ha fatto emergere subito ciò che nasconderlo avrebbe
-sepolto:
+sepolto — **tutti e tre sono `status:` fermi, nessuno è lavoro perso**:
 
 1. **La proposta di *Sinthari*** porta `status: aperto — richiesta di valutazione`, ma il principio
    **è stato ratificato** (come XIII) e ha una pagina propria.
 2. **Il bug `memory archive`** porta `status: da elaborare`, ma è **corretto e verificato dal vivo**
    da oltre un mese.
-3. **Il modello wiki da OpenWiki/wiki-compiler** porta `status: da elaborare` **ed è in `processed/`**:
-   o è stato elaborato senza aggiornare lo stato, o è stato archiviato per errore. **Questo è l'unico
-   dei tre che potrebbe essere lavoro perso**, e va deciso.
+3. **Il modello wiki da OpenWiki/wiki-compiler** porta `status: da elaborare`, ma **era stato elaborato
+   per intero**: le sue 7 richieste vivevano già come idee nella roadmap. Promosse il 2026-07-28 a
+   **epica E16 `evoluzione-modello-wiki`** (FEAT-001..004; connettori → E7; «dirlo fuori» → E13 Fase 2;
+   l'hook `SessionStart` era già risolto).
+
+> **Nota su come è stato letto il n° 3.** Alla prima lettura l'avevo dato per *possibile lavoro perso*,
+> perché avevo guardato **solo il `status:` e il backlog delle epiche**. Bastava aprire la roadmap: le
+> sue richieste erano lì da tre settimane, ciascuna marcata *«Fonte: Nunzio»*. **Un documento processato
+> ha spesso lasciato traccia altrove che nel proprio frontmatter** — cercarla prima di dichiarare un
+> buco. È lo stesso errore d'ordine — *decidere prima, verificare dopo* — già registrato altrove.
 
 Gli `status:` dei documenti **non sono stati modificati**: 1 e 2 sono documenti *ricevuti* — riscriverne
-i campi falsificherebbe un record di cosa ci è stato mandato. L'esito vive **qui**, dove è nostro.
+i campi falsificherebbe un record di cosa ci è stato mandato. Il 3 è un documento nostro, ma resta com'è
+per la stessa ragione di coerenza. L'esito vive **qui**, dove è nostro.
 
 ## Vedi anche
 
