@@ -127,7 +127,11 @@ def extract_wikilinks(text: str) -> list[str]:
     """
     seen: dict[str, None] = {}
     for raw in _WIKILINK.findall(strip_code(body_after_frontmatter(text))):
-        target = raw.strip()
+        # Inside a Markdown TABLE the alias pipe must be escaped (`[[target\|alias]]`) or it would
+        # split the cell — it is the Obsidian-compatible form, and our convention declares wikilinks
+        # Obsidian-compatible. Without this, the backslash rides along into the target and every
+        # aliased link in a table reads as broken.
+        target = raw.strip().rstrip("\\").strip()
         if target:
             seen.setdefault(target, None)
     return list(seen)

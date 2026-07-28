@@ -108,3 +108,13 @@ def test_wikilinks_survive_around_code():
     """Links before and after code are still found (the strip must not eat real content)."""
     text = "Prima [[uno]].\n\n```\n[[finto]]\n```\n\nDopo [[due]] e `codice` finale.\n"
     assert extract_wikilinks(text) == ["uno", "due"]
+
+
+def test_wikilinks_alias_pipe_escaped_in_table():
+    r"""`[[target\|alias]]` — the Obsidian-compatible escape needed inside a Markdown table.
+
+    Without stripping the trailing backslash every aliased link in a table reads as broken
+    (real case: wiki/sources/archivio-processati.md).
+    """
+    text = r"| [[speclift-handoff-sinthari\|Handoff SpecLift]] | Sinthari | ok |" + "\n"
+    assert extract_wikilinks(text) == ["speclift-handoff-sinthari"]
