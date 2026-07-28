@@ -400,9 +400,14 @@ chi dovrebbe?* Corollari operativi:
      de-linkare; principio costituzionale → puntare a `[[constitution]]`; artefatto fuori dal wiki
      (playbook, `requirements/`) → link markdown relativo. Un `--fix` unico avrebbe sbagliato quasi
      ovunque: **il tool trova, tu giudichi**.
-   - **Se non è un difetto, dillo invece di ripararlo.** Gli orfani in `sources/**/processed/` sono
-     lo **stato corretto** di un archivio: vanno tracciati come scope della guardia (E10-FEAT-058),
-     non «sistemati» linkandoli. Metà deterministica della regola: E10-FEAT-059.
+   - **Non «risolvere» nascondendo.** Davanti a un archivio (`sources/**/processed/`) la tentazione è
+     escluderlo dalla guardia perché «è normale che sia orfano». **È sbagliato:** *archiviato non vuol
+     dire nascosto* — un documento processato resta **guardabile e collegato**, *in qualità di
+     processed* (direttiva utente 2026-07-28). Scollegarlo dal grafo o escluderlo dal lint sono due
+     modi di renderlo irraggiungibile. Il rimedio giusto è **catalogarlo** con il suo **esito**
+     ([[archivio-processati]]), che è anche la sola metà non derivabile dalla cartella. *Prova che
+     paga: catalogare i 18 ha fatto emergere **tre stati fermi** che l'esclusione avrebbe sepolto.*
+     Metà deterministica della regola: E10-FEAT-059.
 11. **\<altre azioni\>** — questa lista è **estendibile**: ogni azione che l'utente chiede di rendere
    *standing* va aggiunta qui, e da quel momento fa parte del rituale a ogni step.
 
