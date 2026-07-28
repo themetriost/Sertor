@@ -13,9 +13,9 @@ Il [[dogfooding]] risponde a «usiamo il nostro RAG su di noi». La **fedeltà d
 domanda più stretta e più severa: **il dogfood si comporta *davvero* come un progetto-ospite di Sertor, o
 solo *quasi*?** È la stella polare applicata a noi stessi — se il workspace di Sertor gira su qualcosa di
 diverso da ciò che un ospite otterrebbe, il dogfooding *mente* (misura uno strumento che nessun cliente ha).
-Ogni divergenza dal client è **debito**, non design (vedi [[feedback_dogfood_client_fedele]]); la direttiva
+Ogni divergenza dal client è **debito**, non design (direttiva standing *«il dogfood è un client fedele; ogni special-case è debito»*); la direttiva
 standing è: il dogfood gira **solo** sulla versione **installata**, mai sul sorgente-repo
-([[feedback_dogfood_solo_via_install_versionbump]]).
+(direttiva standing *«dogfood solo via install da version bump»*, 2026-07-03).
 
 ## I due livelli di fedeltà
 
@@ -154,4 +154,5 @@ Vedi [[asset-install-installer-dry-run-2026-07-04]].
 - La pratica di base che questo modello rende fedele: [[dogfooding]].
 - L'audit che ha nominato i due livelli: [[audit-fedelta-dogfood-2026-07-03]].
 - Il dry-run empirico che ha verificato l'idempotenza dei veri installer: [[asset-install-installer-dry-run-2026-07-04]].
-- Le direttive standing: [[feedback_dogfood_client_fedele]], [[feedback_dogfood_solo_via_install_versionbump]].
+- Le direttive standing dell'utente: *«il dogfood è un client fedele»* (2026-07-03) e *«dogfood
+  solo via install da version bump»* (2026-07-03). Vivono nella memoria dell'agente, non nel wiki.

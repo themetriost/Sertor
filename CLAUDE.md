@@ -387,7 +387,23 @@ chi dovrebbe?* Corollari operativi:
    Aggiorna i riferimenti relativi che la citano; le nostre analisi derivate (recon, note di risposta
    in uscita) possono restare o seguirla, a giudizio. **Regola *locale* di Sertor: NON va nei blocchi
    `claude-md-block` distribuiti agli ospiti** (è dogfood/governance interna, non una pratica dell'ospite).
-10. **\<altre azioni\>** — questa lista è **estendibile**: ogni azione che l'utente chiede di rendere
+10. **Regola del boy scout — se il lint trova rotto, si aggiusta** *(direttiva utente 2026-07-28:
+   «lascio le cose migliori di come le ho trovate»)*. Quando il lint strutturale (o qualunque altra
+   guardia) **segnala qualcosa di rotto nell'area che stai toccando**, lo **ripari nello stesso
+   passaggio**, senza chiedere e senza parcheggiarlo come backlog. Vale per link rotti, frontmatter
+   mancante, orfani veri, riferimenti a pagine inesistenti. **Tre vincoli, imparati riparandone 40 in
+   una volta (2026-07-28):**
+   - **Prima chiedi se è rotto davvero.** 3 delle 14 segnalazioni erano **falsi positivi della
+     guardia** (`[[requirement]]` dentro un esempio TOML, `` `[[x]]` `` fra backtick): lì il rimedio
+     è **correggere lo strumento**, mai piegare il contenuto per far tacere il contatore.
+   - **Il rimedio è per classe, non uno solo.** Riferimento alla memoria privata dell'agente →
+     de-linkare; principio costituzionale → puntare a `[[constitution]]`; artefatto fuori dal wiki
+     (playbook, `requirements/`) → link markdown relativo. Un `--fix` unico avrebbe sbagliato quasi
+     ovunque: **il tool trova, tu giudichi**.
+   - **Se non è un difetto, dillo invece di ripararlo.** Gli orfani in `sources/**/processed/` sono
+     lo **stato corretto** di un archivio: vanno tracciati come scope della guardia (E10-FEAT-058),
+     non «sistemati» linkandoli. Metà deterministica della regola: E10-FEAT-059.
+11. **\<altre azioni\>** — questa lista è **estendibile**: ogni azione che l'utente chiede di rendere
    *standing* va aggiunta qui, e da quel momento fa parte del rituale a ogni step.
 
 **Responsabilità & delega.** Che queste azioni **avvengano** a ogni step è responsabilità del flusso

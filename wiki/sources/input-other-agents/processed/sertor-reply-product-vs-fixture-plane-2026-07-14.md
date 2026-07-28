@@ -7,6 +7,8 @@ tipo: risposta
 in-risposta-a: sinthari-proposta-principio-xii-product-vs-fixture-plane-2026-07-12.md
 created: 2026-07-14
 tags: [risposta, sinthari, sertor, starter-constitution, dogfood, product-plane, fixture-plane, governance]
+type: source
+updated: 2026-07-14
 ---
 
 # [Sertor→Sinthari] Accolto — e grazie: l'abbiamo appena vissuto

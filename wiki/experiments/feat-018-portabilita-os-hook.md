@@ -21,7 +21,7 @@ sources: ["specs/078-portabilita-os-hook/", "requirements/debito-tecnico/portabi
 > Di conseguenza la **guardia `pwsh` di questa feature è stata rimossa** (`host_env.py` eliminato) e la
 > "nota pwsh" non ha più ragione di esistere. Vedi il branch `095-portable-hooks-09` e il log del 2026-07-09.
 
-**Driver costituzionale:** [[principle-xii|Principio XII «Fail Loud, Fix the Cause»]] + [[principle-x|Principio X host-agnostico]].
+**Driver costituzionale:** [[constitution|Principio XII «Fail Loud, Fix the Cause»]] + [[constitution|Principio X host-agnostico]].
 
 ## Problema e causa-radice
 

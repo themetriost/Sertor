@@ -63,7 +63,7 @@ sia l'**agente chiamante** invece di uno stub in-process:
 nei limiti; (b) se cita un simbolo, il nome compare nel file (presenza statica); (c) se cita un test, il
 file-test esiste e **referenzia** il simbolo (uso statico). L'LLM non inventa mai un'àncora: se il testo
 EARS è sbagliato ma le àncore reggono, resta citabile e riscrivibile. È l'idea del pattern
-[[deterministic-sandwich]]: *giudizio isolato, input pulito, output verificato*.
+«sandwich deterministico» ([[deterministic-vs-judgment]]): *giudizio isolato, input pulito, output verificato*.
 
 **Exit codes** (`cli.py:8-10`, `contracts/cli.md:37-41`): `0` ok (anche report vuoto) · `2` ref git
 invalido · `3` RAG giù/indice mancante · `4` `EarsAuthor` giù · `5` bundle/contratto invalido. Nessun

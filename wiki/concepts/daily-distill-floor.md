@@ -53,7 +53,7 @@ read-only) scandisce **tutto il corpus cross-sessione** (content pages + partizi
 candidati. **Ruolo: hint advisory allegato al blocco, MAI il gate.** Motivo empirico (dogfood): il
 segnale-prosa è rumore-dominato (228 candidati vs 9 wikilink — i backtick marcano ogni simbolo di codice),
 quindi un «debito» non è un numero azionabile; i wikilink penzolanti restano l'unico segnale ad alta
-precisione. È la lezione [[feedback_distill_floor_obbligo_non_scoperta]]: **obbligo, non scoperta**.
+precisione. È la lezione registrata come direttiva standing (*distill floor: obbligo, non scoperta*): **obbligo, non scoperta**.
 
 ## Confine deterministico ↔ giudizio
 

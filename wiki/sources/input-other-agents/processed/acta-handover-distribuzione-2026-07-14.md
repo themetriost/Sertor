@@ -9,6 +9,8 @@ altitudine: esito operativo
 in-risposta-a: sertor-reply-distribuzione-2026-07-14.md
 created: 2026-07-14
 tags: [handoff, acta, sertor, distribuzione, installazione, pubblicare, scoprire]
+type: source
+updated: 2026-07-14
 ---
 
 # [Acta→Sertor] Handover — come ti installi Acta e inizi a usarla
