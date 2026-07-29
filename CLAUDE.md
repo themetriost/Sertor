@@ -550,24 +550,23 @@ dogfood sopra. *(Non riconciliare cancellando la prosa: i blocchi sono rigenerat
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/123-feat-045-ancora-derivata-scan/plan.md` (**E10 / FEAT-045**, epica **debito-tecnico**, Must/P0 —
-*ancora derivata per la rilevazione del lavoro non registrato*). `scan` risponde a «c'è lavoro non
-registrato?» **stimando** con gli orologi dei file invece di **derivare** il fatto: dopo un merge git
-riscrive lavoro e giornale insieme, l'ordine diventa arbitrario e il gate bloccante `wiki-guard` può
-diventare **insoddisfacibile** — *una sessione non può chiudersi sul proprio ultimo merge*. **Il nostro
-`pending=0` è una corsa vinta, non correttezza.** Rimedio nella forma del **Principio XIV**: ancora
-**derivata** dall'ultima consegna che ha toccato la cartella di giornale + diff da lì, **unito alle
-modifiche non consegnate dell'albero di lavoro** (senza questa seconda metà il gate non vedrebbe mai il
-lavoro di una sessione in corso — il caso per cui esiste); **mtime dichiarato come proxy** dove l'ospite
-non è un repo, con **causa tipizzata** (`not_a_repository` · `git_unavailable` · `log_never_committed`),
-perché `scan` è host-agnostico *by design*. **Assorbe E10-FEAT-048**: esclusione dei file gitignorati e
-nomi dei file **cadono fuori gratis** dalla derivazione (verificato empiricamente). ⚠️ **Vincolo
-critico:** la stringa di schema `wiki.scan/1` **non si bumpa** — i due hook consumatori la confrontano
-per uguaglianza e vanno in **fail-open**, quindi un bump non romperebbe il gate: lo farebbe **sparire in
-silenzio** sugli ospiti non aggiornati (guardia dedicata, fase 2 del piano). **Fuori scope**, rinviato
-per decisione utente a **E10-FEAT-051**: chiudere il gate con un «giudizio registrato». Constitution
-**14/14 + missione PASS**. Branch `123-feat-045-ancora-derivata-scan`.
-
+`specs/124-copertura-changeset-scan/plan.md` (**E10 / FEAT-062**, epica **debito-tecnico**, Must/P0 —
+*la registrazione copre un changeset, non una data*). `scan` azzera `pending` per la **sola presenza**
+della partizione di giornale di oggi fra le modifiche non consegnate (`scan.py:286-292`,
+`recorded_today`): **appena si scrive la voce di giornale il gate smette di vedere tutto il lavoro
+successivo**, nella finestra esatta in cui lo `Stop` interroga — *chi soddisfa la regola la disattiva*.
+Misurati **8 scenari** di non-rilevazione con **una sola causa**, piu' **1 difetto indipendente** (ogni
+invocazione git fallita degrada verso l'insieme vuoto **in silenzio**, continuando a dichiarare
+`anchor_kind: git`). Segnalato dal nodo *Acta*; riprodotto qui. **Rimedio:** `append-log` **deriva** la
+copertura — insieme di `(path, identita-di-contenuto)` — e la persiste **dentro la voce**
+(`sertor-covers/1`); `scan` calcola `pending = lavoro_in_perimetro - copertura`. **La data sparisce
+dalla logica.** L'identita' di contenuto fa scadere da se' le coperture vecchie, il che elimina il
+bisogno di riconoscere «quali voci sono recenti» — e con esso il parsing dell'intestazione, che sarebbe
+stato **cablato sul nostro `log_format`** e quindi rotto sugli ospiti (Principio X). ⚠️ **Vincolo
+critico invariato:** la stringa `wiki.scan/1` **non si bumpa** — i due hook la confrontano per
+uguaglianza e vanno in **fail-open**, quindi un bump non romperebbe il gate: lo farebbe **sparire in
+silenzio**. Solo campi additivi (`determination`, `determination_reason`, `legacy_coverage`).
+Constitution **14/14 + missione PASS**. Branch `124-copertura-changeset-scan`.
 <!-- SPECKIT END -->
 
 <!-- SERTOR:SDLC-RITUAL START -->

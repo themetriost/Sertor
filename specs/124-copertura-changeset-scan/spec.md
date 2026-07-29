@@ -106,8 +106,8 @@ cui si è espressa, e quell'insieme deve corrispondere al lavoro presente in que
   già modificato e un gate che blocca comunque, e la diagnosi diventa un'indagine.
 - **Progetto senza sistema di versionamento.** Resta supportato: l'esito continua a dichiarare che sta
   usando una stima e **perché** (comportamento già esistente, da non regredire).
-- **Registrazioni scritte prima di questa capacità.** Non dichiarano cosa coprono → vedi
-  [NEEDS CLARIFICATION Q1].
+- **Registrazioni scritte prima di questa capacità.** Non dichiarano cosa coprono → coprono tutto il
+  lavoro in perimetro esistente, e l'esito **dichiara quante** stanno valendo per compatibilità (Q1/C).
 - **Elemento rimosso.** Una rimozione è lavoro: deve poter risultare non registrata come una modifica.
 - **Registrazione che dichiara di coprire tutto.** Resta possibile, ma diventa **scritta e
   falsificabile** — è un miglioramento rispetto all'azzeramento invisibile di oggi, non un'eliminazione
@@ -150,8 +150,9 @@ cui si è espressa, e quell'insieme deve corrispondere al lavoro presente in que
   richiedere la consegna per considerare coperto il lavoro.
 - **FR-015**: Una registrazione non consegnata che appartiene a un **giorno diverso** MUST essere
   nominata nell'esito, pur non contribuendo alla copertura di oggi.
-- **FR-016**: Per le registrazioni prive di copertura dichiarata, il sistema MUST applicare la regola
-  di transizione decisa in [NEEDS CLARIFICATION Q1].
+- **FR-016**: Per le registrazioni prive di copertura dichiarata, il sistema MUST considerarle come
+  copertura di **tutto il lavoro in perimetro** esistente al momento della lettura, e MUST dichiarare
+  nell'esito **quante** registrazioni stanno valendo per compatibilità (deroga visibile, non silenziosa).
 
 ### Key Entities
 
@@ -209,7 +210,27 @@ cui si è espressa, e quell'insieme deve corrispondere al lavoro presente in que
 
 ## Clarifications
 
-### Q1 — Registrazioni prive di copertura dichiarata (transizione)
+### Sessione 2026-07-29
+
+- **Q1 — Registrazioni prive di copertura dichiarata → RISOLTA: opzione C** *(assunzione dichiarata,
+  non risposta esplicita dell'utente: raccomandata e non contraddetta dopo tre passaggi; è una regola
+  isolata, spostarla su A o B resta un intervento puntuale).*
+
+  Una registrazione **priva** di copertura dichiarata **copre tutto il lavoro in perimetro esistente al
+  momento in cui viene letta**, e l'esito della verifica **dichiara quante** registrazioni stanno
+  valendo per compatibilità.
+
+  **Perché C e non A:** il comportamento è identico, ma la deroga diventa **visibile**. È il Principio
+  XIV applicato a sé stesso — *conservare una copia stantia può essere giusto, conservarla in silenzio
+  no*. **Perché non B:** azzerare la copertura delle voci esistenti farebbe bloccare il gate su ogni
+  ospite al primo aggiornamento, su lavoro che l'ospite considera registrato; insegnerebbe ad aggirare
+  il gate, cioè il difetto che questa feature chiude.
+
+  → **FR-016** si concretizza così; il campo che dichiara la deroga è additivo (FR-009 invariato).
+
+---
+
+### Q1 — Registrazioni prive di copertura dichiarata (transizione) *(storico della domanda)*
 
 **Context**: FR-016, ed edge case *«registrazioni scritte prima di questa capacità»*. Ogni ospite ha
 un giornale pieno di voci scritte prima che la copertura esistesse.
@@ -223,4 +244,4 @@ un giornale pieno di voci scritte prima che la copertura esistesse.
 | C | **Copre tutto, e lo dichiara** — la voce vecchia vale come A, ma l'esito **nomina** quante registrazioni stanno valendo per compatibilità | Come A sul comportamento, ma la deroga è **visibile** invece che silenziosa (coerente col principio «conservare una copia stantia può essere giusto, conservarla in silenzio no»). Costa un campo in più nell'esito. |
 | Custom | Rispondi con la tua regola | — |
 
-**Your choice**: _[in attesa]_
+**Your choice**: **C** — vedi *Clarifications → Sessione 2026-07-29*.
