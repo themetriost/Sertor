@@ -22,7 +22,11 @@ checklist:
    in the main flow.
 3. **Semantic lint** (`lint` level B) — verify that the wiki has not drifted away from the
    reality of the project (code, requirements, VCS state): flag every claim the repo contradicts,
-   fix on confirmation. This is **judgment** → stays in the main flow.
+   fix on confirmation. This is **judgment** → stays in the main flow. **Start with the pages that
+   SUMMARISE.** Drift concentrates where one page restates what another owns — the index, a status
+   or roadmap page, a CHANGELOG, an instruction block — because a summary is a copy whose source
+   keeps moving, and nothing compares the two. Detail pages, which state what they own, drift far
+   less. Checking the summarising surfaces first is the cheapest way to spend a lint pass.
 4. **Plain-language summary (explainer)** — when a step develops or plans a **significant capability**
    (a requirement, a feature, a product capability), produce or update a **plain-language description**
    under `wiki/explainers/` (for non-technical readers): what it does and why, with an everyday analogy
@@ -53,6 +57,19 @@ record the work, distill durable entities (or log a reasoned "no"), and run the 
 you changed. It is a hard gate, not a nudge; read-only / question turns (nothing pending) close normally.
 Detection reuses `sertor-wiki-tools scan`; the hook only demands the ritual — the judgment stays with you
 (the tool finds, you judge). Resolve by recording + judging, then stop again.
+
+**Boy scout rule (leave it better than you found it).** When a guard reports something broken in an area
+you are touching — a `lint` finding, a dangling link, missing frontmatter, a genuinely orphan page — **fix
+it in the same pass**: not when asked, and not filed away as backlog. A guard nobody owns accumulates, and
+an accumulated backlog teaches you to stop reading it. Three constraints:
+
+- **First ask whether it is really broken.** A guard can be wrong. If it is, the fix belongs **in the
+  guard** — never in bending the content to silence a counter.
+- **The remedy is per class, not one.** A single blanket fix is wrong almost everywhere: each class of
+  finding wants a different repair. The tool finds, **you judge**.
+- **Never "resolve" by hiding.** Excluding an area from a guard, and leaving it disconnected, are two ways
+  of making it unreachable. If something is not a defect, **say so where it can be read** — catalogue it
+  with its outcome — instead of removing it from view.
 
 **Delegation.** That these actions happen is the main flow's responsibility; executing or delegating them
 is merely a choice to avoid blocking. The `record` (structured transcription) is delegatable to the
