@@ -75,6 +75,24 @@ E c'è un aggravante che rende il limite sistematico invece che casuale:
 > informalmente. Ogni fix a mano sul dogfood **cancella una prova** di cosa provi un ospite vero. È un
 > canarino che si cura da solo.
 
+### La forma più acuta del terzo limite: **il dogfood non esercita il verbo che spediamo** (2026-07-29)
+
+Il limite non è solo che occupiamo *una* configurazione favorevole. È più netto di così:
+
+> Il runtime `.sertor/` insegue **HEAD** con un re-lock a ogni merge. Passa da un commit al successivo,
+> **mai da una versione alla successiva**. Il dogfood non esegue mai `sertor upgrade`.
+
+Quindi non c'è una configurazione «poco coperta»: c'è un **verbo del prodotto che nessuno di noi
+esercita**, e che è **l'unico** attraverso cui gli ospiti ricevono qualunque cosa facciamo. E il re-lock
+non è un dettaglio d'ambiente: è **prescritto dal rituale** dopo ogni merge, cioè la disciplina che ci
+tiene aggiornati è la stessa che ci impedisce di provare l'aggiornamento.
+
+La misura del 2026-07-29 lo rende quantitativo: su ~14 difetti reali dal campo, **7 stanno
+nell'installer/upgrade** e **tutti e sette richiedono un'installazione preesistente più vecchia** per
+manifestarsi. Un host pulito — l'unico che il nostro smoke costruisce — non può vederne nessuno *per
+costruzione*. Rimedio: **E15-FEAT-012** (smoke di upgrade come gate di rilascio); la faccia gemella,
+lato guardie, è in [[esito-sull-host-vs-forma-dell-asset]].
+
 **Tre casi, tutti arrivati da fuori, tutti nello stesso senso:**
 
 | Difetto | Perché era invisibile da qui |
