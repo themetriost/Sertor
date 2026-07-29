@@ -296,6 +296,20 @@ which you pass the **curated body**; without `log_dir`, a single log file (back-
 <lead: 1–2 sentences with the why/trigger of the step>
 - **<label>:** <salient fact or pointer [[page]], one line>
 ```
+**Coverage block (`sertor-covers/1`, appended by `append-log` — do not write it by hand).** After the
+body, `append-log` appends an HTML comment listing **which work items the entry covers**, derived from
+the project's state at write time:
+```
+<!-- sertor-covers/1
+src/some/file.py@<content id>
+-->
+```
+It is invisible when the Markdown is rendered and present in the raw text. `scan` reads it to answer
+*"is this work recorded?"* instead of *"does a recording exist?"* — which is why an entry now covers what
+it was written about, and **not** everything you do afterwards. Consequences worth knowing: the journal
+stays append-only (**never edit a block** — a wrong coverage is corrected by a new entry), and an entry
+written with an empty body still covers whatever was pending, because coverage is derived, not declared.
+
 `<operation>` ∈ `setup` · `structure` · `record` · `distill` · `ingest` · `query` · `lint` · `reorg` ·
 `generate` · `rag-sync` — the full set of operations from §5 plus `setup` (generic session/governance bootstrap,
 distinct from `structure` which is the bootstrap of the *wiki structure*). `structure`

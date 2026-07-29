@@ -42,6 +42,9 @@ _WHITELIST = (
     "sertor-core",    # E2-FEAT-021: the PACKAGE name the hook looks up in the runtime lock. Like
                       # `SERTOR_MEMORY` and `.sertor`, it is product-specific but identical on every
                       # host — the guard bans host-specific references, not the product's own name.
+    "sertor-covers",  # E10-FEAT-062: the FORMAT marker of the coverage block a recording carries.
+                      # Same reasoning as `sertor-core` above — product-specific but written
+                      # identically on every host; the guard bans host-specific references.
     ".sertor",
     "SERTOR:WIKI-RITUAL",
 )

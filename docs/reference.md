@@ -83,12 +83,36 @@ are not equally reliable:
 | `git` | **derived** from history — the anchor is the last commit that touched the wiki log | survives merge/pull/rebase/clone; files your VCS **ignores never count** |
 | `mtime` | an **estimate** from file modification times, with the reason stated | used when the project is not a repository (or history is unreadable); may count files a VCS would ignore |
 
-An entry written **today** counts as a recording as soon as it is on disk — **you do not have to
-commit** to satisfy the wiki gate. An uncommitted entry from a *previous* day does **not** count, and
-`scan` names it so the situation is diagnosable rather than puzzling.
+A log entry counts as a recording as soon as it is on disk — **you do not have to commit** to satisfy
+the wiki gate. An uncommitted entry from a *previous* day does **not** count, and `scan` names it so
+the situation is diagnosable rather than puzzling.
+
+**What an entry covers.** A recording is honoured for the work it was written about, not for the rest
+of the day. When you run `append-log`, it records — inside the entry, as an HTML comment — which files
+were pending at that moment:
+
+```
+<!-- sertor-covers/1
+src/some/file.py@<content id>
+-->
+```
+
+So if you record, then keep working, the new work shows up as pending again: the gate stays useful for
+the whole session instead of switching off at the first entry. Editing a file that was already covered
+also brings it back — coverage is about the *content* that was recorded, not the file name. You never
+write that block by hand, and you should not edit it: a wrong coverage is corrected by a new entry
+(the journal is append-only).
+
+**When `scan` could not look.** `determination` is `ok` or `failed`. A `pending: 0` means "nothing to
+record" **only** with `determination: "ok"`; with `"failed"` (for example, a concurrent git operation
+holding the index) it means "I could not look", and `determination_reason` says why. The session hooks
+do **not** block in that case — a broken environment must not make a session unclosable — but they
+leave a note in `.sertor/.last-hook-error` instead of reporting a clean verdict.
 
 `scan --json` emits the `wiki.scan/1` contract: `pending`, `pending_paths`, `pending_truncated`,
-`anchor`, `anchor_kind`, `anchor_ref`, `anchor_fallback_reason`, `stale_recording`.
+`anchor`, `anchor_kind`, `anchor_ref`, `anchor_fallback_reason`, `stale_recording`, `determination`,
+`determination_reason`, `legacy_coverage` (how many pre-existing entries are being honoured for
+compatibility — normally `0`).
 
 ### Wiki knobs (`wiki.config.toml`)
 

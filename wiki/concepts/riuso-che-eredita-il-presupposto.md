@@ -38,6 +38,57 @@ posizione del lettore**. L'agente si fermava con `STOP — Missing Asset` su un 
 In entrambi i casi il riuso era **motivato e ragionevole** — non duplicare un'enumerazione, non
 duplicare una frase. È DRY applicato correttamente al **testo** e scorrettamente al **significato**.
 
+## La terza istanza, colta **prima** di spedirla (2026-07-29, stesso giorno)
+
+Le prime due sono state trovate da un nodo a valle, a difetto già rilasciato. La terza è stata evitata
+in fase di `plan`, ponendo alla lettera la domanda di questa pagina.
+
+**Il riuso proposto**: per riconoscere che «una voce di giornale è stata aggiunta», riusare la regex
+`^## \[[^\]]*\]\s+(?P<op>\S+)` che vive in `distill-floor.py` — codice nostro, funzionante, testato.
+
+**Il presupposto che avrebbe portato con sé**: che l'intestazione di una voce **abbia quella forma**.
+Verificando invece di assumere: `registry.py:87` costruisce l'intestazione con
+`profile.log_format.format(date=…, op=…, title=…)`, e **`log_format` è un campo del profilo
+dell'ospite**. La regex è corretta *per il nostro giornale* e falsa per chiunque configuri il proprio.
+
+**Perché sarebbe stato il peggiore dei tre**: nessun errore. Su un ospite con un formato diverso non
+sarebbe esploso nulla — semplicemente **zero voci riconosciute**, quindi copertura sempre vuota, quindi
+**gate cieco**. Cioè il difetto che quel lavoro stava chiudendo, reintrodotto dal proprio rimedio, e
+invisibile esattamente sugli ospiti e non su di noi.
+
+> Il riuso più pericoloso non è quello sciatto: è quello di un artefatto **buono**, preso da un
+> contesto in cui una variabile era **una costante**.
+
+**Come è finita**: il disegno è cambiato per evitarlo del tutto. Fondando la copertura sull'**identità
+del contenuto** invece che sui path, una copertura vecchia porta un contenuto vecchio che non combacia
+e **scade da sé** — quindi non serve più sapere quali voci siano recenti, e non serve leggere le
+intestazioni. Il presupposto non è stato reso esplicito: è stato reso **non necessario**, che è la
+terza via oltre a *separare* e *dichiarare*.
+
+*Nota utile a chi rilegge:* `distill-floor.py` conserva la regex cablata e quindi lo **stesso difetto
+latente** su un ospite con `log_format` diverso. È rimasto fuori scope per deliberazione, non per
+distrazione.
+
+### La terza via, confermata in esercizio — e dove va messo il compromesso
+
+La pagina proponeva due rimedi, *separare* e *rendere esplicito*. Dall'istanza sopra ne è emersa una
+terza: **rendere il presupposto non necessario**. Implementando si è visto **quanto** paga — fondare la
+copertura sull'identità del contenuto ha fatto cadere insieme, senza una riga per ciascuno, il bisogno
+di riconoscere «quali voci sono recenti», il parsing delle intestazioni e tre casi limite distinti.
+
+> Quando un presupposto non si può dichiarare onestamente, spesso il disegno che non ne ha bisogno è
+> anche **più piccolo** di quello che lo gestisce.
+
+Ma il presupposto è **tornato, ristretto**, e la restrizione è il vero contenuto: distinguere «voce che
+precede la capacità» da «nessuna voce» richiede pur sempre di sapere che forma ha un'intestazione. Non
+era eliminabile del tutto — era eliminabile **dalla logica principale** e confinabile nel **shim di
+compatibilità**, dove è *derivato* dalla configurazione dell'ospite invece che cablato. Stessa sorte per
+la data: sparita dal cuore, sopravvive solo nel shim, che per definizione deve riprodurre il
+comportamento vecchio.
+
+Non è un compromesso mancato: è **dove un compromesso va messo** — in un pezzo che si estingue da sé,
+non nel meccanismo che resta.
+
 ## Perché è difficile da vedere
 
 - **Nessuna delle due parti è sbagliata**, quindi né una code review della definizione né una del punto

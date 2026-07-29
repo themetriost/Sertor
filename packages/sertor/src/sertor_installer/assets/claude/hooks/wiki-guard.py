@@ -102,7 +102,23 @@ def main() -> None:
         _hooklib.write_breadcrumb("wiki-guard", "sertor-wiki-tools scan unavailable or failed")
         return  # fail open
 
-    if not scan or scan.get("schema") != "wiki.scan/1" or int(scan.get("pending", 0)) <= 0:
+    if not scan or scan.get("schema") != "wiki.scan/1":
+        return  # unknown contract → fail open
+
+    # A `pending: 0` is a claim about the world ONLY when the determination succeeded. When it did
+    # not, "nothing to record" and "I could not look" are indistinguishable — so DECLARE it instead
+    # of reading it as clean. It still does NOT block: an unreadable environment must not make the
+    # session unclosable (the deadlock lesson of E10-FEAT-045), and a gate you cannot satisfy is one
+    # people learn to work around.
+    if scan.get("determination") == "failed":
+        _hooklib.write_breadcrumb(
+            "wiki-guard",
+            "could not determine pending work "
+            f"({scan.get('determination_reason') or 'unknown'}) — verdict NOT clean, not blocking",
+        )
+        return
+
+    if int(scan.get("pending", 0)) <= 0:
         return  # nothing pending (read-only / question session) → do not block
 
     reason = _reason(
