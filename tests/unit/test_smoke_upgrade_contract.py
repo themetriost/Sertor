@@ -80,3 +80,43 @@ def test_the_starting_release_is_derived_not_hardcoded():
         assert not literals, (
             f"{name}: hardcoded version literal(s) {literals} — derive the ref instead"
         )
+
+
+# --- the guard born from a defect this feature introduced ---------------------------------------
+
+def test_every_needs_output_reference_names_a_declared_output():
+    """A reference to a non-existent job output makes a job SKIP — silently.
+
+    Born from a real defect in this very feature: `upgrade-smoke` was gated on
+    ``needs.changes.outputs.relevant`` while the declared output is ``smoke``. GitHub Actions
+    resolves the unknown name to an empty string, the `||` chain turns false, and the job is skipped
+    with no error and no warning — a gate that verifies nothing while the run looks fine.
+
+    It is the same failure shape the upgrade smoke exists to catch — an operation that succeeds and
+    does nothing — and it happened *inside* the mechanism built to catch it. Hence this guard.
+    """
+    import re
+
+    import yaml
+
+    workflows = (Path(__file__).resolve().parents[2] / ".github" / "workflows")
+    offenders: list[str] = []
+    for path in sorted(workflows.glob("*.yml")):
+        spec = yaml.safe_load(path.read_text(encoding="utf-8"))
+        jobs = (spec or {}).get("jobs") or {}
+        declared = {
+            job_id: set((job or {}).get("outputs", {}) or {})
+            for job_id, job in jobs.items()
+        }
+        for job_id, job in jobs.items():
+            for producer, name in re.findall(
+                r"needs\.([A-Za-z0-9_-]+)\.outputs\.([A-Za-z0-9_-]+)",
+                yaml.safe_dump(job or {}),
+            ):
+                if name not in declared.get(producer, set()):
+                    have = sorted(declared.get(producer, set())) or "no outputs"
+                    offenders.append(
+                        f"{path.name}:{job_id} references "
+                        f"needs.{producer}.outputs.{name}, but '{producer}' declares {have}"
+                    )
+    assert not offenders, "job outputs referenced but never declared:\n" + "\n".join(offenders)

@@ -205,9 +205,13 @@ jobs:
   upgrade-smoke:
     name: upgrade smoke (ubuntu / claude)
     needs: changes
+    # Same condition as `smoke` above, and it must stay the same: the output is named `smoke`, not
+    # `relevant`. Referencing a non-existent output yields an empty string, the `||` chain is false,
+    # and the job is SKIPPED — no error, no warning, a gate that verifies nothing while looking fine.
+    # That is exactly the failure shape this whole feature exists to catch, and it happened here first.
     if: >-
       github.event_name == 'push' || github.event_name == 'workflow_dispatch' ||
-      needs.changes.outputs.relevant == 'true'
+      (github.event_name == 'pull_request' && needs.changes.outputs.smoke == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
