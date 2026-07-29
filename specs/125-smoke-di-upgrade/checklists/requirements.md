@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain — **3 aperti (Q1 punto di partenza · Q2 perimetro · Q3 release precedente non determinabile)**
+- [x] No [NEEDS CLARIFICATION] markers remain — **tutte e tre risolte il 2026-07-29 (decisione utente)**
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,10 +31,16 @@
 
 ## Notes
 
-- **Le tre domande sono decisioni di costo/copertura, non lacune di analisi.** Ognuna sposta il
-  rapporto fra quanto si copre e quanto si paga a ogni rilascio, e nessuna ha un default derivabile
-  dal contesto: Q1 decide se si prova il percorso su cui il difetto reale è emerso, Q2 quanto
-  perimetro resta eseguibile, Q3 il verso dell'errore quando l'ambiente non collabora.
+- **Le tre domande erano decisioni di costo/copertura, e sono state sciolte così:** Q1 → ultima
+  release per tutti **+ un salto lungo su una combinazione**, con la matrice esaustiva promossa a
+  verifica **una tantum** a sé (E15-FEAT-014); Q2 → **due verifiche distinte**, automatica leggera al
+  rilascio e completa a richiesta; Q3 → **decaduta**, perché con Q1 la partenza è sempre l'ultima
+  release, che esiste per costruzione — il residuo (riferimento momentaneamente irraggiungibile) è un
+  impedimento d'ambiente, già coperto da FR-011.
+- **La risposta a Q2 è migliore delle tre opzioni che avevo proposto.** Le mie erano tutte
+  *«scegli un perimetro»*; separare **quando** si esegue da **quanto** si copre scioglie il rischio R-1
+  senza rinunciare alla copertura: il gate che deve sempre girare resta economico, e la copertura piena
+  resta disponibile a richiesta invece di essere sacrificata.
 - **SC-001 è il criterio che rende la feature falsificabile**: non «esiste un test d'aggiornamento» ma
   «un test che, se fosse esistito, avrebbe fermato **questi** sette difetti» — e ne bastano cinque.
 - **SC-004 nasce da un difetto reale**: l'aggiornamento **usciva con successo** mentre non spostava il

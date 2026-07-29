@@ -84,10 +84,8 @@ modifica verrebbe aggirato; uno assente al rilascio non protegge nulla. Ha prior
 
 ### Edge Cases
 
-- **La release precedente non è determinabile** (primo rilascio, riferimento assente) → vedi
-  [NEEDS CLARIFICATION Q3].
 - **Aggiornamento che salta più versioni.** Un ospite reale l'ha fatto (0.3.0 → 0.3.3 in un passo) ed è
-  **la condizione in cui il difetto del riferimento fisso è emerso** → vedi [NEEDS CLARIFICATION Q1].
+  **la condizione in cui il difetto del riferimento fisso è emerso**: almeno una combinazione lo esercita.
 - **Ambiente non disponibile** (rete, strumenti): la verifica deve **dichiararlo** e distinguerlo da un
   difetto, mai passare in silenzio né fallire come se il prodotto fosse rotto.
 - **Un esito nuovo da verificare** emerge da un difetto futuro: aggiungerlo deve essere un gesto ovvio,
@@ -116,14 +114,16 @@ modifica verrebbe aggirato; uno assente al rilascio non protegge nulla. Ha prior
 - **FR-008**: Se un esito asserito diverge, la verifica MUST fallire **nominando** l'esito divergente e
   l'host/assistente su cui è stato osservato.
 - **FR-009**: La verifica MUST coprire ogni assistente supportato.
-- **FR-010**: La verifica MUST essere **vincolante prima della pubblicazione** di un rilascio.
+- **FR-010**: La verifica **automatica** MUST essere vincolante prima della pubblicazione di un rilascio.
 - **FR-011**: La verifica MUST distinguere un fallimento **ambientale** da un difetto di prodotto, e
   MUST NOT presentare il primo come il secondo.
-- **FR-012**: Se la versione precedente non è determinabile, la verifica MUST dichiarare la condizione
-  invece di saltare in silenzio → forma decisa in [NEEDS CLARIFICATION Q3].
-- **FR-013**: Il perimetro della verifica MUST essere quello deciso in [NEEDS CLARIFICATION Q2].
-- **FR-014**: Il punto di partenza dell'aggiornamento MUST essere quello deciso in
-  [NEEDS CLARIFICATION Q1].
+- **FR-012**: Il sistema MUST offrire **due** verifiche distinte: una **automatica**, su perimetro
+  ridotto, eseguita a ogni rilascio; e una **completa**, su tutto il perimetro, **avviabile a
+  richiesta**.
+- **FR-013**: La verifica completa MUST NOT essere richiesta per pubblicare un rilascio, e la sua
+  esclusione dal percorso automatico MUST essere **dichiarata** dove la si documenta.
+- **FR-014**: Ogni combinazione MUST partire dall'**ultima** release pubblicata; **almeno una**
+  combinazione MUST inoltre esercitare un aggiornamento che **salta più versioni**.
 - **FR-015**: L'elenco degli esiti asseriti MUST vivere in un punto dichiarato, così che aggiungerne
   uno dopo un difetto nuovo sia un'aggiunta e non una ristrutturazione.
 
@@ -165,7 +165,9 @@ modifica verrebbe aggirato; uno assente al rilascio non protegge nulla. Ha prior
 - **La verifica riusa la macchina esistente** dell'installazione end-to-end invece di costruirne una
   seconda: quella funziona, è onesta, e le manca **un verbo**, non rigore.
 - **Il costo è reale e va speso dove serve**: due installazioni complete per combinazione, con rete.
-  Il perimetro si sceglie perché il meccanismo resti eseguibile, non perché sia esaustivo.
+  Da qui la separazione fra la verifica automatica (economica, sempre) e quella completa (a richiesta).
+- **Una release precedente esiste sempre**: il progetto ne ha già pubblicate. Se il riferimento non
+  fosse raggiungibile si tratterebbe di un impedimento d'ambiente, non di una release indeterminabile.
 - **Nessuna modifica al comportamento del prodotto**: questa feature **misura**, non cambia
   l'aggiornamento. I difetti che rileverà si chiudono altrove.
 - **Il dogfood non può sostituirla**: il suo runtime insegue l'ultimo stato del codice e non passa mai
@@ -173,7 +175,25 @@ modifica verrebbe aggirato; uno assente al rilascio non protegge nulla. Ha prior
 
 ## Clarifications
 
-### Q1 — Da quale versione parte l'aggiornamento?
+### Sessione 2026-07-29 — tutte e tre risolte (decisione utente)
+
+- **Q1 → opzione C.** Ogni combinazione parte dall'**ultima** release; **una sola** combinazione fa
+  anche un **salto lungo**. *In più:* la matrice esaustiva «ogni versione → l'ultima» è una verifica
+  **una tantum**, non un gate ricorrente → promossa a riga di backlog propria (**E15-FEAT-014**),
+  perché il suo valore è misurare *una volta* quanto indietro reggiamo, non pagarlo a ogni rilascio.
+- **Q2 → due verifiche distinte, non una.** Una **automatica** al rilascio su **una** combinazione
+  (leggera, sempre eseguita) e una **manuale** su **tutte e quattro** (completa, a richiesta). Scioglie
+  il rischio R-1 senza sacrificare la copertura: il gate che deve *sempre* girare resta economico, la
+  copertura piena resta disponibile quando serve — e la sua assenza dal percorso automatico è una
+  scelta dichiarata, non una dimenticanza.
+- **Q3 → decade.** Con Q1 la partenza è **sempre** l'ultima release, che per costruzione esiste. Resta
+  il solo caso in cui il riferimento è **momentaneamente irraggiungibile** (rete), che **non** è una
+  release indeterminabile ma un **impedimento d'ambiente** — già coperto da **FR-011**, che impone di
+  distinguerlo da un difetto di prodotto. **FR-012 rimosso**, il suo residuo assorbito.
+
+---
+
+### Q1 — Da quale versione parte l'aggiornamento? *(storico)*
 
 **Context**: FR-014, ed edge case *«aggiornamento che salta più versioni»*.
 
@@ -184,7 +204,7 @@ modifica verrebbe aggirato; uno assente al rilascio non protegge nulla. Ha prior
 | C | Dall'ultima release **più** un salto lungo, su una **sola** combinazione | Copre entrambi i percorsi pagando il salto lungo una volta sola invece che su tutta la matrice. |
 | Custom | La tua regola | — |
 
-**Your choice**: _[in attesa]_
+**Your choice**: **C** — vedi *Sessione 2026-07-29*.
 
 ### Q2 — Quanto perimetro?
 
@@ -198,7 +218,7 @@ raddoppierebbe come tempo.
 | C | Una combinazione per **assistente**, sulla capacità dove sono nati i difetti | Copre la parità fra assistenti e la superficie che ha prodotto 7 difetti su 7; il resto è dichiarato fuori. |
 | Custom | La tua regola | — |
 
-**Your choice**: _[in attesa]_
+**Your choice**: **due verifiche distinte** — vedi *Sessione 2026-07-29*.
 
 ### Q3 — Quando la release precedente non è determinabile
 
@@ -210,4 +230,4 @@ raddoppierebbe come tempo.
 | B | **Fallisce** | Impossibile ignorarlo, ma un impedimento ambientale bloccherebbe un rilascio legittimo — la stessa forma di difetto che questa giornata ha già pagato due volte. |
 | Custom | La tua regola | — |
 
-**Your choice**: _[in attesa]_
+**Your choice**: **decaduta** — vedi *Sessione 2026-07-29*.
