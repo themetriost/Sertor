@@ -110,6 +110,16 @@ all'àncora, quindi non entra mai in `touched`.
   conseguenza: è il difetto che stiamo chiudendo, reintrodotto dalla porta di servizio.
 - **Q1/B (non copre nulla)** — corretto ma blocca ogni ospite al primo aggiornamento. Scartato in spec.
 
+> **Conseguenza di transizione, osservata sul dogfood e dichiarata invece che nascosta.** La deroga
+> copre la partizione **mai consegnata**. Non copre il caso in cui la partizione di oggi è **già
+> consegnata** e vi si aggiungono voci con il codice vecchio: quelle voci non portano copertura, quindi
+> il lavoro risulta pendente. **Effetto reale:** al primo aggiornamento, un ospite in quella condizione
+> scrive **una** registrazione in più — e quella, essendo prodotta dal codice nuovo, copre tutto il
+> pendente e chiude il caso. *Perché non allargare la deroga:* «partizione consegnata poi modificata»
+> è indistinguibile, senza parsare le voci, da «partizione consegnata e solo ritoccata» — che **deve**
+> restare pendente, altrimenti si riapre il difetto principale. Si è preferita una richiesta in più a
+> una cecità in più.
+
 ---
 
 ## R5 — Dichiarare una determinazione fallita senza reintrodurre il deadlock
