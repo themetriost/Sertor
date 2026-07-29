@@ -74,6 +74,16 @@ def main() -> None:
         _hooklib.write_breadcrumb("wiki-pending-check", "sertor-wiki-tools scan unavailable or failed")
         return
 
+    # Same reasoning as `wiki-guard`: "nothing pending" and "could not look" must not collapse into
+    # the same silence. This one only reminds, so it declares and stays quiet otherwise.
+    if scan and scan.get("determination") == "failed":
+        _hooklib.write_breadcrumb(
+            "wiki-pending-check",
+            "could not determine pending work "
+            f"({scan.get('determination_reason') or 'unknown'}) — verdict NOT clean",
+        )
+        return
+
     if not scan or scan.get("schema") != "wiki.scan/1" or int(scan.get("pending", 0)) <= 0:
         return
 

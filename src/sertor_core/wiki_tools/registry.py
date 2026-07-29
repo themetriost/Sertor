@@ -18,8 +18,11 @@ from pathlib import Path
 
 from sertor_core.domain.errors import ConfigError
 from sertor_core.observability.logging import log_event
+from sertor_core.wiki_tools import coverage
 from sertor_core.wiki_tools.contracts import AppendLogResult, MigrateResult, UpsertIndexResult
 from sertor_core.wiki_tools.profile import WikiProfile
+from sertor_core.wiki_tools.scan import DETERMINATION_OK, scan
+from sertor_core.wiki_tools.vcs import content_ids
 
 _PARTITION_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _ENTRY_HEADING = re.compile(r"^## \[(\d{4}-\d{2}-\d{2})\]")
@@ -69,6 +72,26 @@ def _append_block(path: Path, block: str) -> None:
     path.write_text(prefix + block.rstrip() + "\n", encoding="utf-8")
 
 
+def _derive_coverage(profile: WikiProfile) -> list[coverage.CoveredItem]:
+    """What the entry about to be written covers: the work that is pending right now.
+
+    Derived, never asked of the caller (Principle XIV): whoever writes an entry should not have to
+    declare what it is about, and a declaration that can drift from reality is exactly the copy this
+    project keeps paying for.
+
+    Returns an empty list whenever the pending work cannot be established — a host without version
+    control, or a determination that failed. Claiming coverage we could not verify would be worse
+    than claiming none: it would silently switch the gate off, which is the defect being fixed.
+    """
+    result = scan(profile)
+    if result.determination != DETERMINATION_OK or not result.pending_paths:
+        return []
+    ids = content_ids(list(result.pending_paths), profile.config_dir)
+    if ids is None:
+        return []
+    return [(path, ids[path]) for path in result.pending_paths]
+
+
 def append_log(
     profile: WikiProfile,
     op: str,
@@ -87,6 +110,14 @@ def append_log(
     heading = profile.log_format.format(date=day.isoformat(), op=op, title=title)
     entry = heading if not body else f"{heading}\n\n{body.strip()}"
 
+    # Derive coverage BEFORE writing (E10-FEAT-062). The order is what makes several entries in one
+    # day compose without a rule: the first covers what is pending now, so by the time the second is
+    # written the first coverage already applies and the second covers only the delta.
+    covered = _derive_coverage(profile)
+    block = coverage.serialize(covered)
+    if block:
+        entry = f"{entry}\n\n{block}"
+
     target, created = _target_log(profile, day)
     rel = _rel_to_root(profile, target)
     existing_lines = {
@@ -102,7 +133,7 @@ def append_log(
         update_log_index(profile)
     log_event(logging.INFO, "registry", profile=profile.profile, target="log",
               action="append", partition=rel)
-    return AppendLogResult(written=True, partition=rel, created=created)
+    return AppendLogResult(written=True, partition=rel, created=created, covered=len(covered))
 
 
 def update_log_index(profile: WikiProfile) -> bool:

@@ -340,3 +340,206 @@ def test_repository_whose_log_was_never_committed_declares_the_reason(tmp_path):
     assert result.anchor_kind == ANCHOR_MTIME
     assert result.anchor_fallback_reason == REASON_LOG_NEVER_COMMITTED
     assert result.anchor_ref is None
+
+
+# --- E10-FEAT-062: coverage instead of presence -------------------------------------------------
+# These exercise the REAL path (`append_log` writes the coverage) rather than hand-written journals:
+# a hand-written entry carries no coverage block and would exercise the compatibility shim instead
+# of the feature itself.
+
+import importlib  # noqa: E402
+from datetime import date  # noqa: E402
+
+from sertor_core.wiki_tools.coverage import parse as _parse_coverage  # noqa: E402
+from sertor_core.wiki_tools.registry import append_log  # noqa: E402
+from sertor_core.wiki_tools.scan import DETERMINATION_FAILED, DETERMINATION_OK  # noqa: E402
+
+_scan_mod = importlib.import_module("sertor_core.wiki_tools.scan")
+
+
+def _host_git(tmp_path):
+    """A host whose journal HAS been delivered, so `scan` runs in derived (git) mode.
+
+    Without a committed journal the anchor falls back to the declared proxy and the coverage branch
+    is never exercised — the tests would pass while testing nothing.
+    """
+    host = _host(tmp_path)
+    _write_log(host, "2026-07-01")
+    _run(host, "add", "-A")
+    _run(host, "commit", "-qm", "journal delivered")
+    return host
+
+
+def _record(host, title="voce"):
+    return append_log(_profile(host), "record", title)
+
+
+def test_work_authored_after_a_recording_comes_back_pending(tmp_path):
+    """Scenario G — the defect itself: writing the entry switched the gate off for the day."""
+    host = _host_git(tmp_path)
+    (host / "src" / "prima.py").write_text("a = 1\n", encoding="utf-8")
+    _record(host, "copre prima.py")
+
+    (host / "src" / "dopo.py").write_text("b = 2\n", encoding="utf-8")
+
+    result = scan(_profile(host))
+    assert result.pending == 1
+    assert result.pending_paths == ["src/dopo.py"]
+    assert result.legacy_coverage == 0
+
+
+def test_a_recording_covers_what_existed_when_it_was_written(tmp_path):
+    host = _host_git(tmp_path)
+    (host / "src" / "prima.py").write_text("a = 1\n", encoding="utf-8")
+    res = _record(host)
+    assert res.covered == 1
+    assert scan(_profile(host)).pending == 0
+
+
+def test_an_item_recorded_then_edited_again_is_pending(tmp_path):
+    """Coverage is about content: the same path with new content is not the same work."""
+    host = _host_git(tmp_path)
+    (host / "src" / "f.py").write_text("a = 1\n", encoding="utf-8")
+    _record(host)
+    assert scan(_profile(host)).pending == 0
+
+    (host / "src" / "f.py").write_text("a = 2\n", encoding="utf-8")
+    assert scan(_profile(host)).pending_paths == ["src/f.py"]
+
+
+def test_two_recordings_in_one_day_compose_by_union(tmp_path):
+    host = _host_git(tmp_path)
+    (host / "src" / "uno.py").write_text("a = 1\n", encoding="utf-8")
+    first = _record(host, "prima")
+    (host / "src" / "due.py").write_text("b = 2\n", encoding="utf-8")
+    second = _record(host, "seconda")
+
+    assert first.covered == 1
+    assert second.covered == 1  # only the delta, because the first coverage already applies
+    assert scan(_profile(host)).pending == 0
+
+
+def test_an_empty_partition_does_not_satisfy_the_gate(tmp_path):
+    """H/I: an empty partition is not a recording — it must not earn the compatibility rule."""
+    host = _host_git(tmp_path)
+    (host / "src" / "f.py").write_text("a = 1\n", encoding="utf-8")
+    (host / "wiki" / "log" / (_today() + ".md")).write_text("", encoding="utf-8")
+
+    result = scan(_profile(host))
+    assert result.pending == 1
+    assert result.legacy_coverage == 0
+
+
+def test_a_whitespace_touch_does_not_satisfy_the_gate(tmp_path):
+    """J: the partition exists and is touched, but nothing was written."""
+    host = _host_git(tmp_path)
+    _write_log(host, _today())
+    _run(host, "add", "-A")
+    _run(host, "commit", "-qm", "log today")
+    (host / "src" / "f.py").write_text("a = 1\n", encoding="utf-8")
+    partition = host / "wiki" / "log" / (_today() + ".md")
+    partition.write_text(partition.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+
+    assert scan(_profile(host)).pending == 1
+
+
+def test_a_second_session_is_not_covered_by_the_first(tmp_path):
+    """R3: two sessions share the day's partition; one recording must not cover the other's work."""
+    host = _host_git(tmp_path)
+    (host / "src" / "sessione1.py").write_text("a = 1\n", encoding="utf-8")
+    _record(host, "sessione 1")
+    (host / "src" / "sessione2.py").write_text("b = 2\n", encoding="utf-8")
+
+    assert scan(_profile(host)).pending_paths == ["src/sessione2.py"]
+
+
+def test_committed_unrecorded_work_is_covered_then_new_work_is_not(tmp_path):
+    """F: already-delivered work is pending until a recording covers it — and only that."""
+    host = _host_git(tmp_path)
+    (host / "src" / "consegnato.py").write_text("a = 1\n", encoding="utf-8")
+    _run(host, "add", "-A")
+    _run(host, "commit", "-qm", "work, unrecorded")
+    (host / "src" / "altro.py").write_text("b = 2\n", encoding="utf-8")
+    _record(host, "copre entrambi")
+
+    assert scan(_profile(host)).pending == 0
+    (host / "src" / "terzo.py").write_text("c = 3\n", encoding="utf-8")
+    assert scan(_profile(host)).pending_paths == ["src/terzo.py"]
+
+
+def test_coverage_does_not_depend_on_the_partition_date(tmp_path):
+    """The date is the file's name, not a rule: coverage in another day's partition still counts."""
+    host = _host_git(tmp_path)
+    (host / "src" / "f.py").write_text("a = 1\n", encoding="utf-8")
+    append_log(_profile(host), "record", "voce datata prima", on_date=date(2026, 7, 15))
+
+    assert scan(_profile(host)).pending == 0
+
+
+# --- compatibility rule (declared, narrow, self-extinguishing) -----------------------------------
+
+
+def test_legacy_undelivered_entry_is_honoured_AND_declared(tmp_path):
+    """An entry written before coverage existed keeps working — and the derogation is visible."""
+    host = _host_git(tmp_path)
+    (host / "src" / "f.py").write_text("a = 1\n", encoding="utf-8")
+    _write_log(host, _today())  # never delivered, an entry with NO coverage block
+
+    result = scan(_profile(host))
+    assert result.pending == 0
+    assert result.legacy_coverage == 1, "la deroga deve essere dichiarata, non implicita"
+
+
+def test_a_delivered_legacy_entry_grants_no_derogation(tmp_path):
+    """Once delivered the anchor moves past it: the shim extinguishes itself."""
+    host = _host_git(tmp_path)
+    _write_log(host, _today())
+    _run(host, "add", "-A")
+    _run(host, "commit", "-qm", "log today")
+    (host / "src" / "f.py").write_text("a = 1\n", encoding="utf-8")
+
+    result = scan(_profile(host))
+    assert result.pending == 1
+    assert result.legacy_coverage == 0
+
+
+# --- determination: a clean verdict cannot come from a failed check ------------------------------
+
+
+def test_a_failed_check_is_declared_not_reported_as_clean(tmp_path, monkeypatch):
+    """US2: `pending == 0` is a claim about the world ONLY when the determination succeeded."""
+    host = _host_git(tmp_path)
+    (host / "src" / "f.py").write_text("a = 1\n", encoding="utf-8")
+
+    real = _scan_mod.run_git
+
+    def flaky(args, cwd, **kwargs):
+        if args and args[0] in {"diff", "status"}:
+            return 128, ""  # git: "Unable to create index.lock: File exists"
+        return real(args, cwd, **kwargs)
+
+    monkeypatch.setattr(_scan_mod, "run_git", flaky)
+    result = scan(_profile(host))
+    assert result.determination == DETERMINATION_FAILED
+    assert result.determination_reason
+    assert result.schema == "wiki.scan/1"  # never bumped, even on the failure path
+
+
+def test_counter_proof_the_same_tree_with_git_healthy_reports_the_work(tmp_path):
+    """The other half of the previous test: that `0` was NOT the truth."""
+    host = _host_git(tmp_path)
+    (host / "src" / "f.py").write_text("a = 1\n", encoding="utf-8")
+
+    result = scan(_profile(host))
+    assert result.determination == DETERMINATION_OK
+    assert result.pending == 1
+
+
+def test_the_coverage_block_lands_in_the_journal(tmp_path):
+    """US3: the recording says what it covers, in the artefact itself."""
+    host = _host_git(tmp_path)
+    (host / "src" / "f.py").write_text("a = 1\n", encoding="utf-8")
+    _record(host)
+
+    text = (host / "wiki" / "log" / (_today() + ".md")).read_text(encoding="utf-8")
+    assert {path for path, _ in _parse_coverage(text)} == {"src/f.py"}

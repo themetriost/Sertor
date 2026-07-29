@@ -32,7 +32,7 @@ _IN_SCOPE = (
 )
 _ALLOW = frozenset({
     "RAG", "CLI", "MCP", "API", "JSON", "JSONL", "YAML", "TOML",
-    "URL", "NL", "POSIX", "HTTP", "SDLC", "MRR", "STOP", "PASS", "FAIL", "PATH",
+    "URL", "NL", "POSIX", "HTTP", "SDLC", "MRR", "STOP", "PASS", "FAIL", "PATH", "HTML",
 })
 _EVAL = (
     "rag/skills/eval-suite-author/SKILL.md",

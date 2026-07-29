@@ -47,6 +47,13 @@ class ScanResult:
     pending_paths: list[str] = field(default_factory=list)  # WHICH files, not just how many
     pending_truncated: int = 0                # how many are left out of the list
     stale_recording: str | None = None        # uncommitted log partition from another day, if any
+    # --- additive (E10-FEAT-062) ---
+    # `pending == 0` is a claim about the world ONLY when determination == "ok". With "failed" it
+    # means "I could not look", which used to be indistinguishable from "there is nothing".
+    determination: str = "ok"                 # "ok" | "failed"
+    determination_reason: str | None = None   # non-null iff determination == "failed"
+    # recordings honoured for compatibility — declared, not implied
+    legacy_coverage: int = 0
     schema: str = SCAN_SCHEMA
 
     def to_dict(self) -> dict:
@@ -135,6 +142,11 @@ class AppendLogResult:
     written: bool
     partition: str | None
     created: bool
+    # --- additive (E10-FEAT-062) ---
+    # How many work items the entry declared itself about. Makes the write observable: without it
+    # the
+    # only way to know what was recorded would be to re-read the file.
+    covered: int = 0
     schema: str = "wiki.append_log/1"
 
     def to_dict(self) -> dict:

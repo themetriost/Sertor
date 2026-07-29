@@ -20,7 +20,7 @@ import subprocess
 from pathlib import Path
 
 
-def run_git(args: list[str], cwd: Path) -> tuple[int, str]:
+def run_git(args: list[str], cwd: Path, *, stdin: str | None = None) -> tuple[int, str]:
     """Run `git <args>` at `cwd`; return `(returncode, stdout)`.
 
     Never raises: a missing binary, a non-repository, or any git error all surface as a non-zero
@@ -29,6 +29,7 @@ def run_git(args: list[str], cwd: Path) -> tuple[int, str]:
     try:
         proc = subprocess.run(
             ["git", *args], cwd=str(cwd), capture_output=True, text=True, encoding="utf-8",
+            input=stdin,
         )
     except OSError:
         return 1, ""
@@ -55,6 +56,38 @@ def is_repository(cwd: Path) -> bool:
     """
     rc, out = run_git(["rev-parse", "--is-inside-work-tree"], cwd)
     return rc == 0 and out.strip() == "true"
+
+
+def content_ids(paths: list[str], cwd: Path) -> dict[str, str] | None:
+    """Content identity of each path **as it is on disk**, or `None` if it cannot be determined.
+
+    Identity of the *content*, not of the commit: it is what makes a coverage expire on its own once
+    the file changes again, and it works on content that was never committed — which is the normal
+    state of a session in progress.
+
+    One process for N paths (`--stdin-paths`), not one per path: this runs at the end of every turn,
+    where the dominant cost is process startup. A path that is not a file gets `ABSENT`, because a
+    deletion is work and must be coverable.
+
+    Returns `None` — never a partial or empty dict — when git cannot answer. Fabricating an empty
+    result here is exactly the silent degradation this feature removes: the caller must be able to
+    say
+    "I could not look" instead of "there is nothing".
+    """
+    from sertor_core.wiki_tools.coverage import ABSENT
+
+    on_disk = [p for p in paths if (cwd / p).is_file()]
+    ids = {p: ABSENT for p in paths}
+    if not on_disk:
+        return ids
+    rc, out = run_git(["hash-object", "--stdin-paths"], cwd, stdin="\n".join(on_disk) + "\n")
+    if rc != 0:
+        return None
+    hashed = out.strip().splitlines()
+    if len(hashed) != len(on_disk):
+        return None  # a partial answer is not an answer
+    ids.update(dict(zip(on_disk, (h.strip() for h in hashed), strict=True)))
+    return ids
 
 
 def repo_prefix(cwd: Path) -> str:

@@ -69,6 +69,26 @@ terza via oltre a *separare* e *dichiarare*.
 latente** su un ospite con `log_format` diverso. È rimasto fuori scope per deliberazione, non per
 distrazione.
 
+### La terza via, confermata in esercizio — e dove va messo il compromesso
+
+La pagina proponeva due rimedi, *separare* e *rendere esplicito*. Dall'istanza sopra ne è emersa una
+terza: **rendere il presupposto non necessario**. Implementando si è visto **quanto** paga — fondare la
+copertura sull'identità del contenuto ha fatto cadere insieme, senza una riga per ciascuno, il bisogno
+di riconoscere «quali voci sono recenti», il parsing delle intestazioni e tre casi limite distinti.
+
+> Quando un presupposto non si può dichiarare onestamente, spesso il disegno che non ne ha bisogno è
+> anche **più piccolo** di quello che lo gestisce.
+
+Ma il presupposto è **tornato, ristretto**, e la restrizione è il vero contenuto: distinguere «voce che
+precede la capacità» da «nessuna voce» richiede pur sempre di sapere che forma ha un'intestazione. Non
+era eliminabile del tutto — era eliminabile **dalla logica principale** e confinabile nel **shim di
+compatibilità**, dove è *derivato* dalla configurazione dell'ospite invece che cablato. Stessa sorte per
+la data: sparita dal cuore, sopravvive solo nel shim, che per definizione deve riprodurre il
+comportamento vecchio.
+
+Non è un compromesso mancato: è **dove un compromesso va messo** — in un pezzo che si estingue da sé,
+non nel meccanismo che resta.
+
 ## Perché è difficile da vedere
 
 - **Nessuna delle due parti è sbagliata**, quindi né una code review della definizione né una del punto
