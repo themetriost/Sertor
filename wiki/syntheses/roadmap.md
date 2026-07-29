@@ -17,6 +17,16 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 ## ⚡ Executive summary (stato al 2026-07-29)
 
 ### 🔄 In progress
+
+> 🚫 **VINCOLO DI RILASCIO ATTIVO (decisione utente 2026-07-29).** **Non si rilascia** — nessun bump di
+> `/VERSION`, nessun tag, nessuna Release, nessun annuncio — finché **E15-FEAT-012 non è conclusa** e i
+> **tre riscontri di *Acta* del 29/07** non sono stati verificati **con i nuovi gate della 012**, cioè
+> su un ospite che **aggiorna**. Il merge su `master` non è bloccato: la consegna resta separata dal
+> rilascio. *Perché:* i tre fix sono provati **da noi**, non su chi li riceve — ed è la lezione di
+> E10-FEAT-031/032, dove ciò che contava non era il merge ma **l'arrivo**. Ricordiamoci anche che per
+> gli ospiti **il rilascio è il bump di `/VERSION` su `master`**, non il tag (scoperto stamattina):
+> quindi il vincolo morde sul bump, prima ancora che sull'annuncio.
+
 **🔴 P0 MISURATO — E15-FEAT-012: testiamo l'installazione, spediamo aggiornamenti** · *dove:* **requisiti EARS su `master`** (merge `8e8c653`/PR #253) in `requirements/fedelta-dogfood/smoke-di-upgrade/` — 11 requisiti, 7 criteri, 5 domande aperte · *prossimo passo:* **`specify`** · *decisione aperta:* se costruirla ora o dopo la 062.
 - **La misura, su 20 riscontri dal campo** (16/07→29/07, ~14 difetti reali): **1 solo nel core**, **13 nella superficie di consegna** (7 installer/upgrade/pin · 3 hook · 3 wiki tooling · 1 asset). I test stanno dall'altra parte: 1385 sotto `tests/`, quasi tutti sul core.
 - **La causa in una riga:** lo smoke end-to-end esiste e gira su 4 matrici, ma **installa su host pulito**. Non esiste **alcun** test che parta dalla release precedente e aggiorni — e tutti e 7 i difetti dell'installer richiedono un'installazione **preesistente più vecchia** per manifestarsi. Un'installazione da zero non può vederne nessuno, *per costruzione*. Ecco perché li trova sempre un nodo a valle: **nemmeno il dogfood aggiorna** (re-lock che insegue HEAD, mai da versione a versione).
