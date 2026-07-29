@@ -3,8 +3,8 @@ title: Identità per presenza o per contenuto
 type: concept
 tags: [idempotenza, installer, guardie, difetti, pattern-diagnostico, principio-vi, e10]
 created: 2026-07-24
-updated: 2026-07-27
-sources: ["src/sertor_core/composition.py", "src/sertor_core/observability/capture.py", "packages/sertor-install-kit/src/sertor_install_kit/", "wiki/log/2026-07-24.md"]
+updated: 2026-07-29
+sources: ["src/sertor_core/composition.py", "src/sertor_core/observability/capture.py", "src/sertor_core/wiki_tools/scan.py", "packages/sertor-install-kit/src/sertor_install_kit/", "wiki/log/2026-07-24.md"]
 ---
 
 # Identità per presenza o per contenuto
@@ -83,6 +83,43 @@ Trovato al **primo uso reale del gate appena consegnato**, contro il suo stesso 
 escludendolo dai commit per abitudine. Era vero — ma lo sapevo per assunzione, non per misura, e
 finché resta un'assunzione non può diventare una **regola nel codice**. La verifica è costata un
 comando.
+
+## La quinta istanza, la peggiore: **un via libera che sembra pulizia** (2026-07-29)
+
+Il gate della freschezza del wiki (`scan` → hook `wiki-guard`) chiede *«c'è lavoro non registrato?»*.
+La decisione **A-2** voleva che una voce di giornale **non committata** valesse — giusto: il gate chiede
+se hai *registrato*, non se hai *committato*. È stata implementata così:
+
+```python
+recorded_today = today is not None and today in worktree   # identità: data + PRESENZA del file
+pending_paths = ([] if recorded_today else [...])          # azzeramento GLOBALE
+```
+
+Verifica la **presenza di una registrazione**, non la **copertura del lavoro**. Conseguenza misurata:
+**otto scenari distinti** di lavoro non registrato riportano `pending: 0`, con **una sola causa**. Il
+gate non richiede nemmeno una *voce* — un file **vuoto**, o una **riga vuota** appesa, lo soddisfano.
+
+> **Chi soddisfa la regola la disattiva.** Il rituale prescrive di scrivere la voce di giornale; nel
+> momento in cui la scrivi, il gate smette di vedere tutto il lavoro successivo — nella finestra esatta
+> in cui lo `Stop` lo interroga.
+
+**Perché è la peggiore delle cinque:** le prime tre producono un no-op che *sembra* un successo, la
+quarta lavoro dichiarato dove non ce n'è. Questa produce **un via libera che sembra pulizia** — e come
+lo formula il nodo *Acta*, che l'ha segnalata: *«un gate che non blocca mai è indistinguibile da un
+gate disinstallato»*.
+
+**E il test la certifica.** `test_todays_uncommitted_entry_satisfies_the_gate_without_a_commit` verifica
+che la voce **ci sia**, non che **copra**: guardia e test condividono la stessa assunzione di identità,
+per questo nessuno dei due ha visto il difetto. È lo stesso schema dell'istanza 2, dove un test
+certificava `--directory`. **Un test scritto dalla stessa mente della guardia ne eredita il confine di
+identità** — non è una verifica indipendente, è la stessa affermazione detta due volte.
+
+*Rimedio in requisito:* la voce dichiara l'**insieme di path che copre**, derivato al momento della
+scrittura; `pending = lavoro − copertura`. La **data sparisce dalla logica** (E10-FEAT-062).
+
+> **Nota che attraversa le istanze:** la 2 e la 5 sono state trovate **da nodi a valle**, non da noi.
+> Il dogfood è **una** configurazione, e la più favorevole per costruzione — vedi il terzo limite in
+> [[dogfood-fidelity]].
 
 ## Perché è insidioso
 
