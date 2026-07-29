@@ -23,7 +23,12 @@ _BUDGETS: dict[tuple[str, str], int] = {
     #                + «parti dalle pagine che riassumono» nel lint semantico (dove guardare prima).
     # SDLC 70 -> 74: + «davanti a un conflitto chiedi cosa manca»
     #                + «"modificato" ha due significati» (`git status` vs `git diff`).
-    ("sertor_installer", "claude-md-block.md"):               92,  # wiki (+guard +boyscout)
+    # 2026-07-29: wiki 92 -> 101, aumento DELIBERATO (segnalazione nodo Acta: `wiki-curator` si
+    #             fermava su un asset PRESENTE perche' il playbook era riferito per nome e non per
+    #             coordinata). + come localizzare il playbook (suffisso stabile / ricerca)
+    #             + «host-agnostico non e' la stessa cosa di risolvibile» nella Definition of Done,
+    #               che e' la regola che propagava il difetto.
+    ("sertor_installer", "claude-md-block.md"):              101,  # wiki (+boyscout +coordinate)
     ("sertor_installer", "rag/claude-md-block-rag-usage.md"): 58,  # RAG   (attuale 49)
     ("sertor_flow",      "claude-md-block-sdlc.md"):          74,  # SDLC  (attuale 74)
 }

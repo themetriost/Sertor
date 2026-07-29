@@ -82,11 +82,20 @@ not deferrable: a step is not closed until both the commit **and** the log entry
 
 **Definition of Done — host-agnostic assets.** Touching a distributable asset (a skill, agent,
 command, instruction block, or its support payload) requires verifying **parity across assistants**:
-the body must stay host-agnostic (no literal assistant paths, no slash-command invocations, payload
-referenced by name) so the SAME body works on every assistant. A step that edits such an asset is not
-done until that parity holds (a parity guard enforces it where available).
+the body must stay host-agnostic (no literal assistant paths, no slash-command invocations) so the SAME
+body works on every assistant. A step that edits such an asset is not done until that parity holds (a
+parity guard enforces it where available).
+
+**Host-agnostic is not the same as resolvable.** Dropping the assistant-specific part of a path is half
+the job: a payload named but not locatable gives the reader *what* to read and no *where*. Say where it
+is in terms that hold everywhere — the **stable suffix** of the path (containers differ, the tail
+usually does not), or an instruction to **search** for it. The test is not "did I avoid a literal
+path?" but **"can a reader who is not already there resolve this?"**, asked from the position of the
+reader with the least context — usually a delegated agent, not you.
 
 For the full list of wiki operations (`record`/`distill`/`ingest`/`query`/`lint`/`reorg`/`generate`/
 `rag-sync`/`structure`), the page conventions (frontmatter, wikilink backlinks, kebab-case naming) and
 the log-entry format, see `wiki-playbook.md` — the single source of truth bundled with the wiki
-capability, read on demand.
+capability, read on demand. It ships inside the `wiki-author` skill: if you are not already in that
+folder, locate it with a search for `**/skills/wiki-author/wiki-playbook.md` rather than assuming a
+path — the container differs per assistant, the `skills/wiki-author/` suffix does not.
