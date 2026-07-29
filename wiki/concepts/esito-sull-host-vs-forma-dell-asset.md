@@ -212,6 +212,40 @@ effettivamente risultante, letta dal runtime**, non «ho fatto».
 > istanza fuori dall'installer (l'idempotenza dell'osservabilità): vedi
 > [[identita-per-presenza-o-per-contenuto]].
 
+## La misura, finalmente (2026-07-29): *testiamo l'installazione, spediamo aggiornamenti*
+
+Questa pagina è del 17/07 e per dodici giorni è rimasta una **tesi**. Il 29/07 è diventata un
+**conteggio**, contando i riscontri della federazione dal 16/07 — 20 riscontri, ~14 difetti reali:
+
+| Dove sta il difetto | Quanti |
+|---|---|
+| installer · upgrade · pin · version-check | **7** |
+| hook (freschezza, duplicazione) | 3 |
+| wiki tooling (scan · gate · lint) | 3 |
+| asset distribuiti | 1 |
+| **core (retrieval, memoria)** | **1** |
+
+**Un difetto su quattordici nel prodotto; tredici nella superficie di consegna.** E i test stanno
+dall'altra parte: 1385 sotto `tests/`, quasi tutti sul core.
+
+**La forma esatta del punto cieco**, che è il contributo nuovo: uno smoke end-to-end **esiste**, gira in
+CI su quattro matrici, ed è onesto — ma **installa su un host pulito**. Non esiste alcun test che parta
+dalla **release precedente** e aggiorni. E tutti e sette i difetti dell'installer **richiedono
+un'installazione preesistente più vecchia** per manifestarsi: il pin che non si muove, il comando
+d'upgrade rotto su chi pinna, gli hook duplicati al ri-cablaggio, `--directory` conservato perché
+«c'era già», il present-divergent che blocca fix già rilasciati, il falso *behind*.
+
+> Un'installazione da zero non può vederne **nessuno**, per costruzione. Testare l'**esito su un host
+> che aggiorna** non è una raffinatezza di questa pagina: è **l'unico** modo in cui quei difetti
+> diventano visibili prima dell'ospite.
+
+E chiude il cerchio sul perché li trova sempre un nodo a valle: **nemmeno il dogfood aggiorna** — il suo
+runtime insegue HEAD con un re-lock, non passa mai da versione a versione (terzo limite di
+[[dogfood-fidelity]]). L'unico che esegue la cosa che spediamo è chi la riceve.
+
+Rimedio tracciato come **E15-FEAT-012**: smoke di **upgrade** come gate di **rilascio**. Sui difetti in
+mano ne avrebbe intercettati **cinque su sette**.
+
 ## Parentele
 
 - È il complemento di [[dogfood-fidelity]]: quella chiede *«giriamo su ciò che gira un ospite?»*,

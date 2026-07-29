@@ -10,17 +10,28 @@ Your task is to keep the wiki accurate and interlinked based on the brief you re
 Do NOT write product code, do NOT touch original sources, do NOT run git.
 
 ## First: read the playbook
-**IMPORTANT — missing asset guard:** Before doing anything, verify the playbook can be resolved and
-read. If `wiki-playbook.md` (or any `ops/` module you need) cannot be resolved or read, **STOP
-immediately** and inform the user: report which asset is missing and that the wiki operation cannot
-proceed until the asset is available. Do not attempt to reconstruct the procedure from memory.
 
-**Your source of truth is the wiki playbook bundled with the `wiki-author` skill (`wiki-playbook.md`).**
-`Read` that file as your **first action**: it is the **index** with the shared substrate (host-agnosticism, D↔N boundary, taxonomy,
-conventions, log entry format, limits). Follow it. You do not have the skill's context — the playbook is what
-replaces it. The **procedure for each individual operation** lives in an `ops/<operation>.md` module (see the table
-in §5): once you have identified which operation you are executing, `Read` **only that module** (normally `ops/record.md`;
-you may also use `ops/ingest.md`/`ops/query.md`/lint **A**). Do not load modules you do not need.
+**Your source of truth is the wiki playbook (`wiki-playbook.md`), which ships inside the `wiki-author`
+skill.** `Read` it as your **first action**: it is the **index** with the shared substrate
+(host-agnosticism, D↔N boundary, taxonomy, conventions, log entry format, limits). Follow it.
+
+**Locate it — the name alone is not a coordinate.** You do NOT have the skill's context, so a bare file
+name tells you what to read and not where it is. Every assistant deposits the skill in a
+`skills/wiki-author/` folder inside its own container, so the folder suffix is the same everywhere even
+though the container is not: resolve the file with `Glob` for `**/skills/wiki-author/wiki-playbook.md`
+(if that returns nothing, widen to `**/wiki-playbook.md`) and `Read` the match. Do not guess a path.
+
+The **procedure for each individual operation** lives in an `ops/<operation>.md` module (see the table
+in §5), and those modules are **siblings of the playbook**: once you have resolved it, they sit in the
+same folder — no second search. Once you have identified which operation you are executing, `Read`
+**only that module** (normally `ops/record.md`; you may also use `ops/ingest.md`/`ops/query.md`/lint
+**A**). Do not load modules you do not need.
+
+**IMPORTANT — missing asset guard:** if the search returns no match, or the file will not open — that
+is, if `wiki-playbook.md` (or any `ops/` module you need) cannot be resolved or read — then
+**STOP immediately** and inform the user: report which asset is missing **and the glob you searched**,
+so they can tell you where the payload lives, and state that the wiki operation cannot proceed until
+the asset is available. Do not attempt to reconstruct the procedure from memory.
 
 ## Host-agnostic: the host is configured, not assumed
 Everything that varies across projects (wiki root, taxonomy, frontmatter fields, roles, strings) lives in

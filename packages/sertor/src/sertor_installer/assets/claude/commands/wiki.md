@@ -6,8 +6,10 @@ argument-hint: "[operation and/or scope, e.g. 'lint', 'generate media', 'distill
 Maintain the project's **LLM Wiki**. The requested scope/operation is whatever you were asked to do
 (if none was specified, consider the relevant work done in this session → `record` operation).
 
-**Single source of truth:** read the wiki playbook bundled with the `wiki-author` skill
-(`wiki-playbook.md`) and **follow it**. It is the **index**
+**Single source of truth:** read the wiki playbook (`wiki-playbook.md`) and **follow it**. It ships
+inside the `wiki-author` skill; you are not in that folder, so **locate it instead of guessing a
+path** — `Glob` for `**/skills/wiki-author/wiki-playbook.md` (widen to `**/wiki-playbook.md` if
+empty), and `Read` the match. It is the **index**
 that defines host-agnosticism, taxonomy, conventions, and the D↔N boundary; the **procedure for each operation**
 lives in an `ops/<operation>.md` module to `Read` on-demand (table in §5). Do not reinvent the rules here.
 
