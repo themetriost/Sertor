@@ -65,6 +65,24 @@ dichiara cosa non copre è più utile di una che tace, perché chi la legge sa d
 5. Quando arriva un guasto nuovo, **aggiungerlo deve essere una riga in più** — se richiede una
    ristrutturazione, l'elenco invecchierà e la guardia proteggerà solo il passato.
 
+## La prima applicazione ha colto il suo autore (2026-07-29, stesso giorno)
+
+Scritto il criterio, l'ho applicato all'implementazione che avevo appena dichiarato finita. Risultato:
+**4 su 7** — sotto il bersaglio di 5. Le cinque asserzioni che avevo scelto coprivano i difetti che
+ricordavo meglio, non i sette che erano avvenuti.
+
+Il difetto scoperto (#5) era invisibile alle asserzioni esistenti per una ragione precisa: l'artefatto
+restava **presente una volta** ma **stantio**, e contare le occorrenze non distingue *«c'è»* da *«è
+quello giusto»* — cioè [[identita-per-presenza-o-per-contenuto]], nella verifica costruita per
+misurare gli altri. Il rimedio è stato leggere il **report dell'aggiornamento**, dove il segnale già
+c'era.
+
+> Il valore del criterio non è nel numero che produce: è che **si può non raggiungerlo**. Un criterio
+> che passa sempre non ha mai misurato niente.
+
+E la parte scomoda: senza calcolarlo avrei consegnato **4 su 7 chiamandolo fatto**, con cinque
+asserzioni che *sembravano* esaustive. Il conteggio è costato dieci minuti e ha cambiato il risultato.
+
 ## Parentele
 
 - [[esito-sull-host-vs-forma-dell-asset]] — dice **dove** guardare (l'esito sull'ospite, non la forma

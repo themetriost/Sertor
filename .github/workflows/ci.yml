@@ -185,4 +185,40 @@ jobs:
         env:
           SERTOR_SMOKE_TARGET: ${{ runner.temp }}/pgntofen
           SERTOR_SMOKE_REF: ${{ github.head_ref || 'master' }}
-        run: uv run pytest -m integration tests/integration/test_host_smoke.py -k "${{ matrix.assistant }}" -v
+        run: uv run pytest -m integration tests/integration/test_host_smoke.py -k "${{ matrix.assistant }} and not upgrade" -v
+
+  # =================================================================================================
+  # UPGRADE smoke (E15-FEAT-012) — the verb the hosts actually run, and that nothing exercised.
+  #
+  # The install smoke above proves a NEW host gets the capability. It cannot prove an EXISTING host
+  # receives it: of ~14 real field defects, 13 sit in the delivery surface and all 7 installer ones
+  # need a pre-existing OLDER installation to show up. A clean host cannot see any of them.
+  #
+  # TWO paths on purpose (Q2). This one is the AUTOMATIC, cheap one: a single combination, so it stays
+  # affordable enough that nobody wants to switch it off — the risk that kills gates. The FULL
+  # perimeter (both assistants, plus a long version jump) lives in `upgrade-smoke-full.yml` and is
+  # triggered on demand; that exclusion is DECLARED here and in docs/, not silently forgotten.
+  #
+  # `fetch-depth: 0` + tags: the starting release is DERIVED from the last tag (Principle XIV applied
+  # to the verification itself) — a list of versions in this file would age like every other copy.
+  # =================================================================================================
+  upgrade-smoke:
+    name: upgrade smoke (ubuntu / claude)
+    needs: changes
+    if: >-
+      github.event_name == 'push' || github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.relevant == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # tags needed to derive the previous release
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Sync workspace (wrapper needs pytest)
+        run: uv sync --all-packages --extra dev
+      - name: Upgrade smoke (previous release → ${{ github.head_ref || 'master' }})
+        env:
+          SERTOR_SMOKE_REF: ${{ github.head_ref || 'master' }}
+        run: uv run pytest -m integration tests/integration/test_host_smoke.py -k "upgrade and claude" -v

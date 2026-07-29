@@ -45,6 +45,8 @@ REF="master"
 TARGET=""
 ASSISTANT="claude"
 CAPABILITY="rag"
+# E15-FEAT-012: ref the host STARTS from. Empty = install-only (behaviour unchanged).
+FROM_REF=""
 
 # Parse: positional REF then TARGET (backward compatible with the pytest wrapper), plus flags.
 _positional=()
@@ -52,8 +54,10 @@ while [ $# -gt 0 ]; do
     case "$1" in
         --assistant)  ASSISTANT="$2"; shift 2;;
         --capability) CAPABILITY="$2"; shift 2;;
+        --from-ref)   FROM_REF="$2"; shift 2;;
         --assistant=*)  ASSISTANT="${1#*=}"; shift;;
         --capability=*) CAPABILITY="${1#*=}"; shift;;
+        --from-ref=*)   FROM_REF="${1#*=}"; shift;;
         *) _positional+=("$1"); shift;;
     esac
 done
@@ -63,10 +67,29 @@ done
 REPO_URL="https://github.com/themetriost/Sertor"
 SERTOR_SOURCE="git+${REPO_URL}@${REF}#subdirectory=packages/sertor"
 FLOW_SOURCE="git+${REPO_URL}@${REF}#subdirectory=packages/sertor-flow"
+IS_UPGRADE=0
+[ -n "$FROM_REF" ] && IS_UPGRADE=1
+FROM_SERTOR_SOURCE="git+${REPO_URL}@${FROM_REF}#subdirectory=packages/sertor"
+FROM_FLOW_SOURCE="git+${REPO_URL}@${FROM_REF}#subdirectory=packages/sertor-flow"
 IS_COPILOT=0
 [ "$ASSISTANT" = "copilot-cli" ] && IS_COPILOT=1
+UPGRADE_OUT=""   # the upgrade report, read by the no-stale-divergence outcome
 
 fail() { echo "SMOKE_FAIL: $1" >&2; exit 1; }
+
+# An environment impediment is NOT a product defect. Collapsing the two teaches people to ignore the
+# gate — the dynamic that made v0.3.3 necessary. Distinct marker AND exit code (parity with .ps1).
+fail_env() { echo "SMOKE_ENV: $1" >&2; exit 2; }
+
+# Every asserted outcome goes through here, so a failure NAMES the outcome and the context (FR-008).
+assert_outcome() {
+    # $1 = outcome name, $2 = 0/1 ok flag, $3 = detail
+    if [ "$2" -eq 1 ]; then
+        echo "[upgrade] OK   $1"
+        return 0
+    fi
+    fail "upgrade outcome '$1' diverged — $3 [assistant=$ASSISTANT capability=$CAPABILITY from=$FROM_REF to=$REF]"
+}
 
 case "$ASSISTANT" in claude|copilot-cli) ;; *) fail "invalid --assistant: $ASSISTANT";; esac
 case "$CAPABILITY" in rag|wiki|flow) ;; *) fail "invalid --capability: $CAPABILITY";; esac
@@ -294,12 +317,131 @@ flow_smoke() {
     echo "SMOKE_OK assistant=$ASSISTANT capability=flow deposit=ok"
 }
 
+# =================================================================================================
+# E15-FEAT-012 — upgrade flow: install the PREVIOUS release, upgrade, assert outcomes on the HOST
+# =================================================================================================
+
+# THE outcome list (FR-015). Every entry exists because a defect really happened: adding one after a
+# new field report must be one more line here, never a restructuring — otherwise the list ages and
+# the guard only protects the past. Kept in parity with `Assert-UpgradeOutcomes` in smoke.ps1.
+assert_upgrade_outcomes() {
+    _cap="$1"
+    _sertor_dir="$HOST/.sertor"
+
+    # 1. The pin moved. Defect: the recorded source stayed at the old version after `upgrade` —
+    #    reported by THREE independent nodes, and the reason v0.3.1 existed.
+    if [ -f "$_sertor_dir/pyproject.toml" ]; then
+        if grep -qF "$FROM_REF" "$_sertor_dir/pyproject.toml"; then
+            assert_outcome "pin-moved" 0 "the runtime source still references '$FROM_REF' in .sertor/pyproject.toml"
+        else
+            assert_outcome "pin-moved" 1 ""
+        fi
+    else
+        echo "[upgrade] n/a  pin-moved (capability '$_cap' creates no runtime)"
+    fi
+
+    # 2. Exactly ONE session automation, and it is the current one. Defect: identity by command string
+    #    made a re-wire look new, so the hook was duplicated (E10-FEAT-032) with the broken copy live.
+    if [ "$IS_COPILOT" -eq 1 ]; then
+        _settings_rel=".github/hooks/sertor-hooks.json"
+    else
+        _settings_rel=".claude/settings.json"
+    fi
+    if [ -f "$HOST/$_settings_rel" ]; then
+        for _stem in rag-freshness wiki-guard memory-capture; do
+            _count="$(grep -oF "$_stem" "$HOST/$_settings_rel" | wc -l | tr -d ' ')"
+            if [ "$_count" -gt 0 ]; then
+                if [ "$_count" -le 2 ]; then
+                    assert_outcome "hook-single:$_stem" 1 ""
+                else
+                    assert_outcome "hook-single:$_stem" 0 "hook '$_stem' appears $_count times in $_settings_rel (duplicated wiring)"
+                fi
+            fi
+        done
+    fi
+
+    # 3. Host-owned configuration preserved. Defect: fixing E2-FEAT-022 nearly zeroed the corpus on
+    #    every upgrade — caught by a MANUAL run, not by the tests.
+    if [ -f "$_sertor_dir/.env" ]; then
+        if grep -qE "SERTOR_CORPUS[[:space:]]*=[[:space:]]*smoke" "$_sertor_dir/.env"; then
+            assert_outcome "host-config-preserved" 1 ""
+        else
+            assert_outcome "host-config-preserved" 0 "SERTOR_CORPUS=smoke is gone from .sertor/.env after the upgrade"
+        fi
+    fi
+
+    # 4. The recorded invocation has the current shape. Defect: `--directory` kept because it "was
+    #    already there" — the RAG resolved the index in the wrong folder for a month.
+    if [ -f "$HOST/.mcp.json" ]; then
+        if grep -qF -- "--directory" "$HOST/.mcp.json"; then
+            assert_outcome "mcp-invocation-shape" 0 "the MCP registration still uses --directory instead of --project"
+        else
+            assert_outcome "mcp-invocation-shape" 1 ""
+        fi
+    fi
+
+    # 5. Nothing was left stale. Defect: `install` is non-destructive and leaves a divergent file in
+    #    place (PRESENT_DIVERGENT) — correct for install, WRONG for upgrade, whose contract is to
+    #    replace our own artefacts. It blocked hook fixes that had already been released. The signal
+    #    is in the upgrade's own report, so reading it costs nothing.
+    if printf '%s' "$UPGRADE_OUT" | grep -qF "PRESENT_DIVERGENT"; then
+        assert_outcome "no-stale-divergence" 0 "the upgrade left an artefact divergent instead of replacing it"
+    else
+        assert_outcome "no-stale-divergence" 1 ""
+    fi
+
+    # 6. Health is green — the catch-all for what the five above do not name.
+    if [ -d "$_sertor_dir" ]; then
+        if _doctor_out="$(uv run --project "$_sertor_dir" sertor-rag doctor 2>&1)"; then
+            assert_outcome "health-green" 1 ""
+        else
+            assert_outcome "health-green" 0 "doctor failed after the upgrade: $_doctor_out"
+        fi
+    fi
+}
+
+upgrade_flow() {
+    _cap="$1"
+    if [ "$_cap" = "flow" ]; then
+        _from_src="$FROM_FLOW_SOURCE"; _to_src="$FLOW_SOURCE"; _exe="sertor-flow"
+    else
+        _from_src="$FROM_SERTOR_SOURCE"; _to_src="$SERTOR_SOURCE"; _exe="sertor"
+    fi
+
+    echo "[upgrade] installing PREVIOUS release $FROM_REF ($_cap / $ASSISTANT) ..."
+    if [ "$_cap" = "rag" ]; then
+        _out="$(cd "$HOST" && uvx --refresh --from "$_from_src" "$_exe" install "$_cap" \
+            --assistant "$ASSISTANT" --backend local --no-rerank --no-graph --corpus smoke \
+            --target "$HOST" 2>&1)" || { echo "$_out"; fail_env "install of previous release '$FROM_REF' failed (ref reachable? network?)"; }
+    else
+        _out="$(cd "$HOST" && uvx --refresh --from "$_from_src" "$_exe" install "$_cap" \
+            --assistant "$ASSISTANT" --target "$HOST" 2>&1)" || { echo "$_out"; fail_env "install of previous release '$FROM_REF' failed (ref reachable? network?)"; }
+    fi
+    echo "$_out"
+
+    echo "[upgrade] upgrading $FROM_REF -> $REF ..."
+    UPGRADE_OUT="$(cd "$HOST" && uvx --refresh --from "$_to_src" "$_exe" upgrade "$_cap" \
+        --assistant "$ASSISTANT" --target "$HOST" 2>&1)" || { echo "$UPGRADE_OUT"; fail "upgrade $_cap failed"; }
+    echo "$UPGRADE_OUT"
+
+    # Exit code 0 is NOT an outcome: `upgrade` used to succeed while moving nothing (SC-004).
+    assert_upgrade_outcomes "$_cap"
+
+    echo ""
+    echo "SMOKE_OK assistant=$ASSISTANT capability=$_cap upgrade=$FROM_REF->$REF"
+}
+
 # 1. Synthetic host (when no TARGET) --------------------------------------------------------------
 if [ "$CREATED_HOST" -eq 1 ]; then
     new_synthetic_host
 fi
 
-# 2. Dispatch to the requested capability ---------------------------------------------------------
+# 2. Dispatch: upgrade flow when a starting ref was given, otherwise the install-only flow ---------
+if [ "$IS_UPGRADE" -eq 1 ]; then
+    upgrade_flow "$CAPABILITY"
+    exit 0
+fi
+
 case "$CAPABILITY" in
     rag)  rag_smoke;;
     wiki) wiki_smoke;;

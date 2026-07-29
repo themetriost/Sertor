@@ -57,20 +57,47 @@ param(
     [ValidateSet("claude", "copilot-cli")]
     [string]$Assistant = "claude",
     [ValidateSet("rag", "wiki", "flow")]
-    [string]$Capability = "rag"
+    [string]$Capability = "rag",
+    # E15-FEAT-012: ref the host STARTS from. Empty = install-only (behaviour unchanged).
+    # Set = install that release, then `upgrade` to -Ref, then assert the outcomes on the host.
+    [string]$FromRef = ""
 )
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-$RepoUrl       = "https://github.com/themetriost/Sertor"
-$SertorSource  = "git+$RepoUrl@$Ref#subdirectory=packages/sertor"
-$FlowSource    = "git+$RepoUrl@$Ref#subdirectory=packages/sertor-flow"
-$IsCopilot     = ($Assistant -eq "copilot-cli")
+$RepoUrl        = "https://github.com/themetriost/Sertor"
+$SertorSource   = "git+$RepoUrl@$Ref#subdirectory=packages/sertor"
+$FlowSource     = "git+$RepoUrl@$Ref#subdirectory=packages/sertor-flow"
+$IsUpgrade      = -not [string]::IsNullOrWhiteSpace($FromRef)
+$FromSertorSrc  = if ($IsUpgrade) { "git+$RepoUrl@$FromRef#subdirectory=packages/sertor" } else { "" }
+$FromFlowSrc    = if ($IsUpgrade) { "git+$RepoUrl@$FromRef#subdirectory=packages/sertor-flow" } else { "" }
+$IsCopilot      = ($Assistant -eq "copilot-cli")
+$script:UpgradeOut = ""   # the upgrade report, read by the no-stale-divergence outcome
 
 function Fail([string]$msg) {
     Write-Host "SMOKE_FAIL: $msg" -ForegroundColor Red
     exit 1
+}
+
+# An environment impediment is NOT a product defect, and collapsing the two teaches people to ignore
+# the gate — the exact dynamic that made v0.3.3 necessary (a guard that cries wolf stops being read).
+# Distinct marker AND distinct exit code so a consumer can tell them apart without parsing prose.
+function Fail-Env([string]$msg) {
+    Write-Host "SMOKE_ENV: $msg" -ForegroundColor Yellow
+    exit 2
+}
+
+# Every asserted outcome goes through here, so a failure NAMES the outcome and the context instead of
+# leaving the reader to reproduce the run (FR-008). The outcome list lives in ONE place: see
+# `Assert-UpgradeOutcomes`.
+function Assert-Outcome([string]$outcome, [bool]$ok, [string]$detail) {
+    if ($ok) {
+        Write-Host "[upgrade] OK   $outcome"
+        return
+    }
+    Fail ("upgrade outcome '$outcome' diverged — $detail " +
+          "[assistant=$Assistant capability=$Capability from=$FromRef to=$Ref]")
 }
 
 function Require-Tool([string]$name) {
@@ -353,8 +380,122 @@ function Invoke-FlowSmoke {
     Write-Host "SMOKE_OK assistant=$Assistant capability=flow deposit=ok" -ForegroundColor Green
 }
 
+# =================================================================================================
+# E15-FEAT-012 — upgrade flow: install the PREVIOUS release, upgrade, assert outcomes on the HOST
+# =================================================================================================
+
+# THE outcome list (FR-015). Every entry exists because a defect really happened: adding one after a
+# new field report must be one more line here, never a restructuring — otherwise the list ages and the
+# guard only protects the past.
+function Assert-UpgradeOutcomes([string]$cap) {
+    $sertorDir = Join-Path $HostDir ".sertor"
+
+    # 1. The pin moved. Defect: the recorded source stayed at the old version after `upgrade` —
+    #    reported by THREE independent nodes, and the reason v0.3.1 existed.
+    $pinFile = Join-Path $sertorDir "pyproject.toml"
+    if (Test-Path $pinFile) {
+        $pin = Get-Content $pinFile -Raw
+        Assert-Outcome "pin-moved" (-not ($pin -match [regex]::Escape($FromRef))) `
+            "the runtime source still references '$FromRef' in .sertor/pyproject.toml"
+    } else {
+        Write-Host "[upgrade] n/a  pin-moved (capability '$cap' creates no runtime)"
+    }
+
+    # 2. Exactly ONE session automation, and it is the current one. Defect: identity by command string
+    #    made a re-wire look new, so the hook was duplicated (E10-FEAT-032) with the broken copy live.
+    $settingsRel = if ($IsCopilot) { ".github/hooks/sertor-hooks.json" } else { ".claude/settings.json" }
+    $settings = Join-Path $HostDir $settingsRel
+    if (Test-Path $settings) {
+        $raw = Get-Content $settings -Raw
+        foreach ($stem in @("rag-freshness", "wiki-guard", "memory-capture")) {
+            $count = ([regex]::Matches($raw, [regex]::Escape($stem))).Count
+            if ($count -gt 0) {
+                Assert-Outcome "hook-single:$stem" ($count -le 2) `
+                    "hook '$stem' appears $count times in $settingsRel (duplicated wiring)"
+            }
+        }
+    }
+
+    # 3. Host-owned configuration preserved. Defect: fixing E2-FEAT-022 nearly zeroed the corpus on
+    #    every upgrade — caught by a MANUAL run, not by the tests. The upgrade rewrites OUR invocation
+    #    and preserves THEIR configuration.
+    $envFile = Join-Path $sertorDir ".env"
+    if (Test-Path $envFile) {
+        $envRaw = Get-Content $envFile -Raw
+        Assert-Outcome "host-config-preserved" ($envRaw -match "SERTOR_CORPUS\s*=\s*smoke") `
+            "SERTOR_CORPUS=smoke is gone from .sertor/.env after the upgrade"
+    }
+
+    # 4. The recorded invocation has the current shape. Defect: `--directory` kept because it "was
+    #    already there" — the RAG resolved the index in the wrong folder for a month.
+    $mcp = Join-Path $HostDir ".mcp.json"
+    if (Test-Path $mcp) {
+        $mcpRaw = Get-Content $mcp -Raw
+        Assert-Outcome "mcp-invocation-shape" (-not ($mcpRaw -match "--directory")) `
+            "the MCP registration still uses --directory instead of --project"
+    }
+
+    # 5. Nothing was left stale. Defect: `install` is non-destructive and leaves a divergent file in
+    #    place (PRESENT_DIVERGENT) — correct for install, WRONG for upgrade, whose contract is to
+    #    replace our own artefacts. It blocked hook fixes that had already been released (E2-FEAT-023
+    #    family). The signal is in the upgrade's own report, so it costs nothing to read.
+    Assert-Outcome "no-stale-divergence" (-not ($script:UpgradeOut -match "PRESENT_DIVERGENT")) `
+        "the upgrade left an artefact divergent instead of replacing it (PRESENT_DIVERGENT in report)"
+
+    # 6. Health is green — the catch-all for what the five above do not name.
+    if (Test-Path $sertorDir) {
+        $doctor = & uv run --project $sertorDir sertor-rag doctor 2>&1 | Out-String
+        Assert-Outcome "health-green" ($LASTEXITCODE -eq 0) `
+            "doctor exited $LASTEXITCODE after the upgrade: $($doctor.Trim())"
+    }
+}
+
+function Invoke-UpgradeFlow([string]$cap) {
+    $fromSrc = if ($cap -eq "flow") { $FromFlowSrc } else { $FromSertorSrc }
+    $toSrc   = if ($cap -eq "flow") { $FlowSource }  else { $SertorSource }
+    $exe     = if ($cap -eq "flow") { "sertor-flow" } else { "sertor" }
+
+    Write-Host "[upgrade] installing PREVIOUS release $FromRef ($cap / $Assistant) ..."
+    Push-Location $HostDir
+    try {
+        if ($cap -eq "rag") {
+            & uvx --refresh --from $fromSrc $exe install $cap --assistant $Assistant `
+                --backend local --no-rerank --no-graph --corpus smoke --target $HostDir 2>&1 | Out-String | Write-Host
+        } else {
+            & uvx --refresh --from $fromSrc $exe install $cap --assistant $Assistant --target $HostDir 2>&1 | Out-String | Write-Host
+        }
+    } finally {
+        Pop-Location
+    }
+    if ($LASTEXITCODE -ne 0) {
+        # Could not even reach the starting line: the previous release is not installable here.
+        Fail-Env "install of previous release '$FromRef' exited $LASTEXITCODE (ref reachable? network?)"
+    }
+
+    Write-Host "[upgrade] upgrading $FromRef -> $Ref ..."
+    Push-Location $HostDir
+    try {
+        $script:UpgradeOut = & uvx --refresh --from $toSrc $exe upgrade $cap --assistant $Assistant --target $HostDir 2>&1 | Out-String
+        Write-Host $script:UpgradeOut.TrimEnd()
+    } finally {
+        Pop-Location
+    }
+    if ($LASTEXITCODE -ne 0) { Fail "upgrade $cap exited $LASTEXITCODE" }
+
+    # Exit code 0 is NOT an outcome: `upgrade` used to succeed while moving nothing (SC-004).
+    Assert-UpgradeOutcomes $cap
+
+    Write-Host ""
+    Write-Host "SMOKE_OK assistant=$Assistant capability=$cap upgrade=$FromRef->$Ref" -ForegroundColor Green
+}
+
 try {
     if ($createdHost) { New-SyntheticHost }
+
+    if ($IsUpgrade) {
+        Invoke-UpgradeFlow $Capability
+        exit 0
+    }
 
     switch ($Capability) {
         "rag"  { Invoke-RagSmoke }

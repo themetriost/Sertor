@@ -50,3 +50,42 @@ più, non una ristrutturazione.
 
 L'esclusione del percorso completo da quello automatico **va dichiarata dove la si documenta**
 (FR-013): una copertura che nessuno sa di dover lanciare è copertura solo sulla carta.
+
+---
+
+## Potere retrospettivo misurato (SC-001) e residuo dichiarato (SC-007)
+
+Applicato ai **sette** difetti d'aggiornamento realmente occorsi:
+
+| # | Difetto reale | Esito asserito che lo coglie | |
+|---|---|---|---|
+| 1 | pin `tag=` non si muove dopo l'upgrade (3 nodi) | `pin-moved` | ✅ |
+| 2 | comando d'upgrade rotto sugli host che pinnano (v0.3.1) | l'upgrade esce non-zero | ✅ |
+| 3 | hook **duplicati** al ri-cablaggio (E10-FEAT-032) | `hook-single:<stem>` | ✅ |
+| 4 | `--directory` conservato perché «c'era già» | `mcp-invocation-shape` | ✅ |
+| 5 | artefatto lasciato **divergente** invece di sostituito | `no-stale-divergence` | ✅ |
+| 6 | falso *behind* del version-check (stamp non derivato) | — | ❌ |
+| 7 | `upgrade` nudo non copre le capability, summary verde ingannevole | — | ❌ |
+
+**5 su 7 — bersaglio SC-001 (≥5) raggiunto.**
+
+### Il residuo, nominato
+
+- **#6 — falso *behind*.** Nessuna asserzione lo coglie: il difetto vive nel confronto fra lo stamp di
+  versione e il runtime, e `doctor` non lo mette a confronto. Servirebbe un esito dedicato che
+  interroghi il controllo-versione **dopo** l'aggiornamento. Non aggiunto qui per non allargare uno
+  changeset già verificabile a fatica.
+- **#7 — `upgrade` nudo.** Qui si aggiorna una capability **nominata**; il difetto riguarda l'invocazione
+  senza argomenti, che riporta un riepilogo verde senza aver toccato le capability. Coglierlo richiede
+  un percorso d'esecuzione in più.
+
+> ⚠️ **Perché il residuo va letto, non archiviato.** «Cinque su sette» dice anche **due no**. Una
+> verifica verde con due difetti noti scoperti produce **esattamente** la falsa sicurezza che questa
+> feature esiste per togliere. Chi legge un verde qui sa che #6 e #7 vanno guardati a mano.
+
+### Nota su dove questo è dichiarato
+
+La verifica è **dev-facing**: non cambia nulla di ciò che un ospite installa, configura o invoca —
+verificato, non assunto (`docs/` e `README` non documentano lo smoke, né prima né dopo). Quindi la
+regola «documentazione utente nello stesso step» **non si applica**, e la dichiarazione del residuo e
+dei due percorsi vive qui e nei commenti delle workflow, dove la legge chi rilascia.

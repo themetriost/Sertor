@@ -1,0 +1,52 @@
+# =================================================================================================
+# FULL upgrade smoke (E15-FEAT-012) — the on-demand half of the pair.
+#
+# The automatic upgrade smoke in `ci.yml` runs ONE combination, because a gate that costs too much is
+# a gate people switch off (risk R-1). This workflow is the other half: the full perimeter, plus a
+# LONG version jump — the condition in which the pin defect actually surfaced (a host upgraded
+# 0.3.0 → 0.3.3 in one step).
+#
+# Deliberately manual (`workflow_dispatch`): it is NOT required to publish a release, and that
+# exclusion is declared — here, in the spec (FR-013) and in docs/. A coverage nobody knows to launch
+# is coverage on paper only.
+#
+# The starting release is DERIVED from the last tag unless `from_ref` is given, so the long jump is a
+# parameter and not a hardcoded version that would age.
+# =================================================================================================
+name: upgrade smoke (full)
+
+on:
+  workflow_dispatch:
+    inputs:
+      from_ref:
+        description: "Release to start from (empty = last tag; set e.g. v0.3.0 for a long jump)"
+        required: false
+        default: ""
+
+jobs:
+  upgrade-smoke-full:
+    name: upgrade (${{ matrix.os }} / ${{ matrix.assistant }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false   # one diverging combination must not hide the others
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        assistant: [claude, copilot-cli]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # tags needed to derive the previous release
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Sync workspace (wrapper needs pytest)
+        run: uv sync --all-packages --extra dev
+
+      # An explicit `from_ref` exercises the long jump; empty falls back to the derived last tag.
+      - name: Upgrade smoke (${{ matrix.assistant }}, from ${{ inputs.from_ref || 'last tag' }})
+        env:
+          SERTOR_SMOKE_REF: master
+          SERTOR_SMOKE_FROM_REF: ${{ inputs.from_ref }}
+        run: uv run pytest -m integration tests/integration/test_host_smoke.py -k "upgrade and ${{ matrix.assistant }}" -v
