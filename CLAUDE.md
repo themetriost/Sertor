@@ -550,23 +550,23 @@ dogfood sopra. *(Non riconciliare cancellando la prosa: i blocchi sono rigenerat
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/124-copertura-changeset-scan/plan.md` (**E10 / FEAT-062**, epica **debito-tecnico**, Must/P0 —
-*la registrazione copre un changeset, non una data*). `scan` azzera `pending` per la **sola presenza**
-della partizione di giornale di oggi fra le modifiche non consegnate (`scan.py:286-292`,
-`recorded_today`): **appena si scrive la voce di giornale il gate smette di vedere tutto il lavoro
-successivo**, nella finestra esatta in cui lo `Stop` interroga — *chi soddisfa la regola la disattiva*.
-Misurati **8 scenari** di non-rilevazione con **una sola causa**, piu' **1 difetto indipendente** (ogni
-invocazione git fallita degrada verso l'insieme vuoto **in silenzio**, continuando a dichiarare
-`anchor_kind: git`). Segnalato dal nodo *Acta*; riprodotto qui. **Rimedio:** `append-log` **deriva** la
-copertura — insieme di `(path, identita-di-contenuto)` — e la persiste **dentro la voce**
-(`sertor-covers/1`); `scan` calcola `pending = lavoro_in_perimetro - copertura`. **La data sparisce
-dalla logica.** L'identita' di contenuto fa scadere da se' le coperture vecchie, il che elimina il
-bisogno di riconoscere «quali voci sono recenti» — e con esso il parsing dell'intestazione, che sarebbe
-stato **cablato sul nostro `log_format`** e quindi rotto sugli ospiti (Principio X). ⚠️ **Vincolo
-critico invariato:** la stringa `wiki.scan/1` **non si bumpa** — i due hook la confrontano per
-uguaglianza e vanno in **fail-open**, quindi un bump non romperebbe il gate: lo farebbe **sparire in
-silenzio**. Solo campi additivi (`determination`, `determination_reason`, `legacy_coverage`).
-Constitution **14/14 + missione PASS**. Branch `124-copertura-changeset-scan`.
+`specs/125-smoke-di-upgrade/plan.md` (**E15 / FEAT-012**, epica **fedelta-dogfood**, Must/P0 —
+*smoke di upgrade: testare la strada che spediamo*). Lo smoke end-to-end esiste e gira su 4 matrici,
+ma **installa su un host pulito**: nessuna verifica tocca il verbo che gli ospiti eseguono davvero,
+**`upgrade`**. Misura del 2026-07-29 su 20 riscontri dal campo (~14 difetti reali): **1 solo nel core,
+13 nella superficie di consegna**, e **tutti e 7 quelli d'installer richiedono un'installazione
+preesistente piu' vecchia** per manifestarsi — un host pulito non puo' vederne nessuno, *per
+costruzione*. Spiega anche perche' li trova sempre un nodo a valle: **nemmeno il dogfood aggiorna**
+(re-lock che insegue HEAD, mai da versione a versione). **Approccio: estendere la macchina, non
+costruirne una seconda** — `scripts/smoke.{ps1,sh}` accetta `-FromRef`: installa la release
+precedente, aggiorna al ref in prova, asserisce **cinque esiti sullo stato dell'host** derivati dai
+difetti **realmente occorsi** (pin mosso · automatismo uno e aggiornato · configurazione dell'ospite
+preservata · forma dell'invocazione corrente · salute verde). **Due percorsi:** automatico e leggero
+al rilascio (vincolante), completo a richiesta. ⚠️ **Criterio falsificabile (SC-001):** applicata ai
+sette difetti gia' occorsi, deve rilevarne **almeno cinque** — e i due restanti vanno **dichiarati**.
+🚫 **Vincolo di rilascio attivo:** nessun bump di `/VERSION`, tag, Release o annuncio finche' questa
+feature non e' conclusa e i tre riscontri del nodo *Acta* del 29/07 non sono verificati **su un ospite
+che aggiorna**. Constitution **13 PASS + 1 N/A + missione PASS**. Branch `125-smoke-di-upgrade`.
 <!-- SPECKIT END -->
 
 <!-- SERTOR:SDLC-RITUAL START -->
