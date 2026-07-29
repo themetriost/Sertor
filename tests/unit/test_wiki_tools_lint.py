@@ -117,3 +117,72 @@ def test_stub_is_wanted_not_broken_nor_orphan(tmp_path):
     assert "concepts/futuro.md" not in res.orphans  # linked from rag
     assert res.stubs == ["concepts/futuro.md"]  # worklist of nodes to fill in
     assert res.schema == "wiki.lint/1"  # additive, no bump
+
+
+# --- E10-FEAT-065: a link to something that EXISTS but is not a "page" ------------------------
+# Reported by the Acta node (2026-07-29): `lint` called `[[log/2026-07-14]]` broken while the
+# partition existed. Root cause: the target index was built from `iter_pages`, which rightly
+# excludes non-pages — so "is it a page?" was answering "does it exist?".
+
+_CONFIG_ROTATION = """\
+profile = "code+doc"
+language = "it"
+root = "wiki"
+index_file = "index.md"
+log_dir = "log"
+
+[[taxonomy]]
+name = "concepts"
+dir = "concepts"
+type = "concept"
+"""
+
+
+def _wiki_with_partitions(tmp_path: Path, body: str):
+    """A rotation-enabled wiki with a real log partition and a log index."""
+    cfg = tmp_path / "wiki.config.toml"
+    cfg.write_text(_CONFIG_ROTATION, encoding="utf-8")
+    wiki = tmp_path / "wiki"
+    (wiki / "concepts").mkdir(parents=True)
+    (wiki / "log").mkdir(parents=True)
+    (wiki / "log" / "2026-07-14.md").write_text("# Log 2026-07-14\n", "utf-8")
+    (wiki / "log" / "index.md").write_text("# Log index\n", "utf-8")
+    (wiki / "index.md").write_text("# Index\n\n- [[rag]]\n", "utf-8")
+    (wiki / "concepts" / "rag.md").write_text(_FM.format(t="RAG") + body, "utf-8")
+    return load_profile(cfg)
+
+
+@pytest.mark.parametrize(
+    "target",
+    ["log/2026-07-14", "log/2026-07-14.md", "2026-07-14", "log/index", "index"],
+)
+def test_link_to_existing_non_page_is_not_broken(tmp_path, target):
+    """Every form of a link to a real-but-not-a-page file resolves (the reported defect)."""
+    p = _wiki_with_partitions(tmp_path, f"\nVedi [[{target}]].\n")
+    res = lint(p)
+    assert res.broken_links == [], f"[[{target}]] reported broken while the file exists"
+
+
+def test_guard_still_catches_a_genuinely_missing_target(tmp_path):
+    """Anti-vacuity: widening the target index must NOT stop real dangling links from failing."""
+    p = _wiki_with_partitions(tmp_path, "\nVedi [[log/2026-01-01]] e [[inesistente]].\n")
+    res = lint(p)
+    targets = sorted(b["target"] for b in res.broken_links)
+    assert targets == ["inesistente", "log/2026-01-01"]
+
+
+def test_non_pages_are_not_linted_as_pages(tmp_path):
+    """Non-regression: partitions/index stay OUT of the page checks (no frontmatter, no orphan)."""
+    p = _wiki_with_partitions(tmp_path, "\nVedi [[log/2026-07-14]].\n")
+    res = lint(p)
+    linted = {d["page"] for d in res.missing_frontmatter} | set(res.orphans)
+    assert not any(rel.startswith("log/") or rel == "index.md" for rel in linted)
+
+
+def test_a_page_wins_over_a_non_page_on_the_same_alias(tmp_path):
+    """On an alias collision the CONTENT page wins: a link normally means the page."""
+    p = _wiki_with_partitions(tmp_path, "\nVedi [[rag]].\n")
+    (tmp_path / "wiki" / "log" / "rag.md").write_text("# not a page\n", "utf-8")
+    res = lint(p)
+    assert res.broken_links == []
+    assert "concepts/rag.md" not in res.orphans  # resolved to the page, which is thus referenced

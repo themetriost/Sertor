@@ -46,6 +46,26 @@ def iter_pages(profile: WikiProfile) -> Iterator[tuple[str, Path]]:
     yield from pages
 
 
+def iter_linkable_files(profile: WikiProfile) -> Iterator[str]:
+    """Iterates the rel_path (POSIX) of every `.md` file under the wiki root — pages or not.
+
+    **Deliberately wider than `iter_pages`, and the distinction is the point.** `iter_pages` answers
+    *"what is a content page?"* — what must carry frontmatter, what can be orphan, what belongs in
+    the inventory — and rightly excludes the index and the log partitions, which are neither.
+
+    This one answers a different question: *"what exists and can therefore be pointed at?"* Using
+    the first to answer the second made every wikilink to a real-but-not-a-page file (a log
+    partition, the log index, the wiki index itself) report as **broken** — the guard calling
+    `[[index]]` a dangling link (E10-FEAT-065, reported by the Acta node).
+
+    Order is deterministic (sorted).
+    """
+    root = profile.root_path
+    if not root.is_dir():
+        return
+    yield from sorted(p.relative_to(root).as_posix() for p in root.rglob("*.md"))
+
+
 def _area_of(rel_path: str, profile: WikiProfile) -> str:
     head = rel_path.split("/", 1)[0]
     for entry in profile.taxonomy:

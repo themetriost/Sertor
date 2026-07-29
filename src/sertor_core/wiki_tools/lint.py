@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 
 from sertor_core.observability.logging import log_event
-from sertor_core.wiki_tools.collect import iter_pages
+from sertor_core.wiki_tools.collect import iter_linkable_files, iter_pages
 from sertor_core.wiki_tools.contracts import LintResult
 from sertor_core.wiki_tools.frontmatter import (
     extract_wikilinks,
@@ -40,9 +40,16 @@ def lint(profile: WikiProfile) -> LintResult:
                 page=rel_path, note="unreadable-skip",
             )
 
-    # Map of all targets resolvable to an existing page.
+    # Map of all targets resolvable to something that EXISTS. Content pages are registered first, so
+    # on an alias collision a page wins over a non-page — a link normally means the page.
+    # The second pass is what keeps a link to a real-but-not-a-page file (log partition, log index,
+    # the wiki index) from being reported as broken: "is it a page?" and "does it exist?" are
+    # different questions, and answering the second with the first was E10-FEAT-065.
     target_index: dict[str, str] = {}
     for rel_path in pages:
+        for alias in _link_targets(rel_path):
+            target_index.setdefault(alias, rel_path)
+    for rel_path in iter_linkable_files(profile):
         for alias in _link_targets(rel_path):
             target_index.setdefault(alias, rel_path)
 
