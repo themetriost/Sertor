@@ -349,7 +349,12 @@ assert_upgrade_outcomes() {
     fi
     if [ -f "$HOST/$_settings_rel" ]; then
         for _stem in rag-freshness wiki-guard memory-capture; do
-            _count="$(grep -oF "$_stem" "$HOST/$_settings_rel" | wc -l | tr -d ' ')"
+            # `|| _count=0`: under `set -euo pipefail` a `grep` that finds NOTHING exits 1, the
+            # pipeline fails, and the script would die HERE — silently, with no SMOKE_FAIL line. An
+            # absent stem is normal (a rag host has no wiki hooks), so it must read as zero, not as a
+            # crash. Observed on the first real run: the gate died opaquely on `wiki-guard`, which is
+            # exactly the failure shape `assert_outcome` exists to prevent.
+            _count="$(grep -oF "$_stem" "$HOST/$_settings_rel" | wc -l | tr -d ' ')" || _count=0
             if [ "$_count" -gt 0 ]; then
                 if [ "$_count" -le 2 ]; then
                     assert_outcome "hook-single:$_stem" 1 ""

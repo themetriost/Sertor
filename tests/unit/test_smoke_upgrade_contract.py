@@ -120,3 +120,26 @@ def test_every_needs_output_reference_names_a_declared_output():
                         f"needs.{producer}.outputs.{name}, but '{producer}' declares {have}"
                     )
     assert not offenders, "job outputs referenced but never declared:\n" + "\n".join(offenders)
+
+
+def test_counting_pipelines_cannot_kill_the_script_silently():
+    """A `grep | wc -l` under `set -euo pipefail` dies when the pattern is ABSENT, with no message.
+
+    Observed on the very first real run of this gate: counting `wiki-guard` in a rag host (where it
+    legitimately does not appear) made `grep` exit 1, `pipefail` failed the substitution, and
+    `set -e` killed the script — returncode 1, empty stderr, no SMOKE_FAIL line.
+
+    A gate that dies opaquely is worse than one that fails loudly, and this one exists to make
+    failures name themselves. So every counting pipeline must carry an explicit fallback.
+    """
+    import re
+
+    sh = (Path(__file__).resolve().parents[2] / "scripts" / "smoke.sh").read_text(encoding="utf-8")
+    offenders = [
+        line.strip()
+        for line in sh.splitlines()
+        if re.search(r"\$\(.*\|\s*wc\s+-l", line) and "||" not in line
+    ]
+    assert not offenders, (
+        "counting pipeline lacks a `|| fallback` under pipefail:\n" + "\n".join(offenders)
+    )
