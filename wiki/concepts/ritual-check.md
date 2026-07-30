@@ -24,6 +24,15 @@ wiki. Confine D↔N: il tool *trova*, l'agente *giudica* (non crea pagine, non d
 - **Scaffold di dichiarazione forzata** `Rituale: record · distill · lint` — l'artefatto concreto a cui la
   chiusura dello step deve rispondere (anche «non serve» va dichiarato). Output JSON `wiki.ritual_check/1`.
 
+> ⚠️ **Precisione nota di `neighbor-of-change`, misurata il 2026-07-30: 11 candidati proposti, 0 reali.**
+> Il segnale è di **prossimità**, non di deriva: propone ogni pagina linkata da una cambiata. Ma una
+> pagina **appena creata** linka i propri parenti *per costruzione* — citarli è il cablaggio normale di
+> una distillazione, non l'indizio che i parenti siano invecchiati. La soglia `hub_threshold` non
+> intercetta il caso, perché una pagina-entità nuova le sta sotto. Rimedio tracciato in **E10-FEAT-067**:
+> escludere i link uscenti delle pagine **aggiunte**, tenendo il segnale per quelle *modificate*, dove un
+> link nuovo verso una pagina ferma è davvero un indizio. Nel frattempo: *il tool trova, tu giudichi* —
+> e qui il giudizio va esercitato davvero, non timbrato.
+
 ## Perimetro dello step: committato e albero di lavoro (E10-FEAT-060)
 
 Lo scope è l'**unione** di:
