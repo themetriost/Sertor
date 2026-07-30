@@ -16,12 +16,20 @@ il suo perimetro è ancora vuoto e risponde «0 candidati» mentre il gate blocc
 **dichiara** le sorgenti e i loro conteggi, sempre; (3) ogni interrogazione git necessaria al perimetro
 **fallisce forte** invece di degradare verso l'insieme vuoto.
 
-**Scelta strutturale che evita di ripetere il difetto.** La derivazione dell'albero di lavoro non viene
-copiata dentro `ritual_check`: viene messa in **`vcs.py`**, il modulo di primitive VCS che *entrambi*
-già importano. `scan.py` **non viene toccato** in questa feature — regge un gate bloccante su ogni
-ospite — ma da qui l'unificazione (E10-FEAT-066) diventa «far consumare a `scan` l'helper condiviso»,
-un passo piccolo e reversibile invece di un refactoring. Nel frattempo un **test di equivalenza**
-confronta le due derivazioni sullo stesso albero e fallisce se divergono (mitigazione R-3).
+**Scelta strutturale: una sola derivazione.** La derivazione dell'albero di lavoro vive in **`vcs.py`**,
+il modulo di primitive VCS che *entrambi* già importano, ed **entrambi la consumano**: la copia privata
+`scan._worktree_changes` è stata rimossa, insieme al gemello `_split_z`. La divergenza non è «corretta
+una volta» ma **impossibile per costruzione**.
+
+*Come ci si è arrivati, perché è la parte istruttiva.* La prima stesura si fermava un passo prima —
+helper condiviso consumato dal solo `ritual_check`, copia di `scan` intatta «perché regge un gate
+bloccante» — con un **test di equivalenza** a sorvegliare le due. Una domanda dell'utente (*«ma quindi
+cosa abbiamo fatto?»*) ha reso evidente il conto: si passava da **una** implementazione a **due**. E il
+rischio invocato per rinviare si era già estinto grazie al lavoro stesso — l'helper esisteva, era
+testato, e l'equivalenza era dimostrata. Il test di equivalenza **esisteva solo perché avevamo
+declinato una modifica da due righe**: non una mitigazione, un promemoria. Rimosso perché diventato
+vacuo (confrontava una funzione con sé stessa), sostituito da una guardia strutturale che verifica che
+la derivazione resti **una**.
 
 ## Technical Context
 
@@ -44,8 +52,8 @@ confronta le due derivazioni sullo stesso albero e fallisce se divergono (mitiga
 **Constraints**: sola lettura · zero LLM · offline · host-agnostico · contratto esteso in modo
 **additivo** (`wiki.ritual_check/1` invariato)
 
-**Scale/Scope**: un modulo (`ritual_check.py`), un helper condiviso in `vcs.py`, un campo di contratto,
-una riga di summary. Nessun tocco a `scan.py`.
+**Scale/Scope**: due moduli consumatori (`ritual_check.py`, `scan.py`), la derivazione condivisa in
+`vcs.py`, un campo di contratto, una riga di summary. In `scan.py` il changeset **toglie** 56 righe.
 
 ## Constitution Check
 
@@ -57,8 +65,8 @@ una riga di summary. Nessun tocco a `scan.py`.
 - [x] **II — Boundary & local-first:** **PASS** — l'unica dipendenza esterna è `git`, già dietro
   l'astrazione `vcs.run_git`. Nessun vector store, nessuna scelta locale↔cloud coinvolta.
 - [x] **III — YAGNI & unità piccole:** **PASS** — **nessuna** opzione `--committed-only` (nessuno l'ha
-  chiesta) e **nessuna** unificazione strutturale con `scan` (rinviata a E10-FEAT-066 con motivazione).
-  Si aggiunge un helper e un campo, non un livello di astrazione.
+  chiesta). L'unificazione con `scan` è **inclusa**, non rinviata: **rimuove** codice (56 righe) invece
+  di aggiungerne, e toglie il test che esisteva solo per sorvegliare la duplicazione.
 - [x] **IV — Errori espliciti (NON-NEGOZIABILE):** **PASS** — è il cuore della feature: ogni
   interrogazione git necessaria al perimetro solleva `ConfigError`; sparisce il ramo `if rc == 0:` che
   produceva un insieme vuoto silenzioso.
@@ -123,20 +131,22 @@ specs/126-ritual-check-perimetro/
 
 ```text
 src/sertor_core/wiki_tools/
-├── vcs.py              # + worktree_changes(): derivazione condivisa (NUOVA, pubblica)
+├── vcs.py              # + worktree_changes() e split_z(): derivazione condivisa, UNA sola
 ├── ritual_check.py     # perimetro unito + dichiarazione + fail-loud
 ├── contracts.py        # RitualCheckResult: + perimeter (scope DERIVATA da esso)
 ├── __main__.py         # summary umano: dichiara il perimetro
-└── scan.py             # ⛔ NON TOCCATO in questa feature (regge un gate bloccante)
+└── scan.py             # consuma l'helper condiviso; rimosse le copie private (−56 righe)
 
 tests/unit/
-├── test_ritual_check.py            # + scenari perimetro/dichiarazione/fail-loud
-└── test_ritual_check_perimetro.py  # matrice comportamentale versionata (SC-001/002)
+├── test_vcs_worktree.py                # l'helper condiviso
+├── test_ritual_check_perimetro.py      # matrice comportamentale versionata (SC-001/002)
+└── test_perimetro_derivazione_unica.py # guardia: la derivazione resta UNA
 ```
 
-**Structure Decision**: modifica **in place** di un modulo esistente più un helper nel modulo VCS già
-condiviso. Nessun pacchetto nuovo, nessuna porta nuova, nessun adapter: la capacità è deterministica e
-vive interamente in `wiki_tools`. `scan.py` è deliberatamente fuori dal perimetro di modifica.
+**Structure Decision**: modifica **in place** di moduli esistenti, con la derivazione promossa nel
+modulo VCS già condiviso e consumata da entrambe le capacità. Nessun pacchetto nuovo, nessuna porta
+nuova, nessun adapter: la capacità è deterministica e vive interamente in `wiki_tools`. Nel modulo
+`scan` il changeset **rimuove** più codice di quanto ne aggiunga.
 
 ## Complexity Tracking
 

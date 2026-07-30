@@ -4,22 +4,27 @@ Ogni decisione qui è **motivata dall'evidenza misurata** nei requisiti, non da 
 
 ## R-1 — Dove vive la derivazione dell'albero di lavoro
 
-**Decisione: in `vcs.py`, come funzione pubblica `worktree_changes()`. `scan.py` NON viene toccato.**
+**Decisione: in `vcs.py`, come funzione pubblica `worktree_changes()`, consumata da ENTRAMBI.**
 
 Tre opzioni erano sul tavolo:
 
 | Opzione | Pro | Contro |
 |---|---|---|
 | Copiare la logica dentro `ritual_check.py` | zero rischio su `scan` | **due copie**: è il difetto stesso, riprodotto |
-| Estrarre in un modulo condiviso e far consumare **entrambi** | divergenza impossibile per costruzione | tocca `scan.py`, che regge l'hook **bloccante** su ogni ospite |
-| **Helper in `vcs.py`, consumato per ora solo da `ritual_check`** | nessun rischio su `scan`; l'unificazione futura diventa una riga | resta **una** copia in `scan` finché E10-FEAT-066 non la rimuove |
+| Helper in `vcs.py` consumato dal solo `ritual_check` | nessun rischio su `scan` | si passa da **una** implementazione a **due** |
+| **Helper in `vcs.py` consumato da entrambi** | divergenza **impossibile per costruzione** | tocca `scan.py`, che regge l'hook bloccante su ogni ospite |
 
-La terza vince perché **non chiude la porta**: `vcs.py` è già importato da entrambi i moduli, quindi è
-la casa naturale, e il passo successivo (`scan` che consuma l'helper) è piccolo e reversibile invece di
-essere un refactoring di un componente critico.
+Vince la terza, ma **non era la scelta iniziale** — ed è la parte che vale la pena registrare.
 
-**Il costo è reale e va nominato:** finché E10-FEAT-066 non atterra, esistono due derivazioni. Per
-questo la mitigazione R-3 dei requisiti non è opzionale — vedi R-5.
+*Come si è corretta.* La prima decisione era la seconda opzione, motivata dal rischio su `scan`. Una
+domanda dell'utente — *«ma quindi cosa abbiamo fatto?»* — ha reso visibile il conto: **da 1 a 2**
+copie, cioè duplicazione **aggiunta**, non rimossa. E il rischio invocato per rinviare **si era già
+estinto grazie al lavoro stesso**: l'helper esisteva, aveva 8 test propri, e un test dimostrava che le
+due producevano lo stesso identico output. Restava una modifica con **un solo punto di chiamata**.
+
+Lezione che non riguarda questa feature soltanto: **una valutazione di rischio invecchia**. Quella
+corretta al momento della decisione era diventata falsa un'ora dopo, e nulla la rivaluta — l'ha scritta
+chi poi non la rilegge.
 
 ## R-2 — Quale porzione di «consegnato»
 
@@ -70,16 +75,26 @@ perimetro falliscono forte *prima*, un git rotto emerge comunque.
 vuoto, quindi `has_new_distill_page` falso, quindi il candidato a distillazione veniva emesso **come se
 non avessi distillato** — un suggerimento sbagliato prodotto da un guasto invisibile.
 
-## R-5 — Come si impedisce che le due derivazioni divergano di nuovo
+## R-5 — Come si impedisce che la derivazione torni a essere due
 
-**Decisione: un test di equivalenza, non una promessa.**
+**Decisione: una guardia strutturale, non un test di equivalenza.**
 
-Il test costruisce un host effimero, esegue la derivazione dell'albero di lavoro dell'una e dell'altra
-capacità sullo **stesso** albero e pretende lo stesso insieme di percorsi. Se un domani qualcuno tocca
-una sola delle due, il test diventa rosso.
+Con una sola implementazione il test di equivalenza della prima stesura è diventato **vacuo per
+costruzione** — confrontava una funzione con sé stessa — ed è stato **rimosso**: un test che non può
+fallire va tolto, non tenuto per conforto.
 
-È la mitigazione R-3 dei requisiti, resa eseguibile. *«Si terrà allineato con la disciplina» non è una
-risposta* — ed è anche la lettera del Principio XIV.
+Al suo posto la domanda che nessun test comportamentale può porre, perché **due copie divergenti
+funzionano entrambe finché non divergono**: *esiste una sola derivazione?* La guardia sorveglia le
+**invocazioni git che costituiscono** la derivazione (il diff content-aware sui tracciati, lo stato dei
+non tracciati) e pretende che compaiano **solo** in `vcs.py`. Un wrapper che delega — come il fail-loud
+di `ritual_check` — è legittimo e non viene confuso con una copia: il criterio è la sostanza, non il nome.
+
+**Provata contro la propria vacuità, e ne aveva bisogno.** Le prime due stesure della guardia
+**passavano a vuoto**: la prima cercava per nome e catturava il wrapper; la seconda ispezionava la
+*funzione* `scan` invece del *modulo*, perché il pacchetto ri-esporta le funzioni omonime. Entrambe
+verdi, entrambe cieche. Ora un test verifica che gli oggetti ispezionati siano moduli, un altro che le
+invocazioni esistano davvero in `vcs`, e la guardia è stata provata reintroducendo una copia: diventa
+rossa.
 
 ## R-6 — Le pagine non tracciate contano come «aggiunte»
 
@@ -96,6 +111,7 @@ non tracciate (FR-003/FR-004).
 
 - **`--committed-only`** — nessun caso d'uso reale, sarebbe superficie non giustificata (YAGNI,
   Principio III). Additiva se emergerà.
-- **Unificazione strutturale con `scan`** — E10-FEAT-066, con la motivazione del rischio.
+- ~~Unificazione strutturale con `scan`~~ — **inclusa**, non rinviata: E10-FEAT-066 si chiude qui
+  senza essere mai stata lavoro a sé.
 - **Il perimetro di `scan` che esclude `packages/` e i file di radice** — problema reale ma **distinto**,
   già tracciato come E10-FEAT-063. Citato, non duplicato.

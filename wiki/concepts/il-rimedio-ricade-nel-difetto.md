@@ -18,16 +18,25 @@ Il risultato ha una firma riconoscibile: **il rimedio contiene una copia del dif
 revisione perché chi rivede è la stessa persona che ha appena spiegato con precisione cos'era il
 problema — e quella spiegazione fa da alibi.
 
-## Tre istanze, due giorni
+## Quattro istanze, due giorni
 
 | Difetto riparato | Il rimedio conteneva | Colto da |
 |---|---|---|
 | **Un verde che non mostra cosa ha asserito** (una guardia poteva essere vacua) | Il primo rimedio rendeva la vacuità **visibile** (`-s` per leggere i log) invece che **impossibile** — cioè delegava l'onere a chi legge i log di un run *verde*, cioè a nessuno | una verifica successiva, applicando al gate la pagina appena distillata |
 | **Un riferimento corretto nel nostro sistema e inutilizzabile nel loro** (E10-FEAT-064) | Le **note di rilascio di quella stessa correzione** contenevano comandi non eseguibili su un host ospite, pubblicati su tre canali | una **domanda dell'utente**, non una rilettura |
 | **Due strumenti che misurano realtà diverse senza dichiararlo** (E10-FEAT-060) | Il piano prevedeva di aggiungere la struttura `perimeter` **accanto** alla stringa `scope`: due descrizioni dello stesso fatto, libere di divergere | il **Constitution Check** (Principio XIV), in fase di piano |
+| **Lo stesso difetto, un'ora dopo** (E10-FEAT-060 → 066) | La riparazione lasciava in piedi **due derivazioni** del perimetro anziché una — cioè una versione strutturale del difetto che stava chiudendo — con un test di equivalenza a sorvegliarle | una **domanda dell'utente**: *«ma quindi cosa abbiamo fatto?»* |
 
-Tre difetti diversi, un solo movimento: *ho capito la malattia abbastanza bene da spiegarla, quindi non
-la sto facendo*. È un non sequitur, e le tre righe qui sopra ne sono la prova.
+Quattro difetti diversi, un solo movimento: *ho capito la malattia abbastanza bene da spiegarla, quindi
+non la sto facendo*. È un non sequitur, e le quattro righe qui sopra ne sono la prova.
+
+**La quarta riga aggiunge un meccanismo che le altre non mostrano: una valutazione di rischio
+invecchia.** «Non tocco quel modulo, regge un gate bloccante» era corretta quando è stata scritta, ed
+era falsa un'ora dopo — perché il lavoro fatto nel frattempo (l'helper condiviso, i suoi test, la prova
+di equivalenza) aveva **estinto proprio quel rischio**. Nessun meccanismo rivaluta una motivazione di
+rinvio: la scrive chi poi non la rilegge, e il testo sopravvive alle condizioni che lo giustificavano.
+Corollario: *quando il lavoro cambia le premesse di una decisione, la decisione va riaperta — e nessuno
+lo ricorda al posto tuo.*
 
 ## Perché è difficile da vedere dall'interno
 
@@ -46,16 +55,18 @@ la sto facendo*. È un non sequitur, e le tre righe qui sopra ne sono la prova.
 
 ## Cosa lo ha effettivamente colto
 
-Nessuna delle tre è stata colta rileggendo con attenzione. Sono state colte da **qualcosa di esterno al
-fuoco**:
+Nessuna delle quattro è stata colta rileggendo con attenzione. Sono state colte da **qualcosa di esterno
+al fuoco**:
 
 1. **Un gate formale con una domanda propria.** Il Principio XIV non chiede «va bene?», chiede
    *«questo valore duplica una fonte di verità esistente?»* — una domanda che non dipende da quanto si
    crede di aver capito. È l'istanza in cui la cattura è avvenuta **prima** che il codice esistesse.
 2. **Applicare al rimedio la regola appena scritta.** Prendere la pagina distillata cinque minuti prima
    e usarla come lente sul proprio lavoro — non come racconto di ciò che è successo.
-3. **Una domanda esterna.** Quella dell'utente (*«quali comandi hai chiesto di installare?»*) ha fatto
-   in una riga ciò che nessuna rilettura aveva fatto.
+3. **Una domanda esterna.** Quelle dell'utente — *«quali comandi hai chiesto di installare?»*, poi *«ma
+   quindi cosa abbiamo fatto?»* — hanno fatto in una riga ciò che nessuna rilettura aveva fatto. **Due
+   istanze su quattro** vengono da qui, ed è il dato più scomodo della pagina: il rilevatore più
+   efficace non è nostro.
 
 ## La domanda che rende operativa questa pagina
 

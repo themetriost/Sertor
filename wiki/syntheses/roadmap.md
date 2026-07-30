@@ -49,17 +49,23 @@ dalla prima voce.
   - **Prova sul campo:** su questo repo, dove rispondeva `pages=0 distill=0 drift=0`, ora dà
     `pages=3 drift=2` con `perimetro: committed=11 · worktree=21` — e i due candidati segnalati erano
     **drift reali**, corretti nello stesso passaggio.
-  - **Verifiche:** gate pre-merge completo (`ruff` + sei suite = **2603 test**). I nuovi test sono
+  - **Verifiche:** gate pre-merge completo (`ruff` + sei suite = **2608 test**). I nuovi test sono
     stati provati **contro il comportamento pre-fix**: 7 diventano rossi, quindi la guardia *può*
-    diventare rossa.
+    diventare rossa. Anche la guardia anti-duplicazione è stata provata reintroducendo una copia.
   - **Prossimo passo concreto:** aprire la PR e mergiare (richiede go esplicito dell'utente).
-  - **Residuo dichiarato, non nascosto:** `scan` e `ritual_check` restano **due** derivazioni
-    (unificazione = **E10-FEAT-066**, rinviata perché toccherebbe il modulo del gate bloccante); un
-    **test di equivalenza** le confronta e diventa rosso se una sola viene toccata.
+  - **Un effetto misurato, e tracciato:** il perimetro unito aumenta il rumore — sul dogfood
+    **11 candidati drift, 0 reali**, verificati uno per uno. Diagnosi precisa: una pagina **nuova**
+    linka i parenti *per costruzione*, e il segnale la scambia per deriva → **E10-FEAT-067**. È il
+    rischio R-1 della feature, che era stato nominato e ora ha la sua misura.
+  - **Nessun residuo strutturale.** La derivazione è **una sola**: `scan` consuma l'helper condiviso,
+    le copie private sono rimosse (−56 righe) — **E10-FEAT-066 si chiude senza essere mai stata lavoro
+    a sé**. Era stata rinviata per un rischio che il lavoro stesso aveva già estinto; l'ha fatto
+    emergere una **domanda dell'utente**, non una rilettura. Il test di equivalenza, diventato vacuo,
+    è stato rimosso e sostituito da una guardia **strutturale** — provata reintroducendo una copia.
 
 **🎯 Il numero che orienta le scelte successive: dei 111 item aperti, i Must sono TRE** — e tutti e tre
 stanno in epiche **differite** (E11 `multiutente`) o **non iniziate** (E9 `second-brain`). Il resto è
-**48 Should e 59 Could** (+1 Could: E10-FEAT-066, promossa dal fuori-ambito di FEAT-060). Cioè: **nessun Must aperto nelle epiche attive**. La domanda non è «cosa manca
+**49 Should e 58 Could**. Cioè: **nessun Must aperto nelle epiche attive**. La domanda non è «cosa manca
 perché sia completo», è «quale direzione vogliamo» — e va posta all'utente, non dedotta dal backlog.
 
 **Il fatto nuovo che cambia come rilasciamo:** da oggi un rilascio parte solo dopo aver verificato, su
@@ -82,14 +88,14 @@ combinazioni**, 8 esiti su 8.
 | **E7** | [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 0/4 | 4 | 0% | 📋 non iniziata |
 | **E8** | [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | 0/3 | 3 | 0% | 📋 non iniziata |
 | **E9** | [`second-brain`](../../requirements/second-brain/epic.md) | 0/10 | 10 | 0% | 📋 non iniziata |
-| **E10** | [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 39/66 | 27 | 59% | 🔄 **in corso — direzione attiva** |
+| **E10** | [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 40/67 | 27 | 60% | 🔄 **in corso — direzione attiva** |
 | **E11** | [`multiutente`](../../requirements/multiutente/epic.md) | 0/6 | 6 | 0% | 📋 non iniziata |
 | **E12** | [`usabilita`](../../requirements/usabilita/epic.md) | 5/14 | 9 | 36% | 🔄 in corso |
 | **E13** | [`documentazione-marketing`](../../requirements/documentazione-marketing/epic.md) | 8/15 | 7 | 53% | 🔄 in corso |
 | **E14** | [`speclift`](../../requirements/speclift/epic.md) | 2/5 | 3 | 40% | 🔄 in corso |
 | **E15** | [`fedelta-dogfood`](../../requirements/fedelta-dogfood/epic.md) | 7/12 | 5 | 58% | 🔄 in corso *(1 ritirata)* |
 | **E16** | [`evoluzione-modello-wiki`](../../requirements/evoluzione-modello-wiki/epic.md) | 0/4 | 4 | 0% | 📋 non iniziata |
-| | **TOTALE** | **114/225** | **111** | **51%** | — |
+| | **TOTALE** | **115/226** | **111** | **51%** | — |
 
 > **Come leggere «Consegnate»:** il denominatore esclude le feature **ritirate** (`❌ Won't`/not-a-bug) e
 > quelle **promosse ad altra epica** — contarle come debito gonfierebbe il residuo con lavoro che nessuno
@@ -215,7 +221,7 @@ combinazioni**, 8 esiti su 8.
 **E10 · [`debito-tecnico`](../../requirements/debito-tecnico/epic.md)** — 27 aperte
 
 - 🔄 **E10-FEAT-060** — `ritual-check` e `wiki-guard` misurano realtà diverse, e la differenza è invisibile · ***Should (P1)*** · **IN CORSO** (vedi EXEC)
-- 📋 **E10-FEAT-066** — `scan` e `ritual_check` derivano il perimetro DUE VOLTE, e possono ridivergere — promossa dal fuori-ambito di FEAT-060 · ***Could (P2)***
+- 📋 **E10-FEAT-067** — i link uscenti di una pagina NUOVA producono candidati drift falsi (11 proposti, 0 reali) · ***Should (P1)***
 - 📋 **E10-FEAT-004** — Rituale/governance come plugin portabile repo-agnostico (oltre ciò che sertor-flow copre) · ***Could***
 - 📋 **E10-FEAT-005** — Igiene del wiki — hub/overview per-area, tassonomia più fine, distill pagina osservabilità, ripasso [[tre · ***Could***
 - 📋 **E10-FEAT-006** — Robustezza del bundle sertor-flow — selettività (vs all-or-nothing) + hook harness governance (DA-g) · ***Could***

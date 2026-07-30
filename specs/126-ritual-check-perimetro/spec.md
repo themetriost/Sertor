@@ -201,8 +201,10 @@ verifica che l'esito sia un errore dichiarato e non un elenco vuoto.
 - **Per una pagina mai consegnata tutti i collegamenti risultano nuovi**, perché non esiste una versione
   precedente con cui confrontarli. È il comportamento corretto e viene **dichiarato** invece che
   ereditato tacitamente.
-- **L'unificazione strutturale** delle due derivazioni resta **fuori ambito** ed è già tracciata come
-  voce di backlog a sé: qui si allinea il comportamento, non si fondono i moduli.
+- **La derivazione è una sola.** Entrambe le capacità consumano lo stesso helper condiviso: la
+  divergenza non è corretta una volta, è **impossibile per costruzione**. L'unificazione era
+  inizialmente fuori ambito e vi è stata inclusa dopo che il rischio addotto per rinviarla si era
+  estinto.
 - **La metà «già consegnata» resta quella odierna, e questa è una scelta esplicita.** Le due capacità
   non divergevano solo sull'albero di lavoro: divergono **anche** su quale porzione di consegnato
   guardano — questa parte da un **riferimento indicato dall'utente** (tutto il ramo di lavoro dalla sua

@@ -89,10 +89,8 @@ Ordine per dipendenza. `[P]` = parallelizzabile con la task precedente.
   ✅ **Anti-vacuità applicata:** ogni caso asserisce `chiamato["hit"]`, cioè di aver **raggiunto** il
   ramo d'errore — senza, un `ConfigError` sollevato da tutt'altra causa lo farebbe passare gratis.
 
-- [x] **T014** — `tests/unit/test_perimetro_equivalenza.py` (nuovo): **test di equivalenza** fra la
-  derivazione di `scan` e quella di `ritual_check` sullo **stesso** albero effimero. Diventa rosso se
-  una delle due viene toccata da sola. È la mitigazione R-3 resa eseguibile, e il presidio finché
-  E10-FEAT-066 non unifica.
+- [x] **T014** — ~~test di equivalenza fra le due derivazioni~~ → **superato da T020**: con una sola
+  derivazione l'equivalenza è vacua per costruzione. Il file è stato rimosso, non conservato.
 
 ## Fase 6 — Documentazione e chiusura
 
@@ -116,6 +114,26 @@ Ordine per dipendenza. `[P]` = parallelizzabile con la task precedente.
   (delegata al `wiki-curator`), **distill** eseguito → nuova pagina
   [[il-rimedio-ricade-nel-difetto]], **lint semantico** eseguito con due correzioni reali trovate
   *dallo strumento appena riparato* (`daily-distill-floor.md` · `fail-loud-fix-cause.md`).
+
+## Fase 7 — Chiusura di E10-FEAT-066 (aggiunta in corsa)
+
+- [x] **T020** — `scan.py` consuma `vcs.worktree_changes` e `vcs.split_z`; rimosse le copie private
+  `_worktree_changes` e `_split_z` (**−56 righe**). **E10-FEAT-066 si chiude senza essere mai stata
+  lavoro a sé.**
+  *Perché in corsa:* la prima stesura la rinviava per il rischio su `scan`; quel rischio **si era già
+  estinto grazie al lavoro fatto** (helper esistente e testato, equivalenza dimostrata, un solo punto
+  di chiamata), e la domanda dell'utente ha reso visibile che si passava da **1 a 2** copie.
+
+- [x] **T021** — Sostituito il test di equivalenza — diventato vacuo — con
+  `tests/unit/test_perimetro_derivazione_unica.py`: guardia **strutturale** sulle invocazioni git che
+  costituiscono la derivazione, con i propri test anti-vacuità (gli oggetti ispezionati sono moduli;
+  le invocazioni esistono davvero in `vcs`). Provata reintroducendo una copia: diventa rossa.
+  ⚠️ Le prime **due** stesure della guardia passavano a vuoto (cercava per nome; ispezionava la
+  funzione invece del modulo). Registrato perché è la stessa classe che la feature cura.
+
+- [x] **T022** — Riallineati gli artefatti che dichiaravano il residuo (spec · plan · research ·
+  tasks · `epic.md` · EXEC e totali della roadmap · corpo della PR): un artefatto che dichiara un
+  residuo inesistente è drift.
 
 ## Tracciamento requisiti → task
 
