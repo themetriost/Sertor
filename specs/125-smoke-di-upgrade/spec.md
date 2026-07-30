@@ -146,6 +146,16 @@ modifica verrebbe aggirato; uno assente al rilascio non protegge nulla. Ha prior
 - **SC-001 (potere retrospettivo):** applicato ai **sette** difetti d'aggiornamento già occorsi, il
   meccanismo ne rileva almeno **cinque**. È il criterio che rende la feature falsificabile: non «esiste
   un test d'aggiornamento» ma «un test che, se fosse esistito, avrebbe fermato questi».
+  - **✅ MISURATO: 6 su 7.** Pin fermo → `pin-moved` · hook duplicato al ri-cablaggio → `hook-single`
+    · corpus azzerato dall'upgrade → `host-config-preserved` · `--directory` conservato →
+    `mcp-invocation-shape` · artefatto divergente saltato → `no-stale-divergence` · falso `behind`
+    letto dallo stamp → `version-derived-from-runtime`.
+  - **Il settimo è dichiarato, non implicito** (SC-007): `upgrade` nudo che copre una sola capability
+    uscendo verde (**E2-FEAT-023**) resta **fuori copertura di proposito**, perché il difetto è
+    **aperto**: asserirlo ora terrebbe il gate rosso in permanenza su un guasto noto, e una guardia
+    sempre rossa è una guardia che si impara a ignorare. Ordine giusto: prima il fix, poi
+    l'asserzione. Il residuo è scritto in `.github/workflows/ci.yml` e in `docs/install.md` §10.2.1,
+    con una guardia che ne verifica la presenza.
 - **SC-002 (il verbo giusto):** esiste almeno una verifica in cui la versione precedente è **realmente
   installata** prima dell'aggiornamento → **0** verifiche che simulano lo stato di partenza.
 - **SC-003 (esiti, non forme):** **100%** delle asserzioni riguardano lo stato dell'host dopo

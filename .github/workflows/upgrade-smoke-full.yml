@@ -49,4 +49,6 @@ jobs:
         env:
           SERTOR_SMOKE_REF: master
           SERTOR_SMOKE_FROM_REF: ${{ inputs.from_ref }}
-        run: uv run pytest -m integration tests/integration/test_host_smoke.py -k "upgrade and ${{ matrix.assistant }}" -v
+        # `-s`: see ci.yml — a green run must show WHICH outcomes held, or an `n/a` branch reads the
+        # same as an assertion that passed.
+        run: uv run pytest -m integration tests/integration/test_host_smoke.py -k "upgrade and ${{ matrix.assistant }}" -v -s

@@ -790,6 +790,38 @@ everything is `skipped`), `1` domain error (fail-fast, the failed step is named)
 `sertor uninstall rag` with a local-scope MCP de-registers the server via `claude mcp remove`; if
 `claude` is absent the command stops with the manual fallback command.
 
+### 10.2.1 What an upgrade is verified to do — and the one gap we know about
+
+Every defect an upgrade can have needs a **pre-existing older installation** to show up, so a check
+that installs onto a clean host cannot see any of them. Before a release is published, an automated
+check therefore installs the **previous release** on a throwaway host, runs `upgrade` on it, and
+asserts outcomes on the **state of that host** — never on the contents of our repository:
+
+| Outcome | What it means for your host |
+|---|---|
+| **pin moved** | the runtime source no longer points at the version you came from |
+| **one automation, current** | each hook is wired **once**, and it is the new copy — not the old one left live beside it |
+| **your configuration preserved** | the settings you chose in `.sertor/.env` survive the upgrade |
+| **invocation shape current** | the recorded MCP command is the current form, not one kept "because it was already there" |
+| **nothing left stale** | a Sertor-owned file that differs is replaced, not skipped |
+| **version derived from the runtime** | what the host reports as installed is read from what it actually resolves, not from a stamp written alongside it |
+| **health green** | `sertor-rag doctor` passes after the upgrade, on an index built by the **previous** version |
+
+**Two paths, on purpose.** The check above runs **automatically** and is blocking before a release,
+on a single combination — a gate that costs too much is a gate people switch off. The **full**
+perimeter (both assistants × Linux/Windows, plus a deliberate long version jump such as
+`0.3.0 → latest`) is a separate, **manually triggered** run. It is **not required to publish**, and
+that exclusion is a declared choice rather than an oversight.
+
+> **The known gap, stated rather than implied.** A bare **`sertor upgrade`** — no capability
+> argument — has been observed on a host with **both** capabilities installed to refresh only one of
+> them and still exit with a green summary, so nothing suggested that half the installation had been
+> left behind. This is tracked as an open defect, and it is deliberately **not** asserted by the
+> check above yet: a guard that is red for a known-open defect is a guard people learn to ignore. It
+> will be added once the defect is fixed. **Until then, if you have more than one capability
+> installed, name them explicitly** — `sertor upgrade rag` *and* `sertor upgrade wiki` — instead of
+> relying on the bare verb, and compare the two reports.
+
 ### 10.3 Manual uninstall (fallback / historical)
 
 > **Prefer §10.2.** The manual procedure below is a **fallback** for environments without the

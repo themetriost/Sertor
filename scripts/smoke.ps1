@@ -442,7 +442,64 @@ function Assert-UpgradeOutcomes([string]$cap) {
     Assert-Outcome "no-stale-divergence" (-not ($script:UpgradeOut -match "PRESENT_DIVERGENT")) `
         "the upgrade left an artefact divergent instead of replacing it (PRESENT_DIVERGENT in report)"
 
-    # 6. Health is green — the catch-all for what the five above do not name.
+    # 6. The version the host reports as INSTALLED is DERIVED from the runtime, not read from the
+    #    install-time stamp. Defect E2-FEAT-021 — already FIXED, which is precisely why the assertion
+    #    is worth its lines: being fixed and ARRIVING at a host that upgrades are different facts, and
+    #    only the second is what the host experiences. The stamp records the version of the *installer
+    #    that ran*; a host whose runtime was current but whose stamp lagged reported a permanent false
+    #    `behind`, with a suggested remedy that was not even executable there.
+    #
+    #    Discriminating BY CONSTRUCTION, not by luck: we plant a stamp that LAGS the runtime — the
+    #    field condition itself. Reading the stamp yields `behind`; deriving from the lock yields
+    #    up-to-date. Without the planted stamp the two sources agree on this fixture and the assertion
+    #    would pass while measuring nothing. `latest` is seeded into the cache so the check stays
+    #    offline: the network is not what is under test here.
+    $vcHook = if ($IsCopilot) { Join-Path $HostDir ".github/hooks/version-check.py" }
+              else            { Join-Path $HostDir ".claude/hooks/version-check.py" }
+    if ((Test-Path $sertorDir) -and (Test-Path $vcHook)) {
+        $lockPath = Join-Path $sertorDir "uv.lock"
+        $runtimeVer = ""
+        if (Test-Path $lockPath) {
+            $mv = [regex]::Match((Get-Content $lockPath -Raw),
+                '(?s)name\s*=\s*"sertor-core".*?version\s*=\s*"([^"]+)"')
+            if ($mv.Success) { $runtimeVer = $mv.Groups[1].Value }
+        }
+        # Fail, not skip: an unreadable lock on a host that just upgraded is the very state this
+        # outcome exists to observe. A silent `n/a` here would be the gate disabling itself.
+        if (-not $runtimeVer) { Fail "version-derived: no sertor-core version in .sertor/uv.lock" }
+
+        Set-Content -Path (Join-Path $sertorDir ".sertor-version") -Value "0.0.1" -Encoding utf8
+        $seed = [ordered]@{
+            schema     = "version.check/1"
+            verdict    = "unknown"
+            installed  = ""
+            latest     = $runtimeVer
+            checked_at = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+        } | ConvertTo-Json
+        Set-Content -Path (Join-Path $sertorDir ".version-check.json") -Value $seed -Encoding utf8
+
+        # CLAUDE_PROJECT_DIR is pinned to the throwaway host ON PURPOSE: the hook honours it over the
+        # event's cwd, so a run started from inside a real session would otherwise write its state
+        # into THAT project instead of the fixture.
+        $prevProjectDir = $env:CLAUDE_PROJECT_DIR
+        $env:CLAUDE_PROJECT_DIR = $HostDir
+        try {
+            '{}' | & uv run --no-project python $vcHook 2>&1 | Out-String | Write-Host
+        } finally {
+            $env:CLAUDE_PROJECT_DIR = $prevProjectDir
+        }
+
+        $vc = Get-Content (Join-Path $sertorDir ".version-check.json") -Raw | ConvertFrom-Json
+        Assert-Outcome "version-derived-from-runtime" `
+            (($vc.installed_source -eq "runtime-lock") -and ($vc.verdict -ne "behind")) `
+            ("the host reports installed='$($vc.installed)' source='$($vc.installed_source)' " +
+             "verdict='$($vc.verdict)' while the runtime resolves sertor-core $runtimeVer — " +
+             "the planted stale stamp won over the lock")
+    } else {
+        Write-Host "[upgrade] n/a  version-derived-from-runtime (capability '$cap' deposits no version-check hook)"
+    }
+
+    # 7. Health is green — the catch-all for what the six above do not name.
     if (Test-Path $sertorDir) {
         $doctor = & uv run --project $sertorDir sertor-rag doctor 2>&1 | Out-String
         Assert-Outcome "health-green" ($LASTEXITCODE -eq 0) `

@@ -395,7 +395,59 @@ assert_upgrade_outcomes() {
         assert_outcome "no-stale-divergence" 1 ""
     fi
 
-    # 6. Health is green — the catch-all for what the five above do not name.
+    # 6. The version the host reports as INSTALLED is DERIVED from the runtime, not read from the
+    #    install-time stamp. Defect E2-FEAT-021 — already FIXED, which is precisely why the assertion
+    #    is worth its lines: being fixed and ARRIVING at a host that upgrades are different facts, and
+    #    only the second is what the host experiences. The stamp records the version of the *installer
+    #    that ran*; a host whose runtime was current but whose stamp lagged reported a permanent false
+    #    `behind`, with a suggested remedy that was not even executable there.
+    #
+    #    Discriminating BY CONSTRUCTION, not by luck: we plant a stamp that LAGS the runtime — the
+    #    field condition itself. Reading the stamp yields `behind`; deriving from the lock yields
+    #    up-to-date. Without the planted stamp the two sources agree on this fixture and the assertion
+    #    would pass while measuring nothing. `latest` is seeded into the cache so the check stays
+    #    offline: the network is not what is under test here.
+    _vc_hook="$HOST/.claude/hooks/version-check.py"
+    [ "$IS_COPILOT" -eq 1 ] && _vc_hook="$HOST/.github/hooks/version-check.py"
+    if [ -d "$_sertor_dir" ] && [ -f "$_vc_hook" ]; then
+        _runtime_ver=""
+        if [ -f "$_sertor_dir/uv.lock" ]; then
+            _runtime_ver="$(awk -F'"' '/^name = "sertor-core"$/{f=1} f && /^version = /{print $2; exit}' \
+                "$_sertor_dir/uv.lock")"
+        fi
+        # fail, not skip: an unreadable lock on a host that just upgraded is the very state this
+        # outcome exists to observe. A silent skip here would be the gate disabling itself.
+        [ -n "$_runtime_ver" ] || fail "version-derived: no sertor-core version in .sertor/uv.lock"
+
+        printf '0.0.1\n' > "$_sertor_dir/.sertor-version"
+        cat > "$_sertor_dir/.version-check.json" <<EOF
+{
+  "schema": "version.check/1",
+  "verdict": "unknown",
+  "installed": "",
+  "latest": "$_runtime_ver",
+  "checked_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+        # CLAUDE_PROJECT_DIR is pinned to the throwaway host ON PURPOSE: the hook honours it over the
+        # event's cwd, so a run started from inside a real session would otherwise write its state
+        # into THAT project instead of the fixture.
+        _vc_out="$(printf '{}' | CLAUDE_PROJECT_DIR="$HOST" uv run --no-project python "$_vc_hook" 2>&1)" || true
+        if [ -n "$_vc_out" ]; then echo "$_vc_out"; fi
+
+        _vc_state="$(cat "$_sertor_dir/.version-check.json")"
+        if printf '%s' "$_vc_state" | grep -qF '"installed_source": "runtime-lock"' \
+           && ! printf '%s' "$_vc_state" | grep -qF '"verdict": "behind"'; then
+            assert_outcome "version-derived-from-runtime" 1 ""
+        else
+            assert_outcome "version-derived-from-runtime" 0 \
+                "the host derived the installed version from the planted stale stamp instead of the lock (runtime sertor-core $_runtime_ver); state: $(printf '%s' "$_vc_state" | tr '\n' ' ')"
+        fi
+    else
+        echo "[upgrade] n/a  version-derived-from-runtime (capability '$_cap' deposits no version-check hook)"
+    fi
+
+    # 7. Health is green — the catch-all for what the six above do not name.
     if [ -d "$_sertor_dir" ]; then
         if _doctor_out="$(uv run --project "$_sertor_dir" sertor-rag doctor 2>&1)"; then
             assert_outcome "health-green" 1 ""

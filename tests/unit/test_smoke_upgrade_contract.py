@@ -26,6 +26,7 @@ OUTCOMES = (
     "host-config-preserved",
     "mcp-invocation-shape",
     "no-stale-divergence",
+    "version-derived-from-runtime",
     "health-green",
 )
 
@@ -140,6 +141,75 @@ def test_the_upgrade_fixture_reaches_the_state_a_real_host_is_in():
             f"{name}: the upgrade flow never builds an index, so 'health-green' would measure "
             f"an empty fixture instead of a host"
         )
+
+
+def test_the_version_outcome_plants_the_condition_it_claims_to_measure():
+    """`version-derived-from-runtime` is vacuous unless the stamp and the lock DISAGREE.
+
+    On this fixture both sources say the same thing, because the same ref produced the installer and
+    the runtime. An assertion read against agreeing sources passes for free and measures nothing —
+    the failure mode of a guard is not going red, it is going green without looking. So the script
+    plants a stamp that LAGS the runtime (the field condition of E2-FEAT-021) before asking.
+
+    Delete the planting and this guard goes red while the outcome itself would stay green: that
+    inversion is the whole point of writing it down.
+    """
+    for name, text in (("ps1", PS1), ("sh", SH)):
+        assert "0.0.1" in text, (
+            f"{name}: no stale stamp is planted, so 'version-derived-from-runtime' would compare "
+            f"two sources that already agree and assert nothing"
+        )
+        assert ".sertor-version" in text, f"{name}: the stamp file is never written"
+        assert "runtime-lock" in text, (
+            f"{name}: the outcome never checks WHICH source the host derived the version from"
+        )
+
+
+def test_the_version_outcome_stays_offline_by_seeding_the_cache():
+    """The network is not under test: a GET failure must not be readable as a product divergence."""
+    for name, text in (("ps1", PS1), ("sh", SH)):
+        assert ".version-check.json" in text, (
+            f"{name}: the version-check cache is not seeded, so the outcome depends on a live GET "
+            f"and an offline runner would look like a defect"
+        )
+        assert "checked_at" in text, f"{name}: a cache without a fresh checked_at is not reused"
+
+
+def test_the_version_outcome_cannot_write_into_a_real_project():
+    """The hook honours CLAUDE_PROJECT_DIR over the event cwd — unpinned, it writes to the caller.
+
+    Run from inside a real session (where the variable is set to the developer's own repo), the
+    invocation would deposit its state THERE and read that project's lock. The fixture must own the
+    variable for the duration of the call.
+    """
+    assert 'CLAUDE_PROJECT_DIR = $HostDir' in PS1, "ps1: the hook run is not pinned to the host"
+    assert 'CLAUDE_PROJECT_DIR="$HOST"' in SH, "sh: the hook run is not pinned to the host"
+
+
+def test_the_uncovered_defect_is_named_where_it_can_be_read():
+    """SC-007: 'six of seven' is only honest if the seventh is written down, not left implied.
+
+    The residual is the half of a coverage claim that rots first, because nothing breaks when it
+    disappears. Two homes, both checked: the gate itself (for whoever reads why it is shaped this
+    way) and the user documentation (for whoever runs `upgrade` and would otherwise trust the bare
+    verb). A number without its remainder is a claim, not a measurement.
+    """
+    ci = (Path(__file__).resolve().parents[2] / ".github/workflows/ci.yml").read_text(
+        encoding="utf-8"
+    )
+    assert "NOT COVERED" in ci, "the upgrade gate does not name the defect it leaves uncovered"
+    assert "E2-FEAT-023" in ci, "the uncovered defect is not identified"
+
+    install_doc = (Path(__file__).resolve().parents[2] / "docs/install.md").read_text(
+        encoding="utf-8"
+    )
+    assert "10.2.1" in install_doc, "the user documentation does not describe what upgrade verifies"
+    assert "The known gap" in install_doc, (
+        "the user documentation does not warn about the gap, so a host would trust the bare verb"
+    )
+    assert "name them explicitly" in install_doc, (
+        "the warning states the gap without telling the host what to do instead"
+    )
 
 
 def test_counting_pipelines_cannot_kill_the_script_silently():
