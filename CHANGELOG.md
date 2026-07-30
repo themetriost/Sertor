@@ -19,10 +19,24 @@ The wiki recording now says **what it covers**, and two guards stop reporting th
 the first release we shipped after checking, on a throwaway host, that an **upgrade** actually
 delivers it — rather than inferring that from the merge.
 
-> **Upgrade.** `sertor upgrade wiki` and `sertor-flow upgrade` refresh the instruction blocks and
-> hooks in place; the library changes travel with the `.sertor/` runtime (`uv sync --project .sertor
-> --upgrade`). Nothing you configured is touched. **No action is required for existing journals** —
-> see the compatibility note below.
+> **Upgrade — bring the host fully to `0.4.0`, naming each capability:**
+>
+> ```
+> uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor upgrade rag
+> uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor upgrade wiki
+> uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor-flow" sertor-flow upgrade
+> uv sync --project .sertor --upgrade
+> ```
+>
+> Nothing you configured is touched. **No action is required for existing journals** — see the
+> compatibility note below.
+>
+> Two points of precision, so a version number means the same thing on every host: **what actually
+> changed is the `wiki` capability and the `.sertor/` runtime** — the `rag` assets and `sertor-flow`
+> carry no changes here, and their commands are listed to leave every host on the same base, not
+> because they deliver a fix. And **name each capability explicitly**: a bare `sertor upgrade` has
+> been observed to refresh only one capability on a host that has several while still exiting green
+> (open defect). `sertor` is not on your `PATH` — it is invoked through `uvx --from`, as above.
 
 ### Changed
 
