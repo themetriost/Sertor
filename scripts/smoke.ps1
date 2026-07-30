@@ -57,20 +57,47 @@ param(
     [ValidateSet("claude", "copilot-cli")]
     [string]$Assistant = "claude",
     [ValidateSet("rag", "wiki", "flow")]
-    [string]$Capability = "rag"
+    [string]$Capability = "rag",
+    # E15-FEAT-012: ref the host STARTS from. Empty = install-only (behaviour unchanged).
+    # Set = install that release, then `upgrade` to -Ref, then assert the outcomes on the host.
+    [string]$FromRef = ""
 )
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-$RepoUrl       = "https://github.com/themetriost/Sertor"
-$SertorSource  = "git+$RepoUrl@$Ref#subdirectory=packages/sertor"
-$FlowSource    = "git+$RepoUrl@$Ref#subdirectory=packages/sertor-flow"
-$IsCopilot     = ($Assistant -eq "copilot-cli")
+$RepoUrl        = "https://github.com/themetriost/Sertor"
+$SertorSource   = "git+$RepoUrl@$Ref#subdirectory=packages/sertor"
+$FlowSource     = "git+$RepoUrl@$Ref#subdirectory=packages/sertor-flow"
+$IsUpgrade      = -not [string]::IsNullOrWhiteSpace($FromRef)
+$FromSertorSrc  = if ($IsUpgrade) { "git+$RepoUrl@$FromRef#subdirectory=packages/sertor" } else { "" }
+$FromFlowSrc    = if ($IsUpgrade) { "git+$RepoUrl@$FromRef#subdirectory=packages/sertor-flow" } else { "" }
+$IsCopilot      = ($Assistant -eq "copilot-cli")
+$script:UpgradeOut = ""   # the upgrade report, read by the no-stale-divergence outcome
 
 function Fail([string]$msg) {
     Write-Host "SMOKE_FAIL: $msg" -ForegroundColor Red
     exit 1
+}
+
+# An environment impediment is NOT a product defect, and collapsing the two teaches people to ignore
+# the gate — the exact dynamic that made v0.3.3 necessary (a guard that cries wolf stops being read).
+# Distinct marker AND distinct exit code so a consumer can tell them apart without parsing prose.
+function Fail-Env([string]$msg) {
+    Write-Host "SMOKE_ENV: $msg" -ForegroundColor Yellow
+    exit 2
+}
+
+# Every asserted outcome goes through here, so a failure NAMES the outcome and the context instead of
+# leaving the reader to reproduce the run (FR-008). The outcome list lives in ONE place: see
+# `Assert-UpgradeOutcomes`.
+function Assert-Outcome([string]$outcome, [bool]$ok, [string]$detail) {
+    if ($ok) {
+        Write-Host "[upgrade] OK   $outcome"
+        return
+    }
+    Fail ("upgrade outcome '$outcome' diverged — $detail " +
+          "[assistant=$Assistant capability=$Capability from=$FromRef to=$Ref]")
 }
 
 function Require-Tool([string]$name) {
@@ -353,8 +380,219 @@ function Invoke-FlowSmoke {
     Write-Host "SMOKE_OK assistant=$Assistant capability=flow deposit=ok" -ForegroundColor Green
 }
 
+# =================================================================================================
+# E15-FEAT-012 — upgrade flow: install the PREVIOUS release, upgrade, assert outcomes on the HOST
+# =================================================================================================
+
+# THE outcome list (FR-015). Every entry exists because a defect really happened: adding one after a
+# new field report must be one more line here, never a restructuring — otherwise the list ages and the
+# guard only protects the past.
+function Assert-UpgradeOutcomes([string]$cap) {
+    $sertorDir = Join-Path $HostDir ".sertor"
+
+    # 1. The pin moved. Defect: the recorded source stayed at the old version after `upgrade` —
+    #    reported by THREE independent nodes, and the reason v0.3.1 existed.
+    $pinFile = Join-Path $sertorDir "pyproject.toml"
+    if (Test-Path $pinFile) {
+        $pin = Get-Content $pinFile -Raw
+        Assert-Outcome "pin-moved" (-not ($pin -match [regex]::Escape($FromRef))) `
+            "the runtime source still references '$FromRef' in .sertor/pyproject.toml"
+    } else {
+        Write-Host "[upgrade] n/a  pin-moved (capability '$cap' creates no runtime)"
+    }
+
+    # 2. Exactly ONE session automation, and it is the current one. Defect: identity by command string
+    #    made a re-wire look new, so the hook was duplicated (E10-FEAT-032) with the broken copy live.
+    $settingsRel = if ($IsCopilot) { ".github/hooks/sertor-hooks.json" } else { ".claude/settings.json" }
+    $settings = Join-Path $HostDir $settingsRel
+    if (Test-Path $settings) {
+        $raw = Get-Content $settings -Raw
+        foreach ($stem in @("rag-freshness", "wiki-guard", "memory-capture")) {
+            $count = ([regex]::Matches($raw, [regex]::Escape($stem))).Count
+            if ($count -gt 0) {
+                Assert-Outcome "hook-single:$stem" ($count -le 2) `
+                    "hook '$stem' appears $count times in $settingsRel (duplicated wiring)"
+            }
+        }
+    }
+
+    # 3. Host-owned configuration preserved. Defect: fixing E2-FEAT-022 nearly zeroed the corpus on
+    #    every upgrade — caught by a MANUAL run, not by the tests. The upgrade rewrites OUR invocation
+    #    and preserves THEIR configuration.
+    $envFile = Join-Path $sertorDir ".env"
+    if (Test-Path $envFile) {
+        $envRaw = Get-Content $envFile -Raw
+        Assert-Outcome "host-config-preserved" ($envRaw -match "SERTOR_CORPUS\s*=\s*smoke") `
+            "SERTOR_CORPUS=smoke is gone from .sertor/.env after the upgrade"
+    }
+
+    # 4. The recorded invocation has the current shape. Defect: `--directory` kept because it "was
+    #    already there" — the RAG resolved the index in the wrong folder for a month.
+    $mcp = Join-Path $HostDir ".mcp.json"
+    if (Test-Path $mcp) {
+        $mcpRaw = Get-Content $mcp -Raw
+        Assert-Outcome "mcp-invocation-shape" (-not ($mcpRaw -match "--directory")) `
+            "the MCP registration still uses --directory instead of --project"
+    }
+
+    # 5. Nothing was left stale. Defect: `install` is non-destructive and leaves a divergent file in
+    #    place (PRESENT_DIVERGENT) — correct for install, WRONG for upgrade, whose contract is to
+    #    replace our own artefacts. It blocked hook fixes that had already been released (E2-FEAT-023
+    #    family). The signal is in the upgrade's own report, so it costs nothing to read.
+    Assert-Outcome "no-stale-divergence" (-not ($script:UpgradeOut -match "PRESENT_DIVERGENT")) `
+        "the upgrade left an artefact divergent instead of replacing it (PRESENT_DIVERGENT in report)"
+
+    # 6. The version the host reports as INSTALLED is DERIVED from the runtime, not read from the
+    #    install-time stamp. Defect E2-FEAT-021 — already FIXED, which is precisely why the assertion
+    #    is worth its lines: being fixed and ARRIVING at a host that upgrades are different facts, and
+    #    only the second is what the host experiences. The stamp records the version of the *installer
+    #    that ran*; a host whose runtime was current but whose stamp lagged reported a permanent false
+    #    `behind`, with a suggested remedy that was not even executable there.
+    #
+    #    Discriminating BY CONSTRUCTION, not by luck: we plant a stamp that LAGS the runtime — the
+    #    field condition itself. Reading the stamp yields `behind`; deriving from the lock yields
+    #    up-to-date. Without the planted stamp the two sources agree on this fixture and the assertion
+    #    would pass while measuring nothing. `latest` is seeded into the cache so the check stays
+    #    offline: the network is not what is under test here.
+    $vcHook = if ($IsCopilot) { Join-Path $HostDir ".github/hooks/version-check.py" }
+              else            { Join-Path $HostDir ".claude/hooks/version-check.py" }
+    if ((Test-Path $sertorDir) -and (Test-Path $vcHook)) {
+        $lockPath = Join-Path $sertorDir "uv.lock"
+        $runtimeVer = ""
+        if (Test-Path $lockPath) {
+            $mv = [regex]::Match((Get-Content $lockPath -Raw),
+                '(?s)name\s*=\s*"sertor-core".*?version\s*=\s*"([^"]+)"')
+            if ($mv.Success) { $runtimeVer = $mv.Groups[1].Value }
+        }
+        # Fail, not skip: an unreadable lock on a host that just upgraded is the very state this
+        # outcome exists to observe. A silent `n/a` here would be the gate disabling itself.
+        if (-not $runtimeVer) { Fail "version-derived: no sertor-core version in .sertor/uv.lock" }
+
+        Set-Content -Path (Join-Path $sertorDir ".sertor-version") -Value "0.0.1" -Encoding utf8
+        $seed = [ordered]@{
+            schema     = "version.check/1"
+            verdict    = "unknown"
+            installed  = ""
+            latest     = $runtimeVer
+            checked_at = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+        } | ConvertTo-Json
+        Set-Content -Path (Join-Path $sertorDir ".version-check.json") -Value $seed -Encoding utf8
+
+        # CLAUDE_PROJECT_DIR is pinned to the throwaway host ON PURPOSE: the hook honours it over the
+        # event's cwd, so a run started from inside a real session would otherwise write its state
+        # into THAT project instead of the fixture.
+        $prevProjectDir = $env:CLAUDE_PROJECT_DIR
+        $env:CLAUDE_PROJECT_DIR = $HostDir
+        try {
+            '{}' | & uv run --no-project python $vcHook 2>&1 | Out-String | Write-Host
+        } finally {
+            $env:CLAUDE_PROJECT_DIR = $prevProjectDir
+        }
+
+        $vc = Get-Content (Join-Path $sertorDir ".version-check.json") -Raw | ConvertFrom-Json
+        Assert-Outcome "version-derived-from-runtime" `
+            (($vc.installed_source -eq "runtime-lock") -and ($vc.verdict -ne "behind")) `
+            ("the host reports installed='$($vc.installed)' source='$($vc.installed_source)' " +
+             "verdict='$($vc.verdict)' while the runtime resolves sertor-core $runtimeVer — " +
+             "the planted stale stamp won over the lock")
+    } else {
+        Write-Host "[upgrade] n/a  version-derived-from-runtime (capability '$cap' deposits no version-check hook)"
+    }
+
+    # 7. Health is green — the catch-all for what the six above do not name.
+    if (Test-Path $sertorDir) {
+        $doctor = & uv run --project $sertorDir sertor-rag doctor 2>&1 | Out-String
+        Assert-Outcome "health-green" ($LASTEXITCODE -eq 0) `
+            "doctor exited $LASTEXITCODE after the upgrade: $($doctor.Trim())"
+    }
+}
+
+function Invoke-UpgradeFlow([string]$cap) {
+    $fromSrc = if ($cap -eq "flow") { $FromFlowSrc } else { $FromSertorSrc }
+    $toSrc   = if ($cap -eq "flow") { $FlowSource }  else { $SertorSource }
+    $exe     = if ($cap -eq "flow") { "sertor-flow" } else { "sertor" }
+
+    Write-Host "[upgrade] installing PREVIOUS release $FromRef ($cap / $Assistant) ..."
+    Push-Location $HostDir
+    try {
+        if ($cap -eq "rag") {
+            & uvx --refresh --from $fromSrc $exe install $cap --assistant $Assistant `
+                --backend local --no-rerank --no-graph --corpus smoke --target $HostDir 2>&1 | Out-String | Write-Host
+        } else {
+            & uvx --refresh --from $fromSrc $exe install $cap --assistant $Assistant --target $HostDir 2>&1 | Out-String | Write-Host
+        }
+    } finally {
+        Pop-Location
+    }
+    if ($LASTEXITCODE -ne 0) {
+        # Could not even reach the starting line: the previous release is not installable here.
+        Fail-Env "install of previous release '$FromRef' exited $LASTEXITCODE (ref reachable? network?)"
+    }
+
+    # Same fixture policy the install flow already applies: the install writes
+    # SERTOR_EMBED_PROVIDER=glove, whose vectors are a ~822 MB download the runner must not make. It
+    # is a FIXTURE choice, not a product one — and the product question it could hide was checked:
+    # `host-config-preserved` passes, so the upgrade preserves .env; the provider stays `glove`
+    # because that is the install default, not because the upgrade touched it.
+    $envFile = Join-Path $HostDir ".sertor/.env"
+    if (Test-Path $envFile) {
+        $envRaw = Get-Content $envFile -Raw
+        if ($envRaw -match "(?m)^SERTOR_EMBED_PROVIDER=") {
+            ($envRaw -replace "(?m)^SERTOR_EMBED_PROVIDER=.*", "SERTOR_EMBED_PROVIDER=hash") |
+                Set-Content -Path $envFile -Encoding utf8
+        } else {
+            Add-Content -Path $envFile -Value "`nSERTOR_EMBED_PROVIDER=hash" -Encoding utf8
+        }
+        Write-Host "[upgrade] provider forced to hash (fixture: no 822 MB download on the runner)"
+    }
+
+    # A host that upgrades HAS an index, and it was built by the OLD version. Skipping this step is
+    # what made the first run report `health-green` as diverged: `doctor` said `index_absent`, which
+    # was true of the fixture and of no real host. It is not only fixture, though — indexing HERE,
+    # with the previous release, is what turns `health-green` into a question the install-only smoke
+    # cannot ask at all: does the new version still READ the index the previous one wrote? A manifest
+    # that stopped being readable would otherwise cost the host its index in silence.
+    if ($cap -eq "rag" -and (Test-Path (Join-Path $HostDir ".sertor"))) {
+        Write-Host "[upgrade] indexing with the PREVIOUS release ..."
+        Push-Location $HostDir
+        try {
+            $idxOut = & uv run --project .sertor sertor-rag index . 2>&1 | Out-String
+        } finally {
+            Pop-Location
+        }
+        # Fail-Env, not Fail: a previous release that cannot index is a starting line we never
+        # reached — it says nothing about $Ref, which is the thing under test.
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host $idxOut
+            Fail-Env "index with the previous release '$FromRef' exited $LASTEXITCODE"
+        }
+        Write-Host $idxOut.TrimEnd()
+    }
+
+    Write-Host "[upgrade] upgrading $FromRef -> $Ref ..."
+    Push-Location $HostDir
+    try {
+        $script:UpgradeOut = & uvx --refresh --from $toSrc $exe upgrade $cap --assistant $Assistant --target $HostDir 2>&1 | Out-String
+        Write-Host $script:UpgradeOut.TrimEnd()
+    } finally {
+        Pop-Location
+    }
+    if ($LASTEXITCODE -ne 0) { Fail "upgrade $cap exited $LASTEXITCODE" }
+
+    # Exit code 0 is NOT an outcome: `upgrade` used to succeed while moving nothing (SC-004).
+    Assert-UpgradeOutcomes $cap
+
+    Write-Host ""
+    Write-Host "SMOKE_OK assistant=$Assistant capability=$cap upgrade=$FromRef->$Ref" -ForegroundColor Green
+}
+
 try {
     if ($createdHost) { New-SyntheticHost }
+
+    if ($IsUpgrade) {
+        Invoke-UpgradeFlow $Capability
+        exit 0
+    }
 
     switch ($Capability) {
         "rag"  { Invoke-RagSmoke }

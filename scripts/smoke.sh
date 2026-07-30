@@ -45,6 +45,8 @@ REF="master"
 TARGET=""
 ASSISTANT="claude"
 CAPABILITY="rag"
+# E15-FEAT-012: ref the host STARTS from. Empty = install-only (behaviour unchanged).
+FROM_REF=""
 
 # Parse: positional REF then TARGET (backward compatible with the pytest wrapper), plus flags.
 _positional=()
@@ -52,8 +54,10 @@ while [ $# -gt 0 ]; do
     case "$1" in
         --assistant)  ASSISTANT="$2"; shift 2;;
         --capability) CAPABILITY="$2"; shift 2;;
+        --from-ref)   FROM_REF="$2"; shift 2;;
         --assistant=*)  ASSISTANT="${1#*=}"; shift;;
         --capability=*) CAPABILITY="${1#*=}"; shift;;
+        --from-ref=*)   FROM_REF="${1#*=}"; shift;;
         *) _positional+=("$1"); shift;;
     esac
 done
@@ -63,10 +67,29 @@ done
 REPO_URL="https://github.com/themetriost/Sertor"
 SERTOR_SOURCE="git+${REPO_URL}@${REF}#subdirectory=packages/sertor"
 FLOW_SOURCE="git+${REPO_URL}@${REF}#subdirectory=packages/sertor-flow"
+IS_UPGRADE=0
+[ -n "$FROM_REF" ] && IS_UPGRADE=1
+FROM_SERTOR_SOURCE="git+${REPO_URL}@${FROM_REF}#subdirectory=packages/sertor"
+FROM_FLOW_SOURCE="git+${REPO_URL}@${FROM_REF}#subdirectory=packages/sertor-flow"
 IS_COPILOT=0
 [ "$ASSISTANT" = "copilot-cli" ] && IS_COPILOT=1
+UPGRADE_OUT=""   # the upgrade report, read by the no-stale-divergence outcome
 
 fail() { echo "SMOKE_FAIL: $1" >&2; exit 1; }
+
+# An environment impediment is NOT a product defect. Collapsing the two teaches people to ignore the
+# gate — the dynamic that made v0.3.3 necessary. Distinct marker AND exit code (parity with .ps1).
+fail_env() { echo "SMOKE_ENV: $1" >&2; exit 2; }
+
+# Every asserted outcome goes through here, so a failure NAMES the outcome and the context (FR-008).
+assert_outcome() {
+    # $1 = outcome name, $2 = 0/1 ok flag, $3 = detail
+    if [ "$2" -eq 1 ]; then
+        echo "[upgrade] OK   $1"
+        return 0
+    fi
+    fail "upgrade outcome '$1' diverged — $3 [assistant=$ASSISTANT capability=$CAPABILITY from=$FROM_REF to=$REF]"
+}
 
 case "$ASSISTANT" in claude|copilot-cli) ;; *) fail "invalid --assistant: $ASSISTANT";; esac
 case "$CAPABILITY" in rag|wiki|flow) ;; *) fail "invalid --capability: $CAPABILITY";; esac
@@ -294,12 +317,218 @@ flow_smoke() {
     echo "SMOKE_OK assistant=$ASSISTANT capability=flow deposit=ok"
 }
 
+# =================================================================================================
+# E15-FEAT-012 — upgrade flow: install the PREVIOUS release, upgrade, assert outcomes on the HOST
+# =================================================================================================
+
+# THE outcome list (FR-015). Every entry exists because a defect really happened: adding one after a
+# new field report must be one more line here, never a restructuring — otherwise the list ages and
+# the guard only protects the past. Kept in parity with `Assert-UpgradeOutcomes` in smoke.ps1.
+assert_upgrade_outcomes() {
+    _cap="$1"
+    _sertor_dir="$HOST/.sertor"
+
+    # 1. The pin moved. Defect: the recorded source stayed at the old version after `upgrade` —
+    #    reported by THREE independent nodes, and the reason v0.3.1 existed.
+    if [ -f "$_sertor_dir/pyproject.toml" ]; then
+        if grep -qF "$FROM_REF" "$_sertor_dir/pyproject.toml"; then
+            assert_outcome "pin-moved" 0 "the runtime source still references '$FROM_REF' in .sertor/pyproject.toml"
+        else
+            assert_outcome "pin-moved" 1 ""
+        fi
+    else
+        echo "[upgrade] n/a  pin-moved (capability '$_cap' creates no runtime)"
+    fi
+
+    # 2. Exactly ONE session automation, and it is the current one. Defect: identity by command string
+    #    made a re-wire look new, so the hook was duplicated (E10-FEAT-032) with the broken copy live.
+    if [ "$IS_COPILOT" -eq 1 ]; then
+        _settings_rel=".github/hooks/sertor-hooks.json"
+    else
+        _settings_rel=".claude/settings.json"
+    fi
+    if [ -f "$HOST/$_settings_rel" ]; then
+        for _stem in rag-freshness wiki-guard memory-capture; do
+            # `|| _count=0`: under `set -euo pipefail` a `grep` that finds NOTHING exits 1, the
+            # pipeline fails, and the script would die HERE — silently, with no SMOKE_FAIL line. An
+            # absent stem is normal (a rag host has no wiki hooks), so it must read as zero, not as a
+            # crash. Observed on the first real run: the gate died opaquely on `wiki-guard`, which is
+            # exactly the failure shape `assert_outcome` exists to prevent.
+            _count="$(grep -oF "$_stem" "$HOST/$_settings_rel" | wc -l | tr -d ' ')" || _count=0
+            if [ "$_count" -gt 0 ]; then
+                if [ "$_count" -le 2 ]; then
+                    assert_outcome "hook-single:$_stem" 1 ""
+                else
+                    assert_outcome "hook-single:$_stem" 0 "hook '$_stem' appears $_count times in $_settings_rel (duplicated wiring)"
+                fi
+            fi
+        done
+    fi
+
+    # 3. Host-owned configuration preserved. Defect: fixing E2-FEAT-022 nearly zeroed the corpus on
+    #    every upgrade — caught by a MANUAL run, not by the tests.
+    if [ -f "$_sertor_dir/.env" ]; then
+        if grep -qE "SERTOR_CORPUS[[:space:]]*=[[:space:]]*smoke" "$_sertor_dir/.env"; then
+            assert_outcome "host-config-preserved" 1 ""
+        else
+            assert_outcome "host-config-preserved" 0 "SERTOR_CORPUS=smoke is gone from .sertor/.env after the upgrade"
+        fi
+    fi
+
+    # 4. The recorded invocation has the current shape. Defect: `--directory` kept because it "was
+    #    already there" — the RAG resolved the index in the wrong folder for a month.
+    if [ -f "$HOST/.mcp.json" ]; then
+        if grep -qF -- "--directory" "$HOST/.mcp.json"; then
+            assert_outcome "mcp-invocation-shape" 0 "the MCP registration still uses --directory instead of --project"
+        else
+            assert_outcome "mcp-invocation-shape" 1 ""
+        fi
+    fi
+
+    # 5. Nothing was left stale. Defect: `install` is non-destructive and leaves a divergent file in
+    #    place (PRESENT_DIVERGENT) — correct for install, WRONG for upgrade, whose contract is to
+    #    replace our own artefacts. It blocked hook fixes that had already been released. The signal
+    #    is in the upgrade's own report, so reading it costs nothing.
+    if printf '%s' "$UPGRADE_OUT" | grep -qF "PRESENT_DIVERGENT"; then
+        assert_outcome "no-stale-divergence" 0 "the upgrade left an artefact divergent instead of replacing it"
+    else
+        assert_outcome "no-stale-divergence" 1 ""
+    fi
+
+    # 6. The version the host reports as INSTALLED is DERIVED from the runtime, not read from the
+    #    install-time stamp. Defect E2-FEAT-021 — already FIXED, which is precisely why the assertion
+    #    is worth its lines: being fixed and ARRIVING at a host that upgrades are different facts, and
+    #    only the second is what the host experiences. The stamp records the version of the *installer
+    #    that ran*; a host whose runtime was current but whose stamp lagged reported a permanent false
+    #    `behind`, with a suggested remedy that was not even executable there.
+    #
+    #    Discriminating BY CONSTRUCTION, not by luck: we plant a stamp that LAGS the runtime — the
+    #    field condition itself. Reading the stamp yields `behind`; deriving from the lock yields
+    #    up-to-date. Without the planted stamp the two sources agree on this fixture and the assertion
+    #    would pass while measuring nothing. `latest` is seeded into the cache so the check stays
+    #    offline: the network is not what is under test here.
+    _vc_hook="$HOST/.claude/hooks/version-check.py"
+    [ "$IS_COPILOT" -eq 1 ] && _vc_hook="$HOST/.github/hooks/version-check.py"
+    if [ -d "$_sertor_dir" ] && [ -f "$_vc_hook" ]; then
+        _runtime_ver=""
+        if [ -f "$_sertor_dir/uv.lock" ]; then
+            _runtime_ver="$(awk -F'"' '/^name = "sertor-core"$/{f=1} f && /^version = /{print $2; exit}' \
+                "$_sertor_dir/uv.lock")"
+        fi
+        # fail, not skip: an unreadable lock on a host that just upgraded is the very state this
+        # outcome exists to observe. A silent skip here would be the gate disabling itself.
+        [ -n "$_runtime_ver" ] || fail "version-derived: no sertor-core version in .sertor/uv.lock"
+
+        printf '0.0.1\n' > "$_sertor_dir/.sertor-version"
+        cat > "$_sertor_dir/.version-check.json" <<EOF
+{
+  "schema": "version.check/1",
+  "verdict": "unknown",
+  "installed": "",
+  "latest": "$_runtime_ver",
+  "checked_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+        # CLAUDE_PROJECT_DIR is pinned to the throwaway host ON PURPOSE: the hook honours it over the
+        # event's cwd, so a run started from inside a real session would otherwise write its state
+        # into THAT project instead of the fixture.
+        _vc_out="$(printf '{}' | CLAUDE_PROJECT_DIR="$HOST" uv run --no-project python "$_vc_hook" 2>&1)" || true
+        if [ -n "$_vc_out" ]; then echo "$_vc_out"; fi
+
+        _vc_state="$(cat "$_sertor_dir/.version-check.json")"
+        if printf '%s' "$_vc_state" | grep -qF '"installed_source": "runtime-lock"' \
+           && ! printf '%s' "$_vc_state" | grep -qF '"verdict": "behind"'; then
+            assert_outcome "version-derived-from-runtime" 1 ""
+        else
+            assert_outcome "version-derived-from-runtime" 0 \
+                "the host derived the installed version from the planted stale stamp instead of the lock (runtime sertor-core $_runtime_ver); state: $(printf '%s' "$_vc_state" | tr '\n' ' ')"
+        fi
+    else
+        echo "[upgrade] n/a  version-derived-from-runtime (capability '$_cap' deposits no version-check hook)"
+    fi
+
+    # 7. Health is green — the catch-all for what the six above do not name.
+    if [ -d "$_sertor_dir" ]; then
+        if _doctor_out="$(uv run --project "$_sertor_dir" sertor-rag doctor 2>&1)"; then
+            assert_outcome "health-green" 1 ""
+        else
+            assert_outcome "health-green" 0 "doctor failed after the upgrade: $_doctor_out"
+        fi
+    fi
+}
+
+upgrade_flow() {
+    _cap="$1"
+    if [ "$_cap" = "flow" ]; then
+        _from_src="$FROM_FLOW_SOURCE"; _to_src="$FLOW_SOURCE"; _exe="sertor-flow"
+    else
+        _from_src="$FROM_SERTOR_SOURCE"; _to_src="$SERTOR_SOURCE"; _exe="sertor"
+    fi
+
+    echo "[upgrade] installing PREVIOUS release $FROM_REF ($_cap / $ASSISTANT) ..."
+    if [ "$_cap" = "rag" ]; then
+        _out="$(cd "$HOST" && uvx --refresh --from "$_from_src" "$_exe" install "$_cap" \
+            --assistant "$ASSISTANT" --backend local --no-rerank --no-graph --corpus smoke \
+            --target "$HOST" 2>&1)" || { echo "$_out"; fail_env "install of previous release '$FROM_REF' failed (ref reachable? network?)"; }
+    else
+        _out="$(cd "$HOST" && uvx --refresh --from "$_from_src" "$_exe" install "$_cap" \
+            --assistant "$ASSISTANT" --target "$HOST" 2>&1)" || { echo "$_out"; fail_env "install of previous release '$FROM_REF' failed (ref reachable? network?)"; }
+    fi
+    echo "$_out"
+
+    # Same fixture policy the install flow already applies: the install writes
+    # SERTOR_EMBED_PROVIDER=glove, whose vectors are a ~822 MB download the runner must not make. It
+    # is a FIXTURE choice, not a product one — and the product question it could hide was checked:
+    # `host-config-preserved` passes, so the upgrade preserves .env; the provider stays `glove`
+    # because that is the install default, not because the upgrade touched it.
+    _env_file="$HOST/.sertor/.env"
+    if [ -f "$_env_file" ]; then
+        if grep -qE '^SERTOR_EMBED_PROVIDER=' "$_env_file"; then
+            sed -i.bak -E 's/^SERTOR_EMBED_PROVIDER=.*/SERTOR_EMBED_PROVIDER=hash/' "$_env_file" && rm -f "$_env_file.bak"
+        else
+            printf '\nSERTOR_EMBED_PROVIDER=hash\n' >> "$_env_file"
+        fi
+        echo "[upgrade] provider forced to hash (fixture: no 822 MB download on the runner)"
+    fi
+
+    # A host that upgrades HAS an index, and it was built by the OLD version. Skipping this step is
+    # what made the first run report `health-green` as diverged: `doctor` said `index_absent`, which
+    # was true of the fixture and of no real host. It is not only fixture, though — indexing HERE,
+    # with the previous release, is what turns `health-green` into a question the install-only smoke
+    # cannot ask at all: does the new version still READ the index the previous one wrote? A manifest
+    # that stopped being readable would otherwise cost the host its index in silence.
+    if [ "$_cap" = "rag" ] && [ -d "$HOST/.sertor" ]; then
+        echo "[upgrade] indexing with the PREVIOUS release ..."
+        # fail_env, not fail: a previous release that cannot index is a starting line we never
+        # reached — it says nothing about $REF, which is the thing under test.
+        _idx_out="$(cd "$HOST" && uv run --project .sertor sertor-rag index . 2>&1)" \
+            || { echo "$_idx_out"; fail_env "index with the previous release '$FROM_REF' failed"; }
+        printf '%s\n' "$_idx_out" | tail -n 2
+    fi
+
+    echo "[upgrade] upgrading $FROM_REF -> $REF ..."
+    UPGRADE_OUT="$(cd "$HOST" && uvx --refresh --from "$_to_src" "$_exe" upgrade "$_cap" \
+        --assistant "$ASSISTANT" --target "$HOST" 2>&1)" || { echo "$UPGRADE_OUT"; fail "upgrade $_cap failed"; }
+    echo "$UPGRADE_OUT"
+
+    # Exit code 0 is NOT an outcome: `upgrade` used to succeed while moving nothing (SC-004).
+    assert_upgrade_outcomes "$_cap"
+
+    echo ""
+    echo "SMOKE_OK assistant=$ASSISTANT capability=$_cap upgrade=$FROM_REF->$REF"
+}
+
 # 1. Synthetic host (when no TARGET) --------------------------------------------------------------
 if [ "$CREATED_HOST" -eq 1 ]; then
     new_synthetic_host
 fi
 
-# 2. Dispatch to the requested capability ---------------------------------------------------------
+# 2. Dispatch: upgrade flow when a starting ref was given, otherwise the install-only flow ---------
+if [ "$IS_UPGRADE" -eq 1 ]; then
+    upgrade_flow "$CAPABILITY"
+    exit 0
+fi
+
 case "$CAPABILITY" in
     rag)  rag_smoke;;
     wiki) wiki_smoke;;

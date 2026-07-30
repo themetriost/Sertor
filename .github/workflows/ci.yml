@@ -185,4 +185,76 @@ jobs:
         env:
           SERTOR_SMOKE_TARGET: ${{ runner.temp }}/pgntofen
           SERTOR_SMOKE_REF: ${{ github.head_ref || 'master' }}
-        run: uv run pytest -m integration tests/integration/test_host_smoke.py -k "${{ matrix.assistant }}" -v
+        run: uv run pytest -m integration tests/integration/test_host_smoke.py -k "${{ matrix.assistant }} and not upgrade" -v
+
+  # =================================================================================================
+  # UPGRADE smoke (E15-FEAT-012) — the verb the hosts actually run, and that nothing exercised.
+  #
+  # The install smoke above proves a NEW host gets the capability. It cannot prove an EXISTING host
+  # receives it: of ~14 real field defects, 13 sit in the delivery surface and all 7 installer ones
+  # need a pre-existing OLDER installation to show up. A clean host cannot see any of them.
+  #
+  # TWO paths on purpose (Q2). This one is the AUTOMATIC, cheap one: a single combination, so it stays
+  # affordable enough that nobody wants to switch it off — the risk that kills gates. The FULL
+  # perimeter (both assistants, plus a long version jump) lives in `upgrade-smoke-full.yml` and is
+  # triggered on demand; that exclusion is DECLARED here and in docs/, not silently forgotten.
+  #
+  # "Cheap" is MEASURED, not asserted (the claim above would otherwise be the kind this feature
+  # exists to distrust): on ubuntu/claude the install-only smoke job runs ~27s and this one ~29s —
+  # two full installs plus an upgrade cost about **+2s of job wall-clock**, because the work is
+  # dominated by runner setup and uv's cache, not by the extra install. The R-1 risk it was sized
+  # against does not materialise at this price.
+  #
+  # `fetch-depth: 0` + tags: the starting release is DERIVED from the last tag (Principle XIV applied
+  # to the verification itself) — a list of versions in this file would age like every other copy.
+  #
+  # RETROSPECTIVE POWER, MEASURED (SC-001) — the question that decides whether a guard is worth its
+  # cost is not "does it cover enough?" but "applied to the defects that ALREADY happened, how many
+  # would it have stopped?". Applied to the seven upgrade defects on record: SIX.
+  #
+  #   1 pin not moved (three nodes)                        → pin-moved
+  #   2 hook duplicated / discarded on re-wire (FEAT-032)   → hook-single:<stem>
+  #   3 corpus zeroed by an upgrade (FEAT-022 fix)          → host-config-preserved
+  #   4 `--directory` kept "because it was there"           → mcp-invocation-shape
+  #   5 divergent artefact skipped instead of replaced      → no-stale-divergence
+  #   6 false `behind` from the install stamp (FEAT-021)    → version-derived-from-runtime
+  #   7 bare `upgrade` covers one capability, exits green   → NOT COVERED — see below
+  #
+  # THE RESIDUAL IS NAMED, NOT IMPLIED (SC-007). #7 (E2-FEAT-023) is still OPEN. Asserting it now
+  # would paint this gate permanently red on a defect we already know about, and a gate that is
+  # always red is one people learn to ignore — so it is excluded ON PURPOSE, and the exclusion is
+  # written here, in `docs/install.md` §10.2.1, and in the spec. It gets its assertion the day the
+  # defect is fixed; the order matters, and "six of seven" only means something if the seventh is
+  # said out loud. (Target was ≥5.)
+  # =================================================================================================
+  upgrade-smoke:
+    name: upgrade smoke (ubuntu / claude)
+    needs: changes
+    # Same condition as `smoke` above, and it must stay the same: the output is named `smoke`, not
+    # `relevant`. Referencing a non-existent output yields an empty string, the `||` chain is false,
+    # and the job is SKIPPED — no error, no warning, a gate that verifies nothing while looking fine.
+    # That is exactly the failure shape this whole feature exists to catch, and it happened here first.
+    if: >-
+      github.event_name == 'push' || github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && needs.changes.outputs.smoke == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # tags needed to derive the previous release
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Sync workspace (wrapper needs pytest)
+        run: uv sync --all-packages --extra dev
+      - name: Upgrade smoke (previous release → ${{ github.head_ref || 'master' }})
+        env:
+          SERTOR_SMOKE_REF: ${{ github.head_ref || 'master' }}
+        # `-s` so a GREEN run also shows which outcomes held. Note what it does NOT fix: the script's
+        # output is swallowed by `capture_output=True` in the wrapper, not by pytest, so `-s` alone
+        # changed nothing — the first attempt at this. The real guard is in the wrapper, which now
+        # demands each outcome BY NAME: every outcome sits behind a precondition and prints `n/a`
+        # when it is absent, so a run where all of them skipped exits 0 and reads like a run where
+        # all of them held. Visibility was the wrong remedy; making vacuity impossible is the right
+        # one, and `-s` only makes the evidence readable afterwards.
+        run: uv run pytest -m integration tests/integration/test_host_smoke.py -k "upgrade and claude" -v -s

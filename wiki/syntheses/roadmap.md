@@ -14,20 +14,26 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 > `requirements → spec → plan → tasks → implement`.
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-07-29)
+## ⚡ Executive summary (stato al 2026-07-30)
 
 ### 🔄 In progress
 
-> 🚫 **VINCOLO DI RILASCIO ATTIVO (decisione utente 2026-07-29).** **Non si rilascia** — nessun bump di
-> `/VERSION`, nessun tag, nessuna Release, nessun annuncio — finché **E15-FEAT-012 non è conclusa** e i
-> **tre riscontri di *Acta* del 29/07** non sono stati verificati **con i nuovi gate della 012**, cioè
-> su un ospite che **aggiorna**. Il merge su `master` non è bloccato: la consegna resta separata dal
+> 🚫 **VINCOLO DI RILASCIO — la seconda condizione è SCIOLTA, la prima aspetta il merge (2026-07-30).**
+> Nessun bump di `/VERSION`, tag, Release o annuncio finché **E15-FEAT-012 non è conclusa** e i **tre
+> riscontri di *Acta* del 29/07** non sono verificati su un ospite che **aggiorna**. ✅ **La verifica
+> c'è stata:** su `v0.3.3 → branch` tutti gli esiti passano — i tre fix **arrivano** a chi aggiorna,
+> misurato, non dedotto. Resta il **merge di #256**: fatto quello, il vincolo cade. Il merge su `master` non è bloccato: la consegna resta separata dal
 > rilascio. *Perché:* i tre fix sono provati **da noi**, non su chi li riceve — ed è la lezione di
 > E10-FEAT-031/032, dove ciò che contava non era il merge ma **l'arrivo**. Ricordiamoci anche che per
 > gli ospiti **il rilascio è il bump di `/VERSION` su `master`**, non il tag (scoperto stamattina):
 > quindi il vincolo morde sul bump, prima ancora che sull'annuncio.
 
-**🔴 P0 MISURATO — E15-FEAT-012: testiamo l'installazione, spediamo aggiornamenti** · *dove:* **requisiti EARS su `master`** (merge `8e8c653`/PR #253) in `requirements/fedelta-dogfood/smoke-di-upgrade/` — 11 requisiti, 7 criteri, 5 domande aperte · *prossimo passo:* **`specify`** · *decisione aperta:* se costruirla ora o dopo la 062.
+**🟢 E15-FEAT-012 — il gate d'aggiornamento è VIVO e VERDE, in attesa del merge** · *dove:* branch `125-smoke-di-upgrade`, **PR #256** (7 commit), SpecKit completo in `specs/125-smoke-di-upgrade/` · *prossimo passo:* **go per il merge**, poi sciogliere il vincolo di rilascio e rispondere ad *Acta* · *nessuna decisione aperta.*
+- **🎯 La misura che contava è arrivata: su un aggiornamento reale `v0.3.3 → branch` TUTTI gli esiti passano** (CI verde su `a006372`, 29s). Un ospite che aggiorna **riceve** i tre fix del 29/07: il pin si muove · gli hook sono **singoli** e aggiornati · la **sua** configurazione è preservata · la forma dell'invocazione MCP è quella corrente · nulla è rimasto stantio · la versione dichiarata è **derivata dal runtime** · `doctor` è verde **su un indice costruito dalla versione precedente**. Per la prima volta non è un'inferenza dal merge: è una misura su un host che ha **eseguito il verbo**.
+- **SC-001 = 6 su 7** (bersaglio ≥5), *scelta utente*: aggiunta l'asserzione su E2-FEAT-021 (falso `behind` letto dallo stamp), sicura perché il difetto è chiuso. **Il settimo è dichiarato, non sparito:** `upgrade` nudo che copre una capability sola uscendo verde (**E2-FEAT-023**) resta fuori **di proposito** — è ancora aperto, e asserirlo terrebbe il gate rosso in permanenza. Residuo scritto in `ci.yml` + `docs/install.md` §10.2.1, con una guardia che ne verifica la presenza.
+- **Costo misurato, non affermato:** install-only ~27s vs upgrade ~29s su ubuntu/claude → **+2s** di wall-clock. Il rischio R-1 («un gate che costa troppo si spegne») non si materializza a questo prezzo.
+- **Il conto dei difetti trovati: cinque, tutti nella verifica stessa** — SC-001 a 4/7 per asserzioni scelte a memoria · job **SKIPPED** per un output inesistente · gate che **muore in silenzio** su un'assenza legittima · fixture senza indice · verde che non mostra cosa ha asserito. **Nessuno nel prodotto.** Una guardia che al primo giro non trova niente, di solito non guarda → distillato in [[guardia-verde-non-e-una-misura]].
+- **⚠️ Debito collaterale confermato:** `testpaths = ["tests"]` → il comando che il `CLAUDE.md` dichiara *«gate vincolante pre-merge»* raccoglie **1372 test su 2504**. Le suite `packages/*` vanno lanciate a parte (**sei** invocazioni + `ruff`); qui è stato fatto così.
 - **La misura, su 20 riscontri dal campo** (16/07→29/07, ~14 difetti reali): **1 solo nel core**, **13 nella superficie di consegna** (7 installer/upgrade/pin · 3 hook · 3 wiki tooling · 1 asset). I test stanno dall'altra parte: 1385 sotto `tests/`, quasi tutti sul core.
 - **La causa in una riga:** lo smoke end-to-end esiste e gira su 4 matrici, ma **installa su host pulito**. Non esiste **alcun** test che parta dalla release precedente e aggiorni — e tutti e 7 i difetti dell'installer richiedono un'installazione **preesistente più vecchia** per manifestarsi. Un'installazione da zero non può vederne nessuno, *per costruzione*. Ecco perché li trova sempre un nodo a valle: **nemmeno il dogfood aggiorna** (re-lock che insegue HEAD, mai da versione a versione).
 - **Rimedio:** smoke di **upgrade** come gate di **rilascio** — installa la release precedente, aggiorna, asserisce gli **esiti**. Sui difetti in mano: **5 su 7** intercettati.

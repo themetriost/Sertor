@@ -83,12 +83,17 @@ def _smoke_ref() -> str:
     return os.environ.get("SERTOR_SMOKE_REF", "master").strip() or "master"
 
 
-def _smoke_command(assistant: str, capability: str, target: str | None) -> list[str]:
+def _smoke_command(
+    assistant: str, capability: str, target: str | None, from_ref: str | None = None,
+) -> list[str]:
     """Platform-specific invocation of the smoke script (ps1 on Windows, sh elsewhere).
 
     The assistant/capability are passed as flags; ``target`` (rag only) is forwarded so the script
     runs on that real repo. The git ref to install from is ``_smoke_ref()`` — ``-Ref`` on Windows,
     the leading positional ``REF`` on POSIX (the script parses positionals and flags independently).
+
+    ``from_ref`` selects the **upgrade** flow (E15-FEAT-012): the script installs that release
+    first, upgrades to ``ref``, then asserts the outcomes. Omitted → install-only, unchanged.
     """
     ref = _smoke_ref()
     if sys.platform == "win32":
@@ -100,13 +105,39 @@ def _smoke_command(assistant: str, capability: str, target: str | None) -> list[
         cmd += ["-Ref", ref, "-Assistant", assistant, "-Capability", capability]
         if target is not None:
             cmd += ["-Target", target]
+        if from_ref:
+            cmd += ["-FromRef", from_ref]
         return cmd
     script = SCRIPTS_DIR / "smoke.sh"
     cmd = ["bash", str(script), ref]  # positional REF
     if target is not None:
         cmd += [target]  # positional TARGET (REF then TARGET — see scripts/smoke.sh usage)
     cmd += ["--assistant", assistant, "--capability", capability]
+    if from_ref:
+        cmd += ["--from-ref", from_ref]
     return cmd
+
+
+def _previous_release() -> str | None:
+    """The last published release, **derived** from the public reference — never hand-written.
+
+    Principle XIV applied to the verification itself: a list of versions in a CI file would be a
+    copy of a fact that lives elsewhere, and it would age exactly like every other copy this project
+    has paid for. `None` when no tag is reachable (shallow clone, or a repo before release 1).
+
+    ``SERTOR_SMOKE_FROM_REF`` overrides the derivation — that is how the on-demand workflow drives a
+    **long jump** (a host several versions behind), the condition in which the pin defect actually
+    surfaced. An override is a parameter, not a hardcoded version that would age.
+    """
+    override = os.environ.get("SERTOR_SMOKE_FROM_REF", "").strip()
+    if override:
+        return override
+    proc = subprocess.run(
+        ["git", "describe", "--tags", "--abbrev=0"],
+        cwd=str(REPO_ROOT), capture_output=True, text=True,
+    )
+    tag = proc.stdout.strip()
+    return tag or None
 
 
 def _preconditions_or_skip() -> None:
@@ -154,6 +185,73 @@ def test_host_smoke(assistant: str, capability: str):
         results = int(fields.group("results"))
         assert documents > 0, f"documents={documents} (expected > 0; cwd/anchor bug gives 0)"
         assert results > 0, f"results={results} (expected > 0)"
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("assistant", ASSISTANTS)
+def test_host_upgrade_smoke(assistant: str):
+    """E15-FEAT-012 — the host STARTS from the previous release, upgrades, and the outcomes hold.
+
+    This is the verb the hosts actually run and that nothing exercised: of ~14 real field defects,
+    13 sit in the delivery surface and all 7 installer ones need a **pre-existing older
+    installation** to show up — a clean host cannot see any of them, by construction.
+
+    Deliberately `rag` only: it is the capability where 7 of 7 installer defects were born, and the
+    automatic path must stay cheap enough that nobody wants to switch it off (risk R-1). The full
+    perimeter is the manually-triggerable path, and that exclusion is declared, not forgotten.
+
+    Exit code 2 from the script means an **environment impediment** (previous release unreachable,
+    no network) — not a product defect, so it skips instead of failing red. Collapsing the two is
+    what teaches people to ignore a gate.
+    """
+    _preconditions_or_skip()
+    from_ref = _previous_release()
+    if from_ref is None:
+        pytest.skip("no reachable release tag — upgrade smoke needs a published starting point")
+
+    proc = subprocess.run(
+        _smoke_command(assistant, "rag", _smoke_target("rag"), from_ref=from_ref),
+        cwd=str(REPO_ROOT),
+        capture_output=True,
+        text=True,
+        timeout=1800,  # two full installs plus an upgrade
+    )
+    combined = proc.stdout + "\n" + proc.stderr
+    if proc.returncode == 2 or "SMOKE_ENV:" in combined:
+        pytest.skip(f"environment impediment, not a product defect:\n{combined[-1500:]}")
+    assert proc.returncode == 0, (
+        f"upgrade smoke exited {proc.returncode}\n--- stdout/stderr ---\n{combined[-4000:]}"
+    )
+    assert f"upgrade={from_ref}->" in combined, (
+        f"no upgrade marker in output\n--- stdout/stderr ---\n{combined[-4000:]}"
+    )
+
+    # Exit code 0 says the script did not fail. It does NOT say the outcomes were asserted: every
+    # one of them sits behind a precondition (`.sertor/` exists, the hook was deposited, the file is
+    # there) and takes a printed `n/a` branch when the precondition is absent. A run where all of
+    # them went `n/a` exits 0 and reads exactly like a run where all of them held.
+    #
+    # So the wrapper demands them by NAME. `hook-single:*` is deliberately absent from the list: it
+    # is conditional on the stem appearing at all, and demanding it would assert the fixture rather
+    # than the host. This is the guard against this gate quietly becoming vacuous — which is a
+    # different failure from it going red, and the one nobody notices.
+    required = (
+        "pin-moved",
+        "host-config-preserved",
+        "mcp-invocation-shape",
+        "no-stale-divergence",
+        "version-derived-from-runtime",
+        "health-green",
+    )
+    missing = [name for name in required if f"OK   {name}" not in combined]
+    assert not missing, (
+        f"the upgrade ran green without asserting {missing} — each was skipped or never reached, "
+        f"so this pass measured less than it appears to\n--- stdout/stderr ---\n{combined[-4000:]}"
+    )
+
+    # Printed so a GREEN run also shows what held: the assertion above makes vacuity impossible,
+    # this makes the evidence readable without re-running (visible under `-s`, which CI passes).
+    print("\n".join(ln for ln in combined.splitlines() if "[upgrade] " in ln or "SMOKE_OK" in ln))
 
 
 def test_no_sertor_core_import():
