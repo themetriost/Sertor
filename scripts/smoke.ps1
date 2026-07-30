@@ -472,6 +472,23 @@ function Invoke-UpgradeFlow([string]$cap) {
         Fail-Env "install of previous release '$FromRef' exited $LASTEXITCODE (ref reachable? network?)"
     }
 
+    # Same fixture policy the install flow already applies: the install writes
+    # SERTOR_EMBED_PROVIDER=glove, whose vectors are a ~822 MB download the runner must not make. It
+    # is a FIXTURE choice, not a product one — and the product question it could hide was checked:
+    # `host-config-preserved` passes, so the upgrade preserves .env; the provider stays `glove`
+    # because that is the install default, not because the upgrade touched it.
+    $envFile = Join-Path $HostDir ".sertor/.env"
+    if (Test-Path $envFile) {
+        $envRaw = Get-Content $envFile -Raw
+        if ($envRaw -match "(?m)^SERTOR_EMBED_PROVIDER=") {
+            ($envRaw -replace "(?m)^SERTOR_EMBED_PROVIDER=.*", "SERTOR_EMBED_PROVIDER=hash") |
+                Set-Content -Path $envFile -Encoding utf8
+        } else {
+            Add-Content -Path $envFile -Value "`nSERTOR_EMBED_PROVIDER=hash" -Encoding utf8
+        }
+        Write-Host "[upgrade] provider forced to hash (fixture: no 822 MB download on the runner)"
+    }
+
     Write-Host "[upgrade] upgrading $FromRef -> $Ref ..."
     Push-Location $HostDir
     try {

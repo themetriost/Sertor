@@ -424,6 +424,21 @@ upgrade_flow() {
     fi
     echo "$_out"
 
+    # Same fixture policy the install flow already applies: the install writes
+    # SERTOR_EMBED_PROVIDER=glove, whose vectors are a ~822 MB download the runner must not make. It
+    # is a FIXTURE choice, not a product one — and the product question it could hide was checked:
+    # `host-config-preserved` passes, so the upgrade preserves .env; the provider stays `glove`
+    # because that is the install default, not because the upgrade touched it.
+    _env_file="$HOST/.sertor/.env"
+    if [ -f "$_env_file" ]; then
+        if grep -qE '^SERTOR_EMBED_PROVIDER=' "$_env_file"; then
+            sed -i.bak -E 's/^SERTOR_EMBED_PROVIDER=.*/SERTOR_EMBED_PROVIDER=hash/' "$_env_file" && rm -f "$_env_file.bak"
+        else
+            printf '\nSERTOR_EMBED_PROVIDER=hash\n' >> "$_env_file"
+        fi
+        echo "[upgrade] provider forced to hash (fixture: no 822 MB download on the runner)"
+    fi
+
     echo "[upgrade] upgrading $FROM_REF -> $REF ..."
     UPGRADE_OUT="$(cd "$HOST" && uvx --refresh --from "$_to_src" "$_exe" upgrade "$_cap" \
         --assistant "$ASSISTANT" --target "$HOST" 2>&1)" || { echo "$UPGRADE_OUT"; fail "upgrade $_cap failed"; }
