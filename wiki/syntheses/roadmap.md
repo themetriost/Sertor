@@ -32,23 +32,30 @@ ospiti, **sveglio dal bump** (era dormiente-fino-alla-release per costruzione).
 dalla prima voce.
 
 - **E10-FEAT-060** — *`ritual-check` e `wiki-guard` misurano realtà diverse, e la differenza è
-  invisibile* · **Should (P1)**, riscontrata dal vivo il 2026-07-28.
-  - **Cosa:** `ritual_check.py:84` deriva il perimetro da `git diff <base>...HEAD` — **solo il
-    committato** — mentre `scan.py:167-223` somma committato-dall'àncora **+** albero di lavoro
-    (diff tracciato *content-aware* + untracked `-uall`). Chi chiude uno step invoca `ritual-check`
-    **prima** del commit e riceve `pages=0 distill=0 drift=0`, mentre il gate allo `Stop` vede il
-    lavoro e blocca. Il tool non sbaglia il calcolo: **risponde a un'altra domanda e non lo dichiara**.
-  - **Dove:** branch `126-ritual-check-perimetro` · `src/sertor_core/wiki_tools/ritual_check.py` ·
-    superficie host-facing da riallineare: `wiki-playbook.md` (descrive il perimetro come «git diff»)
-    + copia bundlata in `packages/sertor/src/sertor_installer/assets/`.
-  - **Prossimo passo:** fase `requirements` (EARS) in
-    `requirements/debito-tecnico/feat-060-perimetro-ritual-check/`.
-  - **Decisione aperta (bivio lasciato dalla riga d'epica):** *allineare il perimetro* a `scan`
-    (includere l'albero di lavoro) **oppure** *dichiarare nell'output* quale perimetro si sta
-    misurando. Non sono alternative ovvie: la seconda da sola lascia il tool muto quando serve.
-  - **Vincolo verificato:** il contratto `wiki.ritual_check/1` **non ha consumatori programmatici**
-    (solo playbook e `specs/`), quindi la trappola di FEAT-062 — bumpare un contratto che i
-    consumatori confrontano per uguaglianza, mandandoli in fail-open — **qui non si applica**.
+  invisibile* · **Should (P1)** · ✅ **IMPLEMENTATA, in attesa di merge**.
+  - **Cosa era rotto:** `ritual_check` derivava il perimetro da `git diff <base>...HEAD` — **solo il
+    committato** — mentre `scan` somma committato **+** albero di lavoro. Chi chiude uno step invoca
+    `ritual-check` **prima** del commit e riceveva `pages=0 distill=0 drift=0` mentre il gate allo
+    `Stop` bloccava. **Misurato:** a parità di contenuto il candidato distill esisteva o meno per il
+    solo `git commit`; e nel caso misto veniva emesso un candidato drift **falso** sulla pagina
+    appena riscritta. Omissione silenziosa **e** positivo fabbricato.
+  - **Consegnato:** perimetro = committato ∪ albero di lavoro (derivazione condivisa in `vcs.py`) ·
+    l'output **dichiara sempre** le sorgenti e i conteggi (JSON + summary umano), anche a zero
+    candidati · **fail-loud** su ogni interrogazione git del perimetro, incluso il ramo che degradava
+    in silenzio. `scope` è ora **derivata** dal nuovo `perimeter`, non mantenuta in parallelo
+    (Principio XIV: il gate ha corretto il design in fase di piano).
+  - **Dove:** branch `126-ritual-check-perimetro` · `specs/126-ritual-check-perimetro/` (SpecKit
+    completo) · Constitution **14 PASS + missione PASS**.
+  - **Prova sul campo:** su questo repo, dove rispondeva `pages=0 distill=0 drift=0`, ora dà
+    `pages=3 drift=2` con `perimetro: committed=11 · worktree=21` — e i due candidati segnalati erano
+    **drift reali**, corretti nello stesso passaggio.
+  - **Verifiche:** gate pre-merge completo (`ruff` + sei suite = **2603 test**). I nuovi test sono
+    stati provati **contro il comportamento pre-fix**: 7 diventano rossi, quindi la guardia *può*
+    diventare rossa.
+  - **Prossimo passo concreto:** aprire la PR e mergiare (richiede go esplicito dell'utente).
+  - **Residuo dichiarato, non nascosto:** `scan` e `ritual_check` restano **due** derivazioni
+    (unificazione = **E10-FEAT-066**, rinviata perché toccherebbe il modulo del gate bloccante); un
+    **test di equivalenza** le confronta e diventa rosso se una sola viene toccata.
 
 **🎯 Il numero che orienta le scelte successive: dei 111 item aperti, i Must sono TRE** — e tutti e tre
 stanno in epiche **differite** (E11 `multiutente`) o **non iniziate** (E9 `second-brain`). Il resto è

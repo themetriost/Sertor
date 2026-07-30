@@ -83,6 +83,9 @@ indistinguibile da una assente** — la tesi stessa per cui il gate esiste, appl
 
 ## Le due parenti già scritte, e il confine
 
+- [[il-rimedio-ricade-nel-difetto]] — lì una riparazione riproduce ciò che ripara; qui una verifica
+  smette di verificare restando verde. Stessa radice (chi interviene è la persona più esposta a fare
+  lo stesso errore), superfici diverse.
 - [[identita-per-presenza-o-per-contenuto]] — «esiste qualcosa di questo tipo?» invece di «esiste
   qualcosa di **giusto**?». Là il no-op sembra un successo; **qui il verde sembra una misura**. Stessa
   malattia (si controlla il segno invece della sostanza), superficie diversa: quella riguarda

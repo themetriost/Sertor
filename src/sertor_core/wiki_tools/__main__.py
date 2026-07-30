@@ -290,9 +290,15 @@ def _human(op: str, result) -> str:
     if op == "reconcile":
         return f"candidates={len(data['candidates'])} clean={data['clean']}"
     if op == "ritual-check":
+        # Declare the perimeter here too, ALWAYS — including when nothing was found. It is the
+        # rendering a person and an agent actually read, and a bare `0` cannot distinguish "there is
+        # nothing" from "I looked somewhere else" (E10-FEAT-060).
+        sources = (data.get("perimeter") or {}).get("sources") or []
+        breakdown = " · ".join(f"{s['name']}={s['paths']}" for s in sources)
         return (
             f"scope={data['scope']} pages={len(data['pages_in_scope'])} "
             f"distill={len(data['distill_candidates'])} drift={len(data['drift_candidates'])}\n"
+            f"  perimetro: {breakdown}\n"
             f"  {data['declaration_scaffold']}"
         )
     if op == "distill-audit":

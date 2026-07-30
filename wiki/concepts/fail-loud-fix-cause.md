@@ -3,7 +3,7 @@ title: Fail Loud, Fix the Cause (Principio XII)
 type: concept
 tags: [costituzione, principio-xii, governance, osservabilita, errori, anti-skip, dogfooding, fail-loud]
 created: 2026-07-22
-updated: 2026-07-22
+updated: 2026-07-30
 sources: [".specify/memory/constitution.md", "wiki/log/2026-06-20.md"]
 ---
 
@@ -48,6 +48,12 @@ difetto:
   invece di fallire muti.
 - **Anti-skip del rituale wiki** ([[ritual-check]] FEAT-026, [[daily-distill-floor]] FEAT-039): distill/lint
   non si saltano in silenzio — il pavimento del distill è Fail Loud applicato al *processo*.
+- **Il perimetro di [[ritual-check]]** (E10-FEAT-060): ogni interrogazione git che compone lo scope dello
+  step **solleva** invece di degradare verso l'insieme vuoto. Il caso peggiore era la query delle pagine
+  aggiunte: fallendo in silenzio faceva emettere il candidato a distillazione *come se non avessi
+  distillato* — **un suggerimento sbagliato prodotto da un guasto invisibile**, che è la firma di questo
+  principio. Unica tolleranza, **dichiarata**: il recupero dei link alla revisione di confronto, dove
+  l'insieme vuoto è la risposta *corretta* per una pagina mai consegnata.
 - **[[product-plane-vs-fixture-plane|Principio XIII]]**: è **Fail Loud applicato al dogfooding** — un buco di
   prodotto tappato da un workaround-fixture va registrato come OPEN PRODUCT QUESTION, non nascosto.
 

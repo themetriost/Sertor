@@ -3,7 +3,7 @@ title: Il riuso che eredita il presupposto
 type: concept
 tags: [riuso, guardie, difetti, pattern-diagnostico, dry, e10]
 created: 2026-07-29
-updated: 2026-07-29
+updated: 2026-07-30
 sources: ["src/sertor_core/wiki_tools/collect.py", "src/sertor_core/wiki_tools/lint.py", "packages/sertor/src/sertor_installer/assets/claude/agents/wiki-curator.md", "wiki/log/2026-07-29.md"]
 ---
 
@@ -124,6 +124,8 @@ una capacità: si sta **nominando una distinzione che esisteva già** ed era rim
 
 ## Parentele
 
+- [[il-rimedio-ricade-nel-difetto]] — lì il rimedio contiene il difetto; qui il riuso eredita il
+  presupposto. Stessa geografia (l'errore non sta in nessuno dei due posti, ma nel gesto), lenti diverse.
 - [[host-agnostico-non-e-risolvibile]] — l'istanza 2 in dettaglio: cosa serve perché una coordinata
   resti tale quando cambia lettore.
 - [[identita-per-presenza-o-per-contenuto]] — parente stretto e distinzione utile: là si sceglie **il

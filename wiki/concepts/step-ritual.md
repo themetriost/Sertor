@@ -125,12 +125,10 @@ distillazione** (gruppi di pagine changed con ≥2 nuovi backlink incrociati e 0
 zero-LLM, sola lettura), l'agente **giudica** (Principio XI). Output JSON `wiki.ritual_check/1` + summary.
 È la gemella lato-giudizio dell'enforcement meccanico via hook (FEAT-011).
 
-> ⚠️ **Quel «scope dello step» oggi è solo il committato** (E10-FEAT-060, misurato il 2026-07-30). Il
-> git-diff `base...HEAD` non vede l'albero di lavoro, ma il rituale prescrive di scrivere la voce di
-> giornale **nello stesso momento del commit** — quindi `ritual-check` viene invocato quando il suo
-> perimetro è ancora vuoto, e risponde `0 candidati` mentre `wiki-guard` allo `Stop` blocca. Finché il
-> rimedio non atterra, leggi uno `0` come *«nel committato non c'è nulla»*, mai come *«nello step non
-> c'è nulla»*. Dettaglio e misura in [[ritual-check]].
+Il sottocomando `ritual-check` misura lo scope come l'**unione di committato e albero di lavoro**, dunque è
+**usabile prima di committare** — esattamente quando il rituale lo chiede. Dichiara sempre quale perimetro
+ha misurato (campo JSON `perimeter` + riga summary `perimetro: committed=N · worktree=M`), e fallisce
+esplicitamente se un'interrogazione git non riesce. Vedi [[ritual-check]] per il dettaglio.
 
 ## Confine di delega: trascrizione vs giudizio
 

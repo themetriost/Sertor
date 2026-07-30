@@ -24,21 +24,33 @@ wiki. Confine D↔N: il tool *trova*, l'agente *giudica* (non crea pagine, non d
 - **Scaffold di dichiarazione forzata** `Rituale: record · distill · lint` — l'artefatto concreto a cui la
   chiusura dello step deve rispondere (anche «non serve» va dichiarato). Output JSON `wiki.ritual_check/1`.
 
-## ⚠️ Limite noto: il perimetro è il committato, e non lo dichiara (E10-FEAT-060)
+## Perimetro dello step: committato e albero di lavoro (E10-FEAT-060)
 
-Lo scope è `base...HEAD`, cioè **solo ciò che è già committato**. Ma il rituale prescrive di scrivere la
-voce di giornale **nello stesso momento del commit**: chi chiude uno step invoca `ritual-check` *prima*
-di committare, quando quel perimetro è ancora vuoto. La gemella `scan` guarda invece **anche l'albero di
-lavoro** — quindi allo `Stop` il gate blocca mentre `ritual-check` risponde `0 candidati su tutto`.
+Lo scope è l'**unione** di:
+- **committato:** `base...HEAD`, cioè ciò che è già su questa linea di sviluppo.
+- **albero di lavoro:** file tracciati modificati (confronto contenuto) + file non tracciati.
 
-Misurato su host effimeri: a **parità di contenuto**, il candidato a distillazione esiste o non esiste a
-seconda del solo `git commit`. E nel caso misto (una pagina committata, una no) il tool emette sulla
-seconda un candidato `neighbor-of-change` **falso** — *«not itself updated»* su una pagina appena
-riscritta — perdendo insieme il candidato distill. Non è solo omissione: è anche **fabbricazione**.
+Per questo il tool è **usabile prima di committare**, che è il momento in cui serve: il rituale prescrive
+di scrivere la voce di giornale **nello stesso momento del commit**, dunque `ritual-check` viene invocato
+mentre il lavoro è ancora in sospeso nell'albero. Fino a E10-FEAT-060 vedeva solo il committato, e in quel
+momento rispondeva **«0 candidati»** mentre il gate allo `Stop` bloccava — *lo strumento che deve preparare
+la dichiarazione taceva proprio mentre la dichiarazione andava scritta*.
 
-Il tool non sbaglia il calcolo: **risponde a un'altra domanda e tace sulla differenza**. Rimedio in corso
-(E10-FEAT-060): perimetro allineato a `scan` **e** dichiarato nell'output. Finché non atterra, leggi uno
-`0` come *«nel committato non c'è nulla»*, mai come *«nello step non c'è nulla»*.
+**Dichiarazione del perimetro.** L'output **dichiara sempre** quale perimetro ha misurato — anche quando i
+candidati sono zero, che è il caso in cui serve di più:
+- nel JSON, il campo `perimeter`: le sorgenti coi rispettivi conteggi;
+- nel summary umano, la riga `perimetro: committed=N · worktree=M`.
+
+Non è cosmesi: **è la parte che impedisce al difetto di tornare invisibile.** Uno `0` senza provenienza non
+distingue *«non c'è nulla»* da *«ho guardato altrove»*, e fu proprio quell'ambiguità — non il numero — a
+tenere nascosto per settimane il disallineamento con [[wiki-guard]].
+
+**Fail-loud su git.** Se un'interrogazione git fallisce (repo non trovato, ref assente), il tool
+fallisce esplicitamente anziché degradare verso l'insieme vuoto in silenzio.
+
+**Ricordo storico:** prima di questa feature, la response era sempre `base...HEAD` (solo committato),
+non veniva dichiarato quale perimetro fosse stato misurato, e il tool perdeva candidati misti. Il rimedio
+unisce i due perimetri e rende trasparente qual è stato coperto.
 
 ## Gemella di daily-distill-floor
 
