@@ -14,8 +14,8 @@ an analysis). **At the end of each step**, the main flow executes — on its own
 checklist:
 
 1. **Record** (`record`) — create/update the impacted pages, backlinks, and `index.md`, and append
-   the log entry (today's file in `wiki/log/`). Structural work → delegatable to the
-   `wiki-curator` agent.
+   the log entry (today's file in `wiki/log/`). This transcription is **always delegated** to the
+   `wiki-curator` agent (see *Delegation* below).
 2. **Distill entities** (`distill`) — identify the durable entities/concepts the step surfaced
    and, if they have their own identity and are referenced from multiple points, give each a
    dedicated page in `concepts/`/`tech/`; the dated record stays lean and points to them. This is **judgment** → stays
@@ -71,11 +71,20 @@ an accumulated backlog teaches you to stop reading it. Three constraints:
   of making it unreachable. If something is not a defect, **say so where it can be read** — catalogue it
   with its outcome — instead of removing it from view.
 
-**Delegation.** That these actions happen is the main flow's responsibility; executing or delegating them
-is merely a choice to avoid blocking. The `record` (structured transcription) is delegatable to the
-`wiki-curator` agent; distillation and semantic lint, being judgment, stay in the main flow.
-To manually trigger a consolidation, invoke the wiki capability of your assistant (main flow)
-or delegate to `wiki-curator` (background).
+**Delegation — ALWAYS delegate the `record`.** That these actions happen is the main flow's
+responsibility. The `record` (structured transcription: impacted pages, backlinks, index, log entry) is
+**always delegated** to the `wiki-curator` agent, in the background — not performed inline, not even for
+small or mechanical steps, and **without asking permission first**: it is standing authorisation, exactly
+like delegating version control to the `configuration-manager`. Pass a self-contained brief (what was
+done, which files, figures/outcomes, what NOT to touch).
+
+Distillation, semantic lint, the roadmap EXEC and explainers are **judgment**, and stay in the main flow.
+This rule changes *who transcribes*, never that boundary.
+
+*Why ALWAYS, and not "you may".* A conditional delegation is one a busy flow silently skips, because
+nothing distinguishes "not needed here" from "forgotten"; an unconditional one is not skipped. The two
+rules now have the same shape for the same reason. If the agent stops because an asset it needs is not
+locatable, that is a **finding to report**, never a reason to quietly redo the work by hand.
 
 **When to record:** at the same moment as the step commit. The log entry is
 not deferrable: a step is not closed until both the commit **and** the log entry are done.
