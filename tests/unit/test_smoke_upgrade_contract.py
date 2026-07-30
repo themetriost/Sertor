@@ -122,6 +122,26 @@ def test_every_needs_output_reference_names_a_declared_output():
     assert not offenders, "job outputs referenced but never declared:\n" + "\n".join(offenders)
 
 
+def test_the_upgrade_fixture_reaches_the_state_a_real_host_is_in():
+    """`health-green` must measure the HOST, not the poverty of the fixture.
+
+    Observed on the first real run: the upgrade path never indexed, so `doctor` reported
+    `index_absent` — true of the fixture and of no host that has been using the capability. The
+    tempting repair was to stop asking `doctor` about the index; that is resolving by hiding, and it
+    would have cost the outcome its meaning permanently.
+
+    The guard is against the WRONG repair, not against deleting the step: deleting it goes red on
+    its own. Indexing with the PREVIOUS release is also the only way to ask whether the new version
+    still reads what the old one wrote — a question the install-only smoke cannot pose.
+    """
+    for name, text in (("ps1", PS1), ("sh", SH)):
+        marker = "indexing with the PREVIOUS release"
+        assert marker.lower() in text.lower(), (
+            f"{name}: the upgrade flow never builds an index, so 'health-green' would measure "
+            f"an empty fixture instead of a host"
+        )
+
+
 def test_counting_pipelines_cannot_kill_the_script_silently():
     """A `grep | wc -l` under `set -euo pipefail` dies when the pattern is ABSENT, with no message.
 

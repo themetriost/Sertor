@@ -489,6 +489,29 @@ function Invoke-UpgradeFlow([string]$cap) {
         Write-Host "[upgrade] provider forced to hash (fixture: no 822 MB download on the runner)"
     }
 
+    # A host that upgrades HAS an index, and it was built by the OLD version. Skipping this step is
+    # what made the first run report `health-green` as diverged: `doctor` said `index_absent`, which
+    # was true of the fixture and of no real host. It is not only fixture, though — indexing HERE,
+    # with the previous release, is what turns `health-green` into a question the install-only smoke
+    # cannot ask at all: does the new version still READ the index the previous one wrote? A manifest
+    # that stopped being readable would otherwise cost the host its index in silence.
+    if ($cap -eq "rag" -and (Test-Path (Join-Path $HostDir ".sertor"))) {
+        Write-Host "[upgrade] indexing with the PREVIOUS release ..."
+        Push-Location $HostDir
+        try {
+            $idxOut = & uv run --project .sertor sertor-rag index . 2>&1 | Out-String
+        } finally {
+            Pop-Location
+        }
+        # Fail-Env, not Fail: a previous release that cannot index is a starting line we never
+        # reached — it says nothing about $Ref, which is the thing under test.
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host $idxOut
+            Fail-Env "index with the previous release '$FromRef' exited $LASTEXITCODE"
+        }
+        Write-Host $idxOut.TrimEnd()
+    }
+
     Write-Host "[upgrade] upgrading $FromRef -> $Ref ..."
     Push-Location $HostDir
     try {

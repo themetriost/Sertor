@@ -439,6 +439,21 @@ upgrade_flow() {
         echo "[upgrade] provider forced to hash (fixture: no 822 MB download on the runner)"
     fi
 
+    # A host that upgrades HAS an index, and it was built by the OLD version. Skipping this step is
+    # what made the first run report `health-green` as diverged: `doctor` said `index_absent`, which
+    # was true of the fixture and of no real host. It is not only fixture, though — indexing HERE,
+    # with the previous release, is what turns `health-green` into a question the install-only smoke
+    # cannot ask at all: does the new version still READ the index the previous one wrote? A manifest
+    # that stopped being readable would otherwise cost the host its index in silence.
+    if [ "$_cap" = "rag" ] && [ -d "$HOST/.sertor" ]; then
+        echo "[upgrade] indexing with the PREVIOUS release ..."
+        # fail_env, not fail: a previous release that cannot index is a starting line we never
+        # reached — it says nothing about $REF, which is the thing under test.
+        _idx_out="$(cd "$HOST" && uv run --project .sertor sertor-rag index . 2>&1)" \
+            || { echo "$_idx_out"; fail_env "index with the previous release '$FROM_REF' failed"; }
+        printf '%s\n' "$_idx_out" | tail -n 2
+    fi
+
     echo "[upgrade] upgrading $FROM_REF -> $REF ..."
     UPGRADE_OUT="$(cd "$HOST" && uvx --refresh --from "$_to_src" "$_exe" upgrade "$_cap" \
         --assistant "$ASSISTANT" --target "$HOST" 2>&1)" || { echo "$UPGRADE_OUT"; fail "upgrade $_cap failed"; }
