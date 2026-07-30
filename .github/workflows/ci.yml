@@ -250,8 +250,11 @@ jobs:
       - name: Upgrade smoke (previous release → ${{ github.head_ref || 'master' }})
         env:
           SERTOR_SMOKE_REF: ${{ github.head_ref || 'master' }}
-        # `-s`: on a PASS pytest swallows the captured output, so a green run says "1 passed" and
-        # nothing about WHICH outcomes were asserted — an outcome that took its `n/a` branch would
-        # look identical to one that held. This gate exists because a check nobody can see the inside
-        # of is indistinguishable from an absent one; that applies to the gate itself first.
+        # `-s` so a GREEN run also shows which outcomes held. Note what it does NOT fix: the script's
+        # output is swallowed by `capture_output=True` in the wrapper, not by pytest, so `-s` alone
+        # changed nothing — the first attempt at this. The real guard is in the wrapper, which now
+        # demands each outcome BY NAME: every outcome sits behind a precondition and prints `n/a`
+        # when it is absent, so a run where all of them skipped exits 0 and reads like a run where
+        # all of them held. Visibility was the wrong remedy; making vacuity impossible is the right
+        # one, and `-s` only makes the evidence readable afterwards.
         run: uv run pytest -m integration tests/integration/test_host_smoke.py -k "upgrade and claude" -v -s

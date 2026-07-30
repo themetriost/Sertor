@@ -226,6 +226,33 @@ def test_host_upgrade_smoke(assistant: str):
         f"no upgrade marker in output\n--- stdout/stderr ---\n{combined[-4000:]}"
     )
 
+    # Exit code 0 says the script did not fail. It does NOT say the outcomes were asserted: every
+    # one of them sits behind a precondition (`.sertor/` exists, the hook was deposited, the file is
+    # there) and takes a printed `n/a` branch when the precondition is absent. A run where all of
+    # them went `n/a` exits 0 and reads exactly like a run where all of them held.
+    #
+    # So the wrapper demands them by NAME. `hook-single:*` is deliberately absent from the list: it
+    # is conditional on the stem appearing at all, and demanding it would assert the fixture rather
+    # than the host. This is the guard against this gate quietly becoming vacuous — which is a
+    # different failure from it going red, and the one nobody notices.
+    required = (
+        "pin-moved",
+        "host-config-preserved",
+        "mcp-invocation-shape",
+        "no-stale-divergence",
+        "version-derived-from-runtime",
+        "health-green",
+    )
+    missing = [name for name in required if f"OK   {name}" not in combined]
+    assert not missing, (
+        f"the upgrade ran green without asserting {missing} — each was skipped or never reached, "
+        f"so this pass measured less than it appears to\n--- stdout/stderr ---\n{combined[-4000:]}"
+    )
+
+    # Printed so a GREEN run also shows what held: the assertion above makes vacuity impossible,
+    # this makes the evidence readable without re-running (visible under `-s`, which CI passes).
+    print("\n".join(ln for ln in combined.splitlines() if "[upgrade] " in ln or "SMOKE_OK" in ln))
+
 
 def test_no_sertor_core_import():
     """Principio XI — the smoke wrapper exercises artefacts, never imports the library."""

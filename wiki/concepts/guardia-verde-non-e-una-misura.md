@@ -58,14 +58,28 @@ diventa rosso proprio quando l'esito smetterebbe di significare qualcosa. *Quell
 
 ### 3. Il verde che non mostra cosa ha asserito
 
-Il gate girava sotto `pytest`, che su **PASS** ingoia l'output catturato. Un run verde stampava
-`1 passed` e nulla su **quali** esiti avessero retto. Un esito finito nel proprio ramo `n/a` — perché
-un file non c'era, perché la capacità non lo deposita — si legge **identico** a un esito che ha
-asserito e tenuto.
+Un run verde stampava `1 passed` e nulla su **quali** esiti avessero retto. Ogni esito sta dietro una
+precondizione (`.sertor/` esiste? l'hook è stato depositato?) e stampa un `n/a` quando manca: un run in
+cui **tutti** sono finiti nel ramo `n/a` esce 0 e si legge **identico** a un run in cui tutti hanno
+tenuto.
 
-Rimedio da una parola (`-s`), ma la classe è più grande della cura: **una verifica di cui non si può
-guardare l'interno è indistinguibile da una assente**, che è la tesi stessa per cui il gate esiste —
-applicata al gate.
+**E qui il primo rimedio è stato quello sbagliato — vale la pena registrarlo.** La diagnosi ovvia era
+«`pytest` ingoia l'output su PASS» e la cura ovvia `-s`. Non ha cambiato nulla: l'output non lo
+catturava `pytest`, lo catturava il **wrapper** (`capture_output=True`), che lo mostra solo in caso di
+fallimento. Ma anche a diagnosi corretta, `-s` sarebbe stata la **cura sbagliata per la malattia
+giusta**:
+
+> **La vacuità non si cura rendendola visibile.** Rendere leggibile l'interno di una guardia sposta
+> l'onere su qualcuno che *legga i log di un run verde* — cioè su nessuno. Il verde esiste apposta per
+> non farli leggere.
+
+Il rimedio vero **toglie il ramo silenzioso**: il wrapper esige ora ogni esito **per nome**, e va rosso
+se un esito manca dall'output — vacuo e fallito diventano lo stesso stato, che è l'unico modo perché
+qualcuno se ne accorga. `-s` resta, ma declassato al suo ruolo onesto: rendere leggibile la prova
+**dopo**, non produrla.
+
+La classe resta più grande della cura: **una verifica di cui non si può guardare l'interno è
+indistinguibile da una assente** — la tesi stessa per cui il gate esiste, applicata al gate.
 
 ## Le due parenti già scritte, e il confine
 
@@ -92,6 +106,10 @@ il verde chiude la questione invece di aprirla. Tre risposte tipiche, e tutte e 
 - *«la fixture non arriva nello stato in cui il difetto vive»* → **forma 1**
 - *«le fonti che confronto concordano già»* → **forma 2**
 - *«non posso vedere quali asserzioni sono state eseguite»* → **forma 3**
+
+E, sulla forma 3, una domanda in più — perché è quella su cui si sbaglia rimedio: *sto rendendo la
+vacuità **visibile** o **impossibile**?* Solo la seconda è una riparazione; la prima delega a un
+lettore che il verde ha appena congedato.
 
 Il corollario operativo: **una guardia che al primo giro non trova niente, di solito non sta
 guardando**. Il gate d'aggiornamento, al primo giro, ha trovato quattro difetti — tutti **in sé

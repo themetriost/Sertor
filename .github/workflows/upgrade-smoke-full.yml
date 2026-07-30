@@ -49,6 +49,6 @@ jobs:
         env:
           SERTOR_SMOKE_REF: master
           SERTOR_SMOKE_FROM_REF: ${{ inputs.from_ref }}
-        # `-s`: see ci.yml — a green run must show WHICH outcomes held, or an `n/a` branch reads the
-        # same as an assertion that passed.
+        # `-s`: see ci.yml — makes the evidence readable on a green run. The guard that makes the
+        # gate non-vacuous is in the wrapper (each outcome demanded by name), not here.
         run: uv run pytest -m integration tests/integration/test_host_smoke.py -k "upgrade and ${{ matrix.assistant }}" -v -s
