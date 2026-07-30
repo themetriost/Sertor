@@ -13,6 +13,67 @@ and Sertor aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 _Changes land here before the next version bump._
 
+## [0.4.0] — 2026-07-30
+
+The wiki recording now says **what it covers**, and two guards stop reporting the false. This is also
+the first release we shipped after checking, on a throwaway host, that an **upgrade** actually
+delivers it — rather than inferring that from the merge.
+
+> **Upgrade.** `sertor upgrade wiki` and `sertor-flow upgrade` refresh the instruction blocks and
+> hooks in place; the library changes travel with the `.sertor/` runtime (`uv sync --project .sertor
+> --upgrade`). Nothing you configured is touched. **No action is required for existing journals** —
+> see the compatibility note below.
+
+### Changed
+
+- **A recording is now honoured for what it COVERS, not for existing.** The wiki freshness gate used
+  to clear its pending set as soon as today's journal partition appeared among the uncommitted
+  changes. Writing the journal entry therefore *switched the gate off* for everything done
+  afterwards — in the exact window in which the session-end check asks. It did not even require an
+  entry: an empty file, or a blank line appended, satisfied it.
+
+  Recordings written by `append-log` now carry a `sertor-covers/1` block declaring which work items
+  they are about, and the gate compares that set against the work actually present. Identity is
+  `(path, content)`, so a file that only differs by line endings is not counted as work.
+
+  **Compatibility is deliberately narrow, and it expires by itself.** An entry written before this
+  existed still counts — but only for **today's** partition, only while it has **not been
+  delivered**, and the derogation is **declared** in the scan output (`legacy_coverage`) rather than
+  applied silently. Read literally, "an entry with no coverage block covers everything" would blind
+  the gate forever, because every journal holds pre-existing entries and one would be enough. Once
+  that file is committed the anchor moves past it: real duration, one session. **You do not need to
+  migrate anything.**
+
+### Fixed
+
+- **The lint no longer declares broken what exists.** `iter_pages` rightly excludes the index and the
+  journal partitions — they are not content: no frontmatter, no orphan status — but the lint built
+  its set of *linkable targets* from that same list, using "is it a page?" to answer "does it
+  exist?". Links to the journal, to `[[log/index]]` and to **`[[index]]`** — the wiki's own index —
+  were all reported broken. There is now a separate `iter_linkable_files`; pages register first, so
+  on an alias collision the page wins. A genuinely dangling link still breaks, as it should.
+- **The `wiki-curator` agent no longer stops on an asset that is present.** Its fail-loud guard was
+  correct but fired on an existing file: the playbook was referenced **by name** while the next line
+  declared *"you do not have the skill's context"* — a correct coordinate expressed in the wrong
+  reader's frame of reference. It is now referenced by **stable path suffix** and located by search,
+  with the guard kept and improved (it reports the pattern it looked for). The rule upstream that
+  produced the defect — *"payload referenced by name"* — has been corrected too: host-agnostic is not
+  the same as resolvable.
+
+### Internal
+
+- **Upgrades are now verified on a host that upgrades.** The end-to-end smoke installed onto a clean
+  host, and every installer defect on record needs a **pre-existing older installation** to appear —
+  so none of them could be seen, by construction. `scripts/smoke.{ps1,sh}` now accept a starting
+  release: they install it on a throwaway host, run `upgrade`, and assert outcomes on the resulting
+  **host state** — the pin moved, each hook is wired once and current, host configuration survives,
+  the recorded invocation has the current shape, nothing was left stale, the reported version is
+  derived from the runtime, and health is green **on an index built by the previous release**.
+  Applied to the seven upgrade defects on record it covers six; the seventh is named in the workflow
+  and in `docs/install.md` §10.2.1 rather than left implied. Runs automatically on one combination
+  before a release; the full perimeter is a separate on-demand workflow and is **not** required to
+  publish.
+
 ## [0.3.3] — 2026-07-28
 
 A **trust** release for the wiki capability: the structural lint stops crying wolf, and the

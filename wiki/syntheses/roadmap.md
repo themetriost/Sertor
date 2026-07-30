@@ -18,17 +18,18 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 ### 🔄 In progress
 
-> 🚫 **VINCOLO DI RILASCIO — la seconda condizione è SCIOLTA, la prima aspetta il merge (2026-07-30).**
-> Nessun bump di `/VERSION`, tag, Release o annuncio finché **E15-FEAT-012 non è conclusa** e i **tre
-> riscontri di *Acta* del 29/07** non sono verificati su un ospite che **aggiorna**. ✅ **La verifica
-> c'è stata:** su `v0.3.3 → branch` tutti gli esiti passano — i tre fix **arrivano** a chi aggiorna,
-> misurato, non dedotto. Resta il **merge di #256**: fatto quello, il vincolo cade. Il merge su `master` non è bloccato: la consegna resta separata dal
+> ✅ **VINCOLO DI RILASCIO SCIOLTO (2026-07-30).** Entrambe le condizioni sono soddisfatte:
+> **E15-FEAT-012 è conclusa e consegnata** (merge `eeca79e`/PR #256) e i **tre riscontri di *Acta* del
+> 29/07** sono verificati **su un ospite che aggiorna** — non dedotti dal merge. Su `v0.3.3 → branch`
+> **otto esiti su otto** sono asseriti, zero `n/a`. Da qui il rilascio **v0.4.0**. Il merge su `master` non è bloccato: la consegna resta separata dal
 > rilascio. *Perché:* i tre fix sono provati **da noi**, non su chi li riceve — ed è la lezione di
 > E10-FEAT-031/032, dove ciò che contava non era il merge ma **l'arrivo**. Ricordiamoci anche che per
 > gli ospiti **il rilascio è il bump di `/VERSION` su `master`**, non il tag (scoperto stamattina):
 > quindi il vincolo morde sul bump, prima ancora che sull'annuncio.
 
-**🟢 E15-FEAT-012 — il gate d'aggiornamento è VIVO e VERDE, in attesa del merge** · *dove:* branch `125-smoke-di-upgrade`, **PR #256** (7 commit), SpecKit completo in `specs/125-smoke-di-upgrade/` · *prossimo passo:* **go per il merge**, poi sciogliere il vincolo di rilascio e rispondere ad *Acta* · *nessuna decisione aperta.*
+**🚀 RILASCIATA v0.4.0 «la registrazione dichiara cosa copre»** — contenuto: E10-FEAT-062 (gate wiki a **copertura** invece che a presenza) + E10-FEAT-064 (`wiki-curator`) + E10-FEAT-065 (`lint`), fermi su `master` dal 29/07 e **mai arrivati agli ospiti** perché per loro il rilascio è il **bump di `/VERSION`**. Minor e non patch: la registrazione ora **dichiara** cosa copre — comportamento nuovo, non una correzione. **Compatibilità stretta e auto-estinguente:** una voce scritta prima della copertura vale solo per la partizione **di oggi**, solo **non consegnata**, e la deroga è **dichiarata** (`legacy_coverage`) — nessuna migrazione richiesta.
+
+**✅ E15-FEAT-012 — il gate d'aggiornamento è CONSEGNATO e VERDE** (merge `eeca79e`/PR #256, 9 commit, SpecKit completo in `specs/125-smoke-di-upgrade/`). *Il primo rilascio che spediamo dopo aver verificato che un **upgrade** lo consegna davvero, invece di dedurlo dal merge.*
 - **🎯 La misura che contava è arrivata: su un aggiornamento reale `v0.3.3 → branch` TUTTI gli esiti passano** (CI verde su `a006372`, 29s). Un ospite che aggiorna **riceve** i tre fix del 29/07: il pin si muove · gli hook sono **singoli** e aggiornati · la **sua** configurazione è preservata · la forma dell'invocazione MCP è quella corrente · nulla è rimasto stantio · la versione dichiarata è **derivata dal runtime** · `doctor` è verde **su un indice costruito dalla versione precedente**. Per la prima volta non è un'inferenza dal merge: è una misura su un host che ha **eseguito il verbo**.
 - **SC-001 = 6 su 7** (bersaglio ≥5), *scelta utente*: aggiunta l'asserzione su E2-FEAT-021 (falso `behind` letto dallo stamp), sicura perché il difetto è chiuso. **Il settimo è dichiarato, non sparito:** `upgrade` nudo che copre una capability sola uscendo verde (**E2-FEAT-023**) resta fuori **di proposito** — è ancora aperto, e asserirlo terrebbe il gate rosso in permanenza. Residuo scritto in `ci.yml` + `docs/install.md` §10.2.1, con una guardia che ne verifica la presenza.
 - **Costo misurato, non affermato:** install-only ~27s vs upgrade ~29s su ubuntu/claude → **+2s** di wall-clock. Il rischio R-1 («un gate che costa troppo si spegne») non si materializza a questo prezzo.
@@ -95,7 +96,7 @@ sources: ["requirements/sertor-core/epic.md", "requirements/sertor-cli/epic.md",
 
 **Rilasciata v0.2.0** «feature + repair»: il **code-graph entra in `search_combined`** come terzo flusso etichettato acceso di default (E5-FEAT-012), e i **tre fix dell'installer** — il pin si muove davvero, il comando d'aggiornamento funziona, il report dichiara la versione effettiva letta dal runtime. Confermata dal campo: *Studium* e *Kaelen* verificano il fix Stop di v0.1.5; *Sinthari* e *VM-WorkingFolder* confermano la diagnosi del pin.
 
-Release precedenti: **v0.3.2** «il gate wiki riparato» · **v0.1.5** (fix `upgrade` double-wire Stop) · **v0.1.4** «wiki-guard» · **v0.1.3** «daily distill floor». Governance: costituzione **v1.6.0** (EN, ultimo emendamento: Principio XIV «Derived State, Not Declared»).
+Release precedenti: **v0.3.3** «il lint che non grida al lupo» · **v0.3.2** «il gate wiki riparato» · **v0.1.5** (fix `upgrade` double-wire Stop) · **v0.1.4** «wiki-guard» · **v0.1.3** «daily distill floor». Governance: costituzione **v1.6.0** (EN, ultimo emendamento: Principio XIV «Derived State, Not Declared»).
 
 ### ✅ Consegnato (digest per epica)
 - **core (E1):** retrieval ibrido+baseline · code-graph · embedder locale (GloVe default) · refresh incrementale — *completa*
