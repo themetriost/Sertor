@@ -22,20 +22,38 @@ sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.m
 <!-- EXEC:START -->
 ## ⚡ Executive summary (stato al 2026-07-30)
 
-**Versione pubblicata: `v0.4.0`** · `master` = `f3e2a31` · CI verde · **nessuna PR aperta**.
+**Versione pubblicata: `v0.4.0`** · `master` = `44208ff` · CI verde · **nessuna PR aperta**.
 Rilascio **notificato**: GitHub Release *latest* · bacheca (canale *Releases*) · auto-updater degli
 ospiti, **sveglio dal bump** (era dormiente-fino-alla-release per costruzione).
 
 ### 🔄 In progress
 
-**Niente in corso.** L'ultima consegna è **E15-FEAT-012** (smoke di aggiornamento, merge `eeca79e`/PR
-#256), rilasciata in **v0.4.0** insieme ai tre fix nati dai riscontri del nodo *Acta* del 29/07. Il
-flusso è **fermo alla scelta della prossima direzione** (vedi *Prossime direzioni*).
+**E10 `debito-tecnico` — direzione scelta dall'utente il 2026-07-30.** Si attacca il debito, partendo
+dalla prima voce.
 
-**🎯 Il numero che orienta la scelta: dei 110 item aperti, i Must sono TRE** — e tutti e tre stanno in
-epiche **differite** (E11 `multiutente`) o **non iniziate** (E9 `second-brain`). Il resto è **48 Should
-e 58 Could**. Cioè: **nessun Must aperto nelle epiche attive**. La domanda non è più «cosa manca perché
-sia completo», è «quale direzione vogliamo» — e va posta all'utente, non dedotta dal backlog.
+- **E10-FEAT-060** — *`ritual-check` e `wiki-guard` misurano realtà diverse, e la differenza è
+  invisibile* · **Should (P1)**, riscontrata dal vivo il 2026-07-28.
+  - **Cosa:** `ritual_check.py:84` deriva il perimetro da `git diff <base>...HEAD` — **solo il
+    committato** — mentre `scan.py:167-223` somma committato-dall'àncora **+** albero di lavoro
+    (diff tracciato *content-aware* + untracked `-uall`). Chi chiude uno step invoca `ritual-check`
+    **prima** del commit e riceve `pages=0 distill=0 drift=0`, mentre il gate allo `Stop` vede il
+    lavoro e blocca. Il tool non sbaglia il calcolo: **risponde a un'altra domanda e non lo dichiara**.
+  - **Dove:** branch `126-ritual-check-perimetro` · `src/sertor_core/wiki_tools/ritual_check.py` ·
+    superficie host-facing da riallineare: `wiki-playbook.md` (descrive il perimetro come «git diff»)
+    + copia bundlata in `packages/sertor/src/sertor_installer/assets/`.
+  - **Prossimo passo:** fase `requirements` (EARS) in
+    `requirements/debito-tecnico/feat-060-perimetro-ritual-check/`.
+  - **Decisione aperta (bivio lasciato dalla riga d'epica):** *allineare il perimetro* a `scan`
+    (includere l'albero di lavoro) **oppure** *dichiarare nell'output* quale perimetro si sta
+    misurando. Non sono alternative ovvie: la seconda da sola lascia il tool muto quando serve.
+  - **Vincolo verificato:** il contratto `wiki.ritual_check/1` **non ha consumatori programmatici**
+    (solo playbook e `specs/`), quindi la trappola di FEAT-062 — bumpare un contratto che i
+    consumatori confrontano per uguaglianza, mandandoli in fail-open — **qui non si applica**.
+
+**🎯 Il numero che orienta le scelte successive: dei 111 item aperti, i Must sono TRE** — e tutti e tre
+stanno in epiche **differite** (E11 `multiutente`) o **non iniziate** (E9 `second-brain`). Il resto è
+**48 Should e 59 Could** (+1 Could: E10-FEAT-066, promossa dal fuori-ambito di FEAT-060). Cioè: **nessun Must aperto nelle epiche attive**. La domanda non è «cosa manca
+perché sia completo», è «quale direzione vogliamo» — e va posta all'utente, non dedotta dal backlog.
 
 **Il fatto nuovo che cambia come rilasciamo:** da oggi un rilascio parte solo dopo aver verificato, su
 host usa-e-getta, che un **`upgrade`** lo consegna davvero. Prima lo si deduceva dal merge — ed è il
@@ -57,14 +75,14 @@ combinazioni**, 8 esiti su 8.
 | **E7** | [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 0/4 | 4 | 0% | 📋 non iniziata |
 | **E8** | [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | 0/3 | 3 | 0% | 📋 non iniziata |
 | **E9** | [`second-brain`](../../requirements/second-brain/epic.md) | 0/10 | 10 | 0% | 📋 non iniziata |
-| **E10** | [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 39/65 | 26 | 60% | 🔄 in corso |
+| **E10** | [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 39/66 | 27 | 59% | 🔄 **in corso — direzione attiva** |
 | **E11** | [`multiutente`](../../requirements/multiutente/epic.md) | 0/6 | 6 | 0% | 📋 non iniziata |
 | **E12** | [`usabilita`](../../requirements/usabilita/epic.md) | 5/14 | 9 | 36% | 🔄 in corso |
 | **E13** | [`documentazione-marketing`](../../requirements/documentazione-marketing/epic.md) | 8/15 | 7 | 53% | 🔄 in corso |
 | **E14** | [`speclift`](../../requirements/speclift/epic.md) | 2/5 | 3 | 40% | 🔄 in corso |
 | **E15** | [`fedelta-dogfood`](../../requirements/fedelta-dogfood/epic.md) | 7/12 | 5 | 58% | 🔄 in corso *(1 ritirata)* |
 | **E16** | [`evoluzione-modello-wiki`](../../requirements/evoluzione-modello-wiki/epic.md) | 0/4 | 4 | 0% | 📋 non iniziata |
-| | **TOTALE** | **114/224** | **110** | **51%** | — |
+| | **TOTALE** | **114/225** | **111** | **51%** | — |
 
 > **Come leggere «Consegnate»:** il denominatore esclude le feature **ritirate** (`❌ Won't`/not-a-bug) e
 > quelle **promosse ad altra epica** — contarle come debito gonfierebbe il residuo con lavoro che nessuno
@@ -75,8 +93,8 @@ combinazioni**, 8 esiti su 8.
 1. **E2-FEAT-023** — `upgrade` nudo copre una capability sola uscendo verde. È **il settimo difetto** che
    il gate d'aggiornamento non copre, dichiarato fuori copertura perché aperto: chiuderlo porta SC-001 a
    **7/7** e toglie l'unica deroga. *Il candidato naturale.*
-2. **Coda dei riscontri dal campo, ancora aperta** — E10-FEAT-060 (`ritual-check` e `wiki-guard` misurano
-   realtà diverse, usato da *Acta* come prova) · E10-FEAT-063 (`packages/` e `CLAUDE.md` **fuori** dal
+2. **Coda dei riscontri dal campo, ancora aperta** — *(E10-FEAT-060 ne è uscita: **in corso**, vedi
+   sopra)* · E10-FEAT-063 (`packages/` e `CLAUDE.md` **fuori** dal
    perimetro di `scan`: il gate non guarda la superficie che arriva agli ospiti) · E10-FEAT-047
    (`wiki/log/index.md` duplica un fatto derivabile) · E10-FEAT-049 + E13-FEAT-014 (riferimenti entranti /
    anti-drift della doc utente — **stessa forma, da progettare insieme**).
@@ -187,8 +205,10 @@ combinazioni**, 8 esiti su 8.
 - 📋 **E9-FEAT-009** — Codifica di metodologie / sintesi N→1 — pattern ricorrente su N progetti → asset nuovo (clustering varian · ***Could***
 - 📋 **E9-FEAT-010** — Meta-grafo dei concetti/asset — relazioni tipate (generalizes/refines/contradicts/applies-when); porta so · ***Could***
 
-**E10 · [`debito-tecnico`](../../requirements/debito-tecnico/epic.md)** — 26 aperte
+**E10 · [`debito-tecnico`](../../requirements/debito-tecnico/epic.md)** — 27 aperte
 
+- 🔄 **E10-FEAT-060** — `ritual-check` e `wiki-guard` misurano realtà diverse, e la differenza è invisibile · ***Should (P1)*** · **IN CORSO** (vedi EXEC)
+- 📋 **E10-FEAT-066** — `scan` e `ritual_check` derivano il perimetro DUE VOLTE, e possono ridivergere — promossa dal fuori-ambito di FEAT-060 · ***Could (P2)***
 - 📋 **E10-FEAT-004** — Rituale/governance come plugin portabile repo-agnostico (oltre ciò che sertor-flow copre) · ***Could***
 - 📋 **E10-FEAT-005** — Igiene del wiki — hub/overview per-area, tassonomia più fine, distill pagina osservabilità, ripasso [[tre · ***Could***
 - 📋 **E10-FEAT-006** — Robustezza del bundle sertor-flow — selettività (vs all-or-nothing) + hook harness governance (DA-g) · ***Could***
@@ -212,7 +232,6 @@ combinazioni**, 8 esiti su 8.
 - 📋 **E10-FEAT-057** — Superficie obsoleta (non morta): l'operazione sertor-wiki-tools migrate — è la migrazione una-tantum dal  · ***Could (P2)***
 - 📋 **E10-FEAT-058** — Il lint applica al contenuto archiviato una regola pensata per quello vivo — dopo la riparazione dei 40 r · ***Should (P1)***
 - 📋 **E10-FEAT-059** — Regola del boy scout: se il lint trova rotto, si aggiusta nello stesso passaggio — direttiva utente (2026 · ***Should (P1)***
-- 📋 **E10-FEAT-060** — ritual-check e wiki-guard misurano realtà diverse, e la differenza è invisibile — ritual-check deriva i c · ***Should (P1)***
 - 📋 **E10-FEAT-061** — Distribuire il metodo d'audit del codice morto come skill — oggi vive solo come pagina wiki nostra ([[aud · ***Could (P2)***
 - 📋 **E10-FEAT-063** — Il perimetro di scan esclude l'installer e i file di radice — sul dogfood source_dirs = ["src", "specs",  · ***Should (P1)***
 

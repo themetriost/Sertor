@@ -3,7 +3,7 @@ title: ritual-check (scoperta anti-skip per-step)
 type: concept
 tags: [wiki, rituale-di-step, distill, lint, anti-skip, deterministico, D-vs-N, sertor-wiki-tools]
 created: 2026-07-22
-updated: 2026-07-22
+updated: 2026-07-30
 sources: ["src/sertor_core/wiki_tools/ritual_check.py", "requirements/debito-tecnico/epic.md", "specs/097-rituale-anti-skip/"]
 ---
 
@@ -23,6 +23,22 @@ wiki. Confine D↔N: il tool *trova*, l'agente *giudica* (non crea pagine, non d
   a sua volta cambiata), `capability-exec` (file di capacità cambiati, la pagina EXEC no — config-driven).
 - **Scaffold di dichiarazione forzata** `Rituale: record · distill · lint` — l'artefatto concreto a cui la
   chiusura dello step deve rispondere (anche «non serve» va dichiarato). Output JSON `wiki.ritual_check/1`.
+
+## ⚠️ Limite noto: il perimetro è il committato, e non lo dichiara (E10-FEAT-060)
+
+Lo scope è `base...HEAD`, cioè **solo ciò che è già committato**. Ma il rituale prescrive di scrivere la
+voce di giornale **nello stesso momento del commit**: chi chiude uno step invoca `ritual-check` *prima*
+di committare, quando quel perimetro è ancora vuoto. La gemella `scan` guarda invece **anche l'albero di
+lavoro** — quindi allo `Stop` il gate blocca mentre `ritual-check` risponde `0 candidati su tutto`.
+
+Misurato su host effimeri: a **parità di contenuto**, il candidato a distillazione esiste o non esiste a
+seconda del solo `git commit`. E nel caso misto (una pagina committata, una no) il tool emette sulla
+seconda un candidato `neighbor-of-change` **falso** — *«not itself updated»* su una pagina appena
+riscritta — perdendo insieme il candidato distill. Non è solo omissione: è anche **fabbricazione**.
+
+Il tool non sbaglia il calcolo: **risponde a un'altra domanda e tace sulla differenza**. Rimedio in corso
+(E10-FEAT-060): perimetro allineato a `scan` **e** dichiarato nell'output. Finché non atterra, leggi uno
+`0` come *«nel committato non c'è nulla»*, mai come *«nello step non c'è nulla»*.
 
 ## Gemella di daily-distill-floor
 
