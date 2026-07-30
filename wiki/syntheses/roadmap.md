@@ -22,13 +22,20 @@ sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.m
 <!-- EXEC:START -->
 ## ⚡ Executive summary (stato al 2026-07-30)
 
-**Versione pubblicata: `v0.4.0`** · `master` = `d0a2e13` · CI verde · nessuna PR aperta.
+**Versione pubblicata: `v0.4.0`** · `master` = `f3e2a31` · CI verde · **nessuna PR aperta**.
+Rilascio **notificato**: GitHub Release *latest* · bacheca (canale *Releases*) · auto-updater degli
+ospiti, **sveglio dal bump** (era dormiente-fino-alla-release per costruzione).
 
 ### 🔄 In progress
 
 **Niente in corso.** L'ultima consegna è **E15-FEAT-012** (smoke di aggiornamento, merge `eeca79e`/PR
 #256), rilasciata in **v0.4.0** insieme ai tre fix nati dai riscontri del nodo *Acta* del 29/07. Il
 flusso è **fermo alla scelta della prossima direzione** (vedi *Prossime direzioni*).
+
+**🎯 Il numero che orienta la scelta: dei 110 item aperti, i Must sono TRE** — e tutti e tre stanno in
+epiche **differite** (E11 `multiutente`) o **non iniziate** (E9 `second-brain`). Il resto è **48 Should
+e 58 Could**. Cioè: **nessun Must aperto nelle epiche attive**. La domanda non è più «cosa manca perché
+sia completo», è «quale direzione vogliamo» — e va posta all'utente, non dedotta dal backlog.
 
 **Il fatto nuovo che cambia come rilasciamo:** da oggi un rilascio parte solo dopo aver verificato, su
 host usa-e-getta, che un **`upgrade`** lo consegna davvero. Prima lo si deduceva dal merge — ed è il
@@ -86,6 +93,15 @@ combinazioni**, 8 esiti su 8.
 **Fermi per decisione utente:** go-public/PyPI (E2-FEAT-006, dal 2026-07-17) · E11 `multiutente`
 (differita) · E2-FEAT-019 (attesa esterna Noetix) · migrazione ad **Acta v0.5.0** (il rimedio al residuo
 `acta` machine-wide tocca gli altri nodi dell'host).
+
+> **⚠️ La superficie che nessuna guardia presidia — emersa il 2026-07-30, da rifletterci prima di
+> scegliere.** In un giorno si sono rotte **due** superfici testuali: la roadmap (5 voci che dichiaravano
+> uno stato falso) e le **note di rilascio** (comandi non eseguibili, pubblicati su tre canali). Nessuna
+> delle due ha un test. Il codice ha le suite, gli asset la parità, i blocchi distribuiti il budget di
+> righe — *ciò che raccontiamo non ha nulla*. E in entrambi i casi il difetto è stato colto da una
+> **domanda dell'utente**, non da una nostra rilettura. Le due contromisure tracciate — **E13-FEAT-014**
+> (anti-drift della doc utente) e **E10-FEAT-049** (riferimenti entranti) — coprono metà del problema:
+> **nessuna delle due guarda le note di rilascio**.
 
 <!-- EXEC:END -->
 
