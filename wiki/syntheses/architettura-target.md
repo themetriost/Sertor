@@ -26,7 +26,7 @@ punto di arrivo; ci si arriva per tappe (vedi [Roadmap](#roadmap-incrementale-01
 - **Code-aware ≠ text-aware**: il codice va spezzato per unità sintattiche (funzioni, classi,
   metodi) via **AST/tree-sitter**, non a finestre fisse; preservare firme, docstring, import.
 - **Hybrid quasi obbligatorio sul codice**: servono sia match **lessicali** esatti su
-  identificatori/simboli (BM25) sia **semantici** (embeddings). Vedi [[hybrid-search]].
+  identificatori/simboli (BM25) sia **semantici** (embeddings). Vedi [[hybrid-retrieval]].
 - **Il codice è un grafo**: simboli, call graph, import, ereditarietà → naturale per
   **GraphRAG**; abilita query multi-hop ("chi chiama X?", "quali doc descrivono il modulo Y?").
 - **Fusione codice ↔ doc**: un layer di linking collega documenti e simboli/file; il
@@ -50,7 +50,7 @@ punto di arrivo; ci si arriva per tappe (vedi [Roadmap](#roadmap-incrementale-01
 | Orchestrazione | LangChain | Semantic Kernel / AutoGen |
 | Interfaccia agenti | **MCP server** + plugin SK/AutoGen | idem |
 
-Vedi anche [[stack]] per la mappa completa.
+Vedi anche [ProtoSertor · stack](https://github.com/themetriost/ProtoSertor/blob/master/wiki/tech/stack.md) per la mappa completa.
 
 ## Diagramma
 
@@ -123,7 +123,7 @@ Tool MCP previsti (bozza): `search_code`, `search_docs`, `search_combined`,
 | 1 | `01-baseline/` | Code RAG e Docs RAG **separati**: chunking code-aware, embeddings, Chroma, similarity search | query → chunk rilevanti su ciascun corpus |
 | 2 | `02-hybrid-reranking/` | Hybrid (BM25+dense) + reranking; **prima fusione** dei due corpora (RRF) | recall/precision migliori; un solo bundle codice+doc |
 | 3 | `03-graphrag/` | **Code knowledge graph** (simboli, call graph, import) + link doc↔codice con Microsoft GraphRAG | query multi-hop ("chi chiama X", "doc del modulo Y") |
-| 4 | `04-agentic-rag/` | **Orchestrator** (query planning, retrieval iterativo) esposto via **MCP**; gli agenti lo usano in automatico su bug/CR/feature — vedi [[design Tappa 4]](../../04-agentic-rag/README.md) | obiettivo finale: agente che legge da solo codice+doc |
+| 4 | `04-agentic-rag/` | **Orchestrator** (query planning, retrieval iterativo) esposto via **MCP**; gli agenti lo usano in automatico su bug/CR/feature — vedi [design Tappa 4](../../04-agentic-rag/README.md) | obiettivo finale: agente che legge da solo codice+doc |
 
 Dettaglio per tappa:
 
@@ -131,7 +131,7 @@ Dettaglio per tappa:
   `shared/`: caricatori, config provider/backend, e un piccolo set di valutazione
   (coppie query→file/simbolo attesi) per misurare ogni miglioramento successivo.
 - **01 Baseline.** Provare end-to-end il retrieval su codice e doc, separatamente. Validare
-  il chunking code-aware (tree-sitter) vs naive. Vedi [[rag-overview]].
+  il chunking code-aware (tree-sitter) vs naive. Vedi [ProtoSertor · rag-overview](https://github.com/themetriost/ProtoSertor/blob/master/wiki/concepts/rag-overview.md).
 - **02 Hybrid + reranking.** Introdurre BM25 (cruciale per identificatori) + dense + rerank.
   Implementare la **fusione** dei due retriever (Reciprocal Rank Fusion) → primo contesto
   combinato. Variante Azure: Azure AI Search hybrid + semantic ranker.
@@ -156,7 +156,7 @@ Dettaglio per tappa:
   Scope: codice = `fastapi/` (48 file `.py`), documentazione = `docs/en/` (153 file Markdown),
   link doc↔codice = `docs_src/` (454 esempi `.py` citati dai doc). Traduzioni `docs/<lingua>/` escluse.
   Motivo: codice Python pulito e tractabile, doc ricca **separata** in Markdown, e `docs_src/`
-  fornisce relazioni doc↔codice esplicite — ideale per dimostrare la fusione.
+  fornisce relazioni doc↔codice esplicite — ideale per dimostrare la fusione. Vedi [ProtoSertor · fastapi](https://github.com/themetriost/ProtoSertor/blob/master/wiki/sources/fastapi.md).
 - **Layer agenti: MCP-first** — prima Claude Code via MCP; adattatore AutoGen/SK in tappa successiva.
 - **Embedding: confronto multi-provider fin da subito**, su stesso eval set, tramite layer
   intercambiabile via config. **Tutti e 3 verificati live** (`shared/check_embeddings.py`):
@@ -168,7 +168,7 @@ Dettaglio per tappa:
 - **Vector store: Chroma in locale** per Tappa 0/1; confronto Azure AI Search vs Cosmos DB for NoSQL dopo.
 - **Ambiente Python: venv `uv` con Python 3.12** (il Python di sistema è 3.14, troppo recente
   per i wheel di chromadb/langchain).
-- **Corpus campione materializzato**: sparse+shallow clone in `raw/fastapi/` (vedi [[fastapi]]).
+- **Corpus campione materializzato**: sparse+shallow clone in `raw/fastapi/` (vedi [ProtoSertor · fastapi](https://github.com/themetriost/ProtoSertor/blob/master/wiki/sources/fastapi.md)).
 
 ## Decisioni ancora aperte
 

@@ -21,7 +21,7 @@ dist/
 build/
 *.egg-info/
 
-# Vector store / indici locali (namespaced per corpus: .index, .index-sertor, .index-prototype, .index-wiki, ...)
+# Vector store / indici locali (namespaced per corpus: .index, .index-sertor, .index-wiki, ...)
 **/chroma/
 *.chroma
 **/.index/
@@ -43,27 +43,12 @@ build/
 # Log rigenerabili (re-index, ecc.)
 **/*.log
 
-# GraphRAG (Tappa 3C): venv isolato + artefatti rigenerabili (input staged da raw/)
-prototype/03-graphrag/.venv-grag/
-prototype/03-graphrag/*.log
-prototype/03-graphrag/grag/input/
-prototype/03-graphrag/grag/output/
-prototype/03-graphrag/grag/output_*/
-prototype/03-graphrag/grag/cache/
-prototype/03-graphrag/grag/logs/
-prototype/03-graphrag/grag/metrics/
-prototype/03-graphrag/grag/update_output/
-prototype/03-graphrag/entity_types_evidence.*
 
 # OS / editor
 .DS_Store
 Thumbs.db
 .vscode/
 
-# Fonti esterne vendored in raw/ (riproducibili via sources/*.md): non versionare,
-# ma tieni il nostro README della cartella. (corpus del prototipo, isolato in prototype/)
-prototype/raw/*
-!prototype/raw/README.md
 
 # Machinery SpecKit materializzata dal percorso d'install (E10-FEAT-027) — RIGENERABILE come `.venv`:
 # la produce `scripts/dev/materialize-speckit.ps1` (che lancia `specify init`, spec-kit pinnato). NON

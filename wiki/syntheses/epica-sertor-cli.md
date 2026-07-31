@@ -104,7 +104,7 @@ Implicazione per FEAT-005 (configurazione RAG): il CLI chiede il vector DB **sol
 - **Metodologia:** [[ears-methodology]] — requisiti in formato EARS
 - **Flusso end-to-end:** [[flusso-requisiti-implementazione]] — come epica→feature→EARS fluiscono in implementazione
 - **Governance progetto:** [[costituzione-produzione-proposta]] — principi di progetto applicati
-- **Stack RAG:** [[rag-overview]] — i 4 motori da installare (baseline, hybrid, graph, agentico)
+- **Stack RAG:** [ProtoSertor · rag-overview](https://github.com/themetriost/ProtoSertor/blob/master/wiki/concepts/rag-overview.md) — i 4 motori da installare (baseline, hybrid, graph, agentico)
 - **Governance/skill:** [[speckit]] — framework orchestrazione fase-gate con 9 agenti, utilizzato dal CLI
 
 ## Note di Decomposizione

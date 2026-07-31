@@ -81,7 +81,7 @@ flowchart TB
    pilota gli orchestratori e genera metriche + `ESEMPI-agentic.md`.
 4. **Trasversale.** `config.py`/`.env` (`RAG_BACKEND`) governa provider di embedding e LLM:
    switch local↔azure. Entry point operativo attuale: **Azure gpt-5.4-mini** + text-embedding-3-large
-   (vedi [[agent-llm-azure-non-locale]]).
+   (agente LLM Azure non-locale).
 
 ## Dove codice e doc si uniscono (i 3 punti + la fusione)
 
@@ -116,7 +116,7 @@ flowchart LR
 indici in-process (`@lru_cache` su HybridIndex/CodeGraph in `shared/retrieval.py`, caldi nel
 processo long-lived del server MCP); modello FlashRank su disco; cache estrazione GraphRAG (~210 MB).
 
-**Backlog di produzione** (non in prototipo — vedi policy SpecKit/branch in [[git-policy-prototipo-vs-produzione]]):
+**Backlog di produzione** (non in prototipo — policy SpecKit/branch: branch + PR workflow con lint pre-merge):
 
 #### Caching & Performance
 1. **Cache embedding query** (lru/disk in `shared/embeddings.py`) — evita di ri-embeddare (e ri-pagare in azure) query identiche.

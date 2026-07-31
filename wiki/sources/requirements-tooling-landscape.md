@@ -18,6 +18,14 @@ sources:
   - martinfowler.com/articles/exploring-gen-ai/sdd-3-tools.html
 ---
 
+> 📦 **In transito verso Sulcimen.** Questa pagina e' il panorama degli strumenti RE: e' **materiale di metodo**, non di
+> retrieval. Viveva in `prototype/wiki/` per collocazione storica (nel maggio 2026 tutto stava li'),
+> ed e' stata portata qui il 2026-07-31 quando il prototipo e' diventato il nodo **ProtoSertor**.
+> **Destinazione finale: il nodo Sulcimen**, che non esiste ancora — vedi
+> [`specs/127-separazione-quattro-prodotti/migration-plan.md`](../../specs/127-separazione-quattro-prodotti/migration-plan.md)
+> (decisione D4, fase F3). Fino ad allora vive qui, **linkata e visibile**: parcheggiata non vuol
+> dire nascosta.
+
 # Panorama strumenti Requirements Engineering (mid-2026) — ricerca avversariale
 
 ## Sintesi esecutiva

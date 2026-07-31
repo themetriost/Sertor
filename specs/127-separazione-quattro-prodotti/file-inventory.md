@@ -16,7 +16,14 @@
 
 ---
 
-## 1. `prototype/` — 90 file · **VERIFICATO**
+## 1. `prototype/` — 90 file · **VERIFICATO e MIGRATO** ✅
+
+> **Chiuso il 2026-07-31.** I 90 file hanno lasciato Sertor: **81** sono partiti col nodo
+> **ProtoSertor** (repo privato proprio, 35 commit di storia), **9** sono stati **ricollocati** nel
+> wiki di Sertor con `git mv` — 3 come pagine di prodotto, 6 *in transito verso Sulcimen* con la
+> destinazione dichiarata in testa a ciascuna. La cartella è stata eliminata dal disco (**1,4 GB**)
+> dopo aver verificato con `comm` che il corpus fosse integralmente presente nell'altro nodo.
+> **ProtoSertor da qui in poi è un nodo autonomo: non gestiamo il suo repo.**
 
 ### 1.1 Ciò che l'aggregato aveva sbagliato
 

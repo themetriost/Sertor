@@ -482,13 +482,30 @@ funziona, pagata sul caso più semplice.
    letta a ogni sessione → ottava istanza di [[riassunto-invecchia-senza-riconciliatore]]. **Va
    corretta comunque**, indipendentemente dalla migrazione.
 
-#### Stato dell'esecuzione (2026-07-31)
+#### ✅ F1 CONCLUSA (2026-07-31)
 
-**F1.0 → F1.4 ESEGUITE.** `C:\Workspace\Git\ProtoSertor` esiste: commit `4e7c143`, **82 file
-tracciati**, **35 commit** (34 di storia estratta, il più vecchio del **2026-05-28**), corpus
-`raw/` copiato (973 file / 34 MB, ignorato correttamente), **zero contaminazione** verificata con
-`diff` fra l'atteso e il reale. Nessun remote: il repo è locale.
-**Restano F1.5 → F1.10.** Il punto attuale è **reversibile**: Sertor non è stato toccato.
+**ProtoSertor è un nodo autonomo e NON lo gestiamo più** *(decisione utente: «da adesso in poi
+ProtoSertor è un altro nodo e noi non gestiamo il suo repo»)*. Repo privato
+`themetriost/ProtoSertor`, 35 commit con storia dal **2026-05-28**, corpus FastAPI incluso.
+Le questioni aperte del suo repo (branch ereditati dal clone, default branch) **le risolve lui**.
+
+**Cosa è stato fatto in Sertor — questa è la parte che ci compete:**
+
+| # | Azione | Esito verificato |
+|---|---|---|
+| 1 | `prototype/` rimosso dal versionamento | **81 file**; `git ls-files prototype` → 0 |
+| 1b | Cartella eliminata dal disco | **1,4 GB liberati** (il corpus era già salvo in ProtoSertor: `comm` fra i due elenchi → **nessun file mancante**) |
+| 2 | I 9 file wiki **ricollocati, non cancellati** (`git mv`, storia preservata) | 3 accolti come pagine di Sertor · **6 marcati «in transito verso Sulcimen»** con nota che dichiara destinazione e motivo |
+| 3 | Riferimenti operativi azzerati | `.gitignore` 14→**0** · `pyproject.toml` 2→**0** · `CLAUDE.md` 12→**1** (storica) · `derive-entity-types` **ritirato** (la capacità è di ProtoSertor) · test `sertor-flow` invariato, resta valido |
+| — | Verifica di non-regressione | **`ruff` pulito** (con `prototype` non più escluso dal lint) e **1402 test verdi**: nulla in produzione ne dipendeva |
+
+**I 74 file** di `specs/`/`requirements/`/`wiki/` che *citano* il prototipo **restano invariati**:
+sono storia, raccontano decisioni prese quando il prototipo era qui, e restano vere.
+
+Le **sette** trappole incontrate sono in [[cosa-non-viaggia-in-una-migrazione]] — da leggere **prima**
+di F2, F3 e F4, che ripeteranno la procedura su sottoalberi più intrecciati. Le ultime due, emerse
+solo eseguendo: `filter-repo` riscrive **tutti i ref** (il repo nuovo eredita 45 branch del sorgente)
+e `git clone` porta con sé anche **su quale branch eri** (il default branch nasce col nome sbagliato).
 
 Le cinque trappole incontrate sono distillate in [[cosa-non-viaggia-in-una-migrazione]] — vanno lette
 **prima** di F2, F3 e F4, che ripeteranno la stessa procedura su sottoalberi più intrecciati.

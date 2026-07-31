@@ -121,7 +121,6 @@ packages = ["src/sertor_core", "src/sertor_mcp"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-# The exploration prototype is FROZEN/read-only by design (see CLAUDE.md): out of lint scope, so
 # `ruff check .` (the documented lint command, and CI) stays green on the maintained code.
 # packages/speclift and packages/specaudit are VENDORED verbatim from Sinthari (features 084/next):
 # each keeps its own [tool.ruff] (110/py311/+SIM) and MUST NOT be reformatted to Sertor's style on
@@ -130,7 +129,7 @@ target-version = "py311"
 # `.claude/hooks/` and run via `uv run --no-project python` — deliverable artifacts, not the package's
 # own importable source (the former `.ps1` were likewise never linted). Out of the project's lint scope.
 extend-exclude = [
-    "prototype", "packages/speclift", "packages/specaudit",
+    "packages/speclift", "packages/specaudit",
     "packages/sertor/src/sertor_installer/assets",
     ".claude/hooks",  # dogfood's own installed copies of the deliverable hook artifacts (A-09)
 ]
