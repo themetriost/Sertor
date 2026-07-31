@@ -38,11 +38,24 @@ Rilascio **notificato**: GitHub Release *latest* (verificata via API) · bacheca
   - **Il dato che ha deciso l'ordine:** tre nodi su quattro hanno accoppiamento **zero** col core
     (`sertor-flow`, `prototype/`, `install-kit`); `wiki_tools` ne ha **quattro**, di cui due lazy. Il
     taglio costoso è il **logging** (11 chiamate), non l'architettura → [[confine-di-prodotto-misurato]].
-  - **Prossimo passo concreto:** l'utente scioglie le **7 decisioni** (§3 del piano). La più
-    strutturante è **D1** — chi possiede il motore d'installazione: dei 58 test dell'installer **37
-    sono guardie di meccanismo**, cioè proprio ciò che verifica la promessa host-agnostica.
-  - **Blocco/decisione aperta:** D1 (kit come prodotto a sé?) · D3 (SpecLift/SpecAudit → Sulcimen?) ·
-    D4 (come si divide il wiki) · D5 (storia git via `filter-repo`).
+  - **✅ Le 7 decisioni sono SCIOLTE** (2026-07-31, in sessione). Le due che cambiano il piano:
+    **D1** — il motore d'installazione non diventa un repo tecnico nuovo, va in **Kaelen**, che
+    entra come **quinto attore**: motore Python + schema del manifest, mentre il suo Rust resta per
+    TUI/matrice/probe. Ogni nodo **si dichiara** con un `node.manifest.json`, quindi un nodo di terzi
+    non richiede di toccare Kaelen. **D3** — SpecLift/SpecAudit **non sono nostri**: sono di
+    **Sinthari**, che li distribuirà; noi smettiamo di vendorare (Sulcimen perde 3.916 righe e 52
+    test rispetto alla prima stesura).
+  - **Il debito che D1 estingue, e che era già in essere:** «dove va una skill per Claude/Copilot»
+    era scritto **due volte** — Rust in Kaelen, Python nel kit — in due repo e due linguaggi, quindi
+    **invisibile a qualunque guardia di un singolo repo**. Con lo schema condiviso non viene gestita:
+    smette di poter esistere.
+  - **Prossimo passo concreto:** **F0** — creare i repo (i folder Thesmion/Sulcimen esistono ma sono
+    vuoti e non-git; ProtoSertor va creato) e congelare il perimetro. Poi **F1 ProtoSertor** (rischio
+    zero, rompe il ghiaccio sulla procedura `filter-repo`).
+  - **La fase che ora domina lo sforzo:** **F2** — Kaelen diventa il motore, e **2.627 righe di piani
+    in codice** (`install_rag`/`install_wiki`/`install_governance`) diventano **dati dichiarativi**.
+    Criterio falsificabile: installare da manifest deve lasciare l'host nello **stesso stato** che
+    installare da codice.
   - **Fatto scomodo da tenere presente:** **43 delle 67 voci di E10 `debito-tecnico` nominano il
     wiki** — Thesmion nascerebbe ereditando la maggior parte del debito aperto.
 

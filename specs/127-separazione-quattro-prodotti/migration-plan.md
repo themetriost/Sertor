@@ -12,8 +12,17 @@ su Claude e Copilot CLI**, esattamente come Sertor oggi:
 |---|---|---|---|
 | **Sertor** | Il RAG: retrieval, code-graph, memoria conversazioni, osservabilità, MCP | `C:\Workspace\Git\Sertor` | esistente (resta qui) |
 | **Thesmion** | Il sistema-wiki: nucleo deterministico + layer agentico + rituale + gate | `C:\Workspace\Git\Thesmion` | **vuoto, non è un repo git** |
-| **Sulcimen** | Il metodo: governance/SDLC, SpecKit, costituzione, SpecLift/SpecAudit | `C:\Workspace\Git\Sulcimen` | **vuoto, non è un repo git** |
+| **Sulcimen** | Il metodo: governance/SDLC, SpecKit, costituzione | `C:\Workspace\Git\Sulcimen` | **vuoto, non è un repo git** |
 | **ProtoSertor** | Il prototipo congelato (4 approcci RAG su corpus FastAPI) | `C:\Workspace\Git\ProtoSertor` | **da creare** |
+
+**E un quinto attore, deciso in D1 e non previsto dalla prima stesura:**
+
+| | Cosa è | Repo | Stato |
+|---|---|---|---|
+| **Kaelen** | Il **motore d'installazione dell'ecosistema** + lo **schema del manifest di nodo**, oltre a ciò che già fa (orchestrazione workspace, matrice skill, probe) | `C:\Workspace\Git\Kaelen` | esistente — **spike Rust** (16.628 righe, 6 crate), non ancora un prodotto, ma nato per questo scopo |
+
+> **SpecLift/SpecAudit non sono nostri** (D3): appartengono a **Sinthari**, che li distribuirà
+> dichiarandosi nodo. Noi smettiamo di vendorarli — Sulcimen **non** li eredita.
 
 **Vincolo trasversale (dal goal):** ogni nodo deve avere il proprio installer, i propri asset in forma
 nativa per **entrambi** gli assistenti, le proprie guardie di parità, il proprio ciclo di rilascio
@@ -105,10 +114,68 @@ solo renderla esplicita nel packaging.*
 
 ---
 
-## 3. Le sette decisioni di design (con raccomandazione)
+## 3. Le sette decisioni — **SCIOLTE il 2026-07-31**
 
-Queste vanno sciolte **prima** di muovere un file. Per ognuna do la raccomandazione e il perché;
-sono decisioni tue, ma il piano assume la raccomandazione.
+> **Tutte e sette decise dall'utente in sessione.** Le analisi che seguono restano come motivazione;
+> gli esiti sono qui in testa e **prevalgono** su ogni raccomandazione scritta sotto.
+
+| # | Decisione presa | Scostamento dalla raccomandazione |
+|---|---|---|
+| **D1** | **Kit unico e generico, casa = Kaelen.** Doppio canale: il nodo resta auto-installabile in superficie (`uvx --from git+…/<nodo> install`), ma **quel comando delega a Kaelen** — una sola implementazione, nessuna duplicazione | **Sì, sostanziale**: la casa non è un repo tecnico nuovo, è **Kaelen** |
+| **D1b** | **Manifest nel nodo, motore in Kaelen.** Kaelen possiede motore + schema; ogni nodo porta il proprio `node.manifest.json`. Un nodo nuovo — anche di terzi — **non richiede di toccare Kaelen** | conforme |
+| **D1c** | **Motore in Python dentro Kaelen** (riusa le 2.552 righe già testate e le 61 guardie). Rust resta per TUI, matrice skill, probe, apertura workspace. **Lo schema è letto da entrambi** | conforme |
+| **D2** | **Thesmion reimplementa il kernel** (~200 righe: `log_event` + 2 errori) + **schema evento condiviso** e versionato | conforme |
+| **D3** | **Sinthari si dichiara nodo e distribuisce SpecLift/SpecAudit.** Noi smettiamo di vendorare. **Provvisorio**: entreranno in un nodo dedicato più avanti | conforme (con riserva temporale) |
+| **D4** | **Divisione per proprietà** + **refactoring semantico** delle pagine (i riferimenti puntano ai nodi, non assumono il monorepo) + **log invariati** (è storia) + **Could**: estrarre dai log le tracce di ciascun nodo | conforme, con tre aggiunte |
+| **D5** | **`git filter-repo`** — storia preservata | conforme |
+| **D6** | **Alias deprecati per una release**, con warning che nomina il sostituto; `upgrade` riscrive hook e blocchi | conforme |
+| **D7** | **Ogni nodo decide quando e cosa installare.** Tendenza: tutti installano tutto, **salvo eccezioni** — la scelta resta del nodo, non imposta | conforme, con l'autonomia esplicitata |
+
+### 3.0 La conseguenza che nessuna opzione aveva previsto: **Kaelen è il quinto attore**
+
+D1 sposta il baricentro del piano. Non stiamo separando quattro prodotti e basta: stiamo **estraendo
+il meccanismo d'installazione dell'intero ecosistema** e dandogli una casa che *esisteva già per quello
+scopo*.
+
+**Cosa Kaelen ha già** (spike, 16.628 righe Rust, 6 crate — non un prodotto, ma il modello è quello
+giusto): enum `Agent` con `install_subpath()` (Claude → `.claude/skills`, Copilot → `.github/prompts`),
+`SkillProbe` che rileva l'installato su disco, `SkillsMatrix` skill × workspace × agente **con gli
+orfani**, un `dojo` come catalogo canonico, `GlobalScope` con i due locator per assistente.
+
+**Il debito che questa decisione estingue, e che era già in essere:** quella conoscenza è **duplicata
+oggi** fra `Agent::install_subpath` (Rust, Kaelen) e `AssistantId`/`Surface` (Python, kit). Due
+implementazioni della stessa verità in due repo, e nulla le riconcilia. Con D1b entrambe leggono
+**lo stesso manifest**: la duplicazione non viene "gestita", smette di esistere.
+
+**La divisione di responsabilità che ne risulta:**
+
+| Chi | Cosa fa | Perché lì |
+|---|---|---|
+| **Kaelen / `engine/` (Python)** | esegue install/upgrade/uninstall leggendo il manifest | riusa 2.552 righe testate + 61 guardie; il canale `uvx` è già il prerequisito accettato |
+| **Kaelen / `schema/`** | possiede e versiona `node.manifest.v1.json` e `observability.event.v1.json` | il contratto è **dato**, non codice — leggibile da Rust e Python |
+| **Kaelen / `crates/` (Rust)** | TUI, matrice skill, probe, orfani, apertura workspace | è ciò che già fa bene, e che al kit manca: il kit **deposita**, Kaelen **osserva** |
+| **Ogni nodo** | porta `node.manifest.json` + gli asset + un **guscio** di comando | il nodo resta padrone di ciò che distribuisce |
+
+**Il lavoro nuovo che questa decisione introduce, e che va dimensionato onestamente:** trasformare
+**2.627 righe di piani in codice** (`install_rag.py` 1.324 · `install_wiki.py` 713 · `install_governance.py`
+590) in **dati dichiarativi**. È il pezzo più sostanziale dell'intera migrazione, e non era nel piano
+originale.
+
+### 3.0.1 Due questioni aperte che le decisioni hanno generato
+
+1. **Riferimenti cross-nodo nel wiki.** D4 chiede il refactoring semantico, ma oggi le pagine si citano
+   con `[[wikilink]]`, che dopo la separazione attraverserebbero i confini dei repo e il lint li
+   vedrebbe **rotti**. Serve una convenzione (proposta: wikilink solo intra-nodo; per i cross-nodo un
+   link markdown all'URL del repo, con il nome del nodo esplicito — `[Thesmion · ritual-check](…)`).
+   *Da confermare.*
+2. **Il guscio deve procurarsi Kaelen.** `uvx --from git+…/Sertor sertor install rag` deve poter
+   invocare il motore in Kaelen: serve decidere se il guscio dichiara Kaelen come dipendenza pinnata
+   (più semplice, versione fissa e riproducibile) o lo risolve a runtime (più flessibile, un punto di
+   rete in più). *Da confermare al momento dell'implementazione di F2.*
+
+---
+
+### Le analisi originali (motivazione delle scelte sopra)
 
 ### D1 — `sertor-install-kit`: chi lo possiede? ⭐ **la decisione che struttura tutto**
 
@@ -403,15 +470,27 @@ Perché primo: **zero import** verso il core (S8), 90 file, nessun asset host-fa
 | F1.5 | In Sertor: rimuovere `prototype/`, aggiornare `CLAUDE.md` (sezione *Riferirsi al prototipo*), `.mcp.json` (corpus), `wiki.config.toml` | 7 suite verdi |
 | **Uscita F1** | il RAG di dogfooding interroga ProtoSertor **da un altro repo**, e Sertor non contiene più `prototype/` | |
 
-### F2 — Il kit (D1): estrarre il motore di installazione
+### F2 — **Kaelen diventa il motore dell'ecosistema** (D1 · D1b · D1c)
+
+> **È la fase più grossa e quella che il piano originale non aveva.** Non sposta soltanto codice:
+> trasforma **2.627 righe di piani in codice** in **dati dichiarativi**, e fa sì che Rust e Python
+> leggano la stessa verità invece di codificarla due volte.
 
 | Step | Azione | Uscita |
 |---|---|---|
-| F2.1 | `filter-repo --path packages/sertor-install-kit/` → repo proprio | 24 test verdi nel nuovo repo |
-| F2.2 | Rinomina neutra del pacchetto + `VERSION`/`CHANGELOG`/CI propri | pubblicabile via `git+url` |
-| F2.3 | In Sertor: `sertor` e `sertor-flow` puntano al kit **esterno** pinnato | 7 suite verdi |
-| F2.4 | Guardia: nessun `import sertor_install_kit` residuo da path locale | grep = 0 |
-| **Uscita F2** | il kit è un prodotto a sé, i due installer lo consumano pinnato, la CI di Sertor è verde | |
+| F2.1 | `filter-repo --path packages/sertor-install-kit/` → `Kaelen/engine/` (Python), con i suoi **24 test** + le **37 guardie di meccanismo** prese da `packages/sertor/tests` | 61 test verdi dentro Kaelen |
+| F2.2 | **Progettare `schema/node.manifest.v1.json`**: cos'è un nodo (identità, artefatti, surface per agente, hook, blocchi a marker, merge, lifecycle, template `.env`) | schema versionato + validatore |
+| F2.3 | **Convertire i tre piani in manifest, uno alla volta** — `install_rag` (1.324) · `install_wiki` (713) · `install_governance` (590) | per ciascuno: **test di equivalenza** — l'installazione via manifest produce lo **stesso esito su host** di quella via codice |
+| F2.4 | Il motore esegue **dal manifest**; le 37 guardie girano invariate sul nuovo percorso | 37 verdi senza modifiche alle asserzioni |
+| F2.5 | **Kaelen/Rust legge lo stesso schema** per `SkillProbe`/`SkillsMatrix`: `Agent::install_subpath` smette di codificare i path, li **deriva** dal manifest | la duplicazione Rust↔Python **non esiste più** (guardia: nessun path d'assistente hardcoded nei due linguaggi) |
+| F2.6 | I **gusci** dei nodi (`sertor install …`) delegano al motore in Kaelen; decidere se Kaelen è dipendenza pinnata o risolta a runtime (§3.0.1) | l'ospite vede lo stesso comando di prima |
+| F2.7 | `schema/observability.event.v1.json` (serve a D2) | Sertor e Thesmion lo rispettano |
+| **Uscita F2** | un nodo si installa **da manifest**, via il motore unico in Kaelen, con **esito identico** a oggi — dimostrato dal test di equivalenza, non affermato | |
+
+> **Il criterio che rende questa fase falsificabile:** non «il motore funziona», ma **«installare via
+> manifest lascia l'host nello stesso stato di installare via codice»** — confronto dell'esito su host
+> usa-e-getta, prima e dopo. È la lezione di [[esito-sull-host-vs-forma-dell-asset]] applicata alla
+> propria migrazione.
 
 ### F3 — Sulcimen (il nodo già indipendente)
 
@@ -420,8 +499,9 @@ chiudendo E14-FEAT-002.
 
 | Step | Azione | Uscita |
 |---|---|---|
-| F3.1 | `filter-repo --path packages/sertor-flow/ --path packages/speclift/ --path packages/specaudit/ --path .specify/` | storia preservata |
-| F3.2 | Workspace `uv` proprio: `sulcimen` + `speclift` + `specaudit`; rinomina CLI con alias deprecato (D6) | 26+33+19 = **78 test verdi** |
+| F3.0 | **D3:** rimuovere il vendoring di `speclift`/`specaudit` da Sertor; **Sinthari** si dichiara nodo (manifest F2.2) e li distribuisce. *Provvisorio: entreranno in un nodo dedicato* | 3.916 righe installabili **dal proprietario**; E14-FEAT-002 chiusa |
+| F3.1 | `filter-repo --path packages/sertor-flow/ --path .specify/` | storia preservata |
+| F3.2 | Pacchetto `sulcimen` proprio; rinomina CLI con alias deprecato (D6) | **26 test verdi** |
 | F3.3 | Asset: agenti (`configuration-manager`, `requirements-analyst`), skill (`requirements`, `speckit-*`, `speclift`, `specaudit`), `constitution-starter`, blocco `SDLC-RITUAL` → `SULCIMEN:RITUAL` | parity guard claude↔copilot verde |
 | F3.4 | **Ripartizione requirements/specs**: E14 intera + le righe SDLC di E10/E12/E13/E15, **una per una con verdetto scritto** | ogni riga assegnata, zero orfane |
 | F3.5 | `docs/` proprie (install + quick-start ×2 assistenti), `README`, `VERSION` 0.1.0, `CHANGELOG` | doc utente completa |
@@ -531,8 +611,8 @@ non ha tutte e dodici:
 |---|---|---|---|
 | F0 preparazione | nullo | 1× | sì |
 | F1 ProtoSertor | **basso** (zero import) | 1× | sì |
-| F2 kit | basso | 2× | sì |
-| F3 Sulcimen | medio (78 test, 3 package) | 4× | sì, finché F3.9 non gira |
+| **F2 Kaelen motore + manifest** | **alto** — 2.627 righe di piani da rendere dati, due linguaggi da riconciliare | **8×** *(era 2× quando era «estrarre il kit»)* | sì, finché i gusci non delegano |
+| F3 Sulcimen | basso (26 test, 1 package) *(era medio: SpecLift/SpecAudit sono usciti con D3)* | 2× | sì, finché F3.9 non gira |
 | F4 Thesmion | **alto** (4 suture + il rituale che ci gira sopra) | 6× | sì, finché F4.9 non gira |
 | F5 Sertor ripulito | medio | 2× | no (è la conseguenza) |
 | F6 verifica | basso | 2× | — |
@@ -571,13 +651,30 @@ monorepo funzionante.
 
 ### Sulcimen (nuovo — il metodo)
 
-**Codice:** `sertor-flow` (1.152) + `speclift` (2.382) + `specaudit` (1.534) ≈ **5.068 righe**.
-**Test:** 26 + 33 + 19 = **78**.
+**Codice:** `sertor-flow` (1.152 righe). *SpecLift/SpecAudit **non** entrano: sono di Sinthari (D3).*
+**Test:** **26**.
 **Asset:** 2 agenti (configuration-manager, requirements-analyst) · skill `requirements` +
-**9** `speckit-*` + `speclift` + `specaudit` · `constitution-starter` · template `.specify/` ·
-manifest d'integrazione · blocco `SULCIMEN:RITUAL`.
-**Backlog:** E14 intera + ~11 righe di E10 + le righe SDLC di E12/E13/E15.
-**Chiude un debito noto:** E14-FEAT-002 (3.916 righe oggi non installabili da nessuno).
+**9** `speckit-*` · `constitution-starter` · template `.specify/` · manifest d'integrazione ·
+blocco `SULCIMEN:RITUAL`.
+**Backlog:** ~11 righe di E10 + le righe SDLC di E12/E13/E15. *(E14 segue SpecLift a Sinthari.)*
+
+### Kaelen (esistente — diventa il motore, D1)
+
+**Codice:** `engine/` Python (2.552 righe migrate) + `schema/` (manifest + evento) + `crates/` Rust
+già presenti (16.628, spike).
+**Test:** 24 propri del kit + **37 guardie di meccanismo** ereditate.
+**Cosa possiede:** l'unica implementazione di install/upgrade/uninstall dell'ecosistema, lo schema che
+definisce *cos'è un nodo*, e la vista di flotta (matrice skill × workspace × agente, orfani).
+**Wiki:** le 10 pagine di installazione/distribuzione (`assistant-targeting`, `installer-lifecycle`,
+`identita-hook-nel-merge`, `esito-sull-host-vs-forma-dell-asset`, …).
+**Il debito che estingue:** la conoscenza «dove va una skill per Claude/Copilot» smette di esistere in
+due linguaggi.
+
+### Sinthari (esistente — non nostro)
+
+Si dichiara nodo con il proprio manifest e distribuisce **SpecLift** e **SpecAudit**. Noi smettiamo di
+vendorare (−3.916 righe, −52 test dal nostro perimetro). **Provvisorio:** i due entreranno in un nodo
+dedicato più avanti.
 
 ### ProtoSertor (nuovo — il congelato)
 
@@ -605,3 +702,18 @@ Sertor-rag come ospite e resta di sola lettura.
    `packages/specaudit`, `.specify/` — e le sue suite restano verdi.
 6. Il rituale di step su Sertor funziona **essendo installato da Thesmion**.
 7. Ogni nodo ha superato le **dodici** voci della checklist §6.
+
+**Aggiunti dalle decisioni del 2026-07-31:**
+
+8. **Equivalenza del motore:** installare un nodo **da manifest** lascia l'host nello **stesso stato**
+   dell'installazione via codice — confrontato su host usa-e-getta, per tutte e tre le capability.
+9. **La duplicazione è estinta, non gestita:** nessun path d'assistente (`.claude/skills`,
+   `.github/prompts`) compare hardcoded né in Rust né in Python — entrambi lo derivano dallo schema.
+   *Verifica: un grep che deve dare zero.*
+10. **Kaelen è generico davvero:** un nodo **di terzi**, con solo il proprio manifest, si installa
+    **senza modificare Kaelen**. *Verifica: un nodo finto costruito apposta, installato end-to-end.*
+11. **Nessun ospite si rompe:** gli hook installati che invocano `sertor-wiki-tools` continuano a
+    funzionare per una release, emettendo il warning che nomina il sostituto (D6). *Verifica: un host
+    con l'installazione vecchia che NON aggiorna — il gate deve continuare a bloccare, non a tacere.*
+12. **Sinthari distribuisce i propri strumenti:** SpecLift/SpecAudit installabili dal proprietario, e
+    zero vendoring residuo nei nostri repo. *Verifica: grep su `VENDORING.md` = 0.*

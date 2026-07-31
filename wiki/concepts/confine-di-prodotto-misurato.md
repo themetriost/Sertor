@@ -57,6 +57,26 @@ nessuno dei prodotti, vive nel motore che li installa.** Duplicare quel motore s
 guardie o spartirle a caso — e allora la promessa diventa tre promesse indipendenti che nessuno
 riconcilia, che è [[pratica-standing-vs-pratica-distribuita]] introdotta di proposito.
 
+### 4. La duplicazione che nessuna guardia poteva vedere
+
+Sciogliendo le decisioni sul piano è emerso un quarto fatto, e il più istruttivo: la conoscenza
+*«dove va una skill per Claude e per Copilot»* era **già scritta due volte**, in due repo e in due
+linguaggi — `Agent::install_subpath()` in Rust (`.claude/skills`, `.github/prompts`) e
+`AssistantId`/`Surface` in Python. Nessuno l'aveva notato, e non per disattenzione:
+
+> **Nessuna guardia di un singolo repo può vedere una duplicazione che attraversa due repo e due
+> linguaggi.** Il parity guard confronta asset dentro il progetto; il lint confronta claim con il
+> codice *locale*; la CI conosce un repo solo. Una verità scritta in Rust a Kaelen e in Python a
+> Sertor non è vista da nessuno dei due — è invisibile **per costruzione**, non per caso.
+
+La cosa da portarsi via non è «attenzione alle duplicazioni»: è che **l'atto di misurare un confine
+per separarlo ha rivelato un accoppiamento che l'uso quotidiano non poteva mostrare**. Il piano di
+separazione è servito da rilevatore prima ancora di essere eseguito.
+
+Il rimedio adottato è lo stesso di ogni altra decisione presa quel giorno: **il contratto diventa un
+dato** (uno schema di manifest letto da entrambi i linguaggi), così la duplicazione non viene gestita
+— smette di poter esistere.
+
 ## Il metodo, in quattro domande
 
 Da porre **prima** di scrivere qualsiasi piano di separazione, su ogni candidato:
