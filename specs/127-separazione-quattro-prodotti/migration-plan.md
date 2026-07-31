@@ -395,7 +395,14 @@ seguono il **kit** (D1).
 
 ### 4.7 `wiki/` (205 pagine) — criterio in D4
 
-Ripartizione **verificata** (classificate una per una le 60 pagine di `concepts/` + `tech/`):
+> ⚠️ **Superato in parte da [`file-inventory.md`](file-inventory.md).** I numeri qui sotto vengono da
+> una classificazione **lessicale** (per titolo). La verifica **file per file** delle 44 pagine di
+> `concepts/` dà una ripartizione diversa — **19 `SER` · 6 `THE` · 3 `SUL` · 2 `SIN` · 4 `KAE` ·
+> 10 `TRA`** — e ha corretto quattro assegnazioni che il titolo suggeriva male (`dogfooding` e
+> `mission-vision` sono di Sertor, non trasversali; `fail-loud-fix-cause` e
+> `product-plane-vs-fixture-plane` sono **principi costituzionali** → Sulcimen). Vale l'inventario.
+
+Ripartizione **da classificazione lessicale** (60 pagine di `concepts/` + `tech/`):
 
 | Area | File | Ripartizione |
 |---|---:|---|
@@ -456,19 +463,79 @@ Ordine scelto per **rischio crescente** e per lasciare `master` sempre verde. Og
 | F0.3 | **Congelare il perimetro**: nessuna nuova feature sui sottoalberi in migrazione finché F5 non chiude | dichiarato nell'EXEC |
 | F0.4 | Fotografare la baseline: `ruff` + le **7 suite** (2.534 test) verdi su `master`, e salvare i numeri | baseline scritta |
 
-### F1 — ProtoSertor (il taglio a rischio zero, che rompe il ghiaccio)
+### F1 — ProtoSertor (il taglio a rischio zero, che rompe il ghiaccio) — **DETTAGLIATA**
 
-Perché primo: **zero import** verso il core (S8), 90 file, nessun asset host-facing, nessun installer.
-È la prova che la procedura `filter-repo` + verifica funziona, pagata sul caso più semplice.
+Perché primo: **zero import** verso il core (S8), 90 file tracciati, nessun asset host-facing, nessun
+installer, nessuna guardia che ci gira sopra. È la prova che la procedura `filter-repo` + verifica
+funziona, pagata sul caso più semplice.
 
-| Step | Azione | Uscita |
+#### Tre scoperte fatte misurando, che cambiano gli step
+
+1. **Il corpus `raw/` NON è in git.** `.gitignore` ha `prototype/raw/*` + `!prototype/raw/README.md`:
+   in git c'è **solo il README**. Su disco ci sono **973 file / 34 MB** (il corpus FastAPI). `filter-repo`
+   porta 90 file e **lascia indietro il corpus**: va copiato a parte, o il nuovo repo nasce con un
+   prototipo che non può essere eseguito né indicizzato.
+2. **Il RAG sul prototipo non è attivo oggi.** L'unico indice presente è `.index`; `.index-prototype`
+   **non esiste**. Quindi non c'è nessun indice da migrare, e F1 è ancora più semplice del previsto.
+3. **`CLAUDE.md` afferma il falso su questo punto** (righe 32-33): dice che il server MCP è puntato sul
+   prototipo (`SERTOR_CORPUS=prototype`), mentre `.mcp.json` dice `sertor`. È **prosa always-loaded**,
+   letta a ogni sessione → ottava istanza di [[riassunto-invecchia-senza-riconciliatore]]. **Va
+   corretta comunque**, indipendentemente dalla migrazione.
+
+#### ✅ F1 CONCLUSA (2026-07-31)
+
+**ProtoSertor è un nodo autonomo e NON lo gestiamo più** *(decisione utente: «da adesso in poi
+ProtoSertor è un altro nodo e noi non gestiamo il suo repo»)*. Repo privato
+`themetriost/ProtoSertor`, 35 commit con storia dal **2026-05-28**, corpus FastAPI incluso.
+Le questioni aperte del suo repo (branch ereditati dal clone, default branch) **le risolve lui**.
+
+**Cosa è stato fatto in Sertor — questa è la parte che ci compete:**
+
+| # | Azione | Esito verificato |
 |---|---|---|
-| F1.1 | `filter-repo --path prototype/ --path-rename prototype/:` su un clone | storia dei 90 file preservata (`git log` non vuoto) |
-| F1.2 | `README.md` proprio: cos'è, che è **congelato**, come si interroga | presente |
-| F1.3 | `.env.example`, `requirements.txt` del prototipo | presenti |
-| F1.4 | Installare **Sertor rag** su ProtoSertor (è il suo corpus) e ricostruire l'indice | `search_code` risponde su ProtoSertor |
-| F1.5 | In Sertor: rimuovere `prototype/`, aggiornare `CLAUDE.md` (sezione *Riferirsi al prototipo*), `.mcp.json` (corpus), `wiki.config.toml` | 7 suite verdi |
-| **Uscita F1** | il RAG di dogfooding interroga ProtoSertor **da un altro repo**, e Sertor non contiene più `prototype/` | |
+| 1 | `prototype/` rimosso dal versionamento | **81 file**; `git ls-files prototype` → 0 |
+| 1b | Cartella eliminata dal disco | **1,4 GB liberati** (il corpus era già salvo in ProtoSertor: `comm` fra i due elenchi → **nessun file mancante**) |
+| 2 | I 9 file wiki **ricollocati, non cancellati** (`git mv`, storia preservata) | 3 accolti come pagine di Sertor · **6 marcati «in transito verso Sulcimen»** con nota che dichiara destinazione e motivo |
+| 3 | Riferimenti operativi azzerati | `.gitignore` 14→**0** · `pyproject.toml` 2→**0** · `CLAUDE.md` 12→**1** (storica) · `derive-entity-types` **ritirato** (la capacità è di ProtoSertor) · test `sertor-flow` invariato, resta valido |
+| — | Verifica di non-regressione | **`ruff` pulito** (con `prototype` non più escluso dal lint) e **1402 test verdi**: nulla in produzione ne dipendeva |
+
+**I 74 file** di `specs/`/`requirements/`/`wiki/` che *citano* il prototipo **restano invariati**:
+sono storia, raccontano decisioni prese quando il prototipo era qui, e restano vere.
+
+Le **sette** trappole incontrate sono in [[cosa-non-viaggia-in-una-migrazione]] — da leggere **prima**
+di F2, F3 e F4, che ripeteranno la procedura su sottoalberi più intrecciati. Le ultime due, emerse
+solo eseguendo: `filter-repo` riscrive **tutti i ref** (il repo nuovo eredita 45 branch del sorgente)
+e `git clone` porta con sé anche **su quale branch eri** (il default branch nasce col nome sbagliato).
+
+Le cinque trappole incontrate sono distillate in [[cosa-non-viaggia-in-una-migrazione]] — vanno lette
+**prima** di F2, F3 e F4, che ripeteranno la stessa procedura su sottoalberi più intrecciati.
+
+#### Gli step
+
+| # | Azione | Comando / dettaglio | Verifica d'uscita |
+|---|---|---|---|
+| **F1.0** | Creare il repo vuoto | `mkdir C:\Workspace\Git\ProtoSertor` + repo remoto | `git remote` raggiungibile |
+| **F1.1** | Estrarre con la storia — **⚠️ non basta `--path prototype/`** | l'isolamento (`104e666`, 30/05) fu una **RINOMINA**: `--path prototype/` da solo preserva **3 commit**. La storia vera (**36 commit**) sta sotto i path in radice. Includere: `prototype/` · `01-baseline/` · `02-hybrid-reranking/` · `03-graphrag/` · `04-agentic-rag/` · `shared/` · `raw/` · `DEMOS.md` · `ESEMPI.md` · `requirements.txt` · `.env.example`. **Escludere** `wiki/`, `tests/`, `README.md` **e `.env.example`**: collidono con la radice di oggi (rispettivamente 547 e 139 commit di produzione; `.env.example` è il template delle manopole — **quarta collisione, trovata verificando path per path prima di lanciare**). I quattro file arrivano comunque via `--path prototype/`: manca solo la loro storia anteriore al 30/05 | `git log` mostra **36 commit**; **controllo anti-contaminazione**: `git ls-files \| grep -E "^(src/\|packages/\|specs/\|requirements/)" ` **deve dare 0** |
+| **F1.2** | **Portare il corpus `raw/`** (non è in git) | copia diretta di `prototype/raw/` → `ProtoSertor/raw/`; `.gitignore` proprio che lo esclude di nuovo | 973 file / 34 MB presenti; `git status` pulito |
+| **F1.3** | Autonomia del repo | `README.md` (cos'è · **congelato** · come si esegue e si interroga) · `.env.example` · `requirements.txt` · `.gitignore` (da quello di Sertor, righe 47-66, ripulite del prefisso `prototype/`) | i 4 file presenti |
+| **F1.4** | Il wiki del prototipo — **⚠️ 9 file su 20 NON vanno a ProtoSertor** | verificato file per file (vedi [`file-inventory.md`](file-inventory.md) §1.3): **11** restano al prototipo · **6 → Sulcimen** (proposta di costituzione, EARS, SpecKit, requirements-engineering, flusso requisiti→implementazione, panorama strumenti) · **3 → Sertor** (`architettura-attuale`, `architettura-target`, **`epica-sertor-cli`** — antenato di `requirements/sertor-cli/`) | i 3+6 file **non** sono nel repo nuovo; `wiki/index.md` di ProtoSertor riscritto senza i rimandi ai 9 |
+| **F1.5** | Verifica che sia **eseguibile** | eseguire uno dei 4 approcci (es. `01-baseline/index.py --provider …`) | almeno un percorso gira, o il README dichiara cosa serve |
+| **F1.6** | ProtoSertor riceve il RAG come **ospite** | `uvx --from git+…/Sertor sertor install rag` sul nuovo repo + `sertor-rag index .` | `search_code` risponde **da ProtoSertor**, non da Sertor |
+| **F1.7** | In Sertor: **rimuovere** `prototype/` | `git rm -r prototype/` in una PR normale (il repo sorgente non è mai stato toccato da `filter-repo`) | 7 suite verdi, `ruff` pulito |
+| **F1.8** | In Sertor: **ripulire i riferimenti operativi** — **5** punti (non 4: il quinto emerso dalla verifica file-per-file) | `.gitignore` (righe 47-66) · `pyproject.toml` (esclusione lint, riga 133) · `CLAUDE.md` (**10 occorrenze**; la sezione *Riferirsi al prototipo* va **riscritta**, non cancellata — già fatto il 31/07) · **`.claude/commands/derive-entity-types.md` riga 23**, che invoca `shared/derive_entity_types.py`: path **inesistente dal 30/05**, quindi il comando è **rotto da due mesi** → correggerlo o ritirarlo · nessun cambio a `wiki.config.toml` (non lo nomina) | grep operativi = 0; il comando `derive-entity-types` **funziona** o è dichiaratamente ritirato |
+| **F1.9** | I **67 riferimenti narrativi** in `specs/`/`requirements/`/`wiki/` **NON si toccano** | sono storia: citano il prototipo come contesto di decisioni passate, e restano veri | nessuna modifica (deliberata, dichiarata qui) |
+| **F1.10** | Rituale: record + distill(≈no) + lint; PR e merge | | lint strutturale pulito |
+
+> **Uscita F1 (falsificabile):** ProtoSertor è un repo con **storia**, **corpus eseguibile** e **RAG
+> proprio** che risponde; Sertor non contiene più `prototype/`, le sue 7 suite sono verdi, e nessun
+> riferimento operativo pende. La procedura `filter-repo` è stata provata end-to-end **prima** di
+> applicarla dove ci girano sopra i gate.
+
+> **Rischi specifici di F1** — bassi, ma nominati: (a) *dimenticare `raw/`* → il repo nasce inerte;
+> mitigazione: F1.2 è uno step a sé con verifica numerica. (b) *`filter-repo` non installato* → è un
+> tool separato da git; verificarlo in F0. (c) *cancellare la sezione del `CLAUDE.md` invece di
+> riscriverla* → il prototipo continuerebbe a esistere senza che nulla dica dove: è l'errore di
+> [[host-agnostico-non-e-risolvibile]] (un riferimento tolto non è un riferimento risolto).
 
 ### F2 — **Kaelen diventa il motore dell'ecosistema** (D1 · D1b · D1c)
 

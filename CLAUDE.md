@@ -9,10 +9,10 @@ Il workspace è entrato nella **fase di produzione**: si costruisce il CLI **`se
 [`requirements/sertor-cli/epic.md`](requirements/sertor-cli/epic.md)).
 
 Il precedente **prototipo di esplorazione** (4 approcci RAG su corpus FastAPI, focus
-Microsoft/Azure, local-first) è stato **isolato e congelato** in [`prototype/`](prototype/):
-non si modifica più a mano, lo si consulta tramite il **RAG di dogfooding** (vedi
-*Riferirsi al prototipo* sotto). La radice ospita la produzione (`requirements/`, nuovo
-`wiki/`, governance `.claude/` + `.specify/`).
+Microsoft/Azure, local-first) **non vive più in questo repo**: dal 2026-07-31 è il nodo autonomo
+**ProtoSertor** (`C:\Workspace\Git\ProtoSertor`, remoto privato `themetriost/ProtoSertor`), estratto
+con la sua storia dalla nascita del progetto. Questo repo ospita **solo la produzione**
+(`src/`, `packages/`, `requirements/`, `specs/`, `wiki/`, governance `.claude/` + `.specify/`).
 
 ## Stella polare (mission) — regola SEMPRE attiva
 
@@ -26,15 +26,25 @@ resa all'agente, o deriva su concern periferici?** È la *stella polare* della c
 *Missione & stella polare*; fonte di verità `README.md`, sintesi [[mission-vision]]); il **Constitution
 Check** la verifica a ogni `plan`.
 
-## Riferirsi al prototipo (RAG di dogfooding)
+## Il prototipo è un altro nodo: ProtoSertor
 
-Il prototipo è **congelato**: per consultarlo **non** si leggono i file a mano, si **interroga il
-RAG**. Il server MCP **`sertor-rag`** (in `.mcp.json`) è puntato sul **prototipo come corpus**
-(`SERTOR_CORPUS=prototype`) — facciamo *dogfooding* del nostro stesso strumento. Tool: `search_code` /
-`search_docs` / `search_combined` (codice e doc del prototipo), `find_symbol` / `who_calls` /
-`related_docs` (relazioni nel code-graph), `get_context` (fusione codice↔doc). Ricostruzione indici
-dogfood: `SERTOR_CORPUS=prototype python prototype/01-baseline/index.py --provider azure-large`
-(Chroma) e `… prototype/03-graphrag/build_graph.py` (grafo AST).
+**Il prototipo non è più in questo repo.** Dal **2026-07-31** (fase F1 della separazione) vive nel
+nodo autonomo **ProtoSertor** — `C:\Workspace\Git\ProtoSertor`, remoto **privato**
+`themetriost/ProtoSertor` — estratto con `git filter-repo` conservando la storia dal 2026-05-28,
+corpus FastAPI incluso.
+
+**Non gestiamo il suo repo** (decisione utente, 2026-07-31): ProtoSertor è un nodo della federazione
+come gli altri, e le sue questioni le risolve lui. Se serve consultarlo, si va nel suo repo.
+
+> **Cosa è stato lasciato qui, deliberatamente:** i **74 file** di `specs/`, `requirements/` e `wiki/`
+> che *citano* il prototipo restano invariati — sono **storia**, raccontano decisioni prese quando il
+> prototipo era qui, e restano vere. Tre pagine che vivevano in `prototype/wiki/` sono invece state
+> **accolte** in `wiki/` perché descrivevano il prodotto, non l'esplorazione
+> (`architettura-attuale`, `architettura-target`, `epica-sertor-cli`); altre sei, di **metodo**, sono
+> qui **in transito verso Sulcimen** e lo dichiarano in testa.
+
+*(Dettaglio della migrazione: [`specs/127-separazione-quattro-prodotti/migration-plan.md`](specs/127-separazione-quattro-prodotti/migration-plan.md),
+fase F1 · le trappole incontrate: `wiki/concepts/cosa-non-viaggia-in-una-migrazione.md`.)*
 
 > **Errori MCP = segnale, non rumore (regola standing).** Se un tool `mcp__sertor-rag__*` ritorna un
 > errore (es. `http 401` per key scaduta, `No module named …` per venv `.venv` non sincronizzato, indice
@@ -59,12 +69,13 @@ usa `sertor-rag search`/MCP, per il wiki `sertor-wiki-tools`.
 
 ## Struttura del progetto
 
-Confine netto **prototipo (congelato: `prototype/`) ↔ produzione (attiva: `src/`, `packages/`,
-`requirements/`, `specs/`, `wiki/`, `docs/`)**. Lo stack e le dipendenze sono in `pyproject.toml`.
+Il repo contiene **solo produzione**: `src/`, `packages/`, `requirements/`, `specs/`, `wiki/`,
+`docs/`. Lo stack e le dipendenze sono in `pyproject.toml`. *(Il confine
+prototipo↔produzione non è più interno: il prototipo è il nodo ProtoSertor — vedi sopra.)*
 
-Il motore in `prototype/shared/` è **corpus-aware** (env `SERTOR_CORPUS`: `fastapi` = demo del
-prototipo · `prototype` = dogfooding sul prototipo stesso); gli indici sono namespaced per corpus
-(`.index` vs `.index-prototype`), così demo FastAPI e dogfood coesistono senza sovrascriversi.
+Gli indici restano **namespaced per corpus** (`SERTOR_CORPUS` → `.index-<corpus>`): il meccanismo è
+una capacità di prodotto e serve a qualunque ospite con più corpora, non era una particolarità del
+dogfood sul prototipo. Il corpus di questo repo è **`sertor`**.
 
 ## Il nucleo di produzione: `sertor-core` (`src/`)
 
@@ -492,7 +503,7 @@ cresce a ogni sessione, invece di ricostruire la conoscenza ogni volta.
 > della regola produceva l'asimmetria nel comportamento; ora le due regole hanno la stessa forma.
 
 ### Struttura
-- `prototype/raw/` — corpus **immutabile** del prototipo (FastAPI). Nuove fonti di produzione andranno in un `raw/` a root quando servirà.
+- `raw/` — **non esiste ancora** in questo repo: le fonti esterne immutabili andranno qui quando arriverà la prima. *(Il `prototype/raw/` con il corpus FastAPI è partito col nodo ProtoSertor il 2026-07-31.)*
 - `wiki/index.md` — catalogo globale (link + summary). **Leggilo per primo**; aggiornalo a ogni modifica.
 - `wiki/log/` — registro **append-only**, un file per giorno (`YYYY-MM-DD.md`, rotazione FEAT-008); scritto via `append-log`.
 - `wiki/concepts/` — concetti RAG. `wiki/tech/` — tecnologie. `wiki/experiments/` — un file per esperimento.

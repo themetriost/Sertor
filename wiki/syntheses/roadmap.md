@@ -29,9 +29,10 @@ Rilascio **notificato**: GitHub Release *latest* (verificata via API) · bacheca
 ### 🔄 In progress
 
 - **Separazione in quattro prodotti — piano scritto, esecuzione non iniziata** *(2026-07-31)*.
-  - **Cosa:** Sertor resta il **RAG**; il sistema-wiki diventa **Thesmion**; governance/SDLC (+
-    SpecLift/SpecAudit) diventa **Sulcimen**; il prototipo diventa **ProtoSertor**. Ogni nodo
-    rilasciabile e installabile host-agnostico su **Claude e Copilot**, come Sertor oggi.
+  - **Cosa:** Sertor resta il **RAG**; il sistema-wiki diventa **Thesmion**; governance/SDLC diventa
+    **Sulcimen**; il prototipo diventa **ProtoSertor**; il **motore d'installazione** va in **Kaelen**
+    (D1, quinto attore). Ogni nodo rilasciabile e installabile host-agnostico su **Claude e Copilot**,
+    come Sertor oggi. *(SpecLift/SpecAudit **non** vanno a Sulcimen: sono di **Sinthari** — D3.)*
   - **Dove:** [`specs/127-separazione-quattro-prodotti/migration-plan.md`](../../specs/127-separazione-quattro-prodotti/migration-plan.md)
     — inventario misurato, 7 decisioni di design, matrice artefatto→destinazione, 8 fasi con criteri
     d'uscita falsificabili, 8 rischi, 12 requisiti di rilascio per nodo. **Nessun file spostato.**
@@ -126,7 +127,8 @@ combinazioni**, 8 esiti su 8.
    (`wiki/log/index.md` duplica un fatto derivabile) · E10-FEAT-049 + E13-FEAT-014 (riferimenti entranti /
    anti-drift della doc utente — **stessa forma, da progettare insieme**).
 3. **Chiudere E4** (73%) — restano 3 Could: remember-this · retention · ponte second-brain.
-4. **E14 — distribuire SpecLift/SpecAudit agli ospiti** (FEAT-002, casa `sertor-flow`): 3.916 righe di
+4. **E14 — distribuire SpecLift/SpecAudit agli ospiti** (FEAT-002; **casa decisa il 31/07: Sinthari**,
+   il proprietario — non più `sertor-flow`, vedi D3 del piano di separazione): 3.916 righe di
    codice **non installabili da nessuno**, che è la definizione di feature non completa. *Decisione
    sospesa: usare · congelare · ritirare.*
 5. **E13 Fase 2 — marketing** (posizionamento/demo/landing), sbloccata dal go-public.
@@ -295,7 +297,7 @@ combinazioni**, 8 esiti su 8.
 
 **E14 · [`speclift`](../../requirements/speclift/epic.md)** — 3 aperte
 
-- 🔄 **E14-FEAT-002** — Distribuzione via installer — rendere SpecLift/SpecAudit installabili su un ospite esterno che installa S · ***Should***
+- 🔄 **E14-FEAT-002** — Distribuzione via installer — rendere SpecLift/SpecAudit installabili su un ospite esterno · ***Should*** · **casa cambiata il 31/07 (D3): è Sinthari, il proprietario — noi smettiamo di vendorare**
 - 📋 **E14-FEAT-004** — Debrief — consumatore a valle dello stesso primitivo diff→requisito: genera un resoconto/riassunto di ses · ***Could***
 - 📋 **E14-FEAT-005** — Guida al test — consumatore a valle: genera indicazioni/casi di test a partire dai requisiti ancorati e d · ***Could***
 
