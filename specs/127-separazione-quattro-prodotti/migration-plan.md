@@ -482,12 +482,23 @@ funziona, pagata sul caso più semplice.
    letta a ogni sessione → ottava istanza di [[riassunto-invecchia-senza-riconciliatore]]. **Va
    corretta comunque**, indipendentemente dalla migrazione.
 
+#### Stato dell'esecuzione (2026-07-31)
+
+**F1.0 → F1.4 ESEGUITE.** `C:\Workspace\Git\ProtoSertor` esiste: commit `4e7c143`, **82 file
+tracciati**, **35 commit** (34 di storia estratta, il più vecchio del **2026-05-28**), corpus
+`raw/` copiato (973 file / 34 MB, ignorato correttamente), **zero contaminazione** verificata con
+`diff` fra l'atteso e il reale. Nessun remote: il repo è locale.
+**Restano F1.5 → F1.10.** Il punto attuale è **reversibile**: Sertor non è stato toccato.
+
+Le cinque trappole incontrate sono distillate in [[cosa-non-viaggia-in-una-migrazione]] — vanno lette
+**prima** di F2, F3 e F4, che ripeteranno la stessa procedura su sottoalberi più intrecciati.
+
 #### Gli step
 
 | # | Azione | Comando / dettaglio | Verifica d'uscita |
 |---|---|---|---|
 | **F1.0** | Creare il repo vuoto | `mkdir C:\Workspace\Git\ProtoSertor` + repo remoto | `git remote` raggiungibile |
-| **F1.1** | Estrarre con la storia — **⚠️ non basta `--path prototype/`** | l'isolamento (`104e666`, 30/05) fu una **RINOMINA**: `--path prototype/` da solo preserva **3 commit**. La storia vera (**36 commit**) sta sotto i path in radice. Includere: `prototype/` · `01-baseline/` · `02-hybrid-reranking/` · `03-graphrag/` · `04-agentic-rag/` · `shared/` · `raw/` · `DEMOS.md` · `ESEMPI.md` · `requirements.txt` · `.env.example`. **Escludere** `wiki/`, `tests/`, `README.md`: collidono con Sertor di oggi (547 e 139 commit di produzione) | `git log` mostra **36 commit**, e **nessun file di produzione** è entrato |
+| **F1.1** | Estrarre con la storia — **⚠️ non basta `--path prototype/`** | l'isolamento (`104e666`, 30/05) fu una **RINOMINA**: `--path prototype/` da solo preserva **3 commit**. La storia vera (**36 commit**) sta sotto i path in radice. Includere: `prototype/` · `01-baseline/` · `02-hybrid-reranking/` · `03-graphrag/` · `04-agentic-rag/` · `shared/` · `raw/` · `DEMOS.md` · `ESEMPI.md` · `requirements.txt` · `.env.example`. **Escludere** `wiki/`, `tests/`, `README.md` **e `.env.example`**: collidono con la radice di oggi (rispettivamente 547 e 139 commit di produzione; `.env.example` è il template delle manopole — **quarta collisione, trovata verificando path per path prima di lanciare**). I quattro file arrivano comunque via `--path prototype/`: manca solo la loro storia anteriore al 30/05 | `git log` mostra **36 commit**; **controllo anti-contaminazione**: `git ls-files \| grep -E "^(src/\|packages/\|specs/\|requirements/)" ` **deve dare 0** |
 | **F1.2** | **Portare il corpus `raw/`** (non è in git) | copia diretta di `prototype/raw/` → `ProtoSertor/raw/`; `.gitignore` proprio che lo esclude di nuovo | 973 file / 34 MB presenti; `git status` pulito |
 | **F1.3** | Autonomia del repo | `README.md` (cos'è · **congelato** · come si esegue e si interroga) · `.env.example` · `requirements.txt` · `.gitignore` (da quello di Sertor, righe 47-66, ripulite del prefisso `prototype/`) | i 4 file presenti |
 | **F1.4** | Il wiki del prototipo — **⚠️ 9 file su 20 NON vanno a ProtoSertor** | verificato file per file (vedi [`file-inventory.md`](file-inventory.md) §1.3): **11** restano al prototipo · **6 → Sulcimen** (proposta di costituzione, EARS, SpecKit, requirements-engineering, flusso requisiti→implementazione, panorama strumenti) · **3 → Sertor** (`architettura-attuale`, `architettura-target`, **`epica-sertor-cli`** — antenato di `requirements/sertor-cli/`) | i 3+6 file **non** sono nel repo nuovo; `wiki/index.md` di ProtoSertor riscritto senza i rimandi ai 9 |
