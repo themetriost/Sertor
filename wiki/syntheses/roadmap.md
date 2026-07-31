@@ -22,9 +22,9 @@ sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.m
 <!-- EXEC:START -->
 ## ⚡ Executive summary (stato al 2026-07-31)
 
-**Versione pubblicata: `v0.4.0`** · `master` = `ec03441` · **nessuna PR aperta**.
-Rilascio **notificato**: GitHub Release *latest* · bacheca (canale *Releases*) · auto-updater degli
-ospiti, **sveglio dal bump** (era dormiente-fino-alla-release per costruzione).
+**Versione pubblicata: `v0.4.1`** · `master` = `9fb1264` · **nessuna PR aperta**.
+Rilascio **notificato**: GitHub Release *latest* (verificata via API) · bacheca (canale *Releases*,
+**depositata** non solo affissa) · auto-updater degli ospiti, svegliato dal bump.
 
 ### 🔄 In progress
 
@@ -38,6 +38,13 @@ ospiti, **sveglio dal bump** (era dormiente-fino-alla-release per costruzione).
 
 ### ✅ Done — recente
 
+- **Rilascio `v0.4.1`** (2026-07-31, tag su `9fb1264`, Release *latest* verificata via API). Patch:
+  è la riparazione di un difetto, non una capacità nuova — la linea 0.4.x resta quella su cui stanno i
+  nodi. **Perimetro dichiarato nelle note:** cambiano la capability `wiki` e il runtime `.sertor/`;
+  `rag` e `sertor-flow` **zero**. Il gate d'aggiornamento ha girato sul salto reale `v0.4.0 → master`:
+  4 combinazioni, **8 esiti asseriti ciascuna, zero `n/a`**, letti dai log e non dedotti dall'exit
+  code. Le note dicono anche **come è stato verificato** e il limite (l'host di prova è quello che il
+  nostro installer produce).
 - **E10-FEAT-060** — *il perimetro di `ritual-check` comprende ciò che non è ancora consegnato*
   (merge `ec03441`, 2026-07-31). Perimetro = committato ∪ albero di lavoro con **derivazione unica**
   in `vcs.py`, output che **dichiara sempre** sorgenti e conteggi anche a zero candidati, **fail-loud**
