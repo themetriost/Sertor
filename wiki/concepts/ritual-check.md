@@ -3,7 +3,7 @@ title: ritual-check (scoperta anti-skip per-step)
 type: concept
 tags: [wiki, rituale-di-step, distill, lint, anti-skip, deterministico, D-vs-N, sertor-wiki-tools]
 created: 2026-07-22
-updated: 2026-07-30
+updated: 2026-07-31
 sources: ["src/sertor_core/wiki_tools/ritual_check.py", "requirements/debito-tecnico/epic.md", "specs/097-rituale-anti-skip/"]
 ---
 

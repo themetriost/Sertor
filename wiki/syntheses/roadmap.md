@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-07-30
+updated: 2026-07-31
 sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.md", "VERSION", "CHANGELOG.md"]
 ---
 
@@ -20,60 +20,34 @@ sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.m
 > verificato* in fondo).
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-07-30)
+## ⚡ Executive summary (stato al 2026-07-31)
 
-**Versione pubblicata: `v0.4.0`** · `master` = `44208ff` · CI verde · **PR #262 aperta** (E10-FEAT-060,
-CI verde su `fcc1f41`, in attesa del go per il merge).
+**Versione pubblicata: `v0.4.0`** · `master` = `ec03441` · **nessuna PR aperta**.
 Rilascio **notificato**: GitHub Release *latest* · bacheca (canale *Releases*) · auto-updater degli
 ospiti, **sveglio dal bump** (era dormiente-fino-alla-release per costruzione).
 
 ### 🔄 In progress
 
-**E10 `debito-tecnico` — direzione scelta dall'utente il 2026-07-30.** Si attacca il debito, partendo
-dalla prima voce.
+- **Refactoring importante — bersaglio da fissare** *(richiesta utente, 2026-07-31)*.
+  - **Dove:** nulla ancora aperto — nessun branch, nessuna spec.
+  - **Prossimo passo concreto:** l'utente nomina **bersaglio e obiettivo** (*cosa deve diventare più
+    facile dopo*); poi si entra da `specify` + Constitution Check, non da una serie di edit.
+  - **Blocco/decisione aperta:** il backlog **non** traccia alcun refactoring architetturale — E10
+    raccoglie debito puntuale (guardie, perimetri, riferimenti). Ancore dimensionali oggi:
+    `install_rag.py` 1324 righe · `cli/__main__.py` 1163 · `composition.py` 934 · `cli/output.py` 844.
 
-- **E10-FEAT-060** — *`ritual-check` e `wiki-guard` misurano realtà diverse, e la differenza è
-  invisibile* · **Should (P1)** · ✅ **IMPLEMENTATA, in attesa di merge**.
-  - **Cosa era rotto:** `ritual_check` derivava il perimetro da `git diff <base>...HEAD` — **solo il
-    committato** — mentre `scan` somma committato **+** albero di lavoro. Chi chiude uno step invoca
-    `ritual-check` **prima** del commit e riceveva `pages=0 distill=0 drift=0` mentre il gate allo
-    `Stop` bloccava. **Misurato:** a parità di contenuto il candidato distill esisteva o meno per il
-    solo `git commit`; e nel caso misto veniva emesso un candidato drift **falso** sulla pagina
-    appena riscritta. Omissione silenziosa **e** positivo fabbricato.
-  - **Consegnato:** perimetro = committato ∪ albero di lavoro (derivazione condivisa in `vcs.py`) ·
-    l'output **dichiara sempre** le sorgenti e i conteggi (JSON + summary umano), anche a zero
-    candidati · **fail-loud** su ogni interrogazione git del perimetro, incluso il ramo che degradava
-    in silenzio. `scope` è ora **derivata** dal nuovo `perimeter`, non mantenuta in parallelo
-    (Principio XIV: il gate ha corretto il design in fase di piano).
-  - **Dove:** branch `126-ritual-check-perimetro` · `specs/126-ritual-check-perimetro/` (SpecKit
-    completo) · Constitution **14 PASS + missione PASS**.
-  - **Prova sul campo:** su questo repo, dove rispondeva `pages=0 distill=0 drift=0`, ora dà
-    `pages=3 drift=2` con `perimetro: committed=11 · worktree=21` — e i due candidati segnalati erano
-    **drift reali**, corretti nello stesso passaggio.
-  - **Verifiche:** gate pre-merge completo (`ruff` + le sei suite) e **CI verde 9/9** su `fcc1f41`.
-    I nuovi test sono stati provati **contro il comportamento pre-fix**: 7 diventano rossi, quindi la
-    guardia *può* diventare rossa. Anche la guardia anti-duplicazione è stata provata reintroducendo
-    una copia.
-  - **Un difetto che solo la CI poteva vedere (2026-07-31).** Il gate locale era verde ma la CI era
-    **rossa su ubuntu**: un test della feature asseriva una proprietà vera solo dove git *normalizza*
-    le terminazioni di riga, mentre la sua fixture non attivava la normalizzazione — e su Windows
-    passava perché `write_text` traduce `\n`, rendendo base e modifica **byte-identiche**. Difetto del
-    test, prodotto invariato; fixture ora byte-deterministica, con un'asserzione che la condizione
-    **esista** (`fcc1f41`). *Il gate locale su un solo sistema operativo non è il gate:* la matrice
-    multi-OS è stata l'unica cosa a poter vedere la vacuità. Distillato in
-    [[guardia-verde-non-e-una-misura]] come variante della forma 1.
-  - **Prossimo passo concreto:** mergiare la PR #262 (richiede go esplicito dell'utente).
-  - **Un effetto misurato, e tracciato:** il perimetro unito aumenta il rumore — sul dogfood
-    **11 candidati drift, 0 reali**, verificati uno per uno. Diagnosi precisa: una pagina **nuova**
-    linka i parenti *per costruzione*, e il segnale la scambia per deriva → **E10-FEAT-067**. È il
-    rischio R-1 della feature, che era stato nominato e ora ha la sua misura.
-  - **Nessun residuo strutturale.** La derivazione è **una sola**: `scan` consuma l'helper condiviso,
-    le copie private sono rimosse (−56 righe) — **E10-FEAT-066 si chiude senza essere mai stata lavoro
-    a sé**. Era stata rinviata per un rischio che il lavoro stesso aveva già estinto; l'ha fatto
-    emergere una **domanda dell'utente**, non una rilettura. Il test di equivalenza, diventato vacuo,
-    è stato rimosso e sostituito da una guardia **strutturale** — provata reintroducendo una copia.
+### ✅ Done — recente
 
-**🎯 Il numero che orienta le scelte successive: dei 111 item aperti, i Must sono TRE** — e tutti e tre
+- **E10-FEAT-060** — *il perimetro di `ritual-check` comprende ciò che non è ancora consegnato*
+  (merge `ec03441`, 2026-07-31). Perimetro = committato ∪ albero di lavoro con **derivazione unica**
+  in `vcs.py`, output che **dichiara sempre** sorgenti e conteggi anche a zero candidati, **fail-loud**
+  su ogni interrogazione git. Chiude anche **E10-FEAT-066** (la duplicazione rimossa, non solo
+  allineata). Due lasciti: **E10-FEAT-067** (il segnale `neighbor-of-change` misurato a **11 candidati,
+  0 reali** — rischio R-1 materializzato) e la variante multi-OS di
+  [[guardia-verde-non-e-una-misura]], nata da un test che era verde su Windows **avendo verificato
+  nulla** e rosso su ubuntu: *il gate locale su un solo sistema operativo non è il gate*.
+
+**🎯 Il numero che orienta le scelte successive: dei 110 item aperti, i Must sono TRE** — e tutti e tre
 stanno in epiche **differite** (E11 `multiutente`) o **non iniziate** (E9 `second-brain`). Il resto è
 **49 Should e 58 Could**. Cioè: **nessun Must aperto nelle epiche attive**. La domanda non è «cosa manca
 perché sia completo», è «quale direzione vogliamo» — e va posta all'utente, non dedotta dal backlog.
@@ -98,14 +72,14 @@ combinazioni**, 8 esiti su 8.
 | **E7** | [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 0/4 | 4 | 0% | 📋 non iniziata |
 | **E8** | [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | 0/3 | 3 | 0% | 📋 non iniziata |
 | **E9** | [`second-brain`](../../requirements/second-brain/epic.md) | 0/10 | 10 | 0% | 📋 non iniziata |
-| **E10** | [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 40/67 | 27 | 60% | 🔄 **in corso — direzione attiva** |
+| **E10** | [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 41/67 | 26 | 61% | 🔄 **in corso — direzione attiva** |
 | **E11** | [`multiutente`](../../requirements/multiutente/epic.md) | 0/6 | 6 | 0% | 📋 non iniziata |
 | **E12** | [`usabilita`](../../requirements/usabilita/epic.md) | 5/14 | 9 | 36% | 🔄 in corso |
 | **E13** | [`documentazione-marketing`](../../requirements/documentazione-marketing/epic.md) | 8/15 | 7 | 53% | 🔄 in corso |
 | **E14** | [`speclift`](../../requirements/speclift/epic.md) | 2/5 | 3 | 40% | 🔄 in corso |
 | **E15** | [`fedelta-dogfood`](../../requirements/fedelta-dogfood/epic.md) | 7/12 | 5 | 58% | 🔄 in corso *(1 ritirata)* |
 | **E16** | [`evoluzione-modello-wiki`](../../requirements/evoluzione-modello-wiki/epic.md) | 0/4 | 4 | 0% | 📋 non iniziata |
-| | **TOTALE** | **115/226** | **111** | **51%** | — |
+| | **TOTALE** | **116/226** | **110** | **51%** | — |
 
 > **Come leggere «Consegnate»:** il denominatore esclude le feature **ritirate** (`❌ Won't`/not-a-bug) e
 > quelle **promosse ad altra epica** — contarle come debito gonfierebbe il residuo con lavoro che nessuno
@@ -116,8 +90,8 @@ combinazioni**, 8 esiti su 8.
 1. **E2-FEAT-023** — `upgrade` nudo copre una capability sola uscendo verde. È **il settimo difetto** che
    il gate d'aggiornamento non copre, dichiarato fuori copertura perché aperto: chiuderlo porta SC-001 a
    **7/7** e toglie l'unica deroga. *Il candidato naturale.*
-2. **Coda dei riscontri dal campo, ancora aperta** — *(E10-FEAT-060 ne è uscita: **in corso**, vedi
-   sopra)* · E10-FEAT-063 (`packages/` e `CLAUDE.md` **fuori** dal
+2. **Coda dei riscontri dal campo, ancora aperta** — *(E10-FEAT-060 ne è uscita: **consegnata**, vedi
+   sopra; ha lasciato E10-FEAT-067)* · E10-FEAT-063 (`packages/` e `CLAUDE.md` **fuori** dal
    perimetro di `scan`: il gate non guarda la superficie che arriva agli ospiti) · E10-FEAT-047
    (`wiki/log/index.md` duplica un fatto derivabile) · E10-FEAT-049 + E13-FEAT-014 (riferimenti entranti /
    anti-drift della doc utente — **stessa forma, da progettare insieme**).
