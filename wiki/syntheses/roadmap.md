@@ -28,13 +28,23 @@ Rilascio **notificato**: GitHub Release *latest* (verificata via API) · bacheca
 
 ### 🔄 In progress
 
-- **Refactoring importante — bersaglio da fissare** *(richiesta utente, 2026-07-31)*.
-  - **Dove:** nulla ancora aperto — nessun branch, nessuna spec.
-  - **Prossimo passo concreto:** l'utente nomina **bersaglio e obiettivo** (*cosa deve diventare più
-    facile dopo*); poi si entra da `specify` + Constitution Check, non da una serie di edit.
-  - **Blocco/decisione aperta:** il backlog **non** traccia alcun refactoring architetturale — E10
-    raccoglie debito puntuale (guardie, perimetri, riferimenti). Ancore dimensionali oggi:
-    `install_rag.py` 1324 righe · `cli/__main__.py` 1163 · `composition.py` 934 · `cli/output.py` 844.
+- **Separazione in quattro prodotti — piano scritto, esecuzione non iniziata** *(2026-07-31)*.
+  - **Cosa:** Sertor resta il **RAG**; il sistema-wiki diventa **Thesmion**; governance/SDLC (+
+    SpecLift/SpecAudit) diventa **Sulcimen**; il prototipo diventa **ProtoSertor**. Ogni nodo
+    rilasciabile e installabile host-agnostico su **Claude e Copilot**, come Sertor oggi.
+  - **Dove:** [`specs/127-separazione-quattro-prodotti/migration-plan.md`](../../specs/127-separazione-quattro-prodotti/migration-plan.md)
+    — inventario misurato, 7 decisioni di design, matrice artefatto→destinazione, 8 fasi con criteri
+    d'uscita falsificabili, 8 rischi, 12 requisiti di rilascio per nodo. **Nessun file spostato.**
+  - **Il dato che ha deciso l'ordine:** tre nodi su quattro hanno accoppiamento **zero** col core
+    (`sertor-flow`, `prototype/`, `install-kit`); `wiki_tools` ne ha **quattro**, di cui due lazy. Il
+    taglio costoso è il **logging** (11 chiamate), non l'architettura → [[confine-di-prodotto-misurato]].
+  - **Prossimo passo concreto:** l'utente scioglie le **7 decisioni** (§3 del piano). La più
+    strutturante è **D1** — chi possiede il motore d'installazione: dei 58 test dell'installer **37
+    sono guardie di meccanismo**, cioè proprio ciò che verifica la promessa host-agnostica.
+  - **Blocco/decisione aperta:** D1 (kit come prodotto a sé?) · D3 (SpecLift/SpecAudit → Sulcimen?) ·
+    D4 (come si divide il wiki) · D5 (storia git via `filter-repo`).
+  - **Fatto scomodo da tenere presente:** **43 delle 67 voci di E10 `debito-tecnico` nominano il
+    wiki** — Thesmion nascerebbe ereditando la maggior parte del debito aperto.
 
 ### ✅ Done — recente
 
