@@ -28,13 +28,36 @@ Rilascio **notificato**: GitHub Release *latest* (verificata via API) · bacheca
 
 ### 🔄 In progress
 
-- **Refactoring importante — bersaglio da fissare** *(richiesta utente, 2026-07-31)*.
-  - **Dove:** nulla ancora aperto — nessun branch, nessuna spec.
-  - **Prossimo passo concreto:** l'utente nomina **bersaglio e obiettivo** (*cosa deve diventare più
-    facile dopo*); poi si entra da `specify` + Constitution Check, non da una serie di edit.
-  - **Blocco/decisione aperta:** il backlog **non** traccia alcun refactoring architetturale — E10
-    raccoglie debito puntuale (guardie, perimetri, riferimenti). Ancore dimensionali oggi:
-    `install_rag.py` 1324 righe · `cli/__main__.py` 1163 · `composition.py` 934 · `cli/output.py` 844.
+- **Separazione in quattro prodotti — piano scritto, esecuzione non iniziata** *(2026-07-31)*.
+  - **Cosa:** Sertor resta il **RAG**; il sistema-wiki diventa **Thesmion**; governance/SDLC (+
+    SpecLift/SpecAudit) diventa **Sulcimen**; il prototipo diventa **ProtoSertor**. Ogni nodo
+    rilasciabile e installabile host-agnostico su **Claude e Copilot**, come Sertor oggi.
+  - **Dove:** [`specs/127-separazione-quattro-prodotti/migration-plan.md`](../../specs/127-separazione-quattro-prodotti/migration-plan.md)
+    — inventario misurato, 7 decisioni di design, matrice artefatto→destinazione, 8 fasi con criteri
+    d'uscita falsificabili, 8 rischi, 12 requisiti di rilascio per nodo. **Nessun file spostato.**
+  - **Il dato che ha deciso l'ordine:** tre nodi su quattro hanno accoppiamento **zero** col core
+    (`sertor-flow`, `prototype/`, `install-kit`); `wiki_tools` ne ha **quattro**, di cui due lazy. Il
+    taglio costoso è il **logging** (11 chiamate), non l'architettura → [[confine-di-prodotto-misurato]].
+  - **✅ Le 7 decisioni sono SCIOLTE** (2026-07-31, in sessione). Le due che cambiano il piano:
+    **D1** — il motore d'installazione non diventa un repo tecnico nuovo, va in **Kaelen**, che
+    entra come **quinto attore**: motore Python + schema del manifest, mentre il suo Rust resta per
+    TUI/matrice/probe. Ogni nodo **si dichiara** con un `node.manifest.json`, quindi un nodo di terzi
+    non richiede di toccare Kaelen. **D3** — SpecLift/SpecAudit **non sono nostri**: sono di
+    **Sinthari**, che li distribuirà; noi smettiamo di vendorare (Sulcimen perde 3.916 righe e 52
+    test rispetto alla prima stesura).
+  - **Il debito che D1 estingue, e che era già in essere:** «dove va una skill per Claude/Copilot»
+    era scritto **due volte** — Rust in Kaelen, Python nel kit — in due repo e due linguaggi, quindi
+    **invisibile a qualunque guardia di un singolo repo**. Con lo schema condiviso non viene gestita:
+    smette di poter esistere.
+  - **Prossimo passo concreto:** **F0** — creare i repo (i folder Thesmion/Sulcimen esistono ma sono
+    vuoti e non-git; ProtoSertor va creato) e congelare il perimetro. Poi **F1 ProtoSertor** (rischio
+    zero, rompe il ghiaccio sulla procedura `filter-repo`).
+  - **La fase che ora domina lo sforzo:** **F2** — Kaelen diventa il motore, e **2.627 righe di piani
+    in codice** (`install_rag`/`install_wiki`/`install_governance`) diventano **dati dichiarativi**.
+    Criterio falsificabile: installare da manifest deve lasciare l'host nello **stesso stato** che
+    installare da codice.
+  - **Fatto scomodo da tenere presente:** **43 delle 67 voci di E10 `debito-tecnico` nominano il
+    wiki** — Thesmion nascerebbe ereditando la maggior parte del debito aperto.
 
 ### ✅ Done — recente
 
