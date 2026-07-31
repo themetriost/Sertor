@@ -3,7 +3,7 @@ title: Storico della roadmap — capacità consegnate e cronologia
 type: synthesis
 tags: [roadmap, storico, archivio, release, consegnato]
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-07-31
 sources: ["wiki/syntheses/roadmap.md", "requirements/**/epic.md", "CHANGELOG.md"]
 ---
 
@@ -23,6 +23,7 @@ sources: ["wiki/syntheses/roadmap.md", "requirements/**/epic.md", "CHANGELOG.md"
 
 | Versione | Titolo | Contenuto in una riga |
 |---|---|---|
+| **v0.4.1** (2026-07-31) | *riparazione del perimetro di `ritual-check`* | Il comando dichiarava il perimetro dello step come committato solo, mentre il gate lo misurava su committato∪albero di lavoro; rituale-check ora misura entrambi e dichiara sempre quale perimetro esamina (E10-FEAT-060 completa). Sesto episodio di prosa stantia documentata in [[riassunto-invecchia-senza-riconciliatore]]. |
 | **v0.4.0** (2026-07-30) | *la registrazione dichiara cosa copre* | Gate wiki a **copertura** invece che a presenza (E10-FEAT-062) + `wiki-curator` non si ferma su un asset presente (064) + il `lint` non dichiara rotto ciò che esiste (065). Primo rilascio spedito **dopo** aver verificato che un `upgrade` lo consegna davvero (E15-FEAT-012). |
 | **v0.3.3** (2026-07-29) | *il lint che non grida al lupo* | `extract_wikilinks` leggeva `[[…]]` dentro il codice e rompeva gli alias escapati in tabella → **21 falsi positivi** su un wiki reale. Più la regola del boy scout e «dove cominciare il lint semantico» nei blocchi distribuiti. |
 | **v0.3.2** (2026-07-27) | *il gate wiki riparato* | L'ancora della rilevazione del lavoro non registrato è **derivata dalla storia**, non più stimata dagli mtime: una sessione non poteva chiudersi sul proprio ultimo merge. Assorbe E10-FEAT-048. |

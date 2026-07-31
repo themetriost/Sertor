@@ -3,8 +3,8 @@ title: Un riassunto invecchia quando cresce ciò che descrive
 type: concept
 tags: [deriva, documentazione, principio-xiv, lint-semantico, problema-aperto, e10, e13]
 created: 2026-07-28
-updated: 2026-07-28
-sources: ["src/sertor_core/config/settings.py", "CLAUDE.md", "wiki/log/2026-07-27.md", "wiki/log/2026-07-28.md", "requirements/debito-tecnico/epic.md", "wiki/syntheses/roadmap.md"]
+updated: 2026-07-31
+sources: ["src/sertor_core/config/settings.py", "CLAUDE.md", "wiki/log/2026-07-27.md", "wiki/log/2026-07-28.md", "wiki/log/2026-07-31.md", "requirements/debito-tecnico/epic.md", "wiki/syntheses/roadmap.md"]
 ---
 
 # Un riassunto invecchia quando cresce ciò che descrive
@@ -27,7 +27,7 @@ che vive in più posti va **derivato**, e dove derivarlo è impossibile serve un
 nominato** che **dichiari** la divergenza. Conservare una copia stantia può essere giusto; conservarla
 **in silenzio** no.
 
-## Sei superfici, sei istanze reali
+## Sette superfici, sette istanze reali
 
 | # | Superficie | Istanza |
 |---|---|---|
@@ -36,7 +36,8 @@ nominato** che **dichiari** la divergenza. Conservare una copia stantia può ess
 | 3 | **Doc utente / CHANGELOG** ↔ asset spedito | cinque punti della doc dicevano «usa `--project`, mai `--directory`» mentre **il template spediva `--directory`** — e un test lo certificava giusto (E2-FEAT-022) |
 | 4 | **Blocchi distribuiti** (`claude-md-block`) ↔ capacità reale | rigenerati dall'installer, quindi la copia dell'ospite invecchia fino al prossimo `upgrade` |
 | 5 | **`wiki/log/index.md`** ↔ cartella del giornale | duplica un fatto **derivabile dalla cartella**, senza riconciliatore, e il `lint` non lo vede (E10-FEAT-047) — prima istanza del XIV, dieci minuti dopo la ratifica |
-| 6 | **Prosa always-loaded di `CLAUDE.md`** ↔ `Settings` | **nuova, 2026-07-28** — vedi sotto |
+| 6 | **Prosa always-loaded di `CLAUDE.md`** ↔ `Settings` | **2026-07-28** — vedi sotto |
+| 7 | **Blocco SPECKIT nel `CLAUDE.md`** ↔ stato effettivo | **nuova, 2026-07-31** — il blocco dichiarava attivo un **vincolo sciolto** (E15-FEAT-012 mergiato il 30/07 con v0.4.0 rilasciata) e un **branch chiuso** (126-ritual-check-perimetro mergiato il 31/07); un controllo automatico l'ha colto *(non era un lint umano, era un harness)*. È la prima volta che una **superficie always-loaded entra in una checklist automatica** — il danno più grave di tutte perché la fonte di errore non è il vago incombing, è la lettura sistematica d'ogni sessione. Vedi sezione La settima |
 
 ## La sesta: l'istruzione che sopravvive alla manopola
 
@@ -75,6 +76,25 @@ stato **eliminare la copia** e rimandare alla fonte (`pyproject.toml`, `.env.exa
 `settings.py`, `ls`): −92 righe di `CLAUDE.md`, e quelle righe **non possono più invecchiare**. Dove la
 copia è servita davvero (le manopole non ovvie), la si tiene **con la citazione della fonte**
 (`settings.py:373`), che è un riconciliatore leggibile a mano.
+
+## La settima: la superficie always-loaded scoperta da un harness
+
+La più grave di tutte, perché è l'unica mai **verificata da una checklist automatica** (le precedenti
+erano lint umani o segnalate dagli utenti). Scoperta il **31/07 durante un rilascio** — il blocco
+SPECKIT in coda al `CLAUDE.md` dichiarava *«corrente»* un **vincolo sciolto** (E15-FEAT-012 mergiato
+il 30/07 con v0.4.0 già rilasciata, il vincolo era quindi **obsoleto dal 31/07 00:00**) e *«attivo»*
+un **branch chiuso** (`126-ritual-check-perimetro` mergiato come PR #262 lo stesso 31/07).
+
+Un controllo manuale di pre-rilascio leggeva il blocco di setup-prova (che ogni agente carica), vedeva
+il vincolo dichiarato attivo, e **si fermava** per chiedere conferma prima di procedere. Il controllo
+**non aveva sbagliato**: il testo mentiva. Questo contraddistingue la settima istanza dalle precedenti
+sei — **non è la prosa a essere vaga, è letteralmente falsa**, e l'ha scoperto un harness, non una
+lettura.
+
+> **Aggravante:** il blocco è sempre-caricato (ogni sessione lo legge), quindi **due sessioni diverse**
+> non hanno alcun modo di sincronizzarsi sulla sua verità. La correzione non è — come per le altre —
+> «aggiorna la copia»; è «il blocco non deve diventare un fatto** (solo una referenza all'artefatto
+> vero, la PR, la branch, il commit).
 
 ## Cosa la chiuderebbe
 
