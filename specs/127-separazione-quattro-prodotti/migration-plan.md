@@ -395,7 +395,14 @@ seguono il **kit** (D1).
 
 ### 4.7 `wiki/` (205 pagine) — criterio in D4
 
-Ripartizione **verificata** (classificate una per una le 60 pagine di `concepts/` + `tech/`):
+> ⚠️ **Superato in parte da [`file-inventory.md`](file-inventory.md).** I numeri qui sotto vengono da
+> una classificazione **lessicale** (per titolo). La verifica **file per file** delle 44 pagine di
+> `concepts/` dà una ripartizione diversa — **19 `SER` · 6 `THE` · 3 `SUL` · 2 `SIN` · 4 `KAE` ·
+> 10 `TRA`** — e ha corretto quattro assegnazioni che il titolo suggeriva male (`dogfooding` e
+> `mission-vision` sono di Sertor, non trasversali; `fail-loud-fix-cause` e
+> `product-plane-vs-fixture-plane` sono **principi costituzionali** → Sulcimen). Vale l'inventario.
+
+Ripartizione **da classificazione lessicale** (60 pagine di `concepts/` + `tech/`):
 
 | Area | File | Ripartizione |
 |---|---:|---|
@@ -480,14 +487,14 @@ funziona, pagata sul caso più semplice.
 | # | Azione | Comando / dettaglio | Verifica d'uscita |
 |---|---|---|---|
 | **F1.0** | Creare il repo vuoto | `mkdir C:\Workspace\Git\ProtoSertor` + repo remoto | `git remote` raggiungibile |
-| **F1.1** | Estrarre con la storia | clone di Sertor in tmp → `git filter-repo --path prototype/ --path-rename prototype/:` | `git log -- 01-baseline/index.py` mostra i commit **originali**, non uno solo |
+| **F1.1** | Estrarre con la storia — **⚠️ non basta `--path prototype/`** | l'isolamento (`104e666`, 30/05) fu una **RINOMINA**: `--path prototype/` da solo preserva **3 commit**. La storia vera (**36 commit**) sta sotto i path in radice. Includere: `prototype/` · `01-baseline/` · `02-hybrid-reranking/` · `03-graphrag/` · `04-agentic-rag/` · `shared/` · `raw/` · `DEMOS.md` · `ESEMPI.md` · `requirements.txt` · `.env.example`. **Escludere** `wiki/`, `tests/`, `README.md`: collidono con Sertor di oggi (547 e 139 commit di produzione) | `git log` mostra **36 commit**, e **nessun file di produzione** è entrato |
 | **F1.2** | **Portare il corpus `raw/`** (non è in git) | copia diretta di `prototype/raw/` → `ProtoSertor/raw/`; `.gitignore` proprio che lo esclude di nuovo | 973 file / 34 MB presenti; `git status` pulito |
 | **F1.3** | Autonomia del repo | `README.md` (cos'è · **congelato** · come si esegue e si interroga) · `.env.example` · `requirements.txt` · `.gitignore` (da quello di Sertor, righe 47-66, ripulite del prefisso `prototype/`) | i 4 file presenti |
-| **F1.4** | Il wiki del prototipo viaggia con lui | i **20 file** di `prototype/wiki/` (concepts, experiments 01-04, sources, syntheses, tech, index, log) | `wiki/index.md` presente e coerente |
+| **F1.4** | Il wiki del prototipo — **⚠️ 9 file su 20 NON vanno a ProtoSertor** | verificato file per file (vedi [`file-inventory.md`](file-inventory.md) §1.3): **11** restano al prototipo · **6 → Sulcimen** (proposta di costituzione, EARS, SpecKit, requirements-engineering, flusso requisiti→implementazione, panorama strumenti) · **3 → Sertor** (`architettura-attuale`, `architettura-target`, **`epica-sertor-cli`** — antenato di `requirements/sertor-cli/`) | i 3+6 file **non** sono nel repo nuovo; `wiki/index.md` di ProtoSertor riscritto senza i rimandi ai 9 |
 | **F1.5** | Verifica che sia **eseguibile** | eseguire uno dei 4 approcci (es. `01-baseline/index.py --provider …`) | almeno un percorso gira, o il README dichiara cosa serve |
 | **F1.6** | ProtoSertor riceve il RAG come **ospite** | `uvx --from git+…/Sertor sertor install rag` sul nuovo repo + `sertor-rag index .` | `search_code` risponde **da ProtoSertor**, non da Sertor |
 | **F1.7** | In Sertor: **rimuovere** `prototype/` | `git rm -r prototype/` in una PR normale (il repo sorgente non è mai stato toccato da `filter-repo`) | 7 suite verdi, `ruff` pulito |
-| **F1.8** | In Sertor: **ripulire i riferimenti operativi** — 4 punti misurati | `.gitignore` (righe 47-66) · `pyproject.toml` (esclusione lint, riga 133) · `CLAUDE.md` (**10 occorrenze**, inclusa la sezione *Riferirsi al prototipo* che va **riscritta**, non cancellata: il prototipo esiste ancora, altrove) · nessun cambio a `wiki.config.toml` (non lo nomina) | grep operativi = 0; `CLAUDE.md` punta al nuovo repo |
+| **F1.8** | In Sertor: **ripulire i riferimenti operativi** — **5** punti (non 4: il quinto emerso dalla verifica file-per-file) | `.gitignore` (righe 47-66) · `pyproject.toml` (esclusione lint, riga 133) · `CLAUDE.md` (**10 occorrenze**; la sezione *Riferirsi al prototipo* va **riscritta**, non cancellata — già fatto il 31/07) · **`.claude/commands/derive-entity-types.md` riga 23**, che invoca `shared/derive_entity_types.py`: path **inesistente dal 30/05**, quindi il comando è **rotto da due mesi** → correggerlo o ritirarlo · nessun cambio a `wiki.config.toml` (non lo nomina) | grep operativi = 0; il comando `derive-entity-types` **funziona** o è dichiaratamente ritirato |
 | **F1.9** | I **67 riferimenti narrativi** in `specs/`/`requirements/`/`wiki/` **NON si toccano** | sono storia: citano il prototipo come contesto di decisioni passate, e restano veri | nessuna modifica (deliberata, dichiarata qui) |
 | **F1.10** | Rituale: record + distill(≈no) + lint; PR e merge | | lint strutturale pulito |
 

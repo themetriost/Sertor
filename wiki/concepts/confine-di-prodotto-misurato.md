@@ -77,6 +77,37 @@ Il rimedio adottato è lo stesso di ogni altra decisione presa quel giorno: **il
 dato** (uno schema di manifest letto da entrambi i linguaggi), così la duplicazione non viene gestita
 — smette di poter esistere.
 
+### 5. La cartella non è la proprietà — e l'aggregato non lo può vedere
+
+Le prime quattro scoperte vengono da una misura **aggregata** (conteggi di import, di righe, di test).
+La quinta viene dall'aver rifatto la stessa classificazione **file per file**, su richiesta — e ha
+smentito l'aggregato **al primo colpo**:
+
+| Affermazione aggregata | Verifica file-per-file |
+|---|---|
+| «i 20 file del wiki del prototipo viaggiano col prototipo» | **9 su 20** appartengono ad altri: 6 sono *metodo*, 3 sono *prodotto* |
+| «4 riferimenti operativi da ripulire» | **5** — e il quinto era **rotto da due mesi** |
+| «`--path prototype/` preserva la storia» | preserva **3 commit su 36**: l'isolamento fu una *rinomina* |
+
+La causa è una sola, e vale oltre il caso:
+
+> **Un file sta in una cartella per la storia che l'ha portato lì, non per ciò che è.** La proposta di
+> costituzione stava in `prototype/wiki/syntheses/` perché nel maggio 2026 *tutto* stava lì — non
+> perché appartenga al prototipo. La cartella registra **quando** una cosa è nata, la proprietà dice
+> **cosa serve**: coincidono solo finché il progetto non si divide.
+
+E il corollario che riguarda il metodo di misura:
+
+> **L'aggregato può solo confermare la collocazione, mai contraddirla.** Contare per cartella eredita
+> l'assunzione che la cartella sia la proprietà — l'ipotesi che dovrebbe verificare. Solo leggere il
+> singolo file può smentirla, perché è l'unico livello in cui il contenuto parla al posto del percorso.
+> È [[riuso-che-eredita-il-presupposto]] applicato agli **strumenti di misura**: un conteggio giusto
+> per «quanto c'è qui dentro» è sbagliato per «a chi appartiene».
+
+**Il costo di scoprirlo tardi è asimmetrico:** un file assegnato male viene *spostato* — e dopo lo
+spostamento la sua storia sta in un repo, il file in un altro. Riparare significa ripetere la
+migrazione, non correggere una riga.
+
 ## Il metodo, in quattro domande
 
 Da porre **prima** di scrivere qualsiasi piano di separazione, su ogni candidato:
