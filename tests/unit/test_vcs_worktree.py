@@ -18,7 +18,10 @@ def _git(cwd: Path, *args: str) -> None:
 
 def _repo(tmp_path: Path) -> Path:
     (tmp_path / "src").mkdir(parents=True, exist_ok=True)
-    (tmp_path / "src" / "mod.py").write_text("x = 1\n", encoding="utf-8")
+    # `write_bytes`, non `write_text`: su Windows quest'ultima traduce `\n` in `\r\n`, quindi la
+    # fixture avrebbe terminazioni diverse a seconda dell'OS su cui gira. Un test sulle terminazioni
+    # di riga non puo' permettersi una base che dipende dalla piattaforma.
+    (tmp_path / "src" / "mod.py").write_bytes(b"x = 1\n")
     _git(tmp_path, "-c", "init.defaultBranch=master", "init")
     _git(tmp_path, "config", "user.email", "t@example.test")
     _git(tmp_path, "config", "user.name", "Test")
@@ -83,9 +86,28 @@ def test_sole_terminazioni_di_riga_non_entrano(tmp_path):
 
     Contarlo bloccherebbe una sessione per un file che nessuno ha modificato — occorso davvero alla
     prima applicazione reale del gate.
+
+    **La condizione esiste solo dove git NORMALIZZA** (`.gitattributes`, come questo repo dal
+    E15-FEAT-010, o `core.autocrlf`): li' `status` riporta il file e `diff` no, che e' l'intera
+    ragione per cui la derivazione usa `diff`. Senza normalizzazione git considera il cambio di
+    terminazioni un cambio di contenuto a pieno titolo (`--numstat` da' `1 1`) e riportarlo e'
+    corretto — quindi la fixture deve dichiarare la configurazione, non ereditarla.
     """
     repo = _repo(tmp_path)
+    (repo / ".gitattributes").write_bytes(b"* text=auto\n")
+    _git(repo, "add", ".gitattributes")
+    _git(repo, "commit", "-m", "attrs", "--no-gpg-sign")
     (repo / "src" / "mod.py").write_bytes(b"x = 1\r\n")  # stesso contenuto, altre terminazioni
+
+    # La fixture DEVE contenere la condizione, altrimenti il test passa a vuoto: e' l'errore che
+    # questo stesso test conteneva (su Windows base e modifica erano byte-identiche, quindi non
+    # c'era nulla da non-riportare). Byte su disco vs byte del blob: vero su ogni OS.
+    blob = subprocess.run(
+        ["git", "cat-file", "blob", "HEAD:src/mod.py"],
+        cwd=str(repo), check=True, capture_output=True,
+    ).stdout
+    assert (repo / "src" / "mod.py").read_bytes() != blob
+
     changed, _ = worktree_changes(repo)
     assert "src/mod.py" not in changed
 
