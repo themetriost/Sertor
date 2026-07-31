@@ -560,25 +560,28 @@ dogfood sopra. *(Non riconciliare cancellando la prosa: i blocchi sono rigenerat
 è la conoscenza dogfood — vanno tenuti entrambi.)*
 
 <!-- SPECKIT START -->
-For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan:
-`specs/125-smoke-di-upgrade/plan.md` (**E15 / FEAT-012**, epica **fedelta-dogfood**, Must/P0 —
-*smoke di upgrade: testare la strada che spediamo*). Lo smoke end-to-end esiste e gira su 4 matrici,
-ma **installa su un host pulito**: nessuna verifica tocca il verbo che gli ospiti eseguono davvero,
-**`upgrade`**. Misura del 2026-07-29 su 20 riscontri dal campo (~14 difetti reali): **1 solo nel core,
-13 nella superficie di consegna**, e **tutti e 7 quelli d'installer richiedono un'installazione
-preesistente piu' vecchia** per manifestarsi — un host pulito non puo' vederne nessuno, *per
-costruzione*. Spiega anche perche' li trova sempre un nodo a valle: **nemmeno il dogfood aggiorna**
-(re-lock che insegue HEAD, mai da versione a versione). **Approccio: estendere la macchina, non
-costruirne una seconda** — `scripts/smoke.{ps1,sh}` accetta `-FromRef`: installa la release
-precedente, aggiorna al ref in prova, asserisce **cinque esiti sullo stato dell'host** derivati dai
-difetti **realmente occorsi** (pin mosso · automatismo uno e aggiornato · configurazione dell'ospite
-preservata · forma dell'invocazione corrente · salute verde). **Due percorsi:** automatico e leggero
-al rilascio (vincolante), completo a richiesta. ⚠️ **Criterio falsificabile (SC-001):** applicata ai
-sette difetti gia' occorsi, deve rilevarne **almeno cinque** — e i due restanti vanno **dichiarati**.
-🚫 **Vincolo di rilascio attivo:** nessun bump di `/VERSION`, tag, Release o annuncio finche' questa
-feature non e' conclusa e i tre riscontri del nodo *Acta* del 29/07 non sono verificati **su un ospite
-che aggiorna**. Constitution **13 PASS + 1 N/A + missione PASS**. Branch `125-smoke-di-upgrade`.
+**Nessun piano attivo.** Non c'e' una feature in corso da leggere: l'ultima consegnata e'
+**E10-FEAT-060** (`specs/126-ritual-check-perimetro/`, merge `ec03441` — il perimetro di
+`ritual-check` comprende cio' che non e' ancora consegnato). Quando si apre la prossima feature,
+questo blocco torna a puntare al suo `plan.md`.
+
+Per sapere **dove siamo e cosa fare adesso**, la fonte e' il blocco EXEC di
+`wiki/syntheses/roadmap.md`, non questo paragrafo — che e' una copia e invecchia (vedi
+`wiki/concepts/riassunto-invecchia-senza-riconciliatore.md`).
+
+✅ **Nessun vincolo di rilascio attivo.** Quello del 2026-07-29 — *niente bump di `/VERSION`, tag,
+Release o annuncio* finche' E15-FEAT-012 non fosse conclusa e i tre riscontri del nodo *Acta* non
+fossero verificati **su un ospite che aggiorna** — si e' **sciolto il 2026-07-30**, perche' entrambe
+le condizioni sono state soddisfatte: la feature e' su `master` (merge `eeca79e`, PR #256) e il gate
+d'aggiornamento ha asserito i suoi esiti su host usa-e-getta che eseguono `upgrade`. La v0.4.0 e'
+stata rilasciata quel giorno.
+
+**Cio' che resta vincolante, e non era il vincolo:** un rilascio parte solo dopo che il **gate
+d'aggiornamento** e' verde sul salto che gli ospiti faranno davvero — automatico e leggero in
+`ci.yml`, completo a richiesta con `upgrade-smoke-full.yml` (`from_ref`). Il motivo sta nella misura
+del 2026-07-29: dei ~14 difetti reali dal campo, **13 erano nella superficie di consegna** e tutti e
+sette quelli d'installer richiedono un'installazione **preesistente piu' vecchia** per manifestarsi —
+un host pulito non puo' vederne nessuno, *per costruzione*.
 <!-- SPECKIT END -->
 
 <!-- SERTOR:SDLC-RITUAL START -->
