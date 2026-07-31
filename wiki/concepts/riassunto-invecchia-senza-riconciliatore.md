@@ -27,7 +27,7 @@ che vive in più posti va **derivato**, e dove derivarlo è impossibile serve un
 nominato** che **dichiari** la divergenza. Conservare una copia stantia può essere giusto; conservarla
 **in silenzio** no.
 
-## Sette superfici, sette istanze reali
+## Otto superfici, otto istanze reali
 
 | # | Superficie | Istanza |
 |---|---|---|
@@ -38,6 +38,7 @@ nominato** che **dichiari** la divergenza. Conservare una copia stantia può ess
 | 5 | **`wiki/log/index.md`** ↔ cartella del giornale | duplica un fatto **derivabile dalla cartella**, senza riconciliatore, e il `lint` non lo vede (E10-FEAT-047) — prima istanza del XIV, dieci minuti dopo la ratifica |
 | 6 | **Prosa always-loaded di `CLAUDE.md`** ↔ `Settings` | **2026-07-28** — vedi sotto |
 | 7 | **Blocco SPECKIT nel `CLAUDE.md`** ↔ stato effettivo | **nuova, 2026-07-31** — il blocco dichiarava attivo un **vincolo sciolto** (E15-FEAT-012 mergiato il 30/07 con v0.4.0 rilasciata) e un **branch chiuso** (126-ritual-check-perimetro mergiato il 31/07); un controllo automatico l'ha colto *(non era un lint umano, era un harness)*. È la prima volta che una **superficie always-loaded entra in una checklist automatica** — il danno più grave di tutte perché la fonte di errore non è il vago incombing, è la lettura sistematica d'ogni sessione. Vedi sezione La settima |
+| 8 | **Sezione *«Riferirsi al prototipo»* nel `CLAUDE.md`** ↔ `.mcp.json` + indici su disco | **nuova, 2026-07-31 — la seconda nello stesso file in un giorno.** Diceva che il server MCP è puntato sul prototipo (`SERTOR_CORPUS=prototype`), mentre `.mcp.json` dice `sertor` e **`.index-prototype` non esiste**: la prosa istruiva a interrogare via RAG un corpus **non indicizzato**. Emersa misurando tutt'altro — il perimetro della migrazione di ProtoSertor. Vedi sezione *L'ottava* |
 
 ## La sesta: l'istruzione che sopravvive alla manopola
 
@@ -76,6 +77,27 @@ stato **eliminare la copia** e rimandare alla fonte (`pyproject.toml`, `.env.exa
 `settings.py`, `ls`): −92 righe di `CLAUDE.md`, e quelle righe **non possono più invecchiare**. Dove la
 copia è servita davvero (le manopole non ovvie), la si tiene **con la citazione della fonte**
 (`settings.py:373`), che è un riconciliatore leggibile a mano.
+
+## L'ottava, lo stesso giorno e nello stesso file — e il dato che ne esce
+
+Poche ore dopo la settima, **nello stesso `CLAUDE.md`**, un'altra affermazione falsa: la sezione
+*«Riferirsi al prototipo»* diceva che il server MCP è puntato sul prototipo come corpus
+(`SERTOR_CORPUS=prototype`), mentre `.mcp.json` dice `sertor` e **l'unico indice esistente è `.index`**.
+Il prototipo non era interrogabile via RAG, e la prosa istruiva a interrogarlo.
+
+Non è la ripetizione a essere interessante, è il **tasso**: due affermazioni false nello stesso file
+**in un giorno**, entrambe scoperte per caso — la prima da un controllo automatico, la seconda
+misurando tutt'altro (il perimetro di una migrazione). Nessuna delle due da una rilettura, perché
+**nessuno rilegge un file che si carica da sé**.
+
+> **La firma della superficie always-loaded:** è l'unica prosa che viene *letta* di continuo e
+> *verificata* mai. Le altre superfici hanno almeno un lettore occasionale che si accorge; questa ha
+> un lettore continuo — l'agente — che non ha modo di dubitarne, perché arriva come contesto e non
+> come affermazione da controllare.
+
+Il rimedio adottato in entrambi i casi non è stato cancellare la frase, ma **dichiarare cosa era falso
+e perché**, lasciando il correttivo leggibile: cancellare avrebbe tolto la prova che il difetto
+esisteva, e con essa la ragione per cercarne altri.
 
 ## La settima: la superficie always-loaded scoperta da un harness
 

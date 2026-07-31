@@ -28,13 +28,24 @@ Check** la verifica a ogni `plan`.
 
 ## Riferirsi al prototipo (RAG di dogfooding)
 
-Il prototipo è **congelato**: per consultarlo **non** si leggono i file a mano, si **interroga il
-RAG**. Il server MCP **`sertor-rag`** (in `.mcp.json`) è puntato sul **prototipo come corpus**
-(`SERTOR_CORPUS=prototype`) — facciamo *dogfooding* del nostro stesso strumento. Tool: `search_code` /
-`search_docs` / `search_combined` (codice e doc del prototipo), `find_symbol` / `who_calls` /
-`related_docs` (relazioni nel code-graph), `get_context` (fusione codice↔doc). Ricostruzione indici
-dogfood: `SERTOR_CORPUS=prototype python prototype/01-baseline/index.py --provider azure-large`
-(Chroma) e `… prototype/03-graphrag/build_graph.py` (grafo AST).
+Il prototipo è **congelato**: non lo si modifica a mano.
+
+> ⚠️ **Corretto il 2026-07-31 — questa sezione affermava il falso.** Diceva che il server MCP
+> `sertor-rag` è puntato sul **prototipo** come corpus (`SERTOR_CORPUS=prototype`). **Non è così:**
+> `.mcp.json` dice `SERTOR_CORPUS=sertor`, e l'unico indice presente è `.index` — **`.index-prototype`
+> non esiste**. Il prototipo **non è interrogabile via RAG** allo stato attuale. Chi leggeva questa
+> prosa — cioè l'agente, a ogni sessione — credeva di poterlo interrogare e non poteva.
+> *(Ottava istanza di `wiki/concepts/riassunto-invecchia-senza-riconciliatore.md`, la seconda in
+> questo stesso file in un solo giorno.)*
+
+**Come consultarlo oggi:** `Read`/`Grep` diretti su `prototype/`, che resta la fonte. **Se serve
+interrogarlo via RAG**, va prima costruito il suo indice — il motore in `prototype/shared/` è
+corpus-aware (`SERTOR_CORPUS=prototype` → `.index-prototype`), quindi la capacità esiste ma **va
+attivata**, non è attiva.
+
+*(Il prototipo diventerà il nodo **ProtoSertor** — vedi
+[`specs/127-separazione-quattro-prodotti/migration-plan.md`](specs/127-separazione-quattro-prodotti/migration-plan.md),
+fase F1: da lì riceverà il RAG come ospite e avrà un indice proprio.)*
 
 > **Errori MCP = segnale, non rumore (regola standing).** Se un tool `mcp__sertor-rag__*` ritorna un
 > errore (es. `http 401` per key scaduta, `No module named …` per venv `.venv` non sincronizzato, indice
