@@ -70,11 +70,27 @@ Conseguenza: `filter-repo --path prototype/` preserverebbe **3 commit soltanto**
 **Ma tre di quei path collidono con Sertor di oggi:** `wiki/` (547 commit, prototipo + produzione),
 `tests/` (139), `README.md`. Includerli porterebbe in ProtoSertor pezzi di produzione.
 
-> **Decisione operativa (da confermare):** includere in `filter-repo` i path **non collidenti**
-> (`prototype/` · `01-baseline/` · `02-hybrid-reranking/` · `03-graphrag/` · `04-agentic-rag/` ·
-> `shared/` · `raw/` · `DEMOS.md` · `ESEMPI.md` · `requirements.txt` · `.env.example`) ed **escludere**
-> i tre collidenti, accettando che per `wiki/`, `tests/` e `README.md` la storia parta dall'isolamento.
-> Resa: **36 commit** invece di 3, senza contaminazione.
+> **Decisione operativa — CONFERMATA dall'utente il 2026-07-31.** Includere in `filter-repo` i path
+> **non collidenti** ed **escludere** i collidenti, accettando per questi ultimi una storia che parte
+> dall'isolamento. Resa: **36 commit** invece di 3, senza contaminazione.
+
+**Verifica di collisione, path per path, contro la radice di oggi** *(fatta prima di eseguire — e ha
+trovato una quarta collisione che l'elenco iniziale non aveva)*:
+
+| Path | Esiste oggi in radice? | Decisione |
+|---|---|---|
+| `prototype/` | — (è la cartella da estrarre) | **includi** |
+| `01-baseline/` · `02-hybrid-reranking/` · `03-graphrag/` · `04-agentic-rag/` | no | **includi** (storia pre-isolamento) |
+| `shared/` · `raw/` | no | **includi** |
+| `DEMOS.md` · `ESEMPI.md` · `requirements.txt` | no | **includi** |
+| `wiki/` | **SÌ** — 547 commit, prototipo **+** produzione | **escludi** |
+| `tests/` | **SÌ** — 139 commit di produzione | **escludi** |
+| `README.md` | **SÌ** — è il README di Sertor | **escludi** |
+| **`.env.example`** | **SÌ** — è il template delle manopole di produzione | **escludi** ⚠️ *quarta collisione, trovata verificando* |
+
+I file esclusi **arrivano comunque** in ProtoSertor attraverso `--path prototype/` (oggi vivono in
+`prototype/wiki/`, `prototype/tests/`, `prototype/README.md`, `prototype/.env.example`): a mancare è
+solo la loro storia **anteriore** al 30/05. È il compromesso, ed è dichiarato.
 
 ### 1.5 Riferimenti a `prototype` fuori dalla cartella — 71 file
 
