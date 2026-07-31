@@ -13,6 +13,46 @@ and Sertor aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 _Changes land here before the next version bump._
 
+## [0.4.1] — 2026-07-31
+
+The step helper stops answering "nothing to declare" while the gate blocks on the very same work.
+
+> **Upgrade — bring the host fully to `0.4.1`, naming each capability:**
+>
+> ```
+> uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor upgrade rag
+> uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor upgrade wiki
+> uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor-flow" sertor-flow upgrade
+> uv sync --project .sertor --upgrade
+> ```
+>
+> **What actually changed here is the `wiki` capability and the `.sertor/` runtime.** The `rag` assets
+> and `sertor-flow` carry **no** changes in this release; their commands are listed so every host ends
+> on the same base, not because they deliver a fix. Name each capability explicitly: a bare
+> `sertor upgrade` has been observed to refresh only one capability on a host that has several while
+> still exiting green (open defect). `sertor` is not on your `PATH` — it is invoked through
+> `uvx --from`, as above. Nothing you configured is touched.
+
+### Fixed
+
+- **`ritual-check` now measures the work you have not committed yet.** It derived its perimeter from
+  the committed diff alone, so a step closed *before* the commit — which is exactly what the ritual
+  prescribes — reported `pages=0 distill=0 drift=0` while the Stop gate blocked on the same work.
+  The perimeter is now the committed diff **∪** the work tree (tracked changes + untracked files):
+  the same reality the wiki guard measures, from a **single shared derivation**, so the two can no
+  longer diverge.
+- **The output always declares what it looked at** — sources and per-source counts, in the JSON
+  (`perimeter`) and in the human summary (`perimetro: committed=N · worktree=M`) — *including* when
+  it finds no candidates, which is the case where a silent zero misleads most.
+- **Fail-loud on every git query** that composes the perimeter. One branch degraded silently, leaving
+  the added-pages set empty and fabricating a distill candidate as if you had not distilled.
+
+### Changed
+
+- The instruction block now delegates the wiki **record** to the `wiki-curator` agent **always**,
+  rather than leaving it optional for small steps: a conditional step is one a busy session skips
+  without noticing, while an unconditional one is not.
+
 ## [0.4.0] — 2026-07-30
 
 The wiki recording now says **what it covers**, and two guards stop reporting the false. This is also
