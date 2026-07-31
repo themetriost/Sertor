@@ -21,10 +21,10 @@ from pathlib import Path
 from sertor_core.domain.errors import ConfigError
 from sertor_core.observability.logging import log_event
 from sertor_core.wiki_tools.collect import iter_pages
-from sertor_core.wiki_tools.contracts import RitualCheckResult
+from sertor_core.wiki_tools.contracts import RitualCheckResult, perimeter_of, scope_of
 from sertor_core.wiki_tools.frontmatter import extract_wikilinks, parse_frontmatter
 from sertor_core.wiki_tools.profile import WikiProfile
-from sertor_core.wiki_tools.vcs import repo_prefix, run_git
+from sertor_core.wiki_tools.vcs import repo_prefix, run_git, worktree_changes
 
 
 def _link_aliases(rel_path: str) -> set[str]:
@@ -88,6 +88,41 @@ def _changed_repo_paths(config_dir: Path, base: str) -> list[str]:
             key="--base",
         )
     return [line.strip() for line in out.splitlines() if line.strip()]
+
+
+def _added_repo_paths(config_dir: Path, base: str) -> list[str]:
+    """Paths ADDED in `base...HEAD` — fail-loud, because an empty answer here MISLEADS.
+
+    A silent empty set leaves `has_new_distill_page` false, so the distill candidate is emitted *as
+    if nothing had been distilled*: a wrong suggestion produced by an invisible failure. That is the
+    `if rc == 0:` this feature removes (Principle XII, same class as E10-FEAT-062's R1).
+    """
+    rc, out = run_git(["diff", "--name-only", "--diff-filter=A", f"{base}...HEAD"], config_dir)
+    if rc != 0:
+        raise ConfigError(
+            f"git could not determine the pages added since '{base}'; the step's scope would look "
+            "as though nothing had been distilled. Pass --pages, or fix the repository state.",
+            key="--base",
+        )
+    return [line.strip() for line in out.splitlines() if line.strip()]
+
+
+def _worktree_repo_paths(config_dir: Path) -> tuple[list[str], list[str]]:
+    """`(changed, untracked)` not-yet-delivered paths — fail-loud (Principio XII).
+
+    Indispensable, not a refinement: the ritual prescribes recording *at the same moment as the
+    commit*, so this capability is invoked BEFORE committing — precisely when a committed-only scope
+    is empty. Measured: with the same content, the distill candidate existed or not depending solely
+    on `git commit`.
+    """
+    pair = worktree_changes(config_dir)
+    if pair is None:
+        raise ConfigError(
+            "git could not report the not-yet-delivered changes; refusing to report an empty step "
+            "scope, which would read as 'nothing to declare'. Pass --pages instead.",
+            key="--base",
+        )
+    return pair
 
 
 def _links_at(config_dir: Path, base: str, repo_path: str) -> set[str]:
@@ -237,14 +272,27 @@ def ritual_check(
     changed_repo_paths: list[str] = []
     if pages:
         changed_pages = {p: all_pages[p] for p in pages if p in all_pages}
-        scope = f"explicit:{len(changed_pages)}"
         wiki_prefix = _wiki_prefix(config_dir, profile)
         base_ref = base or ""
+        perimeter = perimeter_of("explicit", [("explicit", None, len(changed_pages))])
     else:
         base_ref = _resolve_base(config_dir, base)
-        changed_repo_paths = _changed_repo_paths(config_dir, base_ref)
         wiki_prefix = _wiki_prefix(config_dir, profile)
         prefix = f"{wiki_prefix}/" if wiki_prefix else ""
+
+        # The step's scope is the UNION of what has been delivered and what has not. Measured
+        # (E10-FEAT-060): with identical content, the committed-only scope made the distill
+        # candidate appear or vanish depending solely on `git commit` — a bookkeeping state, not a
+        # fact of knowledge — and in the mixed case it emitted a FALSE `neighbor-of-change` on the
+        # very page just rewritten.
+        committed = _changed_repo_paths(config_dir, base_ref)
+        worktree, untracked = _worktree_repo_paths(config_dir)
+        changed_repo_paths = sorted(set(committed) | set(worktree))
+        perimeter = perimeter_of("derived", [
+            ("committed", f"{base_ref}...HEAD", len(committed)),
+            ("worktree", None, len(worktree)),
+        ])
+
         changed_pages = {}
         for repo_path in changed_repo_paths:
             if prefix and not repo_path.startswith(prefix):
@@ -252,15 +300,16 @@ def ritual_check(
             rel = repo_path[len(prefix):] if prefix else repo_path
             if rel.endswith(".md") and rel in all_pages:
                 changed_pages[rel] = all_pages[rel]
-        # ADDED (new) pages in this diff, for the "0 new distill page" check.
-        rc, out = run_git(
-            ["diff", "--name-only", "--diff-filter=A", f"{base_ref}...HEAD"], config_dir,
-        )
-        if rc == 0:
-            for repo_path in (line.strip() for line in out.splitlines() if line.strip()):
-                if prefix and repo_path.startswith(prefix):
-                    added_pages.add(repo_path[len(prefix):])
-        scope = f"git:{base_ref}...HEAD"
+
+        # ADDED pages, for the "0 new distill page" check. Untracked pages count as added: a distill
+        # page just created and not yet committed IS the distillation — treating it as merely
+        # "changed" would make the tool suggest distilling what was just distilled.
+        for repo_path in [*_added_repo_paths(config_dir, base_ref), *untracked]:
+            if prefix and repo_path.startswith(prefix):
+                added_pages.add(repo_path[len(prefix):])
+            elif not prefix:
+                added_pages.add(repo_path)
+    scope = scope_of(perimeter)
 
     distill = (
         _distill_candidates(profile, config_dir, base_ref, wiki_prefix,
@@ -284,7 +333,12 @@ def ritual_check(
         distill_candidates=distill,
         drift_candidates=drift,
         declaration_scaffold=scaffold,
+        perimeter=perimeter,
     )
+    # Per-source counts in telemetry too: a divergence between capabilities must be visible where
+    # runs are inspected after the fact, not only on the screen of whoever ran it.
     log_event(logging.INFO, "ritual_check", profile=profile.profile, scope=scope,
-              pages=len(changed_pages), distill=len(distill), drift=len(drift))
+              pages=len(changed_pages), distill=len(distill), drift=len(drift),
+              perimeter_kind=perimeter.get("kind"),
+              perimeter_sources={s["name"]: s["paths"] for s in perimeter.get("sources", [])})
     return result

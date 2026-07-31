@@ -344,27 +344,40 @@ def test_user_facing_wheel_metadata(built_dist):
 # =================================================================================================
 
 def _branch_reachable() -> bool:
-    """Precondizione Stage 3: il branch corrente è raggiungibile su GitHub (push del checkout).
+    """Precondizione Stage 3: il ref che lo stage userà è raggiungibile su GitHub.
 
-    Verifica che il commit di HEAD esista sul remote `origin` (`git ls-remote`). Se la rete o il
-    push mancano → la precondizione è assente e gli stage 3 fanno skip azionabile, NON fallimento.
+    Verifica il **ref restituito da `_git_ref()`** — cioè esattamente ciò che finirà in
+    `git+url@<ref>` — non il commit di HEAD. Le due domande divergono su un branch locale creato
+    da un commit già pushato: il **commit** c'è (è la punta del default branch), il **branch** no,
+    quindi la guardia diceva «raggiungibile» e `uvx` falliva subito dopo. Guardia e stage devono
+    condividere **una** identità, altrimenti la prima benedice ciò che il secondo non può fare.
+
+    Se rete o push mancano → precondizione assente e gli stage 3 fanno skip azionabile, NON
+    fallimento.
     """
     if not _uv_available():
         return False
     if shutil.which("git") is None:
         return False
+    ref = _git_ref()
+    if ref and ref != "HEAD":
+        # `--heads`: un nome di branch si cerca fra i branch. Senza, `ls-remote <url> HEAD`
+        # risponderebbe con il default branch e un branch locale passerebbe per raggiungibile.
+        remote = subprocess.run(
+            ["git", "ls-remote", "--heads", REPO_URL, ref],
+            capture_output=True, text=True, timeout=30,
+        )
+        return remote.returncode == 0 and bool(remote.stdout.strip())
+    # Detached HEAD: non c'è un nome da risolvere, resta la domanda sul commit.
     head = subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=str(REPO_ROOT), capture_output=True, text=True,
     )
     if head.returncode != 0:
         return False
-    head_sha = head.stdout.strip()
     remote = subprocess.run(
         ["git", "ls-remote", REPO_URL], capture_output=True, text=True, timeout=30,
     )
-    if remote.returncode != 0:
-        return False
-    return head_sha in remote.stdout
+    return remote.returncode == 0 and head.stdout.strip() in remote.stdout
 
 
 def _git_ref() -> str:

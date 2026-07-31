@@ -3,7 +3,7 @@ title: ritual-check (scoperta anti-skip per-step)
 type: concept
 tags: [wiki, rituale-di-step, distill, lint, anti-skip, deterministico, D-vs-N, sertor-wiki-tools]
 created: 2026-07-22
-updated: 2026-07-22
+updated: 2026-07-30
 sources: ["src/sertor_core/wiki_tools/ritual_check.py", "requirements/debito-tecnico/epic.md", "specs/097-rituale-anti-skip/"]
 ---
 
@@ -23,6 +23,50 @@ wiki. Confine D↔N: il tool *trova*, l'agente *giudica* (non crea pagine, non d
   a sua volta cambiata), `capability-exec` (file di capacità cambiati, la pagina EXEC no — config-driven).
 - **Scaffold di dichiarazione forzata** `Rituale: record · distill · lint` — l'artefatto concreto a cui la
   chiusura dello step deve rispondere (anche «non serve» va dichiarato). Output JSON `wiki.ritual_check/1`.
+
+> ⚠️ **Precisione nota di `neighbor-of-change`, misurata il 2026-07-30: 11 candidati proposti, 0 reali.**
+> Il segnale è di **prossimità**, non di deriva: propone ogni pagina linkata da una cambiata. Ma una
+> pagina **appena creata** linka i propri parenti *per costruzione* — citarli è il cablaggio normale di
+> una distillazione, non l'indizio che i parenti siano invecchiati. La soglia `hub_threshold` non
+> intercetta il caso, perché una pagina-entità nuova le sta sotto. Rimedio tracciato in **E10-FEAT-067**:
+> escludere i link uscenti delle pagine **aggiunte**, tenendo il segnale per quelle *modificate*, dove un
+> link nuovo verso una pagina ferma è davvero un indizio. Nel frattempo: *il tool trova, tu giudichi* —
+> e qui il giudizio va esercitato davvero, non timbrato.
+
+## Perimetro dello step: committato e albero di lavoro (E10-FEAT-060)
+
+Lo scope è l'**unione** di:
+- **committato:** `base...HEAD`, cioè ciò che è già su questa linea di sviluppo.
+- **albero di lavoro:** file tracciati modificati (confronto contenuto) + file non tracciati.
+
+Per questo il tool è **usabile prima di committare**, che è il momento in cui serve: il rituale prescrive
+di scrivere la voce di giornale **nello stesso momento del commit**, dunque `ritual-check` viene invocato
+mentre il lavoro è ancora in sospeso nell'albero. Fino a E10-FEAT-060 vedeva solo il committato, e in quel
+momento rispondeva **«0 candidati»** mentre il gate allo `Stop` bloccava — *lo strumento che deve preparare
+la dichiarazione taceva proprio mentre la dichiarazione andava scritta*.
+
+**Dichiarazione del perimetro.** L'output **dichiara sempre** quale perimetro ha misurato — anche quando i
+candidati sono zero, che è il caso in cui serve di più:
+- nel JSON, il campo `perimeter`: le sorgenti coi rispettivi conteggi;
+- nel summary umano, la riga `perimetro: committed=N · worktree=M`.
+
+Non è cosmesi: **è la parte che impedisce al difetto di tornare invisibile.** Uno `0` senza provenienza non
+distingue *«non c'è nulla»* da *«ho guardato altrove»*, e fu proprio quell'ambiguità — non il numero — a
+tenere nascosto per settimane il disallineamento con [[wiki-guard]].
+
+**Fail-loud su git.** Se un'interrogazione git fallisce (repo non trovato, ref assente), il tool
+fallisce esplicitamente anziché degradare verso l'insieme vuoto in silenzio.
+
+**Attenzione alla fixture del test di perimetro.** Il test che verifica il perimetro —
+`test_sole_terminazioni_di_riga_non_entrano` — può diventare una guardia vuota se la fixture non
+stabilisce la configurazione git che dichiara di misurare. Vedi [[guardia-verde-non-e-una-misura]] §
+«La variante che si vede solo da due piattaforme»: la proprietà presidiata esiste solo dove git
+*normalizza*, e un test che non la pianifica per tempo misura la macchina, non il prodotto. La matrice
+multi-OS è stata l'unica a rendere visibile il vuoto.
+
+**Ricordo storico:** prima di questa feature, la response era sempre `base...HEAD` (solo committato),
+non veniva dichiarato quale perimetro fosse stato misurato, e il tool perdeva candidati misti. Il rimedio
+unisce i due perimetri e rende trasparente qual è stato coperto.
 
 ## Gemella di daily-distill-floor
 

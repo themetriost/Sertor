@@ -28,7 +28,16 @@ _BUDGETS: dict[tuple[str, str], int] = {
     #             coordinata). + come localizzare il playbook (suffisso stabile / ricerca)
     #             + «host-agnostico non e' la stessa cosa di risolvibile» nella Definition of Done,
     #               che e' la regola che propagava il difetto.
-    ("sertor_installer", "claude-md-block.md"):              101,  # wiki (+boyscout +coordinate)
+    # 2026-07-30: wiki 101 -> 110, aumento DELIBERATO (direttiva utente). La delega del
+    #             `record` al `wiki-curator` passa da CONDIZIONALE («delegatable», «merely a
+    #             choice») a SEMPRE, in parita' con la delega git che nello stesso file e' gia'
+    #             incondizionata. Motivo: e' la FORMA CONDIZIONALE del testo a produrre lo skip
+    #             silenzioso — nulla distingue «non serviva» da «dimenticato» — e la stessa
+    #             asimmetria viveva parola per parola sugli host.
+    #             + il perche' della regola (un testo che non dice perche' si legge come cerimonia)
+    #             + un agente che si ferma su un asset e' un FINDING, non un motivo per rifare
+    #               il lavoro a mano in silenzio.
+    ("sertor_installer", "claude-md-block.md"):              110,  # wiki (+delega SEMPRE record)
     ("sertor_installer", "rag/claude-md-block-rag-usage.md"): 58,  # RAG   (attuale 49)
     ("sertor_flow",      "claude-md-block-sdlc.md"):          74,  # SDLC  (attuale 74)
 }

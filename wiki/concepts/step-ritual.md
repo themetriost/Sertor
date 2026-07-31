@@ -3,7 +3,7 @@ title: Step ritual & wiki anti-drift
 type: concept
 tags: [wiki, automazione, hook, governance, processo, delega, fonte-unica, rituale-di-step]
 created: 2026-06-04
-updated: 2026-07-23
+updated: 2026-07-30
 sources: ["CLAUDE.md", ".claude/skills/wiki-author/wiki-playbook.md", ".claude/agents/wiki-curator.md", ".claude/agents/configuration-manager.md", ".claude/settings.json", ".claude/hooks/wiki-pending-check.py", "src/sertor_core/wiki_tools/ritual_check.py"]
 ---
 
@@ -124,6 +124,11 @@ distillazione** (gruppi di pagine changed con ≥2 nuovi backlink incrociati e 0
 `capability-exec`) + lo **scaffold di dichiarazione**. Confine D↔N: il tool **trova** (deterministico,
 zero-LLM, sola lettura), l'agente **giudica** (Principio XI). Output JSON `wiki.ritual_check/1` + summary.
 È la gemella lato-giudizio dell'enforcement meccanico via hook (FEAT-011).
+
+Il sottocomando `ritual-check` misura lo scope come l'**unione di committato e albero di lavoro**, dunque è
+**usabile prima di committare** — esattamente quando il rituale lo chiede. Dichiara sempre quale perimetro
+ha misurato (campo JSON `perimeter` + riga summary `perimetro: committed=N · worktree=M`), e fallisce
+esplicitamente se un'interrogazione git non riesce. Vedi [[ritual-check]] per il dettaglio.
 
 ## Confine di delega: trascrizione vs giudizio
 

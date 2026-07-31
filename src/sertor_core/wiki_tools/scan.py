@@ -39,6 +39,8 @@ from sertor_core.wiki_tools.vcs import (
     is_repository,
     repo_prefix,
     run_git,
+    split_z,
+    worktree_changes,
 )
 
 ANCHOR_GIT = "git"
@@ -124,15 +126,6 @@ def _relative_to_project(profile: WikiProfile, path: Path) -> str | None:
         return None
 
 
-def _split_z(out: str) -> list[str]:
-    """Split NUL-separated git output.
-
-    `-z` is not a detail: without it git *quotes* paths containing spaces or non-ASCII characters,
-    and this project has already paid for mis-handled paths with spaces once (E4-FEAT-011).
-    """
-    return [token for token in out.split("\0") if token]
-
-
 def _git_anchor(profile: WikiProfile) -> _Anchor:
     """Derive the anchor from the last commit that touched the log; declare it if impossible."""
     target = _relative_to_project(profile, _log_target(profile))
@@ -173,54 +166,7 @@ def _committed_since(profile: WikiProfile, ref: str) -> list[str] | None:
     function must not be able to say that when it did not manage to look (E10-FEAT-062).
     """
     rc, out = run_git(["diff", "--name-only", "-z", ref, "HEAD"], profile.config_dir)
-    return _split_z(out) if rc == 0 else None
-
-
-def _worktree_changes(profile: WikiProfile) -> tuple[list[str], list[str]] | None:
-    """`(changed, untracked)` repo-relative work-tree paths, or `None` if git could not answer.
-
-    The two are returned apart because the compatibility rule needs the distinction: a journal that
-    was never delivered can predate coverage; a delivered-then-touched one is already accounted
-    for by the anchor.
-
-    Indispensable, not a refinement: at Stop time the session's work is typically **not yet
-    committed**, so an anchor made of history alone would never see the very case the gate exists
-    for. Files the VCS ignores never appear here — which is how E10-FEAT-048 is absorbed: not by
-    filtering them out, but by never letting them in.
-
-    The two halves come from DIFFERENT commands on purpose. `git diff HEAD` is **content-aware**: a
-    file whose only difference is line-ending normalisation is *not* reported, because nothing was
-    authored. `git status` reports it, and counting it would block a session over a file nobody
-    edited — observed on the very first real use of this gate. `status` is therefore used only for
-    what `diff` cannot see: untracked files.
-    """
-    tracked_rc, tracked_out = run_git(
-        ["diff", "--name-only", "-z", "HEAD"], profile.config_dir,
-    )
-    if tracked_rc != 0:
-        return None
-    paths: list[str] = _split_z(tracked_out)
-    untracked: list[str] = []
-
-    # `-uall` matters: by default git COLLAPSES an untracked directory into a single entry (`src/`),
-    # which would name a folder where the point is to name the files inside it.
-    rc, out = run_git(["status", "--porcelain", "-z", "-uall"], profile.config_dir)
-    if rc != 0:
-        return None
-    tokens = _split_z(out)
-    index = 0
-    while index < len(tokens):
-        entry = tokens[index]
-        index += 1
-        if len(entry) < 4:
-            continue
-        status, path = entry[:2], entry[3:]
-        if "R" in status or "C" in status:
-            index += 1  # a rename/copy is followed by its ORIGINAL path; we keep the destination
-        if status == "??":
-            paths.append(path)
-            untracked.append(path)
-    return paths, untracked
+    return split_z(out) if rc == 0 else None
 
 
 def _to_project_paths(profile: WikiProfile, repo_paths: list[str]) -> list[str]:
@@ -397,7 +343,7 @@ def scan(profile: WikiProfile) -> ScanResult:
     determination, determination_reason, legacy = DETERMINATION_OK, None, 0
 
     if anchor.kind == ANCHOR_GIT and anchor.ref:
-        worktree_pair = _worktree_changes(profile)
+        worktree_pair = worktree_changes(profile.config_dir)
         raw_committed = _committed_since(profile, anchor.ref)
         if worktree_pair is None or raw_committed is None:
             # Could not look. Saying `pending: 0` here would be indistinguishable from a clean

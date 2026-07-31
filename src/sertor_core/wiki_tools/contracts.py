@@ -251,6 +251,7 @@ class RitualCheckResult:
     distill_candidates: list[dict] = field(default_factory=list)
     drift_candidates: list[dict] = field(default_factory=list)
     declaration_scaffold: str = ""
+    perimeter: dict = field(default_factory=dict)
     schema: str = "wiki.ritual_check/1"
 
     def to_dict(self) -> dict:
@@ -258,6 +259,39 @@ class RitualCheckResult:
 
     def to_json(self) -> str:
         return _to_json(self.to_dict())
+
+
+def perimeter_of(kind: str, sources: list[tuple[str, str | None, int]]) -> dict:
+    """Build the `perimeter` field: where the step's scope came from, and how much from each.
+
+    `sources` is `(name, ref, paths)` in a stable order. The entity exists because its ABSENCE is
+    what made E10-FEAT-060 invisible: the scope was computed but had no provenance, so nothing could
+    reveal that two capabilities were measuring different realities.
+    """
+    return {
+        "kind": kind,
+        "sources": [{"name": n, "ref": r, "paths": p} for n, r, p in sources],
+    }
+
+
+def scope_of(perimeter: dict) -> str:
+    """DERIVE the human `scope` string from `perimeter` — never maintain the two in parallel.
+
+    Principle XIV applied to this feature's own remedy: keeping a summary string BESIDE the
+    structure it summarises creates two descriptions of one fact, free to drift. That is the
+    disease being cured here, and it would have been reintroduced by the cure.
+
+    Back-compatible by construction: for a committed-only scope and for an explicit one the
+    string is byte-identical to what this capability emitted before.
+    """
+    sources = perimeter.get("sources") or []
+    if perimeter.get("kind") == "explicit":
+        total = sum(s.get("paths", 0) for s in sources)
+        return f"explicit:{total}"
+    names = [s.get("name") for s in sources]
+    ref = next((s.get("ref") for s in sources if s.get("name") == "committed"), None) or ""
+    suffix = "+worktree" if "worktree" in names else ""
+    return f"git:{ref}{suffix}"
 
 
 @dataclass(frozen=True)

@@ -412,12 +412,12 @@ chi dovrebbe?* Corollari operativi:
    *standing* va aggiunta qui, e da quel momento fa parte del rituale a ogni step.
 
 **Responsabilità & delega.** Che queste azioni **avvengano** a ogni step è responsabilità del flusso
-principale. Eseguirle direttamente oppure **delegarle** è solo una scelta per non bloccare il flusso —
-la delega **non è un modo per saltarle**. **Confine di delega netto:** il `record` (trascrizione
-strutturata: pagine, backlink, `index.md`, voce di log) si delega al `wiki-curator` (Haiku),
-perché è lavoro di forma rette dal brief; la **distillazione** (punto 2) e il **lint semantico** (punto 3),
-essendo **giudizio**, **restano nel flusso principale**, non a Haiku. Git si delega al `configuration-manager`. Gli hook `SessionStart`/`Stop`
-restano **promemoria vincolanti**, non opzionali.
+principale; la delega **non è un modo per saltarle**. **Confine di delega netto:** il `record`
+(trascrizione strutturata: pagine, backlink, `index.md`, voce di log) **si delega SEMPRE** al
+`wiki-curator` (Haiku) — vedi la regola sotto — perché è lavoro di forma retto dal brief; la
+**distillazione** (punto 2) e il **lint semantico** (punto 3), essendo **giudizio**, **restano nel
+flusso principale**, non a Haiku. Git si delega **SEMPRE** al `configuration-manager`. Gli hook
+`SessionStart`/`Stop` restano **promemoria vincolanti**, non opzionali.
 
 **Calibra al valore:** modifiche puramente meccaniche o di poco conto non innescano il rituale (vedi
 *regola aurea* del wiki). Lo step è "significativo" quando produce conoscenza, decisioni o codice.
@@ -472,12 +472,24 @@ cresce a ogni sessione, invece di ricostruire la conoscenza ogni volta.
 > prese, concetti/tecnologie approfonditi e fonti ingerite. Modifiche puramente meccaniche e di
 > poco conto non richiedono una voce.
 
-> **Delega (non bloccante):** l'aggiornamento del wiki va **delegato all'agente `wiki-curator`**
-> (modello Haiku, vedi `.claude/agents/wiki-curator.md`), lanciato **in background** durante o
-> dopo un'attività di progetto, così il flusso principale non si blocca sul bookkeeping.
-> Passagli un brief autocontenuto (cosa è stato fatto, file/percorsi, numeri/esiti, commit).
-> Quando l'agente ha finito, includi le modifiche al wiki nel commit dello step. Per attività
-> piccole o puramente meccaniche puoi non delegare.
+> **Delega (SEMPRE, non bloccante):** la parte **`record`** dell'aggiornamento del wiki — trascrizione
+> strutturata: pagine impattate, backlink, `index.md`, voce di log — va **delegata all'agente
+> `wiki-curator`** (modello Haiku, vedi `.claude/agents/wiki-curator.md`), lanciato **in background**
+> durante o dopo un'attività di progetto, così il flusso principale non si blocca sul bookkeeping.
+> **Non** eseguirla direttamente (nemmeno per step piccoli o meccanici) e **non chiedere il permesso di
+> lanciare l'agente: è pre-autorizzato in permanenza**, esattamente come il `configuration-manager` per
+> git. Passagli un brief autocontenuto (cosa è stato fatto, file/percorsi, numeri/esiti, commit).
+> Quando l'agente ha finito, includi le modifiche al wiki nel commit dello step.
+>
+> **Restano al flusso principale** (sono **giudizio**, non trascrizione): la **distillazione**, il **lint
+> semantico**, l'**EXEC** della roadmap e gli **explainer**. La regola cambia *chi fa la trascrizione*,
+> non il confine D↔N.
+>
+> *Perché SEMPRE (2026-07-30, direttiva utente).* La formulazione precedente era **condizionale**
+> («per attività piccole o puramente meccaniche puoi non delegare») e la condizionalità è il buco: un
+> passo condizionale + auto-eseguito si salta in silenzio, mentre la regola git — **incondizionata** —
+> non si è mai saltata. È la stessa diagnosi già distillata per re-index e smoke. L'asimmetria nel testo
+> della regola produceva l'asimmetria nel comportamento; ora le due regole hanno la stessa forma.
 
 ### Struttura
 - `prototype/raw/` — corpus **immutabile** del prototipo (FastAPI). Nuove fonti di produzione andranno in un `raw/` a root quando servirà.
@@ -715,8 +727,8 @@ an analysis). **At the end of each step**, the main flow executes — on its own
 checklist:
 
 1. **Record** (`record`) — create/update the impacted pages, backlinks, and `index.md`, and append
-   the log entry (today's file in `wiki/log/`). Structural work → delegatable to the
-   `wiki-curator` agent.
+   the log entry (today's file in `wiki/log/`). This transcription is **always delegated** to the
+   `wiki-curator` agent (see *Delegation* below).
 2. **Distill entities** (`distill`) — identify the durable entities/concepts the step surfaced
    and, if they have their own identity and are referenced from multiple points, give each a
    dedicated page in `concepts/`/`tech/`; the dated record stays lean and points to them. This is **judgment** → stays
@@ -772,11 +784,20 @@ an accumulated backlog teaches you to stop reading it. Three constraints:
   of making it unreachable. If something is not a defect, **say so where it can be read** — catalogue it
   with its outcome — instead of removing it from view.
 
-**Delegation.** That these actions happen is the main flow's responsibility; executing or delegating them
-is merely a choice to avoid blocking. The `record` (structured transcription) is delegatable to the
-`wiki-curator` agent; distillation and semantic lint, being judgment, stay in the main flow.
-To manually trigger a consolidation, invoke the wiki capability of your assistant (main flow)
-or delegate to `wiki-curator` (background).
+**Delegation — ALWAYS delegate the `record`.** That these actions happen is the main flow's
+responsibility. The `record` (structured transcription: impacted pages, backlinks, index, log entry) is
+**always delegated** to the `wiki-curator` agent, in the background — not performed inline, not even for
+small or mechanical steps, and **without asking permission first**: it is standing authorisation, exactly
+like delegating version control to the `configuration-manager`. Pass a self-contained brief (what was
+done, which files, figures/outcomes, what NOT to touch).
+
+Distillation, semantic lint, the roadmap EXEC and explainers are **judgment**, and stay in the main flow.
+This rule changes *who transcribes*, never that boundary.
+
+*Why ALWAYS, and not "you may".* A conditional delegation is one a busy flow silently skips, because
+nothing distinguishes "not needed here" from "forgotten"; an unconditional one is not skipped. The two
+rules now have the same shape for the same reason. If the agent stops because an asset it needs is not
+locatable, that is a **finding to report**, never a reason to quietly redo the work by hand.
 
 **When to record:** at the same moment as the step commit. The log entry is
 not deferrable: a step is not closed until both the commit **and** the log entry are done.

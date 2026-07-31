@@ -3,7 +3,7 @@ title: Daily distill floor (merge-gate del distill)
 type: concept
 tags: [wiki, rituale-di-step, distill, hook, governance, enforcement, merge, host-agnostico, D-vs-N]
 created: 2026-07-22
-updated: 2026-07-22
+updated: 2026-07-30
 sources: ["requirements/debito-tecnico/epic.md", "specs/116-daily-distill-floor/", "packages/sertor/src/sertor_installer/assets/claude/hooks/distill-floor.py", "src/sertor_core/wiki_tools/distill_audit.py"]
 ---
 
@@ -64,7 +64,8 @@ l'obiettivo è rendere lo skip **caro e visibile**, non impossibile.
 
 ## Relazioni
 
-Gemella **lato-enforcement** di E10-FEAT-026 (`ritual-check`: scoperta per-**step** via git-diff +
+Gemella **lato-enforcement** di E10-FEAT-026 (`ritual-check`: scoperta per-**step** sul committato
+unito all'albero di lavoro, E10-FEAT-060 +
 dichiarazione forzata); `distill-audit` è complementare (per-**corpus** cross-sessione), non la sostituisce.
 Distribuita agli ospiti via installer (parità Claude/Copilot) come parte del sistema-wiki: ogni ospite col
 wiki riceve il merge-gate. Vedi [[step-ritual]], [[fail-loud-fix-cause]].

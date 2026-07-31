@@ -95,7 +95,7 @@ session.
 | `append-log` | places a log entry (body curated by the LLM) in today's file, idempotent | `wiki.append_log/1` |
 | `migrate` | retroactively splits the monolithic log into daily partitions | `wiki.migrate/1` |
 | `upsert-index` | inserts/updates the `- [[page]] — summary` line in the index (LLM-authored summary) | `wiki.upsert_index/1` |
-| `ritual-check` | lists distill/drift candidates for the step (git diff) + a declaration scaffold; the tool finds, the agent judges (anti-silent-skip, read-only) | `wiki.ritual_check/1` |
+| `ritual-check` | lists distill/drift candidates for the step + a declaration scaffold; the step's scope is what is committed on the branch **plus** what is not yet delivered (so it is usable *before* you commit), and the output declares which perimeter it measured; the tool finds, the agent judges (anti-silent-skip, read-only) | `wiki.ritual_check/1` |
 | `distill-audit` | lists cross-session distill candidates over the whole corpus (entities referenced from ≥k points with no page: dangling wikilinks + prose identifiers) + a debt count; an advisory hint for the daily distill floor (read-only, tool finds / agent judges) | `wiki.distill_audit/1` |
 
 Invocation: `uv run --project .sertor sertor-wiki-tools <op> --config wiki/wiki.config.toml --root .

@@ -90,6 +90,64 @@ def content_ids(paths: list[str], cwd: Path) -> dict[str, str] | None:
     return ids
 
 
+def split_z(out: str) -> list[str]:
+    """Split NUL-separated git output.
+
+    `-z` is not a detail: without it git *quotes* paths containing spaces or non-ASCII characters,
+    and this project has already paid for mis-handled paths with spaces once (E4-FEAT-011).
+    """
+    return [token for token in out.split("\0") if token]
+
+
+def worktree_changes(cwd: Path) -> tuple[list[str], list[str]] | None:
+    """`(changed, untracked)` repo-relative work-tree paths, or `None` if git could not answer.
+
+    **Why this lives here and not in a caller (E10-FEAT-060).** Two capabilities need "what has been
+    touched but not yet delivered": the pending-work `scan` behind the blocking Stop gate, and the
+    per-step `ritual-check` that prepares the closure declaration. They used to answer *different*
+    questions — one counted the work tree, the other only the committed diff — so the gate blocked
+    while the helper reported "nothing to declare", and nothing compared the two. Deriving both from
+    one place is what makes that divergence impossible rather than merely fixed once.
+
+    The two halves come from DIFFERENT commands on purpose. `git diff HEAD` is **content-aware**: a
+    file whose only difference is line-ending normalisation is *not* reported, because nothing was
+    authored. `git status` reports it, and counting it would block a session over a file nobody
+    edited — observed on the very first real use of the gate. `status` is therefore used only for
+    what `diff` cannot see: untracked files.
+
+    Files the VCS ignores never appear here — not because they are filtered out, but because neither
+    command lets them in.
+
+    Returns `None`, never `([], [])`, on failure: an empty change set reads as "nothing was
+    touched", and this function must not be able to say that when it did not manage to look.
+    """
+    tracked_rc, tracked_out = run_git(["diff", "--name-only", "-z", "HEAD"], cwd)
+    if tracked_rc != 0:
+        return None
+    paths: list[str] = split_z(tracked_out)
+    untracked: list[str] = []
+
+    # `-uall` matters: by default git COLLAPSES an untracked directory into a single entry (`src/`),
+    # which would name a folder where the point is to name the files inside it.
+    rc, out = run_git(["status", "--porcelain", "-z", "-uall"], cwd)
+    if rc != 0:
+        return None
+    tokens = split_z(out)
+    index = 0
+    while index < len(tokens):
+        entry = tokens[index]
+        index += 1
+        if len(entry) < 4:
+            continue
+        status, path = entry[:2], entry[3:]
+        if "R" in status or "C" in status:
+            index += 1  # a rename/copy is followed by its ORIGINAL path; we keep the destination
+        if status == "??":
+            paths.append(path)
+            untracked.append(path)
+    return paths, untracked
+
+
 def repo_prefix(cwd: Path) -> str:
     """Path of `cwd` relative to the repository root, without leading/trailing slashes.
 
