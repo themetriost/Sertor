@@ -57,6 +57,13 @@ tenere nascosto per settimane il disallineamento con [[wiki-guard]].
 **Fail-loud su git.** Se un'interrogazione git fallisce (repo non trovato, ref assente), il tool
 fallisce esplicitamente anziché degradare verso l'insieme vuoto in silenzio.
 
+**Attenzione alla fixture del test di perimetro.** Il test che verifica il perimetro —
+`test_sole_terminazioni_di_riga_non_entrano` — può diventare una guardia vuota se la fixture non
+stabilisce la configurazione git che dichiara di misurare. Vedi [[guardia-verde-non-e-una-misura]] §
+«La variante che si vede solo da due piattaforme»: la proprietà presidiata esiste solo dove git
+*normalizza*, e un test che non la pianifica per tempo misura la macchina, non il prodotto. La matrice
+multi-OS è stata l'unica a rendere visibile il vuoto.
+
 **Ricordo storico:** prima di questa feature, la response era sempre `base...HEAD` (solo committato),
 non veniva dichiarato quale perimetro fosse stato misurato, e il tool perdeva candidati misti. Il rimedio
 unisce i due perimetri e rende trasparente qual è stato coperto.

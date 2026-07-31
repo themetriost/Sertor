@@ -22,7 +22,8 @@ sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.m
 <!-- EXEC:START -->
 ## ⚡ Executive summary (stato al 2026-07-30)
 
-**Versione pubblicata: `v0.4.0`** · `master` = `44208ff` · CI verde · **nessuna PR aperta**.
+**Versione pubblicata: `v0.4.0`** · `master` = `44208ff` · CI verde · **PR #262 aperta** (E10-FEAT-060,
+CI verde su `fcc1f41`, in attesa del go per il merge).
 Rilascio **notificato**: GitHub Release *latest* · bacheca (canale *Releases*) · auto-updater degli
 ospiti, **sveglio dal bump** (era dormiente-fino-alla-release per costruzione).
 
@@ -49,10 +50,19 @@ dalla prima voce.
   - **Prova sul campo:** su questo repo, dove rispondeva `pages=0 distill=0 drift=0`, ora dà
     `pages=3 drift=2` con `perimetro: committed=11 · worktree=21` — e i due candidati segnalati erano
     **drift reali**, corretti nello stesso passaggio.
-  - **Verifiche:** gate pre-merge completo (`ruff` + sei suite = **2608 test**). I nuovi test sono
-    stati provati **contro il comportamento pre-fix**: 7 diventano rossi, quindi la guardia *può*
-    diventare rossa. Anche la guardia anti-duplicazione è stata provata reintroducendo una copia.
-  - **Prossimo passo concreto:** aprire la PR e mergiare (richiede go esplicito dell'utente).
+  - **Verifiche:** gate pre-merge completo (`ruff` + le sei suite) e **CI verde 9/9** su `fcc1f41`.
+    I nuovi test sono stati provati **contro il comportamento pre-fix**: 7 diventano rossi, quindi la
+    guardia *può* diventare rossa. Anche la guardia anti-duplicazione è stata provata reintroducendo
+    una copia.
+  - **Un difetto che solo la CI poteva vedere (2026-07-31).** Il gate locale era verde ma la CI era
+    **rossa su ubuntu**: un test della feature asseriva una proprietà vera solo dove git *normalizza*
+    le terminazioni di riga, mentre la sua fixture non attivava la normalizzazione — e su Windows
+    passava perché `write_text` traduce `\n`, rendendo base e modifica **byte-identiche**. Difetto del
+    test, prodotto invariato; fixture ora byte-deterministica, con un'asserzione che la condizione
+    **esista** (`fcc1f41`). *Il gate locale su un solo sistema operativo non è il gate:* la matrice
+    multi-OS è stata l'unica cosa a poter vedere la vacuità. Distillato in
+    [[guardia-verde-non-e-una-misura]] come variante della forma 1.
+  - **Prossimo passo concreto:** mergiare la PR #262 (richiede go esplicito dell'utente).
   - **Un effetto misurato, e tracciato:** il perimetro unito aumenta il rumore — sul dogfood
     **11 candidati drift, 0 reali**, verificati uno per uno. Diagnosi precisa: una pagina **nuova**
     linka i parenti *per costruzione*, e il segnale la scambia per deriva → **E10-FEAT-067**. È il

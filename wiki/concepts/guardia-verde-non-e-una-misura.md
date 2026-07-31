@@ -3,8 +3,8 @@ title: Una guardia verde non è una misura
 type: concept
 tags: [guardie, verifiche, vacuita, fixture, misura, e15]
 created: 2026-07-30
-updated: 2026-07-30
-sources: ["specs/125-smoke-di-upgrade/spec.md", "scripts/smoke.ps1", "scripts/smoke.sh", ".github/workflows/ci.yml", "wiki/log/2026-07-30.md"]
+updated: 2026-07-31
+sources: ["specs/125-smoke-di-upgrade/spec.md", "scripts/smoke.ps1", "scripts/smoke.sh", ".github/workflows/ci.yml", "wiki/log/2026-07-30.md", "tests/unit/test_vcs_worktree.py"]
 ---
 
 # Una guardia verde non è una misura
@@ -40,6 +40,37 @@ Il rimedio giusto ha aggiunto valore invece di toglierne: indicizzare **con la r
 trasforma `health-green` in una domanda che lo smoke d'installazione non può nemmeno porre —
 *la versione nuova legge ancora l'indice che ha scritto la vecchia?* Un manifest diventato illeggibile
 costerebbe all'ospite il suo indice **in silenzio**.
+
+#### La variante che si vede solo da due piattaforme (2026-07-31)
+
+La forma 1 ha una versione più insidiosa: la fixture arriva nello stato del difetto **su un sistema
+operativo e non sull'altro**, quindi la stessa riga di test è una misura di là e un verde vuoto di qua.
+
+Il caso reale sta in [[ritual-check]]. Un test fissa la proprietà per cui un file le cui uniche
+differenze sono le **terminazioni di riga** non entra nel perimetro dello step — la derivazione usa
+`git diff` (content-aware) e non `git status` proprio per questo. La fixture scriveva la base con
+`Path.write_text("x = 1\n")` e la modifica con `write_bytes(b"x = 1\r\n")`. Su Windows `write_text`
+**traduce** `\n` in `\r\n`: base e modifica erano **byte-identiche**, non c'era alcuna differenza da
+non-riportare, e il test passava avendo verificato nulla. Su Linux i due byte differiscono davvero, e
+lì il test è diventato rosso — ma per una terza ragione ancora: senza attributi git, un cambio di
+terminazioni **è** un cambio di contenuto (`--numstat` dà `1 1`), quindi riportarlo era corretto e
+l'asserzione era semplicemente falsa.
+
+Il difetto vero è a monte di entrambi gli esiti: **la fixture ereditava dall'ambiente la condizione
+che il test dichiarava di verificare**, invece di dichiararla. La proprietà presidiata esiste solo dove
+git *normalizza* (un `.gitattributes` come quello di questo repo, o `core.autocrlf`) — è lì che
+`status` vede il file e `diff` no. Un test che non stabilisce quella configurazione non misura il
+prodotto: misura la macchina su cui gira.
+
+Due cose valgono per la prossima volta:
+
+- **La matrice multi-OS non è ridondanza.** È stata l'unica cosa a rendere visibile la vacuità: il
+  rosso su una piattaforma ha rivelato che il verde sull'altra non significava niente. Un gate
+  eseguito su un solo sistema non poteva porsi la domanda.
+- **Il rimedio ha la stessa forma della forma 2** — piantare la condizione e poi verificare che ci
+  sia: la fixture ora committa il `.gitattributes` che attiva la normalizzazione e **asserisce che i
+  byte su disco differiscano dal blob** prima di chiedere l'assenza dal perimetro. Se un domani quella
+  differenza sparisse, il test diventa rosso invece di tornare verde a vuoto.
 
 ### 2. Le due fonti che concordano per costruzione
 
