@@ -25,6 +25,22 @@ def run_git(args: list[str], cwd: Path, *, stdin: str | None = None) -> tuple[in
 
     Never raises: a missing binary, a non-repository, or any git error all surface as a non-zero
     return code, so the caller keeps the decision (fail-open, fall back, or report).
+
+    KNOWN GAP — the `rc != 0` guard is NOT sufficient, and this docstring used to say it was
+    (E10-FEAT-069, reported from the field 2026-08-02). Output is decoded as UTF-8 with no
+    `errors=`, so when git returns bytes that are not valid UTF-8 the `UnicodeDecodeError` is
+    raised inside subprocess's reader thread, never here: `proc.stdout` comes back as `None` and
+    this returns `(0, None)` — a ZERO return code with no stdout, which the annotation above also
+    does not admit. Every caller that branches only on `rc != 0` then passes `None` downstream.
+    It is reachable today via `git show <rev>:<path>` on a repository with a git filter
+    (git-crypt, git-lfs, redaction filters), where the object store holds ciphertext.
+
+    Do not "fix" this by catching the failure here: reading a historical file through the object
+    store BYPASSES smudge filters, so on a filtered repository the decoded text would be the blob
+    at rest, and callers would silently compute on ciphertext — worse than the crash. The repair
+    belongs at the call site (read via `git cat-file --filters`, or declare what could not be
+    read); until then, a caller that reads file CONTENT must treat a falsy stdout as "unreadable",
+    not as "empty".
     """
     try:
         proc = subprocess.run(
