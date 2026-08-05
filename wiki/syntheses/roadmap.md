@@ -56,11 +56,13 @@ Rilascio notificato su tre canali (Release *latest* · bacheca · auto-updater).
 - **Il debito che F2 estingue, e che è già in essere:** «dove va una skill per Claude/Copilot» è
   scritto **due volte** — Rust in Kaelen, Python nel kit — in due repo e due linguaggi, quindi
   **invisibile a qualunque guardia di un singolo repo**.
-- **⚠️ Decisione aperta, da prendere presto: questo lavoro non ha una casa nel backlog.** È la cosa
-  più grossa in corso e non corrisponde ad alcuna `FEAT` di alcuna epica: vive solo in `specs/127-*` e
-  qui. È esattamente ciò che la regola sugli *Out of Scope* vieta (un lavoro reale che vive solo dentro
-  `specs/`). Due opzioni: **epica nuova** `separazione-ecosistema`, oppure voci in **E15
-  `fedelta-dogfood`**, che già si occupa di come i nodi si installano e si verificano fra loro.
+- **✅ Il lavoro ha una casa nel backlog** *(2026-08-05)*: **E17
+  [`separazione-ecosistema`](../../requirements/separazione-ecosistema/epic.md)** — 16 feature, 8
+  criteri di successo falsificabili, 14 requisiti trasversali EARS (la checklist di rilascio resa
+  verificabile), 9 rischi, 6 domande aperte. Fino a ieri viveva **solo** in `specs/127-*` e qui, che è
+  esattamente ciò che la regola sugli *Out of Scope* vieta. *Verificato prima di crearla:* nessuna
+  delle 16 epiche preesistenti la copriva, ed **E15 `fedelta-dogfood`** — la più vicina — ha nel suo
+  *Fuori ambito* proprio «riscrivere gli installer», che è il cuore di F2.
 - **Fatto scomodo da tenere presente:** **43 delle 67 voci di E10 `debito-tecnico` nominano il
   wiki** — Thesmion nascerà ereditando la maggior parte del debito aperto.
 
@@ -92,10 +94,13 @@ Rilascio notificato su tre canali (Release *latest* · bacheca · auto-updater).
   [[guardia-verde-non-e-una-misura]], nata da un test che era verde su Windows **avendo verificato
   nulla** e rosso su ubuntu: *il gate locale su un solo sistema operativo non è il gate*.
 
-**🎯 Il numero che orienta le scelte successive: dei 110 item aperti, i Must sono TRE** — e tutti e tre
-stanno in epiche **differite** (E11 `multiutente`) o **non iniziate** (E9 `second-brain`). Il resto è
-**49 Should e 58 Could**. Cioè: **nessun Must aperto nelle epiche attive**. La domanda non è «cosa manca
-perché sia completo», è «quale direzione vogliamo» — e va posta all'utente, non dedotta dal backlog.
+**🎯 Il numero che orienta le scelte successive è cambiato il 2026-08-05, e in modo sostanziale.** Fino
+a ieri, dei 110 item aperti i **Must erano TRE**, tutti in epiche differite (E11 `multiutente`) o non
+iniziate (E9 `second-brain`): **nessun Must aperto nelle epiche attive**, quindi la domanda era «quale
+direzione vogliamo», non «cosa manca». Con **E17 `separazione-ecosistema`** i **127 item aperti** sono
+**13 Must · 53 Should · 61 Could**, e **dieci dei tredici Must stanno in E17**. Il lavoro più grosso in
+corso ora *pesa* nel backlog quanto pesa nella realtà — che è precisamente ciò che la sua assenza
+nascondeva.
 
 **Il fatto nuovo che cambia come rilasciamo:** da oggi un rilascio parte solo dopo aver verificato, su
 host usa-e-getta, che un **`upgrade`** lo consegna davvero. Prima lo si deduceva dal merge — ed è il
@@ -124,7 +129,8 @@ combinazioni**, 8 esiti su 8.
 | **E14** | [`speclift`](../../requirements/speclift/epic.md) | 2/5 | 3 | 40% | 🔄 in corso |
 | **E15** | [`fedelta-dogfood`](../../requirements/fedelta-dogfood/epic.md) | 7/12 | 5 | 58% | 🔄 in corso *(1 ritirata)* |
 | **E16** | [`evoluzione-modello-wiki`](../../requirements/evoluzione-modello-wiki/epic.md) | 0/4 | 4 | 0% | 📋 non iniziata |
-| | **TOTALE** | **116/228** | **112** | **51%** | — |
+| **E17** | [`separazione-ecosistema`](../../requirements/separazione-ecosistema/epic.md) | 1/16 | 15 | 6% | 🔄 **in corso — il lavoro che domina** |
+| | **TOTALE** | **117/244** | **127** | **48%** | — |
 
 > **Come leggere «Consegnate»:** il denominatore esclude le feature **ritirate** (`❌ Won't`/not-a-bug) e
 > quelle **promosse ad altra epica** — contarle come debito gonfierebbe il residuo con lavoro che nessuno
@@ -146,10 +152,11 @@ combinazioni**, 8 esiti su 8.
    (`wiki/log/index.md` duplica un fatto derivabile) · E10-FEAT-049 + E13-FEAT-014 (riferimenti entranti /
    anti-drift della doc utente — **stessa forma, da progettare insieme**).
 3. **Chiudere E4** (73%) — restano 3 Could: remember-this · retention · ponte second-brain.
-4. **E14 — distribuire SpecLift/SpecAudit agli ospiti** (FEAT-002; **casa decisa il 31/07: Sinthari**,
-   il proprietario — non più `sertor-flow`, vedi D3 del piano di separazione): 3.916 righe di
-   codice **non installabili da nessuno**, che è la definizione di feature non completa. *Decisione
-   sospesa: usare · congelare · ritirare.*
+4. **E14 — SpecLift/SpecAudit: non più lavoro nostro** (E14-FEAT-002). La casa è **Sinthari**, il
+   proprietario (D3, 31/07): noi smettiamo di vendorare, e ciò che resta a noi — la **rimozione del
+   vendoring** — è **E17-FEAT-008**. *Riga dell'`epic.md` allineata il 2026-08-05: dichiarava ancora
+   la decisione superata del 14/07 («fold in `sertor-flow`»).* Le 3.916 righe restano non installabili
+   **da noi**, ma non sono più un nostro debito di completamento.
 5. **E13 Fase 2 — marketing** (posizionamento/demo/landing), sbloccata dal go-public.
 6. **E15-FEAT-014** — matrice esaustiva «da ogni versione all'ultima»: ora **parzialmente risposta**
    (4 combinazioni, 4 release indietro).
@@ -335,6 +342,24 @@ combinazioni**, 8 esiti su 8.
 - 📋 **E16-FEAT-002** — Backlink deterministici generati dal core — collect.py estrae già i wikilink uscenti per ogni pagina; i b · ***Could (P2)***
 - 📋 **E16-FEAT-003** — sertor-wiki-tools plan + coda di riverifica dei «passivi» — scan è a un passo da un update diff-driven: g · ***Could (P2)***
 - 📋 **E16-FEAT-004** — Riproducibilità cross-OS verificata + benchmark di scalabilità — «zero-LLM, offline» nell'--help implica  · ***Could (P2)***
+
+**E17 · [`separazione-ecosistema`](../../requirements/separazione-ecosistema/epic.md)** — 15 aperte *(1 consegnata)*
+
+- 📋 **E17-FEAT-002** — Il motore d'installazione unico, casa **Kaelen** (kit 2.552 righe + 24 test + 37 guardie di meccanismo) · ***Must***
+- 📋 **E17-FEAT-003** — Schema `node.manifest.v1.json`: un nodo si dichiara — un nodo di terzi non deve toccare Kaelen · ***Must*** *(deve prevedere il terzo caso di proprietà, R9)*
+- 📋 **E17-FEAT-004** — I piani-in-codice diventano dati: 2.627 righe convertite in manifest, a **parità d'esito su host** · ***Must*** *(sforzo 8×, domina)*
+- 📋 **E17-FEAT-005** — La duplicazione cross-linguaggio si estingue: Rust e Python derivano i path dallo stesso schema · ***Must***
+- 📋 **E17-FEAT-006** — I gusci dei nodi delegano al motore: l'ospite vede lo stesso comando di prima · ***Should***
+- 📋 **E17-FEAT-007** — Kernel condiviso (Thesmion reimplementa `log_event` + 2 errori) + schema evento versionato · ***Should***
+- 📋 **E17-FEAT-008** — **Sulcimen**, il nodo del metodo — include la rimozione del vendoring, che chiude **E14-FEAT-002** · ***Must***
+- 📋 **E17-FEAT-009** — **Thesmion**, il nodo del sistema-wiki; `thesmion[rag]` come extra opzionale · ***Must*** *(la più intrecciata: 4 suture)*
+- 📋 **E17-FEAT-010** — Sertor ripulito riceve wiki e metodo **come un ospite** — il rituale gira essendo installato da Thesmion · ***Must***
+- 📋 **E17-FEAT-011** — Ripartizione tracciata di requirements/specs/wiki: verdetto scritto per riga, conteggio che torna · ***Must*** *(mitiga R1)*
+- 📋 **E17-FEAT-012** — La checklist dei 12 requisiti di rilascio resa **eseguibile** per ogni nodo · ***Must***
+- 📋 **E17-FEAT-013** — Verifica su host pulito: 3 nodi × 2 assistenti, conflitti e `uninstall` che non rompe gli altri · ***Must***
+- 📋 **E17-FEAT-014** — Continuità per gli ospiti esterni: alias deprecati che **nominano** il sostituto · ***Should*** *(mitiga R6)*
+- 📋 **E17-FEAT-015** — Federazione e rilascio coordinato; alias rimossi **una release dopo** · ***Should***
+- 📋 **E17-FEAT-016** — Estrazione delle tracce per-nodo dai log, così nessun nodo nasce con una storia vuota · ***Could***
 
 ---
 
