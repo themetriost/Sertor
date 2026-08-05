@@ -253,6 +253,11 @@ mano ne avrebbe intercettati **cinque su sette**.
   la stessa cosa da lati diversi — e il dogfood, da solo, non basta come prova: il bug FEAT-032 è
   stato colto da un **re-install reale** e confermato da un **nodo indipendente** (Noetix), perché il
   nodo che scrive il fix è un teste contaminato.
+- È la **guardia cieca** sul tema di proprietà che [[punti-di-estensione-condivisi]] affronta: nel caso
+  FEAT-068 l'asset `.gitattributes` era **formalmente corretto** secondo il modello binario, ma il terzo
+  caso (punto di estensione senza proprietario) non era stato nominato. Qui una guardia sulla forma sa
+  dire se il wiring è dichiarato bene; lì la regola di proprietà stessa è **incongruente con la realtà**
+  — nessuna guardia può accorgersene finché la regola non ammette il terzo caso.
 - È [[constitution|Principio XII]] «Fail Loud» applicato ai **test**: un path che fallisce in silenzio
   è il difetto; una guardia che non guarda dove il silenzio accade lo **istituzionalizza**.
 - La ragione per cui il difetto è emerso dal **campo** e non dalla suite è la stessa già vista con

@@ -22,45 +22,59 @@ sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.m
 <!-- EXEC:START -->
 ## ⚡ Executive summary (stato al 2026-07-31)
 
-**Versione pubblicata: `v0.4.1`** · `master` = `9fb1264` · **nessuna PR aperta**.
-Rilascio **notificato**: GitHub Release *latest* (verificata via API) · bacheca (canale *Releases*,
-**depositata** non solo affissa) · auto-updater degli ospiti, svegliato dal bump.
+**Versione pubblicata: `v0.4.1`** · `master` = `c10bf36` · **nessuna PR aperta**.
+Rilascio notificato su tre canali (Release *latest* · bacheca · auto-updater).
+**Da oggi il repo contiene solo produzione: il prototipo è uscito.**
 
 ### 🔄 In progress
 
-- **Separazione in quattro prodotti — piano scritto, esecuzione non iniziata** *(2026-07-31)*.
-  - **Cosa:** Sertor resta il **RAG**; il sistema-wiki diventa **Thesmion**; governance/SDLC diventa
-    **Sulcimen**; il prototipo diventa **ProtoSertor**; il **motore d'installazione** va in **Kaelen**
-    (D1, quinto attore). Ogni nodo rilasciabile e installabile host-agnostico su **Claude e Copilot**,
-    come Sertor oggi. *(SpecLift/SpecAudit **non** vanno a Sulcimen: sono di **Sinthari** — D3.)*
-  - **Dove:** [`specs/127-separazione-quattro-prodotti/migration-plan.md`](../../specs/127-separazione-quattro-prodotti/migration-plan.md)
-    — inventario misurato, 7 decisioni di design, matrice artefatto→destinazione, 8 fasi con criteri
-    d'uscita falsificabili, 8 rischi, 12 requisiti di rilascio per nodo. **Nessun file spostato.**
-  - **Il dato che ha deciso l'ordine:** tre nodi su quattro hanno accoppiamento **zero** col core
-    (`sertor-flow`, `prototype/`, `install-kit`); `wiki_tools` ne ha **quattro**, di cui due lazy. Il
-    taglio costoso è il **logging** (11 chiamate), non l'architettura → [[confine-di-prodotto-misurato]].
-  - **✅ Le 7 decisioni sono SCIOLTE** (2026-07-31, in sessione). Le due che cambiano il piano:
-    **D1** — il motore d'installazione non diventa un repo tecnico nuovo, va in **Kaelen**, che
-    entra come **quinto attore**: motore Python + schema del manifest, mentre il suo Rust resta per
-    TUI/matrice/probe. Ogni nodo **si dichiara** con un `node.manifest.json`, quindi un nodo di terzi
-    non richiede di toccare Kaelen. **D3** — SpecLift/SpecAudit **non sono nostri**: sono di
-    **Sinthari**, che li distribuirà; noi smettiamo di vendorare (Sulcimen perde 3.916 righe e 52
-    test rispetto alla prima stesura).
-  - **Il debito che D1 estingue, e che era già in essere:** «dove va una skill per Claude/Copilot»
-    era scritto **due volte** — Rust in Kaelen, Python nel kit — in due repo e due linguaggi, quindi
-    **invisibile a qualunque guardia di un singolo repo**. Con lo schema condiviso non viene gestita:
-    smette di poter esistere.
-  - **Prossimo passo concreto:** **F0** — creare i repo (i folder Thesmion/Sulcimen esistono ma sono
-    vuoti e non-git; ProtoSertor va creato) e congelare il perimetro. Poi **F1 ProtoSertor** (rischio
-    zero, rompe il ghiaccio sulla procedura `filter-repo`).
-  - **La fase che ora domina lo sforzo:** **F2** — Kaelen diventa il motore, e **2.627 righe di piani
-    in codice** (`install_rag`/`install_wiki`/`install_governance`) diventano **dati dichiarativi**.
-    Criterio falsificabile: installare da manifest deve lasciare l'host nello **stesso stato** che
-    installare da codice.
-  - **Fatto scomodo da tenere presente:** **43 delle 67 voci di E10 `debito-tecnico` nominano il
-    wiki** — Thesmion nascerebbe ereditando la maggior parte del debito aperto.
+> 🏗️ **SEPARAZIONE IN QUATTRO PRODOTTI — è il lavoro che domina la roadmap.** Sertor resta il
+> **RAG**; il sistema-wiki diventa **Thesmion**; governance/SDLC diventa **Sulcimen**; il prototipo è
+> già **ProtoSertor**. Il **motore d'installazione** va in **Kaelen** (D1), che entra come quinto
+> attore. Ogni nodo dev'essere rilasciabile e installabile host-agnostico su **Claude e Copilot**,
+> come Sertor oggi.
+> **Piano:** [`specs/127-separazione-quattro-prodotti/migration-plan.md`](../../specs/127-separazione-quattro-prodotti/migration-plan.md)
+> (8 fasi, criteri d'uscita falsificabili) · **inventario file-per-file:**
+> [`file-inventory.md`](../../specs/127-separazione-quattro-prodotti/file-inventory.md).
+
+**Stato delle fasi:**
+
+| Fase | Cosa | Stato |
+|---|---|---|
+| **F0** | decisioni + repo | ✅ **7 decisioni sciolte** dall'utente |
+| **F1** | **ProtoSertor** | ✅ **CONCLUSA** — vedi Done |
+| **F2** | **Kaelen diventa il motore** | 🔜 **prossima, e la più grossa (sforzo 8×)** |
+| F3 | Sulcimen | ⏳ |
+| F4 | Thesmion | ⏳ (la più intrecciata: 4 suture) |
+| F5–F7 | Sertor ripulito · verifica su host · federazione | ⏳ |
+
+- **Prossimo passo concreto: F2.** Il kit d'installazione (2.552 righe + **37 guardie di meccanismo**)
+  si trasferisce in `Kaelen/engine/`, e **2.627 righe di piani in codice**
+  (`install_rag`/`install_wiki`/`install_governance`) diventano **dati dichiarativi** letti da uno
+  schema `node.manifest.v1.json` che vive in Kaelen. Criterio falsificabile: *installare da manifest
+  deve lasciare l'host nello stesso stato che installare da codice*.
+- **Il debito che F2 estingue, e che è già in essere:** «dove va una skill per Claude/Copilot» è
+  scritto **due volte** — Rust in Kaelen, Python nel kit — in due repo e due linguaggi, quindi
+  **invisibile a qualunque guardia di un singolo repo**.
+- **⚠️ Decisione aperta, da prendere presto: questo lavoro non ha una casa nel backlog.** È la cosa
+  più grossa in corso e non corrisponde ad alcuna `FEAT` di alcuna epica: vive solo in `specs/127-*` e
+  qui. È esattamente ciò che la regola sugli *Out of Scope* vieta (un lavoro reale che vive solo dentro
+  `specs/`). Due opzioni: **epica nuova** `separazione-ecosistema`, oppure voci in **E15
+  `fedelta-dogfood`**, che già si occupa di come i nodi si installano e si verificano fra loro.
+- **Fatto scomodo da tenere presente:** **43 delle 67 voci di E10 `debito-tecnico` nominano il
+  wiki** — Thesmion nascerà ereditando la maggior parte del debito aperto.
 
 ### ✅ Done — recente
+
+- **F1 — ProtoSertor è un nodo autonomo** (2026-07-31, merge `c10bf36`). Il prototipo ha lasciato
+  Sertor: repo privato proprio con **35 commit e la storia dalla nascita del progetto** (2026-05-28),
+  corpus FastAPI incluso, **zero contaminazione** verificata con `diff` fra atteso e reale. In Sertor:
+  **81 file** fuori dal versionamento e **1,4 GB** liberati dal disco · **9 pagine wiki ricollocate**
+  con `git mv` (3 accolte perché descrivevano il prodotto — fra cui l'**antenato di
+  `requirements/sertor-cli/`** — e 6 *in transito verso Sulcimen*, dichiarate) · riferimenti operativi
+  azzerati · un comando **rotto dal 30/05** ritirato. `ruff` pulito, 1402 test verdi, lint wiki a zero.
+  **Non gestiamo il repo di ProtoSertor** (decisione utente): è un nodo come gli altri.
+  *Le sette trappole incontrate → [[cosa-non-viaggia-in-una-migrazione]], da leggere prima di F2.*
 
 - **Rilascio `v0.4.1`** (2026-07-31, tag su `9fb1264`, Release *latest* verificata via API). Patch:
   è la riparazione di un difetto, non una capacità nuova — la linea 0.4.x resta quella su cui stanno i
@@ -103,14 +117,14 @@ combinazioni**, 8 esiti su 8.
 | **E7** | [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 0/4 | 4 | 0% | 📋 non iniziata |
 | **E8** | [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | 0/3 | 3 | 0% | 📋 non iniziata |
 | **E9** | [`second-brain`](../../requirements/second-brain/epic.md) | 0/10 | 10 | 0% | 📋 non iniziata |
-| **E10** | [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 41/67 | 26 | 61% | 🔄 **in corso — direzione attiva** |
+| **E10** | [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 41/69 | 28 | 59% | 🔄 **in corso — direzione attiva** |
 | **E11** | [`multiutente`](../../requirements/multiutente/epic.md) | 0/6 | 6 | 0% | 📋 non iniziata |
 | **E12** | [`usabilita`](../../requirements/usabilita/epic.md) | 5/14 | 9 | 36% | 🔄 in corso |
 | **E13** | [`documentazione-marketing`](../../requirements/documentazione-marketing/epic.md) | 8/15 | 7 | 53% | 🔄 in corso |
 | **E14** | [`speclift`](../../requirements/speclift/epic.md) | 2/5 | 3 | 40% | 🔄 in corso |
 | **E15** | [`fedelta-dogfood`](../../requirements/fedelta-dogfood/epic.md) | 7/12 | 5 | 58% | 🔄 in corso *(1 ritirata)* |
 | **E16** | [`evoluzione-modello-wiki`](../../requirements/evoluzione-modello-wiki/epic.md) | 0/4 | 4 | 0% | 📋 non iniziata |
-| | **TOTALE** | **116/226** | **110** | **51%** | — |
+| | **TOTALE** | **116/228** | **112** | **51%** | — |
 
 > **Come leggere «Consegnate»:** il denominatore esclude le feature **ritirate** (`❌ Won't`/not-a-bug) e
 > quelle **promosse ad altra epica** — contarle come debito gonfierebbe il residuo con lavoro che nessuno
@@ -122,7 +136,12 @@ combinazioni**, 8 esiti su 8.
    il gate d'aggiornamento non copre, dichiarato fuori copertura perché aperto: chiuderlo porta SC-001 a
    **7/7** e toglie l'unica deroga. *Il candidato naturale.*
 2. **Coda dei riscontri dal campo, ancora aperta** — *(E10-FEAT-060 ne è uscita: **consegnata**, vedi
-   sopra; ha lasciato E10-FEAT-067)* · E10-FEAT-063 (`packages/` e `CLAUDE.md` **fuori** dal
+   sopra; ha lasciato E10-FEAT-067)* · **E10-FEAT-068 + E10-FEAT-069** (dal nodo *VM-WorkingFolder*,
+   2026-08-02, entrambi **verificati nel codice**: l'asset `.gitattributes` che `upgrade` **sovrascrive**
+   e `uninstall` **cancella** — su un ospite ha spento git-crypt per tre commit · `run_git` che ritorna
+   `(0, None)` su output non-UTF-8, con la guardia `rc != 0` che non lo vede. **Priorità bassa per
+   decisione utente (2026-08-05)**, non per gravità: finché sono aperti, l'effetto resta in essere su
+   ogni ospite con un filtro git) · E10-FEAT-063 (`packages/` e `CLAUDE.md` **fuori** dal
    perimetro di `scan`: il gate non guarda la superficie che arriva agli ospiti) · E10-FEAT-047
    (`wiki/log/index.md` duplica un fatto derivabile) · E10-FEAT-049 + E13-FEAT-014 (riferimenti entranti /
    anti-drift della doc utente — **stessa forma, da progettare insieme**).
@@ -234,10 +253,11 @@ combinazioni**, 8 esiti su 8.
 - 📋 **E9-FEAT-009** — Codifica di metodologie / sintesi N→1 — pattern ricorrente su N progetti → asset nuovo (clustering varian · ***Could***
 - 📋 **E9-FEAT-010** — Meta-grafo dei concetti/asset — relazioni tipate (generalizes/refines/contradicts/applies-when); porta so · ***Could***
 
-**E10 · [`debito-tecnico`](../../requirements/debito-tecnico/epic.md)** — 27 aperte
+**E10 · [`debito-tecnico`](../../requirements/debito-tecnico/epic.md)** — 28 aperte
 
-- 🔄 **E10-FEAT-060** — `ritual-check` e `wiki-guard` misurano realtà diverse, e la differenza è invisibile · ***Should (P1)*** · **IN CORSO** (vedi EXEC)
 - 📋 **E10-FEAT-067** — i link uscenti di una pagina NUOVA producono candidati drift falsi (11 proposti, 0 reali) · ***Should (P1)***
+- 📋 **E10-FEAT-068** — `.gitattributes` è un punto di estensione CONDIVISO trattato come file proprio: `upgrade` lo sovrascrive, `uninstall` lo cancella — su un ospite ha spento **git-crypt** (195 file in chiaro per tre commit) · ***Could (P2)*** *(bassa per decisione utente, non per gravità)*
+- 📋 **E10-FEAT-069** — `run_git` ritorna `(0, None)` su output non-UTF-8 e la guardia `rc != 0` non lo vede: `ritual-check` crasha su un repo con filtro git, e la lettura scavalca i filtri (candidati sbagliati in silenzio) · ***Could (P2)*** *(bassa per decisione utente)*
 - 📋 **E10-FEAT-004** — Rituale/governance come plugin portabile repo-agnostico (oltre ciò che sertor-flow copre) · ***Could***
 - 📋 **E10-FEAT-005** — Igiene del wiki — hub/overview per-area, tassonomia più fine, distill pagina osservabilità, ripasso [[tre · ***Could***
 - 📋 **E10-FEAT-006** — Robustezza del bundle sertor-flow — selettività (vs all-or-nothing) + hook harness governance (DA-g) · ***Could***
