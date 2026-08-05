@@ -172,5 +172,6 @@ Vedi [[asset-install-installer-dry-run-2026-07-04]].
 - La pratica di base che questo modello rende fedele: [[dogfooding]].
 - L'audit che ha nominato i due livelli: [[audit-fedelta-dogfood-2026-07-03]].
 - Il dry-run empirico che ha verificato l'idempotenza dei veri installer: [[asset-install-installer-dry-run-2026-07-04]].
+- L'altro limite del dogfood: non contiene punti di estensione con filtri (che richiedono host reali attenti), vedi [[punti-di-estensione-condivisi]].
 - Le direttive standing dell'utente: *«il dogfood è un client fedele»* (2026-07-03) e *«dogfood
   solo via install da version bump»* (2026-07-03). Vivono nella memoria dell'agente, non nel wiki.

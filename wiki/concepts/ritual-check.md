@@ -82,3 +82,16 @@ lo skip del distill/lint non deve poter avvenire in silenzio.
 Legge scope e tassonomia da `wiki.config.toml` (Principio X); rileva il **default branch** a runtime
 (`origin/HEAD` → ref esistenti, non assume `master` — E10-FEAT-033); fail-loud su scope indeterminabile
 (Principio XII). Distribuito agli ospiti col sistema-wiki. Vedi [[step-ritual]], [[daily-distill-floor]].
+
+> ⚠️ **Il fail-loud non copre tutti i rami, e lo sappiamo per misura (2026-08-02, nodo esterno).** La
+> proprietà vale per lo **scope indeterminabile** (`worktree_changes` → `None` → `ConfigError`), non per
+> l'**output non decodificabile**: `run_git` decodifica UTF-8 senza `errors=`, quindi su un repo con un
+> **filtro git** (git-crypt, git-lfs, filtri di redazione) l'eccezione muore nel reader thread, la
+> funzione ritorna `(0, None)` — la guardia `rc != 0` **non scatta** — e `ritual-check` **crasha** con un
+> `TypeError` che non nomina la causa. Sotto c'è un difetto peggiore del crash: `git show <rev>:<path>`
+> **scavalca gli smudge filter**, quindi anche riparando la decodifica si leggerebbe testo cifrato e i
+> candidati a distillazione sarebbero **sbagliati in silenzio**. Tracciato come **E10-FEAT-069**; la
+> classe è [[punti-di-estensione-condivisi|il difetto che seleziona chi segue la disciplina]] — serve un
+> ospite che abbia configurato un filtro, e il nostro dogfood non ne ha. *Le note della v0.4.1 hanno
+> annunciato «fail-loud su ogni interrogazione git del perimetro»: era vero per il ramo che stavamo
+> guardando* → [[guardia-verde-non-e-una-misura]].
