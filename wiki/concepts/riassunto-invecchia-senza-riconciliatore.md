@@ -27,7 +27,7 @@ che vive in più posti va **derivato**, e dove derivarlo è impossibile serve un
 nominato** che **dichiari** la divergenza. Conservare una copia stantia può essere giusto; conservarla
 **in silenzio** no.
 
-## Otto superfici, otto istanze reali
+## Nove superfici, nove istanze reali
 
 | # | Superficie | Istanza |
 |---|---|---|
@@ -39,6 +39,33 @@ nominato** che **dichiari** la divergenza. Conservare una copia stantia può ess
 | 6 | **Prosa always-loaded di `CLAUDE.md`** ↔ `Settings` | **2026-07-28** — vedi sotto |
 | 7 | **Blocco SPECKIT nel `CLAUDE.md`** ↔ stato effettivo | **nuova, 2026-07-31** — il blocco dichiarava attivo un **vincolo sciolto** (E15-FEAT-012 mergiato il 30/07 con v0.4.0 rilasciata) e un **branch chiuso** (126-ritual-check-perimetro mergiato il 31/07); un controllo automatico l'ha colto *(non era un lint umano, era un harness)*. È la prima volta che una **superficie always-loaded entra in una checklist automatica** — il danno più grave di tutte perché la fonte di errore non è il vago incombing, è la lettura sistematica d'ogni sessione. Vedi sezione La settima |
 | 8 | **Sezione *«Riferirsi al prototipo»* nel `CLAUDE.md`** ↔ `.mcp.json` + indici su disco | **nuova, 2026-07-31 — la seconda nello stesso file in un giorno.** Diceva che il server MCP è puntato sul prototipo (`SERTOR_CORPUS=prototype`), mentre `.mcp.json` dice `sertor` e **`.index-prototype` non esiste**: la prosa istruiva a interrogare via RAG un corpus **non indicizzato**. Emersa misurando tutt'altro — il perimetro della migrazione di ProtoSertor. Vedi sezione *L'ottava* |
+| 9 | **Riga di backlog (`epic.md`)** ↔ decisione presa altrove | **nuova, 2026-08-05 — e va nel verso opposto a tutte le precedenti.** La riga `E14-FEAT-002` dichiarava *«CASA DECISA (2026-07-14): `sertor-flow` — fold nel pacchetto»*, mentre la decisione **D3 del 31/07** aveva stabilito il contrario (SpecLift/SpecAudit sono di *Sinthari*, smettiamo di vendorare). Vedi sezione *La nona* |
+
+## La nona: quando è la FONTE a invecchiare, non il riassunto
+
+Le prime otto istanze hanno tutte la stessa forma: una **copia descrittiva** invecchia mentre la fonte
+si muove. La nona la rovescia, e per questo merita di essere nominata a parte.
+
+Il 2026-08-05, cercando una casa nel backlog per la separazione, la riga `E14-FEAT-002` dell'`epic.md`
+dichiarava una decisione **superata da cinque giorni**. Il blocco **EXEC della roadmap** — cioè il
+*riassunto* — aveva invece la versione **giusta** (*«casa cambiata il 31/07 (D3): è Sinthari»*).
+
+**Il riassunto era aggiornato e la fonte era stantia.** Non è un caso fortunato, ha una causa
+strutturale: l'EXEC ha un **rituale che lo tocca** (punto 4 della Definition of Done, «ogni volta che
+lo step cambia lo stato di una capacità»), mentre una riga di backlog viene riletta solo **quando
+qualcuno lavora su quella feature** — e su una feature che abbiamo deciso di *non* fare, non ci lavora
+nessuno per definizione.
+
+> **La regola che ne esce:** *«fonte» e «copia» non dicono chi è aggiornato — lo dice **chi ha un
+> rituale che lo tocca**.* Una decisione registrata in un artefatto che nessuno ha motivo di riaprire
+> è una decisione che invecchia in pace, per quanto autorevole sia l'artefatto.
+
+**Il corollario scomodo per la regola A-12.** La convenzione dice che l'EXEC è la fonte unica dello
+stato *«consegnato»* e che gli `epic.md` vi puntano invece di duplicarlo. Regge, e questo caso non la
+smentisce — ma mostra il suo **bordo**: la A-12 governa lo *stato di consegna*, **non le decisioni di
+design** (dove va una feature, chi la possiede, se si fa). Quelle vivono nel backlog, che è
+l'artefatto **senza riconciliatore**. È il residuo che la A-12 non copre, e per cui oggi non esiste una
+guardia.
 
 ## La sesta: l'istruzione che sopravvive alla manopola
 
