@@ -66,20 +66,24 @@ Rilascio notificato su tre canali (Release *latest* · bacheca · auto-updater).
 - **Fatto scomodo da tenere presente:** **46 delle 75 voci di E10 `debito-tecnico` nominano il
   wiki** — Thesmion nascerà ereditando la maggior parte del debito aperto.
 
-> 🔧 **Tetto sulla dipendenza `mcp` — in consegna** (branch `fix/tetto-dipendenza-mcp`).
-> **Cosa:** `sertor-core` dichiarava `mcp>=1.2` **senza limite superiore**; l'SDK ha rilasciato la
-> **2.0.0 il 2026-07-28** eliminando `mcp.server.fastmcp`, che `sertor_mcp/server.py:25` importa in
-> cima al modulo → su un'installazione nuova il server MCP **muore all'import** e l'ospite non riceve
-> **nessun** tool, mentre `doctor` resta verde. **Dove:** due righe di `pyproject.toml` + `uv.lock`
-> (solo il vincolo registrato: la versione risolta non si muove) + `docs/troubleshooting.md`.
-> **Prossimo passo concreto:** PR e merge. **Provato, non dedotto:** con `uv pip compile`, `mcp>=1.2`
-> risolve **2.0.0** e `mcp>=1.2,<2` risolve **1.29.0**; l'import di `fastmcp` fallisce sulla prima e
-> riesce sulla seconda. **Non chiude il tema:** il porting a `MCPServer` è **E10-FEAT-070**, e gli
-> ospiti che hanno installato fra il 28/07 e oggi hanno **2.0.0 congelato nel proprio lock** — il
-> tetto salva i nuovi, non loro (rimedio documentato in `docs/troubleshooting.md`).
-> *Origine: riscontro del nodo **Vestiger**, verificato voce per voce nel codice.*
-
 ### ✅ Done — recente
+
+- **Tetto sulla dipendenza `mcp` — il server MCP non parte sulle installazioni nuove** (2026-08-07,
+  merge `0d16f19`, PR #271). `sertor-core` dichiarava `mcp>=1.2` **senza limite superiore**; l'SDK ha
+  rilasciato la **2.0.0 il 28/07** eliminando `mcp.server.fastmcp`, che `sertor_mcp/server.py:25`
+  importa in cima al modulo → su un'installazione **nuova** il server muore all'import e l'ospite non
+  riceve **nessun** tool, mentre `doctor` resta verde. **Provato, non dedotto** (fidarsi del lock è ciò
+  che l'ha nascosto per dieci giorni): `uv pip compile` sceglie **2.0.0** su `mcp>=1.2` e **1.29.0** su
+  `mcp>=1.2,<2`; l'import di `fastmcp` fallisce sulla prima e riesce sulla seconda. **Nella stessa PR,
+  per boy scout: la guardia che avrebbe potuto vederlo non veniva eseguita** — il filtro dei percorsi
+  escludeva `pyproject.toml`/`uv.lock` dai job di *smoke d'installazione*, cioè l'unica verifica che
+  installa davvero su un host era cieca verso il file che dichiara *cosa si installa*. Corretto: i 4
+  smoke (ubuntu·windows × claude·copilot-cli) + l'upgrade smoke sono passati **su questa stessa PR**.
+  **Non chiude il tema:** porting a `MCPServer` = **E10-FEAT-070**; e gli ospiti che hanno installato
+  fra il 28/07 e il 07/08 hanno **2.0.0 congelato nel proprio lock** — il tetto salva i nuovi, non loro
+  (rimedio in `docs/troubleshooting.md`). *Origine: riscontro del nodo **Vestiger**, quattro punti
+  verificati uno per uno; risposta pubblicata sulla bacheca.*
+
 
 - **F1 — ProtoSertor è un nodo autonomo** (2026-07-31, merge `c10bf36`). Il prototipo ha lasciato
   Sertor: repo privato proprio con **35 commit e la storia dalla nascita del progetto** (2026-05-28),
