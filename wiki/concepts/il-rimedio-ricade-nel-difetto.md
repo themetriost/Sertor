@@ -18,7 +18,7 @@ Il risultato ha una firma riconoscibile: **il rimedio contiene una copia del dif
 revisione perché chi rivede è la stessa persona che ha appena spiegato con precisione cos'era il
 problema — e quella spiegazione fa da alibi.
 
-## Quattro istanze, due giorni
+## Cinque istanze, tre giorni
 
 | Difetto riparato | Il rimedio conteneva | Colto da |
 |---|---|---|
@@ -26,8 +26,9 @@ problema — e quella spiegazione fa da alibi.
 | **Un riferimento corretto nel nostro sistema e inutilizzabile nel loro** (E10-FEAT-064) | Le **note di rilascio di quella stessa correzione** contenevano comandi non eseguibili su un host ospite, pubblicati su tre canali | una **domanda dell'utente**, non una rilettura |
 | **Due strumenti che misurano realtà diverse senza dichiararlo** (E10-FEAT-060) | Il piano prevedeva di aggiungere la struttura `perimeter` **accanto** alla stringa `scope`: due descrizioni dello stesso fatto, libere di divergere | il **Constitution Check** (Principio XIV), in fase di piano |
 | **Lo stesso difetto, un'ora dopo** (E10-FEAT-060 → 066) | La riparazione lasciava in piedi **due derivazioni** del perimetro anziché una — cioè una versione strutturale del difetto che stava chiudendo — con un test di equivalenza a sorvegliarle | una **domanda dell'utente**: *«ma quindi cosa abbiamo fatto?»* |
+| **Un crash su repo con filtro git** (E10-FEAT-069, dal campo) | Il rimedio **ovvio** — catturare l'errore di decodifica dove avviene — sostituirebbe un crash rumoroso con il **calcolo silenzioso su testo cifrato**: la lettura scavalca gli smudge filter, quindi il testo «riparato» sarebbe il blob a riposo e i candidati uscirebbero sbagliati **senza che nulla lo dica** | **il segnalante stesso**, che lo ha scritto nella segnalazione: *«un `try/except` qui nasconderebbe il difetto invece di chiuderlo»* |
 
-Quattro difetti diversi, un solo movimento: *ho capito la malattia abbastanza bene da spiegarla, quindi
+Cinque difetti diversi, un solo movimento: *ho capito la malattia abbastanza bene da spiegarla, quindi
 non la sto facendo*. È un non sequitur, e le quattro righe qui sopra ne sono la prova.
 
 **La quarta riga aggiunge un meccanismo che le altre non mostrano: una valutazione di rischio
@@ -37,6 +38,16 @@ di equivalenza) aveva **estinto proprio quel rischio**. Nessun meccanismo rivalu
 rinvio: la scrive chi poi non la rilegge, e il testo sopravvive alle condizioni che lo giustificavano.
 Corollario: *quando il lavoro cambia le premesse di una decisione, la decisione va riaperta — e nessuno
 lo ricorda al posto tuo.*
+
+**La quinta riga aggiunge il caso in cui la trappola è nel rimedio *ovvio*, e chi la evita è chi sta
+fuori.** Le prime quattro sono nostre, e in tutte il difetto era **visibile solo a posteriori**. Qui no:
+la trappola stava davanti a chiunque avesse aperto quel file — un `UnicodeDecodeError` non gestito
+chiede di essere gestito — e a nominarla è stato **chi la subiva**, non chi l'avrebbe riparata. È il
+vantaggio strutturale di chi guarda da fuori: non ha investito nulla nel rimedio che sta per proporre.
+Da qui la contromisura adottata: l'avvertimento **non** è finito in una pagina di wiki che il
+riparatore non leggerà, ma **nel docstring della funzione stessa**, cioè nell'unico punto che chi
+ripara *deve* attraversare. *Una lezione va scritta dove inciampa chi la ignora, non dove la cerca chi
+già la conosce.*
 
 ## Perché è difficile da vedere dall'interno
 
