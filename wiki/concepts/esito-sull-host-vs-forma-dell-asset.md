@@ -253,6 +253,7 @@ mano ne avrebbe intercettati **cinque su sette**.
   la stessa cosa da lati diversi — e il dogfood, da solo, non basta come prova: il bug FEAT-032 è
   stato colto da un **re-install reale** e confermato da un **nodo indipendente** (Noetix), perché il
   nodo che scrive il fix è un teste contaminato.
+- È lo specchio opposto di [[difetto-che-solo-un-ospite-nuovo-puo-vedere]]: questa descrive difetti che colpiscono chi **installa da zero** dopo l'uscita a monte; quella descrive difetti che colpiscono chi **aggiorna** da una versione vecchia. Insieme coprono le due estremità di un arco asimmetrico.
 - È la **guardia cieca** sul tema di proprietà che [[punti-di-estensione-condivisi]] affronta: nel caso
   FEAT-068 l'asset `.gitattributes` era **formalmente corretto** secondo il modello binario, ma il terzo
   caso (punto di estensione senza proprietario) non era stato nominato. Qui una guardia sulla forma sa

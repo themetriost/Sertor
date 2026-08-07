@@ -3,8 +3,8 @@ title: Una guardia verde non è una misura
 type: concept
 tags: [guardie, verifiche, vacuita, fixture, misura, e15]
 created: 2026-07-30
-updated: 2026-07-31
-sources: ["specs/125-smoke-di-upgrade/spec.md", "scripts/smoke.ps1", "scripts/smoke.sh", ".github/workflows/ci.yml", "wiki/log/2026-07-30.md", "tests/unit/test_vcs_worktree.py"]
+updated: 2026-08-07
+sources: ["specs/125-smoke-di-upgrade/spec.md", "scripts/smoke.ps1", "scripts/smoke.sh", ".github/workflows/ci.yml", "wiki/log/2026-07-30.md", "tests/unit/test_vcs_worktree.py", "src/sertor_core/services/doctor.py", "src/sertor_core/composition.py"]
 ---
 
 # Una guardia verde non è una misura
@@ -112,6 +112,41 @@ qualcuno se ne accorga. `-s` resta, ma declassato al suo ruolo onesto: rendere l
 La classe resta più grande della cura: **una verifica di cui non si può guardare l'interno è
 indistinguibile da una assente** — la tesi stessa per cui il gate esiste, applicata al gate.
 
+## La quarta forma: la guardia misura una procura, e la procura non è la domanda
+
+Le tre sopra sono nate insieme, costruendo il gate d'aggiornamento. La quarta è arrivata dal campo
+(nodo **Vestiger**, 2026-08-07) e ha una radice diversa: qui la guardia **poteva** diventare rossa, la
+fixture è reale, l'output è leggibile. Il verde è perfettamente valido — **di un'altra domanda**.
+
+`sertor-rag doctor` riporta `mcp pass (registered=True)` su un host dove il server MCP **non parte**.
+L'affermazione è vera: il server *è* scritto in `.mcp.json`. Ma chi lancia `doctor` non sta chiedendo
+*«l'ho registrato?»* — sta chiedendo *«funziona?»*, e fra le due c'è tutto lo spazio in cui il difetto
+si è nascosto ([[difetto-che-solo-un-ospite-nuovo-puo-vedere]]: un `import` in cima al modulo che
+esplode, quindi **nessun** tool servito).
+
+**La forma è più insidiosa delle altre tre perché il verde non è vuoto: è pieno di un altro
+contenuto.** Nelle forme 1-3 c'è sempre un momento in cui si può chiedere *«questa esecuzione poteva
+fallire?»* e la risposta è no. Qui la risposta è sì — l'esito `mcp_not_registered` esiste e scatta — e
+la domanda giusta è un'altra: *sto misurando la cosa, o un suo indizio?*
+
+Due cose la rendono riconoscibile, e vale la pena tenerle:
+
+- **Il confine è spesso dichiarato in chiaro, e passa per prudenza.** `read_mcp_registration` porta
+  scritto *«Sola lettura: never starts the server»*, e `doctor.py` codifica che «MCP never has a
+  critical outcome». Non è una svista: è un confine deciso, che nessuno ha più riletto dal lato di chi
+  legge il verde. Le decisioni di non-guardare invecchiano peggio dei difetti, perché non falliscono.
+- **La cura non è misurare tutto: è dire cosa non si è guardato.** Sulla riga accanto, `provider pass
+  (probe=skipped)` fa esattamente la cosa giusta — dichiara la propria astensione. È la stessa
+  disciplina del proxy dichiarato di [[ritual-check]], e la differenza fra le due righe dello stesso
+  report è la lezione intera: *una procura dichiarata è onesta, una procura taciuta è una bugia
+  strutturale*.
+
+Vale anche la provenienza: Vestiger nomina **tre occorrenze in due giorni su tre strumenti diversi**
+(il nostro `doctor`, l'`install` di Acta che dichiara `config: scritto` su una bacheca inesistente, e
+un terzo caso). Quando la stessa forma esce da tre codebase indipendenti non è un incidente ripetuto —
+è il modo normale in cui si scrive una verifica: *si misura ciò che è comodo misurare, e si chiama
+come la domanda che si voleva porre*.
+
 ## Le due parenti già scritte, e il confine
 
 - [[il-rimedio-ricade-nel-difetto]] — lì una riparazione riproduce ciò che ripara; qui una verifica
@@ -135,11 +170,15 @@ indistinguibile da una assente** — la tesi stessa per cui il gate esiste, appl
 > **Se il difetto che questa guardia presidia fosse presente adesso, questa esecuzione lo vedrebbe?**
 
 Va posta **quando la guardia diventa verde la prima volta**, che è il momento in cui nessuno la fa —
-il verde chiude la questione invece di aprirla. Tre risposte tipiche, e tutte e tre sono un no:
+il verde chiude la questione invece di aprirla. Quattro risposte tipiche, e tutte e quattro sono un no:
 
 - *«la fixture non arriva nello stato in cui il difetto vive»* → **forma 1**
 - *«le fonti che confronto concordano già»* → **forma 2**
 - *«non posso vedere quali asserzioni sono state eseguite»* → **forma 3**
+- *«sì, ma sto guardando un indizio della cosa, non la cosa»* → **forma 4**
+
+La quarta ha bisogno di una domanda sua, perché sfugge alla prima: non *«poteva fallire?»* (poteva),
+ma **«la domanda a cui rispondo è quella che si sta ponendo chi legge?»**
 
 E, sulla forma 3, una domanda in più — perché è quella su cui si sbaglia rimedio: *sto rendendo la
 vacuità **visibile** o **impossibile**?* Solo la seconda è una riparazione; la prima delega a un
