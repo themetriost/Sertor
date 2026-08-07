@@ -42,8 +42,14 @@ azure = [
 ]
 # Server MCP: espone il retrieval del core a un client MCP (es. Claude Code). Dipendenza isolata
 # (REQ-060): la libreria core resta installabile senza l'SDK MCP.
+# TETTO `<2` — NON rimuoverlo senza portare il codice: `sertor_mcp/server.py` importa
+# `mcp.server.fastmcp`, sottomodulo che l'SDK ha ELIMINATO nella 2.0.0 (PyPI, 2026-07-28; la classe
+# equivalente è `mcp.server.MCPServer`). Senza tetto il resolver prende la 2.0.0 e il server muore
+# all'import, quindi l'ospite non riceve NESSUN tool. Il difetto è invisibile a chi ha già un lock:
+# lo vede solo chi installa da zero dopo quella data — riscontro dal nodo Vestiger, 2026-08-07.
+# Il porting a `MCPServer` è E10-FEAT-070; alla sua consegna questo tetto si alza.
 mcp = [
-    "mcp>=1.2",
+    "mcp>=1.2,<2",
 ]
 # Reranker cross-encoder del motore ibrido (FEAT-004, REQ-021): extra isolato, import lazy nel
 # composition root — il pacchetto base funziona senza (RRF-only).
@@ -82,7 +88,7 @@ dev = [
     "ruff>=0.6",
     "textual>=8,<9",   # per i test headless del pannello (Pilot)
     "tiktoken>=0.7",   # conteggio token preciso del tetto chunk (dogfood/test)
-    "mcp>=1.2",        # server MCP del dogfood (era solo nel venv .venv-core costruito a mano)
+    "mcp>=1.2,<2",     # server MCP del dogfood — stesso tetto dell'extra `mcp` sopra (vedi il perché lì)
     "networkx>=3",     # navigazione code-graph (find_symbol/who_calls) servita dal server MCP
     "opentelemetry-sdk>=1.20",                    # export OTel (feature 061) + InMemory exporter nei test
     "opentelemetry-exporter-otlp-proto-http>=1.20",
