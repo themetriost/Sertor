@@ -40,6 +40,14 @@ jobs:
               - 'scripts/smoke.sh'
               - 'scripts/smoke.ps1'
               - '.github/workflows/ci.yml'
+              # Il manifest di `sertor-core` dichiara COSA un ospite installa: un vincolo di
+              # dipendenza che cambia cambia l'install, anche senza toccare `packages/**`. Senza
+              # queste due righe lo smoke — l'unica guardia che installa davvero su un host — restava
+              # cieco proprio verso il file che ha prodotto il guasto del nodo Vestiger (2026-08-07:
+              # `mcp>=1.2` senza tetto → SDK 2.0.0 → server MCP morto all'import su ogni installazione
+              # nuova, con lo smoke `skipping`).
+              - 'pyproject.toml'
+              - 'uv.lock'
 
   test:
     name: test (${{ matrix.os }} / py${{ matrix.python }})
