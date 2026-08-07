@@ -63,8 +63,21 @@ Rilascio notificato su tre canali (Release *latest* · bacheca · auto-updater).
   esattamente ciò che la regola sugli *Out of Scope* vieta. *Verificato prima di crearla:* nessuna
   delle 16 epiche preesistenti la copriva, ed **E15 `fedelta-dogfood`** — la più vicina — ha nel suo
   *Fuori ambito* proprio «riscrivere gli installer», che è il cuore di F2.
-- **Fatto scomodo da tenere presente:** **43 delle 67 voci di E10 `debito-tecnico` nominano il
+- **Fatto scomodo da tenere presente:** **46 delle 75 voci di E10 `debito-tecnico` nominano il
   wiki** — Thesmion nascerà ereditando la maggior parte del debito aperto.
+
+> 🔧 **Tetto sulla dipendenza `mcp` — in consegna** (branch `fix/tetto-dipendenza-mcp`).
+> **Cosa:** `sertor-core` dichiarava `mcp>=1.2` **senza limite superiore**; l'SDK ha rilasciato la
+> **2.0.0 il 2026-07-28** eliminando `mcp.server.fastmcp`, che `sertor_mcp/server.py:25` importa in
+> cima al modulo → su un'installazione nuova il server MCP **muore all'import** e l'ospite non riceve
+> **nessun** tool, mentre `doctor` resta verde. **Dove:** due righe di `pyproject.toml` + `uv.lock`
+> (solo il vincolo registrato: la versione risolta non si muove) + `docs/troubleshooting.md`.
+> **Prossimo passo concreto:** PR e merge. **Provato, non dedotto:** con `uv pip compile`, `mcp>=1.2`
+> risolve **2.0.0** e `mcp>=1.2,<2` risolve **1.29.0**; l'import di `fastmcp` fallisce sulla prima e
+> riesce sulla seconda. **Non chiude il tema:** il porting a `MCPServer` è **E10-FEAT-070**, e gli
+> ospiti che hanno installato fra il 28/07 e oggi hanno **2.0.0 congelato nel proprio lock** — il
+> tetto salva i nuovi, non loro (rimedio documentato in `docs/troubleshooting.md`).
+> *Origine: riscontro del nodo **Vestiger**, verificato voce per voce nel codice.*
 
 ### ✅ Done — recente
 
@@ -95,10 +108,10 @@ Rilascio notificato su tre canali (Release *latest* · bacheca · auto-updater).
   nulla** e rosso su ubuntu: *il gate locale su un solo sistema operativo non è il gate*.
 
 **🎯 Il numero che orienta le scelte successive è cambiato il 2026-08-05, e in modo sostanziale.** Fino
-a ieri, dei 110 item aperti i **Must erano TRE**, tutti in epiche differite (E11 `multiutente`) o non
+a quel giorno, dei 110 item aperti i **Must erano TRE**, tutti in epiche differite (E11 `multiutente`) o non
 iniziate (E9 `second-brain`): **nessun Must aperto nelle epiche attive**, quindi la domanda era «quale
-direzione vogliamo», non «cosa manca». Con **E17 `separazione-ecosistema`** i **127 item aperti** sono
-**13 Must · 53 Should · 61 Could**, e **dieci dei tredici Must stanno in E17**. Il lavoro più grosso in
+direzione vogliamo», non «cosa manca». Con **E17 `separazione-ecosistema`** i **133 item aperti** sono
+**13 Must · 57 Should · 63 Could**, e **dieci dei tredici Must stanno in E17**. Il lavoro più grosso in
 corso ora *pesa* nel backlog quanto pesa nella realtà — che è precisamente ciò che la sua assenza
 nascondeva.
 
@@ -122,7 +135,7 @@ combinazioni**, 8 esiti su 8.
 | **E7** | [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 0/4 | 4 | 0% | 📋 non iniziata |
 | **E8** | [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | 0/3 | 3 | 0% | 📋 non iniziata |
 | **E9** | [`second-brain`](../../requirements/second-brain/epic.md) | 0/10 | 10 | 0% | 📋 non iniziata |
-| **E10** | [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 41/69 | 28 | 59% | 🔄 **in corso — direzione attiva** |
+| **E10** | [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 41/75 | 34 | 55% | 🔄 **in corso — direzione attiva** |
 | **E11** | [`multiutente`](../../requirements/multiutente/epic.md) | 0/6 | 6 | 0% | 📋 non iniziata |
 | **E12** | [`usabilita`](../../requirements/usabilita/epic.md) | 5/14 | 9 | 36% | 🔄 in corso |
 | **E13** | [`documentazione-marketing`](../../requirements/documentazione-marketing/epic.md) | 8/15 | 7 | 53% | 🔄 in corso |
@@ -130,7 +143,7 @@ combinazioni**, 8 esiti su 8.
 | **E15** | [`fedelta-dogfood`](../../requirements/fedelta-dogfood/epic.md) | 7/12 | 5 | 58% | 🔄 in corso *(1 ritirata)* |
 | **E16** | [`evoluzione-modello-wiki`](../../requirements/evoluzione-modello-wiki/epic.md) | 0/4 | 4 | 0% | 📋 non iniziata |
 | **E17** | [`separazione-ecosistema`](../../requirements/separazione-ecosistema/epic.md) | 1/16 | 15 | 6% | 🔄 **in corso — il lavoro che domina** |
-| | **TOTALE** | **117/244** | **127** | **48%** | — |
+| | **TOTALE** | **117/250** | **133** | **47%** | — |
 
 > **Come leggere «Consegnate»:** il denominatore esclude le feature **ritirate** (`❌ Won't`/not-a-bug) e
 > quelle **promosse ad altra epica** — contarle come debito gonfierebbe il residuo con lavoro che nessuno
@@ -141,8 +154,16 @@ combinazioni**, 8 esiti su 8.
 1. **E2-FEAT-023** — `upgrade` nudo copre una capability sola uscendo verde. È **il settimo difetto** che
    il gate d'aggiornamento non copre, dichiarato fuori copertura perché aperto: chiuderlo porta SC-001 a
    **7/7** e toglie l'unica deroga. *Il candidato naturale.*
-2. **Coda dei riscontri dal campo, ancora aperta** — *(E10-FEAT-060 ne è uscita: **consegnata**, vedi
-   sopra; ha lasciato E10-FEAT-067)* · **E10-FEAT-068 + E10-FEAT-069** (dal nodo *VM-WorkingFolder*,
+2. **Coda dei riscontri dal campo, ancora aperta** — 🆕 **la prima installazione del nodo *Vestiger*
+   (2026-08-07) ha prodotto cinque voci in un colpo**, tutte verificate nel codice lo stesso giorno:
+   **E10-FEAT-070** (portare `sertor_mcp` all'SDK MCP v2 — il tetto `mcp<2` è già su `master`, il
+   porting no) · **E10-FEAT-072** (`doctor` dichiara `mcp pass` guardando la registrazione, non
+   l'avvio — *il più importante secondo il segnalante*: è il controllo che avrebbe dovuto vedere il
+   guasto) · **E10-FEAT-071** (nessuna guardia sui vincoli di dipendenza senza tetto di major, la
+   generalizzazione) · **E10-FEAT-073** (localizzazione del registro wiki applicata a metà) ·
+   **E10-FEAT-074** (l'euristica mtime conta gli output che il record stesso produce). Aggiunta lo
+   stesso giorno dal dogfood: **E10-FEAT-075** (`distill-floor` nega il merge in base al branch su cui
+   sei fermo, **stampando una diagnosi falsa**) · **E10-FEAT-068 + E10-FEAT-069** (dal nodo *VM-WorkingFolder*,
    2026-08-02, entrambi **verificati nel codice**: l'asset `.gitattributes` che `upgrade` **sovrascrive**
    e `uninstall` **cancella** — su un ospite ha spento git-crypt per tre commit · `run_git` che ritorna
    `(0, None)` su output non-UTF-8, con la guardia `rc != 0` che non lo vede. **Priorità bassa per

@@ -64,10 +64,34 @@ le dipendenze. Le due estremità dell'arco sono entrambe cieche per noi, e per r
   (chi ha appena installato). È il contrario della distribuzione utile del dolore.
 - **Chi lo incontra è chi ci conosce meno.** Il primo contatto con Sertor di un nodo nuovo è un
   vehicle su due che non parte. Non è un costo tecnico, è un costo di fiducia.
-- **La domanda che nessuna guardia pone oggi:** *quali nostri vincoli ammettono una major non ancora
+- **La domanda che nessuna guardia pone:** *quali nostri vincoli ammettono una major non ancora
   uscita?* È deterministica e a costo quasi zero — si legge dai metadati del pacchetto — e nessun
-  test la fa. `textual>=8,<9` il tetto ce l'ha; `mcp>=1.2` no. La differenza era discrezione di chi
-  scriveva la riga, non una regola.
+  test la fa. `textual>=8,<9` il tetto ce l'ha; `mcp` **non ce l'aveva**. La differenza era
+  discrezione di chi scriveva la riga, non una regola — ed è la ragione per cui il caso singolo si
+  chiude ma la classe no (tracciata come **E10-FEAT-071**).
+
+## Come è finita, e cosa resta aperto
+
+Il tetto `mcp>=1.2,<2` è stato messo **lo stesso giorno** (2026-08-07). Vale la pena registrare come è
+stato *verificato*, perché la tentazione qui è fidarsi del lock — che è precisamente ciò che ha
+nascosto il difetto per dieci giorni:
+
+| Domanda | Come è stata risposta |
+|---|---|
+| il difetto è reale **ora**? | `uv pip compile` su `mcp>=1.2` → sceglie **2.0.0** |
+| il tetto cambia la scelta? | `uv pip compile` su `mcp>=1.2,<2` → sceglie **1.29.0** |
+| la versione col tetto **funziona**? | `import mcp.server.fastmcp` su `1.29.0` → OK; su `2.0.0` → `ModuleNotFoundError` |
+
+Due cose **il tetto non le chiude**, e vanno tenute distinte dal «fatto»:
+
+- **Il codice resta sull'SDK v1.** Un tetto è una scelta su *quando* scoprire la major, non un modo
+  per non scoprirla: finché regge, l'ospite sta su una linea che a monte riceve solo correzioni
+  critiche. Il porting a `MCPServer` è **E10-FEAT-070**.
+- **Chi ha installato nella finestra ha già `2.0.0` nel proprio lock.** Il tetto protegge le
+  installazioni *future*; quelle fatte fra il 28/07 e il 07/08 restano rotte finché non ri-risolvono.
+  È il corollario della regola in testa alla pagina, applicato alla riparazione invece che al
+  difetto — ed è il motivo per cui il rimedio è finito in `docs/troubleshooting.md` e non solo nel
+  `pyproject.toml`.
 
 ## Collegate
 

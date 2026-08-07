@@ -118,6 +118,45 @@ Alternatively, avoid secrets entirely by using the zero-config `glove` embedder 
 
 ---
 
+## NO MCP tools at all, but `doctor` is green (`No module named 'mcp.server.fastmcp'`)
+
+**Symptom.** Your assistant receives **none** of the `sertor-rag` tools — not some, none — while
+`sertor-rag doctor` reports `PASS` on every area, including `mcp pass (registered=True)`. The CLI
+works fine: `sertor-rag search` returns correct results.
+
+**Cause.** The MCP SDK released **2.0.0** on 2026-07-28, and it **removed** the `mcp.server.fastmcp`
+submodule that Sertor's server imports at the top of the module. Sertor's requirement was
+`mcp>=1.2` with **no upper bound**, so a host that resolved its dependencies in that window pulled
+2.0.0 and froze it in `.sertor/uv.lock`. The server process then dies on import, before serving
+anything — hence "none" rather than "some". `doctor` stays green because its `mcp` check asks
+whether the server is *registered* in `.mcp.json`, not whether it *starts*.
+
+**Who is affected.** Only hosts whose `.sertor/uv.lock` was written between 2026-07-28 and the
+release carrying the fix. A host that installed earlier is unaffected — its lock holds a 1.x — and
+so is a host installing after the fix, which now resolves `mcp>=1.2,<2`.
+
+**Confirm it in one command** (this is the check `doctor` does not do):
+
+```powershell
+uv run --project .sertor python -m sertor_mcp.server
+```
+
+A `ModuleNotFoundError: No module named 'mcp.server.fastmcp'` confirms this exact case.
+
+**Fix.** Re-resolve the runtime so it picks up the upper bound, then verify:
+
+```powershell
+uv sync --project .sertor --upgrade
+uv run --project .sertor python -c "import sertor_mcp.server; print('server imports OK')"
+```
+
+Then reload your MCP client (restart Claude Code, or `/mcp reload` on the Copilot CLI). If your
+runtime is pinned to a release that predates the fix, pin the SDK locally in the meantime by adding
+`"mcp<2"` to the `dependencies` of `.sertor/pyproject.toml` and re-running `uv sync --project
+.sertor`.
+
+---
+
 ## First index is very slow / triggers a large download
 
 **Symptom.** The first `index .` run stalls for a while and downloads a large file (~822 MB).
