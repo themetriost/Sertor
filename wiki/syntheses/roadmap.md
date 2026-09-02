@@ -20,9 +20,10 @@ sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.m
 > verificato* in fondo).
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-07-31)
+## ⚡ Executive summary (stato al 2026-08-07)
 
-**Versione pubblicata: `v0.4.1`** · `master` = `c10bf36` · **nessuna PR aperta**.
+**Versione pubblicata: `v0.4.1`** · `master` = `0d16f19` · **una PR aperta**: #272 (docs, CI verde,
+in attesa del go per il merge).
 Rilascio notificato su tre canali (Release *latest* · bacheca · auto-updater).
 **Da oggi il repo contiene solo produzione: il prototipo è uscito.**
 
