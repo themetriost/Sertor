@@ -158,10 +158,23 @@ risposta undici giorni.
 
 E c'è un corollario che orienta la scelta tecnica, misurato il 2026-09-13 valutando **E10-FEAT-070**:
 fra i rimedi possibili, **non tutti hanno lo stesso perimetro**. Un tetto raggiunge solo chi
-ri-risolve. Un **import a doppia via** (`MCPServer` con fallback su `FastMCP`, vincolo `mcp>=1.2,<3`)
-funziona su *qualunque* lock esistente — 1.x o 2.x congelata — e quindi guarisce **entrambe** le
-popolazioni senza chiedere loro nulla. Costa quattro righe in più del porting secco, e sono le quattro
-righe che decidono chi resta rotto.
+ri-risolve. Un **import a doppia via** — la classe del server presa dalla linea nuova con fallback sulla
+precedente — funziona su *qualunque* lock esistente, 1.x o 2.x congelata, e quindi guarisce **entrambe**
+le popolazioni senza chiedere loro nulla: è la sola forma che raggiunge anche chi non può ri-risolvere
+perché è agganciato a una versione pubblicata. **Consegnato nella `v0.4.2`** (2026-09-13), con vincolo
+`mcp>=1.2,<2.3`.
+
+> **Correzione a una prima stesura di questo paragrafo, scritta la mattina dello stesso giorno.** Diceva
+> *«costa quattro righe in più del porting secco»*, e citava un tetto `<3` che non è quello scelto. Il
+> modo in cui l'errore è stato scoperto vale più del numero: quella cifra veniva da una sonda
+> sull'**helper interno** dell'SDK, mentre la misura al confine — un client MCP vero sul transport — ha
+> mostrato che il lavoro reale non è l'import, è la **classificazione degli errori**. In v2 solo un errore
+> dichiarato *previsto* porta il proprio messaggio al modello; un crash viene reso generico *by design*.
+> Preservare la diagnosi che l'ospite riceve ha richiesto di mappare i guasti previsti — la gerarchia
+> `SertorError`, che nel dominio esiste già — sulla forma d'errore che l'SDK rende al client: non quattro
+> righe, e nemmeno un'operazione meccanica. *La lezione sul metodo ha una pagina propria:*
+> [[misura-al-confine-pubblico]]. *L'entità che questa pagina nomina resta vera: il rimedio a doppia via
+> è ancora quello che raggiunge tutti — era il suo **prezzo** a essere stato misurato sul piano sbagliato.*
 
 ## Collegate
 

@@ -1,84 +1,101 @@
 ---
 title: Una compatibilità si misura al confine pubblico
 type: concept
-tags: [misura, compatibilità, dipendenze, interfaccia-pubblica, mcp, e10, e15]
+tags: [misura, dipendenze, contratto, metodo, compatibilita, e10]
 created: 2026-09-13
 updated: 2026-09-13
-sources: ["src/sertor_mcp/server.py", "tests/contract/test_mcp_protocol_e2e.py", "specs/128-porting-mcp-sdk-v2/spec.md", "requirements/debito-tecnico/epic.md", "wiki/log/2026-09-13.md"]
+sources: ["src/sertor_mcp/server.py", "tests/contract/test_mcp_protocol_e2e.py", "requirements/debito-tecnico/feat-070-porting-mcp-sdk-v2/requirements.md", "wiki/log/2026-09-13.md"]
 ---
 
 # Una compatibilità si misura al confine pubblico
 
-Quando è necessario verificare se il codice funziona con una versione nuova di una dipendenza, la
-domanda che conta non è se l'API interna risponde. **La domanda è: cosa arriva a chi ci consuma?**
+Quando bisogna sapere se il codice regge su una versione nuova di una dipendenza, la domanda non è
+*«l'API risponde?»* ma **«cosa arriva a chi ci consuma?»**. Fra le due c'è un piano intermedio — gli
+helper interni della libreria — che risponde volentieri, in fretta, e **con un'altra risposta**.
 
-Tra la domanda interna e quella del consumatore c'è un piano intermedio — gli helper interni della
-libreria — che risponde volentieri, in fretta, e **con un'altra risposta**. Una misura presa su quel
-piano intermedio è valida per quel piano, non per il confine pubblico che i consumatori attraversano.
-
-> **La regola:** misura sul piano che i consumatori attraversano davvero. È il **Principio XI letto dal
-> lato della misura**.
+> **La regola:** misura sul piano che i consumatori attraversano davvero. Ogni piano più interno ha il
+> **diritto** di cambiare fra una major e l'altra, quindi un confronto fatto lì misura la libreria, non
+> il contratto.
 
 ## La misura che ha prodotto la pagina
 
-Il porting del server MCP dall'SDK v1 al v2 (**E10-FEAT-070**) è stato misurato due volte, con conclusioni
-discordanti.
+Il 2026-09-13, valutando il porting del server MCP all'SDK v2 (**E10-FEAT-070**), la compatibilità è
+stata misurata **due volte**, e le due misure hanno dato risposte diverse.
 
-**Primo giro** — sull'helper interno `call_tool`: conclusione «il porting richiede due differenze fra le
-versioni». Superficie: il docstring di due tool, il ritorno della funzione helper.
+**Primo giro — l'helper interno.** Una sonda ha istanziato il server e invocato `call_tool()`, l'helper
+che l'SDK usa internamente per eseguire un tool. Conclusione: *due* differenze fra le versioni.
 
-**Secondo giro** — al confine pubblico, con un **client MCP reale** sul transport stdio: conclusione
-«una sola differenza». Handshake vero, 10 tool, payload, diagnostica di errore.
+**Secondo giro — il protocollo.** Un client MCP vero, connesso sullo stdio, ha fatto l'handshake,
+elencato i tool e chiamato gli stessi tre casi. Conclusione: **una** differenza.
 
-La riga che appariva nel primo giro come differenza era **falsa** — perché l'helper cambia forma di
-ritorno fra le major. In v1 ritorna una tupla, in v2 un `CallToolResult`. Comparare due oggetti diversi
-per forma produce differenze che stanno nell'oggetto, non nel contratto. **Il difetto era reale** e
-identico su entrambe le linee dell'SDK, ma **non era conseguenza del porting**: fu promosso a
-**E10-FEAT-076** come lavoro separato.
+| Fatto | Misurato sull'helper | Misurato sul protocollo |
+|---|---|---|
+| payload dei tool che ritornano `list[dict]` | identico | identico ✔ concorda |
+| payload dei tool che ritornano `dict` | **«v2 regredisce»** | `None` su **entrambe** → *non è il porting, è il nostro design* |
+| messaggio dell'errore al client | perso in v2 | perso in v2 ✔ concorda |
 
-## Perché sfugge, e perché sfugge a chi ha misurato
+La riga centrale era **falsa**, e non per un errore di esecuzione: l'helper `call_tool` **cambia forma di
+ritorno** fra le due major (`tuple` in v1, `CallToolResult` in v2). Confrontare due oggetti diversi
+produce differenze che esistono nell'oggetto e non nel contratto. Il difetto era reale — metà dei nostri
+tool non consegna contenuto strutturato — ma **preesistente e identico sulle due linee**: una proprietà
+del nostro design, non una conseguenza del porting. Attribuirlo al porting avrebbe messo in quella
+feature un lavoro che non le appartiene, e lasciato il difetto vero senza casa. Ora è
+**E10-FEAT-076**.
 
-L'helper interno è raggiungibile, facile da testare, e la sua forma è quella che il codice del server
-tocca ogni giorno. È naturale leggervi una misura. Il confine pubblico è uno strato sopra, meno diretto,
-e molti degli ospiti che usano Sertor non sono nemmeno lì — hanno delegato al server, e il server
-gestisce i dettagli.
+## Perché il piano sbagliato è quello che si prova per primo
 
-La conseguenza è che una misura presa al piano sbagliato *è valida* (risponde a una domanda vera) e
-*fuorviante* (risponde a una domanda sbagliata). Nessun errore la segnala: il test passa, la forma è
-corretta, la conclusione è presentata con sicurezza.
+Non è distrazione: è che il piano interno è **più facile da raggiungere**. Un `await srv.call_tool(...)`
+sta in tre righe; un handshake vero richiede due processi, un transport e un client. Con l'aggravante
+che la sonda facile **funziona**: produce numeri, tabelle, una conclusione dall'aria definitiva. Nulla
+nel suo output dice *«ho guardato un piano che i tuoi consumatori non attraversano»*.
 
-## Cosa ne segue
+È la **quarta forma** di [[guardia-verde-non-e-una-misura]] applicata a una sonda invece che a una
+guardia: *sto misurando la cosa, o un suo indizio?* Con una differenza che vale la pena tenere distinta —
+lì il verde era valido *di un'altra domanda*; qui la misura è **positivamente fuorviante**, perché
+produce una differenza inesistente al confine. Un indizio che tace è meno dannoso di un indizio che
+afferma.
 
-- **Progetta il test con il consumatore in mente, non con la superficie disponibile.** Se il test è una
-  unit test su un helper interno, nomina la domanda che sta rispondendo. Se la domanda di affidabilità
-  è *«regge su una versione nuova della dipendenza?»*, il test deve attraversare il confine pubblico.
-  
-- **Se il confine pubblico non è testabile dal dogfood, nomina quel fatto.** I test di porting del
-  nostro server MCP girano con `mcp 2.2.0` in CI, e includono il contratto di handshake: è quello che
-  un ospite vede. Se il confine non fosse testabile, l'accettazione di qualunque misura interna
-  dovrebbe portare il disclaimer.
-  
-- **Il Principio XI vale anche per le sonde.** Il principio dice di consumare Sertor solo via vehicles
-  pubblici per non bypassare osservabilità ed errori; la stessa asimmetria vale per le misure — misurare
-  per via interna bypassa le scelte di design che avvengono al confine.
+## Il confine, per Sertor, è già scritto
 
-## Il parente stretto, e le somiglianze
+La cosa notevole è che questa regola **non è nuova**: è il **Principio XI** letto dal lato della misura.
+Il principio dice che a runtime si accede a Sertor *solo via vehicles* (CLI, MCP), mai importando
+`sertor_core`, perché i vehicles cablano configurazione, osservabilità ed errori, e l'accesso diretto li
+bypassa in silenzio. La simmetria è esatta:
 
-[[punto-di-partenza-non-verificato]] chiede: *stavo misurando gli stati che credo?* — qui, a monte,
-il punto di partenza della misurazione. Questa pagina chiede la stessa cosa, a valle: *il piano di
-misurazione è quello che conta?* — cioè, gli stati che misuro sono quelli che il consumatore
-attraversa?
+| | consumare | misurare |
+|---|---|---|
+| **piano giusto** | il vehicle (CLI / MCP) | il protocollo / l'output del comando |
+| **piano interno** | `build_facade()` a mano | un helper interno della libreria |
+| **cosa si perde** | osservabilità, config, policy d'errore | la validità della conclusione |
 
-[[guardia-verde-non-e-una-misura]] chiede: *il meccanismo della guardia poteva fallire?* — è di
-progetto e di *esecuzione*. Qui chiediamo: *la domanda della misura è la domanda che conta?* — è di
-*fondamento*.
+Chi non attraversa il confine pubblico ottiene *qualcosa* — un risultato, o un numero — e perde
+esattamente ciò che il confine garantisce. Ce n'è un precedente scritto in casa:
+`specs/073-cattura-copilot-cli/research.md` dichiara che `events.jsonl` di Copilot CLI *«è un dettaglio
+interno, non un contratto pubblico»*, e ne deriva un parsing tollerante. Lì il confine è stato
+riconosciuto nel **design**; qui si è dovuto riconoscerlo nel **metodo di misura**, che è il posto in cui
+sfugge più facilmente.
+
+## Come si applica, in pratica
+
+- **Chiediti chi è il consumatore, e imita lui.** Per un server MCP è un client sul transport; per una
+  CLI è un processo che legge stdout e l'exit code; per una libreria, il codice che importa solo la
+  superficie pubblica. Se la sonda fa qualcosa che nessun consumatore fa, la sua conclusione vale per
+  nessuno.
+- **Quando una sonda interna e una al confine divergono, vince il confine** — e la divergenza è essa
+  stessa un'informazione: dice che stai guardando un dettaglio che la libreria è libera di cambiare.
+- **Se al confine c'è un costo, pagalo una volta e tienilo.** L'handshake end-to-end era il buco
+  dichiarato in E10-FEAT-070 (*«manca l'handshake stdio con un client vero»*): scriverlo è costato una
+  sonda e ha **cambiato le conclusioni**. Per questo diventa un requisito permanente (FR-007), non una
+  verifica una volta sola: una misura vale il giorno in cui la fai.
+- **Dichiara il perimetro.** La sonda al confine ha coperto handshake, elenco dei tool, forma dei
+  risultati ed errori. **Non** ha coperto cancellazione, timeout, payload grandi e concorrenza — scritto
+  nella spec come *non misurato*, invece di lasciarlo presumere equivalente.
 
 ## Collegate
 
-- [[punto-di-partenza-non-verificato]] — l'altra metà della stessa disciplina: verificare da dove si
-  parte
-- [[guardia-verde-non-e-una-misura]] — il meccanismo che non guarda; qui, il piano di osservazione che
-  sbaglia
-- [[difetto-che-solo-un-ospite-nuovo-puo-vedere]] — il difetto per cui questa misurazione era
-  necessaria
-- [[Principio XI]] della costituzione — misurare come si consuma, non come si costruisce
+- [[guardia-verde-non-e-una-misura]] — la quarta forma: misurare una procura al posto della cosa
+- [[punto-di-partenza-non-verificato]] — l'altra metà: verificare *da dove* parte la misura, non solo su quale piano
+- [[confine-di-prodotto-misurato]] — parente sull'oggetto vicino: *dove* passa un confine si misura, non si deduce
+- [[difetto-che-solo-un-ospite-nuovo-puo-vedere]] — il difetto che ha reso necessaria questa misura
+- [[constitution]] — Principio XI: si consuma solo via vehicles, di cui questa pagina è il lato-misura
+- [[mcp-server]] — il server misurato
