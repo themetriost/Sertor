@@ -46,13 +46,16 @@ Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
 > ⚠️ Vincolo standing invariato: il rilascio parte solo col **gate d'aggiornamento** verde sul salto
 > reale (`v0.4.1 → master`).
 >
-> **Dimensione misurata il 2026-09-13 su `mcp` 2.2.0** — la versione attuale, non la 2.0.0 di agosto:
-> **mezza giornata, non «due righe»**. Reggono `instructions=`, `.tool(description=)`, `@tool()` col
-> docstring, `.run(transport='stdio')` e i 10 decoratori. **Non** reggono due cose: il
-> `structured_content` arriva solo ai **5** tool che ritornano `list[dict]` (i 5 che ritornano `dict`,
-> `search_combined` per primo, prendono `None`), e il **messaggio dell'errore si perde**
-> (`UnexpectedToolError` senza il testo del core, che resta solo in `__cause__`) — quest'ultima è da
-> **progettare**, perché tocca la regola «errori MCP = segnale, non rumore».
+> **Dimensione misurata il 2026-09-13 su `mcp` 2.2.0** — la versione attuale, non la 2.0.0 di agosto —
+> e **verificata end-to-end sul protocollo stdio** con un client MCP vero, che era la verifica dichiarata
+> mancante. Reggono handshake, `instructions`, i 10 tool, `.tool(description=)`, `@tool()` col docstring,
+> `.run(transport='stdio')` e il payload dei tool `list[dict]`. **Una sola regressione vera:** il
+> **messaggio dell'errore non arriva più al client** (`isError=True` in entrambe, ma il testo perde il
+> dettaglio del core, che resta solo in `__cause__`) — falsifica il docstring di `_guard` e degrada la
+> regola «errori MCP = segnale, non rumore». È la parte da **progettare**, non da portare.
+> *Rettifica di una misura intermedia:* il `structuredContent` assente sui 5 tool che ritornano `dict`
+> **non** è causato dal porting — è identico su 1.29.0 e 2.2.0, è un limite del nostro design, e vive
+> ora come **E10-FEAT-076** invece di restare nascosto dentro FEAT-070.
 
 ### 🔄 In progress
 
