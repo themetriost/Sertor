@@ -74,6 +74,11 @@ $FromSertorSrc  = if ($IsUpgrade) { "git+$RepoUrl@$FromRef#subdirectory=packages
 $FromFlowSrc    = if ($IsUpgrade) { "git+$RepoUrl@$FromRef#subdirectory=packages/sertor-flow" } else { "" }
 $IsCopilot      = ($Assistant -eq "copilot-cli")
 $script:UpgradeOut = ""   # the upgrade report, read by the no-stale-divergence outcome
+# Planting state for the `mcp-server-imports` outcome (feature 128). Initialised here because
+# `Set-StrictMode -Version Latest` makes reading an unset variable a terminating error — which is
+# how the first run of this outcome died, AFTER planting successfully.
+$script:PlantSkipped  = $false   # the starting release already carries the ceiling: nothing to plant
+$script:PlantedBroken = $false   # the planted condition really broke the server (the measure)
 
 function Fail([string]$msg) {
     Write-Host "SMOKE_FAIL: $msg" -ForegroundColor Red
@@ -294,6 +299,20 @@ function Invoke-RagSmoke {
         $resultCount = $results.Count
         if ($resultCount -le 0) { Fail "search returned no results" }
         Write-Host "[smoke] search OK (results=$resultCount)"
+
+        # MCP server starts ---------------------------------------------------------------------
+        # The four steps above pass with a DEAD MCP server: `doctor` reports the registration in
+        # `.mcp.json` rather than the startup (E10-FEAT-072), and `search` goes through the CLI. So
+        # before feature 128 none of the install smokes could see a host receiving zero tools — which
+        # is precisely how that defect reached three nodes. Importing the module is the cheapest
+        # question that actually fails when the server cannot start.
+        Write-Host "[smoke] importing the MCP server ..."
+        $mcpImport = & uv run --project .sertor python -c "import sertor_mcp.server; print('ok')" 2>&1 | Out-String
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host $mcpImport
+            Fail "the MCP server cannot be imported: the host would receive NO tools while doctor stays green"
+        }
+        Write-Host "[smoke] MCP server import OK"
     }
     finally {
         Pop-Location
@@ -499,7 +518,41 @@ function Assert-UpgradeOutcomes([string]$cap) {
         Write-Host "[upgrade] n/a  version-derived-from-runtime (capability '$cap' deposits no version-check hook)"
     }
 
-    # 7. Health is green — the catch-all for what the six above do not name.
+    # 7. The MCP server IMPORTS. Defect E10-FEAT-070: on a host whose lock froze the SDK's new major
+    #    the server died at import and the assistant received NO tools — while `doctor` stayed green,
+    #    because its `mcp` check reads the registration in `.mcp.json`, not the startup. So this
+    #    outcome cannot be folded into `health-green`: the green is precisely what failed to see it.
+    #    Only meaningful if the condition was planted (see Invoke-UpgradeFlow): if the previous
+    #    release was already fine, we say so rather than claiming a repair we did not observe.
+    #    ⚠️ WHAT THIS OUTCOME DOES AND DOES NOT DISCRIMINATE. It asserts that an affected host ends
+    #    the upgrade with a server that starts — which is what the host cares about — but two
+    #    different mechanisms can satisfy it: the CEILING pulling the SDK back to the old line, or
+    #    the CODE now running on the new one. On the current jump the credit goes to the ceiling
+    #    (measured 2026-09-13). What measures the porting itself is the CI step that runs the MCP
+    #    tests against the other SDK line; the two presidia cover different things and neither
+    #    replaces the other.
+    if ((Test-Path $sertorDir) -and ($cap -eq "rag")) {
+        Push-Location $HostDir
+        try {
+            $impOut = & uv run --project .sertor python -c "import sertor_mcp.server; print('ok')" 2>&1 | Out-String
+            $impOk = ($LASTEXITCODE -eq 0)
+        } finally {
+            Pop-Location
+        }
+        if ($script:PlantedBroken) {
+            Assert-Outcome "mcp-server-imports" $impOk `
+                ("the MCP server still cannot be imported AFTER the upgrade, so the host keeps " +
+                 "receiving no tools: $($impOut.Trim())")
+        } elseif ($impOk) {
+            Write-Host "[upgrade] n/a  mcp-server-imports (the previous release was not affected: nothing was repaired here)"
+        } else {
+            Assert-Outcome "mcp-server-imports" $false `
+                ("the MCP server cannot be imported after the upgrade, and it was NOT broken " +
+                 "before: this jump BREAKS it: $($impOut.Trim())")
+        }
+    }
+
+    # 8. Health is green — the catch-all for what the seven above do not name.
     if (Test-Path $sertorDir) {
         $doctor = & uv run --project $sertorDir sertor-rag doctor 2>&1 | Out-String
         Assert-Outcome "health-green" ($LASTEXITCODE -eq 0) `
@@ -567,6 +620,72 @@ function Invoke-UpgradeFlow([string]$cap) {
             Fail-Env "index with the previous release '$FromRef' exited $LASTEXITCODE"
         }
         Write-Host $idxOut.TrimEnd()
+    }
+
+    # PLANT THE CONDITION of an already-affected host (E10-FEAT-070, feature 128). The MCP SDK's
+    # major 2.0.0 removed the submodule older Sertor versions import, so every host that re-resolved
+    # after 2026-07-28 ended up with a server that dies at import — three nodes measured it, two ran
+    # without MCP for over a month. A freshly created fixture resolves a working version, so
+    # `mcp-server-imports` after the upgrade would pass GRATIS: it would measure nothing. We force
+    # the OLD runtime onto the new major, and ASSERT IT IS BROKEN FIRST — that assertion is what
+    # turns the outcome below into a measure (the same trade as the planted stale stamp in #6).
+    if ($cap -eq "rag" -and (Test-Path (Join-Path $HostDir ".sertor"))) {
+        $sertorRt = Join-Path $HostDir ".sertor"
+        Push-Location $HostDir
+        try {
+            # HOW the condition is planted, and why it takes two edits. The installer writes the
+            # runtime source as a BARE git reference, so the runtime follows the default branch —
+            # NOT the release the installer came from (measured 2026-09-13: uv resolved
+            # `sertor-core==0.4.1` carrying the CEILING, which exists only on the default branch).
+            # With the ceiling in force `mcp>=2` cannot be resolved at all, so we also pin the
+            # runtime to `$FromRef` — the release the host is supposed to be starting FROM. That pin
+            # is what makes the fixture match the field: a host whose lock froze the new major
+            # because its Sertor had no ceiling yet. `upgrade` moves the pin back (outcome #1), so
+            # nothing planted here survives the upgrade except the frozen SDK major.
+            # The planting itself lives in `scripts/smoke_plant_mcp.py`, shared with `smoke.sh`
+            # so the two scripts cannot drift on it: it adds the frozen SDK major AND pins
+            # `sertor-core` to the starting release (without that pin the runtime follows the
+            # default branch, which already carries the ceiling, and the condition is simply
+            # unsatisfiable).
+            $plantHelper = Join-Path $PSScriptRoot "smoke_plant_mcp.py"
+            $rtPyproject = Join-Path $sertorRt "pyproject.toml"
+            & uv run --no-project python $plantHelper $rtPyproject $FromRef 2>&1 |
+                Out-String | Write-Host
+            # the SDK is re-resolved on purpose: `uv sync` alone is conservative and keeps the locked 1.x, so 
+            # nothing would be planted. `--upgrade-package mcp` is the mechanism that hit the field — node Noetix was 
+            # broken by the third command of OUR upgrade procedure, `uv sync --upgrade`, which re-resolved its saf
+            # e 1.x into the new major two days after that major shipped.
+            $plantOut = & uv sync --project .sertor --upgrade-package mcp 2>&1 | Out-String
+            if ($LASTEXITCODE -ne 0) {
+                # Two very different reasons land here, and collapsing them would hide the one that
+                # matters. If the STARTING release already carries the ceiling, `mcp>=2` is simply
+                # unsatisfiable: that release is not affected, so there is nothing to repair on this
+                # jump — say so and let the outcome go `n/a`. Anything else is an impediment.
+                if ($plantOut -match "unsatisfiable|No solution found") {
+                    Write-Host ("[upgrade] note: '$FromRef' already carries the mcp ceiling — " +
+                                "the condition does not exist on this jump")
+                    $script:PlantSkipped = $true
+                } else {
+                    Write-Host $plantOut.TrimEnd()
+                    # Fail-Env: an impediment says nothing about $Ref, which is under test.
+                    Fail-Env "could not plant the mcp>=2 condition (uv sync exit $LASTEXITCODE)"
+                }
+            }
+            if (-not $script:PlantSkipped) {
+                & uv run --project .sertor python -c "import sertor_mcp.server" 2>&1 | Out-Null
+                $script:PlantedBroken = ($LASTEXITCODE -ne 0)
+            }
+            if ($script:PlantedBroken) {
+                Write-Host "[upgrade] planted: the PREVIOUS release cannot import its MCP server (as in the field)"
+            } else {
+                # Not a failure of $Ref: the previous release already survives the new major, so this
+                # jump cannot demonstrate the repair. Say so instead of reporting a green that measured
+                # a condition which was never there.
+                Write-Host "[upgrade] note: the PREVIOUS release imports fine on mcp>=2 — nothing to repair on this jump"
+            }
+        } finally {
+            Pop-Location
+        }
     }
 
     Write-Host "[upgrade] upgrading $FromRef -> $Ref ..."

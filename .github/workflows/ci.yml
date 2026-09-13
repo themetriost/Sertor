@@ -90,6 +90,29 @@ jobs:
       - name: Tests — core (root)
         run: uv run pytest -m "not cloud and not integration"
 
+      # E10-FEAT-070 (feature 128): il server MCP regge DUE linee dell'SDK, e `sertor_mcp/_sdk.py`
+      # sceglie quale usare con un fallback sull'import. Un ramo che nessuna esecuzione attraversa si
+      # rompe in silenzio e lo scopre un ospite: la suite sopra gira sulla linea del lock (1.x), questo
+      # passo ri-esegue i soli test che toccano `sertor_mcp` sulla linea 2.x. `--with` sovrascrive la
+      # versione senza toccare `uv.lock`.
+      #
+      # ANTI-VACUITÀ, e non è cerimonia: `test_sdk_line_matches_the_class` gira per PRIMO e asserisce
+      # che la linea attiva sia davvero cambiata, leggendola dal modulo della classe ottenuta. Senza
+      # quella asserzione un passo che non ha cambiato nulla sarebbe verde e indistinguibile da uno che
+      # ha misurato entrambe le linee.
+      - name: Tests — MCP server sull'ALTRA linea dell'SDK (mcp 2.x)
+        run: >-
+          uv run --with "mcp==2.2.0" pytest
+          tests/unit/test_sdk_compat.py
+          tests/unit/test_mcp_server.py
+          tests/unit/test_mcp_graph_tools.py
+          tests/unit/test_mcp_combined_graph.py
+          tests/unit/test_score_contract.py
+          tests/unit/test_doctor.py
+          tests/unit/test_single_venv_guard.py
+          tests/contract/test_mcp_protocol_e2e.py
+          -m "not cloud and not integration" -v
+
       - name: Tests — sertor (wiki/rag installer)
         run: uv run pytest packages/sertor/tests -m "not cloud and not integration and not hooks_smoke"
 
