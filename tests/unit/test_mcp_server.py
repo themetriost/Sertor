@@ -15,10 +15,12 @@ import sertor_mcp.server as srv
 from sertor_core.adapters.memory.archive import MemoryArchive
 from sertor_core.config.settings import Settings
 from sertor_core.domain.entities import EmbeddedChunk
+from sertor_core.domain.errors import IndexNotFoundError
 from sertor_core.domain.memory import ArchivedSession, TranscriptTurn
 from sertor_core.services.episodic_search import EpisodicSearch
 from sertor_core.services.memory_semantic import SemanticMemoryHit, SemanticMemoryResults
 from sertor_core.services.retrieval import RetrievalFacade
+from sertor_mcp._sdk import ToolError
 from tests.fixtures.mocks import FakeEmbedder, InMemoryStore
 
 COLL = "mcp-test"
@@ -535,3 +537,56 @@ def test_memory_search_default_is_full_text(monkeypatch, tmp_path):
     finally:
         _clear_memory()
         srv._memory_semantic.cache_clear()
+
+
+# --- feature 128: classificazione degli errori verso il client ------------------------------------
+#
+# D-1: un guasto PREVISTO (SertorError) arriva al client con la sua diagnosi; qualunque altra
+# eccezione resta invariata e l'SDK decide. La discriminazione è per TIPO, mai sul testo.
+
+
+def test_anticipated_domain_error_becomes_a_tool_error_with_its_message(monkeypatch, caplog):
+    """T018a — un `SertorError` diventa `ToolError` col messaggio d'origine, e l'evento resta.
+
+    È la riga che l'agente legge: «index not found … run `sertor-rag index .`» è azionabile,
+    «the tool failed» non lo è. Misurato identico sulle due linee dell'SDK (research.md R-2).
+    """
+    diagnosis = "index not found for corpus 'sertor': run `sertor-rag index .`"
+
+    class _NoIndex:
+        def search_code(self, *_a, **_k):
+            raise IndexNotFoundError(diagnosis, collection=COLL)
+
+    _use(monkeypatch, lambda _s=None: _NoIndex())
+    try:
+        with caplog.at_level(logging.ERROR, logger="sertor_core"):
+            with pytest.raises(ToolError) as excinfo:
+                srv.search_code("x")
+        assert diagnosis in str(excinfo.value), "la diagnosi del dominio deve sopravvivere intatta"
+        assert isinstance(excinfo.value.__cause__, IndexNotFoundError), (
+            "la causa originale resta allacciata, per chi legge il traceback lato server"
+        )
+        ops = [getattr(r, "operation", None) for r in caplog.records]
+        assert "mcp.search_code.error" in ops, "l'evento si registra comunque (Principio IX)"
+    finally:
+        srv._facade.cache_clear()
+
+
+def test_unexpected_error_is_not_converted(monkeypatch):
+    """T018b — un'eccezione NON prevista non viene convertita: resta il suo tipo.
+
+    Presidia la scelta di R-2 (mappare solo `SertorError`) invece di lasciarla solo scritta. Se un
+    domani la mappatura si allargasse, questo test diventa rosso — ed è il punto: l'allargamento
+    reintrodurrebbe l'inoltro del testo grezzo che D-1 chiude, e romperebbe i quattro test storici
+    sul re-raise.
+    """
+    class _Boom:
+        def search_code(self, *_a, **_k):
+            raise RuntimeError("qualcosa di inatteso")
+
+    _use(monkeypatch, lambda _s=None: _Boom())
+    try:
+        with pytest.raises(RuntimeError):   # NON ToolError
+            srv.search_code("x")
+    finally:
+        srv._facade.cache_clear()

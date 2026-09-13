@@ -12,6 +12,7 @@ import pytest
 import sertor_mcp.server as srv
 from sertor_core.domain.entities import GraphData, GraphEdge, GraphNode
 from sertor_core.domain.errors import ConfigError, GraphNotFoundError
+from sertor_mcp._sdk import ToolError
 from tests.fixtures.mocks import FakeCodeGraph
 
 CORPUS = "fake"
@@ -92,10 +93,22 @@ def test_unknown_symbol_returns_empty_lists(monkeypatch):
 # --- structured errors (FR-021/FR-022) -----------------------------------------------------------
 
 def test_graph_not_built_propagates_explicit_error(monkeypatch):
+    """FR-021 — not swallowed; since feature 128 it is also DELIVERED to the client.
+
+    The error is an ANTICIPATED failure (`GraphNotFoundError` is a `SertorError`), so `_guard`
+    re-raises it as the SDK's `ToolError`, whose message the SDK puts in the error content for the
+    model to read. The property this test has always guarded — «not swallowed» — is unchanged; what
+    it now ALSO pins is that the diagnosis survives to the client, which is stronger, and is the
+    reason the mapping exists.
+    """
     _use(monkeypatch, lambda _s=None: FakeCodeGraph("vuoto"))
     try:
-        with pytest.raises(GraphNotFoundError):
-            srv.find_symbol("aiuta")                       # the server does NOT swallow it (FR-021)
+        with pytest.raises(ToolError) as excinfo:
+            srv.find_symbol("aiuta")
+        assert isinstance(excinfo.value.__cause__, GraphNotFoundError), (
+            "the domain type must stay attached as the cause, for whoever reads the traceback"
+        )
+        assert str(excinfo.value), "the message must not be empty: it is what the agent reads"
     finally:
         srv._graph.cache_clear()
 
@@ -107,8 +120,13 @@ def test_missing_extra_propagates_actionable_error(monkeypatch):
 
     _use(monkeypatch, lambda _s=None: _NoExtra())
     try:
-        with pytest.raises(ConfigError):
-            srv.find_symbol("aiuta")                       # DA-5: actionable error
+        with pytest.raises(ToolError) as excinfo:          # DA-5: actionable error, now client-side
+            srv.find_symbol("aiuta")
+        assert 'uv add "sertor-core[graph]"' in str(excinfo.value), (
+            "the ACTIONABLE part is the remedy: it must reach the caller verbatim, not be "
+            "replaced by a generic message (feature 128, FR-004)"
+        )
+        assert isinstance(excinfo.value.__cause__, ConfigError)
     finally:
         srv._graph.cache_clear()
 
