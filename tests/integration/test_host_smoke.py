@@ -235,12 +235,21 @@ def test_host_upgrade_smoke(assistant: str):
     # is conditional on the stem appearing at all, and demanding it would assert the fixture rather
     # than the host. This is the guard against this gate quietly becoming vacuous — which is a
     # different failure from it going red, and the one nobody notices.
+    # `mcp-server-imports` (feature 128) is demanded like the rest: the upgrade must leave a host
+    # whose
+    # lock froze the SDK's new major with a server that STARTS. It is the one outcome `health-green`
+    # cannot cover, because `doctor` reports the registration and not the startup — the green is
+    # exactly
+    # what did not see the defect. The scripts print `n/a` when the previous release was already
+    # unaffected, which on the jumps we exercise would mean the condition could not be planted: that
+    # shows up here as a missing name, not as a silent pass.
     required = (
         "pin-moved",
         "host-config-preserved",
         "mcp-invocation-shape",
         "no-stale-divergence",
         "version-derived-from-runtime",
+        "mcp-server-imports",
         "health-green",
     )
     missing = [name for name in required if f"OK   {name}" not in combined]

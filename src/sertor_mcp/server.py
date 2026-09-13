@@ -22,8 +22,6 @@ from collections.abc import Callable
 from functools import lru_cache
 from typing import TypeVar
 
-from mcp.server.fastmcp import FastMCP
-
 from sertor_core.composition import (
     build_agent_context,
     build_episodic_search,
@@ -35,10 +33,13 @@ from sertor_core.composition import (
 )
 from sertor_core.config.settings import Settings
 from sertor_core.domain.entities import RetrievalResult, SymbolHit
+from sertor_core.domain.errors import SertorError
 from sertor_core.observability.logging import log_event
 from sertor_core.observability.scrub import scrub_text
 from sertor_core.services.episodic_search import SearchQuery
 from sertor_core.services.memory_semantic import SemanticMemoryQuery
+
+from ._sdk import ServerClass, ToolError
 
 
 def score_contract(settings: Settings) -> str:
@@ -109,7 +110,7 @@ _SEARCH_COMBINED_DESC = (
     + _SCORE_CONTRACT
 )
 
-mcp = FastMCP(
+mcp = ServerClass(
     "sertor-rag",
     instructions=(
         "Retrieval over an indexed corpus (code + documentation) with the Sertor engine. "
@@ -208,18 +209,38 @@ _T = TypeVar("_T")
 
 
 def _guard(tool: str, body: Callable[[], _T]) -> _T:
-    """Run a tool body; on failure persist an error event (`mcp.<tool>.error`) then RE-RAISE.
+    """Run a tool body; on failure persist an error event (`mcp.<tool>.error`), then surface it.
 
-    Visibility, not swallowing: the exception still reaches the MCP client unchanged, but the
-    failure is also recorded in the observability store (reliability report) instead of vanishing
-    at end-of-turn. This way a broken server (bad key, missing extra, store fault) is not masked
-    when a caller degrades to other tools — the failure leaves a durable trace.
+    Visibility, not swallowing: every failure is recorded in the observability store (reliability
+    report) instead of vanishing at end-of-turn, so a broken server (bad key, missing extra, store
+    fault) is not masked when a caller degrades to other tools.
+
+    **What reaches the client depends on the CLASS of failure**, and the two are deliberately
+    different (feature 128, decision D-1):
+
+    * An **anticipated** failure — any `SertorError`: missing index, unreachable provider, missing
+      extra, locked index — is re-raised as the SDK's `ToolError`, whose message the SDK puts in the
+      error content **for the model to read**. This is the reason the mapping exists: an agent that
+      is told «index not found: run `sertor-rag index .`» can act, one told «the tool failed»
+      cannot. Measured identical on both SDK lines.
+    * **Anything else** is re-raised unchanged, and the SDK decides. On line 2.x it renders a
+      generic message naming the tool and **withholds** the original text — by design, and welcome:
+      the raw text of an internal exception has no business in a client payload (note that
+      `scrub_text` below protects the EVENT, not the payload). On line 1.x the SDK still forwards
+      it; that residual difference is declared in `specs/128-porting-mcp-sdk-v2/data-model.md`
+      rather than papered over.
+
+    Classification is by TYPE, never by inspecting the message: the domain already draws this line
+    (`sertor_core.domain.errors.SertorError` and its subclasses), so a new domain error inherits the
+    behaviour for free.
     """
     try:
         return body()
     except Exception as exc:
         log_event(logging.ERROR, f"mcp.{tool}.error",
                   error=type(exc).__name__, detail=scrub_text(str(exc)))
+        if isinstance(exc, SertorError):
+            raise ToolError(str(exc)) from exc
         raise
 
 

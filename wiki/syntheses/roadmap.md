@@ -25,7 +25,35 @@ sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.m
 **Versione pubblicata: `v0.4.1`** · `master` = `0d16f19` · **PR #272** (docs) ha il go: si mergia.
 Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
 
-> ### 🔴 DA FARE ADESSO — la riparazione del server MCP esiste e nessuno può ottenerla
+> ### 🟡 IMPLEMENTATO, NON ANCORA CONSEGNATO — il server MCP regge entrambe le linee dell'SDK
+>
+> **E10-FEAT-070 è implementata** (2026-09-13, branch `128-porting-mcp-sdk-v2`, non ancora in PR):
+> `sertor_mcp/_sdk.py` prende classe-server e classe-d'errore dalla 2.x o, in mancanza, dalla 1.x;
+> `_guard` mappa i `SertorError` su `ToolError`, così **la diagnosi arriva al client su entrambe le
+> linee** — la parte non meccanica del lavoro, perché v2 trattiene il testo dei crash *by design*.
+> Vincolo `mcp>=1.2,<2.3`. **Misurato:** 100 test verdi su `mcp` 2.2.0 (la linea su cui il server
+> moriva all'import) e sulla 1.x del lock · nuovo test **sul protocollo** con un client MCP vero ·
+> passo CI sull'altra linea con asserzione anti-vacuità su `SDK_LINE` · **settimo esito**
+> `mcp-server-imports` negli smoke, con la condizione dell'ospite colpito **piantata** e l'asserzione
+> che *prima* fallisse. Artefatti: [`specs/128-porting-mcp-sdk-v2/`](../../specs/128-porting-mcp-sdk-v2/).
+>
+> **⚠️ Quello che il merge NON chiude, ed è la metà che riguarda gli ospiti:**
+> **(a)** serve una **release** — chi è agganciato a una versione pubblicata non prende nulla da
+> `master`; **(b)** la **domanda posta in bacheca da due nodi** (Noetix 02/09, VM-WorkingFolder 07/09)
+> è ancora senza risposta da undici giorni. Finché non arrivano, la capacità è implementata e **non
+> consegnata**, e la regola *«una feature è completa solo se è installabile su un ospite»* dice che
+> non è done.
+>
+> **Lasciti tracciati:** **E10-FEAT-076** (i 5 tool che ritornano `dict` non consegnano
+> `structuredContent` — nostro design, identico sulle due linee) · **E10-FEAT-071**, che non è un
+> lascito qualsiasi: è la **condizione** del tetto scelto, perché un tetto senza promemoria è una
+> scadenza che nessuno legge · **E10-FEAT-072** (`doctor` che guarda la registrazione e non l'avvio):
+> *questa feature rimuove la causa del guasto, non la cecità del controllo che non l'ha visto* — e
+> intanto gli smoke d'installazione hanno smesso di essere ciechi, perché ora importano il server.
+>
+> <details><summary>Perché era urgente (contesto storico, 2026-09-13)</summary>
+>
+> ### 🔴 la riparazione del server MCP esisteva e nessuno poteva ottenerla
 >
 > `git tag --contains dd76dc3` → **vuoto**. Il tetto `mcp>=1.2,<2` sta su `master` dal 07/08, ma
 > l'ultima release è la **v0.4.1 del 31/07**: **37 giorni** in cui la riparazione è corretta e
@@ -46,13 +74,16 @@ Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
 > ⚠️ Vincolo standing invariato: il rilascio parte solo col **gate d'aggiornamento** verde sul salto
 > reale (`v0.4.1 → master`).
 >
-> **Dimensione misurata il 2026-09-13 su `mcp` 2.2.0** — la versione attuale, non la 2.0.0 di agosto:
-> **mezza giornata, non «due righe»**. Reggono `instructions=`, `.tool(description=)`, `@tool()` col
-> docstring, `.run(transport='stdio')` e i 10 decoratori. **Non** reggono due cose: il
-> `structured_content` arriva solo ai **5** tool che ritornano `list[dict]` (i 5 che ritornano `dict`,
-> `search_combined` per primo, prendono `None`), e il **messaggio dell'errore si perde**
-> (`UnexpectedToolError` senza il testo del core, che resta solo in `__cause__`) — quest'ultima è da
-> **progettare**, perché tocca la regola «errori MCP = segnale, non rumore».
+> **Dimensione misurata il 2026-09-13 su `mcp` 2.2.0** — la versione attuale, non la 2.0.0 di agosto —
+> e **verificata end-to-end sul protocollo stdio** con un client MCP vero, che era la verifica dichiarata
+> mancante. Reggono handshake, `instructions`, i 10 tool, `.tool(description=)`, `@tool()` col docstring,
+> `.run(transport='stdio')` e il payload dei tool `list[dict]`. **Una sola regressione vera:** il
+> **messaggio dell'errore non arriva più al client** (`isError=True` in entrambe, ma il testo perde il
+> dettaglio del core, che resta solo in `__cause__`) — falsifica il docstring di `_guard` e degrada la
+> regola «errori MCP = segnale, non rumore». È la parte da **progettare**, non da portare.
+> *Rettifica di una misura intermedia:* il `structuredContent` assente sui 5 tool che ritornano `dict`
+> **non** è causato dal porting — è identico su 1.29.0 e 2.2.0, è un limite del nostro design, e vive
+> ora come **E10-FEAT-076** invece di restare nascosto dentro FEAT-070.
 
 ### 🔄 In progress
 

@@ -3,8 +3,8 @@ title: Server MCP sertor-rag
 type: tech
 tags: [mcp, server, sertor-mcp, thin-consumer, retrieval, dogfooding, sertor-core]
 created: 2026-06-08
-updated: 2026-07-23
-sources: ["src/sertor_mcp/server.py", ".mcp.json"]
+updated: 2026-09-13
+sources: ["src/sertor_mcp/server.py", "src/sertor_mcp/_sdk.py", ".mcp.json"]
 ---
 
 # Server MCP sertor-rag
@@ -17,7 +17,8 @@ server del prototipo come superficie attiva (FEAT-MCP, record: [[server-mcp-prod
 
 ## I dieci tool
 
-Istanza `FastMCP("sertor-rag")` con `instructions` che guidano la scelta del tool. Il server espone
+Istanza del server (`ServerClass("sertor-rag")`, ottenuta dal layer di compatibilità — vedi *Le due
+linee dell'SDK* in fondo) con `instructions` che guidano la scelta del tool. Il server espone
 **10 tool**: i **3 di ricerca** + i **4 di navigazione** sul [[code-graph]] + i **3 di memoria**
 conversazionale (E4, gated). I tool di ricerca/grafo delegano al metodo omonimo della
 [[indexing-and-retrieval|facade]] / `build_graph_service()`:
@@ -99,9 +100,21 @@ di `main()` copre facade E grafo (tollerante ad assenze).
 A partire da 2026-06-14, il server implementa una strategia di **segnalazione esplicita degli errori su tre
 strati** (vedi record nel log del 2026-06-14):
 
-1. **Helper `_guard` sui tool:** ogni tool è avvolto in un wrapper che cattura gli errori, emette un evento
-   `mcp.<tool>.error` nello store di osservabilità ([[ports-adapters|FEAT-020]]) e **ri-solleva l'errore
-   invariato** (non lo inghiotte). Così gli errori compaiono nei report e nei pannelli TUI.
+1. **Helper `_guard` sui tool:** ogni tool è avvolto in un wrapper che cattura gli errori ed emette un
+   evento `mcp.<tool>.error` nello store di osservabilità ([[ports-adapters|FEAT-020]]), così compaiono
+   nei report e nei pannelli TUI. **Dal 2026-09-13 (E10-FEAT-070) ciò che arriva al client dipende dalla
+   CLASSE del guasto**, e la distinzione è deliberata:
+   * un guasto **previsto** — qualunque `SertorError`: indice assente, provider irraggiungibile, extra
+     mancante, indice bloccato — viene ri-sollevato come `ToolError` dell'SDK, **e il suo messaggio
+     raggiunge il modello**. È la riga che rende un errore azionabile: «graph not built: run index
+     first» si può seguire, «the tool failed» no;
+   * **ogni altra eccezione** è ri-sollevata invariata e decide l'SDK. Sulla linea 2.x rende un
+     messaggio generico col nome del tool e **trattiene** il testo originale (*by design*, e va bene:
+     il testo grezzo di un'eccezione interna non appartiene a un payload verso il client — nota che
+     `scrub_text` protegge l'**evento**, non il payload). Sulla 1.x lo inoltra ancora: differenza
+     residua, dichiarata.
+   La classificazione è **per tipo**, mai sul testo del messaggio, e riusa la gerarchia che il dominio
+   ha già — quindi un `SertorError` nuovo eredita il comportamento senza che nessuno lo iscriva.
 2. **Self-test allo startup:** `_self_test()` esercita una ricerca end-to-end (embedding + BM25). Un guasto
    (key invalida, extra mancante, store rotto) emerge immediatamente su stderr al reconnect; indice assente
    NON è un errore (degrada a lista vuota per coerenza con la policy della facade).
@@ -155,3 +168,32 @@ Quando una chiamata MCP sembra appesa o il server pare morto:
 - Il pattern che incarna: [[thin-consumer]]. Cosa consuma: [[indexing-and-retrieval]] · [[retrieval-core]].
 - Guida ai tool di ricerca vs grafo: [[retrieval-vs-graph]] — quando usare ricerca (scopri) vs grafo (naviga).
 - A cosa serve: [[dogfooding]]. Naming del corpus: [[corpus-index-naming]].
+
+## Le due linee dell'SDK (dal 2026-09-13, E10-FEAT-070)
+
+L'SDK MCP ha pubblicato la **2.0.0 il 2026-07-28**, rimuovendo `mcp.server.fastmcp` — il modulo su cui
+questo server era costruito. Ogni ospite che ha risolto le dipendenze dopo quella data si è trovato un
+server che **muore all'import**: nessun tool, e `doctor` verde (perché guarda la registrazione in
+`.mcp.json`, non l'avvio — **E10-FEAT-072**, aperta). Tre nodi della federazione lo hanno misurato; due
+sono rimasti senza MCP per oltre un mese.
+
+Il server ora regge **entrambe le linee**, e un solo file lo sa: **`src/sertor_mcp/_sdk.py`** esporta
+`ServerClass`, `ToolError` e `SDK_LINE` (quest'ultimo **derivato** dall'import riuscito, non dichiarato).
+`server.py` non nomina nessuna delle due linee, e un test lo asserisce sul sorgente: un layer che il
+consumatore aggira è peggio di nessun layer, perché **sembra** protezione.
+
+- **Perché entrambe e non solo la nuova:** un tetto protegge solo chi risolve dopo; chi ha la major
+  nuova già congelata nel lock, o è agganciato a una versione pubblicata, non guarisce. Reggere le due
+  linee guarisce **ogni** popolazione aggiornando il solo `sertor-core`.
+- **Vincolo `mcp>=1.2,<2.3`**, pinnato alla minor **misurata** — non `<3`: il limite superiore per major
+  resta, e alzarlo è una decisione. Chi avvisa che è uscita una versione sopra il tetto è
+  **E10-FEAT-071**, e finché non esiste il tetto è sorvegliato dalla memoria umana.
+- **Come è verificato:** un test di contratto parla il **protocollo** con un client MCP reale
+  (handshake, i dieci nomi, payload, contenuto diagnostico di un guasto previsto) e la CI ri-esegue i
+  test MCP sull'**altra** linea — un ramo che nessuna esecuzione attraversa si rompe in silenzio
+  ([[guardia-verde-non-e-una-misura]]). Perché il protocollo e non gli helper interni dell'SDK:
+  [[misura-al-confine-pubblico]].
+- **Il layer è pensato per sparire:** quando la 1.x sarà abbandonata si cancella e `server.py` torna a
+  importare direttamente.
+
+*Contesto del difetto e del perimetro di chi colpisce:* [[difetto-che-solo-un-ospite-nuovo-puo-vedere]].
