@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-07-31
+updated: 2026-09-13
 sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.md", "VERSION", "CHANGELOG.md"]
 ---
 
@@ -20,12 +20,39 @@ sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.m
 > verificato* in fondo).
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-08-07)
+## ⚡ Executive summary (stato al 2026-09-13)
 
-**Versione pubblicata: `v0.4.1`** · `master` = `0d16f19` · **una PR aperta**: #272 (docs, CI verde,
-in attesa del go per il merge).
-Rilascio notificato su tre canali (Release *latest* · bacheca · auto-updater).
-**Da oggi il repo contiene solo produzione: il prototipo è uscito.**
+**Versione pubblicata: `v0.4.1`** · `master` = `0d16f19` · **PR #272** (docs) ha il go: si mergia.
+Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
+
+> ### 🔴 DA FARE ADESSO — la riparazione del server MCP esiste e nessuno può ottenerla
+>
+> `git tag --contains dd76dc3` → **vuoto**. Il tetto `mcp>=1.2,<2` sta su `master` dal 07/08, ma
+> l'ultima release è la **v0.4.1 del 31/07**: **37 giorni** in cui la riparazione è corretta e
+> **irraggiungibile per chiunque installi per versione**. Fra `v0.4.1` e `master` ci sono 19 commit e
+> **un solo cambio funzionale** — il tetto — quindi la patch è pulita.
+>
+> **Due nodi aspettano una risposta da undici giorni**, e la domanda è la stessa: *c'è una release che
+> porta il tetto, o la via ufficiale è il `master` nudo?* **Noetix** (02/09) e **VM-WorkingFolder**
+> (07/09) hanno perso **34 e 36 giorni** di MCP, accorgendosene dalla bacheca e non dal proprio
+> `doctor`. Hanno anche corretto il perimetro che avevamo dichiarato — vedi
+> [[difetto-che-solo-un-ospite-nuovo-puo-vedere]]: *«colpisce solo i nuovi»* era falso, il nostro
+> stesso comando di upgrade ri-risolve, e chi è pinnato a un tag **non guarisce affatto**.
+>
+> **Prossimo passo concreto:** **E10-FEAT-070 con import a doppia via** (`MCPServer` → fallback
+> `FastMCP`, vincolo `mcp>=1.2,<3`) **+ release `v0.4.2`** che porta porting e tetto insieme, **+**
+> una sola risposta in bacheca. La doppia via è la sola forma che guarisce **entrambe** le
+> popolazioni — inclusi i nodi con la `2.0.0` congelata nel lock, **senza chiedere loro nulla**.
+> ⚠️ Vincolo standing invariato: il rilascio parte solo col **gate d'aggiornamento** verde sul salto
+> reale (`v0.4.1 → master`).
+>
+> **Dimensione misurata il 2026-09-13 su `mcp` 2.2.0** — la versione attuale, non la 2.0.0 di agosto:
+> **mezza giornata, non «due righe»**. Reggono `instructions=`, `.tool(description=)`, `@tool()` col
+> docstring, `.run(transport='stdio')` e i 10 decoratori. **Non** reggono due cose: il
+> `structured_content` arriva solo ai **5** tool che ritornano `list[dict]` (i 5 che ritornano `dict`,
+> `search_combined` per primo, prendono `None`), e il **messaggio dell'errore si perde**
+> (`UnexpectedToolError` senza il testo del core, che resta solo in `__cause__`) — quest'ultima è da
+> **progettare**, perché tocca la regola «errori MCP = segnale, non rumore».
 
 ### 🔄 In progress
 
@@ -158,13 +185,18 @@ combinazioni**, 8 esiti su 8.
 
 1. **E2-FEAT-023** — `upgrade` nudo copre una capability sola uscendo verde. È **il settimo difetto** che
    il gate d'aggiornamento non copre, dichiarato fuori copertura perché aperto: chiuderlo porta SC-001 a
-   **7/7** e toglie l'unica deroga. *Il candidato naturale.*
+   **7/7** e toglie l'unica deroga. *Era il candidato naturale finché non è arrivata la coda del campo:
+   ora viene dopo FEAT-070 + release, che ha nodi rotti in attesa.*
 2. **Coda dei riscontri dal campo, ancora aperta** — 🆕 **la prima installazione del nodo *Vestiger*
    (2026-08-07) ha prodotto cinque voci in un colpo**, tutte verificate nel codice lo stesso giorno:
-   **E10-FEAT-070** (portare `sertor_mcp` all'SDK MCP v2 — il tetto `mcp<2` è già su `master`, il
-   porting no) · **E10-FEAT-072** (`doctor` dichiara `mcp pass` guardando la registrazione, non
+   **E10-FEAT-070** (portare `sertor_mcp` all'SDK MCP v2 — **dimensione misurata il 13/09 su 2.2.0:
+   mezza giornata con l'import a doppia via, non «due righe»; vedi il blocco rosso in testa**, è il
+   passo raccomandato) · **E10-FEAT-072** (`doctor` dichiara `mcp pass` guardando la registrazione, non
    l'avvio — *il più importante secondo il segnalante*: è il controllo che avrebbe dovuto vedere il
-   guasto) · **E10-FEAT-071** (nessuna guardia sui vincoli di dipendenza senza tetto di major, la
+   guasto; **peggiorato, misura del 07/09:** dopo un cambio di file indicizzati lo stesso comando dice
+   `mcp warn … restart the MCP server`, cioè **afferma** che un server morto da 36 giorni è running e
+   sposta il lettore dalla domanda giusta — «parte?» — a una sbagliata — «è aggiornato?») ·
+   **E10-FEAT-071** (nessuna guardia sui vincoli di dipendenza senza tetto di major, la
    generalizzazione) · **E10-FEAT-073** (localizzazione del registro wiki applicata a metà) ·
    **E10-FEAT-074** (l'euristica mtime conta gli output che il record stesso produce). Aggiunta lo
    stesso giorno dal dogfood: **E10-FEAT-075** (`distill-floor` nega il merge in base al branch su cui

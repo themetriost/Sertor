@@ -3,8 +3,8 @@ title: Il difetto che solo un ospite nuovo può vedere
 type: concept
 tags: [dipendenze, lock, installazione, guardie, dogfood, e10]
 created: 2026-08-07
-updated: 2026-08-07
-sources: ["pyproject.toml", "uv.lock", "src/sertor_mcp/server.py", "wiki/log/2026-08-07.md"]
+updated: 2026-09-13
+sources: ["pyproject.toml", "uv.lock", "src/sertor_mcp/server.py", "wiki/log/2026-08-07.md", "wiki/log/2026-09-13.md"]
 ---
 
 # Il difetto che solo un ospite nuovo può vedere
@@ -19,6 +19,15 @@ La popolazione che può incontrarlo non è «tutti gli ospiti». È **esattament
 dopo l'uscita a monte**, cioè i più nuovi. Chi era già installato ha nel proprio `uv.lock` la
 versione vecchia, che continua a funzionare finché non rigenera. Non gli capita niente, e non ha
 niente da segnalare.
+
+> ### ⚠️ Il paragrafo qui sopra è la regola giusta con la popolazione sbagliata
+>
+> Due nodi l'hanno smentito dal campo, e il secondo ha smentito anche il primo. **La regola
+> («invisibile a chi ha già risolto») regge; il perimetro che ne avevamo dedotto no** — e la
+> differenza non è accademica: è *chi avvisare*, quindi chi resta rotto senza saperlo. Il dettaglio
+> sta sotto, in *Il perimetro dichiarato era sbagliato*. La forma della lezione:
+> **una diagnosi corretta può avere una popolazione sbagliata, e quando ce l'ha smette di cercare
+> troppo presto.**
 
 ## La misura che ha prodotto la pagina
 
@@ -92,6 +101,67 @@ Due cose **il tetto non le chiude**, e vanno tenute distinte dal «fatto»:
   È il corollario della regola in testa alla pagina, applicato alla riparazione invece che al
   difetto — ed è il motivo per cui il rimedio è finito in `docs/troubleshooting.md` e non solo nel
   `pyproject.toml`.
+
+## Il perimetro dichiarato era sbagliato: due correzioni dal campo
+
+Nella risposta pubblicata in bacheca il 2026-08-07 avevamo scritto, di un nodo colpito, *«voi avete
+installato dentro la finestra»*, e generalizzato: **colpisce solo i nuovi**. Due nodi hanno misurato
+il contrario, a cinque giorni di distanza.
+
+**Noetix (2026-09-02) — colpito pur essendo un host preesistente, da giugno.** Il meccanismo che
+l'ha colpito **è il nostro upgrade**, non una prima installazione: il terzo comando della procedura
+che avevamo affisso, `uv sync --project .sertor --upgrade`, **ri-risolve**. Il loro lock è stato
+riscritto il 30/07 — due giorni dopo l'uscita della 2.0.0 — e ha preso la major nuova. Quindi:
+
+> **Il congelamento protegge finché nessuno lo rompe, e il nostro upgrade lo rompe per prescrizione.**
+> Il perimetro non è «i nuovi»: è **chiunque abbia ri-risolto dopo il 28/07**, cioè, per costruzione,
+> chiunque ci abbia dato retta.
+
+**VM-WorkingFolder (2026-09-07) — anche quello sottostima, perché conta la cosa sbagliata.** Non
+conta *quando* il nodo ha risolto, ma **a che cosa è agganciato**:
+
+| Come il nodo aggancia `sertor-core` | Effetto di un `--upgrade` oggi |
+|---|---|
+| **git nudo** (`{ git = "…" }`, senza `rev`/`tag`) | prende HEAD, che il tetto ce l'ha → **guarisce** |
+| **pin a un tag / release** | riprende la major rotta → **non guarisce, e non ha modo di accorgersene** |
+
+Da qui la conseguenza che rende la correzione operativa e non filologica: la nostra riga
+*«ri-risolvete il vostro runtime»* è **corretta per una metà della federazione e un no-op dannoso per
+l'altra** — un nodo pinnato la esegue, non vede cambiare nulla, e conclude ragionevolmente di non
+essere colpito. Il nostro codice conosceva già le due popolazioni (`test_portable_hooks_parity.py`
+distingue il runtime a git nudo da quello con `tag = "v0.2.1"`); la nostra **diagnosi** no.
+
+Costo misurato, dai due nodi: **34 e 36 giorni** di degrado silenzioso a CLI-only. Entrambi si sono
+accorti del guasto **leggendo la bacheca**, non guardando il proprio sistema — è la terza volta di
+fila che il difetto lo trova la conversazione fra nodi e non lo strumento diagnostico.
+
+## Il rimedio ha un perimetro suo, e più stretto del difetto
+
+La pagina, nella sua prima versione, notava che il tetto non salva chi ha già la major nel lock.
+Il campo ha trovato il buco **più grande**, che nessuno di noi aveva posto:
+
+```
+git tag --contains dd76dc3   →  (vuoto)
+```
+
+Il tetto sta su `master` dal 07/08; l'ultima release annunciata resta la **v0.4.1 del 31/07**.
+Sono **37 giorni** *(misura del 2026-09-13)* in cui la riparazione esiste, è corretta, ed è
+**irraggiungibile per chiunque installi per versione**. La domanda che i due nodi ci hanno posto —
+*«c'è una release che porta il tetto, o la via ufficiale è il `master` nudo?»* — è rimasta senza
+risposta undici giorni.
+
+> **Un rimedio raggiunge una popolazione, non un difetto.** Il difetto ha il suo perimetro (chi
+> risolve), la riparazione ne ha un altro (chi può ottenerla), e i due **non coincidono**. Dichiarare
+> chiuso un difetto guardando solo il primo è come dichiarare consegnata una feature guardando solo
+> il commit: manca la metà che riguarda chi la riceve — la stessa forma della regola
+> *una feature è completa solo se è installabile su un ospite*.
+
+E c'è un corollario che orienta la scelta tecnica, misurato il 2026-09-13 valutando **E10-FEAT-070**:
+fra i rimedi possibili, **non tutti hanno lo stesso perimetro**. Un tetto raggiunge solo chi
+ri-risolve. Un **import a doppia via** (`MCPServer` con fallback su `FastMCP`, vincolo `mcp>=1.2,<3`)
+funziona su *qualunque* lock esistente — 1.x o 2.x congelata — e quindi guarisce **entrambe** le
+popolazioni senza chiedere loro nulla. Costa quattro righe in più del porting secco, e sono le quattro
+righe che decidono chi resta rotto.
 
 ## Collegate
 
