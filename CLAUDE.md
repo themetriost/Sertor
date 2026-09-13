@@ -571,10 +571,15 @@ dogfood sopra. *(Non riconciliare cancellando la prosa: i blocchi sono rigenerat
 è la conoscenza dogfood — vanno tenuti entrambi.)*
 
 <!-- SPECKIT START -->
-**Nessun piano attivo.** Non c'e' una feature in corso da leggere: l'ultima consegnata e'
-**E10-FEAT-060** (`specs/126-ritual-check-perimetro/`, merge `ec03441` — il perimetro di
-`ritual-check` comprende cio' che non e' ancora consegnato). Quando si apre la prossima feature,
-questo blocco torna a puntare al suo `plan.md`.
+**Piano attivo: [`specs/128-porting-mcp-sdk-v2/plan.md`](specs/128-porting-mcp-sdk-v2/plan.md)**
+(E10-FEAT-070 — il server MCP funziona su entrambe le linee dell'SDK). Branch
+`128-porting-mcp-sdk-v2`. Fasi `requirements`/`specify`/`plan` fatte; `clarify` saltata di proposito
+(i tre bivi sciolti dall'utente: D-1/D-2/D-3 in
+[`research.md`](specs/128-porting-mcp-sdk-v2/research.md)). **Perche' esiste:** il server MCP non
+parte dove l'ambiente ha risolto `mcp` 2.x — tre nodi colpiti, due senza MCP da oltre un mese.
+Da leggere prima di toccare l'area: il contratto d'errore verso il client
+([`contracts/tool-error-surface.md`](specs/128-porting-mcp-sdk-v2/contracts/tool-error-surface.md)),
+perche' la parte non meccanica del porting e' **la classificazione degli errori**, non l'import.
 
 Per sapere **dove siamo e cosa fare adesso**, la fonte e' il blocco EXEC di
 `wiki/syntheses/roadmap.md`, non questo paragrafo — che e' una copia e invecchia (vedi

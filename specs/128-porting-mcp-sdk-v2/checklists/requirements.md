@@ -24,7 +24,7 @@
 
 ## Feature Readiness
 
-- [~] All functional requirements have clear acceptance criteria — **vedi nota 2**
+- [x] All functional requirements have clear acceptance criteria — **riserva SCIOLTA in fase `plan`**: R-3 nomina gli 11 test esistenti che presidiano FR-008/FR-009, e **T019b** li esegue per nome invece di affidarli al gate complessivo. La nota 2 resta come storia di come è stata chiusa.
 - [x] User scenarios cover primary flows
 - [x] Feature meets measurable outcomes defined in Success Criteria
 - [x] No implementation details leak into specification

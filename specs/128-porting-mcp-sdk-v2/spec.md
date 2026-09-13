@@ -153,8 +153,12 @@ di prudenza invece dell'unica difesa. Valore reale ma già coperto, quindi ultim
   raggiungibile, componente opzionale mancante, indice bloccato), il server MUST restituire un esito di
   errore il cui contenuto porta il messaggio diagnostico d'origine, su **ogni** linea supportata.
 - **FR-005**: Quando un tool incontra un guasto **non previsto**, il server MUST registrare l'evento di
-  errore corrispondente e restituire un esito di errore che identifica il tool, senza inserire il testo
-  grezzo dell'eccezione nel contenuto restituito al chiamante.
+  errore corrispondente e restituire un esito di errore che identifica il tool.
+- **FR-005a** *(Optional feature — solo dove la linea risolta è la più recente)*: Where la linea nuova
+  dell'SDK è quella risolta, il contenuto restituito al chiamante per un guasto **non previsto** MUST NOT
+  contenere il testo grezzo dell'eccezione. *Sulla linea precedente questo non è ottenibile senza
+  convertire ogni eccezione — scelta scartata in R-2 perché reintrodurrebbe l'inoltro che D-1 chiude e
+  costerebbe la riscrittura di quattro test che presidiano il re-raise: la differenza resta, dichiarata.*
 - **FR-006**: Il vincolo di dipendenza MUST ammettere entrambe le linee supportate fino alla minor
   verificata, in **tutti** i punti in cui è dichiarato, e MUST portare la ragione del limite e la
   condizione per alzarlo.
