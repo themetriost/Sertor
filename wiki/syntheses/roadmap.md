@@ -25,9 +25,9 @@ sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.m
 **Versione pubblicata: `v0.4.1`** · `master` = `0d16f19` · **PR #272** (docs) ha il go: si mergia.
 Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
 
-> ### 🟡 IMPLEMENTATO, NON ANCORA CONSEGNATO — il server MCP regge entrambe le linee dell'SDK
+> ### 🟢 CONSEGNATO — il server MCP regge entrambe le linee dell'SDK
 >
-> **E10-FEAT-070 è implementata** (2026-09-13, branch `128-porting-mcp-sdk-v2`, non ancora in PR):
+> **E10-FEAT-070 su `master`** (2026-09-13, merge `4cf2490`, PR #273, CI 9/9 verde) **e rilasciata in `v0.4.2`**:
 > `sertor_mcp/_sdk.py` prende classe-server e classe-d'errore dalla 2.x o, in mancanza, dalla 1.x;
 > `_guard` mappa i `SertorError` su `ToolError`, così **la diagnosi arriva al client su entrambe le
 > linee** — la parte non meccanica del lavoro, perché v2 trattiene il testo dei crash *by design*.
@@ -37,12 +37,15 @@ Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
 > `mcp-server-imports` negli smoke, con la condizione dell'ospite colpito **piantata** e l'asserzione
 > che *prima* fallisse. Artefatti: [`specs/128-porting-mcp-sdk-v2/`](../../specs/128-porting-mcp-sdk-v2/).
 >
-> **⚠️ Quello che il merge NON chiude, ed è la metà che riguarda gli ospiti:**
-> **(a)** serve una **release** — chi è agganciato a una versione pubblicata non prende nulla da
-> `master`; **(b)** la **domanda posta in bacheca da due nodi** (Noetix 02/09, VM-WorkingFolder 07/09)
-> è ancora senza risposta da undici giorni. Finché non arrivano, la capacità è implementata e **non
-> consegnata**, e la regola *«una feature è completa solo se è installabile su un ospite»* dice che
-> non è done.
+> **La consegna è completa, e le due metà sono state fatte entrambe:** la `v0.4.2` porta il porting
+> agli ospiti (chi è agganciato a una versione pubblicata non poteva prenderlo da `master`), e la
+> **risposta ai due nodi** che aspettavano da undici giorni è stata pubblicata in bacheca — comprensiva
+> della **correzione del perimetro** che avevamo dichiarato sbagliato ad agosto.
+>
+> ⚠️ **Resta aperto E10-FEAT-072:** `doctor` continua a leggere la registrazione e non l'avvio, quindi
+> può ancora dire verde su un server che non parte. Questa feature ha rimosso la causa del guasto, non
+> la cecità del controllo che non l'ha visto — e intanto gli smoke d'installazione hanno smesso di
+> essere ciechi, perché ora importano il server.
 >
 > **Lasciti tracciati:** **E10-FEAT-076** (i 5 tool che ritornano `dict` non consegnano
 > `structuredContent` — nostro design, identico sulle due linee) · **E10-FEAT-071**, che non è un
