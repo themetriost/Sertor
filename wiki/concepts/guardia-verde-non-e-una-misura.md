@@ -3,7 +3,7 @@ title: Una guardia verde non è una misura
 type: concept
 tags: [guardie, verifiche, vacuita, fixture, misura, e15]
 created: 2026-07-30
-updated: 2026-08-07
+updated: 2026-09-13
 sources: ["specs/125-smoke-di-upgrade/spec.md", "scripts/smoke.ps1", "scripts/smoke.sh", ".github/workflows/ci.yml", "wiki/log/2026-07-30.md", "tests/unit/test_vcs_worktree.py", "src/sertor_core/services/doctor.py", "src/sertor_core/composition.py"]
 ---
 
@@ -140,6 +140,37 @@ Due cose la rendono riconoscibile, e vale la pena tenerle:
   disciplina del proxy dichiarato di [[ritual-check]], e la differenza fra le due righe dello stesso
   report è la lezione intera: *una procura dichiarata è onesta, una procura taciuta è una bugia
   strutturale*.
+
+### Il peggioramento: la procura taciuta diventa una procura che *prescrive* (2026-09-07)
+
+La quarta forma, un mese dopo, ha mostrato un grado peggiore — misurato dal nodo **VM-WorkingFolder**
+su un server MCP morto da 36 giorni. Dopo una modifica a file indicizzati, lo stesso comando non dice
+più `pass` in silenzio:
+
+```
+mcp   warn   (registered=True)
+      the index changed; the running MCP server may serve stale content
+      → restart the MCP server so it reloads the refreshed index
+```
+
+Lo strumento **nomina «the running MCP server»** e **ordina di riavviarlo**. Quel server non è running:
+è morto all'import, e un riavvio non lo farebbe partire. La gradazione è la cosa da tenere:
+
+| | cosa fa al lettore |
+|---|---|
+| **`pass` silenzioso** (il caso di agosto) | omette un'informazione — chi legge **può ancora sospettare** |
+| **`warn` che prescrive** (questo caso) | **afferma** che il server esiste e funziona, e sposta il lettore dalla domanda giusta («parte?») a una sbagliata («è aggiornato?») |
+
+> **Un consiglio derivato da un fatto non verificato è peggio del silenzio sullo stesso fatto.** Il
+> `pass` taceva; il `warn` deduce dalla procura (`registered=True`) uno stato del mondo (*il server
+> gira*) e da quello un rimedio (*riavvialo*) — costruendo due piani sopra un'assunzione che nessuno
+> misura. Chi lo legge non ha più modo di arrivare alla domanda vera.
+
+È la ragione per cui **E10-FEAT-072** è più urgente di come era tracciata: non stiamo *omettendo* una
+misura, stiamo **prescrivendo** su un fatto che non abbiamo guardato. E la beffa, registrata in
+[[difetto-che-solo-un-ospite-nuovo-puo-vedere]]: in `mcp` 2.x il `ModuleNotFoundError` dell'import è
+**didattico** — nomina la classe nuova, la guida di migrazione e il rimedio. L'SDK diceva esattamente
+ciò che il nostro `doctor` non dice; nessuno l'ha letto perché nessuno eseguiva l'import.
 
 Vale anche la provenienza: Vestiger nomina **tre occorrenze in due giorni su tre strumenti diversi**
 (il nostro `doctor`, l'`install` di Acta che dichiara `config: scritto` su una bacheca inesistente, e
