@@ -237,7 +237,7 @@ def test_host_upgrade_smoke(assistant: str):
     # different failure from it going red, and the one nobody notices.
     # `mcp-server-imports` (feature 128) is demanded like the rest: the upgrade must leave a host
     # with a server that STARTS. It is the one outcome `health-green` cannot cover, because `doctor`
-    # reports the registration and not the startup — the green is exactly what did not see the defect.
+    # reports the registration and not the startup — the green is exactly what did not see it.
     #
     # It is demandable on EVERY jump only since 2026-09-16. Before that the scripts printed `n/a`
     # when the starting release was unaffected, which tied the outcome to a condition that the fix
