@@ -22,8 +22,14 @@ sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.m
 <!-- EXEC:START -->
 ## ⚡ Executive summary (stato al 2026-09-16)
 
-**Versione pubblicata: `v0.4.2`** (Release *latest*, 2026-09-13) · `master` = `a0c3e5f` (tag `v0.4.2`) ·
-**nessuna PR aperta**. Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
+**Versione pubblicata: `v0.4.2`** (Release *latest*, 2026-09-13) · **nessuna PR aperta**.
+Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
+
+> *Perché qui non c'è l'hash di `master`.* Il campo c'era, e il 2026-09-16 è stato trovato falso: diceva
+> `0d16f19` mentre `master` era quattro commit più avanti. Non è un campo da aggiornare meglio — è un
+> campo che **il merge stesso falsifica**, incluso il merge che lo corregge, e che nessuna decisione usa.
+> Rimosso invece che riparato: `git rev-parse master` lo dà in un comando.
+> Vedi [[riassunto-invecchia-senza-riconciliatore]], decima istanza.
 
 > ### 🟢 CONSEGNATO — il server MCP regge entrambe le linee dell'SDK
 >
