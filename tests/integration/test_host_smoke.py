@@ -236,13 +236,17 @@ def test_host_upgrade_smoke(assistant: str):
     # than the host. This is the guard against this gate quietly becoming vacuous — which is a
     # different failure from it going red, and the one nobody notices.
     # `mcp-server-imports` (feature 128) is demanded like the rest: the upgrade must leave a host
-    # whose
-    # lock froze the SDK's new major with a server that STARTS. It is the one outcome `health-green`
-    # cannot cover, because `doctor` reports the registration and not the startup — the green is
-    # exactly
-    # what did not see the defect. The scripts print `n/a` when the previous release was already
-    # unaffected, which on the jumps we exercise would mean the condition could not be planted: that
-    # shows up here as a missing name, not as a silent pass.
+    # with a server that STARTS. It is the one outcome `health-green` cannot cover, because `doctor`
+    # reports the registration and not the startup — the green is exactly what did not see the defect.
+    #
+    # It is demandable on EVERY jump only since 2026-09-16. Before that the scripts printed `n/a`
+    # when the starting release was unaffected, which tied the outcome to a condition that the fix
+    # itself destroys: from `v0.4.2` on, the previous release carries the ceiling, the condition is
+    # unplantable by construction, and the outcome was permanently `n/a` — read here as a missing
+    # name, so `master` went red on every push. The scripts now assert the PERMANENT half ("the
+    # server starts after the upgrade", which still catches a regression) and annotate whether a
+    # repair was actually observed. A guard whose premise is the unrepaired state dies of its own
+    # success; this list must only ever demand claims that outlive the defect.
     required = (
         "pin-moved",
         "host-config-preserved",
