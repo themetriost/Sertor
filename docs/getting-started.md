@@ -47,7 +47,7 @@ uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sert
 
 > **Latest vs pinned release.** The commands above install from the repository's default branch
 > (latest). To install a specific **stable release** instead, pin its tag — add `@<tag>` before the
-> fragment, e.g. `git+https://github.com/themetriost/Sertor@v0.3.1#subdirectory=packages/sertor`. The
+> fragment, e.g. `git+https://github.com/themetriost/Sertor@v0.4.2#subdirectory=packages/sertor`. The
 > current tags are listed on the
 > [releases page](https://github.com/themetriost/Sertor/releases); pinning is the recommended choice if
 > you want a reproducible setup.

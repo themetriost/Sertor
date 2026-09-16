@@ -3,7 +3,7 @@ title: Un riassunto invecchia quando cresce ciò che descrive
 type: concept
 tags: [deriva, documentazione, principio-xiv, lint-semantico, problema-aperto, e10, e13]
 created: 2026-07-28
-updated: 2026-07-31
+updated: 2026-09-16
 sources: ["src/sertor_core/config/settings.py", "CLAUDE.md", "wiki/log/2026-07-27.md", "wiki/log/2026-07-28.md", "wiki/log/2026-07-31.md", "requirements/debito-tecnico/epic.md", "wiki/syntheses/roadmap.md"]
 ---
 
@@ -27,7 +27,7 @@ che vive in più posti va **derivato**, e dove derivarlo è impossibile serve un
 nominato** che **dichiari** la divergenza. Conservare una copia stantia può essere giusto; conservarla
 **in silenzio** no.
 
-## Nove superfici, nove istanze reali
+## Dieci superfici, dieci istanze reali
 
 | # | Superficie | Istanza |
 |---|---|---|
@@ -40,6 +40,8 @@ nominato** che **dichiari** la divergenza. Conservare una copia stantia può ess
 | 7 | **Blocco SPECKIT nel `CLAUDE.md`** ↔ stato effettivo | **nuova, 2026-07-31** — il blocco dichiarava attivo un **vincolo sciolto** (E15-FEAT-012 mergiato il 30/07 con v0.4.0 rilasciata) e un **branch chiuso** (126-ritual-check-perimetro mergiato il 31/07); un controllo automatico l'ha colto *(non era un lint umano, era un harness)*. È la prima volta che una **superficie always-loaded entra in una checklist automatica** — il danno più grave di tutte perché la fonte di errore non è il vago incombing, è la lettura sistematica d'ogni sessione. Vedi sezione La settima |
 | 8 | **Sezione *«Riferirsi al prototipo»* nel `CLAUDE.md`** ↔ `.mcp.json` + indici su disco | **nuova, 2026-07-31 — la seconda nello stesso file in un giorno.** Diceva che il server MCP è puntato sul prototipo (`SERTOR_CORPUS=prototype`), mentre `.mcp.json` dice `sertor` e **`.index-prototype` non esiste**: la prosa istruiva a interrogare via RAG un corpus **non indicizzato**. Emersa misurando tutt'altro — il perimetro della migrazione di ProtoSertor. Vedi sezione *L'ottava* |
 | 9 | **Riga di backlog (`epic.md`)** ↔ decisione presa altrove | **nuova, 2026-08-05 — e va nel verso opposto a tutte le precedenti.** La riga `E14-FEAT-002` dichiarava *«CASA DECISA (2026-07-14): `sertor-flow` — fold nel pacchetto»*, mentre la decisione **D3 del 31/07** aveva stabilito il contrario (SpecLift/SpecAudit sono di *Sinthari*, smettiamo di vendorare). Vedi sezione *La nona* |
+
+| 10 | **Sezione *«Status / in sviluppo»* del `README`** ↔ decisione di backlog | **nuova, 2026-09-16 — e la più economica da cogliere di tutte.** Il `README` prometteva *«In development / next: … PyPI distribution»* mentre, **nello stesso file**, la sezione d'installazione dichiarava *«there is no PyPI package»*. La copia invecchiata è una riga di **roadmap** trapiantata in un documento che non è la roadmap: `E2-FEAT-006` è *Should (planned)* ma **ferma per decisione utente dal 2026-07-17**, e la doc utente ha scelto apposta di non promettere («none is planned for now»). Vedi sezione *La decima* |
 
 ## La nona: quando è la FONTE a invecchiare, non il riassunto
 
@@ -145,13 +147,42 @@ lettura.
 > «aggiorna la copia»; è «il blocco non deve diventare un fatto** (solo una referenza all'artefatto
 > vero, la PR, la branch, il commit).
 
+## La decima: la contraddizione che sta dentro un solo file
+
+Le nove precedenti hanno tutte bisogno di **due artefatti** per essere viste: una copia e la sua fonte,
+in file diversi, spesso in cartelle diverse — ed è precisamente per questo che nessuna guardia le coglie
+a costo zero. La decima no. Il `README` prometteva un pacchetto PyPI in una sezione e **ne negava
+l'esistenza in un'altra sezione dello stesso file**, a settanta righe di distanza. Non serviva conoscere
+la fonte di verità: bastava **leggere il documento intero**, che è esattamente ciò che nessuno rifà dopo
+la prima stesura.
+
+Due cose che questa istanza aggiunge, e che le altre nove non dicevano:
+
+1. **La superficie a rischio ha un nome ricorrente: la sezione *«Status / next / in sviluppo»*.** È una
+   riga di **roadmap trapiantata** in un documento che non è la roadmap, e quindi nessuno la riconcilia
+   quando il backlog si muove. Peggio di un riassunto descrittivo: è una **promessa sul futuro**, e
+   niente contraddice una promessa — solo la decisione che l'ha sospesa, e le decisioni non passano dal
+   `README`. *(Qui la decisione era del **2026-07-17**: la riga è sopravvissuta due mesi.)*
+2. **Dà a [[roadmap|E13-FEAT-014]] il suo caso più facile.** La guardia anti-drift della doc utente è
+   progettata per confrontare doc ↔ asset spedito (superfici 3 e 4). Ma un controllo che cerca
+   **affermazioni incompatibili dentro lo stesso file** — «no PyPI package» contro «next: PyPI
+   distribution» — non ha bisogno di conoscere alcuna fonte di verità, e avrebbe colto questa da solo.
+   *Il presidio più economico non è sapere la verità: è accorgersi che il documento non è d'accordo con
+   se stesso.*
+
+Nota su cosa **non** è il difetto: la divergenza fra backlog («Should, planned, ferma») e doc utente
+(«non promettiamo») è **deliberata e corretta** — l'intenzione interna non è un impegno verso l'utente.
+Il difetto era che il `README` ne dichiarava **entrambe le versioni**, come se fossero due fatti.
+
 ## Cosa la chiuderebbe
 
 - **[[roadmap|E10-FEAT-049]]** — il lint semantico guarda i **riferimenti entranti**: indice ↔ pagina
   puntata, e `sources:` ↔ data dell'ultimo commit. Due prototipi già scritti (~40 righe), quattro casi
   di prova reali. Copre le superfici 1, 2, 5.
 - **[[roadmap|E13-FEAT-014]]** — guardia deterministica anti-drift della **doc utente** (richiesta del
-  nodo *Acta*). Copre 3 e 4. *È la stessa forma di 049: conviene progettarle insieme.*
+  nodo *Acta*). Copre 3 e 4 — e, con il controllo di **coerenza interna** suggerito dalla decima,
+  anche quella, che è la sola raggiungibile senza conoscere la fonte di verità. *È la stessa forma di
+  049: conviene progettarle insieme.*
 - **Scoperto: nessuna delle due copre la 6.** La prosa `CLAUDE.md` non ha né un indice che la punti né
   un `sources:` da confrontare. Il presidio praticabile è **strutturale, non diagnostico**: non
   scrivere nel file always-loaded ciò che è derivabile da una fonte a due `Read` di distanza —

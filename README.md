@@ -3,6 +3,95 @@
 > Give **any project** a living, queryable knowledge of itself — where **code and documentation answer
 > as one**. Portable, local-first, no lock-in.
 
+## Install
+
+**Prerequisites:** **Python ≥ 3.11**, **[`uv`](https://github.com/astral-sh/uv)**, and network access to
+GitHub — Sertor ships via `git+url`, there is **no PyPI package**. Run every command **in the root of
+your target repository**. Every installer is **non-destructive**, **idempotent**, and **`install ≠ run`**:
+nothing is indexed until you ask.
+
+Three **orthogonal** capabilities — install only the ones you want.
+
+### 1. RAG — indexing, search, MCP server
+
+```powershell
+uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install rag --backend local
+```
+
+`--backend local` selects the zero-config **`glove`** embedder — **no secrets needed**. For **GitHub
+Copilot CLI** add `--assistant copilot-cli` (the default is Claude Code). For Azure OpenAI embeddings
+use `--backend azure`, then fill the credentials with a guided prompt (no editor):
+
+```powershell
+uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor configure --backend azure
+```
+
+**Then index** — an explicit step, install never indexes. The first run on `--backend local` downloads
+the GloVe vectors once (~822 MB, cached per machine, offline afterwards):
+
+```powershell
+uv run --project .sertor sertor-rag index .
+uv run --project .sertor sertor-rag doctor    # verify: config, provider, index, MCP
+```
+
+Finally reload your assistant so the `sertor-rag` MCP server comes up — on Claude Code, approve the
+server added to `.mcp.json`; on Copilot CLI, run `/mcp reload` and check with `/mcp show`.
+
+> **Why `uv run --project .sertor`?** After `install rag` the runtime CLIs live in `.sertor/.venv` and
+> are **not on `PATH`**. `--project` runs that runtime while keeping your current directory, so
+> `index .` indexes the project root — do **not** use `--directory`, which would index `.sertor` itself.
+> A bare `sertor-rag …` failing means *"not on `PATH`"*, **not** *"not installed"*.
+
+### 2. Wiki — the cumulative LLM Wiki system
+
+```powershell
+uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor install wiki
+```
+
+Useful flags: `--language it` · `--source-dirs src,docs` · `--assistant copilot-cli`.
+
+### 3. `sertor-flow` — the development method (SDLC)
+
+A **separate, standalone** installer, orthogonal to the RAG (no dependency on `sertor-core`):
+
+```powershell
+uvx --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor-flow" sertor-flow install
+```
+
+### Pin a release, upgrade, uninstall
+
+The commands above track the repository's **default branch**. For a reproducible setup, pin a **stable
+release tag** instead — add `@<tag>` before the fragment:
+
+```powershell
+uvx --from "git+https://github.com/themetriost/Sertor@v0.4.2#subdirectory=packages/sertor" sertor install rag --backend local
+```
+
+Current tags are on the [releases page](https://github.com/themetriost/Sertor/releases). To refresh an
+existing install (and rebuild the corpus with the new code):
+
+```powershell
+uvx --refresh --from "git+https://github.com/themetriost/Sertor#subdirectory=packages/sertor" sertor upgrade
+uv sync --project .sertor --upgrade
+uv run --project .sertor sertor-rag index .
+uv run --project .sertor sertor-rag doctor
+```
+
+`sertor uninstall` (and `sertor-flow uninstall`) reverse the install; `wiki/` is preserved unless you
+pass `--purge-wiki`. Every verb accepts `--dry-run`.
+
+### Where to go next
+
+- **[docs/getting-started.md](docs/getting-started.md)** — the guided path, ending in a **first query
+  that shows the code+doc fusion**.
+- **[docs/install.md](docs/install.md)** — the full reference: every flag, knob, hook, and the host
+  root hygiene rules. Per-assistant guides: **[Claude](docs/install-claude.md)** ·
+  **[Copilot](docs/install-copilot.md)**.
+- **[docs/why-sertor.md](docs/why-sertor.md)** — the plain-language *"what it is and why"*, no jargon.
+- A worked **[tutorial](docs/tutorial.md)**, how to **[search well](docs/retrieval.md)**, and
+  **[troubleshooting](docs/troubleshooting.md)** — index: **[docs/README.md](docs/README.md)**. What
+  changed is in the **[changelog](CHANGELOG.md)**.
+
 ## Why Sertor: code and docs, fused
 
 Every other tool makes your assistant read **either** the code **or** the docs. Sertor's differentiator
@@ -58,21 +147,6 @@ domain**. The **library is the product**; the CLI and MCP server are thin vehicl
   behind abstract *ports*. This decoupling is binding — see the
   [constitution](.specify/memory/constitution.md).
 
-## Get started
-
-**One path, from nothing to your first retrieval:** **[docs/getting-started.md](docs/getting-started.md)**
-— prerequisites → install → index → a first query that shows the code+doc fusion. It is host-agnostic
-(Claude Code **and** GitHub Copilot CLI).
-
-**New to the idea?** The plain-language *"what it is and why"* — no jargon, no code — is
-**[docs/why-sertor.md](docs/why-sertor.md)**.
-
-For everything else — a worked [tutorial](docs/tutorial.md), the per-assistant guides
-([Claude](docs/install-claude.md) · [Copilot](docs/install-copilot.md)), the full
-[reference](docs/install.md), how to [search well](docs/retrieval.md), and
-[troubleshooting](docs/troubleshooting.md) — see the **[documentation index](docs/README.md)**. What
-changed is in the **[changelog](CHANGELOG.md)**.
-
 ## Status
 
 **Actively under construction.** Available today on `master`:
@@ -95,7 +169,9 @@ changed is in the **[changelog](CHANGELOG.md)**.
   feeding wiki distillation.
 - ✅ **Observability** — persistent local event store, reports, and a TUI panel (`sertor-rag observe`).
 
-In development / next: multi-assistant distribution (Codex), PyPI distribution.
+In development / next: multi-assistant distribution (Codex). **A PyPI package is not planned for
+now** — Sertor is distributed exclusively via `git+url`; if that changes it will be announced in a
+release, not promised here in advance.
 
 ## Development
 
