@@ -522,8 +522,16 @@ function Assert-UpgradeOutcomes([string]$cap) {
     #    the server died at import and the assistant received NO tools — while `doctor` stayed green,
     #    because its `mcp` check reads the registration in `.mcp.json`, not the startup. So this
     #    outcome cannot be folded into `health-green`: the green is precisely what failed to see it.
-    #    Only meaningful if the condition was planted (see Invoke-UpgradeFlow): if the previous
-    #    release was already fine, we say so rather than claiming a repair we did not observe.
+    #    ⚠️ THE OUTCOME IS ASSERTED ON EVERY JUMP, and the planting decides WHICH CLAIM it supports —
+    #    not whether it runs. It used to print `n/a` when the starting release was unaffected, and that
+    #    made it EXPIRE: from `v0.4.2` on, the previous release carries the ceiling, so the condition is
+    #    unplantable BY CONSTRUCTION and the outcome went permanently `n/a` — which the wrapper reads as
+    #    a missing name, painting `master` red on every push (measured 2026-09-16, first push after the
+    #    tag). The two claims were conflated: "an affected host was HEALED" is historical and expires the
+    #    moment the fix ships; "after the upgrade the server STARTS" is permanent and still catches a
+    #    regression. We assert the permanent one always and annotate which of the two was observed.
+    #    A repair makes its own defect irreproducible: a guard whose premise is the unrepaired state
+    #    dies of its own success.
     #    ⚠️ WHAT THIS OUTCOME DOES AND DOES NOT DISCRIMINATE. It asserts that an affected host ends
     #    the upgrade with a server that starts — which is what the host cares about — but two
     #    different mechanisms can satisfy it: the CEILING pulling the SDK back to the old line, or
@@ -539,16 +547,20 @@ function Assert-UpgradeOutcomes([string]$cap) {
         } finally {
             Pop-Location
         }
+        # The outcome is ASSERTED EITHER WAY; only the CLAIM it supports changes with the planting.
+        # The diagnosis on failure differs, so it is chosen before asserting, not after.
         if ($script:PlantedBroken) {
-            Assert-Outcome "mcp-server-imports" $impOk `
-                ("the MCP server still cannot be imported AFTER the upgrade, so the host keeps " +
-                 "receiving no tools: $($impOut.Trim())")
-        } elseif ($impOk) {
-            Write-Host "[upgrade] n/a  mcp-server-imports (the previous release was not affected: nothing was repaired here)"
+            $impWhy = ("the MCP server still cannot be imported AFTER the upgrade, so the host keeps " +
+                       "receiving no tools: $($impOut.Trim())")
         } else {
-            Assert-Outcome "mcp-server-imports" $false `
-                ("the MCP server cannot be imported after the upgrade, and it was NOT broken " +
-                 "before: this jump BREAKS it: $($impOut.Trim())")
+            $impWhy = ("the MCP server cannot be imported after the upgrade, and it was NOT broken " +
+                       "before: this jump BREAKS it: $($impOut.Trim())")
+        }
+        Assert-Outcome "mcp-server-imports" $impOk $impWhy
+        if ($script:PlantedBroken) {
+            Write-Host "[upgrade]      ^ planted: an AFFECTED host ended the upgrade with a server that STARTS (a repair was observed)"
+        } else {
+            Write-Host "[upgrade]      ^ not plantable: '$FromRef' already carries the ceiling — this asserts NO REGRESSION, not a repair"
         }
     }
 

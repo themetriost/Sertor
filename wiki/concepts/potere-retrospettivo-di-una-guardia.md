@@ -3,8 +3,8 @@ title: Il potere retrospettivo di una guardia
 type: concept
 tags: [guardie, verifiche, criteri-accettazione, misura, e10, e15]
 created: 2026-07-29
-updated: 2026-07-29
-sources: ["specs/124-copertura-changeset-scan/spec.md", "specs/125-smoke-di-upgrade/spec.md", "requirements/fedelta-dogfood/smoke-di-upgrade/requirements.md", "wiki/log/2026-07-29.md"]
+updated: 2026-09-16
+sources: ["specs/124-copertura-changeset-scan/spec.md", "specs/125-smoke-di-upgrade/spec.md", "requirements/fedelta-dogfood/smoke-di-upgrade/requirements.md", "wiki/log/2026-07-29.md", "scripts/smoke.sh", "scripts/smoke.ps1", "tests/integration/test_host_smoke.py", "wiki/log/2026-09-16.md"]
 ---
 
 # Il potere retrospettivo di una guardia
@@ -83,6 +83,55 @@ c'era.
 E la parte scomoda: senza calcolarlo avrei consegnato **4 su 7 chiamandolo fatto**, con cinque
 asserzioni che *sembravano* esaustive. Il conteggio è costato dieci minuti e ha cambiato il risultato.
 
+## La guardia che muore del proprio successo (2026-09-16)
+
+Il criterio di questa pagina — *ancora la guardia ai difetti già avvenuti* — ha un rovescio che si paga
+più tardi, e va scritto qui perché **colpisce esattamente chi lo applica bene**.
+
+Ancorare una verifica a un difetto reale significa, spesso, **riprodurne la condizione**: piantare lo
+stato rotto e asserire che il rimedio lo guarisca. È la forma più onesta di guardia — nessuna vacuità
+possibile, perché se la condizione non si pianta l'asserzione non c'è. Ma la condizione appartiene al
+**mondo non riparato**, e il rilascio del rimedio la cancella. Da quel momento la guardia non misura
+più: *non può*.
+
+**L'istanza, misurata.** L'esito `mcp-server-imports` del gate d'aggiornamento (E10-FEAT-070) pianta la
+condizione dell'ospite colpito dalla major 2.0.0 dell'SDK MCP — runtime pinnato alla release precedente,
+SDK forzato alla major nuova — e asserisce che dopo l'`upgrade` il server parta. Ha funzionato
+perfettamente **una volta**: sul salto `v0.4.1 → master`, dove la release di partenza era davvero
+affetta. Poi è uscita la **v0.4.2**, che *porta il tetto*. Da lì la release precedente non è più
+affetta, la condizione è **impiantabile per costruzione**, l'esito esce `n/a` — e la lista anti-vacuità
+del wrapper, che lo pretende **per nome**, lo legge come esito mancante. Risultato: **`master` rosso a
+ogni push**, su un difetto che non esiste.
+
+Il dettaglio che rende la trappola difficile da vedere: **il rilascio che l'ha rotta non ha eseguito la
+guardia**. Il tag `v0.4.2` è stato creato *dopo* l'ultimo run verde, quindi nulla ha girato con la
+release nuova come punto di partenza. Il primo push successivo — una modifica al `README`, che con tutto
+questo non c'entra nulla — è stato il primo a rivelarlo, e sembrava esserne la causa.
+
+**La distinzione che scioglie il nodo.** L'esito confondeva due affermazioni:
+
+| Affermazione | Natura | Vive quanto |
+|---|---|---|
+| «un ospite affetto è stato **guarito** da questo upgrade» | storica | fino al rilascio del rimedio |
+| «dopo l'upgrade il server **parte**» | permanente | per sempre, e coglie una regressione |
+
+Il rimedio è **asserire sempre la permanente** e *annotare* quale delle due si è osservata — non
+scegliere quale asserire. La guardia mantiene i denti, l'annotazione resta onesta su cosa ha misurato
+davvero (`not plantable: la release di partenza porta già il tetto — questo asserisce NESSUNA
+REGRESSIONE, non una riparazione`), e non c'è più nulla che scada.
+
+> **La regola operativa, da aggiungere ai cinque passi qui sopra:**
+> **6. Pretendi solo affermazioni che SOPRAVVIVONO al difetto.** Se ciò che la guardia esige esiste solo
+> finché il difetto non è riparato, la guardia ha una data di scadenza che nessuno ha scritto — e scade
+> nel momento del successo, quando meno la si guarda.
+
+**Nota su come ci si arriva comunque.** Questa forma era stata **vista e scartata** il 2026-09-13, fra i
+candidati distill respinti: *«una riparazione rende irriproducibile il difetto che ripara — vero, ma è un
+corollario di [[punto-di-partenza-non-verificato]], non un'entità a sé»*. Tre giorni dopo ha tenuto rossa
+la CI del ramo principale. Il giudizio non era sbagliato sul *contenuto* — è davvero un corollario — ma lo
+era sulla **conseguenza**: un corollario che rompe un gate non è una nota a piè di pagina. *Scartare un
+candidato è una decisione che va rivista quando il candidato si presenta con un conto.*
+
 ## Parentele
 
 - [[esito-sull-host-vs-forma-dell-asset]] — dice **dove** guardare (l'esito sull'ospite, non la forma
@@ -94,3 +143,9 @@ asserzioni che *sembravano* esaustive. Il conteggio è costato dieci minuti e ha
   bersaglio sia accettabile è **giudizio**.
 - [[daily-distill-floor]] — parente per la lezione sul costo: una guardia troppo cara si impara ad
   aggirarla, quindi il bersaglio va scelto anche in funzione di quanto la verifica costa a ogni giro.
+- [[guardia-verde-non-e-una-misura]] — il guasto speculare: là il verde non ha verificato nulla, qui il
+  **rosso** non segnala nulla. Entrambi consumano la fiducia nel gate, e un gate stabilmente rosso è
+  quello che si impara a ignorare per primo.
+- [[il-rimedio-ricade-nel-difetto]] — là il rimedio riproduce la forma del difetto; qui il rimedio
+  **cancella la condizione** su cui la guardia poggiava. Due modi diversi in cui una riparazione si
+  ritorce su ciò che la verifica.
