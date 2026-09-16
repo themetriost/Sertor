@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-09-13
+updated: 2026-09-16
 sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.md", "VERSION", "CHANGELOG.md"]
 ---
 
@@ -20,10 +20,10 @@ sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.m
 > verificato* in fondo).
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-09-13)
+## ⚡ Executive summary (stato al 2026-09-16)
 
-**Versione pubblicata: `v0.4.1`** · `master` = `0d16f19` · **PR #272** (docs) ha il go: si mergia.
-Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
+**Versione pubblicata: `v0.4.2`** (Release *latest*, 2026-09-13) · `master` = `a0c3e5f` (tag `v0.4.2`) ·
+**nessuna PR aperta**. Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
 
 > ### 🟢 CONSEGNATO — il server MCP regge entrambe le linee dell'SDK
 >

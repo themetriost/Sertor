@@ -3,7 +3,7 @@ title: Indice del Wiki — Produzione Sertor
 type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
-updated: 2026-09-13
+updated: 2026-09-16
 sources: ["requirements/sertor-core/epic.md", "requirements/memoria-conversazioni/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "src/sertor_core/**", "CLAUDE.md", "wiki/concepts/punto-di-partenza-non-verificato.md", "wiki/concepts/misura-al-confine-pubblico.md"]
 ---
 
