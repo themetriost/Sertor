@@ -3,7 +3,7 @@ title: Una pratica standing non è una pratica distribuita
 type: concept
 tags: [fedelta-dogfood, principio-x, asset-host-facing, problema-aperto, e15, governance]
 created: 2026-07-29
-updated: 2026-07-29
+updated: 2026-09-18
 sources: ["CLAUDE.md", "packages/sertor/src/sertor_installer/assets/claude-md-block.md", "requirements/fedelta-dogfood/epic.md", "wiki/log/2026-07-28.md", "wiki/log/2026-07-29.md"]
 ---
 
@@ -95,6 +95,9 @@ scoperta era di tre parole: *«quindi non c'è»*.
 
 ## Vedi anche
 
+- [[registrato-non-e-comunicato]] — la stessa assenza di reclamante su un confine diverso: là il
+  destinatario mancante è **un altro nodo della federazione**, qui l'**ospite che installa**. La frase di
+  questa pagina — *un secondo atto che nessuno reclama non avviene* — vale per entrambe.
 - [[dogfood-fidelity]] — i due assi che questo caso mostra insufficienti.
 - [[riassunto-invecchia-senza-riconciliatore]] — la gemella: là una copia invecchia, qui una copia **non
   viene mai fatta**. Entrambe sono Principio XIV (*derivare, o dichiarare la divergenza*).
