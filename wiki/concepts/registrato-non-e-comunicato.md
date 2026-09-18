@@ -90,6 +90,9 @@ che nessuno dei due presidiava.
   federazione. Stessa assenza di reclamante, due confini diversi.
 - [[difetto-che-solo-un-ospite-nuovo-puo-vedere]] — perché il difetto `mcp` 2.0 è arrivato dal campo:
   l'altra metà della stessa storia.
+- [[omissione-che-diventa-risposta]] — distillata lo stesso giorno, dalla stessa segnalazione di
+  Kaelen: là il silenzio è fra **moduli** e produce una risposta falsa, qui è fra **nodi** e produce
+  un lavoro fermo. In entrambe nessuno fallisce, e per questo nessuno se ne accorge.
 - [[step-ritual]] — dove vivrebbe la forma 1.
 - [[deterministic-vs-judgment]] — «riguarda un altro nodo?» è giudizio; «esiste un "da segnalare" non
   affisso?» è deterministico. Le forme 1 e 3 stanno sui due lati di questo confine.

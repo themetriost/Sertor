@@ -21,9 +21,16 @@ storiche, non di design: il **RAG** (retrieval, code-graph, memoria, osservabili
 
 La convivenza ha un costo che ora è misurato, non percepito:
 
-- **Il debito si attribuisce per collocazione, non per contenuto.** **43 delle 67 voci** di E10
-  `debito-tecnico` nominano il wiki: un prodotto porta il debito di un altro, e nessuna metrica lo
-  dice.
+- **Il debito si attribuisce per collocazione, non per contenuto.** Un prodotto porta il debito di un
+  altro, e nessuna metrica lo dice. **Misura (criterio dichiarato, 2026-09-18):** contando le righe
+  `FEAT-` di `requirements/debito-tecnico/epic.md` che contengono la stringa «wiki», **18 delle 39
+  aperte** (46%) e **36 delle 80 totali**. È un conteggio **lessicale**, non un giudizio di
+  proprieta': sovrastima (una voce può nominare il wiki di sfuggita) e sottostima (una voce può
+  essere di Thesmion senza usare la parola) — la ripartizione vera è il lavoro di FEAT-011, che
+  pretende un verdetto **scritto** per ogni riga.
+  > ⚠️ **Questo è l'unico posto in cui il numero vive.** Fino al 2026-09-18 ne esistevano due copie
+  > divergenti — qui «43 delle 67», nell'EXEC della roadmap «46 delle 75» — e **nessuna delle due**
+  > reggeva al ricalcolo. Chi ha bisogno del dato cita questa riga o rifà il conteggio; non lo copia.
 - **La conoscenza si duplica in modo invisibile.** «Dove va una skill per Claude vs Copilot» è scritta
   **due volte** — Rust in Kaelen, Python nel kit d'installazione — in **due repo e due linguaggi**,
   quindi fuori dalla portata di qualunque guardia che conosca un solo repo. Non è un difetto trovato:
