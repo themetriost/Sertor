@@ -672,7 +672,8 @@ function Invoke-UpgradeFlow([string]$cap) {
                 # Two very different reasons land here, and collapsing them would hide the one that
                 # matters. If the STARTING release already carries the ceiling, `mcp>=2` is simply
                 # unsatisfiable: that release is not affected, so there is nothing to repair on this
-                # jump — say so and let the outcome go `n/a`. Anything else is an impediment.
+                # jump — say so. The OUTCOME is asserted either way (see #7): what the planting decides
+                # is WHICH CLAIM it supports, not whether it runs. Anything else is an impediment.
                 if ($plantOut -match "unsatisfiable|No solution found") {
                     Write-Host ("[upgrade] note: '$FromRef' already carries the mcp ceiling — " +
                                 "the condition does not exist on this jump")

@@ -3,8 +3,8 @@ title: Un riassunto invecchia quando cresce ciò che descrive
 type: concept
 tags: [deriva, documentazione, principio-xiv, lint-semantico, problema-aperto, e10, e13]
 created: 2026-07-28
-updated: 2026-09-16
-sources: ["src/sertor_core/config/settings.py", "CLAUDE.md", "wiki/log/2026-07-27.md", "wiki/log/2026-07-28.md", "wiki/log/2026-07-31.md", "requirements/debito-tecnico/epic.md", "wiki/syntheses/roadmap.md"]
+updated: 2026-09-18
+sources: ["src/sertor_core/config/settings.py", "CLAUDE.md", "wiki/log/2026-07-27.md", "wiki/log/2026-07-28.md", "wiki/log/2026-07-31.md", "requirements/debito-tecnico/epic.md", "wiki/syntheses/roadmap.md", "scripts/smoke.ps1", "scripts/smoke.sh", "tests/unit/test_smoke_upgrade_contract.py"]
 ---
 
 # Un riassunto invecchia quando cresce ciò che descrive
@@ -27,7 +27,7 @@ che vive in più posti va **derivato**, e dove derivarlo è impossibile serve un
 nominato** che **dichiari** la divergenza. Conservare una copia stantia può essere giusto; conservarla
 **in silenzio** no.
 
-## Dieci superfici, dieci istanze reali
+## Undici superfici, undici istanze reali
 
 | # | Superficie | Istanza |
 |---|---|---|
@@ -42,6 +42,7 @@ nominato** che **dichiari** la divergenza. Conservare una copia stantia può ess
 | 9 | **Riga di backlog (`epic.md`)** ↔ decisione presa altrove | **nuova, 2026-08-05 — e va nel verso opposto a tutte le precedenti.** La riga `E14-FEAT-002` dichiarava *«CASA DECISA (2026-07-14): `sertor-flow` — fold nel pacchetto»*, mentre la decisione **D3 del 31/07** aveva stabilito il contrario (SpecLift/SpecAudit sono di *Sinthari*, smettiamo di vendorare). Vedi sezione *La nona* |
 
 | 10 | **Sezione *«Status / in sviluppo»* del `README`** ↔ decisione di backlog | **nuova, 2026-09-16 — e la più economica da cogliere di tutte.** Il `README` prometteva *«In development / next: … PyPI distribution»* mentre, **nello stesso file**, la sezione d'installazione dichiarava *«there is no PyPI package»*. La copia invecchiata è una riga di **roadmap** trapiantata in un documento che non è la roadmap: `E2-FEAT-006` è *Should (planned)* ma **ferma per decisione utente dal 2026-07-17**, e la doc utente ha scelto apposta di non promettere («none is planned for now»). Vedi sezione *La decima* |
+| 11 | **Commento di codice** ↔ il codice che descrive, in una coppia di gemelli | **nuova, 2026-09-16 — la prima in cui la copia stantia è un commento, e la più breve di tutte.** Il blocco di piantagione di `mcp-server-imports` in `scripts/smoke.ps1` diceva *«say so and let the outcome go `n/a`»* — comportamento **rimosso poche ore prima** dalla PR #278 (`b5c7b6e`), che scinde l'esito e lo asserisce su **ogni** salto. `smoke.sh` non ha **mai** portato quella frase (verificato con `git log -S` su entrambi i file): i due gemelli descrivevano lo stesso meccanismo in modi incompatibili. Vedi sezione *L'undicesima* |
 
 ## La nona: quando è la FONTE a invecchiare, non il riassunto
 
@@ -174,6 +175,43 @@ Nota su cosa **non** è il difetto: la divergenza fra backlog («Should, planned
 («non promettiamo») è **deliberata e corretta** — l'intenzione interna non è un impegno verso l'utente.
 Il difetto era che il `README` ne dichiarava **entrambe le versioni**, come se fossero due fatti.
 
+## L'undicesima: commento di codice, e una parità che confronta solo il comportamento
+
+Nelle dieci precedenti la copia e la sua fonte stanno in **documenti diversi** (o, nella decima, in
+sezioni lontane dello stesso file). Da qui la spiegazione implicita: è la distanza che impedisce il
+confronto. L'undicesima la smentisce. La copia è un **commento di codice**; la sua fonte è il blocco
+`if` che comincia **sette righe sotto**. Distanza nulla, commento invecchiato comunque.
+
+> **La causa non è la distanza, è che nessuno confronta.** La vicinanza rende il confronto facile, non
+> automatico: nessuna guardia legge un commento, e chi modifica il codice legge il diff.
+
+**Meccanica, verificata sui commit.** `b4cf9d1` (13/09) introduce la frase in `smoke.ps1`, dove allora
+era vera: se la condizione non era piantabile, l'esito andava a `n/a`. `b5c7b6e` (16/09, PR #278) cambia
+il meccanismo — l'esito è asserito su ogni salto, e la piantagione decide **quale affermazione**
+sostiene, non **se** l'asserzione avvenga — aggiorna il **codice** di entrambi gli script e lascia
+indietro **quel** commento. `bc538d3` lo allinea, lo stesso giorno. `git log -S` su entrambi i file:
+`smoke.sh` non ha mai portato quella frase.
+
+**Il contributo dell'istanza riguarda il rilevatore, e contraddice una nostra tesi.**
+[[pratica-standing-vs-pratica-distribuita]] sostiene che riconciliare due superfici testuali è
+difficile: lingue diverse, granularità diverse, divergenza voluta. Qui nessuna di quelle condizioni
+vale. I due script sono gemelli dichiarati, i commenti sono nella stessa lingua e descrivono lo stesso
+meccanismo, e accanto a loro gira già una guardia di parità,
+`test_every_outcome_is_asserted_on_both_platforms`. Quella guardia confronta **gli esiti asseriti**,
+cioè il comportamento dei due script; i commenti non li confronta nessuno.
+
+> Ne segue una distinzione utile per decidere dove spendere. Alcune superfici non hanno un
+> riconciliatore **perché costruirlo è difficile** (4 e 6: giudizio, lingue diverse, divergenza
+> legittima). Altre non ce l'hanno **perché nessuno l'ha chiesto**, e costerebbero un `diff` dei blocchi
+> di commento fra gemelli già appaiati. Questa è del secondo tipo.
+
+**Scopritore: il RAG, in un ruolo diverso da quello in cui compare già in questa pagina.** Nella sezione
+*La riparazione ricade nello stesso difetto* il RAG **verifica**: smentisce un'affermazione appena
+scritta e sotto controllo. Qui **scopre**: il difetto è emerso da una `search_code` durante lo smoke di
+chiusura del rituale, mentre il server MCP veniva esercitato per verificare la freschezza dell'indice.
+La domanda posta era «l'indice è fresco?», non «questo commento è vero?»: nessun controllo era puntato
+su quel commento, perché nessuno ne dubitava.
+
 ## Cosa la chiuderebbe
 
 - **[[roadmap|E10-FEAT-049]]** — il lint semantico guarda i **riferimenti entranti**: indice ↔ pagina
@@ -183,6 +221,7 @@ Il difetto era che il `README` ne dichiarava **entrambe le versioni**, come se f
   nodo *Acta*). Copre 3 e 4 — e, con il controllo di **coerenza interna** suggerito dalla decima,
   anche quella, che è la sola raggiungibile senza conoscere la fonte di verità. *È la stessa forma di
   049: conviene progettarle insieme.*
+- **La 11 non ha bisogno di nessuna delle due, ed è la più economica del gruppo:** un test che estrae i **blocchi di commento** dei siti già appaiati di `smoke.sh`/`smoke.ps1` e ne pretende la corrispondenza, accanto alla parità degli esiti che già esiste. Non richiede giudizio né una fonte di verità esterna: i due gemelli sono la fonte di verità l'uno dell'altro.
 - **Scoperto: nessuna delle due copre la 6.** La prosa `CLAUDE.md` non ha né un indice che la punti né
   un `sources:` da confrontare. Il presidio praticabile è **strutturale, non diagnostico**: non
   scrivere nel file always-loaded ciò che è derivabile da una fonte a due `Read` di distanza —
