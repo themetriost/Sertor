@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-09-16
+updated: 2026-09-18
 sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.md", "VERSION", "CHANGELOG.md"]
 ---
 
@@ -20,7 +20,7 @@ sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.m
 > verificato* in fondo).
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-09-16)
+## ⚡ Executive summary (stato al 2026-09-18)
 
 **Versione pubblicata: `v0.4.2`** (Release *latest*, 2026-09-13) · **nessuna PR aperta**.
 Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
@@ -227,7 +227,17 @@ combinazioni**, 8 esiti su 8.
    il gate d'aggiornamento non copre, dichiarato fuori copertura perché aperto: chiuderlo porta SC-001 a
    **7/7** e toglie l'unica deroga. *Era il candidato naturale finché non è arrivata la coda del campo:
    ora viene dopo FEAT-070 + release, che ha nodi rotti in attesa.*
-2. **Coda dei riscontri dal campo, ancora aperta** — 🆕 **la prima installazione del nodo *Vestiger*
+2. **E10-FEAT-078** — *un esito del gate d'aggiornamento può diventare `n/a` permanente, e il ramo
+   principale resta rosso su un difetto inesistente.* Accaduto il 2026-09-16 (run `35102113219`):
+   `mcp-server-imports` è scaduto quando la `v0.4.2` ha portato il tetto agli ospiti, perché la sua
+   precondizione era una condizione **piantata** che il rimedio ha cancellato. L'istanza è riparata
+   (`b5c7b6e`: si asserisce sempre la metà permanente «il server parte dopo l'upgrade»); **la classe
+   no** — il prossimo esito costruito allo stesso modo avrà la stessa scadenza non scritta. Due
+   rimedi da valutare: il wrapper pretende una **dichiarazione esplicita** invece del silenzio, e il
+   gate gira **al momento del tag** oltre che al push, così un rilascio non può rompere la propria
+   guardia senza accorgersene (il tag `v0.4.2` è stato creato venti minuti dopo l'ultimo run verde).
+
+3. **Coda dei riscontri dal campo, ancora aperta** — 🆕 **la prima installazione del nodo *Vestiger*
    (2026-08-07) ha prodotto cinque voci in un colpo**, tutte verificate nel codice lo stesso giorno:
    **E10-FEAT-070** (portare `sertor_mcp` all'SDK MCP v2 — **dimensione misurata il 13/09 su 2.2.0:
    mezza giornata con l'import a doppia via, non «due righe»; vedi il blocco rosso in testa**, è il
@@ -249,16 +259,16 @@ combinazioni**, 8 esiti su 8.
    perimetro di `scan`: il gate non guarda la superficie che arriva agli ospiti) · E10-FEAT-047
    (`wiki/log/index.md` duplica un fatto derivabile) · E10-FEAT-049 + E13-FEAT-014 (riferimenti entranti /
    anti-drift della doc utente — **stessa forma, da progettare insieme**).
-3. **Chiudere E4** (73%) — restano 3 Could: remember-this · retention · ponte second-brain.
-4. **E14 — SpecLift/SpecAudit: non più lavoro nostro** (E14-FEAT-002). La casa è **Sinthari**, il
+4. **Chiudere E4** (73%) — restano 3 Could: remember-this · retention · ponte second-brain.
+5. **E14 — SpecLift/SpecAudit: non più lavoro nostro** (E14-FEAT-002). La casa è **Sinthari**, il
    proprietario (D3, 31/07): noi smettiamo di vendorare, e ciò che resta a noi — la **rimozione del
    vendoring** — è **E17-FEAT-008**. *Riga dell'`epic.md` allineata il 2026-08-05: dichiarava ancora
    la decisione superata del 14/07 («fold in `sertor-flow`»).* Le 3.916 righe restano non installabili
    **da noi**, ma non sono più un nostro debito di completamento.
-5. **E13 Fase 2 — marketing** (posizionamento/demo/landing), sbloccata dal go-public.
-6. **E15-FEAT-014** — matrice esaustiva «da ogni versione all'ultima»: ora **parzialmente risposta**
+6. **E13 Fase 2 — marketing** (posizionamento/demo/landing), sbloccata dal go-public.
+7. **E15-FEAT-014** — matrice esaustiva «da ogni versione all'ultima»: ora **parzialmente risposta**
    (4 combinazioni, 4 release indietro).
-7. **Scommesse grandi** — E7 ingestione → **sblocca E8** · E6 PGVector · E9 second-brain · E5 leve
+8. **Scommesse grandi** — E7 ingestione → **sblocca E8** · E6 PGVector · E9 second-brain · E5 leve
    retrieval residue (**solo** con lift misurato).
 
 **Fermi per decisione utente:** go-public/PyPI (E2-FEAT-006, dal 2026-07-17) · E11 `multiutente`
