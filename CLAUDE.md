@@ -571,15 +571,14 @@ dogfood sopra. *(Non riconciliare cancellando la prosa: i blocchi sono rigenerat
 è la conoscenza dogfood — vanno tenuti entrambi.)*
 
 <!-- SPECKIT START -->
-**Piano attivo: [`specs/128-porting-mcp-sdk-v2/plan.md`](specs/128-porting-mcp-sdk-v2/plan.md)**
-(E10-FEAT-070 — il server MCP funziona su entrambe le linee dell'SDK). Branch
-`128-porting-mcp-sdk-v2`. Fasi `requirements`/`specify`/`plan` fatte; `clarify` saltata di proposito
-(i tre bivi sciolti dall'utente: D-1/D-2/D-3 in
-[`research.md`](specs/128-porting-mcp-sdk-v2/research.md)). **Perche' esiste:** il server MCP non
-parte dove l'ambiente ha risolto `mcp` 2.x — tre nodi colpiti, due senza MCP da oltre un mese.
-Da leggere prima di toccare l'area: il contratto d'errore verso il client
-([`contracts/tool-error-surface.md`](specs/128-porting-mcp-sdk-v2/contracts/tool-error-surface.md)),
-perche' la parte non meccanica del porting e' **la classificazione degli errori**, non l'import.
+**Piano attivo: [`specs/137-provider-openai/plan.md`](specs/137-provider-openai/plan.md)**
+(FEAT-012 dell'epica `sertor-core` — provider di embedding sull'API OpenAI diretta,
+`SERTOR_EMBED_PROVIDER=openai`). Branch `137-provider-openai`. Fasi `requirements`/`specify`/`clarify`/
+`plan` fatte. **Perche' esiste:** la chiave Azure del dogfood risponde `http 401` e il ripiego `glove`
+degrada la qualita' del retrieval; una chiave OpenAI e' la credenziale cloud piu' diffusa. Da leggere
+prima di toccare l'area: [`research.md`](specs/137-provider-openai/research.md) — la base di protocollo
+condivisa con Azure (D-1), le chiavi del provider derivate invece che copiate (D-3) e i tre silenzi del
+wizard congelato da girare a Kaelen (D-7).
 
 Per sapere **dove siamo e cosa fare adesso**, la fonte e' il blocco EXEC di
 `wiki/syntheses/roadmap.md`, non questo paragrafo — che e' una copia e invecchia (vedi

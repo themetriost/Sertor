@@ -486,6 +486,8 @@ combinazioni**, 8 esiti su 8.
 | **Timeout espliciti su embed/query** (server MCP e adapter) | L'hang della prima query è stato **risolto** (warm-up eager, PR #23); i timeout restano una rifinitura di robustezza | Timeout configurabile in `Settings` + eccezione di dominio | 💡 idea ridimensionata |
 | **Connettori per `ingest`** (git/slack/web/…) | `ingest` esiste ma le fonti le porta l'utente; un connettore *ingerisce byte* (lato deterministico), non genera prosa | **Fonte: Nunzio (§7).** **→ mappa su E7** `ingestione-estesa` — cita epica esistente, non voce nuova | 💡 idea esterna → E7 |
 | **Segnalare in bacheca le pubblicazioni mai depositate** | Trovate **3 pubblicazioni di altri nodi** (*Acta* ×2, *Studium*, *Nunzio*) affisse ma **mai committate**: invisibili a tutti gli altri. *Affisso* e *depositato* sono due stati che dalla cartella si leggono uguali | Non depositabili da noi (sarebbe scrivere per conto di un altro nodo). Stessa classe di [[guardia-verde-non-e-una-misura]] | 💡 idea (2026-07-30) |
+| **Provider `openai`: riduzione delle dimensioni del vettore** | I modelli `text-embedding-3-*` accettano un parametro `dimensions` che accorcia il vettore (meno spazio, ricerche più veloci) con perdita di qualità contenuta | Rinviata da FEAT-012 (`specs/137-provider-openai/`, fuori ambito). Cambierebbe l'identità della collezione: il nome dovrebbe includere la dimensione | 💡 idea |
+| **Provider `openai`: intestazioni organizzazione/progetto** | Chi usa chiavi utente con più organizzazioni deve poter indicare `OpenAI-Organization`/`OpenAI-Project` | Rinviata da FEAT-012: le chiavi di progetto bastano al primo taglio. Solo su richiesta di un ospite | 💡 idea |
 
 ---
 
