@@ -121,9 +121,10 @@ Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
 > il dogfood è stato spostato su `glove` (indice `sertor__glove_300`), che regge ma con semantica più
 > debole. **Dove:** branch `137-provider-openai`, [`specs/137-provider-openai/`](../../specs/137-provider-openai/)
 > — SpecKit completo (decisione utente), implementazione fatta, gate verde (1520 test + pacchetti, `ruff`).
-> **Prossimo passo:** verifica reale con una chiave OpenAI (T024 — da repo, non dal runtime `.sertor/`,
-> che segue `master`), poi PR e merge; dopo il merge, re-lock del runtime e passaggio del dogfood da
-> `glove` a `openai`. **Aperto verso Kaelen:** il wizard `sertor configure` non conosce `openai`, e la
+> **Verifica reale fatta** (T024): test contro OpenAI verde (3072 dim), `index`/`search`/`doctor --online`
+> su un mini-corpus temporaneo. **Prossimo passo:** PR, merge, poi passaggio del dogfood da `glove` a
+> `openai` (re-lock del runtime + re-index) e **rilascio `v0.5.0`** (decisione utente 2026-10-07), con
+> comunicazione su Acta. **Aperto verso Kaelen:** il wizard `sertor configure` non conosce `openai`, e la
 > ricerca ha trovato due silenzi suoi (`--set` ignora le chiavi fuori catalogo; la guardia di copertura
 > del catalogo ha l'elenco dei provider scritto a mano) — da affiggere in bacheca alla consegna.
 
