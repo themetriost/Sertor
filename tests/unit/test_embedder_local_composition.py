@@ -84,7 +84,7 @@ def test_unknown_provider_raises_configerror():
         build_embedder(Settings(embed_provider="bogus"))
     msg = str(exc.value)
     assert "SERTOR_EMBED_PROVIDER" in msg
-    for value in ("glove", "hash", "ollama", "azure"):
+    for value in ("glove", "hash", "ollama", "azure", "openai"):
         assert value in msg
 
 
@@ -131,3 +131,41 @@ def test_store_orthogonal_to_provider(monkeypatch):
     settings = Settings.load(env_file=None)
     assert settings.embed_provider == "glove"
     assert settings.store_backend == "azure"
+
+
+# --- 137: provider openai ----------------------------------------------------------------------
+
+
+def test_openai_provider_builds_openai_embedder():
+    from sertor_core.adapters.embeddings.openai import OpenAIEmbedder
+
+    emb = build_embedder(Settings(embed_provider="openai", openai_api_key="sk-x",
+                                  openai_embed_model="text-embedding-3-small"))
+    assert isinstance(emb, OpenAIEmbedder)
+    assert emb.name == "openai:text-embedding-3-small"
+
+
+def test_openai_selected_by_selector_only():
+    # FR-005: Azure variables present do not change the selection.
+    from sertor_core.adapters.embeddings.openai import OpenAIEmbedder
+
+    settings = Settings(
+        embed_provider="openai", openai_api_key="sk-x",
+        azure_openai_endpoint="https://x.openai.azure.com/openai/v1",
+        azure_openai_api_key="k", azure_openai_embed_deployment="dep",
+    )
+    assert isinstance(build_embedder(settings), OpenAIEmbedder)
+
+
+def test_openai_without_key_fails_loud():
+    from sertor_core.domain.errors import EmbeddingError
+
+    with pytest.raises(EmbeddingError) as exc:
+        build_embedder(Settings(embed_provider="openai"))
+    assert "api_key" in exc.value.reason
+
+
+def test_embed_providers_is_the_single_list():
+    from sertor_core.config.settings import EMBED_PROVIDERS
+
+    assert EMBED_PROVIDERS == ("glove", "hash", "ollama", "azure", "openai")

@@ -64,7 +64,7 @@ The commands above track the repository's **default branch**. For a reproducible
 release tag** instead — add `@<tag>` before the fragment:
 
 ```powershell
-uvx --from "git+https://github.com/themetriost/Sertor@v0.4.2#subdirectory=packages/sertor" sertor install rag --backend local
+uvx --from "git+https://github.com/themetriost/Sertor@v0.5.0#subdirectory=packages/sertor" sertor install rag --backend local
 ```
 
 Current tags are on the [releases page](https://github.com/themetriost/Sertor/releases). To refresh an
@@ -140,7 +140,7 @@ domain**. The **library is the product**; the CLI and MCP server are thin vehicl
 ## Portable, local-first, no lock-in
 
 - **Local-first ↔ Azure**, swappable via configuration: the embedding provider
-  (`SERTOR_EMBED_PROVIDER=glove|hash|ollama|azure`, default `glove` — zero-config, offline) and the
+  (`SERTOR_EMBED_PROVIDER=glove|hash|ollama|azure|openai`, default `glove` — zero-config, offline) and the
   vector store (`SERTOR_STORE_BACKEND=local|azure`) are **independent knobs**, no code changes.
 - **The library is the product.** The core lives in [`src/sertor_core/`](src/sertor_core/) in **Clean
   Architecture** (dependencies point inward; the `domain` imports no SDK). Providers and stores sit

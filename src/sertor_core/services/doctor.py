@@ -146,7 +146,7 @@ def check_config(missing: list[str]) -> AreaReport:
             severity=Severity.CRITICAL,
             code="env_missing_key",
             message=f"missing {key}",
-            remedy=f"set {key} in .sertor/.env (or run `sertor configure`)",
+            remedy=f"set {key} in .sertor/.env",
             fields=(key,),
         )
         for key in missing
@@ -169,10 +169,9 @@ def check_provider(
                 severity=Severity.CRITICAL,
                 code="provider_config_incomplete",
                 message=f"provider config incomplete ({', '.join(missing_provider)})",
-                remedy=(
-                    f"set {', '.join(missing_provider)} in .sertor/.env "
-                    "(or run `sertor configure`)"
-                ),
+                # No `sertor configure` hint: the wizard covers only some providers (it ignores
+                # the `openai` keys, 137 D-7), and the core must not keep a copy of its catalogue.
+                remedy=f"set {', '.join(missing_provider)} in .sertor/.env",
                 fields=tuple(missing_provider),
             ),
         )

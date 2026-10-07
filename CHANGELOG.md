@@ -13,6 +13,75 @@ and Sertor aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 _Changes land here before the next version bump._
 
+## [0.5.0] — 2026-10-07
+
+Sertor can now compute embeddings with the **OpenAI API** directly — no Azure subscription needed. An
+OpenAI key is enough to index and search your corpus with `text-embedding-3-large`.
+
+> **Upgrade — only the `rag` capability changes in this release:**
+>
+> ```
+> uvx --refresh --from "git+https://github.com/themetriost/Sertor@v0.5.0#subdirectory=packages/sertor" sertor upgrade rag
+> ```
+>
+> **Who needs it:** every host with the `rag` capability (the `.sertor/` runtime). **Who does not:** the
+> `wiki` capability and `sertor-flow` carry **no** changes in this release — do **not** run their
+> `upgrade` commands for 0.5.0. In particular, `sertor-flow upgrade` on a host that never installed
+> `sertor-flow` **installs** it (open defect, see below), so it is not a harmless no-op.
+> `sertor` is not on your `PATH` — it is invoked through `uvx --from`, as above. Nothing you configured
+> is touched: your provider stays the one you chose.
+
+### Added
+
+- **Embedding provider `openai`** (`SERTOR_EMBED_PROVIDER=openai`): embeddings from the OpenAI API, or
+  from any OpenAI-compatible service. Three settings in `.sertor/.env`:
+  - `OPENAI_API_KEY` — required;
+  - `OPENAI_EMBED_MODEL` — default `text-embedding-3-large` (≈ $0.13 per million tokens; the embedding
+    cache avoids paying again for unchanged chunks);
+  - `OPENAI_BASE_URL` — default `https://api.openai.com/v1`; point it at an OpenAI-compatible service if
+    needed. An empty value means the default.
+
+  It behaves like the `azure` provider: retries on rate limits and server errors, reports the token
+  count, keeps one index per provider **and** per model (switching never mixes vectors), and never
+  writes the key to logs, errors or `doctor` output. **Switching provider requires a re-index**
+  (`sertor-rag index .`) and a restart of the MCP server.
+- **`sertor-rag doctor` knows the new provider**: a missing `OPENAI_API_KEY` fails the *provider* area
+  and names the key; `doctor --online` reaches the service and reports `http 401` for a rejected key.
+
+### Changed
+
+- **`doctor` no longer suggests `sertor configure`** when a key is missing: the suggestion was wrong for
+  providers the wizard does not know. It now says where to set the key (`.sertor/.env`), which is true
+  for every provider.
+- The Azure provider now shares its protocol code with the OpenAI one. Its behaviour is unchanged — the
+  same URL, header, `api-version` handling, errors and retries; its existing tests pass unmodified.
+
+### Known issues — open, and declared so you do not find them yourself
+
+- **`sertor configure` does not know the `openai` provider yet.** Its profiles are `azure` and `local`,
+  and `--set` only writes the fields of its own catalogue: `--set SERTOR_EMBED_PROVIDER=openai` or
+  `--set OPENAI_API_KEY=...` are **ignored without a warning**. Set the three values by editing
+  `.sertor/.env` directly, then check with `sertor-rag doctor`. The installer is now maintained by the
+  **Kaelen** node; the fix is requested there.
+- **`sertor-flow upgrade` installs `sertor-flow` on a host that never had it** (it is named `upgrade`
+  but does not check). This is why the upgrade block above names only `rag`.
+- **A bare `sertor upgrade` may refresh only one capability** on a host that has several, while exiting
+  green. Name the capability explicitly, as above.
+
+### Verification — how this release was checked
+
+- **Against the real service:** an integration test embeds through the composition root with a real key
+  (vectors of dimension 3072), and the full CLI path — `index`, `search`, `doctor --online` with a
+  valid, a wrong and a missing key — was run on a throwaway corpus.
+- **Offline:** 20 contract tests for the provider (request shape, ordering across batches, error
+  classification, per-batch retry, token signal, key never exposed, custom base URL); the full suite
+  (1520 tests) and the package suites green; a mutation check confirmed the new `doctor` tests fail
+  when the key derivation is broken.
+- **Upgrade path:** the update gate ran on the real jump `v0.4.2 → master` on throwaway hosts before
+  tagging.
+- **Not checked:** OpenAI-compatible services other than OpenAI itself (the base URL is honoured, but
+  only the official API was exercised).
+
 ## [0.4.2] — 2026-09-13
 
 The MCP server runs again on hosts whose environment resolved the SDK's new major — including those

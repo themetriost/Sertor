@@ -387,3 +387,37 @@ def test_cmd_doctor_fails_loud_when_root_unresolvable(monkeypatch, capsys):
     assert code == 1
     assert "cannot resolve the project root" in captured.err
     assert "doctor:" not in captured.out  # no verdict emitted on an unanchored run
+
+
+# --- 137: provider openai — keys derived from Settings, not from a hand-copied list ------------
+
+
+def _openai_settings(api_key: str) -> Settings:
+    return Settings(
+        corpus="default", embed_provider="openai", store_backend="local",
+        openai_api_key=api_key, project_root=Path("."),
+    )
+
+
+def test_cmd_doctor_openai_missing_key_fails_provider(wired, capsys):
+    monkeypatch, _ = wired
+    settings = _openai_settings("")
+    monkeypatch.setattr(cli.Settings, "load", classmethod(lambda c, env_file=".env": settings))
+    code = _run(["doctor", "--json"])
+    obj = json.loads(capsys.readouterr().out)
+    provider = next(a for a in obj["areas"] if a["name"] == "provider")
+    assert provider["status"] == "fail"
+    fields = {f for p in provider["problems"] for f in p["fields"]}
+    assert "OPENAI_API_KEY" in fields
+    assert code == 1
+
+
+def test_cmd_doctor_openai_with_key_passes_provider(wired, capsys):
+    monkeypatch, _ = wired
+    settings = _openai_settings("sk-present-123456")
+    monkeypatch.setattr(cli.Settings, "load", classmethod(lambda c, env_file=".env": settings))
+    _run(["doctor", "--json"])
+    out = capsys.readouterr().out
+    provider = next(a for a in json.loads(out)["areas"] if a["name"] == "provider")
+    assert provider["status"] == "pass"
+    assert "sk-present-123456" not in out

@@ -20,16 +20,17 @@ sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.m
 > verificato* in fondo).
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-09-18)
+## ⚡ Executive summary (stato al 2026-10-07)
 
-**Versione pubblicata: `v0.4.2`** (Release *latest*, 2026-09-13) · **nessuna PR aperta**.
+**Versione pubblicata: `v0.4.2`** (Release *latest*, 2026-09-13). Le PR aperte: `gh pr list`.
 Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
 
 > *Perché qui non c'è l'hash di `master`.* Il campo c'era, e il 2026-09-16 è stato trovato falso: diceva
 > `0d16f19` mentre `master` era quattro commit più avanti. Non è un campo da aggiornare meglio — è un
 > campo che **il merge stesso falsifica**, incluso il merge che lo corregge, e che nessuna decisione usa.
 > Rimosso invece che riparato: `git rev-parse master` lo dà in un comando.
-> Vedi [[riassunto-invecchia-senza-riconciliatore]], decima istanza.
+> Vedi [[riassunto-invecchia-senza-riconciliatore]], decima istanza. *Stessa sorte, 2026-10-07, per
+> «nessuna PR aperta»: lo diceva con la #282 aperta, ed è un campo che ogni PR falsifica.*
 
 > ### ⛔ CONGELATO — la logica d'installazione non è più lavoro nostro (2026-09-18)
 >
@@ -114,6 +115,18 @@ Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
 > ora come **E10-FEAT-076** invece di restare nascosto dentro FEAT-070.
 
 ### 🔄 In progress
+
+> 🔌 **FEAT-012 (`sertor-core`) — provider di embedding sull'API OpenAI diretta.** *Perché ora:* il
+> 2026-10-07 la chiave Azure del dogfood risponde `http 401` e il server MCP non serve più ricerche;
+> il dogfood è stato spostato su `glove` (indice `sertor__glove_300`), che regge ma con semantica più
+> debole. **Dove:** branch `137-provider-openai`, [`specs/137-provider-openai/`](../../specs/137-provider-openai/)
+> — SpecKit completo (decisione utente), implementazione fatta, gate verde (1520 test + pacchetti, `ruff`).
+> **Verifica reale fatta** (T024): test contro OpenAI verde (3072 dim), `index`/`search`/`doctor --online`
+> su un mini-corpus temporaneo. **Prossimo passo:** PR, merge, poi passaggio del dogfood da `glove` a
+> `openai` (re-lock del runtime + re-index) e **rilascio `v0.5.0`** (decisione utente 2026-10-07), con
+> comunicazione su Acta. **Aperto verso Kaelen:** il wizard `sertor configure` non conosce `openai`, e la
+> ricerca ha trovato due silenzi suoi (`--set` ignora le chiavi fuori catalogo; la guardia di copertura
+> del catalogo ha l'elenco dei provider scritto a mano) — da affiggere in bacheca alla consegna.
 
 > 🏗️ **SEPARAZIONE IN QUATTRO PRODOTTI — è il lavoro che domina la roadmap.** Sertor resta il
 > **RAG**; il sistema-wiki diventa **Thesmion**; governance/SDLC diventa **Sulcimen**; il prototipo è
@@ -515,6 +528,8 @@ combinazioni**, 8 esiti su 8.
 | **Timeout espliciti su embed/query** (server MCP e adapter) | L'hang della prima query è stato **risolto** (warm-up eager, PR #23); i timeout restano una rifinitura di robustezza | Timeout configurabile in `Settings` + eccezione di dominio | 💡 idea ridimensionata |
 | **Connettori per `ingest`** (git/slack/web/…) | `ingest` esiste ma le fonti le porta l'utente; un connettore *ingerisce byte* (lato deterministico), non genera prosa | **Fonte: Nunzio (§7).** **→ mappa su E7** `ingestione-estesa` — cita epica esistente, non voce nuova | 💡 idea esterna → E7 |
 | **Segnalare in bacheca le pubblicazioni mai depositate** | Trovate **3 pubblicazioni di altri nodi** (*Acta* ×2, *Studium*, *Nunzio*) affisse ma **mai committate**: invisibili a tutti gli altri. *Affisso* e *depositato* sono due stati che dalla cartella si leggono uguali | Non depositabili da noi (sarebbe scrivere per conto di un altro nodo). Stessa classe di [[guardia-verde-non-e-una-misura]] | 💡 idea (2026-07-30) |
+| **Provider `openai`: riduzione delle dimensioni del vettore** | I modelli `text-embedding-3-*` accettano un parametro `dimensions` che accorcia il vettore (meno spazio, ricerche più veloci) con perdita di qualità contenuta | Rinviata da FEAT-012 (`specs/137-provider-openai/`, fuori ambito). Cambierebbe l'identità della collezione: il nome dovrebbe includere la dimensione | 💡 idea |
+| **Provider `openai`: intestazioni organizzazione/progetto** | Chi usa chiavi utente con più organizzazioni deve poter indicare `OpenAI-Organization`/`OpenAI-Project` | Rinviata da FEAT-012: le chiavi di progetto bastano al primo taglio. Solo su richiesta di un ospite | 💡 idea |
 
 ---
 

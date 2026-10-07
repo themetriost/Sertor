@@ -430,3 +430,40 @@ def test_current_source_stats_no_rescan(tmp_path, monkeypatch):
 
     stats = current_source_stats(_S(), tmp_path)
     assert [p.as_posix() for p, _m, _h in stats] == ["known.py"]  # extra.py never seen
+
+
+# --- 137: provider openai — isolation and online probe -----------------------------------------
+
+
+def test_collection_name_distinct_per_openai_model():
+    from types import SimpleNamespace
+
+    settings = Settings(corpus="sertor", store_backend="local")
+    names = {
+        collection_name(settings, SimpleNamespace(name=n))
+        for n in ("openai:text-embedding-3-large", "openai:text-embedding-3-small",
+                  "azure:text-embedding-3-large", "glove:6B.300d")
+    }
+    assert len(names) == 4
+
+
+def test_build_provider_probe_openai_unreachable_without_leaking_key(monkeypatch):
+    import httpx
+
+    from sertor_core.adapters.embeddings import _openai_protocol
+    from sertor_core.composition import build_provider_probe
+    from sertor_core.services.doctor import ProbeStatus
+
+    key = "sk-probe-secret-abcdef123456"
+    real_client = httpx.Client
+    monkeypatch.setattr(
+        _openai_protocol.httpx, "Client",
+        lambda **_kw: real_client(
+            transport=httpx.MockTransport(lambda r: httpx.Response(401, text=f"bad key {key}"))
+        ),
+    )
+    settings = Settings(embed_provider="openai", openai_api_key=key, embed_cache_enabled=False)
+    probe = build_provider_probe(settings)
+    assert probe.status is ProbeStatus.unreachable
+    assert "http 401" in probe.reason
+    assert key not in probe.reason

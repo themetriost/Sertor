@@ -129,6 +129,7 @@ are two independent knobs.
 | `hash` | char-n-gram lexical floor, airgapped/CI, zero-download; lexical only (limited NL) | none | free |
 | `ollama` | local embedding model (requires `ollama serve`) | none | free |
 | `azure` | Azure OpenAI cloud embeddings | Azure OpenAI | billable |
+| `openai` | OpenAI API cloud embeddings (or any OpenAI-compatible service via `OPENAI_BASE_URL`) | OpenAI API key | billable (`text-embedding-3-large` ≈ $0.13 per million tokens) |
 
 **Local, zero-credentials (default):**
 ```bash
@@ -153,6 +154,28 @@ AZURE_OPENAI_API_KEY=...
 AZURE_OPENAI_EMBED_DEPLOYMENT=text-embedding-3-large
 SERTOR_CORPUS=my-project
 ```
+
+**OpenAI (cloud embeddings + local Chroma store):**
+```bash
+SERTOR_EMBED_PROVIDER=openai
+SERTOR_STORE_BACKEND=local             # local Chroma vector store
+OPENAI_API_KEY=sk-...
+# optional — defaults shown; an empty value means the default:
+# OPENAI_EMBED_MODEL=text-embedding-3-large
+# OPENAI_BASE_URL=https://api.openai.com/v1   # point it at an OpenAI-compatible service if needed
+SERTOR_CORPUS=my-project
+```
+
+> **Set these by editing `.sertor/.env` directly.** The `sertor configure` wizard does not know the
+> `openai` provider yet: its profiles are `azure` and `local`, and `--set` only writes the fields of
+> its own catalogue, so `--set SERTOR_EMBED_PROVIDER=openai` or `--set OPENAI_API_KEY=...` are
+> **ignored without a warning**. Verify with `sertor-rag doctor` (a missing key fails the *provider*
+> area and names `OPENAI_API_KEY`) and `sertor-rag doctor --online` (reaches the service).
+
+> **Changing provider (or model) requires a re-index.** Each provider/model pair has its own
+> collection, so `sertor-rag index .` builds a new one and leaves the previous ones untouched; until
+> you re-index, searches find no index for the new provider. Restart the MCP server afterwards so it
+> picks up the new configuration.
 
 > **Migration note (`RAG_BACKEND` removed).** `RAG_BACKEND` is **no longer honoured**: select the
 > embedding provider with `SERTOR_EMBED_PROVIDER` and the vector store with `SERTOR_STORE_BACKEND`.

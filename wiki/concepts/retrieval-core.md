@@ -3,7 +3,7 @@ title: Retrieval core
 type: concept
 tags: [retrieval-core, sertor-core, clean-architecture, porte-adapter, retrieval, architettura]
 created: 2026-06-07
-updated: 2026-07-23
+updated: 2026-10-07
 sources: ["src/sertor_core/composition.py", "src/sertor_core/**", "CLAUDE.md", "specs/001-nucleo-retrieval/**"]
 ---
 
@@ -40,11 +40,12 @@ src/sertor_core/
   vivono qui dietro le porte. Gli SDK pesanti sono importati **lazy** nelle factory, così l'extra `azure`
   non serve in locale.
 - **`composition.py` è l'unico cablaggio.** Sceglie le implementazioni da **manopole distinte** di
-  `Settings`: l'**embedder** da `embed_provider` (`SERTOR_EMBED_PROVIDER`, **quattro provider**
-  `glove|hash|ollama|azure`, default **`glove`** — vettori statici NL local-first; `hash` = pavimento
-  lessicale airgapped/CI; `ollama`/`azure` = remoti) e lo **store** da `store_backend`
-  (`azure` → Azure AI Search · altrimenti Chroma). Le due sono **combinabili** — es. embeddings Azure +
-  store Chroma locale, la combinazione del dogfood `sertor`. Il **motore** si sceglie con `SERTOR_ENGINE`
+  `Settings`: l'**embedder** da `embed_provider` (`SERTOR_EMBED_PROVIDER`, **cinque provider**
+  `glove|hash|ollama|azure|openai`, elenco unico `EMBED_PROVIDERS`, default **`glove`** — vettori statici
+  NL local-first; `hash` = pavimento lessicale airgapped/CI; `ollama`/`azure`/`openai` = servizi) e lo
+  **store** da `store_backend` (`azure` → Azure AI Search · altrimenti Chroma). Le due sono
+  **combinabili** — es. embeddings cloud + store Chroma locale, la combinazione che il dogfood `sertor`
+  ha usato con Azure fino al 2026-10-07. Il **motore** si sceglie con `SERTOR_ENGINE`
   (default **`hybrid`** = BM25+RRF+rerank opzionale; `baseline` = solo vettoriale). Per aggiungere un
   provider si estendono composition root e adapters, **non** i servizi. Vedi [[ports-adapters]].
 
