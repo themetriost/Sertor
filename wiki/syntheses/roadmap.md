@@ -20,16 +20,17 @@ sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.m
 > verificato* in fondo).
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-09-18)
+## ⚡ Executive summary (stato al 2026-10-07)
 
-**Versione pubblicata: `v0.4.2`** (Release *latest*, 2026-09-13) · **nessuna PR aperta**.
+**Versione pubblicata: `v0.4.2`** (Release *latest*, 2026-09-13). Le PR aperte: `gh pr list`.
 Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
 
 > *Perché qui non c'è l'hash di `master`.* Il campo c'era, e il 2026-09-16 è stato trovato falso: diceva
 > `0d16f19` mentre `master` era quattro commit più avanti. Non è un campo da aggiornare meglio — è un
 > campo che **il merge stesso falsifica**, incluso il merge che lo corregge, e che nessuna decisione usa.
 > Rimosso invece che riparato: `git rev-parse master` lo dà in un comando.
-> Vedi [[riassunto-invecchia-senza-riconciliatore]], decima istanza.
+> Vedi [[riassunto-invecchia-senza-riconciliatore]], decima istanza. *Stessa sorte, 2026-10-07, per
+> «nessuna PR aperta»: lo diceva con la #282 aperta, ed è un campo che ogni PR falsifica.*
 
 > ### 🟢 CONSEGNATO — il server MCP regge entrambe le linee dell'SDK
 >
@@ -95,6 +96,17 @@ Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
 > ora come **E10-FEAT-076** invece di restare nascosto dentro FEAT-070.
 
 ### 🔄 In progress
+
+> 🔌 **FEAT-012 (`sertor-core`) — provider di embedding sull'API OpenAI diretta.** *Perché ora:* il
+> 2026-10-07 la chiave Azure del dogfood risponde `http 401` e il server MCP non serve più ricerche;
+> il dogfood è stato spostato su `glove` (indice `sertor__glove_300`), che regge ma con semantica più
+> debole. **Dove:** branch `137-provider-openai`, [`specs/137-provider-openai/`](../../specs/137-provider-openai/)
+> — SpecKit completo (decisione utente), implementazione fatta, gate verde (1520 test + pacchetti, `ruff`).
+> **Prossimo passo:** verifica reale con una chiave OpenAI (T024 — da repo, non dal runtime `.sertor/`,
+> che segue `master`), poi PR e merge; dopo il merge, re-lock del runtime e passaggio del dogfood da
+> `glove` a `openai`. **Aperto verso Kaelen:** il wizard `sertor configure` non conosce `openai`, e la
+> ricerca ha trovato due silenzi suoi (`--set` ignora le chiavi fuori catalogo; la guardia di copertura
+> del catalogo ha l'elenco dei provider scritto a mano) — da affiggere in bacheca alla consegna.
 
 > 🏗️ **SEPARAZIONE IN QUATTRO PRODOTTI — è il lavoro che domina la roadmap.** Sertor resta il
 > **RAG**; il sistema-wiki diventa **Thesmion**; governance/SDLC diventa **Sulcimen**; il prototipo è

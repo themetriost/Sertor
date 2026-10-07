@@ -94,10 +94,11 @@ Regole architetturali da rispettare quando si estende il core:
   `Reranker`, `CodeGraph`, `ObservabilityStore`, `RetrieverStrategy`, `TranscriptCaptureAdapter`);
   structural typing → si mockano senza ereditarietà
   (vedi `tests/fixtures/mocks.py`).
-- **Si sceglie l'implementazione SOLO in `composition.py`**: l'embedder da `Settings.backend`
-  (`local`→Ollama · `azure`→Azure OpenAI) e lo store da `Settings.store_backend` (`local`→Chroma ·
-  `azure`→Azure AI Search) — **manopole distinte** (FEAT-009, `store_backend` default = `backend`): si
-  combinano, es. embeddings Azure + store Chroma locale (l'indice dogfood `sertor`). Per aggiungere un
+- **Si sceglie l'implementazione SOLO in `composition.py`**: l'embedder da `Settings.embed_provider`
+  (uno di `EMBED_PROVIDERS`: `glove` default · `hash` · `ollama` · `azure` · `openai`) e lo store da
+  `Settings.store_backend` (`local`→Chroma · `azure`→Azure AI Search) — **manopole distinte**
+  (FEAT-009/011): si combinano, es. embeddings cloud + store Chroma locale. L'indice dogfood `sertor` gira
+  su `glove` dal 2026-10-07 (chiave Azure rifiutata con `http 401`), in attesa di `openai` (FEAT-012). Per aggiungere un
   provider/backend si estende il composition root e gli adapter, **non** i servizi. Gli import degli SDK
   pesanti sono **lazy** dentro le `build_*` (NFR isolamento dipendenze: l'extra `azure` non serve in locale).
 - **Default solo in `Settings`**, mai hardcodati nei componenti. I consumatori entrano da
@@ -344,7 +345,8 @@ chi dovrebbe?* Corollari operativi:
    `build_indexer().index()` diretto: la CLI chiama `enable_observability` e l'evento `index` finisce in
    telemetria; il percorso libreria lo bypassa). Il rebuild è **full ma sicuro**: `reset` della
    collezione *dopo* l'embedding (atomico) e namespaced. È **meccanico** → delegabile/in background;
-   richiede l'ambiente di embeddings attivo (oggi Azure: centesimi a rebuild). **Calibra al valore:**
+   richiede l'ambiente di embeddings attivo (oggi `glove`, locale e gratuito; con un provider cloud
+   costa centesimi a rebuild). **Calibra al valore:**
    step ravvicinati → basta un re-index a fine giornata/sessione; momento *obbligato*: dopo un **merge
    su `master`**. Mitigante operativo in attesa della FEAT-009 d'epica (refresh incrementale, Could).
    NB: il server MCP legge l'indice da disco ma va **riavviato** per servire *codice* nuovo, non per
