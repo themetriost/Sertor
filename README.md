@@ -64,7 +64,7 @@ The commands above track the repository's **default branch**. For a reproducible
 release tag** instead — add `@<tag>` before the fragment:
 
 ```powershell
-uvx --from "git+https://github.com/themetriost/Sertor@v0.4.2#subdirectory=packages/sertor" sertor install rag --backend local
+uvx --from "git+https://github.com/themetriost/Sertor@v0.5.0#subdirectory=packages/sertor" sertor install rag --backend local
 ```
 
 Current tags are on the [releases page](https://github.com/themetriost/Sertor/releases). To refresh an
