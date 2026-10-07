@@ -54,6 +54,37 @@ fase F1 · le trappole incontrate: `wiki/concepts/cosa-non-viaggia-in-una-migraz
 > all'avvio (vedi `src/sertor_mcp/server.py`): i guasti compaiono nel report affidabilità e a
 > reconnect. La stessa regola è nelle definizioni degli agenti che usano `sertor-rag`.
 
+## Congelamento della logica d'installazione (regola SEMPRE attiva — decisione utente 2026-09-18)
+
+**Non si modifica più la logica d'installazione.** Il tema — codice **e** tracciamento dei difetti —
+appartiene da oggi al nodo **Kaelen** (decisione D1 del piano di separazione, portata alla sua
+conseguenza). Quando Kaelen avrà consegnato, **la nostra copia si cancella**.
+
+**Cosa è congelato:** `packages/sertor-install-kit/` (2.552 righe) · `install_rag.py` ·
+`install_wiki.py` · `install_governance.py` (2.627 righe in tutto) · `settings_merge.py` e il resto di
+`sertor_installer/`. Nessuna riparazione, nessun refactoring, nessun «già che ci sono».
+
+**Le 11 voci di backlog trasferite** portano il marcatore ⛔ **TRASFERITA A KAELEN** nel loro campo
+*Stato*: `E10-FEAT-006`, `007`, `015`, `042`, `053`, `068` · `E2-FEAT-019`, `020`, `023`, `024`, `025`.
+Se una di queste sembra il prossimo lavoro naturale, **non lo è**: è di Kaelen.
+
+**Cosa resta nostro**, e non va confuso con l'installer:
+- il **RAG** e il code-graph, il **sistema-wiki**, la **documentazione utente**;
+- le **guardie di CI** che *osservano* l'installazione senza modificarla — lo smoke d'installazione, il
+  gate d'aggiornamento (`E10-FEAT-077`, `078`). Misurare non è modificare;
+- le **note di rilascio** (`E10-FEAT-081`): dove un difetto d'installazione resta aperto perché
+  congelato, le note **lo dichiarano** invece di lasciarlo scoprire all'ospite.
+
+**Se un difetto d'installazione emerge dal campo:** si **registra** e si **affigge in bacheca**
+attribuendolo al perimetro di Kaelen — non si ripara qui. Questo vale anche quando la riparazione
+sembra di due righe.
+
+> **Conseguenza dichiarata pubblicamente, e quindi vincolante.** Il congelamento è scritto in bacheca
+> (*Feedback Sertor*, 2026-09-18). Se Kaelen **rifiuta** l'incarico, la logica d'installazione resta
+> senza manutentore: in quel caso la regola va **riaperta con l'utente**, non aggirata in silenzio.
+> Il rischio è dichiarato nella pubblicazione stessa, con la richiesta a Kaelen di rispondere in fretta
+> nel caso rifiuti.
+
 ## Accesso a Sertor: solo via vehicles (regola SEMPRE attiva — Principio XI)
 
 A **runtime**, l'agente / gli script / qualunque consumatore accedono alle capacità di Sertor **solo**
