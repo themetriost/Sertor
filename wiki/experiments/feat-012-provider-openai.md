@@ -21,7 +21,7 @@ Il feature è stato sviluppato con **full SpecKit flow** (requirements → spec 
 
 - **Spec `specs/137-provider-openai/spec.md`:** 4 user story, 18 functional requirement, 5 criteri di successo, out-of-scope (*org/project headers*, *vector dimensions* → backlog).
 - **Plan `specs/137-provider-openai/plan.md`:** 7 decisioni architetturali (D-1…D-7), data model, contracts, quickstart.
-- **Tasks `specs/137-provider-openai/tasks.md`:** 25 task in sequenza; 23 completati; T024/T025 aperte (live test con chiave OpenAI reale + epic row post-merge).
+- **Tasks `specs/137-provider-openai/tasks.md`:** 25 task in sequenza; 24 completati; T025 aperta (riga epica ✅ dopo il merge + pubblicazione a Kaelen).
 
 ## Implementazione
 
@@ -57,6 +57,16 @@ Esito: **1520 test non-cloud verdi** (3 skipped), **suite completa verde** (sert
 ## Distillazione
 
 L'architettura della **base di protocollo condivisa** (`OpenAIProtocolEmbedder`) è distillata nella pagina [[ports-adapters]] (sezione della porta `EmbeddingProvider`, tabella degli adapter con la nuova riga OpenAI + selettore a 5 valori). Non crea una pagina propria perché ha una sola casa naturale: la porta.
+
+## Verifica reale (T024)
+
+La chiave OpenAI è stata inserita in `.sertor/.env`; il provider del dogfood rimane `glove` (il runtime `.sertor/` segue `master`, che il provider non conosce ancora).
+
+- **Live test:** `tests/integration/test_openai_live.py -m cloud` → 1 PASSED; vettori 3072-dim (`text-embedding-3-large`).
+- **E2E via CLI:** `sertor-rag index .` su corpus temporaneo con `.env` dedicato → collezione `e2e__openai_text_embedding_3_large`, 3 doc, 125 chunk, 3.7 s; `sertor-rag search` ritorna il provider doc primo risultato.
+- **Doctor:** `--online --area provider` chiave valida → `pass (probe=reachable)`; chiave sbagliata → `warn` http 401 (chiave non stampata); chiave assente → `FAIL` col nome della variabile.
+- **Correzione doctor:** rimedio precedente suggeriva «o esegui `sertor configure`» ma il wizard congelato ignora le chiavi `openai`; rimedio ora è «imposta <KEY> in .sertor/.env» (`src/sertor_core/services/doctor.py`).
+- **MCP dogfood:** server riconnesso dall'utente; smoke glove (`search_code`, `search_docs`, `find_symbol` attivi); `find_symbol collection_name` → riga 168 posizione master (attesa fino al post-merge re-index); con glove, `search_code` non ritorna `build_embedder` nei top 3 — drop di qualità che il provider è fatto per correggere.
 
 ## Prodotto
 
