@@ -3,7 +3,7 @@ title: Fedeltà del dogfood (dogfood-fidelity)
 type: concept
 tags: [dogfooding, fedelta, runtime, installato, head-tracking, re-lock, e15]
 created: 2026-07-03
-updated: 2026-07-26
+updated: 2026-09-18
 sources: ["requirements/fedelta-dogfood/epic.md", "wiki/syntheses/audit-fedelta-dogfood-2026-07-03.md", "specs/088-relock-runtime/plan.md", ".sertor/pyproject.toml", "scripts/dev/relock-runtime.ps1", "CLAUDE.md"]
 ---
 
@@ -16,6 +16,15 @@ diverso da ciò che un ospite otterrebbe, il dogfooding *mente* (misura uno stru
 Ogni divergenza dal client è **debito**, non design (direttiva standing *«il dogfood è un client fedele; ogni special-case è debito»*); la direttiva
 standing è: il dogfood gira **solo** sulla versione **installata**, mai sul sorgente-repo
 (direttiva standing *«dogfood solo via install da version bump»*, 2026-07-03).
+
+> ⛔ **Cambio di proprieta' dell'oggetto misurato (2026-09-18).** Dal 2026-09-18 **la logica
+> d'installazione non e' piu' nostra**: passa al nodo **Kaelen** e da noi e' congelata (sezione
+> *Congelamento della logica d'installazione* di `CLAUDE.md`). Questa pagina resta vera per **cio' che
+> e' gia' stato consegnato** — descrive misure fatte, non impegni futuri. Ma le voci E15 **ancora
+> aperte** che presuppongono un installer nostro (`FEAT-003`, `FEAT-007`, `FEAT-011`, `FEAT-014`) vanno
+> **rilette**, non solo rietichettate: «il dogfood e' un client fedele del nostro installer» diventa
+> «del motore di Kaelen», e la process-fidelity cambia oggetto. Non e' una riga da aggiornare, e' una
+> domanda da riporre. **Non ancora fatto**, dichiarato qui per non essere scoperto per caso.
 
 ## I due livelli di fedeltà
 

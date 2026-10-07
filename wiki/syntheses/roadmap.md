@@ -31,6 +31,25 @@ Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
 > Rimosso invece che riparato: `git rev-parse master` lo dà in un comando.
 > Vedi [[riassunto-invecchia-senza-riconciliatore]], decima istanza.
 
+> ### ⛔ CONGELATO — la logica d'installazione non è più lavoro nostro (2026-09-18)
+>
+> **Decisione dell'utente:** da oggi **non si modifica la logica d'installazione**. Il tema — codice e
+> tracciamento dei difetti — passa al nodo **Kaelen**; a consegna fatta **la nostra copia si cancella**.
+> È la decisione D1 del piano di separazione portata alla sua conseguenza, ed è **affissa in bacheca**
+> (*Feedback Sertor* e *Generale*, 2026-09-18), quindi vincolante verso l'esterno.
+>
+> **Congelati:** `packages/sertor-install-kit/` (2.552 righe) e i tre piani-in-codice (2.627).
+> **Trasferite: 11 voci** con marcatore ⛔ nel campo *Stato* — `E10-FEAT-006`, `007`, `015`, `042`,
+> `053`, `068` · `E2-FEAT-019`, `020`, `023`, `024`, `025`. **Non sono candidate al prossimo lavoro.**
+>
+> **Resta nostro:** RAG, sistema-wiki, doc utente, le guardie di CI che *osservano* l'installazione
+> senza modificarla (`E10-FEAT-077`, `078`), e le **note di rilascio** (`E10-FEAT-081`), che devono
+> dichiarare i difetti d'installazione rimasti aperti invece di lasciarli scoprire.
+>
+> ⚠️ **Se Kaelen rifiuta**, l'area resta senza manutentore e la regola va riaperta con l'utente. Il
+> rischio è dichiarato nella pubblicazione, con richiesta di risposta rapida in caso di rifiuto.
+> Dettaglio operativo: sezione *Congelamento della logica d'installazione* di `CLAUDE.md`.
+
 > ### 🟢 CONSEGNATO — il server MCP regge entrambe le linee dell'SDK
 >
 > **E10-FEAT-070 su `master`** (2026-09-13, merge `4cf2490`, PR #273, CI 9/9 verde) **e rilasciata in `v0.4.2`**:
@@ -131,8 +150,11 @@ Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
   esattamente ciò che la regola sugli *Out of Scope* vieta. *Verificato prima di crearla:* nessuna
   delle 16 epiche preesistenti la copriva, ed **E15 `fedelta-dogfood`** — la più vicina — ha nel suo
   *Fuori ambito* proprio «riscrivere gli installer», che è il cuore di F2.
-- **Fatto scomodo da tenere presente:** **46 delle 75 voci di E10 `debito-tecnico` nominano il
-  wiki** — Thesmion nascerà ereditando la maggior parte del debito aperto.
+- **Fatto scomodo da tenere presente:** Thesmion nascerà ereditando **una quota larga** del debito
+  aperto di E10 — non la maggioranza, come questa riga ha dichiarato fino al 2026-09-18. Il numero,
+  col criterio con cui è ottenuto, vive **solo** in
+  [`E17 §2`](../../requirements/separazione-ecosistema/epic.md): qui non se ne tiene una copia, perche'
+  le due copie precedenti erano divergenti **e** entrambe false.
 
 ### ✅ Done — recente
 
@@ -223,10 +245,10 @@ combinazioni**, 8 esiti su 8.
 
 ### 📋 Prossime direzioni (da scegliere)
 
-1. **E2-FEAT-023** — `upgrade` nudo copre una capability sola uscendo verde. È **il settimo difetto** che
-   il gate d'aggiornamento non copre, dichiarato fuori copertura perché aperto: chiuderlo porta SC-001 a
-   **7/7** e toglie l'unica deroga. *Era il candidato naturale finché non è arrivata la coda del campo:
-   ora viene dopo FEAT-070 + release, che ha nodi rotti in attesa.*
+1. ~~**E2-FEAT-023**~~ — ⛔ **non è più una nostra direzione: trasferita a Kaelen** il 2026-09-18 con
+   il resto della logica d'installazione. Resta vero che chiuderla porterebbe SC-001 a 7/7, ma la
+   riparazione non è nostra. **La metà che ci resta è `E10-FEAT-081`**: finché il difetto è aperto, le
+   note di rilascio lo **dichiarano** e dicono a chi serve ciascun comando.
 2. **E10-FEAT-078** — *un esito del gate d'aggiornamento può diventare `n/a` permanente, e il ramo
    principale resta rosso su un difetto inesistente.* Accaduto il 2026-09-16 (run `35102113219`):
    `mcp-server-imports` è scaduto quando la `v0.4.2` ha portato il tetto agli ospiti, perché la sua
@@ -259,16 +281,23 @@ combinazioni**, 8 esiti su 8.
    perimetro di `scan`: il gate non guarda la superficie che arriva agli ospiti) · E10-FEAT-047
    (`wiki/log/index.md` duplica un fatto derivabile) · E10-FEAT-049 + E13-FEAT-014 (riferimenti entranti /
    anti-drift della doc utente — **stessa forma, da progettare insieme**).
-4. **Chiudere E4** (73%) — restano 3 Could: remember-this · retention · ponte second-brain.
-5. **E14 — SpecLift/SpecAudit: non più lavoro nostro** (E14-FEAT-002). La casa è **Sinthari**, il
+4. **I tre silenzi del retrieval, dal riscontro di Kaelen (2026-09-18)** — tre voci nuove che sono lo
+   **stesso difetto su tre strati**: l'ingestione scarta le estensioni fuori mappa senza dirlo
+   (`E10-FEAT-079`, *Should P1*), il grafo nasce vuoto senza dirlo, la navigazione risponde «non c'è»
+   senza dirlo (`E10-FEAT-080`, *Should P1*). Più la capacità mancante che ha fatto emergere il caso:
+   `E7-FEAT-005` (Rust nel corpus — `_EXT_LANG` è una **allowlist chiusa** di 16 estensioni). Un ospite
+   riceve una risposta **sintatticamente corretta e semanticamente falsa** e non ha modo di
+   accorgersene. Segnalato il 31/07, **49 giorni senza risposta**, non tracciato fino a oggi.
+5. **Chiudere E4** (73%) — restano 3 Could: remember-this · retention · ponte second-brain.
+6. **E14 — SpecLift/SpecAudit: non più lavoro nostro** (E14-FEAT-002). La casa è **Sinthari**, il
    proprietario (D3, 31/07): noi smettiamo di vendorare, e ciò che resta a noi — la **rimozione del
    vendoring** — è **E17-FEAT-008**. *Riga dell'`epic.md` allineata il 2026-08-05: dichiarava ancora
    la decisione superata del 14/07 («fold in `sertor-flow`»).* Le 3.916 righe restano non installabili
    **da noi**, ma non sono più un nostro debito di completamento.
-6. **E13 Fase 2 — marketing** (posizionamento/demo/landing), sbloccata dal go-public.
-7. **E15-FEAT-014** — matrice esaustiva «da ogni versione all'ultima»: ora **parzialmente risposta**
+7. **E13 Fase 2 — marketing** (posizionamento/demo/landing), sbloccata dal go-public.
+8. **E15-FEAT-014** — matrice esaustiva «da ogni versione all'ultima»: ora **parzialmente risposta**
    (4 combinazioni, 4 release indietro).
-8. **Scommesse grandi** — E7 ingestione → **sblocca E8** · E6 PGVector · E9 second-brain · E5 leve
+9. **Scommesse grandi** — E7 ingestione → **sblocca E8** · E6 PGVector · E9 second-brain · E5 leve
    retrieval residue (**solo** con lift misurato).
 
 **Fermi per decisione utente:** go-public/PyPI (E2-FEAT-006, dal 2026-07-17) · E11 `multiutente`
