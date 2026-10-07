@@ -1,1 +1,1 @@
-"""Embedding adapters: Ollama (local), Azure OpenAI (cloud)."""
+"""Embedding adapters: GloVe/hash/Ollama (local), Azure OpenAI and OpenAI (cloud)."""

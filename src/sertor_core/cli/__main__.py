@@ -587,11 +587,11 @@ def _cmd_doctor(args) -> None:
         )
     areas: list = []
 
-    # The config/provider areas share the SINGLE source `validate_backend()` (no duplicated list).
-    missing_all = settings.validate_backend() if (
-        AreaName.config in wanted or AreaName.provider in wanted
-    ) else []
-    missing_provider = [k for k in missing_all if k in _PROVIDER_ENV_KEYS]
+    # The config/provider areas share the SINGLE source in `Settings` (no duplicated list): the
+    # provider area inherits the criticality of the provider's own missing keys (DA-D4, 137 D-3).
+    needs_config = AreaName.config in wanted or AreaName.provider in wanted
+    missing_all = settings.validate_backend() if needs_config else []
+    missing_provider = settings.missing_provider_keys() if needs_config else []
 
     # Index freshness is needed both for the `index` area and the best-effort MCP staleness (DA-D5).
     index_area = None
@@ -626,13 +626,6 @@ def _cmd_doctor(args) -> None:
             if any(p.severity.value == "critical" for p in a.problems)
         ]
         raise DoctorCheckFailed(f"critical problems in: {', '.join(critical)}")
-
-
-# Env keys that belong to the PROVIDER area (subset of `validate_backend()`): the provider area
-# inherits the criticality of these missing keys (DA-D4). Store keys (AZURE_SEARCH_*) stay config.
-_PROVIDER_ENV_KEYS = frozenset(
-    {"AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_API_KEY", "AZURE_OPENAI_EMBED_DEPLOYMENT"}
-)
 
 
 def _emit_doctor_event(report) -> None:

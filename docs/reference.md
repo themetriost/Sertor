@@ -130,7 +130,7 @@ Settings live in `.sertor/.env` (never committed). The most common ones:
 
 | Knob | Values / default | What it selects |
 |---|---|---|
-| `SERTOR_EMBED_PROVIDER` | `glove` (default) · `hash` · `ollama` · `azure` | the embeddings provider — `glove` is zero-config & offline |
+| `SERTOR_EMBED_PROVIDER` | `glove` (default) · `hash` · `ollama` · `azure` · `openai` | the embeddings provider — `glove` is zero-config & offline |
 | `SERTOR_STORE_BACKEND` | `local` (default) · `azure` | the vector store — independent from the embedder |
 | `SERTOR_ENGINE` | `hybrid` (default) · `baseline` | the retrieval engine (hybrid = BM25 + vector, RRF) |
 | `SERTOR_GRAPH` | `true` (default) · `false` | build the structural code graph inside `index()` |
@@ -141,6 +141,11 @@ Settings live in `.sertor/.env` (never committed). The most common ones:
 **Azure** (only when a knob is set to `azure`): `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`
 (embeddings); `AZURE_SEARCH_ENDPOINT`, `AZURE_SEARCH_API_KEY` (store). **Ollama**: `OLLAMA_HOST`. Fill
 secrets with `sertor configure` rather than editing by hand — they are prompted masked and never printed.
+
+**OpenAI** (only with `SERTOR_EMBED_PROVIDER=openai`): `OPENAI_API_KEY` (required),
+`OPENAI_EMBED_MODEL` (default `text-embedding-3-large`), `OPENAI_BASE_URL` (default
+`https://api.openai.com/v1`, or an OpenAI-compatible service). `sertor configure` does not know this
+provider yet: set these by editing `.sertor/.env` — see [install.md](install.md) §2.
 
 > This is the common set. The **full list** of knobs (chunking, RRF/reranking tuning, code-graph limits,
 > memory retention, observability/OTel export, eval thresholds) is in **[install.md](install.md)**.

@@ -7,7 +7,7 @@ The character n-grams give signal even to out-of-vocabulary tokens (code identif
 `build_indexer`), which a word-vector model would drop. The hash is **stable** across runs,
 machines, and Python versions: it uses `hashlib.blake2b`, never the builtin `hash()` (salted
 per-process via `PYTHONHASHSEED`) — REQ-013/RNF-1. The signal is lexical, not semantic: the
-composition root warns to configure glove/ollama/azure for NL search (REQ-014).
+composition root warns to configure glove/ollama/azure/openai for NL search (REQ-014).
 """
 from __future__ import annotations
 

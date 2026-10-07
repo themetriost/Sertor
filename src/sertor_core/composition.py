@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from sertor_core.config.settings import Settings
+from sertor_core.config.settings import EMBED_PROVIDERS, Settings
 from sertor_core.domain.errors import ConfigError
 from sertor_core.domain.ports import (
     EmbeddingProvider,
@@ -62,17 +62,15 @@ def _build_reranker(settings: Settings) -> Reranker | None:
         ) from exc
 
 
-_VALID_EMBED_PROVIDERS = ("glove", "hash", "ollama", "azure")
-
-
 def build_embedder(
     settings: Settings | None = None, *, cache: bool = False, allow_download: bool = False
 ) -> EmbeddingProvider:
     """Build the embedding provider selected by `Settings.embed_provider` (068, REQ-001/003).
 
-    FOUR branches with a lazy import per branch (Principio I — no new adapter imported at module
+    FIVE branches with a lazy import per branch (Principio I — no new adapter imported at module
     top): `glove` (default, static NL vectors), `hash` (airgapped/CI lexical floor), `ollama`,
-    `azure`. An unknown value → `ConfigError(key="SERTOR_EMBED_PROVIDER")` naming allowed values.
+    `azure`, `openai` (137). An unknown value → `ConfigError(key="SERTOR_EMBED_PROVIDER")` naming
+    the allowed values from `EMBED_PROVIDERS`, the single list.
 
     Wires the retry policy (018, REQ-H3) for the cloud/Ollama providers; the local providers
     (`glove`/`hash`) need none. `allow_download` (068, REQ-034) is passed `True` only by the
@@ -106,7 +104,7 @@ def build_embedder(
             logging.WARNING, "embeddings_lexical_only",
             note=(
                 "the 'hash' provider gives lexical signal only; NL semantic search is limited; "
-                "configure glove/ollama/azure for semantic retrieval"
+                "configure glove/ollama/azure/openai for semantic retrieval"
             ),
         )
     elif provider == "ollama":
@@ -128,10 +126,20 @@ def build_embedder(
             batch_size=settings.embed_batch_size,
             retry=retry,
         )
+    elif provider == "openai":
+        from sertor_core.adapters.embeddings.openai import OpenAIEmbedder
+
+        embedder = OpenAIEmbedder(
+            base_url=settings.openai_base_url,
+            api_key=settings.openai_api_key,
+            model=settings.openai_embed_model,
+            batch_size=settings.embed_batch_size,
+            retry=retry,
+        )
     else:
         raise ConfigError(
             f"unknown embedding provider: {provider!r} "
-            f"(allowed: {', '.join(_VALID_EMBED_PROVIDERS)})",
+            f"(allowed: {', '.join(EMBED_PROVIDERS)})",
             key="SERTOR_EMBED_PROVIDER",
         )
     if cache:

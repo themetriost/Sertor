@@ -17,6 +17,10 @@ from dotenv import load_dotenv
 
 from sertor_core.domain.errors import ConfigError
 
+# Embedding providers selectable with SERTOR_EMBED_PROVIDER — the single list (137, D-3/XIV): the
+# composition root validates against it, so a new provider is added here and nowhere else.
+EMBED_PROVIDERS: tuple[str, ...] = ("glove", "hash", "ollama", "azure", "openai")
+
 # Default exclusion patterns for ingestion (REQ-002): environments, artifacts, VCS, secrets.
 # This is an overridable default via config, not a hardcoded list in components.
 _DEFAULT_EXCLUDES: tuple[str, ...] = (
@@ -165,7 +169,7 @@ class Settings:
 
     # embeddings provider & store (068, FEAT-011): two INDEPENDENT knobs (RAG_BACKEND removed).
     # `embed_provider` selects the embedding provider; `store_backend` selects the vector store.
-    embed_provider: str = "glove"          # glove | hash | ollama | azure (validated downstream)
+    embed_provider: str = "glove"          # one of EMBED_PROVIDERS (validated downstream)
     store_backend: str = "local"           # local | azure — VECTOR STORE backend (decoupled)
     glove_path: Path | None = None         # SERTOR_GLOVE_PATH — override of glove.6B.300d.txt
     corpus: str = "default"                # logical namespace for the collection
@@ -178,6 +182,10 @@ class Settings:
     azure_openai_endpoint: str = ""
     azure_openai_api_key: str = ""
     azure_openai_embed_deployment: str = ""
+    # embeddings: cloud (OpenAI API or an OpenAI-compatible service, 137)
+    openai_api_key: str = field(default="", repr=False)
+    openai_embed_model: str = "text-embedding-3-large"
+    openai_base_url: str = "https://api.openai.com/v1"
     embed_batch_size: int = 64
     # embedding resilience (018, REQ-H3): retry transient provider failures (429/5xx/network).
     embed_retry_attempts: int = 3          # total attempts per batch; 1 = no retry
@@ -326,9 +334,25 @@ class Settings:
 
         **Static** validation (FR-015): does not contact services; returns only the list of
         empty configuration fields required by the chosen embedding provider/store. This is the ONLY
-        source of the "which fields are needed for azure" map (Principio VIII): the CLI knows only
-        the outcome. Local providers (`glove`/`hash`/Ollama, Chroma — valid defaults) are never
-        blocked → empty list (068, REQ-005/007, DA-7).
+        source of the "which fields are needed" map (Principio VIII): provider keys from
+        `missing_provider_keys()`, then the store keys; the CLI knows only the outcome. Local
+        providers (`glove`/`hash`/Ollama, Chroma — valid defaults) are never blocked → empty list
+        (068, REQ-005/007, DA-7).
+        """
+        missing = self.missing_provider_keys()
+        if self.store_backend == "azure":
+            if not self.azure_search_endpoint:
+                missing.append("AZURE_SEARCH_ENDPOINT")
+            if not self.azure_search_api_key:
+                missing.append("AZURE_SEARCH_API_KEY")
+        return missing
+
+    def missing_provider_keys(self) -> list[str]:
+        """Required but missing env keys of the EMBEDDING PROVIDER only (137, D-3).
+
+        The provider half of `validate_backend()`: `doctor` reads it to grade the provider area,
+        instead of filtering `validate_backend()` through a hand-copied list of key names. Static:
+        never contacts a service. `openai` needs only the key (model and base URL have defaults).
         """
         missing: list[str] = []
         if self.embed_provider == "azure":
@@ -338,11 +362,9 @@ class Settings:
                 missing.append("AZURE_OPENAI_API_KEY")
             if not self.azure_openai_embed_deployment:
                 missing.append("AZURE_OPENAI_EMBED_DEPLOYMENT")
-        if self.store_backend == "azure":
-            if not self.azure_search_endpoint:
-                missing.append("AZURE_SEARCH_ENDPOINT")
-            if not self.azure_search_api_key:
-                missing.append("AZURE_SEARCH_API_KEY")
+        elif self.embed_provider == "openai":
+            if not self.openai_api_key:
+                missing.append("OPENAI_API_KEY")
         return missing
 
     @classmethod
@@ -409,6 +431,10 @@ class Settings:
             azure_openai_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT", ""),
             azure_openai_api_key=os.getenv("AZURE_OPENAI_API_KEY", ""),
             azure_openai_embed_deployment=os.getenv("AZURE_OPENAI_EMBED_DEPLOYMENT", ""),
+            # Defaults read from the field, not repeated (137, D-2): an empty value means "unset".
+            openai_api_key=os.getenv("OPENAI_API_KEY", ""),
+            openai_embed_model=os.getenv("OPENAI_EMBED_MODEL") or cls.openai_embed_model,
+            openai_base_url=os.getenv("OPENAI_BASE_URL") or cls.openai_base_url,
             embed_batch_size=_int_env("EMBED_BATCH_SIZE", 64),
             embed_retry_attempts=_int_env("SERTOR_EMBED_RETRY_ATTEMPTS", 3),
             embed_retry_base_s=_float_env("SERTOR_EMBED_RETRY_BASE", 0.5),

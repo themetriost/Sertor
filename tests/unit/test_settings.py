@@ -245,3 +245,45 @@ def test_memory_retention_blank_is_none(monkeypatch):
     # Blank env var = unset = no retention hint (twin of _float_or_none_env semantics, FR-021).
     monkeypatch.setenv("SERTOR_MEMORY_RETENTION_DAYS", "   ")
     assert Settings.load(env_file=None).memory_retention_days is None
+
+
+# --- 137: provider openai ----------------------------------------------------------------------
+
+
+def _clear_openai(monkeypatch):
+    for name in ("OPENAI_API_KEY", "OPENAI_EMBED_MODEL", "OPENAI_BASE_URL"):
+        monkeypatch.delenv(name, raising=False)
+
+
+def test_openai_defaults(monkeypatch):
+    _clear_openai(monkeypatch)
+    s = Settings.load(env_file=None)
+    assert s.openai_api_key == ""
+    assert s.openai_embed_model == "text-embedding-3-large"
+    assert s.openai_base_url == "https://api.openai.com/v1"
+
+
+def test_openai_empty_values_fall_back_to_defaults(monkeypatch):
+    _clear_openai(monkeypatch)
+    monkeypatch.setenv("OPENAI_EMBED_MODEL", "")
+    monkeypatch.setenv("OPENAI_BASE_URL", "")
+    s = Settings.load(env_file=None)
+    assert s.openai_embed_model == Settings.openai_embed_model
+    assert s.openai_base_url == Settings.openai_base_url
+
+
+def test_openai_values_read_from_env(monkeypatch):
+    monkeypatch.setenv("SERTOR_EMBED_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-from-env-123456")
+    monkeypatch.setenv("OPENAI_EMBED_MODEL", "text-embedding-3-small")
+    monkeypatch.setenv("OPENAI_BASE_URL", "http://localhost:8080/v1")
+    s = Settings.load(env_file=None)
+    assert s.embed_provider == "openai"
+    assert s.openai_api_key == "sk-from-env-123456"
+    assert s.openai_embed_model == "text-embedding-3-small"
+    assert s.openai_base_url == "http://localhost:8080/v1"
+
+
+def test_openai_key_not_in_repr():
+    s = Settings(openai_api_key="sk-must-not-leak-987")
+    assert "sk-must-not-leak-987" not in repr(s)

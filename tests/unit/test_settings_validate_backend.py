@@ -62,3 +62,36 @@ def test_preview_chars_override_via_env(monkeypatch):
     monkeypatch.setenv("SERTOR_PREVIEW_CHARS", "80")
     s = Settings.load(env_file=None)
     assert s.preview_chars == 80
+
+
+# ----------------------------------------------------------------- 137: provider openai
+def test_validate_backend_openai_missing_key():
+    s = Settings(embed_provider="openai", store_backend="local")
+    assert s.validate_backend() == ["OPENAI_API_KEY"]
+
+
+def test_validate_backend_openai_complete():
+    s = Settings(embed_provider="openai", store_backend="local", openai_api_key="sk-x")
+    assert s.validate_backend() == []
+
+
+def test_validate_backend_openai_needs_no_azure_embeddings_keys():
+    missing = Settings(embed_provider="openai").validate_backend()
+    assert not any(k.startswith("AZURE_OPENAI_") for k in missing)
+
+
+def test_missing_provider_keys_excludes_store_keys():
+    s = Settings(embed_provider="openai", store_backend="azure")
+    assert s.missing_provider_keys() == ["OPENAI_API_KEY"]
+    assert s.validate_backend() == [
+        "OPENAI_API_KEY", "AZURE_SEARCH_ENDPOINT", "AZURE_SEARCH_API_KEY",
+    ]
+
+
+def test_missing_provider_keys_azure_and_local():
+    assert Settings(embed_provider="azure").missing_provider_keys() == [
+        "AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_API_KEY", "AZURE_OPENAI_EMBED_DEPLOYMENT",
+    ]
+    for provider in ("glove", "hash", "ollama"):
+        settings = Settings(embed_provider=provider, store_backend="azure")
+        assert settings.missing_provider_keys() == []
