@@ -75,6 +75,11 @@ Se una di queste sembra il prossimo lavoro naturale, **non lo è**: è di Kaelen
 - le **note di rilascio** (`E10-FEAT-081`): dove un difetto d'installazione resta aperto perché
   congelato, le note **lo dichiarano** invece di lasciarlo scoprire all'ospite.
 
+**Eccezioni autorizzate dall'utente** (una per volta, mai per analogia):
+- **2026-10-12 — `model_policy.py` v2:** model-ID Copilot portati alla famiglia Claude 5.5 e
+  abbinamento allineato agli alias degli asset Claude (concierge → sonnet, wiki-curator → haiku).
+  Kaelen eredita il kit con questa modifica.
+
 **Se un difetto d'installazione emerge dal campo:** si **registra** e si **affigge in bacheca**
 attribuendolo al perimetro di Kaelen — non si ripara qui. Questo vale anche quando la riparazione
 sembra di due righe.

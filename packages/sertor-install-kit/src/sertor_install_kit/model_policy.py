@@ -9,16 +9,16 @@ from __future__ import annotations
 
 from sertor_install_kit.errors import ModelPolicyError
 
-MODEL_POLICY_VERSION = "1"
+MODEL_POLICY_VERSION = "2"
 
-# Fonte unica agente -> model-ID (FR-005). Default ragionato iniziale (spec §Policy):
-# meccanico/dispatcher -> economico/veloce; scrittura/reasoning/sintesi -> capace.
+# Fonte unica agente -> model-ID (FR-005). v2 (2026-10-12): famiglia Claude 5.5, abbinamento
+# allineato agli alias `model:` degli asset Claude (concierge -> sonnet, wiki-curator -> haiku).
 _MODEL_POLICY: dict[str, str] = {
-    "concierge": "claude-haiku-4.5",
-    "configuration-manager": "claude-haiku-4.5",
-    "requirements-analyst": "claude-sonnet-4.6",
-    "requirements": "claude-sonnet-4.6",
-    "wiki-curator": "claude-sonnet-4.6",
+    "concierge": "claude-sonnet-5.5",
+    "configuration-manager": "claude-haiku-5.5",
+    "requirements-analyst": "claude-sonnet-5.5",
+    "requirements": "claude-sonnet-5.5",
+    "wiki-curator": "claude-haiku-5.5",
 }
 
 IN_SCOPE_AGENTS: frozenset[str] = frozenset(_MODEL_POLICY)
