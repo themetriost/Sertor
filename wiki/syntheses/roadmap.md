@@ -120,9 +120,10 @@ Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
   Razor `.cshtml`/`.razor`, con estrazione del C# lato server inline e righe riferite al file originale).
   **Dove:** branch locale `140-pagine-aspnet`,
   [`requirements/ingestione-estesa/pagine-aspnet/requirements.md`](../../requirements/ingestione-estesa/pagine-aspnet/requirements.md).
-  **Prossimo passo:** `specify` (SpecKit completo, decisione utente). **Aperte per `clarify`:** doppio
-  conteggio markup/C# estratto · identità dei metodi WebForms senza classe · ruolo delle espressioni
-  `<%= %>`. Secondo caso di [[omissione-che-diventa-risposta]] dopo Rust (E7-FEAT-005).
+  [`specs/140-pagine-aspnet/`](../../specs/140-pagine-aspnet/) — spec, clarify (3 decisioni) e plan
+  scritti; design misurato sul parser reale (vista C# con le stesse righe del file). **Prossimo passo:**
+  `tasks` → `analyze`, poi stop prima di `implement` (richiesta utente). Secondo caso di
+  [[omissione-che-diventa-risposta]] dopo Rust (E7-FEAT-005); rinvio promosso a E7-FEAT-007.
 
 > 🏗️ **SEPARAZIONE IN QUATTRO PRODOTTI — è il lavoro che domina la roadmap.** Sertor resta il
 > **RAG**; il sistema-wiki diventa **Thesmion**; governance/SDLC diventa **Sulcimen**; il prototipo è
@@ -246,7 +247,7 @@ combinazioni**, 8 esiti su 8.
 | **E4** | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 11/15 | 4 | 73% | 🔄 in corso |
 | **E5** | [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | 6/13 | 7 | 46% | 🔄 in corso |
 | **E6** | [`backend-store-scala`](../../requirements/backend-store-scala/epic.md) | 0/7 | 7 | 0% | 📋 non iniziata |
-| **E7** | [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 0/6 | 6 | 0% | 🔄 FEAT-006 in requisiti |
+| **E7** | [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 0/7 | 7 | 0% | 🔄 FEAT-006 in piano |
 | **E8** | [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | 0/3 | 3 | 0% | 📋 non iniziata |
 | **E9** | [`second-brain`](../../requirements/second-brain/epic.md) | 0/10 | 10 | 0% | 📋 non iniziata |
 | **E10** | [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 41/75 | 34 | 55% | 🔄 **in corso — direzione attiva** |
@@ -257,7 +258,7 @@ combinazioni**, 8 esiti su 8.
 | **E15** | [`fedelta-dogfood`](../../requirements/fedelta-dogfood/epic.md) | 7/12 | 5 | 58% | 🔄 in corso *(1 ritirata)* |
 | **E16** | [`evoluzione-modello-wiki`](../../requirements/evoluzione-modello-wiki/epic.md) | 0/4 | 4 | 0% | 📋 non iniziata |
 | **E17** | [`separazione-ecosistema`](../../requirements/separazione-ecosistema/epic.md) | 1/16 | 15 | 6% | 🔄 **in corso — il lavoro che domina** |
-| | **TOTALE** | **117/252** | **135** | **46%** | — |
+| | **TOTALE** | **117/253** | **136** | **46%** | — |
 
 > **Come leggere «Consegnate»:** il denominatore esclude le feature **ritirate** (`❌ Won't`/not-a-bug) e
 > quelle **promosse ad altra epica** — contarle come debito gonfierebbe il residuo con lavoro che nessuno
@@ -391,7 +392,7 @@ combinazioni**, 8 esiti su 8.
 - 📋 **E6-FEAT-006** — Scala del code-graph oltre l'in-memory — backend a grafo persistente (Neo4j opzionale) oltre la soglia ~5 · ***Could***
 - 📋 **E6-FEAT-007** — Azure AI Search: dichiarare experimental o testare — la traccia store cloud odierna (store_backend=azure) · ***Should***
 
-**E7 · [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md)** — 6 aperte
+**E7 · [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md)** — 7 aperte
 
 - 📋 **E7-FEAT-001** — Repository remoti via URL — clone/fetch come sorgente del corpus · ***Could***
 - 📋 **E7-FEAT-002** — Formati non-testo (PDF/DOCX/notebook → testo) nell'ingestione documentale · ***Could***
@@ -399,6 +400,7 @@ combinazioni**, 8 esiti su 8.
 - 📋 **E7-FEAT-004** — No-code-first — wiki/RAG su progetti senza codice (solo doc) · ***Could***
 - 📋 **E7-FEAT-005** — Rust nel corpus — `.rs` fuori da `_EXT_LANG` (nodo Kaelen, 104 file) · ***Should***
 - 🔄 **E7-FEAT-006** — Pagine ASP.NET nel corpus — WebForms + Razor con estrazione del C# inline · ***Should***
+- 📋 **E7-FEAT-007** — Relazioni fra file ASP.NET — pagina ↔ code-behind / master / controlli registrati · ***Could***
 
 **E8 · [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md)** — 3 aperte
 
@@ -541,6 +543,8 @@ combinazioni**, 8 esiti su 8.
 | **Provider `openai`: intestazioni organizzazione/progetto** | Chi usa chiavi utente con più organizzazioni deve poter indicare `OpenAI-Organization`/`OpenAI-Project` | Rinviata da FEAT-012: le chiavi di progetto bastano al primo taglio. Solo su richiesta di un ospite | 💡 idea |
 | **Lo smoke d'installazione non gira sulle PR che cambiano `src/`** | Il filtro dei percorsi di `ci.yml` attiva lo smoke solo per installer, script di smoke, `pyproject.toml`/`uv.lock`: un cambio in `src/sertor_core`, che finisce nel runtime degli ospiti, viene installato per la prima volta **dopo** il merge (sul push a `master`). Visto sulla PR #283 (2026-10-07) | Trade-off di costo voluto; valutare almeno lo smoke di un solo OS su `src/sertor_mcp/**` e `src/sertor_core/composition.py` | 💡 idea (2026-10-07) |
 | **Nel flusso «code» i test superano la definizione** | La query «build_embedder selects the embedding provider» restituisce test che nominano la funzione prima della sua definizione in `composition.py`, **sia con `glove` sia con `openai`** (2026-10-07): non è il provider, è un tratto del retrieval su codice | Una query non è una misura: serve un caso nella suite di eval (`eval add-case`) prima di qualunque rimedio | 💡 idea (2026-10-07) |
+| **Pagine ASP.NET in VB.NET e JavaScript lato client** | E7-FEAT-006 estrae solo il C# lato server: una pagina con `Language="VB"` (e i `.aspx.vb`, `.vbhtml`) entra come testo con evento; i `<script>` client restano testo del markup | Rinviate da `specs/140-pagine-aspnet/` (fuori ambito). VB richiederebbe una grammatica VB; il JS client riuserebbe quella JavaScript esistente. Solo su richiesta di un ospite | 💡 idea (2026-10-12) |
+| **Navigazione del grafo dalla CLI** | `find_symbol`/`who_calls` esistono solo come tool MCP; dalla CLI si arriva al grafo solo con `graph-eval validate-ref`, che conferma ref noti ma non li elenca. Uno script o un ospite senza MCP non può chiedere «dov'è definito X?» | Emerso scrivendo il quickstart di `specs/140-pagine-aspnet/` (2026-10-12). Comando sottile sopra la porta `CodeGraph` esistente | 💡 idea (2026-10-12) |
 | **Il gate wiki chiama «voce non di oggi» l'indice del giornale** | `scan` riporta `stale_recording: wiki/log/index.md` quando `append-log` aggiorna l'indice: è l'indice, non una partizione, e la nota fa cercare un problema che non c'è | `src/sertor_core/wiki_tools/scan.py` `_stale_recording` (sistema-wiki, futuro Thesmion) | 💡 idea (2026-10-07) |
 
 ---

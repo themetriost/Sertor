@@ -177,11 +177,10 @@ error»*. È falso: le estensioni fuori allowlist non arrivano al chunker.
 
 ## 10. Domande aperte
 
-- **DA-1 — Doppio conteggio (R-3):** il C# estratto va **escluso** dai chunk del markup, o i due flussi
-  restano sovrapposti? [DA CHIARIRE in clarify]
-- **DA-2 — Espressioni `<%= %>` / `<%# %>`:** contano solo per gli archi `calls`, o diventano anche chunk
-  propri? Proposta: solo archi.
-- **DA-3 — Identità dei metodi WebForms senza classe (A-2):** qualname = `<NomeFile>.<Metodo>`, oppure la
-  classe dichiarata da `Inherits`? [DA CHIARIRE in clarify; legata a REQ-014]
+- ✅ **DA-1 — Doppio conteggio (R-3):** *risolta in clarify, 2026-10-12* — il C# dei blocchi è **escluso**
+  dai chunk del markup (righe vuote al suo posto); ogni riga di codice compare una volta sola.
+- ✅ **DA-2 — Espressioni `<%= %>` / `<%# %>`:** *risolta* — solo archi `calls`, nessun chunk proprio.
+- ✅ **DA-3 — Identità dei metodi senza classe (A-2):** *risolta* — qualname = `<NomeFile>.<Metodo>`
+  (`Default.Page_Load`), per entrambe le famiglie. `Inherits` resta materia di REQ-014.
 - **DA-4 — JS lato client:** indicizzare i `<script>` client come JavaScript sintattico? Proposta: no in
   questa feature; voce di backlog se serve.
