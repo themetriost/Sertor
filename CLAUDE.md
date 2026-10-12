@@ -129,7 +129,7 @@ Regole architetturali da rispettare quando si estende il core:
   (uno di `EMBED_PROVIDERS`: `glove` default · `hash` · `ollama` · `azure` · `openai`) e lo store da
   `Settings.store_backend` (`local`→Chroma · `azure`→Azure AI Search) — **manopole distinte**
   (FEAT-009/011): si combinano, es. embeddings cloud + store Chroma locale. L'indice dogfood `sertor` gira
-  su `glove` dal 2026-10-07 (chiave Azure rifiutata con `http 401`), in attesa di `openai` (FEAT-012). Per aggiungere un
+  su `openai` (`text-embedding-3-large`) dal 2026-10-07 (FEAT-012, rilasciata in v0.5.0; la chiave Azure era stata rifiutata con `http 401`). Per aggiungere un
   provider/backend si estende il composition root e gli adapter, **non** i servizi. Gli import degli SDK
   pesanti sono **lazy** dentro le `build_*` (NFR isolamento dipendenze: l'extra `azure` non serve in locale).
 - **Default solo in `Settings`**, mai hardcodati nei componenti. I consumatori entrano da
@@ -376,8 +376,8 @@ chi dovrebbe?* Corollari operativi:
    `build_indexer().index()` diretto: la CLI chiama `enable_observability` e l'evento `index` finisce in
    telemetria; il percorso libreria lo bypassa). Il rebuild è **full ma sicuro**: `reset` della
    collezione *dopo* l'embedding (atomico) e namespaced. È **meccanico** → delegabile/in background;
-   richiede l'ambiente di embeddings attivo (oggi `glove`, locale e gratuito; con un provider cloud
-   costa centesimi a rebuild). **Calibra al valore:**
+   richiede l'ambiente di embeddings attivo (oggi `openai`: centesimi a rebuild completo, ~5 minuti; la
+   cache degli embedding evita di ripagare i chunk invariati). **Calibra al valore:**
    step ravvicinati → basta un re-index a fine giornata/sessione; momento *obbligato*: dopo un **merge
    su `master`**. Mitigante operativo in attesa della FEAT-009 d'epica (refresh incrementale, Could).
    NB: il server MCP legge l'indice da disco ma va **riavviato** per servire *codice* nuovo, non per
@@ -604,14 +604,9 @@ dogfood sopra. *(Non riconciliare cancellando la prosa: i blocchi sono rigenerat
 è la conoscenza dogfood — vanno tenuti entrambi.)*
 
 <!-- SPECKIT START -->
-**Piano attivo: [`specs/137-provider-openai/plan.md`](specs/137-provider-openai/plan.md)**
-(FEAT-012 dell'epica `sertor-core` — provider di embedding sull'API OpenAI diretta,
-`SERTOR_EMBED_PROVIDER=openai`). Branch `137-provider-openai`. Fasi `requirements`/`specify`/`clarify`/
-`plan` fatte. **Perche' esiste:** la chiave Azure del dogfood risponde `http 401` e il ripiego `glove`
-degrada la qualita' del retrieval; una chiave OpenAI e' la credenziale cloud piu' diffusa. Da leggere
-prima di toccare l'area: [`research.md`](specs/137-provider-openai/research.md) — la base di protocollo
-condivisa con Azure (D-1), le chiavi del provider derivate invece che copiate (D-3) e i tre silenzi del
-wizard congelato da girare a Kaelen (D-7).
+**Nessun piano attivo.** L'ultimo, [`specs/137-provider-openai/plan.md`](specs/137-provider-openai/plan.md)
+(FEAT-012, provider di embedding `openai`), e' consegnato: PR #283, rilascio **v0.5.0** (2026-10-07). Il
+prossimo lavoro si sceglie dall'EXEC.
 
 Per sapere **dove siamo e cosa fare adesso**, la fonte e' il blocco EXEC di
 `wiki/syntheses/roadmap.md`, non questo paragrafo — che e' una copia e invecchia (vedi

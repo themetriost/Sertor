@@ -21,7 +21,7 @@ Il feature è stato sviluppato con **full SpecKit flow** (requirements → spec 
 
 - **Spec `specs/137-provider-openai/spec.md`:** 4 user story, 18 functional requirement, 5 criteri di successo, out-of-scope (*org/project headers*, *vector dimensions* → backlog).
 - **Plan `specs/137-provider-openai/plan.md`:** 7 decisioni architetturali (D-1…D-7), data model, contracts, quickstart.
-- **Tasks `specs/137-provider-openai/tasks.md`:** 25 task in sequenza; 24 completati; T025 aperta (riga epica ✅ dopo il merge + pubblicazione a Kaelen).
+- **Tasks `specs/137-provider-openai/tasks.md`:** 25 task in sequenza; 25 completati.
 
 ## Implementazione
 
@@ -67,6 +67,20 @@ La chiave OpenAI è stata inserita in `.sertor/.env`; il provider del dogfood ri
 - **Doctor:** `--online --area provider` chiave valida → `pass (probe=reachable)`; chiave sbagliata → `warn` http 401 (chiave non stampata); chiave assente → `FAIL` col nome della variabile.
 - **Correzione doctor:** rimedio precedente suggeriva «o esegui `sertor configure`» ma il wizard congelato ignora le chiavi `openai`; rimedio ora è «imposta <KEY> in .sertor/.env» (`src/sertor_core/services/doctor.py`).
 - **MCP dogfood:** server riconnesso dall'utente; smoke glove (`search_code`, `search_docs`, `find_symbol` attivi); `find_symbol collection_name` → riga 168 posizione master (attesa fino al post-merge re-index); con glove, `search_code` non ritorna `build_embedder` nei top 3 — drop di qualità che il provider è fatto per correggere.
+
+## Consegna e rilascio
+
+**PR #283 merged (2026-10-07):** Feature mergiata su master (commit `c66c231`). Il commit di rilascio `75f07a1` (`/VERSION` 0.5.0, CHANGELOG, pin d'installazione @v0.5.0 in README/docs) è dentro la PR; il tag `v0.5.0` è sul merge `c66c231`, Release pubblicata come latest. Release notes: solo il capability `rag` cambia; non eseguire upgrade per `wiki`/`sertor-flow`.
+
+**Dogfood su v0.5.0 openai:**
+- Runtime re-locked sertor-core 0.4.2 → 0.5.0; provider configurazione glove → openai (`.sertor/.env` SERTOR_EMBED_PROVIDER=openai).
+- Re-index completato: collezione `sertor__openai_text_embedding_3_large`, 1572 documenti, 17730 chunks, dimensione vettore 3072, tempo ~320 s.
+- Doctor: `--online` prima del re-index → provider `pass (reachable)` e indice mancante (atteso); dopo il re-index → PASS.
+- MCP richiede reconnect utente per servire con nuovo provider.
+
+**Comunicato Acta:** Due post pubblicati: release announcement (v0.5.0) e segnalazione a Kaelen di tre wizard defects (no openai profile, --set ignora chiavi, coverage guard hand-written provider-list).
+
+**Verifica:** CI master 9/9 verde; upgrade-smoke-full sul salto v0.4.2 → master (`c66c231`, poi taggato): 4 combinazioni, 36/36 esiti OK.
 
 ## Prodotto
 

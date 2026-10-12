@@ -45,7 +45,7 @@ src/sertor_core/
   NL local-first; `hash` = pavimento lessicale airgapped/CI; `ollama`/`azure`/`openai` = servizi) e lo
   **store** da `store_backend` (`azure` → Azure AI Search · altrimenti Chroma). Le due sono
   **combinabili** — es. embeddings cloud + store Chroma locale, la combinazione che il dogfood `sertor`
-  ha usato con Azure fino al 2026-10-07. Il **motore** si sceglie con `SERTOR_ENGINE`
+  ha usato con Azure fino al 2026-10-07 e usa con `openai` da allora. Il **motore** si sceglie con `SERTOR_ENGINE`
   (default **`hybrid`** = BM25+RRF+rerank opzionale; `baseline` = solo vettoriale). Per aggiungere un
   provider si estendono composition root e adapters, **non** i servizi. Vedi [[ports-adapters]].
 

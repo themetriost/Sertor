@@ -106,7 +106,7 @@ l'implementazione. Provider di **embeddings** è scelto da **una sola manopola**
 il backend del **vector store** è scelto dalla **manopola indipendente** `SERTOR_STORE_BACKEND` (default
 `local` — valori `local|azure`). Sono **combinabili e ortogonali** — es. embeddings Azure con store Chroma
 locale (la combinazione usata per l'indice di dogfooding `sertor` fino al 2026-10-07, quando la chiave
-Azure è stata rifiutata con `http 401` e il dogfood è passato a `glove`) — fedeli al local-first del
+Azure è stata rifiutata con `http 401`: il dogfood è passato a `glove` e, con la v0.5.0, a `openai`) — fedeli al local-first del
 Principio II.
 
 **Provider locali deterministici (FEAT-011):** `glove` (GloVe 6B 300d PDDL, vettori statici, semantica NL,

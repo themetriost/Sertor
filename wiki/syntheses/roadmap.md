@@ -22,7 +22,7 @@ sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.m
 <!-- EXEC:START -->
 ## ⚡ Executive summary (stato al 2026-10-07)
 
-**Versione pubblicata: `v0.4.2`** (Release *latest*, 2026-09-13). Le PR aperte: `gh pr list`.
+**Versione pubblicata: `v0.5.0`** (Release *latest*, 2026-10-07). Le PR aperte: `gh pr list`.
 Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
 
 > *Perché qui non c'è l'hash di `master`.* Il campo c'era, e il 2026-09-16 è stato trovato falso: diceva
@@ -116,18 +116,6 @@ Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
 
 ### 🔄 In progress
 
-> 🔌 **FEAT-012 (`sertor-core`) — provider di embedding sull'API OpenAI diretta.** *Perché ora:* il
-> 2026-10-07 la chiave Azure del dogfood risponde `http 401` e il server MCP non serve più ricerche;
-> il dogfood è stato spostato su `glove` (indice `sertor__glove_300`), che regge ma con semantica più
-> debole. **Dove:** branch `137-provider-openai`, [`specs/137-provider-openai/`](../../specs/137-provider-openai/)
-> — SpecKit completo (decisione utente), implementazione fatta, gate verde (1520 test + pacchetti, `ruff`).
-> **Verifica reale fatta** (T024): test contro OpenAI verde (3072 dim), `index`/`search`/`doctor --online`
-> su un mini-corpus temporaneo. **Prossimo passo:** PR, merge, poi passaggio del dogfood da `glove` a
-> `openai` (re-lock del runtime + re-index) e **rilascio `v0.5.0`** (decisione utente 2026-10-07), con
-> comunicazione su Acta. **Aperto verso Kaelen:** il wizard `sertor configure` non conosce `openai`, e la
-> ricerca ha trovato due silenzi suoi (`--set` ignora le chiavi fuori catalogo; la guardia di copertura
-> del catalogo ha l'elenco dei provider scritto a mano) — da affiggere in bacheca alla consegna.
-
 > 🏗️ **SEPARAZIONE IN QUATTRO PRODOTTI — è il lavoro che domina la roadmap.** Sertor resta il
 > **RAG**; il sistema-wiki diventa **Thesmion**; governance/SDLC diventa **Sulcimen**; il prototipo è
 > già **ProtoSertor**. Il **motore d'installazione** va in **Kaelen** (D1), che entra come quinto
@@ -170,6 +158,17 @@ Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
   le due copie precedenti erano divergenti **e** entrambe false.
 
 ### ✅ Done — recente
+
+- **FEAT-012 (`sertor-core`) — provider di embedding `openai`, rilasciato in `v0.5.0`** (2026-10-07, merge
+  `c66c231`, PR #283). `SERTOR_EMBED_PROVIDER=openai` usa l'API OpenAI diretta o un servizio compatibile
+  (`OPENAI_BASE_URL`), default `text-embedding-3-large`; Azure e OpenAI condividono la base di protocollo
+  ([[ports-adapters]]); `doctor` deriva le chiavi del provider da `Settings`. **Il dogfood gira su
+  `openai`** (`sertor__openai_text_embedding_3_large`, 1572 documenti, 17730 chunk) dopo che la chiave
+  Azure era stata rifiutata (`http 401`). **Rilascio verificato sul salto reale** `v0.4.2 → master`: gate
+  completo 4/4 combinazioni con 9 esiti `OK` ciascuna, CI di `master` 9/9 inclusi i 4 smoke d'installazione.
+  Le note dicono a chi serve ogni comando (solo `rag`) e dichiarano i difetti d'installazione aperti
+  (E10-FEAT-081). **Aperto verso Kaelen:** il wizard non conosce `openai` e `--set` ignora le chiavi
+  fuori catalogo — affisso in bacheca. Artefatti: [`specs/137-provider-openai/`](../../specs/137-provider-openai/).
 
 - **Tetto sulla dipendenza `mcp` — il server MCP non parte sulle installazioni nuove** (2026-08-07,
   merge `0d16f19`, PR #271). `sertor-core` dichiarava `mcp>=1.2` **senza limite superiore**; l'SDK ha
@@ -233,7 +232,7 @@ combinazioni**, 8 esiti su 8.
 
 | # | Epica | Consegnate | Aperte | Copertura | Stato |
 |---|---|---|---|---|---|
-| **E1** | [`sertor-core`](../../requirements/sertor-core/epic.md) | 10/10 | 0 | 100% | ✅ **completa** *(1 promossa altrove)* |
+| **E1** | [`sertor-core`](../../requirements/sertor-core/epic.md) | 11/11 | 0 | 100% | ✅ **completa** *(1 promossa altrove)* |
 | **E2** | [`sertor-cli`](../../requirements/sertor-cli/epic.md) | 18/25 | 7 | 72% | 🔄 in corso *(1 ritirata)* |
 | **E3** | [`osservabilita`](../../requirements/osservabilita/epic.md) | 8/16 | 8 | 50% | 🔄 in corso |
 | **E4** | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 11/15 | 4 | 73% | 🔄 in corso |
@@ -530,6 +529,9 @@ combinazioni**, 8 esiti su 8.
 | **Segnalare in bacheca le pubblicazioni mai depositate** | Trovate **3 pubblicazioni di altri nodi** (*Acta* ×2, *Studium*, *Nunzio*) affisse ma **mai committate**: invisibili a tutti gli altri. *Affisso* e *depositato* sono due stati che dalla cartella si leggono uguali | Non depositabili da noi (sarebbe scrivere per conto di un altro nodo). Stessa classe di [[guardia-verde-non-e-una-misura]] | 💡 idea (2026-07-30) |
 | **Provider `openai`: riduzione delle dimensioni del vettore** | I modelli `text-embedding-3-*` accettano un parametro `dimensions` che accorcia il vettore (meno spazio, ricerche più veloci) con perdita di qualità contenuta | Rinviata da FEAT-012 (`specs/137-provider-openai/`, fuori ambito). Cambierebbe l'identità della collezione: il nome dovrebbe includere la dimensione | 💡 idea |
 | **Provider `openai`: intestazioni organizzazione/progetto** | Chi usa chiavi utente con più organizzazioni deve poter indicare `OpenAI-Organization`/`OpenAI-Project` | Rinviata da FEAT-012: le chiavi di progetto bastano al primo taglio. Solo su richiesta di un ospite | 💡 idea |
+| **Lo smoke d'installazione non gira sulle PR che cambiano `src/`** | Il filtro dei percorsi di `ci.yml` attiva lo smoke solo per installer, script di smoke, `pyproject.toml`/`uv.lock`: un cambio in `src/sertor_core`, che finisce nel runtime degli ospiti, viene installato per la prima volta **dopo** il merge (sul push a `master`). Visto sulla PR #283 (2026-10-07) | Trade-off di costo voluto; valutare almeno lo smoke di un solo OS su `src/sertor_mcp/**` e `src/sertor_core/composition.py` | 💡 idea (2026-10-07) |
+| **Nel flusso «code» i test superano la definizione** | La query «build_embedder selects the embedding provider» restituisce test che nominano la funzione prima della sua definizione in `composition.py`, **sia con `glove` sia con `openai`** (2026-10-07): non è il provider, è un tratto del retrieval su codice | Una query non è una misura: serve un caso nella suite di eval (`eval add-case`) prima di qualunque rimedio | 💡 idea (2026-10-07) |
+| **Il gate wiki chiama «voce non di oggi» l'indice del giornale** | `scan` riporta `stale_recording: wiki/log/index.md` quando `append-log` aggiorna l'indice: è l'indice, non una partizione, e la nota fa cercare un problema che non c'è | `src/sertor_core/wiki_tools/scan.py` `_stale_recording` (sistema-wiki, futuro Thesmion) | 💡 idea (2026-10-07) |
 
 ---
 
