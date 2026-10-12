@@ -22,7 +22,7 @@ sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.m
 <!-- EXEC:START -->
 ## ⚡ Executive summary (stato al 2026-10-12)
 
-**Versione pubblicata: `v0.5.0`** (Release *latest*, 2026-10-07). Le PR aperte: `gh pr list`.
+**Versione pubblicata: `v0.6.0`** (Release *latest*, 2026-10-12). Le PR aperte: `gh pr list`.
 Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
 
 > *Perché qui non c'è l'hash di `master`.* Il campo c'era, e il 2026-09-16 è stato trovato falso: diceva
@@ -116,15 +116,7 @@ Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
 
 ### 🔄 In progress
 
-- **E7-FEAT-006 — pagine ASP.NET nel corpus** (WebForms `.aspx`/`.ascx`/`.master`/`.asmx`/`.ashx` +
-  Razor `.cshtml`/`.razor`, con estrazione del C# lato server inline e righe riferite al file originale).
-  **Dove:** branch locale `140-pagine-aspnet`,
-  [`requirements/ingestione-estesa/pagine-aspnet/requirements.md`](../../requirements/ingestione-estesa/pagine-aspnet/requirements.md).
-  [`specs/140-pagine-aspnet/`](../../specs/140-pagine-aspnet/) — **implementata** sul branch locale: 34/36
-  task, SC-001..SC-005 e FR-014 asseriti end-to-end, quickstart eseguito via CLI; meccanismo distillato in
-  [[vista-che-conserva-le-righe]]. **Prossimo passo:** gate pre-merge (T035) → push + PR → merge su go
-  dell'utente → re-index e smoke sul dogfood (T036). Rinvio promosso a E7-FEAT-007. **Scoperto lungo la
-  strada:** E10-FEAT-082 (C# con `namespace { }` a blocco senza chunk sintattici), non corretto qui.
+*Nessuna feature in corso.* Prossimo lavoro: da scegliere fra i Should P1 di E10 e la separazione (E17).
 
 > 🏗️ **SEPARAZIONE IN QUATTRO PRODOTTI — è il lavoro che domina la roadmap.** Sertor resta il
 > **RAG**; il sistema-wiki diventa **Thesmion**; governance/SDLC diventa **Sulcimen**; il prototipo è
@@ -168,6 +160,22 @@ Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
   le due copie precedenti erano divergenti **e** entrambe false.
 
 ### ✅ Done — recente
+
+- **`v0.6.0` rilasciata** (2026-10-12) — pagine ASP.NET (E7-FEAT-006) + chunking per metodo dentro
+  `namespace`/`export` (E10-FEAT-082, PR #287) + model-ID Copilot sulla famiglia Claude 5.5 (#285). Note:
+  `CHANGELOG.md` §0.6.0 (cosa aggiornare per assistente; re-index obbligatorio, il `_logic_version` è
+  cambiato).
+- **E10-FEAT-082 — chunking dentro namespace ed `export`** (2026-10-12, PR #287). Prima `namespace { }`
+  (C#, C++, PHP) ed `export` (TS/JS) producevano un solo chunk «module» per file; ora si spezza per
+  metodo, i contenitori restano fuori dal qualname come nel grafo, e la firma `_SCOPES` entra nel
+  `_logic_version`. Dettaglio: [[chunking-dispatch]].
+
+- **E7-FEAT-006 — pagine ASP.NET nel corpus** (2026-10-12, merge `d232dc5`, PR #286). WebForms
+  (`.aspx`/`.ascx`/`.master`/`.asmx`/`.ashx`) e Razor (`.cshtml`/`.razor`) entrano nel corpus; il C# lato
+  server inline diventa simboli navigabili (`find_symbol`/`who_calls`) **alle righe del file originale**, il
+  markup resta ricercabile, VB.NET e C# malformato degradano con l'evento `aspnet_page_degraded`. Meccanismo:
+  [[vista-che-conserva-le-righe]]. Re-index e smoke del dogfood verdi sul runtime `d232dc5`. Rinvio:
+  E7-FEAT-007. Artefatti: [`specs/140-pagine-aspnet/`](../../specs/140-pagine-aspnet/).
 
 - **FEAT-012 (`sertor-core`) — provider di embedding `openai`, rilasciato in `v0.5.0`** (2026-10-07, merge
   `c66c231`, PR #283). `SERTOR_EMBED_PROVIDER=openai` usa l'API OpenAI diretta o un servizio compatibile
@@ -248,10 +256,10 @@ combinazioni**, 8 esiti su 8.
 | **E4** | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 11/15 | 4 | 73% | 🔄 in corso |
 | **E5** | [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | 6/13 | 7 | 46% | 🔄 in corso |
 | **E6** | [`backend-store-scala`](../../requirements/backend-store-scala/epic.md) | 0/7 | 7 | 0% | 📋 non iniziata |
-| **E7** | [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 0/7 | 7 | 0% | 🔄 FEAT-006 in piano |
+| **E7** | [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 1/7 | 6 | 14% | 🔄 in corso *(FEAT-006 consegnata)* |
 | **E8** | [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | 0/3 | 3 | 0% | 📋 non iniziata |
 | **E9** | [`second-brain`](../../requirements/second-brain/epic.md) | 0/10 | 10 | 0% | 📋 non iniziata |
-| **E10** | [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 41/76 | 35 | 54% | 🔄 **in corso — direzione attiva** |
+| **E10** | [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 42/76 | 34 | 55% | 🔄 **in corso — direzione attiva** |
 | **E11** | [`multiutente`](../../requirements/multiutente/epic.md) | 0/6 | 6 | 0% | 📋 non iniziata |
 | **E12** | [`usabilita`](../../requirements/usabilita/epic.md) | 5/14 | 9 | 36% | 🔄 in corso |
 | **E13** | [`documentazione-marketing`](../../requirements/documentazione-marketing/epic.md) | 8/15 | 7 | 53% | 🔄 in corso |
@@ -259,7 +267,7 @@ combinazioni**, 8 esiti su 8.
 | **E15** | [`fedelta-dogfood`](../../requirements/fedelta-dogfood/epic.md) | 7/12 | 5 | 58% | 🔄 in corso *(1 ritirata)* |
 | **E16** | [`evoluzione-modello-wiki`](../../requirements/evoluzione-modello-wiki/epic.md) | 0/4 | 4 | 0% | 📋 non iniziata |
 | **E17** | [`separazione-ecosistema`](../../requirements/separazione-ecosistema/epic.md) | 1/16 | 15 | 6% | 🔄 **in corso — il lavoro che domina** |
-| | **TOTALE** | **117/254** | **137** | **46%** | — |
+| | **TOTALE** | **119/254** | **135** | **47%** | — |
 
 > **Come leggere «Consegnate»:** il denominatore esclude le feature **ritirate** (`❌ Won't`/not-a-bug) e
 > quelle **promosse ad altra epica** — contarle come debito gonfierebbe il residuo con lavoro che nessuno
@@ -393,14 +401,13 @@ combinazioni**, 8 esiti su 8.
 - 📋 **E6-FEAT-006** — Scala del code-graph oltre l'in-memory — backend a grafo persistente (Neo4j opzionale) oltre la soglia ~5 · ***Could***
 - 📋 **E6-FEAT-007** — Azure AI Search: dichiarare experimental o testare — la traccia store cloud odierna (store_backend=azure) · ***Should***
 
-**E7 · [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md)** — 7 aperte
+**E7 · [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md)** — 6 aperte
 
 - 📋 **E7-FEAT-001** — Repository remoti via URL — clone/fetch come sorgente del corpus · ***Could***
 - 📋 **E7-FEAT-002** — Formati non-testo (PDF/DOCX/notebook → testo) nell'ingestione documentale · ***Could***
 - 📋 **E7-FEAT-003** — Chunking sintattico esteso — PowerShell / T-SQL / PL-SQL / Bash da fallback a tree-sitter · ***Could***
 - 📋 **E7-FEAT-004** — No-code-first — wiki/RAG su progetti senza codice (solo doc) · ***Could***
 - 📋 **E7-FEAT-005** — Rust nel corpus — `.rs` fuori da `_EXT_LANG` (nodo Kaelen, 104 file) · ***Should***
-- 🔄 **E7-FEAT-006** — Pagine ASP.NET nel corpus — WebForms + Razor con estrazione del C# inline · ***Should***
 - 📋 **E7-FEAT-007** — Relazioni fra file ASP.NET — pagina ↔ code-behind / master / controlli registrati · ***Could***
 
 **E8 · [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md)** — 3 aperte
@@ -422,9 +429,8 @@ combinazioni**, 8 esiti su 8.
 - 📋 **E9-FEAT-009** — Codifica di metodologie / sintesi N→1 — pattern ricorrente su N progetti → asset nuovo (clustering varian · ***Could***
 - 📋 **E9-FEAT-010** — Meta-grafo dei concetti/asset — relazioni tipate (generalizes/refines/contradicts/applies-when); porta so · ***Could***
 
-**E10 · [`debito-tecnico`](../../requirements/debito-tecnico/epic.md)** — 28 aperte
+**E10 · [`debito-tecnico`](../../requirements/debito-tecnico/epic.md)** — 27 aperte
 
-- 📋 **E10-FEAT-082** — le classi C# dentro un `namespace { }` a blocco non producono chunk sintattici: il file intero diventa un chunk «module» (il grafo le trova, il retrieval no) · ***Should (P1)*** · *scoperta 2026-10-12 durante E7-FEAT-006*
 - 📋 **E10-FEAT-067** — i link uscenti di una pagina NUOVA producono candidati drift falsi (11 proposti, 0 reali) · ***Should (P1)***
 - 📋 **E10-FEAT-068** — `.gitattributes` è un punto di estensione CONDIVISO trattato come file proprio: `upgrade` lo sovrascrive, `uninstall` lo cancella — su un ospite ha spento **git-crypt** (195 file in chiaro per tre commit) · ***Could (P2)*** *(bassa per decisione utente, non per gravità)*
 - 📋 **E10-FEAT-069** — `run_git` ritorna `(0, None)` su output non-UTF-8 e la guardia `rc != 0` non lo vede: `ritual-check` crasha su un repo con filtro git, e la lettura scavalca i filtri (candidati sbagliati in silenzio) · ***Could (P2)*** *(bassa per decisione utente)*

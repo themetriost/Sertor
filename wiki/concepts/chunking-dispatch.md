@@ -73,12 +73,24 @@ inaffidabili.
   (E10-FEAT-079, [[omissione-che-diventa-risposta]]). *(Corretto il 2026-10-12: la pagina diceva «nessun
   documento resti non indicizzato», la stessa affermazione falsa che stava nel README del core.)*
 
-### Limite noto: le classi C# dentro `namespace { }` a blocco
+### Contenitori trasparenti: namespace ed `export` (E10-FEAT-082)
 
-`code_chunks` cerca classi e metodi solo fra i figli **diretti** della radice. In C# con il namespace a
-blocco (`namespace Demo { class X { … } }`, la forma più comune fino a C# 10) il figlio di primo livello è
-il namespace, quindi **l'intero file diventa un solo chunk `module`**. Il grafo non ne soffre (la sua visita
-scende nei figli), il retrieval sì. Misurato il 2026-10-12; tracciato come **E10-FEAT-082**.
+Alcuni nodi **avvolgono** le definizioni senza esserlo: il `namespace Demo { … }` a blocco del C# (la forma
+più comune fino a C# 10), `namespace`/`extern "C"` del C++, il namespace a graffe del PHP, `export` in
+TypeScript/JavaScript (`export class X`, `export default function f`), il `namespace N { }` di TypeScript.
+Fino al 2026-10-12 `code_chunks` guardava solo i figli **diretti** della radice, quindi un file così
+diventava **un solo chunk `module`** — il grafo trovava i metodi, il retrieval riceveva il file intero senza
+qualname. Ora la mappa `_SCOPES` dichiara per linguaggio questi contenitori e il chunker **ci scende
+dentro**, come già faceva la visita del grafo:
+
+- il contenitore **non entra nel qualname** (`Default.BindGrid`, non `Demo.Default.BindGrid`): chunker e
+  grafo devono nominare il simbolo allo stesso modo, o il grafo avrebbe due nodi per un metodo;
+- l'intestazione (`namespace Demo {`, gli `using`) resta testo del chunk `module`;
+- la firma di `_SCOPES` entra nel `_logic_version` dell'indice, così il primo re-index incrementale
+  ri-spezza anche i file non modificati.
+
+Tipi di nodo **misurati** con un probe sulle grammatiche reali, non dedotti. Un linguaggio assente da
+`_SCOPES` non ha contenitori trasparenti noti (Python, Java, Go, Ruby: `module` di Ruby è già una classe).
 - **`markdown_chunks`** (`markdown.py`) — spezza ai confini di **heading**, popolando `heading_path` (la
   gerarchia di sezione) nei metadati.
 

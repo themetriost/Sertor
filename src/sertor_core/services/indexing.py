@@ -29,6 +29,7 @@ from sertor_core.domain.entities import Chunk, Document, EmbeddedChunk, IndexRep
 from sertor_core.domain.errors import IndexLockedError
 from sertor_core.domain.ports import CodeGraph, EmbeddingProvider, LexicalIndex, VectorStore
 from sertor_core.observability.logging import log_event
+from sertor_core.services.chunking.code import scope_signature
 from sertor_core.services.chunking.dispatch import chunk_document
 from sertor_core.services.graph_extraction import COVERAGE, extract_graph
 from sertor_core.services.index_manifest import (
@@ -59,14 +60,15 @@ def _payload(chunk: Chunk) -> dict:
 def _logic_version(settings: Settings) -> str:
     """Identity of the chunking + graph-extraction logic (046, FR-013).
 
-    When chunking parameters or the graph coverage change, the derived units (chunks/edges) of an
-    unchanged file would differ: a manifest stamped with a different logic-version is treated as
-    MODIFIED for every file (in `classify`), so the incremental result stays equivalent to a full.
+    When chunking parameters, the chunker's transparent scopes (E10-FEAT-082) or the graph coverage
+    change, the derived units (chunks/edges) of an unchanged file would differ: a manifest stamped
+    with a different logic-version is treated as MODIFIED for every file (in `classify`), so the
+    incremental result stays equivalent to a full.
     """
     coverage_sig = ";".join(f"{lang}:{','.join(kinds)}" for lang, kinds in sorted(COVERAGE.items()))
     return (
         f"chunk={settings.chunk_size}/{settings.chunk_overlap}/maxtok{settings.max_chunk_tokens}"
-        f"|cov={coverage_sig}"
+        f"|scopes={scope_signature()}|cov={coverage_sig}"
     )
 
 

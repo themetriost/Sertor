@@ -125,7 +125,7 @@ e devono **fallire** prima di passare.
 - [X] T033 Aggiornare i docstring di modulo toccati (`ingestion.py`: «files with unrecognised extensions are silently ignored» resta vero ma va citato E10-FEAT-079; `code.py`, `dispatch.py`, `graph_extraction.py`: menzione delle pagine).
 - [X] T034 Eseguire [`quickstart.md`](quickstart.md) alla lettera via vehicles (`sertor-rag index`/`search`/`graph-eval validate-ref`) e correggere il file dove l'esecuzione reale differisce.
 - [X] T035 Gate pre-merge: `uv run pytest -m "not cloud"`, le suite di `packages/*` lanciate a parte, `uv run ruff check .` — tutto verde.
-- [ ] T036 Verifica sul dogfood (non-regressione, SC-006): `uv run --project .sertor sertor-rag index .` dopo il re-lock, e smoke MCP (`search_code`, `search_docs`, `find_symbol` su un simbolo a riga nota).
+- [X] T036 Verifica sul dogfood (non-regressione, SC-006): `uv run --project .sertor sertor-rag index .` dopo il re-lock, e smoke MCP (`search_code`, `search_docs`, `find_symbol` su un simbolo a riga nota).
 
 ---
 
