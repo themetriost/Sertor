@@ -3,7 +3,7 @@ title: Indice del Wiki — Produzione Sertor
 type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
-updated: 2026-10-07
+updated: 2026-10-12
 sources: ["requirements/sertor-core/epic.md", "requirements/memoria-conversazioni/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "src/sertor_core/**", "CLAUDE.md", "wiki/concepts/punto-di-partenza-non-verificato.md", "wiki/concepts/misura-al-confine-pubblico.md"]
 ---
 
@@ -78,6 +78,7 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 - **[[domain-model]]** — Le **entità dati pure** del nucleo (`Document`, `Chunk`/`ChunkMetadata`, `EmbeddedChunk`, `RetrievalResult`, `IndexReport`; enum `DocType`/`ChunkerKind`): nessun SDK nel dominio, id stabili (path POSIX, `doc_id#index`) → idempotenza del rebuild.
 - **[[ports-adapters]]** — Le **otto porte** `Protocol` (`EmbeddingProvider`, `VectorStore`, `LexicalIndex`, `Reranker`, `CodeGraph`, `ObservabilityStore`, `RetrieverStrategy`, `TranscriptCaptureAdapter`) e gli **adapter** che le implementano (Ollama/Azure · Chroma/Azure Search · BM25 · FlashRank · networkx); il composition root sceglie da `Settings` con import lazy. Structural typing → mockabili.
 - **[[chunking-dispatch]]** — Il **chunking** `Document`→`Chunk`: dispatch per tipo/lingua (markdown / sintattico tree-sitter / fallback dimensionale), 10 linguaggi sintattici, esclusione deliberata R-N2 di PowerShell/SQL, id stabile `doc_id#index`.
+- **[[vista-che-conserva-le-righe]]** — Codice incorporato in un altro formato (C# dentro le pagine ASP.NET): invece di estrarre frammenti e rimappare gli offset, si **proietta** il file in una vista dove il non-codice diventa spazi e i ritorni a capo restano — le righe sono giuste per costruzione. Tre viste da una scansione (chunk/graph/markup), la sentinella trasparente per i metodi fuori classe, la degradazione dichiarata. Nata con E7-FEAT-006.
 - **[[indexing-and-retrieval]]** — Le **due pipeline**: indicizzazione (ingest→chunk→embed→store, atomicità del rebuild, DEFAULT incrementale da FEAT-009 con manifest persistito) e la **facade** `search_code/docs/combined`, tollerante su indice assente (`[]`+warning). Punto d'ingresso dei consumatori via `build_facade()`.
 - **[[vector-retrieval]]** — La **prima modalità RAG**: retrieval vettoriale (embed query → similarity top-k) realizzato dal motore baseline; policy errore *strict* (`IndexNotFoundError`) + valutazione hit-rate@k/MRR@10. Dal 2026-06-12 non è più il default (→ [[hybrid-retrieval]]) ma resta la baseline di confronto, selezionabile con `SERTOR_ENGINE=baseline`.
 - **[[hybrid-retrieval]]** — La **seconda modalità RAG e nuovo default** (FEAT-004, PR #24): BM25 lessicale (porta `LexicalIndex`, sidecar atomico) + via densa fusi con RRF deterministico; degradazione onesta sui corpora pre-ibrido (warning, mai errore); reranking FlashRank come extra opzionale; consumatori invariati via strategia iniettata. Qualità: simboli hit@5 0→1.00, xfail storici chiusi strict.

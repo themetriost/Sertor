@@ -3,8 +3,8 @@ title: Un'omissione non dichiarata diventa una risposta
 type: concept
 tags: [retrieval, ingestione, code-graph, fail-loud, mission, e10, e7, problema-aperto]
 created: 2026-09-18
-updated: 2026-09-18
-sources: ["src/sertor_core/services/ingestion.py", "src/sertor_core/domain/ports.py", "requirements/debito-tecnico/epic.md", "requirements/ingestione-estesa/epic.md", "wiki/log/2026-09-18.md"]
+updated: 2026-10-12
+sources: ["src/sertor_core/services/ingestion.py", "src/sertor_core/domain/ports.py", "requirements/debito-tecnico/epic.md", "requirements/ingestione-estesa/epic.md", "requirements/ingestione-estesa/pagine-aspnet/requirements.md", "wiki/log/2026-09-18.md"]
 ---
 
 # Un'omissione non dichiarata diventa una risposta
@@ -81,9 +81,13 @@ La riparazione non sta nel terzo strato: sta nel **primo che tace**.
   qualunque linguaggio fuori dalla allowlist, non solo Rust.
 - `E10-FEAT-080` (*Should P1*) — il contratto riconosce il terzo stato d'assenza.
 - `E7-FEAT-005` (*Should*) — Rust nel corpus. Chiude il **caso** che ha fatto emergere la classe.
+- `E7-FEAT-006` (*Should*, requisiti scritti il 2026-10-12) — pagine ASP.NET nel corpus. **Secondo caso
+  della stessa classe**, con una forma più insidiosa: il code-behind `.aspx.cs` entra come C#, la pagina
+  `.aspx` che lo usa no. L'agente vede metà del progetto e la metà che vede sembra completa.
 
-> Le tre sono tenute separate apposta: aggiungere Rust farebbe sparire il sintomo di Kaelen e
-> lascerebbe intatto il meccanismo per il prossimo ospite scritto in un linguaggio non previsto.
+> Sono tenute separate apposta: aggiungere un linguaggio fa sparire il sintomo di un ospite e
+> lascia intatto il meccanismo per il prossimo ospite scritto in un linguaggio non previsto.
+> Ogni caso nuovo che arriva prima di `E10-FEAT-079` è un'altra conferma che la classe è reale.
 
 ## Vedi anche
 

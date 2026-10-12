@@ -1,0 +1,7 @@
+<%@ Master Language="C#" %>
+<html>
+<body>
+<% RegistraVisita(); %>
+<asp:ContentPlaceHolder ID="Contenuto" runat="server" />
+</body>
+</html>

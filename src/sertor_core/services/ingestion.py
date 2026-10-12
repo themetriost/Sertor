@@ -16,8 +16,10 @@ from sertor_core.config.settings import Settings
 from sertor_core.domain.entities import DocType, Document
 from sertor_core.domain.errors import IngestionError
 from sertor_core.observability.logging import log_event
+from sertor_core.services.chunking.aspnet import RAZOR, WEBFORMS
 
-# Extension -> language. Language names match those expected by the chunker (tree-sitter).
+# Extension -> language. Language names match those expected by the chunker (tree-sitter); the
+# ASP.NET pages map to the page languages of `chunking.aspnet`, which projects them onto C# (140).
 _EXT_LANG: dict[str, str] = {
     ".py": "python",
     ".js": "javascript", ".jsx": "javascript", ".mjs": "javascript", ".cjs": "javascript",
@@ -32,6 +34,8 @@ _EXT_LANG: dict[str, str] = {
     ".ps1": "powershell", ".psm1": "powershell",
     ".sh": "bash", ".bash": "bash",
     ".sql": "sql",
+    ".aspx": WEBFORMS, ".ascx": WEBFORMS, ".master": WEBFORMS, ".asmx": WEBFORMS, ".ashx": WEBFORMS,
+    ".cshtml": RAZOR, ".razor": RAZOR,
     ".md": "markdown", ".markdown": "markdown",
 }
 _DOC_EXTS = {".md", ".markdown"}
@@ -120,7 +124,8 @@ def discover(root: Path | str, settings: Settings) -> list[Document]:
 
     Raises `IngestionError` if the root is not an accessible directory (Principio IV). Unreadable
     files are **skipped** with a warning (not an error); files with unrecognised extensions
-    (binaries/other) are silently ignored (out of MVP corpus). Built on the stat/read split so the
+    (binaries/other) are ignored without a report — a known gap, E10-FEAT-079. Built on the
+    stat/read split so the
     full path and the incremental path share the same discovery+filtering logic.
     """
     sources = discover_files(root, settings)

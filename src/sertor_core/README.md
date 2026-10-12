@@ -124,10 +124,17 @@ facade = RetrievalFacade(embedder=FakeEmbedder(dim=8), store=InMemoryStore(),
                          collection="test", default_k=5)
 ```
 
-## Languages supported by code-aware chunking
+## What enters the corpus
 
-Syntactic at first release: Python, JavaScript/TypeScript, Java, C#, Go, C/C++, PHP, Ruby.
-PowerShell and SQL dialects (T-SQL/PL-SQL) use the **dimensional fallback** until their node types
-are validated (incremental extension). Any other language falls back without error.
+Indexing reads only files whose extension is in a fixed list (`_EXT_LANG` in
+`services/ingestion.py`). **Files with any other extension do not enter the corpus at all** — they
+are not chunked, embedded or graphed, and today nothing reports them (tracked as E10-FEAT-079).
+
+| Extensions | Chunking |
+|---|---|
+| `.py` · `.js` `.jsx` `.mjs` `.cjs` · `.ts` `.tsx` · `.java` · `.cs` · `.go` · `.c` `.h` · `.cpp` `.cc` `.cxx` `.hpp` `.hh` · `.php` · `.rb` | **syntactic** (tree-sitter): one chunk per function/method/class, with its lines |
+| `.ps1` `.psm1` · `.sh` `.bash` · `.sql` | **dimensional fallback**: their node types are not validated yet (incremental extension) |
+| `.aspx` `.ascx` `.master` `.asmx` `.ashx` (WebForms) · `.cshtml` `.razor` (Razor) | **ASP.NET pages**: the server-side C# (`<script runat="server">`, `<% %>`, `@code`, `@functions`, `@{ }`) is chunked syntactically at the page's real lines, with methods outside a class named `<FileName>.<Method>`; the markup is chunked dimensionally and stays searchable. A page in VB.NET or with C# that does not parse is indexed as text and reported with the event `aspnet_page_degraded` |
+| `.md` `.markdown` | **Markdown**: by heading, as documentation |
 
 See `specs/001-nucleo-retrieval/` for the full spec, plan, contracts, and quickstart.

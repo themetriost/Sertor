@@ -135,9 +135,10 @@ def test_extraction_is_deterministic():
     assert _extract() == _extract()
 
 
-def test_coverage_declares_all_ten_languages():
+def test_coverage_declares_all_ten_languages_and_the_two_page_families():
     assert set(COVERAGE) == {"python", "javascript", "typescript", "java", "c_sharp",
-                             "go", "c", "cpp", "php", "ruby"}
+                             "go", "c", "cpp", "php", "ruby",
+                             "webforms", "razor"}  # ASP.NET pages, analysed as C# (140)
     assert set(COVERAGE["python"]) >= {"calls", "imports", "inherits"}
     for lang, kinds in COVERAGE.items():
         assert isinstance(kinds, tuple), lang   # explicit declaration, never silent absence

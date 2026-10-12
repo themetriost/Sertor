@@ -1,0 +1,13 @@
+@page "/counter"
+<h1>Contatore</h1>
+<p>Valore: @count</p>
+<button @onclick="IncrementCount">Piu' uno</button>
+@code {
+    private int count = 0;
+
+    private void IncrementCount()
+    {
+        count++;
+        Registra(count);
+    }
+}

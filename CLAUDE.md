@@ -609,9 +609,9 @@ dogfood sopra. *(Non riconciliare cancellando la prosa: i blocchi sono rigenerat
 è la conoscenza dogfood — vanno tenuti entrambi.)*
 
 <!-- SPECKIT START -->
-**Nessun piano attivo.** L'ultimo, [`specs/137-provider-openai/plan.md`](specs/137-provider-openai/plan.md)
-(FEAT-012, provider di embedding `openai`), e' consegnato: PR #283, rilascio **v0.5.0** (2026-10-07). Il
-prossimo lavoro si sceglie dall'EXEC.
+**Piano attivo:** [`specs/140-pagine-aspnet/plan.md`](specs/140-pagine-aspnet/plan.md) — E7-FEAT-006,
+pagine ASP.NET (WebForms + Razor) nel corpus con il C# lato server inline. Fase: piano scritto, prossime
+`tasks` → `analyze` → `implement`.
 
 Per sapere **dove siamo e cosa fare adesso**, la fonte e' il blocco EXEC di
 `wiki/syntheses/roadmap.md`, non questo paragrafo — che e' una copia e invecchia (vedi
