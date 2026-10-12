@@ -114,6 +114,6 @@ La policy passa a `MODEL_POLICY_VERSION = "2"` (eccezione al congelamento della 
 
 - **Claude Code:** nessuna modifica; gli agenti usano gli alias `model: haiku` / `model: sonnet`, che seguono l'ultimo modello della famiglia. Con v2 l'abbinamento di Claude è quello valido: concierge e wiki-curator su Copilot erano invertiti rispetto a Claude e ora sono allineati.
 - **SpecKit (`speckit.*`):** fuori ambito, invariato (E2-FEAT-016 resta WON'T).
-- **Verifica:** test kit 207, sertor 595, sertor-flow 149 verdi; ruff pulito. Gli ID `claude-*-5.5` non risultano ancora nell'elenco modelli della CLI locale: verifica sul campo ancora aperta (cfr. Prossimi passi, punto 1).
+- **Verifica:** test kit 207, sertor 595, sertor-flow 149 verdi; ruff pulito. Gli ID `claude-haiku-5.5` e `claude-sonnet-5.5` sono verificati con `copilot help config` sulla CLI 1.0.95 (la 1.0.78 non li elencava ancora).
 
 Dettaglio, file toccati e riferimenti: il log del giorno 2026-10-12 (voce `record` «Model-policy v2»). Pagina di concetto aggiornata: [[assistant-targeting]].
