@@ -3,9 +3,10 @@ title: Chunking e dispatch (Document → Chunk)
 type: concept
 tags: [chunking, tree-sitter, dispatch, code-aware, markdown, fallback, sertor-core]
 created: 2026-06-08
-updated: 2026-06-17
+updated: 2026-10-12
 sources: [
   "src/sertor_core/services/chunking/dispatch.py",
+  "src/sertor_core/services/chunking/aspnet.py",
   "src/sertor_core/services/chunking/code.py",
   "src/sertor_core/services/chunking/markdown.py",
   "src/sertor_core/services/chunking/fallback.py",
@@ -20,13 +21,20 @@ indicizzabili, smistando per **tipo di documento e linguaggio** verso la strateg
 è `chunk_document(doc, settings)` in `services/chunking/dispatch.py`; il chunker scelto è registrato in
 `ChunkMetadata.chunker` (`ChunkerKind`) per osservabilità.
 
-## Il dispatch (tre strategie)
+## Il dispatch (quattro strategie)
 
 ```
 doc_type == DOC      → markdown_chunks   (confini di heading)         → ChunkerKind.MARKDOWN
+pagina ASP.NET       → page_raws(...)    (C# proiettato + markup)     → SYNTACTIC + SIZE_FALLBACK
 doc_type == CODE     → code_chunks(...)  (confini sintattici, AST)    → ChunkerKind.SYNTACTIC
    └─ se la lingua non è chunkabile → None → size_chunks (finestra)   → ChunkerKind.SIZE_FALLBACK
 ```
+
+Le **pagine ASP.NET** (`webforms`: `.aspx .ascx .master .asmx .ashx`; `razor`: `.cshtml .razor`, dal
+2026-10-12) sono l'unico caso in cui **un documento mescola due chunker**: i chunk sintattici del C# lato
+server, alle righe reali del file, **seguiti** dai chunk dimensionali del markup senza il codice. Il
+meccanismo è la [[vista-che-conserva-le-righe]]; per questo il dispatcher associa la funzione dei metadati
+**a ogni raw**, non al documento.
 
 A ogni chunk emesso il dispatcher assegna l'id stabile `f"{document_id}#{index}"` (ordinale posizionale): è la
 sorgente dell'**idempotenza** del [[domain-model]].
@@ -59,7 +67,18 @@ inaffidabili.
 ## Fallback dimensionale e Markdown
 
 - **`size_chunks`** (`fallback.py`) — finestra dimensionale con overlap, per i linguaggi fuori dal set
-  sintattico e per ogni testo non riconosciuto. Garantisce che **nessun documento resti non indicizzato**.
+  sintattico. Garantisce che **nessun documento ingerito** resti senza chunk. Attenzione al confine: il
+  chunker vede solo ciò che l'ingestione gli passa, e l'ingestione legge **solo le estensioni di
+  `_EXT_LANG`** — un file con un'altra estensione non arriva mai qui, e oggi nessuno lo segnala
+  (E10-FEAT-079, [[omissione-che-diventa-risposta]]). *(Corretto il 2026-10-12: la pagina diceva «nessun
+  documento resti non indicizzato», la stessa affermazione falsa che stava nel README del core.)*
+
+### Limite noto: le classi C# dentro `namespace { }` a blocco
+
+`code_chunks` cerca classi e metodi solo fra i figli **diretti** della radice. In C# con il namespace a
+blocco (`namespace Demo { class X { … } }`, la forma più comune fino a C# 10) il figlio di primo livello è
+il namespace, quindi **l'intero file diventa un solo chunk `module`**. Il grafo non ne soffre (la sua visita
+scende nei figli), il retrieval sì. Misurato il 2026-10-12; tracciato come **E10-FEAT-082**.
 - **`markdown_chunks`** (`markdown.py`) — spezza ai confini di **heading**, popolando `heading_path` (la
   gerarchia di sezione) nei metadati.
 

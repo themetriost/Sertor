@@ -3,8 +3,8 @@ title: Code-graph strutturale (navigazione del codice)
 type: concept
 tags: [code-graph, graphrag, find-symbol, who-calls, navigazione, tree-sitter, networkx, sertor-core, feat-005]
 created: 2026-06-12
-updated: 2026-06-19
-sources: ["src/sertor_core/services/graph_extraction.py", "src/sertor_core/adapters/graph/networkx_graph.py", "specs/014-motore-grafo/**"]
+updated: 2026-10-12
+sources: ["src/sertor_core/services/graph_extraction.py", "src/sertor_core/adapters/graph/networkx_graph.py", "specs/014-motore-grafo/**", "specs/140-pagine-aspnet/**"]
 ---
 
 # Code-graph strutturale (navigazione del codice)
@@ -26,6 +26,13 @@ tree-sitter dedicato guidato dalla mappa **`COVERAGE`** — la dichiarazione per
 che è supportato, persistita nell'artefatto e **verificata dai test** (un mini-corpus chiuso per
 i 10 linguaggi): nodi+gerarchia ovunque, chiamate per tutti, import/ereditarietà per Python.
 Per C/C++ il chunker non nomina i simboli → fallback dichiarato sul `declarator` (R-3 gestito).
+
+**Pagine ASP.NET (dal 2026-10-12, `specs/140-pagine-aspnet/`).** `COVERAGE` dichiara anche
+`webforms` e `razor`, **derivate** da `c_sharp` (non copiate): le pagine si leggono attraverso la loro
+[[vista-che-conserva-le-righe|vista C# proiettata]]. Due regole valgono **solo** per le pagine: le chiamate
+fuori da un metodo (`<% %>`, `<%= %>`, `@{ }`) hanno come chiamante il **nodo modulo** della pagina, così
+`who_calls` su un metodo del code-behind restituisce la pagina; una pagina degradata (VB.NET, C# malformato)
+contribuisce solo il proprio nodo modulo.
 
 ## Mai stantio: build dentro `index()` e reload su cambio disco
 

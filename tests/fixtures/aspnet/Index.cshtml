@@ -1,0 +1,16 @@
+@model Demo.IndexModel
+@{
+    ViewData["Title"] = CalcolaTitolo();
+    var righe = Model.Righe;
+    <p>Righe caricate</p>
+}
+<h1>@ViewData["Title"]</h1>
+<p>Contatti: info@esempio.it — prezzo @@ 10</p>
+@* commento razor con } graffa *@
+@functions {
+    string CalcolaTitolo()
+    {
+        // una graffa } nel commento
+        return "Indice } con graffa";
+    }
+}

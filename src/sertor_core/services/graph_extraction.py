@@ -14,6 +14,8 @@ persistence/navigation belongs to the adapter behind the `CodeGraph` port.
   does not exist in a DECLARED way, never silently.
 - **Best-effort intra-corpus resolution by name** (FR-004): names more ambiguous than the
   threshold do not generate `calls` edges (precision > recall, matching prototype 03).
+- **ASP.NET pages** (140): read through their projected C# view (`chunking.aspnet`); calls outside
+  any method belong to the page's module node, and a degraded page contributes no relations.
 """
 from __future__ import annotations
 
@@ -26,6 +28,15 @@ from sertor_core.domain.entities import (
     GraphData,
     GraphEdge,
     GraphNode,
+)
+from sertor_core.services.chunking.aspnet import (
+    PAGE_LANGUAGES,
+    PAGE_SENTINEL,
+    RAZOR,
+    WEBFORMS,
+    degradation,
+    page_stem,
+    project_page,
 )
 
 # Deliberate reuse of the chunker's syntactic knowledge (same services layer, DRY):
@@ -56,6 +67,9 @@ _REL: dict[str, dict] = {
     "php": {"calls": {"function_call_expression", "member_call_expression"}},
     "ruby": {"calls": {"call"}},
 }
+# ASP.NET pages are analysed through their projected C# view (140): their relations ARE the C# ones,
+# derived here rather than copied (Principio XIV).
+_REL[WEBFORMS] = _REL[RAZOR] = _REL["c_sharp"]
 
 #: Declared coverage per language (consumed by build/doc/test — FR-003).
 COVERAGE: dict[str, tuple[str, ...]] = {
@@ -103,11 +117,14 @@ def extract_graph(
     pending_inherits: list[tuple[str, str]] = []
     discovered: dict[str, GraphNode] = {}
     for doc in code_documents:
+        if doc.language in PAGE_LANGUAGES:
+            _walk_page(doc, pending_calls, pending_inherits, edges, module_paths, discovered)
+            continue
         rel = _REL.get(doc.language)
         lang_cfg = _LANG.get(doc.language)
         if not rel or not lang_cfg:
             continue  # declared coverage: language stays at nodes+contains only
-        root = _parse(doc)
+        root = _parse(doc.text, doc.language)
         if root is None:
             continue
         _walk_relations(
@@ -174,15 +191,62 @@ def extract_graph(
     )
 
 
-def _parse(doc: Document) -> _Node | None:
+def _parse(text: str, language: str) -> _Node | None:
     try:
         from tree_sitter_language_pack import get_parser
 
-        parser = get_parser(_TS_NAME.get(doc.language, doc.language))
+        parser = get_parser(_TS_NAME.get(language, language))
         # The pack binding accepts `str` and indexes in bytes: same usage as the chunker (code.py).
-        return _Node(parser.parse(doc.text).root_node(), doc.text.encode("utf-8"))
+        return _Node(parser.parse(text).root_node(), text.encode("utf-8"))
     except Exception:
         return None  # unparseable source: nodes+contains from the chunker are retained
+
+
+def _walk_page(
+    doc: Document,
+    pending_calls: list[tuple[str, str]],
+    pending_inherits: list[tuple[str, str]],
+    edges: set[tuple[str, str, str]],
+    module_paths: set[str],
+    discovered: dict[str, GraphNode],
+) -> None:
+    """Relations of an ASP.NET page, read from its projected C# view (140, research D-5/D-7).
+
+    A degraded page is skipped: the chunker already reported it, and reporting twice would make one
+    defect look like two. Calls outside any method are attributed to the page's module node, and the
+    sentinel class is transparent: its members are renamed to the file stem, it gets no node.
+    """
+    projection = project_page(doc.text, doc.language)
+    if degradation(projection) is not None:
+        return
+    root = _parse(projection.graph_view, "c_sharp")
+    if root is None:
+        return
+    calls: list[tuple[str, str]] = []
+    inherits: list[tuple[str, str]] = []
+    found: dict[str, GraphNode] = {}
+    _walk_relations(
+        root, doc.path, _LANG["c_sharp"], _REL[doc.language], "", doc.path,
+        calls, inherits, edges, module_paths, found,
+    )
+    sentinel_id = f"{doc.path}::{PAGE_SENTINEL}"
+    renamed_prefix = f"{doc.path}::{page_stem(doc.path)}."
+
+    def rename(node_id: str) -> str:
+        if node_id.startswith(f"{sentinel_id}."):
+            return renamed_prefix + node_id[len(sentinel_id) + 1:]
+        return node_id
+
+    for node_id, node in found.items():
+        if node_id == sentinel_id:
+            continue
+        qualname = rename(node_id).split("::", 1)[1]
+        discovered.setdefault(rename(node_id), GraphNode(
+            rename(node_id), node.kind, node.name, node.path, node.line, qualname))
+    pending_calls.extend((rename(caller), callee) for caller, callee in calls)
+    pending_inherits.extend(
+        (rename(child), base) for child, base in inherits if child != sentinel_id
+    )
 
 
 def _definition_name(eff: _Node) -> str | None:

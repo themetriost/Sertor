@@ -70,6 +70,22 @@ def test_go_functions_are_chunked():
     assert "Add" in quals
 
 
+def test_syntax_error_line_on_valid_and_broken_csharp():
+    from sertor_core.services.chunking.code import syntax_error_line
+
+    assert syntax_error_line("class A {\n    void F() { }\n}\n", "c_sharp") is None
+    broken = "class A {\n    void F() { }\n    void G( {\n}\n"
+    assert syntax_error_line(broken, "c_sharp") == 3
+
+
+def test_syntax_error_line_points_at_the_innermost_error_not_the_enclosing_class():
+    from sertor_core.services.chunking.code import syntax_error_line
+
+    # The outer ERROR node starts at the class (line 2); the missing `)` is on line 3.
+    view = "\nclass P {\n    void Rotto( {\n        Nulla(\n}\n"
+    assert syntax_error_line(view, "c_sharp") == 3
+
+
 def test_unsupported_language_returns_none():
     # powershell/sql: grammar not configured at 1st release -> None -> fallback (REQ-009)
     assert code_chunks("function Deploy {}", "powershell") is None

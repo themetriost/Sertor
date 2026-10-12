@@ -53,11 +53,17 @@ Pop-Location
 ```
 
 La riga esatta (scarto 0, SC-002) si legge dal tool MCP `find_symbol("Page_Load")` puntato sullo stesso
-corpus, oppure dai test d'integrazione della feature, che la asseriscono.
+corpus, oppure dai test d'integrazione della feature (`tests/integration/test_aspnet_corpus.py`), che la
+asseriscono.
 
-> Il formato del ref del chiamante-modulo (`Default.aspx#Default.aspx`) va confermato all'implementazione: un
-> nodo modulo non ha qualname, e `_hit` usa allora il nome (`qualname or name`). Il task del quickstart lo
-> verifica e corregge questa riga se serve.
+**Eseguito il 2026-10-12 (T034).** Esito: indice `documents=2 chunks=3`; `OrdiniGrid` restituisce come
+**primo** risultato il chunk del markup `Default.aspx#1`; i tre `validate-ref` rispondono
+`all 1 ref(s) confirmed by the graph` — incluso il chiamante-modulo, il cui ref è `Default.aspx#Default.aspx`
+(un nodo modulo non ha qualname e il ref usa il nome del file).
+
+> **Prima del rilascio** il runtime installato `.sertor/` segue `master` e non contiene la feature: per
+> verificarla dal branch si usa la CLI del venv di sviluppo, `uv run --project <radice del repo> sertor-rag …`
+> (stesso vehicle, Principio XI). Dopo il merge vale la forma con `$sertor`.
 
 **Degradazione (SC-005):** aggiungere `Vecchia.aspx` con `<%@ Page Language="VB" %>`, re-indicizzare con `-v`
 e verificare sullo stderr l'evento `aspnet_page_degraded` con `reason=server_language` e `path=Vecchia.aspx`.

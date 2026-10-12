@@ -140,6 +140,39 @@ def _effective(node: _Node) -> _Node:
     return node
 
 
+def syntax_error_line(text: str, language: str) -> int | None:
+    """1-based line of the first syntax error in `text`, or `None` if it parses cleanly.
+
+    Used where a parse that merely *recovers* is not good enough (ASP.NET pages, 140): the caller
+    needs to know the source is broken and where, to report it instead of indexing a damaged tree.
+    A grammar that cannot be loaded counts as an error at line 1 — never as a clean parse.
+    """
+    try:
+        from tree_sitter_language_pack import get_parser
+
+        root = get_parser(_TS_NAME.get(language, language)).parse(text).root_node()
+    except Exception:
+        return 1
+    if not root.has_error():
+        return None
+    rows = _innermost_error_rows(root)
+    return min(rows, default=root.start_position().row) + 1
+
+
+def _innermost_error_rows(node) -> list[int]:
+    """Rows of the error/missing nodes that contain no other error.
+
+    An outer ERROR node often starts at the enclosing construct (a class), far from the broken line;
+    the innermost one points at what actually broke (e.g. a missing `)`).
+    """
+    rows: list[int] = []
+    for i in range(node.child_count()):
+        rows.extend(_innermost_error_rows(node.child(i)))
+    if not rows and (node.is_error() or node.is_missing()):
+        rows.append(node.start_position().row)
+    return rows
+
+
 def code_chunks(
     text: str, language: str = "python", max_chars: int = DEFAULT_MAX_CHARS
 ) -> list[dict] | None:
