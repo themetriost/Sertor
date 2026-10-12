@@ -3,7 +3,7 @@ title: "E2-FEAT-015 default model-policy per subagent Copilot CLI"
 type: experiment
 tags: [feat-015, sertor-cli, copilot-cli, installer, model-policy, distribuzione, subagents]
 created: 2026-07-01
-updated: 2026-07-01
+updated: 2026-10-12
 sources: ["packages/sertor-install-kit/src/sertor_install_kit/model_policy.py", "packages/sertor/src/sertor_installer/install_rag.py", "packages/sertor-flow/src/sertor_flow/install_governance.py", "specs/083-default-model-policy-copilot/plan.md", "requirements/sertor-cli/default-model-policy/requirements.md", "PR #135"]
 ---
 
@@ -97,3 +97,23 @@ Gli agenti vendorati di spec-kit (`speckit.*`: specify/clarify/plan/tasks/analyz
 
 **Data registrazione:** 2026-07-01 (ore post-implementazione)
 **Record:** E2-FEAT-015 branch `083-default-model-policy-copilot`, PR #135, Constitution 12/12, CI verde, ruff clean, **pronto per merge**.
+
+---
+
+## Aggiornamento 2026-10-12 — policy v2 (famiglia Claude 5.5)
+
+La policy passa a `MODEL_POLICY_VERSION = "2"` (eccezione al congelamento della logica d'installazione, autorizzata dall'utente il 2026-10-12). Tabella di default per agente Copilot CLI:
+
+| Agente | v1 (2026-07-01) | v2 (2026-10-12) |
+|---|---|---|
+| concierge | `claude-haiku-4.5` | `claude-sonnet-5.5` |
+| configuration-manager | `claude-haiku-4.5` | `claude-haiku-5.5` |
+| requirements-analyst | `claude-sonnet-4.6` | `claude-sonnet-5.5` |
+| requirements | `claude-sonnet-4.6` | `claude-sonnet-5.5` |
+| wiki-curator | `claude-sonnet-4.6` | `claude-haiku-5.5` |
+
+- **Claude Code:** nessuna modifica; gli agenti usano gli alias `model: haiku` / `model: sonnet`, che seguono l'ultimo modello della famiglia. Con v2 l'abbinamento di Claude è quello valido: concierge e wiki-curator su Copilot erano invertiti rispetto a Claude e ora sono allineati.
+- **SpecKit (`speckit.*`):** fuori ambito, invariato (E2-FEAT-016 resta WON'T).
+- **Verifica:** test kit 207, sertor 595, sertor-flow 149 verdi; ruff pulito. Gli ID `claude-*-5.5` non risultano ancora nell'elenco modelli della CLI locale: verifica sul campo ancora aperta (cfr. Prossimi passi, punto 1).
+
+Dettaglio, file toccati e riferimenti: il log del giorno 2026-10-12 (voce `record` «Model-policy v2»). Pagina di concetto aggiornata: [[assistant-targeting]].

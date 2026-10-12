@@ -101,11 +101,11 @@ def test_in_scope_agents_matches_deposited_agents(tmp_path: Path):
 
 def test_policy_pins_five_model_ids():
     """Pin (regression on accidental edits)."""
-    assert resolve_model("concierge") == "claude-haiku-4.5"
-    assert resolve_model("configuration-manager") == "claude-haiku-4.5"
-    assert resolve_model("requirements-analyst") == "claude-sonnet-4.6"
-    assert resolve_model("requirements") == "claude-sonnet-4.6"
-    assert resolve_model("wiki-curator") == "claude-sonnet-4.6"
+    assert resolve_model("concierge") == "claude-sonnet-5.5"
+    assert resolve_model("configuration-manager") == "claude-haiku-5.5"
+    assert resolve_model("requirements-analyst") == "claude-sonnet-5.5"
+    assert resolve_model("requirements") == "claude-sonnet-5.5"
+    assert resolve_model("wiki-curator") == "claude-haiku-5.5"
 
 
 # --- C3/R12: fail-loud on an incomplete profile, BEFORE any artifact is written ------------

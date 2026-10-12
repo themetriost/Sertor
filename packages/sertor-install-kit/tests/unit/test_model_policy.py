@@ -46,9 +46,10 @@ def test_r5_version_marker_is_a_non_empty_string():
 
 
 def test_pin_initial_reasoned_defaults():
-    """Pin (regression on accidental edits): the initial reasoned policy values (spec table)."""
-    assert resolve_model("concierge") == "claude-haiku-4.5"
-    assert resolve_model("configuration-manager") == "claude-haiku-4.5"
-    assert resolve_model("requirements-analyst") == "claude-sonnet-4.6"
-    assert resolve_model("requirements") == "claude-sonnet-4.6"
-    assert resolve_model("wiki-curator") == "claude-sonnet-4.6"
+    """Pin (regression on accidental edits): the policy values of profile v2."""
+    assert MODEL_POLICY_VERSION == "2"
+    assert resolve_model("concierge") == "claude-sonnet-5.5"
+    assert resolve_model("configuration-manager") == "claude-haiku-5.5"
+    assert resolve_model("requirements-analyst") == "claude-sonnet-5.5"
+    assert resolve_model("requirements") == "claude-sonnet-5.5"
+    assert resolve_model("wiki-curator") == "claude-haiku-5.5"

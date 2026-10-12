@@ -3,7 +3,7 @@ title: Targeting per-assistente (AssistantProfile / Surface)
 type: tech
 tags: [installer, sertor-install-kit, copilot, copilot-cli, claude, host-agnostico, principio-x, feat-007, feat-010, multi-target]
 created: 2026-06-15
-updated: 2026-07-13
+updated: 2026-10-12
 sources: ["packages/sertor-install-kit/src/sertor_install_kit/assistant.py", "packages/sertor/src/sertor_installer/install_wiki.py", "packages/sertor/src/sertor_installer/install_rag.py", "specs/044-distribuzione-copilot/plan.md", "requirements/sertor-cli/distribuzione-copilot/requirements.md"]
 ---
 
@@ -173,10 +173,14 @@ requirements, wiki-curator) ricevono un campo `model:` nel frontmatter del custo
 ([[copilot-default-models]], elaborata in PR #135).
 
 **Fonte unica versionata** (`packages/sertor-install-kit/src/sertor_install_kit/model_policy.py`):
-- Costante `MODEL_POLICY_VERSION = "1.0.0"` (indipendente dalla versione Sertor)
-- Mappa agente→modello: concierge/configuration-manager → `claude-haiku-4.5` (dispatcher, basso carico);
-  requirements-analyst/requirements/wiki-curator → `claude-sonnet-4.6` (reasoning + sintesi)
-- Funzione `resolve_model(agent_name, policy_version)` fail-loud su agente fuori ambito → zero
+- Costante `MODEL_POLICY_VERSION = "2"` (indipendente dalla versione Sertor; la v1 del 2026-07-01
+  usava `claude-haiku-4.5`/`claude-sonnet-4.6`)
+- Mappa agente→modello (v2, 2026-10-12, famiglia Claude 5.5): configuration-manager/wiki-curator →
+  `claude-haiku-5.5` (lavoro guidato da un brief); concierge/requirements-analyst/requirements →
+  `claude-sonnet-5.5` (giudizio, consenso, scrittura). Abbinamento **identico** agli alias `model:`
+  degli asset Claude Code (`haiku`/`sonnet`, che risolvono sempre all'ultimo modello): fino alla v1
+  concierge e wiki-curator erano invertiti fra i due assistenti
+- Funzione `resolve_model(agent_name)` fail-loud su agente fuori ambito → zero
   deposito parziale (Principio IV), niente silent config-mismatch
 - Importata da **entrambi** i pacchetti (`sertor` + `sertor-flow`) → niente drift, niente dipendenza
   cross-pacchetto
@@ -186,8 +190,8 @@ profilo/policy e lo scrive nel frontmatter YAML di Copilot CLI. Path Claude byte
 echo dell'alias). Fail-loud install-time se il profilo Copilot CLI non copre un agente atteso.
 
 **Guardie riconciliate:** le guardie di test distinguono alias Claude **nudo** (`haiku`/`sonnet`/`opus`,
-**assente**, cattivo) dal campo `model:` **di policy** (`claude-haiku-4.5`, **presente**, buono). Parsing
-YAML-aware (chiave `model:`, non substring, poiché `claude-haiku-4.5` contiene `haiku`).
+**assente**, cattivo) dal campo `model:` **di policy** (`claude-haiku-5.5`, **presente**, buono). Parsing
+YAML-aware (chiave `model:`, non substring, poiché `claude-haiku-5.5` contiene `haiku`).
 
 **Finding di verifica:** il meccanismo config `subagents.agents.<name>.model` di Copilot CLI è
 runtime settings, NON un meccanismo di repository. La doc ufficiale GitHub stabilisce che il modello

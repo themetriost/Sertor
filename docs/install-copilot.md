@@ -163,11 +163,14 @@ by `sertor` and `sertor-flow` — see
 
 | Agent | Package | Default model | Rationale |
 |---|---|---|---|
-| `concierge` | `sertor` | `claude-haiku-4.5` | thin dispatcher — mechanical task, economical/fast |
-| `wiki-curator` | `sertor` | `claude-sonnet-4.6` | synthesis/curation — capable |
-| `requirements-analyst` | `sertor-flow` | `claude-sonnet-4.6` | requirements analysis/writing — capable |
-| `configuration-manager` | `sertor-flow` | `claude-haiku-4.5` | git operations from a brief — mechanical, economical/fast |
-| `requirements` | `sertor-flow` | `claude-sonnet-4.6` | EARS elicitation/writing — capable |
+| `concierge` | `sertor` | `claude-sonnet-5.5` | guided setup with consent gates — capable |
+| `wiki-curator` | `sertor` | `claude-haiku-5.5` | structured transcription from a brief — economical/fast |
+| `requirements-analyst` | `sertor-flow` | `claude-sonnet-5.5` | requirements analysis/writing — capable |
+| `configuration-manager` | `sertor-flow` | `claude-haiku-5.5` | git operations from a brief — mechanical, economical/fast |
+| `requirements` | `sertor-flow` | `claude-sonnet-5.5` | EARS elicitation/writing — capable |
+
+The same pairing is used on Claude Code, where the agents carry the `sonnet`/`haiku` aliases
+(which always resolve to the latest model of each family).
 
 **It's a default, not a lock-in.** Change it any time with the CLI's `/subagents` picker
 (persists in `~/.copilot/settings.json`, a file Sertor never touches — the override wins at
