@@ -185,9 +185,10 @@ famiglie, come per gli altri linguaggi.
   `@functions` e `@{ }`. *(REQ-005)*
 - **FR-006**: Il sistema MUST riferire ogni simbolo e ogni unità di testo derivata dal codice estratto
   alle righe del file originale della pagina. *(REQ-006)*
-- **FR-006a**: I blocchi di codice (script lato server, blocchi di codice, blocchi Razor) MUST produrre
-  unità di testo per simbolo; le espressioni brevi lato server MUST NOT produrre unità di testo proprie e
-  contribuiscono solo alle relazioni di chiamata (FR-008).
+- **FR-006a**: Il codice dei blocchi (script lato server, blocchi di codice, blocchi Razor) MUST produrre
+  un'unità di testo per ogni simbolo che definisce, e unità di modulo per le istruzioni scritte fuori da
+  qualunque simbolo (es. un ciclo in `<% %>` o in `@{ }`); le espressioni brevi lato server MUST NOT
+  produrre unità di testo proprie e contribuiscono solo alle relazioni di chiamata (FR-008).
 
 **Simboli e navigazione**
 - **FR-007**: Il sistema MUST esporre classi, metodi e funzioni definiti nel codice estratto come simboli
@@ -262,7 +263,8 @@ famiglie, come per gli altri linguaggi.
 - **Espressioni Razor inline** (`@Model.Nome`) fuori dai blocchi elencati restano testo e non producono
   relazioni.
 - **Relazioni fra file** (pagina ↔ code-behind, master page ↔ pagine, controlli registrati): fuori da
-  questa specifica; la richiesta corrispondente (REQ-014, *Could*) resta nel backlog dell'epica.
+  questa specifica; la richiesta corrispondente (REQ-014, *Could*) è promossa a **E7-FEAT-007** nel backlog
+  dell'epica `ingestione-estesa`.
 - **Installabilità**: la capacità viaggia con il pacchetto del core e raggiunge gli ospiti con un
   rilascio; non introduce artefatti d'installazione nuovi (la logica d'installazione è congelata).
 - **Nessuna dipendenza nuova obbligatoria**: l'analisi del C# riusa il supporto già presente per i file
