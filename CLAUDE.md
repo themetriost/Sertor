@@ -610,7 +610,7 @@ dogfood sopra. *(Non riconciliare cancellando la prosa: i blocchi sono rigenerat
 
 <!-- SPECKIT START -->
 **Piano attivo:** nessuno. L'ultimo, [`specs/140-pagine-aspnet/plan.md`](specs/140-pagine-aspnet/plan.md)
-(E7-FEAT-006), è consegnato (PR #286). In corso E10-FEAT-082, una correzione di debito senza spec.
+(E7-FEAT-006), è consegnato (PR #286) e rilasciato in `v0.6.0` insieme a E10-FEAT-082.
 
 Per sapere **dove siamo e cosa fare adesso**, la fonte e' il blocco EXEC di
 `wiki/syntheses/roadmap.md`, non questo paragrafo — che e' una copia e invecchia (vedi

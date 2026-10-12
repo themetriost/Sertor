@@ -232,7 +232,9 @@ SERTOR_GRAPH_LIMIT_DOCS=8
 
 Missing symbol → empty lists; graph not built → error telling you to index; extra not installed →
 error with the installation instruction. Edge coverage per language is **declared**: nodes and
-hierarchy for all 10 syntactic languages, calls for all, imports/inheritance for Python.
+hierarchy for all 10 syntactic languages, calls for all, imports/inheritance for Python. ASP.NET pages
+(WebForms `.aspx`/`.ascx`/`.master`/`.asmx`/`.ashx`, Razor `.cshtml`/`.razor`) are covered like C#: the
+server-side C# written inside the page becomes navigable symbols at the page's own line numbers.
 
 **Embedding cache (hardening, REQ-H4):** with a paid provider (Azure) every `sertor-rag index .`
 would re-embed identical content. The content-hash cache reuses embeddings for **unchanged** chunks —

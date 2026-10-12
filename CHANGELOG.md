@@ -13,6 +13,93 @@ and Sertor aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 _Changes land here before the next version bump._
 
+## [0.6.0] — 2026-10-12
+
+Sertor now indexes **ASP.NET pages** — the C# written inside them included — and splits C#, TypeScript,
+JavaScript, C++ and PHP code **per method** even when it sits inside a `namespace` or behind `export`,
+which until now produced one block per file.
+
+> **Upgrade — what to run depends on your assistant:**
+>
+> ```
+> uvx --refresh --from "git+https://github.com/themetriost/Sertor@v0.6.0#subdirectory=packages/sertor" sertor upgrade rag
+> ```
+>
+> **Every host with the `rag` capability** runs the command above, then **re-indexes**
+> (`sertor-rag index .`) and restarts the MCP server. Until the re-index, `sertor-rag doctor` reports the
+> index as incompatible: that is expected — the chunking logic changed, so every file is split again. The
+> embedding cache keeps the cost to the chunks that actually changed.
+>
+> **GitHub Copilot hosts only** also get new model IDs for the installed agents (Claude 5.5 family), and
+> those come with each capability that installs an agent. Run, for the capabilities you have:
+>
+> ```
+> uvx --refresh --from "git+https://github.com/themetriost/Sertor@v0.6.0#subdirectory=packages/sertor" sertor upgrade wiki
+> uvx --refresh --from "git+https://github.com/themetriost/Sertor@v0.6.0#subdirectory=packages/sertor-flow" sertor-flow upgrade
+> ```
+>
+> **Claude Code hosts** do not need the `wiki` and `sertor-flow` upgrades: their agents name models by
+> alias, which did not change. Do **not** run `sertor-flow upgrade` on a host that never installed
+> `sertor-flow`: it installs it (open defect, see below). `sertor` is not on your `PATH` — it is invoked
+> through `uvx --from`, as above.
+
+### Added
+
+- **ASP.NET pages in the corpus.** WebForms (`.aspx`, `.ascx`, `.master`, `.asmx`, `.ashx`) and Razor
+  (`.cshtml`, `.razor`) files are indexed. Until now they were skipped without notice, so an agent saw the
+  code-behind but not the page that uses it.
+  - The **server-side C#** written in the page (`<script runat="server">`, `<% %>`, `@code`,
+    `@functions`, `@{ }`) is split per method and becomes navigable: `find_symbol` returns it **at the
+    line of the page file**, and a method written outside any class is named after the file
+    (`Default.Page_Load`).
+  - Calls written in the markup (`<%= FormatTitle() %>`) make the page a caller: `who_calls` on a
+    code-behind method returns the page.
+  - The **markup** stays searchable text.
+  - A page written in **VB.NET**, or whose C# does not parse, is still indexed as text and reported with
+    an `aspnet_page_degraded` warning naming the file and the reason (`server_language` or
+    `parse_error`, with the line).
+
+### Fixed
+
+- **Code inside a `namespace` or behind `export` is split per method again.** In C#
+  (`namespace Demo { class X … }`, the most common form before C# 10), TypeScript and JavaScript
+  (`export class`, `export function`, `export default function`, `namespace N { }`), C++ (`namespace`,
+  `extern "C"`) and PHP (`namespace Foo { }`), the whole file became a single search chunk without the
+  method name: search returned the file instead of the method. Navigation (`find_symbol`, `who_calls`)
+  was not affected. Namespaces do not enter the symbol name (`Default.BindGrid`), as in the code graph.
+- **A change in the chunking logic now forces re-chunking** on the next incremental index. Before, an
+  incremental index kept the old chunks of unchanged files.
+
+### Changed
+
+- **Copilot agents use the Claude 5.5 model family** (`claude-sonnet-5.5`, `claude-haiku-5.5`), matched
+  to the model aliases of the Claude assets: `concierge` → sonnet, `wiki-curator` → haiku.
+
+### Known issues — open, and declared so you do not find them yourself
+
+- **ASP.NET pages are not linked to each other yet:** page ↔ code-behind (`CodeBehind`/`Inherits`),
+  content page ↔ master page, page ↔ registered controls. Each file is navigable on its own.
+- **VB.NET pages and client-side JavaScript in pages** are indexed as text only.
+- **C and C++ functions have no name in search chunks** (navigation names them from the declarator).
+- **`sertor configure` does not know the `openai` provider** and `--set` ignores keys outside its
+  catalogue without a warning (from 0.5.0; the installer is now maintained by the **Kaelen** node).
+- **`sertor-flow upgrade` installs `sertor-flow` on a host that never had it.**
+- **A bare `sertor upgrade` may refresh only one capability** on a host that has several, while exiting
+  green. Name the capability explicitly, as above.
+
+### Verification — how this release was checked
+
+- **On this project's own corpus:** after the merge, the runtime was re-locked, the corpus re-indexed
+  (1602 documents) and the MCP tools exercised: `find_symbol` returns the line that matches the file, and
+  the ASP.NET test pages are found by `search_code`.
+- **Offline:** end-to-end tests index a fixture corpus of every page type and assert the method lines,
+  the page as caller of its code-behind, markup search, and the two degradation events; 9 tests cover the
+  namespace/`export` fix per language. Full suite (1601 tests) and the package suites green.
+- **Upgrade path:** the update gate ran on the real jump `v0.5.0 → master` on throwaway hosts before
+  tagging.
+- **Not checked:** ASP.NET projects from the field — the pages exercised are fixtures written for the
+  tests.
+
 ## [0.5.0] — 2026-10-07
 
 Sertor can now compute embeddings with the **OpenAI API** directly — no Azure subscription needed. An
