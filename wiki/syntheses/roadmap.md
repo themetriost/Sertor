@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-09-18
+updated: 2026-10-12
 sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.md", "VERSION", "CHANGELOG.md"]
 ---
 
@@ -20,7 +20,7 @@ sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.m
 > verificato* in fondo).
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-10-07)
+## ⚡ Executive summary (stato al 2026-10-12)
 
 **Versione pubblicata: `v0.5.0`** (Release *latest*, 2026-10-07). Le PR aperte: `gh pr list`.
 Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
@@ -115,6 +115,14 @@ Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
 > ora come **E10-FEAT-076** invece di restare nascosto dentro FEAT-070.
 
 ### 🔄 In progress
+
+- **E7-FEAT-006 — pagine ASP.NET nel corpus** (WebForms `.aspx`/`.ascx`/`.master`/`.asmx`/`.ashx` +
+  Razor `.cshtml`/`.razor`, con estrazione del C# lato server inline e righe riferite al file originale).
+  **Dove:** branch locale `140-pagine-aspnet`,
+  [`requirements/ingestione-estesa/pagine-aspnet/requirements.md`](../../requirements/ingestione-estesa/pagine-aspnet/requirements.md).
+  **Prossimo passo:** `specify` (SpecKit completo, decisione utente). **Aperte per `clarify`:** doppio
+  conteggio markup/C# estratto · identità dei metodi WebForms senza classe · ruolo delle espressioni
+  `<%= %>`. Secondo caso di [[omissione-che-diventa-risposta]] dopo Rust (E7-FEAT-005).
 
 > 🏗️ **SEPARAZIONE IN QUATTRO PRODOTTI — è il lavoro che domina la roadmap.** Sertor resta il
 > **RAG**; il sistema-wiki diventa **Thesmion**; governance/SDLC diventa **Sulcimen**; il prototipo è
@@ -238,7 +246,7 @@ combinazioni**, 8 esiti su 8.
 | **E4** | [`memoria-conversazioni`](../../requirements/memoria-conversazioni/epic.md) | 11/15 | 4 | 73% | 🔄 in corso |
 | **E5** | [`retrieval-qualita`](../../requirements/retrieval-qualita/epic.md) | 6/13 | 7 | 46% | 🔄 in corso |
 | **E6** | [`backend-store-scala`](../../requirements/backend-store-scala/epic.md) | 0/7 | 7 | 0% | 📋 non iniziata |
-| **E7** | [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 0/4 | 4 | 0% | 📋 non iniziata |
+| **E7** | [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 0/6 | 6 | 0% | 🔄 FEAT-006 in requisiti |
 | **E8** | [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | 0/3 | 3 | 0% | 📋 non iniziata |
 | **E9** | [`second-brain`](../../requirements/second-brain/epic.md) | 0/10 | 10 | 0% | 📋 non iniziata |
 | **E10** | [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 41/75 | 34 | 55% | 🔄 **in corso — direzione attiva** |
@@ -249,7 +257,7 @@ combinazioni**, 8 esiti su 8.
 | **E15** | [`fedelta-dogfood`](../../requirements/fedelta-dogfood/epic.md) | 7/12 | 5 | 58% | 🔄 in corso *(1 ritirata)* |
 | **E16** | [`evoluzione-modello-wiki`](../../requirements/evoluzione-modello-wiki/epic.md) | 0/4 | 4 | 0% | 📋 non iniziata |
 | **E17** | [`separazione-ecosistema`](../../requirements/separazione-ecosistema/epic.md) | 1/16 | 15 | 6% | 🔄 **in corso — il lavoro che domina** |
-| | **TOTALE** | **117/250** | **133** | **47%** | — |
+| | **TOTALE** | **117/252** | **135** | **46%** | — |
 
 > **Come leggere «Consegnate»:** il denominatore esclude le feature **ritirate** (`❌ Won't`/not-a-bug) e
 > quelle **promosse ad altra epica** — contarle come debito gonfierebbe il residuo con lavoro che nessuno
@@ -383,12 +391,14 @@ combinazioni**, 8 esiti su 8.
 - 📋 **E6-FEAT-006** — Scala del code-graph oltre l'in-memory — backend a grafo persistente (Neo4j opzionale) oltre la soglia ~5 · ***Could***
 - 📋 **E6-FEAT-007** — Azure AI Search: dichiarare experimental o testare — la traccia store cloud odierna (store_backend=azure) · ***Should***
 
-**E7 · [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md)** — 4 aperte
+**E7 · [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md)** — 6 aperte
 
 - 📋 **E7-FEAT-001** — Repository remoti via URL — clone/fetch come sorgente del corpus · ***Could***
 - 📋 **E7-FEAT-002** — Formati non-testo (PDF/DOCX/notebook → testo) nell'ingestione documentale · ***Could***
 - 📋 **E7-FEAT-003** — Chunking sintattico esteso — PowerShell / T-SQL / PL-SQL / Bash da fallback a tree-sitter · ***Could***
 - 📋 **E7-FEAT-004** — No-code-first — wiki/RAG su progetti senza codice (solo doc) · ***Could***
+- 📋 **E7-FEAT-005** — Rust nel corpus — `.rs` fuori da `_EXT_LANG` (nodo Kaelen, 104 file) · ***Should***
+- 🔄 **E7-FEAT-006** — Pagine ASP.NET nel corpus — WebForms + Razor con estrazione del C# inline · ***Should***
 
 **E8 · [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md)** — 3 aperte
 
