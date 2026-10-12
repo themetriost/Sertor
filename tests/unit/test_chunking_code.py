@@ -99,3 +99,108 @@ def test_code_chunking_is_deterministic():
     assert [(c["start_line"], c["end_line"]) for c in a] == [
         (c["start_line"], c["end_line"]) for c in b
     ]
+
+
+# --- Transparent scopes (E10-FEAT-082): namespaces and `export` wrap definitions without being one.
+# The chunker descends into them without adding to the qualname, exactly as the graph walk does.
+
+def _quals(src: str, language: str) -> dict[str, tuple[int, int]]:
+    return {
+        c["qualname"]: (c["start_line"], c["end_line"])
+        for c in code_chunks(src, language)
+        if c["qualname"]
+    }
+
+
+def test_csharp_block_namespace_is_descended():
+    src = (
+        "using System;\n"
+        "namespace Demo\n"
+        "{\n"
+        "    public partial class Default\n"
+        "    {\n"
+        "        void BindGrid() { }\n"
+        "\n"
+        "        string Titolo() { return \"x\"; }\n"
+        "    }\n"
+        "}\n"
+    )
+    quals = _quals(src, "c_sharp")
+    assert quals["Default.BindGrid"] == (6, 6)
+    assert quals["Default.Titolo"] == (8, 8)
+    assert "Default" in quals
+    module = [c for c in code_chunks(src, "c_sharp") if c["symbol_kind"] == "module"]
+    assert len(module) == 1 and "namespace Demo" in module[0]["text"]
+
+
+def test_csharp_nested_and_qualified_namespaces_stay_out_of_the_qualname():
+    src = "namespace A.B\n{\n  namespace C {\n    class X { void M() {} }\n  }\n}\n"
+    assert set(_quals(src, "c_sharp")) == {"X", "X.M"}
+
+
+def test_csharp_file_scoped_namespace_is_unchanged():
+    src = "namespace Demo;\nclass X\n{\n    void M() { }\n}\n"
+    assert _quals(src, "c_sharp")["X.M"] == (4, 4)
+
+
+def test_cpp_namespaces_and_extern_c_are_descended():
+    src = (
+        "namespace a {\n"
+        "class X { void m() {} };\n"
+        "int f() { return 1; }\n"
+        "}\n"
+        "namespace { int g() { return 0; } }\n"
+        "extern \"C\" { int h() { return 0; } }\n"
+    )
+    chunks = code_chunks(src, "cpp")
+    assert _quals(src, "cpp")["X"] == (2, 2)
+    # C/C++ functions carry no `name` field (R-3: the graph names them from the declarator);
+    # what matters here is that each one is its own chunk, at its own lines
+    functions = [(c["start_line"], c["end_line"]) for c in chunks if c["symbol_kind"] == "function"]
+    assert functions == [(3, 3), (5, 5), (6, 6)]
+
+
+def test_php_braced_namespace_is_descended():
+    src = "<?php\nnamespace Foo {\n  class X {\n    function m() {}\n  }\n}\n"
+    assert _quals(src, "php")["X.m"] == (4, 4)
+
+
+def test_typescript_export_and_namespace_are_descended():
+    src = (
+        "import x from 'y';\n"
+        "export class Y {\n"
+        "  m() {}\n"
+        "}\n"
+        "export function g() {}\n"
+        "namespace N {\n"
+        "  export class Z { n() {} }\n"
+        "}\n"
+    )
+    quals = _quals(src, "typescript")
+    assert quals["Y"][0] == 2 and quals["Y.m"] == (3, 3)
+    assert quals["g"] == (5, 5)
+    assert quals["Z.n"] == (7, 7)
+
+
+def test_javascript_export_default_function_is_chunked():
+    src = "export class Y {\n  m() {}\n}\nexport default function g() {}\n"
+    quals = _quals(src, "javascript")
+    assert quals["Y.m"] == (2, 2)
+    assert quals["g"] == (4, 4)
+
+
+def test_scope_signature_is_part_of_the_chunking_identity():
+    from sertor_core.services.chunking.code import scope_signature
+
+    sig = scope_signature()
+    assert "c_sharp:namespace_declaration" in sig
+    assert "typescript:" in sig and "export_statement" in sig
+
+
+def test_logic_version_carries_the_scope_rules():
+    """Changing the scope rules re-chunks unchanged files on the next incremental index."""
+    from sertor_core.config.settings import Settings
+    from sertor_core.services.chunking.code import scope_signature
+    from sertor_core.services.indexing import _logic_version
+
+    assert f"scopes={scope_signature()}" in _logic_version(Settings())

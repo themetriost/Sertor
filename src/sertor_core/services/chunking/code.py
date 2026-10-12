@@ -67,7 +67,26 @@ _LANG: dict[str, dict[str, set[str]]] = {
     "ruby": {"def": {"method", "singleton_method"}, "class": {"class", "module"}},
 }
 
+# language -> TRANSPARENT scopes: nodes that wrap definitions without being one (namespaces,
+# `export`, `extern "C"`). The chunker descends into them and they never enter the qualname,
+# exactly as the graph walk does (E10-FEAT-082: before, `namespace Demo { class X … }` became one
+# `module` chunk). Measured on the grammars with a probe; a language absent here has none.
+_SCOPES: dict[str, set[str]] = {
+    "c_sharp": {"namespace_declaration"},
+    "cpp": {"namespace_definition", "linkage_specification"},
+    "php": {"namespace_definition"},
+    "javascript": {"export_statement"},
+    # `namespace N { }` at top level parses as expression_statement > internal_module
+    "typescript": {"export_statement", "internal_module", "expression_statement"},
+}
+
 _BODY_FIELDS = ("body", "declaration_list")
+
+
+def scope_signature() -> str:
+    """Identity of the transparent-scope rules, part of the indexing logic-version: changing them
+    changes the chunks of unchanged files, which must then be re-chunked."""
+    return ";".join(f"{lang}:{','.join(sorted(kinds))}" for lang, kinds in sorted(_SCOPES.items()))
 
 
 class _Node:
@@ -138,6 +157,21 @@ def _effective(node: _Node) -> _Node:
             if c.kind.endswith("definition") or c.kind.endswith("declaration"):
                 return c
     return node
+
+
+def _scope_children(node: _Node, language: str) -> list[_Node] | None:
+    """Children of `node` if it is a transparent scope for `language`, else `None`.
+
+    An `expression_statement` counts only when it wraps a TypeScript namespace: any other
+    expression stays module-level code.
+    """
+    if node.kind not in _SCOPES.get(language, ()):
+        return None
+    if node.kind == "expression_statement":
+        inner = node.named_children()
+        return inner if len(inner) == 1 and inner[0].kind == "internal_module" else None
+    body = node.body()
+    return (body if body is not None else node).named_children()
 
 
 def syntax_error_line(text: str, language: str) -> int | None:
@@ -246,16 +280,26 @@ def code_chunks(
                 mqual = ".".join(p for p in (qual, mname) if p) or mname
                 emit(mname, "method", mqual, m.start_row, m.end_row)
 
-    for node in root.named_children():
-        eff = _effective(node)
-        if eff.kind in cfg["class"]:
-            flush_module()
-            handle_class(node, "")
-        elif eff.kind in cfg["def"]:
-            flush_module()
-            name = eff.name()
-            emit(name, "function", name, node.start_row, node.end_row)
-        else:
-            pending.append((node.start_row, node.end_row))
+    def walk(nodes: list[_Node]) -> None:
+        for node in nodes:
+            eff = _effective(node)
+            if eff.kind in cfg["class"]:
+                flush_module()
+                handle_class(node, "")
+            elif eff.kind in cfg["def"]:
+                flush_module()
+                name = eff.name()
+                emit(name, "function", name, node.start_row, node.end_row)
+            elif (inner := _scope_children(node, language)) is not None:
+                # the scope's header (`namespace Demo {`) stays module-level text; its closing
+                # brace carries nothing worth a chunk
+                first = inner[0].start_row if inner else node.end_row + 1
+                if first > node.start_row:
+                    pending.append((node.start_row, first - 1))
+                walk(inner)
+            else:
+                pending.append((node.start_row, node.end_row))
+
+    walk(root.named_children())
     flush_module()
     return chunks

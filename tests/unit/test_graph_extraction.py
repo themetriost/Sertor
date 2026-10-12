@@ -147,3 +147,13 @@ def test_coverage_declares_all_ten_languages_and_the_two_page_families():
 def test_coverage_is_persisted_in_graph_data():
     data = _extract()
     assert dict(data.coverage) == {lang: tuple(kinds) for lang, kinds in COVERAGE.items()}
+
+
+def test_chunker_and_graph_agree_on_namespaced_csharp_symbols():
+    """E10-FEAT-082: the chunker now descends namespaces like the graph walk; the two must name the
+    symbol the same way, or the graph would carry two nodes for one method."""
+    from sertor_core.services.chunking.code import code_chunks
+
+    src = "namespace Demo\n{\n    class Default\n    {\n        void BindGrid() { }\n    }\n}\n"
+    chunk_quals = {c["qualname"] for c in code_chunks(src, "c_sharp") if c["qualname"]}
+    assert chunk_quals == {"Default", "Default.BindGrid"}
