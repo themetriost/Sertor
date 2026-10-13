@@ -218,3 +218,7 @@ lettore che il verde ha appena congedato.
 Il corollario operativo: **una guardia che al primo giro non trova niente, di solito non sta
 guardando**. Il gate d'aggiornamento, al primo giro, ha trovato quattro difetti — tutti **in sé
 stesso**, nessuno nel prodotto. È il segno che guardava davvero.
+
+## Vedi anche
+
+- [[come-si-rilascia-sertor]] — dove il gate d'aggiornamento entra nella procedura di rilascio, e perché un verde non basta a chiudere la fase
