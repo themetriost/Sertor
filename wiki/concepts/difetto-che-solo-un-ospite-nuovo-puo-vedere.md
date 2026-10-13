@@ -182,3 +182,4 @@ perché è agganciato a una versione pubblicata. **Consegnato nella `v0.4.2`** (
 - [[guardia-verde-non-e-una-misura]] — perché `doctor` ha detto `pass` mentre niente funzionava
 - [[dogfood-fidelity]] — i limiti strutturali di ciò che il dogfood può esercitare
 - [[il-rimedio-ricade-nel-difetto]] — la famiglia dei rimedi che rientrano nel problema che chiudono
+- [[come-si-rilascia-sertor]] — la procedura di rilascio ricostruita dalle 17 release: il gate d'aggiornamento su un host che aggiorna è lo stadio che questo difetto ha imposto
