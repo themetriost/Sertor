@@ -54,11 +54,22 @@ nessuno lo veda — e che il nodo non può dichiarare quale versione esegue.
    ```
    uv run --project .acta acta publish --node <tuo-nodo> --source <fonte> --channel <canale> --slug <slug> \
                 --content-file <path|-> [--tag tipo:esito] [--tag altitudine:requisito] \
-                [--date YYYY-MM-DD] [--commit]
+                [--date YYYY-MM-DD]
    ```
 
-4. `--commit` esegue anche il **deposito** (commit+push su `acta.folder`), che rende la pubblicazione
-   visibile agli altri nodi: è una **decisione dell'utente** — chiedila esplicitamente.
+4. **`publish` deposita**: affigge *e* rende la pubblicazione visibile agli altri nodi (commit+push su
+   `acta.folder`) **nella stessa invocazione**. Non c'è un flag da aggiungere e **non c'è una seconda
+   conferma da chiedere**: chi ti ha chiesto di pubblicare **ha già deciso** — è lì che cade il gate
+   REQ-E04 (FR-PUB-12, dalla v0.7.0). Non invocare `publish` di tua iniziativa; una volta invocato, va
+   fino in fondo.
+   **Cosa tocca, esattamente:** `git add` e `git commit` del **solo file affisso** (il commit porta il
+   pathspec). Quello che altri nodi avessero lasciato in stage o modificato in bacheca **resta dov'è**:
+   non entra nel commit e non viene tolto dal loro indice. Non serve committare a mano per prudenza — e
+   se lo fai, stai scavalcando il vehicle.
+   **Se il deposito fallisce** (rete, ramo divergente, permessi) il comando esce **non-zero** e dichiara
+   il passo fallito *e lo stato*: il contenuto è affisso ma **nessuno lo vede**. Riparala, non ignorarla.
+   *(`--commit` è ancora accettato per non rompere invocazioni esistenti, ma è **deprecato e senza
+   effetto**: il comando lo segnala.)*
 5. Riporta all'utente il file affisso, il canale e i tag.
 
 ## Come scoprire (visita read-only)
@@ -134,13 +145,18 @@ Quando **usi** un contenuto scoperto, distingui tre atti (il gate cade sull'**az
 - **Avviare attività/lavoro sulla base di ciò che leggi: GATED (per ora).** Se dal contenuto discende
   un'azione (lanciare task, aprire lavori, modificare qualcosa), **fermati e chiedi** una decisione
   esplicita all'utente prima di procedere. In assenza, proponi/segnala, non agire.
-- **Depositare / scrivere fuori dal tuo spazio: GATED.** Pubblicare (`--commit`) e ogni scrittura in un
-  altro nodo restano decisioni esplicite dell'utente. Scrivere nel *tuo* repo non è cross-nodo.
+- **Depositare / scrivere fuori dal tuo spazio: GATED.** Pubblicare e ogni scrittura in un altro nodo
+  restano decisioni esplicite dell'utente. Scrivere nel *tuo* repo non è cross-nodo.
+  **Il gate cade sul *decidere di pubblicare*, non su un passo interno al comando:** quando l'utente te
+  lo chiede, esegui `publish` **fino in fondo** — non spezzare l'atto per richiedere un secondo consenso
+  che ti è già stato dato. Il gate serve a impedire una pubblicazione **che nessuno ha chiesto**, non a
+  far riconfermare quella richiesta.
 
 > **Nota sui confini.** Gli ultimi due gate «non-azione» e il «non inventare» in scoperta sono **giudizio
 > tuo**, non imposti dal tool: sotto sessione lunga o pressione, ricordali. La difesa *meccanica* è solo
-> quella armata dal runtime — `--commit` per il deposito, la distinzione `assenza`/`accesso non riuscito`,
-> il rifiuto di sovrascrivere.
+> quella armata dal runtime — la distinzione `assenza`/`accesso non riuscito` e il rifiuto di
+> sovrascrivere uno slug esistente. **Il deposito non è più fra queste** (v0.7.0): non c'era un flag da
+> non-mettere per essere prudenti, c'era un atto spezzato a metà.
 
 ## Confini
 

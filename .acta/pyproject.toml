@@ -8,4 +8,4 @@ requires-python = ">=3.11"
 dependencies = ["acta"]
 
 [tool.uv.sources]
-acta = { git = "https://github.com/themetriost/Acta", tag = "v0.5.1" }
+acta = { git = "https://github.com/themetriost/Acta", tag = "v0.7.0" }

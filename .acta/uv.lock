@@ -4,8 +4,8 @@ requires-python = ">=3.11"
 
 [[package]]
 name = "acta"
-version = "0.5.1"
-source = { git = "https://github.com/themetriost/Acta?tag=v0.5.1#ef829ee46ab8b699ad27f212279c75d8a0fac901" }
+version = "0.7.0"
+source = { git = "https://github.com/themetriost/Acta?tag=v0.7.0#8676f4255e85935af6e6ae7f97a57479eedaac22" }
 
 [[package]]
 name = "acta-runtime"
@@ -16,4 +16,4 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "acta", git = "https://github.com/themetriost/Acta?tag=v0.5.1" }]
+requires-dist = [{ name = "acta", git = "https://github.com/themetriost/Acta?tag=v0.7.0" }]

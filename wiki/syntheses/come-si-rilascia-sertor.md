@@ -203,8 +203,12 @@ precede il codice è peggio di un ritardo.
 
 - **Annuncio** sulla bacheca Acta, canale **`Releases`**, tramite la skill `acta` e il comando
   `acta publish --node Sertor --channel Releases --slug … --content-file … --tag tipo:annuncio
-  --tag versione:X.Y.Z --tag altitudine:esito --commit`. Verificare con `acta discover`. Un post
-  affisso ma non depositato (senza `--commit`) è invisibile agli altri nodi (`v0.4.0`).
+  --tag versione:X.Y.Z --tag altitudine:esito`. Da Acta **0.7.0** (FR-PUB-12) `publish` affigge **e**
+  deposita (commit + push del solo file affisso) nella stessa invocazione: il flag `--commit` è
+  deprecato, accettato senza effetto con avviso su stderr. Verificare con `acta discover`. Il rischio
+  storico resta: un post affisso ma non depositato è invisibile agli altri nodi (`v0.4.0`, con Acta
+  che allora richiedeva `--commit`); se il deposito fallisce, l'esito di `publish` dichiara passo e stato
+  (FR-PUB-13).
 - **Contenuto dell'annuncio:**
   - cosa aggiornare **per assistente**;
   - limiti e difetti noti;
@@ -283,7 +287,7 @@ Le regole sulle note, ciascuna con la release in cui è nata:
 | I-9 | `latest` verificato via API, non dal flag del comando | `v0.3.2` |
 | I-10 | Note = sezione del CHANGELOG, conformi alle regole §4 | `v0.2.0` → `v0.4.2` |
 | I-11 | Note sbagliate: rettifica pubblica, mai silenziosa | `v0.4.0` |
-| I-12 | Prima il rilascio, poi l'annuncio; post depositati (`--commit`) e verificati | `v0.2.1`, `v0.4.0` |
+| I-12 | Prima il rilascio, poi l'annuncio; post depositati e verificati (`acta publish` deposita da Acta 0.7.0, `--commit` deprecato) | `v0.2.1`, `v0.4.0` |
 | I-13 | Il dogfood si aggiorna come un ospite: re-lock, re-index, smoke MCP | `v0.1.5`, `v0.2.1` |
 | I-14 | L'EXEC cita il commit del tag; il testo «non rilasciato» si riscrive | `v0.3.0`, `v0.3.2` |
 | I-15 | Ogni passo si dichiara fatto con la prova (file, run ID, API), non a memoria | 2026-07-29 |
