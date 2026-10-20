@@ -3,7 +3,7 @@ title: Memoria episodica — Cattura delle conversazioni (il tier grezzo)
 type: concept
 tags: [memoria, episodico, conversazioni, hermes, tier-grezzo, archive, host-agnostico, feat-001, feat-008]
 created: 2026-06-14
-updated: 2026-07-23
+updated: 2026-10-20
 sources: ["requirements/memoria-conversazioni/epic.md", "requirements/memoria-conversazioni/cattura-copilot-cli/requirements.md", "src/sertor_core/domain/memory.py", "src/sertor_core/adapters/capture/copilot_cli.py", "https://github.com/nous-research/hermesresearch"]
 ---
 
@@ -97,6 +97,7 @@ Verificato in test: logica di archivio e contratto di cattura passano con ≥2 a
 - ✅ **FEAT-010 (Parità MCP per la lettura della memoria)**: consegnata (PR #208, 2026-07-20). 3 tool read-only nel server `sertor-rag`: `memory_search` (full-text FTS5), `memory_list`, `memory_show` — thin sopra gli stessi servizi core della CLI (`MemoryArchive.list_recent`/`get`, `EpisodicSearch.search`), gated da `SERTOR_MEMORY` (spenta → `{"status":"disabled"}` esplicito). Memoria interrogabile nativamente dall'agente, non solo da terminale. `sertor-core` invariato (solo `sertor_mcp`).
 - ✅ **FEAT-012 (Fix cattura-auto — gate privacy sull'ambiente sbagliato)**: consegnata (PR #210, 2026-07-21). L'hook `memory-capture` (SessionEnd) gata su `os.environ["SERTOR_MEMORY"]`, ma il valore vive in `.sertor/.env` → gate sempre `None` → cattura mai eseguita. `_hooklib.memory_enabled()` ora legge `./.env`→`.sertor/.env` (ancorato a `CLAUDE_PROJECT_DIR`, `.env` vince su `os.environ`), byte-copiato Claude/Copilot. `sertor-core` invariato (solo asset hook).
 - ✅ **FEAT-013 (Ricerca semantica della memoria via MCP)**: consegnata (PR #212, 2026-07-21). Il tool MCP `memory_search` accetta `semantic=true` (ricerca per significato), mirror di `sertor-rag memory search --semantic`, dietro il doppio gate `SERTOR_MEMORY` + `SERTOR_MEMORY_SEMANTIC`. Chiude il residuo «semantico via MCP» rinviato da FEAT-010. `sertor-core` invariato (solo `sertor_mcp`).
+- 🔄 **FEAT-016 (BUG: turni oltre il limite del modello)**: in consegna (branch 145, 2026-10-20) — turni grandi spezzati col tetto del corpus, rifiuto confinato al turno, esito che nomina sessione e turno. Vedi [[budget-ingresso-embedding]].
 - ✅ **FEAT-014 (Fix FTS5 punteggiatura in `memory search`)**: consegnata (2026-07-21). Il testo grezzo andava nel `MATCH` FTS5 senza quoting → un token tipo `0.1.1` causava `fts5: syntax error` mascherato a `(no results)` (anti-Fail-Loud). Funzione pura `_to_fts_match` (quoting per-token, AND preservato) a monte di `_build_sql`; colpiva CLI + tool MCP `memory_search`.
 - 📋 **FEAT-005/006/007**: estensioni (remember-this, retention, second-brain).
 
@@ -113,5 +114,6 @@ Verificato in test: logica di archivio e contratto di cattura passano con ≥2 a
 - [[ricerca-episodica-fts5]] — il motore FTS5 SQLite.
 - [[copilot-cli-session-storage]] — ricognizione tecnica storage sessioni Copilot CLI (FEAT-008).
 - [[diary-vs-graph]] — come la memoria episodica si relaziona al grafo wiki.
+- [[budget-ingresso-embedding]] — il tetto d'ingresso dell'embedding, condiviso con il corpus: come un turno troppo grande non fa perdere la sessione (E4-FEAT-016).
 - [[second-brain-cross-progetto]] — visione meta: memoria su più progetti e assistenti.
 - [[constitution]] — Principio X (host-agnosticità) alla base della porta.

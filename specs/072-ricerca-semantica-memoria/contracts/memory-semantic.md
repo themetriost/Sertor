@@ -24,6 +24,9 @@ CLI `sertor-rag memory` (Principio XI). Tutto **gated** da `memory_enabled AND m
   collezione (incrementalità, REQ-030); embedda solo i nuovi; `upsert` idempotente (REQ-006).
 - Sessione interamente già indicizzata → `embedded=0, skipped=N` (zero chiamate di embedding, NFR-009).
 - Guasto store/provider → report con `errors`, warning, **non-fatale** (REQ-008).
+- **Aggiornato dalla 145** ([`contracts/memory-semantic-index.md`](../../145-memoria-semantica-turni-grandi/contracts/memory-semantic-index.md)):
+  un turno oltre `max_chunk_tokens` è spezzato in pezzi `session_key#turn_index/part`; un rifiuto
+  dell'input (`http 400/413/422`) è confinato ai turni rifiutati, elencati in `SemanticIndexReport.rejected`.
 
 ### `index_all(archive: MemoryArchive) -> SemanticIndexReport`
 - Backfill incrementale (REQ-007): itera le sessioni archiviate, `index_session` su ciascuna; embedda

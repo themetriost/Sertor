@@ -40,6 +40,13 @@ mirror of `sertor-rag memory search --semantic`. It needs the second opt-in `SER
 (and a one-time backfill, `sertor-rag memory index-semantic`); until then it returns `{"status":
 "disabled"}` naming that knob, never a silent fall back to full-text.
 
+**Long turns are fine.** A turn longer than the embedding model accepts (a skill loaded into the
+conversation, a pasted file) is split into pieces under `SERTOR_MAX_CHUNK_TOKENS` — the same cap the
+code/doc index uses — and still comes back as **one** result. If the provider refuses a specific turn
+anyway, only that turn is lost, and `memory index-semantic` names it on its own line
+(`rejected session=<key> turn=<n> reason=http 400`; in `--json`, a `rejected` list). Sessions that an
+older version left out are picked up by the next `memory index-semantic` run — no rebuild needed.
+
 ## The rule of thumb: discover → navigate
 
 | Your question | Surface | Tool |

@@ -3,7 +3,7 @@ title: Indice del Wiki — Produzione Sertor
 type: index
 tags: [produzione, wiki, index]
 created: 2026-05-30
-updated: 2026-10-12
+updated: 2026-10-20
 sources: ["requirements/sertor-core/epic.md", "requirements/memoria-conversazioni/epic.md", ".specify/memory/constitution.md", "specs/001-nucleo-retrieval/**", "specs/002-rag-baseline/**", "src/sertor_core/**", "CLAUDE.md", "wiki/concepts/punto-di-partenza-non-verificato.md", "wiki/concepts/misura-al-confine-pubblico.md"]
 ---
 
@@ -77,6 +77,7 @@ playbook (`.claude/skills/wiki-author/wiki-playbook.md`, §3).
 - **[[retrieval-vs-graph]]** — Guida di scelta: ricerca **ibrida** (scopri per significato) vs **code-graph** (naviga per struttura), pattern *scopri → naviga*, tabella domanda→tool. Ortogonali, non alternative.
 - **[[domain-model]]** — Le **entità dati pure** del nucleo (`Document`, `Chunk`/`ChunkMetadata`, `EmbeddedChunk`, `RetrievalResult`, `IndexReport`; enum `DocType`/`ChunkerKind`): nessun SDK nel dominio, id stabili (path POSIX, `doc_id#index`) → idempotenza del rebuild.
 - **[[ports-adapters]]** — Le **otto porte** `Protocol` (`EmbeddingProvider`, `VectorStore`, `LexicalIndex`, `Reranker`, `CodeGraph`, `ObservabilityStore`, `RetrieverStrategy`, `TranscriptCaptureAdapter`) e gli **adapter** che le implementano (Ollama/Azure · Chroma/Azure Search · BM25 · FlashRank · networkx); il composition root sceglie da `Settings` con import lazy. Structural typing → mockabili.
+- **[[budget-ingresso-embedding]]** — Il **tetto d'ingresso** dell'embedding (`SERTOR_MAX_CHUNK_TOKENS`/`cap_to_tokens`) condiviso da corpus e memoria: turno troppo grande spezzato, rifiuto confinato al turno che lo ha causato (E4-FEAT-016).
 - **[[chunking-dispatch]]** — Il **chunking** `Document`→`Chunk`: dispatch per tipo/lingua (markdown / sintattico tree-sitter / fallback dimensionale), 10 linguaggi sintattici, esclusione deliberata R-N2 di PowerShell/SQL, id stabile `doc_id#index`.
 - **[[vista-che-conserva-le-righe]]** — Codice incorporato in un altro formato (C# dentro le pagine ASP.NET): invece di estrarre frammenti e rimappare gli offset, si **proietta** il file in una vista dove il non-codice diventa spazi e i ritorni a capo restano — le righe sono giuste per costruzione. Tre viste da una scansione (chunk/graph/markup), la sentinella trasparente per i metodi fuori classe, la degradazione dichiarata. Nata con E7-FEAT-006.
 - **[[indexing-and-retrieval]]** — Le **due pipeline**: indicizzazione (ingest→chunk→embed→store, atomicità del rebuild, DEFAULT incrementale da FEAT-009 con manifest persistito) e la **facade** `search_code/docs/combined`, tollerante su indice assente (`[]`+warning). Punto d'ingresso dei consumatori via `build_facade()`.

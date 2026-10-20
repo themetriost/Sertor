@@ -13,6 +13,17 @@ and Sertor aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 _Changes land here before the next version bump._
 
+### Fixed
+
+- **Semantic memory no longer loses a whole session to one long turn.** A turn above the embedding
+  model's input limit (e.g. a large skill loaded into the conversation) used to be sent whole: the
+  provider answered `http 400`, and **every** turn of that session was counted as an error under a
+  misleading `provider_unavailable`. Long turns are now split under `SERTOR_MAX_CHUNK_TOKENS` (the
+  same cap as the code/doc index) and still return as one search result; a turn the provider refuses
+  for any other reason costs only itself; and `memory index-semantic` lists each refused turn with its
+  session, turn and reason (`input_rejected` in the events). Run `sertor-rag memory index-semantic`
+  once after updating to recover the sessions left out — no rebuild. *(Reported by node Kaelen.)*
+
 ## [0.6.0] — 2026-10-12
 
 Sertor now indexes **ASP.NET pages** — the C# written inside them included — and splits C#, TypeScript,

@@ -98,7 +98,8 @@ Tipi di nodo **misurati** con un probe sulle grammatiche reali, non dedotti. Un 
 
 I chunker strutturali (markdown per heading, codice per simbolo) producono chunk **coerenti** ma di dimensione **non limitata**: una sezione/funzione enorme diventa un singolo chunk. Gli embedder hanno un **budget di token per input** (text-embedding-3-large: 8192) e rifiutano gli input più grandi (`http 400`).
 
-Per questo `chunk_document` applica un **tetto in token** (`Settings.max_chunk_tokens`, env `SERTOR_MAX_CHUNK_TOKENS`, default **8191**): un chunk oltre il tetto è **sub-splittato** (helper `services/chunking/_tokens.py`, `cap_to_tokens`) preservando i metadati strutturali (heading_path/qualname), gli altri restano interi. Il default 8191 **usa quasi tutta la finestra del modello large** (non frammenta le sezioni coerenti), restando entro il limite.
+Per questo `chunk_document` applica un **tetto in token** (lo stesso che dal 2026-10-20 usa anche la
+memoria semantica, vedi [[budget-ingresso-embedding]]) (`Settings.max_chunk_tokens`, env `SERTOR_MAX_CHUNK_TOKENS`, default **8191**): un chunk oltre il tetto è **sub-splittato** (helper `services/chunking/_tokens.py`, `cap_to_tokens`) preservando i metadati strutturali (heading_path/qualname), gli altri restano interi. Il default 8191 **usa quasi tutta la finestra del modello large** (non frammenta le sezioni coerenti), restando entro il limite.
 
 Conteggio token: **preciso con tiktoken** (`cl100k_base`) dietro l'**extra opzionale `tokenizer`** (import lazy); senza l'extra, **fallback conservativo per carattere** (~2 char/token) → il core resta installabile e **offline-safe** (Principio II).
 

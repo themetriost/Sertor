@@ -280,21 +280,32 @@ def format_semantic_index_report(report: SemanticIndexReport, *, json: bool) -> 
     """Formats the outcome of `memory index-semantic` (072, FEAT-004, REQ-007).
 
     Counts only, never text/transcript. Human/JSON informational equivalence: both report
-    `embedded`/`skipped`/`errors`. Pure function.
+    `embedded`/`skipped`/`errors`, plus — ONLY when the provider refused some turns — where each
+    refusal happened (session, turn, reason; 145, REQ-035). With no refusal the output is
+    unchanged. Pure function.
     """
     if json:
-        return _json.dumps(
-            {
-                "embedded": report.embedded,
-                "skipped": report.skipped,
-                "errors": report.errors,
-            }
-        )
-    return (
+        payload: dict = {
+            "embedded": report.embedded,
+            "skipped": report.skipped,
+            "errors": report.errors,
+        }
+        if report.rejected:
+            payload["rejected"] = [
+                {"session": r.session_key, "turn": r.turn_index, "reason": r.reason}
+                for r in report.rejected
+            ]
+        return _json.dumps(payload)
+    lines = [
         f"embedded={report.embedded} "
         f"skipped={report.skipped} "
         f"errors={report.errors}"
+    ]
+    lines.extend(
+        f"rejected session={r.session_key} turn={r.turn_index} reason={r.reason}"
+        for r in report.rejected
     )
+    return "\n".join(lines)
 
 
 def format_session_transcript(session: ArchivedSession, *, json: bool) -> str:
