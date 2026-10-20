@@ -74,7 +74,7 @@
 
 - [x] T023 Test in `tests/unit/test_memory_semantic_large_turns.py`: turno indicizzato intero con un budget largo, reindicizzato con un budget stretto → `skipped`, zero chiamate, nessun pezzo creato (fallisce su `master` dopo la 145)
 - [x] T024 In `src/sertor_core/services/memory_semantic.py`: `_existing_ids` interroga anche gli id interi dei turni; un turno con l'id intero presente è «già indicizzato»
-- [ ] T025 Dopo il merge: re-lock del runtime e `memory index-semantic` → `embedded=0` sul dogfood (nessun nuovo ri-embedding)
+- [x] T025 Dopo il merge: re-lock del runtime e `memory index-semantic` → `embedded=0` sul dogfood (nessun nuovo ri-embedding) — 2026-10-20, runtime `df930d2`: `embedded=0 skipped=13785 errors=0`
 
 ## Dependencies & Execution Order
 
