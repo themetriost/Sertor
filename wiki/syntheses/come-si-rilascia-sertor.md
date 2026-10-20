@@ -3,7 +3,7 @@ title: Come si rilascia Sertor — procedura ricostruita da 17 release
 type: synthesis
 tags: [rilascio, release, processo, gate-aggiornamento, note-di-rilascio, acta, handoff, sinthari]
 created: 2026-10-13
-updated: 2026-10-13
+updated: 2026-10-20
 sources:
   - CHANGELOG.md
   - wiki/log/2026-07-13.md … wiki/log/2026-10-12.md
@@ -16,7 +16,7 @@ sources:
 # Come si rilascia Sertor
 
 > **A chi serve.** È la procedura di rilascio di Sertor **ricostruita dai fatti**: le 17 release
-> pubblicate fra il 2026-07-13 (`v0.1.0`) e il 2026-10-12 (`v0.6.0`), con gli incidenti che hanno
+> pubblicate fra il 2026-07-13 (`v0.1.0`) e il 2026-10-12 (`v0.6.0`) (+ `v0.6.1` il 2026-10-20), con gli incidenti che hanno
 > prodotto ciascuna regola. Ha due lettori:
 > - **noi**, come riferimento operativo al prossimo rilascio;
 > - **Sinthari**, il nodo che crea skill e agenti, come **specifica di partenza per una skill di
@@ -85,6 +85,7 @@ Il numero comunica il contenuto. L'utente può scegliere diversamente per ragion
 | `v0.4.2` | 09-13 | patch | server MCP su entrambe le linee dell'SDK | tag creato **20 minuti dopo l'ultimo run verde**; il rilascio ha cancellato la precondizione di un esito del gate, e `master` è diventato rosso (E10-FEAT-078) · note con **quattro comandi per tutti**, uno dei quali installa `sertor-flow` dove non c'era (E10-FEAT-081) |
 | `v0.5.0` | 10-07 | minor | provider `openai` | smoke saltato sulla PR (il filtro dei percorsi esclude `src/`) → **il gate completo gira su `master` prima del tag** |
 | `v0.6.0` | 10-12 | minor | pagine ASP.NET + chunking dentro namespace | note **per assistente** (Claude usa alias, Copilot ID fissi) · `_logic_version` cambiato → **re-index obbligatorio dichiarato** |
+| `v0.6.1` | 10-20 | patch | memoria semantica, turni lunghi (E4-FEAT-016) | il merge in una delega unica con altro lavoro è stato bloccato dal classificatore («Merge Without Review») → **commit/PR e merge in deleghe separate, merge solo col go esplicito** |
 
 ## 3. La procedura, fase per fase
 

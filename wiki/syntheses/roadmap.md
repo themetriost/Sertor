@@ -163,7 +163,8 @@ Dopo: da scegliere fra i Should P1 di E10 e la separazione (E17).
 
 ### ✅ Done — recente
 
-- **`v0.6.1` rilasciata** (2026-10-20) — correzione della memoria semantica (**E4-FEAT-016**, BUG
+- **`v0.6.1` rilasciata** (2026-10-20, tag sul merge `2b8ee1f` della PR #293; gate d'aggiornamento
+  `v0.6.0 → master` 4/4, run 39457562357; annuncio in *Releases* e risposta a Kaelen in bacheca) — correzione della memoria semantica (**E4-FEAT-016**, BUG
   segnalato da Kaelen, PR #291 + seguito #292, [`specs/145-memoria-semantica-turni-grandi/`](../../specs/145-memoria-semantica-turni-grandi/)):
   un turno oltre `SERTOR_MAX_CHUNK_TOKENS` è spezzato e torna come un solo risultato; un rifiuto
   `http 400/413/422` costa solo il suo turno ed è nominato nell'esito (`input_rejected`); un turno già
