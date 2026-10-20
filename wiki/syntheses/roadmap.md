@@ -22,7 +22,7 @@ sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.m
 <!-- EXEC:START -->
 ## ⚡ Executive summary (stato al 2026-10-20)
 
-**Versione pubblicata: `v0.6.0`** (Release *latest*, 2026-10-12). Le PR aperte: `gh pr list`.
+**Versione pubblicata: `v0.6.1`** (Release *latest*, 2026-10-20). Le PR aperte: `gh pr list`.
 Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
 
 > *Perché qui non c'è l'hash di `master`.* Il campo c'era, e il 2026-09-16 è stato trovato falso: diceva
@@ -116,17 +116,7 @@ Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
 
 ### 🔄 In progress
 
-- **E4-FEAT-016 — memoria semantica: un turno troppo lungo faceva perdere l'intera sessione** (BUG,
-  segnalato dal nodo Kaelen su Acta il 2026-10-20, v0.6.0). *Dove:* branch
-  `145-memoria-semantica-turni-grandi`, [`specs/145-memoria-semantica-turni-grandi/`](../../specs/145-memoria-semantica-turni-grandi/),
-  `services/memory_semantic.py`. *Stato:* **su `master`** (PR #291, merge `68ec358`); caso riprodotto
-  anche sul dogfood (pre-fix `embedded=13610 errors=175`, post-fix `errors=0`). La verifica sul dogfood
-  ha trovato un difetto della correzione stessa: senza `tiktoken` la stima dei token faceva spezzare
-  e ri-embeddare 62 turni già accettati interi → **seguito** sul branch
-  `146-memoria-turno-intero-gia-indicizzato` (un turno indicizzato intero resta indicizzato), suite
-  1618 verde. *Prossimo passo:* PR del seguito → merge col via → re-lock → `index-semantic` con
-  `embedded=0` → risposta a Kaelen in bacheca (fix su `master`, arriva agli ospiti con la prossima
-  release). *Blocco:* nessuno.
+Nessuna voce in corso.
 
 Dopo: da scegliere fra i Should P1 di E10 e la separazione (E17).
 
@@ -173,6 +163,13 @@ Dopo: da scegliere fra i Should P1 di E10 e la separazione (E17).
 
 ### ✅ Done — recente
 
+- **`v0.6.1` rilasciata** (2026-10-20) — correzione della memoria semantica (**E4-FEAT-016**, BUG
+  segnalato da Kaelen, PR #291 + seguito #292, [`specs/145-memoria-semantica-turni-grandi/`](../../specs/145-memoria-semantica-turni-grandi/)):
+  un turno oltre `SERTOR_MAX_CHUNK_TOKENS` è spezzato e torna come un solo risultato; un rifiuto
+  `http 400/413/422` costa solo il suo turno ed è nominato nell'esito (`input_rejected`); un turno già
+  indicizzato intero non viene rispezzato. Dogfood: 175 turni recuperati, secondo run `embedded=0`.
+  Riguarda ogni ospite con la memoria semantica accesa. Note: `CHANGELOG.md` §0.6.1 (basta `upgrade rag`
+  + un `memory index-semantic`, nessun re-index del corpus).
 - **`v0.6.0` rilasciata** (2026-10-12) — pagine ASP.NET (E7-FEAT-006) + chunking per metodo dentro
   `namespace`/`export` (E10-FEAT-082, PR #287) + model-ID Copilot sulla famiglia Claude 5.5 (#285). Note:
   `CHANGELOG.md` §0.6.0 (cosa aggiornare per assistente; re-index obbligatorio, il `_logic_version` è

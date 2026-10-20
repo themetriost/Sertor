@@ -13,16 +13,84 @@ and Sertor aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 _Changes land here before the next version bump._
 
+## [0.6.1] — 2026-10-20
+
+A fix for **semantic conversation memory**: one very long turn — a large skill loaded into the
+conversation, a pasted file — no longer makes the whole session disappear from semantic search. It
+concerns **every host that has semantic memory turned on** (`SERTOR_MEMORY_SEMANTIC=true`), not one node.
+
+> **Upgrade — what to run depends on what you use:**
+>
+> ```
+> uvx --refresh --from "git+https://github.com/themetriost/Sertor@v0.6.1#subdirectory=packages/sertor" sertor upgrade rag
+> ```
+>
+> **Every host with the `rag` capability** runs the command above and restarts the MCP server. No corpus
+> re-index is needed: the code and document index is unchanged.
+>
+> **Hosts with semantic memory turned on** then run, once:
+>
+> ```
+> uv run --project .sertor sertor-rag memory index-semantic
+> ```
+>
+> It indexes the sessions that were left out and leaves the ones already indexed alone — no rebuild, no
+> configuration change. Hosts without semantic memory have nothing else to do.
+>
+> **No `wiki` or `sertor-flow` upgrade** is needed for this release, on either assistant. Do **not** run
+> `sertor-flow upgrade` on a host that never installed `sertor-flow`: it installs it (open defect, see
+> below). `sertor` is not on your `PATH` — it is invoked through `uvx --from`, as above.
+
 ### Fixed
 
 - **Semantic memory no longer loses a whole session to one long turn.** A turn above the embedding
-  model's input limit (e.g. a large skill loaded into the conversation) used to be sent whole: the
-  provider answered `http 400`, and **every** turn of that session was counted as an error under a
-  misleading `provider_unavailable`. Long turns are now split under `SERTOR_MAX_CHUNK_TOKENS` (the
-  same cap as the code/doc index) and still return as one search result; a turn the provider refuses
-  for any other reason costs only itself; and `memory index-semantic` lists each refused turn with its
-  session, turn and reason (`input_rejected` in the events). Run `sertor-rag memory index-semantic`
-  once after updating to recover the sessions left out — no rebuild. *(Reported by node Kaelen.)*
+  model's input limit used to be sent whole: the provider answered `http 400`, and **every** new turn of
+  that session was counted as an error, under a misleading `provider_unavailable`. Real case: 181 turns
+  lost because of one turn of ~290,000 characters. Now:
+  - a turn above `SERTOR_MAX_CHUNK_TOKENS` (the same cap the code/doc index already applies) is split
+    into pieces that fit, and still comes back as **one** search result;
+  - a turn the provider refuses (`http 400`, `413`, `422`) costs only itself: the other turns are
+    indexed, and the refused one is retried on the next run. With the service down or a wrong key the
+    behaviour is unchanged;
+  - `memory index-semantic` names each refused turn — `rejected session=<key> turn=<n> reason=http 400`
+    (a `rejected` list with `--json`) — and the observability event says `input_rejected`, distinct from
+    `provider_unavailable`. Events stay metrics-only: no text, no session keys.
+  - Turns that were already indexed whole keep their record and are not sent to the provider again,
+    even when the token count is only estimated (see below).
+
+  *(Reported by node Kaelen; the same defect was present on this project's own archive: 175 turns
+  missing.)*
+
+### Known issues — open, and declared so you do not find them yourself
+
+- **Without the `tokenizer` extra, token counts are estimated** at ~2 characters per token. The estimate
+  errs on the safe side, so a long turn may be split into more pieces than strictly needed: harmless for
+  search, slightly more embedding calls.
+- **ASP.NET pages are not linked to each other yet** (page ↔ code-behind, content ↔ master page,
+  page ↔ registered controls); **VB.NET pages and client-side JavaScript in pages** are indexed as text
+  only (from 0.6.0).
+- **C and C++ functions have no name in search chunks** (navigation names them from the declarator).
+- **`sertor configure` does not know the `openai` provider** and `--set` ignores keys outside its
+  catalogue without a warning (from 0.5.0; the installer is now maintained by the **Kaelen** node).
+- **`sertor-flow upgrade` installs `sertor-flow` on a host that never had it.**
+- **A bare `sertor upgrade` may refresh only one capability** on a host that has several, while exiting
+  green. Name the capability explicitly, as above.
+
+### Verification — how this release was checked
+
+- **On this project's own archive (13,785 turns):** before the fix, `memory index-semantic` ended with
+  175 turns in error. After the fix they were indexed; a second run sent nothing to the provider
+  (`embedded=0`). The first version of the fix re-split 62 turns that had already been indexed whole —
+  found by this check, fixed before release, with a regression test.
+- **Offline:** 17 tests reproduce the reported case (181 turns, one of ~290,000 characters, a provider
+  that refuses over its limit: `errors=181` before, `embedded=181` after), the confinement of a refusal
+  to its turn, the unchanged behaviour on network and authentication errors, one result per turn in
+  search, and the report output with and without refusals. Full suite (1620 tests), the package
+  suites and lint green.
+- **Upgrade path:** the update gate ran on the real jump `v0.6.0 → master` on throwaway hosts before
+  tagging.
+- **Not checked:** the fix on a host from the field — the reported case is reproduced in a test, not
+  re-run on the reporting node.
 
 ## [0.6.0] — 2026-10-12
 
