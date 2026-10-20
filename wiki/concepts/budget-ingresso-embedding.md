@@ -54,6 +54,16 @@ e nominato**. Se non può fermarsi per dire «qualcosa non va», deve dire *cosa
 il meno possibile. È la forma che il principio *Fail Loud, Fix the Cause* prende dove il «loud»
 non può essere un'interruzione.
 
+## Il conteggio è una stima; l'accettazione è un fatto
+
+Senza l'extra `tokenizer` il conteggio dei token è una **sovrastima** prudente (~2 caratteri/token):
+giusto per decidere *prima* se spezzare, sbagliato per rimettere in discussione *dopo* ciò che il
+provider ha già accettato. La verifica sul dogfood (2026-10-20) lo ha mostrato: la prima versione della
+correzione ri-spezzava turni già indicizzati interi (62 ri-embedding, record orfani). Da allora un turno
+presente **intero** nell'indice è indicizzato, qualunque cosa dica oggi la stima o un tetto abbassato.
+La regola generale: **una misura approssimata può decidere il nuovo, non smentire un esito già
+osservato.**
+
 ## Distinguere «questo testo» da «il servizio»
 
 Il ripiego per turno scatta solo sui motivi che significano *input rifiutato*: `http 400`, `413`, `422`.

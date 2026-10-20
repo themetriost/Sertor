@@ -156,7 +156,9 @@ JSON e trovarvi sessione, turno e motivo.
   configurato (lo stesso tetto già applicato ai pezzi del corpus) in pezzi che rientrano ciascuno nel
   budget, e indicizzarli tutti.
 - **FR-002** *(REQ-033)*: Un turno che rientra nel budget DEVE conservare l'identità che ha oggi
-  nell'indice, così che le sessioni già indicizzate non cambino.
+  nell'indice, così che le sessioni già indicizzate non cambino. Un turno **già indicizzato intero**
+  resta indicizzato anche se oggi il conteggio dei token (stimato, o con un budget più basso) lo
+  giudicherebbe da spezzare *(seguito 146, emerso dalla verifica sul dogfood)*.
 - **FR-003** *(REQ-033)*: La ricerca semantica DEVE restituire al più **un** risultato per turno; se più
   pezzi dello stesso turno sono pertinenti, vale il più pertinente, e il risultato cita sessione e
   indice di turno come oggi.

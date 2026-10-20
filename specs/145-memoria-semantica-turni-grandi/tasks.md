@@ -68,7 +68,13 @@
 - [x] T020 [P] Aggiornare il contratto e il data-model della feature d'origine (`specs/072-ricerca-semantica-memoria/contracts/memory-semantic.md` §index_session/§index_all, `data-model.md` §chunk_id) con un rimando alla 145, perché non descrivano più la granularità «un id per turno» come unica
 - [x] T021 Gate pre-merge: `uv run pytest -m "not cloud"` e `uv run ruff check .` verdi; confronto col conteggio di T001 (nessun test esistente rimosso o modificato oltre T014)
 - [x] T022a Verificare che `tests/unit/test_memory_archive_semantic.py` resti verde: l'indicizzazione automatica a fine sessione chiama lo stesso `index_session`, quindi eredita la correzione senza codice proprio
-- [ ] T022 Verifica sul dogfood via vehicle: `uv run --project .sertor sertor-rag memory index-semantic` (se la memoria semantica è accesa) — dopo il merge, a runtime ri-lockato
+- [x] T022 Verifica sul dogfood (2026-10-20, runtime `68ec358`: `embedded=237 skipped=13548 errors=0`, secondo run `embedded=0` — 62 ri-embedding imprevisti → seguito Phase 7) via vehicle: `uv run --project .sertor sertor-rag memory index-semantic` (se la memoria semantica è accesa) — dopo il merge, a runtime ri-lockato
+
+## Phase 7: Seguito dalla verifica sul dogfood (branch 146)
+
+- [x] T023 Test in `tests/unit/test_memory_semantic_large_turns.py`: turno indicizzato intero con un budget largo, reindicizzato con un budget stretto → `skipped`, zero chiamate, nessun pezzo creato (fallisce su `master` dopo la 145)
+- [x] T024 In `src/sertor_core/services/memory_semantic.py`: `_existing_ids` interroga anche gli id interi dei turni; un turno con l'id intero presente è «già indicizzato»
+- [ ] T025 Dopo il merge: re-lock del runtime e `memory index-semantic` → `embedded=0` sul dogfood (nessun nuovo ri-embedding)
 
 ## Dependencies & Execution Order
 

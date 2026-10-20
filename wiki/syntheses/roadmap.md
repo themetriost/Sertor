@@ -119,10 +119,14 @@ Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
 - **E4-FEAT-016 — memoria semantica: un turno troppo lungo faceva perdere l'intera sessione** (BUG,
   segnalato dal nodo Kaelen su Acta il 2026-10-20, v0.6.0). *Dove:* branch
   `145-memoria-semantica-turni-grandi`, [`specs/145-memoria-semantica-turni-grandi/`](../../specs/145-memoria-semantica-turni-grandi/),
-  `services/memory_semantic.py`. *Stato:* implementata, suite completa 1617 verde, lint verde; caso
-  riprodotto **anche sul dogfood** (versione installata: `embedded=13610 errors=175`). *Prossimo passo:*
-  PR → merge col via dell'utente → re-lock del runtime → `memory index-semantic` deve dare
-  `embedded=175 skipped=13610 errors=0` (T022) → risposta a Kaelen in bacheca. *Blocco:* nessuno.
+  `services/memory_semantic.py`. *Stato:* **su `master`** (PR #291, merge `68ec358`); caso riprodotto
+  anche sul dogfood (pre-fix `embedded=13610 errors=175`, post-fix `errors=0`). La verifica sul dogfood
+  ha trovato un difetto della correzione stessa: senza `tiktoken` la stima dei token faceva spezzare
+  e ri-embeddare 62 turni già accettati interi → **seguito** sul branch
+  `146-memoria-turno-intero-gia-indicizzato` (un turno indicizzato intero resta indicizzato), suite
+  1618 verde. *Prossimo passo:* PR del seguito → merge col via → re-lock → `index-semantic` con
+  `embedded=0` → risposta a Kaelen in bacheca (fix su `master`, arriva agli ospiti con la prossima
+  release). *Blocco:* nessuno.
 
 Dopo: da scegliere fra i Should P1 di E10 e la separazione (E17).
 
