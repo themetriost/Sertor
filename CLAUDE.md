@@ -609,8 +609,9 @@ dogfood sopra. *(Non riconciliare cancellando la prosa: i blocchi sono rigenerat
 è la conoscenza dogfood — vanno tenuti entrambi.)*
 
 <!-- SPECKIT START -->
-**Piano attivo:** nessuno. L'ultimo, [`specs/140-pagine-aspnet/plan.md`](specs/140-pagine-aspnet/plan.md)
-(E7-FEAT-006), è consegnato (PR #286) e rilasciato in `v0.6.0` insieme a E10-FEAT-082.
+**Piano attivo:** [`specs/145-memoria-semantica-turni-grandi/plan.md`](specs/145-memoria-semantica-turni-grandi/plan.md)
+(E4-FEAT-016, BUG segnalato da Kaelen: un turno oltre il limite del modello faceva perdere l'intera
+sessione alla memoria semantica).
 
 Per sapere **dove siamo e cosa fare adesso**, la fonte e' il blocco EXEC di
 `wiki/syntheses/roadmap.md`, non questo paragrafo — che e' una copia e invecchia (vedi

@@ -40,6 +40,9 @@ SemanticIndexReport        # esito di una indicizzazione/backfill (counts, mai t
 
 - **`chunk_id` del turno** = `f"{session_key}#{turn_index}"` — stabile e deterministico (Principio VI):
   ri-processare lo stesso turno produce lo stesso id → `upsert` idempotente, **niente duplicati**.
+  *Dalla 145:* vale per i turni entro `max_chunk_tokens`; un turno oltre il budget produce i pezzi
+  `f"{session_key}#{turn_index}/{part}"` (vedi
+  [`145 data-model`](../145-memoria-semantica-turni-grandi/data-model.md)).
 - **Collezione vettoriale isolata** (REQ-017, SC-009): `collection_name(memory_settings, embedder)`
   dove `memory_settings` ha `corpus` impostato a un namespace dedicato della memoria distinto dal
   corpus del progetto (es. `f"memory__{settings.corpus}"`). Garantisce che il nome collezione **non

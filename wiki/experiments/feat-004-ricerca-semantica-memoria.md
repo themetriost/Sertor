@@ -3,7 +3,7 @@ title: FEAT-004 — Ricerca semantica sull'archivio episodico (implementazione S
 type: experiment
 tags: [feat-004, memoria, ricerca-semantica, embedding, archive, incrementalità, chroma, bugfix]
 created: 2026-06-22
-updated: 2026-06-22 (bugfix post-merge metadata Chroma generici + test store reale)
+updated: 2026-10-20
 sources: ["requirements/memoria-conversazioni/ricerca-semantica/requirements.md", "specs/072-ricerca-semantica-memoria/**", "src/sertor_core/services/memory_semantic.py", "src/sertor_core/adapters/vectorstores/chroma.py", "tests/unit/vectorstores/test_vectorstore.py", "tests/unit/services/test_memory_semantic.py"]
 ---
 
@@ -76,6 +76,10 @@ Aggiungere un **tier semantico** all'archivio: indicizzazione embedding dei turn
 1. **Incrementalità append-only:** per archivi che non si modificano, il marker di indicizzazione è lo stato dello store (collezione), non un registro separato. Permette re-index deterministico senza gestione esterna.
 2. **Capability opzionale duck-typed:** `ChromaStore.contains_ids` aggiunta come metodo opzionale (non sulla porta), non richiede refactor della porta `VectorStore` (Principio III).
 3. **Privacy stratificato:** ogni nuovo percorso embedding ha il suo gate, non fida la composabilità del precedente.
+
+## Seguito (2026-10-20)
+
+La granularità «un id per turno» descritta sopra vale per i turni entro `max_chunk_tokens`. I turni più grandi sono spezzati dalla 145 (E4-FEAT-016): il tetto d'ingresso dell'embedding è lo stesso del corpus, vedi [[budget-ingresso-embedding]].
 
 ## Pagine collegate
 

@@ -161,6 +161,35 @@ existing vectors are incompatible (e.g. a different vector dimension or a change
 system shall rebuild the semantic index from the archive; this full rebuild shall be the ONLY
 circumstance that re-embeds already-indexed content, and it shall be explicit and observable.*
 
+### 5.2.2 Robustezza dell'indicizzazione sui turni grandi o rifiutati (FEAT-016)
+
+> *Origine:* segnalazione del nodo **Kaelen** (Acta, *Feedback Sertor*, 2026-10-20, v0.6.0). Un turno da
+> ~290.000 caratteri (il testo di una skill caricata in conversazione, registrato come messaggio `user`)
+> supera di circa dieci volte il limite d'ingresso di `text-embedding-3-large` (8.192 token): il servizio
+> risponde `http 400` all'intero batch e **tutti** i 181 turni della sessione finiscono in `errors`, con
+> l'esito `provider_unavailable` che nomina l'errore sbagliato. Il corpus non ha il problema perché i suoi
+> chunk passano dal tetto `SERTOR_MAX_CHUNK_TOKENS`; la memoria no. REQ-008 copre già il caso
+> «oversized content» ma solo a livello di sessione (non abortire la cattura): questi requisiti lo
+> portano a livello di **turno**.
+
+**REQ-033 (Unwanted behaviour):** *If a memory unit (turn) exceeds the embedding input budget
+(`SERTOR_MAX_CHUNK_TOKENS`, the same cap applied to corpus chunks), then the system shall split it into
+pieces that each fit the budget, embed and index every piece, and still return the turn as a single
+result (one hit per turn) in a semantic search.*
+
+**REQ-034 (Unwanted behaviour):** *If the embeddings provider rejects a specific input (a non-retriable
+error, e.g. `http 400`), then the system shall confine the failure to the turn(s) actually rejected:
+the other turns of the same session shall be embedded and indexed in the same run.*
+
+**REQ-035 (Ubiquitous):** *The indexing outcome shall distinguish an input rejected by the provider
+(`input_rejected`) from an unavailable provider or store, and the user-facing report of
+`memory index-semantic` shall name the session and the turn of every rejected input; observability
+events shall stay metrics-only (counts and reasons, never transcript text) per REQ-026.*
+
+**REQ-036 (Ubiquitous):** *The change of granularity shall preserve incrementality (REQ-030): turns
+already indexed before the change shall not be re-embedded, and a turn previously lost to a rejection
+shall be indexed on the next indexing run without requiring a full rebuild.*
+
 ### 5.3 Ricerca semantica
 
 **REQ-009 (Ubiquitous):** *The semantic search shall accept a natural-language query and return
@@ -367,6 +396,7 @@ produce nuove chiamate di embedding.
 | REQ-004..006, REQ-008 | Indicizzazione automatica a fine sessione, idempotente, non-fatale | **Must** |
 | REQ-030..031 | Incrementalità: embedda solo il nuovo + marker durevole di «già indicizzato» | **Must** |
 | REQ-032 | Rebuild totale solo su cambio provider/dimensione vettore (esplicito) | **Should** |
+| REQ-033..036 | Turni oltre il budget spezzati; rifiuto confinato al turno; esito che distingue e nomina; incrementalità preservata (FEAT-016) | **Must** |
 | REQ-009..011 | Ricerca semantica di base (query, risultati, citazione, limite) | **Must** |
 | REQ-013..015 | Modo separato opt-in; full-text resta default; no fallback silenzioso | **Must** |
 | REQ-016..017 | Riuso del RAG, indice isolato dal corpus | **Must** |

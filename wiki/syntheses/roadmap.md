@@ -20,7 +20,7 @@ sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.m
 > verificato* in fondo).
 
 <!-- EXEC:START -->
-## ⚡ Executive summary (stato al 2026-10-12)
+## ⚡ Executive summary (stato al 2026-10-20)
 
 **Versione pubblicata: `v0.6.0`** (Release *latest*, 2026-10-12). Le PR aperte: `gh pr list`.
 Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
@@ -116,7 +116,15 @@ Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
 
 ### 🔄 In progress
 
-*Nessuna feature in corso.* Prossimo lavoro: da scegliere fra i Should P1 di E10 e la separazione (E17).
+- **E4-FEAT-016 — memoria semantica: un turno troppo lungo faceva perdere l'intera sessione** (BUG,
+  segnalato dal nodo Kaelen su Acta il 2026-10-20, v0.6.0). *Dove:* branch
+  `145-memoria-semantica-turni-grandi`, [`specs/145-memoria-semantica-turni-grandi/`](../../specs/145-memoria-semantica-turni-grandi/),
+  `services/memory_semantic.py`. *Stato:* implementata, suite completa 1617 verde, lint verde; caso
+  riprodotto **anche sul dogfood** (versione installata: `embedded=13610 errors=175`). *Prossimo passo:*
+  PR → merge col via dell'utente → re-lock del runtime → `memory index-semantic` deve dare
+  `embedded=175 skipped=13610 errors=0` (T022) → risposta a Kaelen in bacheca. *Blocco:* nessuno.
+
+Dopo: da scegliere fra i Should P1 di E10 e la separazione (E17).
 
 > 🏗️ **SEPARAZIONE IN QUATTRO PRODOTTI — è il lavoro che domina la roadmap.** Sertor resta il
 > **RAG**; il sistema-wiki diventa **Thesmion**; governance/SDLC diventa **Sulcimen**; il prototipo è
