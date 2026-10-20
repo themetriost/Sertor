@@ -279,3 +279,27 @@ def test_cli_report_without_rejections_is_unchanged() -> None:
     assert output.format_semantic_index_report(report, json=True) == (
         '{"embedded": 4, "skipped": 2, "errors": 1}'
     )
+
+
+def test_turn_indexed_whole_is_not_resplit_when_the_budget_shrinks() -> None:
+    """146 (FR-002/REQ-036): a turn the provider already accepted WHOLE stays indexed.
+
+    Field case (dogfood, 2026-10-20): without `tiktoken` the token count falls back to a ~2 chars
+    per token estimate, so turns that fit the model whole now measure «over budget». Re-splitting
+    them re-embedded 62 turns and orphaned their whole records. Same if the cap is lowered.
+    """
+    store = IncrementalStore()
+    medium = _big_text(chars=20_000)
+    session = _session("m", 3, text_of=lambda i: medium if i == 1 else None)
+    wide = MemorySemanticIndex(
+        LimitedEmbedder(budget=10**9), store, COLLECTION, Settings(max_chunk_tokens=50_000)
+    )
+    assert wide.index_session(session).embedded == 3
+    assert "m#1" in store._data[COLLECTION]
+
+    embedder = LimitedEmbedder(budget=10**9)
+    narrow = MemorySemanticIndex(embedder, store, COLLECTION, Settings(max_chunk_tokens=MAX_TOKENS))
+    report = narrow.index_session(session)
+    assert (report.embedded, report.skipped) == (0, 3)
+    assert embedder.calls == 0
+    assert not any(cid.startswith("m#1/") for cid in store._data[COLLECTION])

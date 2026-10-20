@@ -39,6 +39,24 @@ incognita esterna: niente da ricercare fuori dal repo.
   accettato (caso raro, nessuna risposta sbagliata: la deduplicazione per turno di R-5 assorbe i
   doppioni); lo stesso accade oggi al corpus fino al prossimo rebuild.
 
+## R-3b — Un turno indicizzato intero resta indicizzato (seguito, branch 146)
+
+- **Trovato sul campo, dopo il merge (2026-10-20):** il primo run sul dogfood ha dato
+  `embedded=237 skipped=13548` invece dei previsti `175 / 13610`. Causa: il runtime `.sertor/` non ha
+  l'extra `tokenizer`, quindi `cap_to_tokens` usa la stima prudente (~2 caratteri/token). Turni fra
+  ~16.000 e ~30.000 caratteri, che il modello aveva **accettato interi**, risultavano «oltre il budget»:
+  venivano spezzati, ri-embeddati (62) e il loro record intero restava orfano. FR-002 era rispettato
+  solo con il tokenizzatore preciso.
+- **Decision:** un turno è «già indicizzato» anche se il suo id **intero** (`session_key#turn_index`) è
+  nella collezione, qualunque sia la scomposizione calcolata oggi. Il probe di incrementalità chiede
+  anche gli id interi.
+- **Rationale:** il fatto che il provider abbia già accettato il turno intero è la prova più forte che
+  rientrava nel limite; il conteggio dei token di oggi è una stima. Vale anche quando l'utente abbassa
+  `SERTOR_MAX_CHUNK_TOKENS`: non si rifà ciò che è già valido.
+- **Effetto residuo sul dogfood:** i 62 record interi orfani e i pezzi creati prima di questo seguito
+  restano nella collezione (doppioni assorbiti dalla deduplicazione per turno in ricerca). Nessuna
+  azione: un ospite che aggiorna direttamente alla versione con il seguito non li crea.
+
 ## R-4 — Isolare un rifiuto
 
 - **Decision:** il percorso normale resta **un** `embed()` per sessione sui pezzi nuovi. Se solleva

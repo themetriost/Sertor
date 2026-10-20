@@ -248,8 +248,11 @@ class MemorySemanticIndex:
         Each turn becomes its units (`_turn_units`): the whole turn when it fits
         `max_chunk_tokens`, else the pieces of `cap_to_tokens` — the same cap the corpus applies.
         A turn is skipped when ALL its unit ids are already in the collection (incrementality via
-        store state — DA-SS-4); a fully-indexed session → `embedded=0, skipped=N` with ZERO
-        embedding calls (NFR-009). The new units go to the provider in ONE call; if the provider
+        store state — DA-SS-4), OR when the WHOLE turn is (`session_key#turn_index`): the provider
+        already accepted it, so re-splitting it — because the token count is now an estimate, or the
+        cap changed — would only re-embed it and orphan the old record (146). A fully-indexed
+        session → `embedded=0, skipped=N` with ZERO embedding calls (NFR-009).
+        The new units go to the provider in ONE call; if the provider
         refuses an input (`_INPUT_REJECTION_REASONS`) the session falls back to one call per unit
         so that only the refused turns are lost (REQ-034). Any other outage → every new turn is a
         counted error + warning, non-fatal (REQ-008/REQ-006).
@@ -259,7 +262,7 @@ class MemorySemanticIndex:
             return SemanticIndexReport()
         units = {turn.index: self._turn_units(session, turn) for turn in turns}
         try:
-            already = self._existing_ids(units)
+            already = self._existing_ids(session, units)
         except VectorStoreError as exc:
             log_event(
                 logging.WARNING, "memory_semantic_index_failed",
@@ -270,7 +273,8 @@ class MemorySemanticIndex:
         new_turns = [
             turn
             for turn in turns
-            if any(unit.chunk_id not in already for unit in units[turn.index])
+            if f"{session.session_key}#{turn.index}" not in already
+            and any(unit.chunk_id not in already for unit in units[turn.index])
         ]
         skipped = len(turns) - len(new_turns)
         if not new_turns:
@@ -422,7 +426,9 @@ class MemorySemanticIndex:
         self._emit_index_event(total, latency_ms)
         return total
 
-    def _existing_ids(self, units: dict[int, list[_Unit]]) -> set[str]:
+    def _existing_ids(
+        self, session: ArchivedSession, units: dict[int, list[_Unit]]
+    ) -> set[str]:
         """The unit ids of a session already present in the collection (incrementality probe).
 
         Watermark = state of the store (DA-SS-4, Opzione 3): «already indexed» ⇔ the unit's
@@ -438,8 +444,10 @@ class MemorySemanticIndex:
         probe = getattr(self._store, "contains_ids", None)
         if probe is None:
             return set()
-        ids = [unit.chunk_id for turn_units in units.values() for unit in turn_units]
-        return set(probe(self._collection, ids))
+        ids = {unit.chunk_id for turn_units in units.values() for unit in turn_units}
+        # The whole-turn id of every turn too: a turn indexed whole stays indexed (146).
+        ids.update(f"{session.session_key}#{index}" for index in units)
+        return set(probe(self._collection, sorted(ids)))
 
     def _backfill_limit(self) -> int:
         """Upper bound on sessions scanned during a backfill — large enough to cover the archive.
