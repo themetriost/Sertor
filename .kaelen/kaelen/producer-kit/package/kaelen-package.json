@@ -1,0 +1,570 @@
+{
+  "schema": "kaelen.package-record/2",
+  "node": "kaelen",
+  "capability": "producer-kit",
+  "version": "0.16.3",
+  "contract": 1,
+  "engine": {
+    "version": "0.16.3",
+    "digest": "sha256:5e4d350fa236ac5329981934fe4b2a94b90adc79568cccfa5559eeb003a96c67"
+  },
+  "placement_rule": {
+    "digest": "sha256:90a023caa9780b3ba60d83aedea622a780f1a744635dea3e2283a7979e2a2f7b"
+  },
+  "producer_state": "sha256:d04b9fb49834623c670ed0744a70c4671a3e65a0f2d0123bcb12b524b4ae007d",
+  "targets": [
+    {
+      "target": "claude-code",
+      "items": [
+        {
+          "name": "kaelen-authoring",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".claude/skills/kaelen-authoring/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "kaelen-install",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".claude/skills/kaelen-install/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "kaelen-author",
+          "kind": "agent",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".claude/agents/kaelen-author.md",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "producer-kit",
+          "kind": "instruction-block",
+          "qualifier": "assistant-instructions",
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": "CLAUDE.md",
+              "wrapper": "markdown-section",
+              "section": "producer-kit/producer-kit",
+              "shared": {
+                "role": "instruction block"
+              }
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "package-staging",
+          "kind": "git-lines",
+          "qualifier": ".gitignore",
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".gitignore",
+              "wrapper": "git-section",
+              "section": "producer-kit/package-staging",
+              "shared": {
+                "role": "git ignore rules"
+              }
+            }
+          ],
+          "verified": "2026-10-18"
+        },
+        {
+          "name": "declaration-draft",
+          "kind": "git-lines",
+          "qualifier": ".gitignore",
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".gitignore",
+              "wrapper": "git-section",
+              "section": "producer-kit/declaration-draft",
+              "shared": {
+                "role": "git ignore rules"
+              }
+            }
+          ],
+          "verified": "2026-10-18"
+        }
+      ]
+    },
+    {
+      "target": "github-copilot",
+      "items": [
+        {
+          "name": "kaelen-authoring",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".github/skills/kaelen-authoring/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "kaelen-install",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".github/skills/kaelen-install/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "kaelen-author",
+          "kind": "agent",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".github/agents/kaelen-author.agent.md",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "producer-kit",
+          "kind": "instruction-block",
+          "qualifier": "assistant-instructions",
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".github/instructions/producer-kit.instructions.md",
+              "wrapper": "copilot-instructions-file",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "package-staging",
+          "kind": "git-lines",
+          "qualifier": ".gitignore",
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".gitignore",
+              "wrapper": "git-section",
+              "section": "producer-kit/package-staging",
+              "shared": {
+                "role": "git ignore rules"
+              }
+            }
+          ],
+          "verified": "2026-10-18"
+        },
+        {
+          "name": "declaration-draft",
+          "kind": "git-lines",
+          "qualifier": ".gitignore",
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".gitignore",
+              "wrapper": "git-section",
+              "section": "producer-kit/declaration-draft",
+              "shared": {
+                "role": "git ignore rules"
+              }
+            }
+          ],
+          "verified": "2026-10-18"
+        }
+      ]
+    },
+    {
+      "target": "codex",
+      "items": [
+        {
+          "name": "kaelen-authoring",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".agents/skills/kaelen-authoring/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "kaelen-install",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".agents/skills/kaelen-install/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "kaelen-author",
+          "kind": "agent",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".codex/agents/kaelen-author.toml",
+              "wrapper": "codex-agent-toml",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "producer-kit",
+          "kind": "instruction-block",
+          "qualifier": "assistant-instructions",
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": "AGENTS.md",
+              "wrapper": "markdown-section",
+              "section": "producer-kit/producer-kit",
+              "shared": {
+                "role": "instruction block"
+              }
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "package-staging",
+          "kind": "git-lines",
+          "qualifier": ".gitignore",
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".gitignore",
+              "wrapper": "git-section",
+              "section": "producer-kit/package-staging",
+              "shared": {
+                "role": "git ignore rules"
+              }
+            }
+          ],
+          "verified": "2026-10-18"
+        },
+        {
+          "name": "declaration-draft",
+          "kind": "git-lines",
+          "qualifier": ".gitignore",
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".gitignore",
+              "wrapper": "git-section",
+              "section": "producer-kit/declaration-draft",
+              "shared": {
+                "role": "git ignore rules"
+              }
+            }
+          ],
+          "verified": "2026-10-18"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": ".gitattributes",
+      "size": 8,
+      "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da"
+    },
+    {
+      "path": "content/kit/agents/kaelen-author.md",
+      "size": 9377,
+      "sha256": "d8dd592790e1d5ab9759c75f4698170cd19d570ee9609b22f3fcb47cbf24f05b"
+    },
+    {
+      "path": "content/kit/blocks/producer-kit.md",
+      "size": 1870,
+      "sha256": "ee9c8410581bf042a62a44dacb49ba5861b9cb94985812d1eb7fa6bce1ec192c"
+    },
+    {
+      "path": "content/kit/skills/kaelen-authoring/SKILL.md",
+      "size": 23169,
+      "sha256": "3f4a9740fcb34f08abcc68dabbc1e31284116141ab0db1ec3aae23b8f0508916"
+    },
+    {
+      "path": "content/kit/skills/kaelen-install/SKILL.md",
+      "size": 24163,
+      "sha256": "12fe4a094339b5e1c7f0238118839e4b5905b093682dcc3bb9dd1678906c34ca"
+    },
+    {
+      "path": "declaration.toml",
+      "size": 1666,
+      "sha256": "611f12679d37e18c113d215273ad83062d0b980adaaa178e6cf893ad2b4f96ce"
+    },
+    {
+      "path": "engine/kaelen-0.16.3.dist-info/METADATA",
+      "size": 51,
+      "sha256": "9343b1682a4c7d6630a267cfb83c6fdb481374875df9c163859c9787345066c4"
+    },
+    {
+      "path": "engine/kaelen/__init__.py",
+      "size": 29,
+      "sha256": "a2ef6a8c323152cc5d88cc8ea265dca29c73bc00ad2924acad84f4219097ec55"
+    },
+    {
+      "path": "engine/kaelen/__main__.py",
+      "size": 58,
+      "sha256": "875841a5cd812d6dfc5f525527d83993cdab1982b20e135a561887348a69e306"
+    },
+    {
+      "path": "engine/kaelen/cli.py",
+      "size": 38999,
+      "sha256": "adebc5f98ddcedc18df4b6f61d3688ad5f70059d9b435938a623ef3cdc64a9e6"
+    },
+    {
+      "path": "engine/kaelen/contract/__init__.py",
+      "size": 1506,
+      "sha256": "32592239090d06e9cd691fe27cfa885c7b7281c149ce9ac08c9e9c196dc38199"
+    },
+    {
+      "path": "engine/kaelen/contract/coherence.py",
+      "size": 12819,
+      "sha256": "36e7c607498f83054f990f3941b9bf0e59462a4dc34c6386378532362f9ffdff"
+    },
+    {
+      "path": "engine/kaelen/contract/declaration-v1.schema.json",
+      "size": 10299,
+      "sha256": "e82c74a3ed3a19e2eb5d19694e50bbe557b7ece536f7f5ad4feb0817f5ec26ad"
+    },
+    {
+      "path": "engine/kaelen/contract/schema_eval.py",
+      "size": 8334,
+      "sha256": "d2573745232fae68d9d0b6592e410454582de95872a5f2f4e7b5d65b1a1e4926"
+    },
+    {
+      "path": "engine/kaelen/draft/__init__.py",
+      "size": 18040,
+      "sha256": "4508b4a8a49e2e5b9479aa34089c40ffe280ad1277066b67d470c5d6911f1f4b"
+    },
+    {
+      "path": "engine/kaelen/draft/conventions.json",
+      "size": 1571,
+      "sha256": "21e8556d35bd2a3c8753a2393d9c332d637261b3078e79aa54227f55055caa42"
+    },
+    {
+      "path": "engine/kaelen/host/__init__.py",
+      "size": 89604,
+      "sha256": "0ba64cb95095dc20ad3ce38a4cdab78dc853dd9c1b4325ad890879afd21da20f"
+    },
+    {
+      "path": "engine/kaelen/host/apply.py",
+      "size": 31089,
+      "sha256": "02d375ed1552ef6c89dd68106fcee4844ce26d9bb85a1675f1a87d9731777c88"
+    },
+    {
+      "path": "engine/kaelen/host/checks.py",
+      "size": 6240,
+      "sha256": "837a4ac1945e0bad91f34821e6ee5e77998611e38c04870cb34d39706d6ed50b"
+    },
+    {
+      "path": "engine/kaelen/host/consent.py",
+      "size": 2280,
+      "sha256": "fa0ea0a45356cce79c1f44209dc30757326e57f3ab39c20c11b766495710915a"
+    },
+    {
+      "path": "engine/kaelen/host/contributions.py",
+      "size": 18340,
+      "sha256": "dd65a341d98531574007fe0f8a82094867f6bdf07d7becbc315b9b67a4fe77f7"
+    },
+    {
+      "path": "engine/kaelen/host/desired.py",
+      "size": 10029,
+      "sha256": "376887304d5ac1cb5e6e369492ede60246d83a2002c6886915d045b336ed81d3"
+    },
+    {
+      "path": "engine/kaelen/host/home.py",
+      "size": 6632,
+      "sha256": "3aeed0b33001903d7ef94ef1a54233797a021a261e134ea9bf5b22f97d1ad321"
+    },
+    {
+      "path": "engine/kaelen/host/jsonspan.py",
+      "size": 14593,
+      "sha256": "9a411c7c7f0f9b257dadf8badfbdcbdf4a571a1adb6be528d81cc34103561c10"
+    },
+    {
+      "path": "engine/kaelen/host/live.py",
+      "size": 5985,
+      "sha256": "0ef235b3b0aa9f37d068218515a579feb2aa25d70f0dcaa4efde7191ae1c85d4"
+    },
+    {
+      "path": "engine/kaelen/host/reconcile.py",
+      "size": 29421,
+      "sha256": "35011b2883e49a0d8e681382d18f69ae04c7a80b829f490a2be41ff03ed852d4"
+    },
+    {
+      "path": "engine/kaelen/host/registry.py",
+      "size": 7481,
+      "sha256": "0e53d416a09f9040ba3e0c88230f4f63a7073ce486fe23d6562e33602e9c2928"
+    },
+    {
+      "path": "engine/kaelen/host/render.py",
+      "size": 6626,
+      "sha256": "a77568a8b5bd4ee33da8b11cb7943234f6007397aa7bea7098abf4f43f3398e6"
+    },
+    {
+      "path": "engine/kaelen/host/runtime.py",
+      "size": 14607,
+      "sha256": "d1ff13579597fc7e2684e195fd3ce15b137fc6047a5d1c25fcf6a79e2fafb4f0"
+    },
+    {
+      "path": "engine/kaelen/host/sections.py",
+      "size": 4453,
+      "sha256": "0a9bddc02ccae6a6d55cac21d14f1fe1e9c6b9cac5d4584878c3744206b3a6a2"
+    },
+    {
+      "path": "engine/kaelen/host/settingsfile.py",
+      "size": 2542,
+      "sha256": "1be24d525363cd4fb5e64dda4d68319bf0e187cffd120614d5fbf8ed1573ab30"
+    },
+    {
+      "path": "engine/kaelen/host/source.py",
+      "size": 6488,
+      "sha256": "22c2b0ab17adaa4b176d8297a1b1936bfaeea9ae4f937d59cfe478a3195046da"
+    },
+    {
+      "path": "engine/kaelen/host/state.py",
+      "size": 4500,
+      "sha256": "ff1408c4d99395140bc1a27492a0f80b92c97faa625504101a3b9a6c2abbb1f0"
+    },
+    {
+      "path": "engine/kaelen/outcome.py",
+      "size": 17007,
+      "sha256": "ae72adbbebd05a784efc92284eaaca40e92679899f76d2f23f8ba31333fbd447"
+    },
+    {
+      "path": "engine/kaelen/package/__init__.py",
+      "size": 9297,
+      "sha256": "8c9201695c9e72e4e097613c4a0808e55d51365c6a8490dfa3109a1270e70768"
+    },
+    {
+      "path": "engine/kaelen/package/distribution.py",
+      "size": 3608,
+      "sha256": "565b414c4664a0355601db5e9521a0b1635f7056b4df072c22edba4e45920c89"
+    },
+    {
+      "path": "engine/kaelen/package/inject.py",
+      "size": 1997,
+      "sha256": "95c8c0d1709a9fc497d7b13f33f7751a9698fed4607d23aebce30d40741b7a71"
+    },
+    {
+      "path": "engine/kaelen/package/launcher.py.txt",
+      "size": 972,
+      "sha256": "8e94e699dfe7db1fa055f7e38651e2d3744282a789f3a7a246eebac013f0d63d"
+    },
+    {
+      "path": "engine/kaelen/package/location.py",
+      "size": 3209,
+      "sha256": "f81e91de9b83bd672ba0a4872a7c0bb543cb0d19b8ac67b7b006cd1717837799"
+    },
+    {
+      "path": "engine/kaelen/package/plan.py",
+      "size": 7161,
+      "sha256": "5520b8c26612f1d337571e527000aa97eae33debcd4958d28d70354350af887e"
+    },
+    {
+      "path": "engine/kaelen/package/record.py",
+      "size": 2244,
+      "sha256": "7329e3045e8a97888ad5d71071c97c39106006ccece3ea0502fda4e5bd30ec5f"
+    },
+    {
+      "path": "engine/kaelen/placement/__init__.py",
+      "size": 14326,
+      "sha256": "66d4878aed77643a141ec339817d4ae65e91cd58c398ef0c735c3dad73ebe643"
+    },
+    {
+      "path": "engine/kaelen/placement/rule.json",
+      "size": 40314,
+      "sha256": "ceb718080f30c678fdfa9ebe88034f183d15af10db67ea2c6c27b85ef063589c"
+    },
+    {
+      "path": "engine/kaelen/producer.py",
+      "size": 3786,
+      "sha256": "4fef7ad6fe2a87bb9aad35e85a125663fb11a9ff533d277f1b2a36f76cf0805e"
+    },
+    {
+      "path": "engine/kaelen/provenance.py",
+      "size": 12278,
+      "sha256": "08e08d395d5478b5da5cebf9a1aa450523f534c86cb58bbca37a9020464726b6"
+    },
+    {
+      "path": "engine/kaelen/validate.py",
+      "size": 4490,
+      "sha256": "34e2679b9f796e1123528d9785f854443088cd354e56d94d3576080cf3ee2f04"
+    },
+    {
+      "path": "engine/kaelen/versions.py",
+      "size": 3057,
+      "sha256": "b200895a59087cd7a6bf176c147862aeef3340670abae2ff1737baa800d9a11d"
+    },
+    {
+      "path": "kaelen_launch.py",
+      "size": 397,
+      "sha256": "15c1c1a305ce18a0aa8f26094a6bce60143185175a8ee155ea3904c2f70482e5"
+    },
+    {
+      "path": "pyproject.toml",
+      "size": 598,
+      "sha256": "aa15bb72294c259c2a70db9a3d2925dc00e52d9e01cfedbc73475fba0eb0f978"
+    },
+    {
+      "path": "run.py",
+      "size": 972,
+      "sha256": "8e94e699dfe7db1fa055f7e38651e2d3744282a789f3a7a246eebac013f0d63d"
+    }
+  ]
+}

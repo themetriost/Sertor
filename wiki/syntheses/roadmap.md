@@ -116,7 +116,7 @@ Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
 
 ### 🔄 In progress
 
-Nessuna voce in corso.
+- **E17-FEAT-004 — pacchetto Kaelen della capability `rag`** · *dove:* branch `151-kaelen-producer-kit` (kit del produttore installato), dichiarazione da scrivere · *prossimo passo:* requisiti (ciclo SpecKit) · *decisioni prese:* runtime Kaelen; wiki/SDLC dopo · *aperto:* `previous` per blocchi a marker e voci in array JSON (da collaudare con Kaelen)
 
 Dopo: da scegliere fra i Should P1 di E10 e la separazione (E17).
 

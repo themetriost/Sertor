@@ -1,0 +1,53 @@
+# Kaelen's own capability: the producer kit (specs/018-kaelen-self-node).
+#
+# Written by hand, like every declaration. Kaelen installs it into itself by the same verbs as any
+# host (FEAT-011). Its version is the engine's version (research R-5): a test keeps them equal.
+
+contract = 1
+node = "kaelen"
+capability = "producer-kit"
+version = "0.16.3"
+targets = ["claude-code", "github-copilot", "codex"]
+
+# Every file under kit/ must be declared by some item.
+governs = ["kit"]
+
+# No `engine` item since 0.12.0 (specs/026): the engine every package carries becomes the host's
+# main Kaelen, `.kaelen/engine/run.py`, and stays in the capability's folder with its package.
+
+[[items]]
+kind = "skill"
+name = "kaelen-authoring"
+source = "kit/skills/kaelen-authoring"
+
+[[items]]
+kind = "skill"
+name = "kaelen-install"
+source = "kit/skills/kaelen-install"
+
+# The authoring agent, a thin delegate over the kaelen-authoring skill (specs/030 R-9).
+[[items]]
+kind = "agent"
+name = "kaelen-author"
+source = "kit/agents/kaelen-author.md"
+
+[[items]]
+kind = "instruction-block"
+name = "producer-kit"
+source = "kit/blocks/producer-kit.md"
+extension_point = "assistant-instructions"
+
+# Packaging builds next to the package and swaps it in; an interrupted run leaves those
+# siblings behind, and git must not offer them for a commit (specs/015 quickstart, spec 025).
+[[items]]
+kind = "git-lines"
+name = "package-staging"
+file = ".gitignore"
+lines = [".kaelen/packages/.*"]
+
+# The declaration draft `kaelen draft` writes is a working file of the author (specs/030 Q-3).
+[[items]]
+kind = "git-lines"
+name = "declaration-draft"
+file = ".gitignore"
+lines = ["kaelen.declaration.draft.toml"]

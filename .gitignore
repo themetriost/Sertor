@@ -79,3 +79,11 @@ Thumbs.db
 .acta/*
 !.acta/pyproject.toml
 !.acta/uv.lock
+
+# kaelen:begin producer-kit/declaration-draft
+kaelen.declaration.draft.toml
+# kaelen:end producer-kit/declaration-draft
+
+# kaelen:begin producer-kit/package-staging
+.kaelen/packages/.*
+# kaelen:end producer-kit/package-staging
