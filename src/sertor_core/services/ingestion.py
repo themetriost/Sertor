@@ -47,10 +47,18 @@ def _read_text(path: Path) -> str:
 
 
 def _is_excluded(rel_parts: tuple[str, ...], patterns: tuple[str, ...]) -> bool:
-    """True if any segment of the relative path matches an exclusion pattern."""
-    for part in rel_parts:
-        for pat in patterns:
-            if part == pat or fnmatch(part, pat):
+    """True if a segment — or a run of consecutive segments — matches an exclusion pattern.
+
+    A pattern without `/` matches one segment (`node_modules`). A pattern with `/` matches that many
+    consecutive segments, each with fnmatch: `.*/kaelen` is a `kaelen` folder inside a dot-folder
+    (a capability Kaelen installed, `.<node>/kaelen/`), and leaves `src/kaelen` indexed.
+    """
+    for pat in patterns:
+        segs = pat.split("/")
+        width = len(segs)
+        for i in range(len(rel_parts) - width + 1):
+            pairs = zip(rel_parts[i:i + width], segs, strict=True)
+            if all(part == seg or fnmatch(part, seg) for part, seg in pairs):
                 return True
     return False
 

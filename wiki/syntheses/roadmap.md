@@ -163,6 +163,7 @@ Dopo: da scegliere fra i Should P1 di E10 e la separazione (E17).
 
 ### ✅ Done — recente
 
+- **E10-FEAT-084 — una voce di log copre tutto il lavoro pendente** (2026-10-27, PR #296, merge `43cd18d`): `append-log` derivava la copertura dalla lista mostrata, troncata a 10 file, e il gate wiki non si chiudeva su un passo grande (61 file dell'installazione di Sinthari). Segnalato da Kaelen il 2026-09-19.
 - **`v0.6.1` rilasciata** (2026-10-20, tag sul merge `2b8ee1f` della PR #293; gate d'aggiornamento
   `v0.6.0 → master` 4/4, run 39457562357; annuncio in *Releases* e risposta a Kaelen in bacheca) — correzione della memoria semantica (**E4-FEAT-016**, BUG
   segnalato da Kaelen, PR #291 + seguito #292, [`specs/145-memoria-semantica-turni-grandi/`](../../specs/145-memoria-semantica-turni-grandi/)):
@@ -269,7 +270,7 @@ combinazioni**, 8 esiti su 8.
 | **E7** | [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 1/7 | 6 | 14% | 🔄 in corso *(FEAT-006 consegnata)* |
 | **E8** | [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | 0/3 | 3 | 0% | 📋 non iniziata |
 | **E9** | [`second-brain`](../../requirements/second-brain/epic.md) | 0/10 | 10 | 0% | 📋 non iniziata |
-| **E10** | [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 42/78 | 36 | 54% | 🔄 **in corso — direzione attiva** |
+| **E10** | [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 43/79 | 36 | 54% | 🔄 **in corso — direzione attiva** |
 | **E11** | [`multiutente`](../../requirements/multiutente/epic.md) | 0/6 | 6 | 0% | 📋 non iniziata |
 | **E12** | [`usabilita`](../../requirements/usabilita/epic.md) | 5/14 | 9 | 36% | 🔄 in corso |
 | **E13** | [`documentazione-marketing`](../../requirements/documentazione-marketing/epic.md) | 8/15 | 7 | 53% | 🔄 in corso |
@@ -277,7 +278,7 @@ combinazioni**, 8 esiti su 8.
 | **E15** | [`fedelta-dogfood`](../../requirements/fedelta-dogfood/epic.md) | 7/12 | 5 | 58% | 🔄 in corso *(1 ritirata)* |
 | **E16** | [`evoluzione-modello-wiki`](../../requirements/evoluzione-modello-wiki/epic.md) | 0/4 | 4 | 0% | 📋 non iniziata |
 | **E17** | [`separazione-ecosistema`](../../requirements/separazione-ecosistema/epic.md) | 1/16 | 15 | 6% | 🔄 **in corso — il lavoro che domina** |
-| | **TOTALE** | **119/256** | **137** | **47%** | — |
+| | **TOTALE** | **120/257** | **137** | **47%** | — |
 
 > **Come leggere «Consegnate»:** il denominatore esclude le feature **ritirate** (`❌ Won't`/not-a-bug) e
 > quelle **promosse ad altra epica** — contarle come debito gonfierebbe il residuo con lavoro che nessuno

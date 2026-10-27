@@ -188,6 +188,14 @@ contacting any service**, listing the missing variables. Useful optional setting
 `SERTOR_INDEX_DIR` (index directory, default `.index` — add it to the host's `.gitignore`),
 `SERTOR_EXCLUDE_PATTERNS`, `DEFAULT_K`, `SERTOR_PREVIEW_CHARS`.
 
+`SERTOR_EXCLUDE_PATTERNS` is a comma-separated list. A pattern without `/` matches one path segment
+(`node_modules`, `*.key`); a pattern with `/` matches consecutive segments (`.*/kaelen` is a `kaelen`
+folder inside a dot-folder). The built-in default also leaves out the capabilities installed by
+**Kaelen** — `.kaelen` and `.*/kaelen` — because they are copies of other projects' packages, not
+your project's knowledge. **If your `.sertor/.env` sets `SERTOR_EXCLUDE_PATTERNS`** (the template
+written by `sertor install rag` does), the variable replaces the default: append
+`,.kaelen,.*/kaelen` to it yourself, then re-index.
+
 **Retrieval engine (FEAT-004):** the default is the **hybrid** engine (lexical BM25 + vector
 fused with RRF) — significantly improves symbol/exact-term queries:
 

@@ -41,6 +41,23 @@ def test_excludes_artifacts_and_secrets(sample_repo):
     assert not any(i.endswith(".key") for i in ids)
 
 
+def test_excludes_capabilities_installed_by_kaelen(sample_repo):
+    # Copies of other nodes' packages are not this project's knowledge: `.kaelen/` (main engine,
+    # package copies) and every `.<node>/kaelen/` capability folder stay out of the corpus.
+    for rel in (".kaelen/engine/run.py", ".sinthari/kaelen/skill-authoring/package/SKILL.md",
+                ".sertor/kaelen/rag/launch.py"):
+        path = sample_repo / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("def installed():\n    return True\n", encoding="utf-8")
+    kept = sample_repo / "src" / "kaelen" / "engine.py"     # a `kaelen` folder that is NOT one
+    kept.parent.mkdir(parents=True, exist_ok=True)
+    kept.write_text("def mine():\n    return True\n", encoding="utf-8")
+
+    ids = {d.id for d in discover(sample_repo, Settings.load(env_file=None))}
+    assert not any(i.startswith((".kaelen/", ".sinthari/", ".sertor/")) for i in ids)
+    assert "src/kaelen/engine.py" in ids
+
+
 def test_ids_are_stable_across_runs(sample_repo):
     a = {d.id for d in discover(sample_repo, Settings.load(env_file=None))}
     b = {d.id for d in discover(sample_repo, Settings.load(env_file=None))}
