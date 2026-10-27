@@ -1,0 +1,165 @@
+{
+  "schema": "kaelen.registry/1",
+  "node": "kaelen",
+  "capability": "producer-kit",
+  "version": "0.16.3",
+  "contract": 1,
+  "package": {
+    "producer_state": "sha256:d04b9fb49834623c670ed0744a70c4671a3e65a0f2d0123bcb12b524b4ae007d",
+    "record_schema": "kaelen.package-record/2"
+  },
+  "engine": {
+    "version": "0.16.3",
+    "digest": "sha256:5e4d350fa236ac5329981934fe4b2a94b90adc79568cccfa5559eeb003a96c67"
+  },
+  "placement_rule": {
+    "digest": "sha256:90a023caa9780b3ba60d83aedea622a780f1a744635dea3e2283a7979e2a2f7b"
+  },
+  "targets": [
+    "claude-code"
+  ],
+  "locations": [
+    {
+      "path": ".claude/agents/kaelen-author.md",
+      "form": "file",
+      "ownership": "owned",
+      "item": {
+        "kind": "agent",
+        "name": "kaelen-author"
+      },
+      "targets": [
+        "claude-code"
+      ],
+      "wrapper": "verbatim",
+      "digest": "sha256:d8dd592790e1d5ab9759c75f4698170cd19d570ee9609b22f3fcb47cbf24f05b"
+    },
+    {
+      "path": ".claude/skills/kaelen-authoring",
+      "form": "directory",
+      "ownership": "owned",
+      "item": {
+        "kind": "skill",
+        "name": "kaelen-authoring"
+      },
+      "targets": [
+        "claude-code"
+      ],
+      "wrapper": "verbatim",
+      "digest": "sha256:c6fad62629edc35e59cc4f190f3ad78f6a753f26994b9c5e8451beb096932133"
+    },
+    {
+      "path": ".claude/skills/kaelen-install",
+      "form": "directory",
+      "ownership": "owned",
+      "item": {
+        "kind": "skill",
+        "name": "kaelen-install"
+      },
+      "targets": [
+        "claude-code"
+      ],
+      "wrapper": "verbatim",
+      "digest": "sha256:d10395c511bf308a621d6ccd9a5bb0a3c1953f389bcac13bacd1e23581db6bdb"
+    },
+    {
+      "path": ".gitignore",
+      "form": "file",
+      "ownership": "section",
+      "item": {
+        "kind": "git-lines",
+        "name": "declaration-draft"
+      },
+      "targets": [
+        "claude-code"
+      ],
+      "wrapper": "git-section",
+      "digest": "sha256:74dbed5309a062d857979fbd310f0fc540a017c674cd14a249251ee79457a643",
+      "style": "hash",
+      "address": "producer-kit/declaration-draft",
+      "inserted": {
+        "separator": "\n"
+      }
+    },
+    {
+      "path": ".gitignore",
+      "form": "file",
+      "ownership": "section",
+      "item": {
+        "kind": "git-lines",
+        "name": "package-staging"
+      },
+      "targets": [
+        "claude-code"
+      ],
+      "wrapper": "git-section",
+      "digest": "sha256:edfeaafac8917ff1b6ee94e32c102d65527e8ed59f0e898c258df4ed26395c89",
+      "style": "hash",
+      "address": "producer-kit/package-staging",
+      "inserted": {
+        "separator": "\n"
+      }
+    },
+    {
+      "path": ".kaelen/kaelen/producer-kit/package",
+      "form": "directory",
+      "ownership": "owned",
+      "item": {
+        "kind": "package",
+        "name": "producer-kit"
+      },
+      "targets": [
+        "claude-code"
+      ],
+      "wrapper": "verbatim",
+      "digest": "sha256:8a5c36067866c135e3dc4f208a97794a19652c49214b87c1b99566583711183a"
+    },
+    {
+      "path": "CLAUDE.md",
+      "form": "file",
+      "ownership": "section",
+      "item": {
+        "kind": "instruction-block",
+        "name": "producer-kit"
+      },
+      "targets": [
+        "claude-code"
+      ],
+      "wrapper": "markdown-section",
+      "digest": "sha256:ee9c8410581bf042a62a44dacb49ba5861b9cb94985812d1eb7fa6bce1ec192c",
+      "style": "markdown",
+      "address": "producer-kit/producer-kit",
+      "inserted": {
+        "separator": "\n"
+      }
+    }
+  ],
+  "shared_files": [
+    {
+      "path": ".gitignore",
+      "existed_before": true
+    },
+    {
+      "path": "CLAUDE.md",
+      "existed_before": true
+    }
+  ],
+  "unsupported": [],
+  "shared_writer": "main",
+  "created_dirs": [
+    ".kaelen/kaelen",
+    ".kaelen/kaelen/producer-kit"
+  ],
+  "origin": {
+    "repository": "https://github.com/themetriost/Kaelen.git",
+    "commit": "7ebbfbafc027d79ed16133dec465b93ad8f244f8",
+    "subdirectory": ".kaelen/packages/producer-kit",
+    "how": "deduced",
+    "resolved": true
+  },
+  "provenance": {
+    "signature": "absent",
+    "signer": null,
+    "key": null,
+    "consents": []
+  }
+}

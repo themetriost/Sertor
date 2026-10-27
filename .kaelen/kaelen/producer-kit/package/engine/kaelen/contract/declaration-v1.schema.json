@@ -1,0 +1,208 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/themetriost/Kaelen/engine/src/kaelen/contract/declaration-v1.schema.json",
+  "title": "Kaelen node declaration, contract version 1",
+  "description": "What one capability of one node installs. Written by the node's author; the single definition of contract version 1 (specs/014-declaration-contract).",
+  "type": "object",
+  "required": ["contract", "node", "capability", "version", "targets", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "contract": {"description": "Contract major version this declaration is written for.", "type": "integer", "const": 1},
+    "node": {"$ref": "#/$defs/name"},
+    "capability": {"$ref": "#/$defs/name"},
+    "version": {"description": "Version of the capability (semver recommended).", "type": "string", "minLength": 1},
+    "targets": {
+      "description": "Every assistant target the capability supports. Never inferred.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/target"}
+    },
+    "governs": {
+      "description": "Producer directories whose every file must be declared by some item.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/path"}
+    },
+    "items": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/item"}},
+    "settings": {"type": "array", "items": {"$ref": "#/$defs/setting"}},
+    "settings_file": {
+      "description": "Host-relative file where the node's settings live; the engine writes non-secret defaults there and never a value the operator set (specs/017).",
+      "$ref": "#/$defs/path"
+    },
+    "signer": {
+      "description": "The SSH principal that signs this capability's packages; never a key. Hosts verify the signature against their trusted signers (specs/028).",
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^ \t,]+$"
+    },
+    "runtime": {
+      "description": "The capability's environment, built by the engine inside the host at install (specs/022).",
+      "$ref": "#/$defs/runtime"
+    },
+    "previous": {
+      "description": "Locations an earlier installation of this capability left on hosts, by another installer: adopted when the capability installs them now, retired otherwise (specs/024).",
+      "type": "array",
+      "items": {"$ref": "#/$defs/previous"}
+    },
+    "requires": {
+      "description": "Capabilities that must be installed on the host first: checked at install and update, never installed by the engine (specs/029).",
+      "type": "array",
+      "items": {"$ref": "#/$defs/requirement"}
+    },
+    "groups": {
+      "description": "Named sets of items the operator chooses with --with / --without; items in no group are always installed (specs/029).",
+      "type": "array",
+      "items": {"$ref": "#/$defs/group"}
+    }
+  },
+  "$defs": {
+    "name": {"type": "string", "pattern": "^[a-z][a-z0-9-]{0,62}$"},
+    "requirement": {
+      "type": "object",
+      "required": ["node", "capability", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "node": {"$ref": "#/$defs/name"},
+        "capability": {"$ref": "#/$defs/name"},
+        "version": {"description": "A range: comma-separated comparators, e.g. \">=1.2,<2\".", "type": "string", "minLength": 1},
+        "groups": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/name"}},
+        "source": {"description": "Where the operator gets it; shown as is, never run.", "type": "string", "minLength": 1}
+      }
+    },
+    "group": {
+      "type": "object",
+      "required": ["name", "items"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"$ref": "#/$defs/name"},
+        "items": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "mandatory": {"type": "boolean"},
+        "default": {"description": "Chosen when the operator names no group; true when absent.", "type": "boolean"}
+      }
+    },
+    "path": {
+      "description": "Producer-relative path: forward slashes, no empty segment, no trailing slash.",
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!.*//)(?!.*/$)[^\\\\]+$"
+    },
+    "target": {
+      "description": "An assistant target known to the placement rule. The values are injected from kaelen/placement/rule.json when the schema is loaded: the rule is the only list of targets (specs/016-placement-rule).",
+      "type": "string"
+    },
+    "kind": {
+      "enum": ["skill", "agent", "command", "hook", "instruction-block", "mcp-server", "support-file", "engine", "git-lines"]
+    },
+    "extensionPoint": {"enum": ["assistant-instructions"]},
+    "gitFile": {"enum": [".gitignore", ".gitattributes"]},
+    "hookEvent": {
+      "enum": ["session-start", "session-end", "prompt-submit", "pre-tool-use", "post-tool-use", "stop"]
+    },
+    "item": {
+      "type": "object",
+      "required": ["kind", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"$ref": "#/$defs/kind"},
+        "name": {"$ref": "#/$defs/name"},
+        "source": {"$ref": "#/$defs/path"},
+        "targets": {
+          "description": "Restricts the item to some of the declared targets.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/target"}
+        },
+        "extension_point": {"$ref": "#/$defs/extensionPoint"},
+        "event": {"$ref": "#/$defs/hookEvent"},
+        "entry": {"description": "An mcp-server item started from one of the runtime's entry points (specs/022).", "$ref": "#/$defs/name"},
+        "runtime": {"description": "A hook item whose script runs with the runtime's interpreter (specs/022).", "type": "boolean"},
+        "file": {"description": "A git-lines item: the git file it writes a section into (specs/025).", "$ref": "#/$defs/gitFile"},
+        "directory": {"description": "A git-lines item: the host directory holding the file; the root when absent (specs/025).", "$ref": "#/$defs/path"},
+        "lines": {"description": "A git-lines item: the lines of its section, in order (specs/025).", "type": "array", "minItems": 1, "items": {"type": "string"}}
+      },
+      "allOf": [
+        {
+          "if": {"required": ["kind"], "properties": {"kind": {"const": "instruction-block"}}},
+          "then": {"required": ["extension_point"]},
+          "else": {"properties": {"extension_point": false}}
+        },
+        {
+          "if": {"required": ["kind"], "properties": {"kind": {"const": "hook"}}},
+          "then": {"required": ["event"]},
+          "else": {"properties": {"event": false}}
+        },
+        {
+          "description": "A git-lines item belongs to the host, not to an assistant: no source, no targets (specs/025 R-1).",
+          "if": {"required": ["kind"], "properties": {"kind": {"const": "git-lines"}}},
+          "then": {"required": ["file", "lines"], "properties": {"source": false, "targets": false}},
+          "else": {"properties": {"file": false, "directory": false, "lines": false}}
+        },
+        {
+          "description": "An engine item has no source: its content is the engine the package carries (specs/018 R-1); a git-lines item carries its lines (specs/025). Every other kind names its source.",
+          "if": {"required": ["kind"], "properties": {"kind": {"enum": ["engine", "git-lines"]}}},
+          "then": {"properties": {"source": false}},
+          "else": {"required": ["source"]}
+        },
+        {
+          "if": {"required": ["kind"], "properties": {"kind": {"const": "mcp-server"}}},
+          "else": {"properties": {"entry": false}}
+        },
+        {
+          "if": {"required": ["kind"], "properties": {"kind": {"const": "hook"}}},
+          "else": {"properties": {"runtime": false}}
+        }
+      ]
+    },
+    "runtime": {
+      "type": "object",
+      "required": ["language", "python", "lock", "entry_points"],
+      "additionalProperties": false,
+      "properties": {
+        "language": {"description": "Closed set; a later language is added without changing these.", "enum": ["python"]},
+        "python": {"description": "Accepted interpreter versions: comma-separated specifiers such as >=3.11.", "type": "string", "minLength": 1},
+        "lock": {"description": "Producer path of a requirements file: every requirement pinned with == and hashed.", "$ref": "#/$defs/path"},
+        "code": {"description": "Producer directory of the capability's own code, put on the environment's path.", "$ref": "#/$defs/path"},
+        "entry_points": {"type": "object", "additionalProperties": {"$ref": "#/$defs/entryPoint"}}
+      }
+    },
+    "previous": {
+      "type": "object",
+      "required": ["path"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {"description": "Host-relative path the earlier installer wrote.", "$ref": "#/$defs/path"},
+        "member": {"description": "Dotted path of a member inside a shared JSON file at path, e.g. mcpServers.name.", "type": "string", "minLength": 1},
+        "digests": {
+          "description": "Digests of the contents earlier versions left there, as the engine reports them (digest_found).",
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+        }
+      }
+    },
+    "entryPoint": {
+      "type": "object",
+      "required": ["module"],
+      "additionalProperties": false,
+      "properties": {
+        "module": {"type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_.]*$"},
+        "args": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "setting": {
+      "description": "Configuration the host operator supplies. A non-secret setting may carry a default the engine installs; a secret one never carries a value. Unstated secret means secret.",
+      "type": "object",
+      "required": ["name", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,62}$"},
+        "description": {"type": "string", "minLength": 1},
+        "required": {"type": "boolean"},
+        "secret": {"type": "boolean"},
+        "default": {"type": "string"}
+      }
+    }
+  }
+}

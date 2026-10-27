@@ -40,9 +40,12 @@ d'installazione è **congelata** (sezione *Congelamento* di `CLAUDE.md`).
   `.kaelen/engine/`. Verifica: `python .kaelen/engine/run.py verify --host .`.
 - **Lint:** `.kaelen`, `.sinthari` e `.claude/skills/skill-authoring` sono in `extend-exclude` di ruff:
   è codice di terzi con il suo stile, come `packages/speclift`.
-- **Produttore: non ancora.** Sertor non ha una dichiarazione né pacchetti. Diventarlo è la **F2** della
-  separazione ([E17](../../requirements/separazione-ecosistema/epic.md)): i tre piani d'installazione
-  scritti in codice diventano una dichiarazione, con `[[previous]]` per i file del nostro installatore.
+- **Produttore: in preparazione.** È installato il **kit del produttore** `kaelen/producer-kit` 0.16.3
+  (skill `kaelen-authoring` e `kaelen-install`, agente `kaelen-author`, sezioni in `CLAUDE.md` e
+  `.gitignore`), ma Sertor non ha ancora una dichiarazione né pacchetti. Il primo è la capability `rag`
+  (E17-FEAT-004, deciso il 2026-10-27): runtime sul `[runtime]` di Kaelen, `[[previous]]` per i file del
+  nostro installatore. Wiki e SDLC seguono, consegnati a Thesmion e Sulcimen **dopo** la RAG, che fissa
+  lo schema.
 
 ## Versioni che contano
 
