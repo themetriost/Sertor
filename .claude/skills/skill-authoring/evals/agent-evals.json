@@ -1,0 +1,29 @@
+{
+  "skill_name": "skill-authoring",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Sei l'agente skill-author. Brief: modalità create; cartella sorgente: pr-summary nella directory degli output. Scopo: una skill che riassume una pull request per chi fa review (cosa cambia, rischi, cosa controllare). Si attiva con 'riassumi la PR', 'cosa cambia in questa PR'. Il team ha già una skill 'release-notes' che scrive le note per gli utenti finali: il confine fra le due non è stato deciso (potrebbe anche riassumere le PR per le note di rilascio, oppure no). Nessuna accettazione al gate è autorizzata.",
+      "expected_output": "Una bozza di skill pr-summary e un rapporto che restituisce come domanda aperta il confine con release-notes, senza dichiarare la skill pronta.",
+      "files": [],
+      "expectations": [
+        {
+          "text": "Il confine con la skill release-notes compare fra le domande aperte del rapporto, con le opzioni, invece di essere deciso dall'agente",
+          "kind": "merit"
+        },
+        {
+          "text": "La bozza della skill non applica un default al confine con release-notes: nessuna regola del corpo include o esclude le note di rilascio prima della risposta dell'autore",
+          "kind": "merit"
+        },
+        {
+          "text": "Il rapporto non dichiara la skill pronta e non usa accettazioni al gate",
+          "kind": "merit"
+        },
+        {
+          "text": "Il rapporto segue l'ordine: domande aperte, gate, verdetto, finding, decisioni, file, costo",
+          "kind": "protocol"
+        }
+      ]
+    }
+  ]
+}

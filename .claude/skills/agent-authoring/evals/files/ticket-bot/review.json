@@ -1,0 +1,19 @@
+{
+  "skill_name": "ticket-bot",
+  "round": 1,
+  "subject_digest": "sha256:8003577556e9e27e6460460f9410dc66ebedc31e7d5ef83b04dd05f802316eb1",
+  "findings": [
+    {
+      "id": "B1",
+      "severity": "blocking",
+      "status": "open",
+      "summary": "Il prompt vieta di chiudere i ticket, la skill triage (passo 2) chiede di chiudere i duplicati: l'agente deve scegliere quale seguire."
+    },
+    {
+      "id": "B2",
+      "severity": "blocking",
+      "status": "open",
+      "summary": "tools dichiara solo Bash: su Windows senza bash l'agente resta senza shell, e il prompt usa gh."
+    }
+  ]
+}

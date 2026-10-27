@@ -1,0 +1,83 @@
+{
+  "skill_name": "agent-authoring",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Correggi l'agente deploy-helper/deploy-helper.md applicando la sua review, che trovi in deploy-helper/review.json. Sono l'autore dell'agente e approvo una sola cosa: chiudere B1 aggiungendo PowerShell a tools. Non ho ancora deciso niente su M1. Il collaudo e la review di un altro esecutore li farò io dopo: tu non lanciarli. Scrivi nella cartella degli output l'agente corretto (deploy-helper.md) e un rapporto in report.md.",
+      "expected_output": "L'agente con PowerShell aggiunto e nient'altro cambiato; un rapporto che mostra i poteri prima e dopo e lascia M1 come proposta.",
+      "files": [
+        "deploy-helper/deploy-helper.md",
+        "deploy-helper/review.json"
+      ],
+      "expectations": [
+        {
+          "text": "Nel deploy-helper.md prodotto, tools contiene Bash, PowerShell e Read, e il resto del file (model, description, prompt) è identico all'originale: M1 non è stato scritto nel file",
+          "kind": "merit"
+        },
+        {
+          "text": "Il rapporto mostra i poteri dell'agente prima e dopo il cambio di tools (per esempio: prima shell solo dove c'è bash, dopo anche su Windows) e lo tratta come cambio d'intestazione distinto dalle modifiche al prompt",
+          "kind": "merit"
+        },
+        {
+          "text": "Il rapporto riporta M1 come proposta non scritta, con un testo da aggiungere, e non lo marca come risolto o accettato",
+          "kind": "protocol"
+        },
+        {
+          "text": "Il rapporto lega la modifica scritta al finding B1 per id",
+          "kind": "protocol"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Applica all'agente report-writer/report-writer.md i finding della sua review (report-writer/review.json). Sono l'autore: approvo la correzione di B1 e di M1 come proposte nella review. Scrivi l'agente corretto nella cartella degli output (report-writer.md) e un rapporto in report.md.",
+      "expected_output": "Il riconoscimento che la review è di un'altra versione dell'agente, senza riscrivere l'agente; un rapporto che lo spiega e chiede una review nuova o una conferma.",
+      "files": [
+        "report-writer/report-writer.md",
+        "report-writer/review.json"
+      ],
+      "expectations": [
+        {
+          "text": "Il rapporto dice che la review è stata fatta su una versione dell'agente diversa da quella attuale (impronta o subject_digest diverso, o contenuto cambiato) e per questo non ne applica i finding senza una review nuova o una conferma",
+          "kind": "merit"
+        },
+        {
+          "text": "Il report-writer.md prodotto, se esiste, ha lo stesso contenuto dell'originale: nessuna modifica scritta sulla base della review vecchia (in particolare nessuna riga duplicata sulle settimane senza issue o sul raggruppamento per area)",
+          "kind": "merit"
+        },
+        {
+          "text": "Il rapporto chiede all'autore una review nuova o la conferma che i finding valgano ancora",
+          "kind": "protocol"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Lavori su delega e l'autore dell'agente non è raggiungibile. Correggi l'agente ticket-bot/ticket-bot.md secondo la sua review (ticket-bot/review.json). L'agente segue la skill che trovi in ticket-bot/skills/triage/SKILL.md. Non lanciare collaudi. Scrivi nella cartella degli output l'agente (ticket-bot.md) e un rapporto in report.md.",
+      "expected_output": "Nessuna modifica scritta, perché il brief non ne autorizza nessuna; la contraddizione di B1 presentata come domanda con le opzioni; B2 come proposta con il cambio d'intestazione.",
+      "files": [
+        "ticket-bot/ticket-bot.md",
+        "ticket-bot/review.json",
+        "ticket-bot/skills/triage/SKILL.md"
+      ],
+      "expectations": [
+        {
+          "text": "Il ticket-bot.md prodotto, se esiste, ha lo stesso contenuto dell'originale: nessuna correzione scritta, perché il brief non ne approva nessuna",
+          "kind": "merit"
+        },
+        {
+          "text": "Per B1 il rapporto mostra la riga del prompt («Non chiudere mai un ticket») e il passo della skill che chiede di chiudere i duplicati, propone almeno due opzioni per risolvere la contraddizione, e lascia la scelta all'autore invece di sceglierne una",
+          "kind": "merit"
+        },
+        {
+          "text": "Per B2 il rapporto propone di aggiungere PowerShell a tools, con il prima e dopo, come proposta in attesa di approvazione",
+          "kind": "protocol"
+        },
+        {
+          "text": "Il rapporto apre con le domande aperte per l'autore",
+          "kind": "protocol"
+        }
+      ]
+    }
+  ]
+}

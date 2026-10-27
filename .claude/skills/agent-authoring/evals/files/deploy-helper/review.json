@@ -1,0 +1,19 @@
+{
+  "skill_name": "deploy-helper",
+  "round": 1,
+  "subject_digest": "sha256:dbac5cf75f3bb0224bb5e28ed3fc5d6ee77709c32aa27e4c53da98441b445e59",
+  "findings": [
+    {
+      "id": "B1",
+      "severity": "blocking",
+      "status": "open",
+      "summary": "tools dichiara solo Bash: su Windows senza bash l'agente resta senza shell, e il prompt esegue git e make. Proposta: aggiungere PowerShell a tools."
+    },
+    {
+      "id": "M1",
+      "severity": "improvement",
+      "status": "open",
+      "summary": "Il rapporto non obbliga a dichiarare cosa l'agente non ha fatto rispetto al brief. Proposta: una riga che chiede di dichiarare gli scostamenti."
+    }
+  ]
+}

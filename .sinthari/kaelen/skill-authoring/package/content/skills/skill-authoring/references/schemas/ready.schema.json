@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sinthari.local/skillauthor/ready.schema.json",
+  "title": "skillauthor ready gate",
+  "type": "object",
+  "required": [
+    "skill_name",
+    "status",
+    "reasons",
+    "accepted"
+  ],
+  "properties": {
+    "skill_name": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "ready",
+        "ready-unvalidated",
+        "not-ready"
+      ]
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "code",
+          "detail"
+        ],
+        "properties": {
+          "code": {
+            "enum": [
+              "lint-blocking",
+              "review-open-blocking",
+              "verdict-unvalidated",
+              "verdict-incomplete",
+              "review-missing",
+              "verdict-missing",
+              "verdict-stale"
+            ]
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "accepted": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "what",
+          "reason"
+        ]
+      }
+    }
+  }
+}

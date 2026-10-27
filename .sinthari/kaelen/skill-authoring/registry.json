@@ -1,0 +1,198 @@
+{
+  "schema": "kaelen.registry/1",
+  "node": "sinthari",
+  "capability": "skill-authoring",
+  "version": "0.3.1",
+  "contract": 1,
+  "package": {
+    "producer_state": "sha256:ad9ee51f6af6fb0d8e1ef4ddcf550aed271a26f3a4ea00fd602a6ffeca6eb3d2",
+    "record_schema": "kaelen.package-record/2"
+  },
+  "engine": {
+    "version": "0.16.3",
+    "digest": "sha256:5e4d350fa236ac5329981934fe4b2a94b90adc79568cccfa5559eeb003a96c67"
+  },
+  "placement_rule": {
+    "digest": "sha256:90a023caa9780b3ba60d83aedea622a780f1a744635dea3e2283a7979e2a2f7b"
+  },
+  "targets": [
+    "claude-code"
+  ],
+  "locations": [
+    {
+      "path": ".claude/agents/agent-author.md",
+      "form": "file",
+      "ownership": "owned",
+      "item": {
+        "kind": "agent",
+        "name": "agent-author"
+      },
+      "targets": [
+        "claude-code"
+      ],
+      "wrapper": "verbatim",
+      "digest": "sha256:e6a86325de7000d09ad18b0a06c87d03626edfc5ed0d075a910d3c6ff3e35a01"
+    },
+    {
+      "path": ".claude/agents/skill-author.md",
+      "form": "file",
+      "ownership": "owned",
+      "item": {
+        "kind": "agent",
+        "name": "skill-author"
+      },
+      "targets": [
+        "claude-code"
+      ],
+      "wrapper": "verbatim",
+      "digest": "sha256:fc0d0e3d62adf7d1be294162da7175230ec1981e4b0ee7bd4c41be48dd096193"
+    },
+    {
+      "path": ".claude/skills/agent-authoring",
+      "form": "directory",
+      "ownership": "owned",
+      "item": {
+        "kind": "skill",
+        "name": "agent-authoring"
+      },
+      "targets": [
+        "claude-code"
+      ],
+      "wrapper": "verbatim",
+      "digest": "sha256:6ee1fd5383cbdfacb3bd309ba87809e16c122be848b0634a32179cfc8b4882d1"
+    },
+    {
+      "path": ".claude/skills/agent-review",
+      "form": "directory",
+      "ownership": "owned",
+      "item": {
+        "kind": "skill",
+        "name": "agent-review"
+      },
+      "targets": [
+        "claude-code"
+      ],
+      "wrapper": "verbatim",
+      "digest": "sha256:aa822d34f5d740c1120a319e35770964c22b7502691a6c561b38ec393e7fda2a"
+    },
+    {
+      "path": ".claude/skills/skill-authoring",
+      "form": "directory",
+      "ownership": "owned",
+      "item": {
+        "kind": "skill",
+        "name": "skill-authoring"
+      },
+      "targets": [
+        "claude-code"
+      ],
+      "wrapper": "verbatim",
+      "digest": "sha256:433e785cc102410398a6a2b3b7e5db443776d8f8300f119ac98cb85d02151edf"
+    },
+    {
+      "path": ".claude/skills/skill-review",
+      "form": "directory",
+      "ownership": "owned",
+      "item": {
+        "kind": "skill",
+        "name": "skill-review"
+      },
+      "targets": [
+        "claude-code"
+      ],
+      "wrapper": "verbatim",
+      "digest": "sha256:964a42f9033a6afb8833ded4610535f51169c7b45d7c4dcaba63fbcb515d9156"
+    },
+    {
+      "path": ".sinthari/kaelen/skill-authoring/launch.py",
+      "form": "file",
+      "ownership": "owned",
+      "item": {
+        "kind": "runtime",
+        "name": "launcher"
+      },
+      "targets": [
+        "claude-code"
+      ],
+      "wrapper": "verbatim",
+      "digest": "sha256:06f1cdb707d3ae056806fea35193549dd88e5591f6d352bfb50fb2fc3a87d15a"
+    },
+    {
+      "path": ".sinthari/kaelen/skill-authoring/package",
+      "form": "directory",
+      "ownership": "owned",
+      "item": {
+        "kind": "package",
+        "name": "skill-authoring"
+      },
+      "targets": [
+        "claude-code"
+      ],
+      "wrapper": "verbatim",
+      "digest": "sha256:17ea42c0e0315a9a0fa12e0188a2f5814d67070d8c91c5fd08c9e044a5a9d4b4"
+    },
+    {
+      "path": ".sinthari/kaelen/skill-authoring/runtime",
+      "form": "runtime",
+      "ownership": "owned",
+      "item": {
+        "kind": "runtime",
+        "name": "skill-authoring"
+      },
+      "targets": [
+        "claude-code"
+      ],
+      "wrapper": "runtime",
+      "digest": "sha256:95ef3e546da98c456dd6afbc2d65f74e729e408bde964badddcd9c38dcae1409",
+      "runtime": {
+        "tool": "uv",
+        "python": "3.12.13"
+      }
+    },
+    {
+      "path": "CLAUDE.md",
+      "form": "file",
+      "ownership": "section",
+      "item": {
+        "kind": "instruction-block",
+        "name": "skill-authoring"
+      },
+      "targets": [
+        "claude-code"
+      ],
+      "wrapper": "markdown-section",
+      "digest": "sha256:289530bb70378f818ad9453cddca49b9416551f3bebc35021e793c6acb8765b8",
+      "style": "markdown",
+      "address": "skill-authoring/skill-authoring",
+      "inserted": {
+        "separator": "\n"
+      }
+    }
+  ],
+  "shared_files": [
+    {
+      "path": "CLAUDE.md",
+      "existed_before": true
+    }
+  ],
+  "unsupported": [],
+  "shared_writer": "main",
+  "created_dirs": [
+    ".sinthari",
+    ".sinthari/kaelen",
+    ".sinthari/kaelen/skill-authoring"
+  ],
+  "origin": {
+    "repository": "https://github.com/themetriost/Sinthari.git",
+    "commit": "ca2842f22ec20f310644b257b02acc104c029acf",
+    "subdirectory": ".kaelen/packages/skill-authoring",
+    "how": "deduced",
+    "resolved": true
+  },
+  "provenance": {
+    "signature": "absent",
+    "signer": null,
+    "key": null,
+    "consents": []
+  }
+}

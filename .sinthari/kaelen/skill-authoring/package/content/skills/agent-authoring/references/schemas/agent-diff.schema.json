@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sinthari.local/skillauthor/agent-diff.schema.json",
+  "title": "skillauthor agent-diff",
+  "type": "object",
+  "required": ["before", "after", "fields", "tools", "prompt"],
+  "properties": {
+    "before": {"type": "string"},
+    "after": {"type": "string"},
+    "fields": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["field", "change", "before", "after"],
+        "properties": {
+          "field": {"type": "string"},
+          "change": {"enum": ["added", "removed", "changed"]},
+          "before": {},
+          "after": {}
+        }
+      }
+    },
+    "tools": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "required": ["added", "removed"],
+          "properties": {
+            "added": {"type": "array", "items": {"type": "string"}},
+            "removed": {"type": "array", "items": {"type": "string"}}
+          }
+        }
+      ]
+    },
+    "prompt": {
+      "type": "object",
+      "required": ["changed", "lines_added", "lines_removed"],
+      "properties": {
+        "changed": {"type": "boolean"},
+        "lines_added": {"type": "integer", "minimum": 0},
+        "lines_removed": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}

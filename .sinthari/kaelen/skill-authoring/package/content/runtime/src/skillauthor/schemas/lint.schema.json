@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sinthari.local/skillauthor/lint.schema.json",
+  "title": "skillauthor lint",
+  "type": "object",
+  "required": ["skill_dir", "findings", "allowed"],
+  "properties": {
+    "skill_dir": {"type": "string"},
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["rule", "severity", "location", "detail"],
+        "properties": {
+          "rule": {"enum": ["H", "R", "F", "S", "M", "L"]},
+          "severity": {"enum": ["blocking", "warning"]},
+          "location": {"type": "string"},
+          "detail": {"type": "string"}
+        }
+      }
+    },
+    "allowed": {
+      "type": "array",
+      "items": {"type": "object", "required": ["rule", "match", "why"]}
+    }
+  }
+}

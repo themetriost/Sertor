@@ -1,0 +1,19 @@
+{
+  "skill_name": "report-writer",
+  "round": 1,
+  "subject_digest": "sha256:25889734ba6728360ea7b038bbfaccf2d028eb035471cee79af880a5e3ad7a4a",
+  "findings": [
+    {
+      "id": "B1",
+      "severity": "blocking",
+      "status": "open",
+      "summary": "Il prompt non dice cosa fare in una settimana senza issue chiuse: l'agente può inventarle. Proposta: aggiungere «se non ce ne sono, scrivilo, non inventarle»."
+    },
+    {
+      "id": "M1",
+      "severity": "improvement",
+      "status": "open",
+      "summary": "Il rapporto non ha un ordine: proposta di raggruppare le issue per area."
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "schema": "kaelen.draft-conventions/1",
+  "description": "How `kaelen draft` reads a producer's layout (specs/030 R-1). Fixed and documented: a producer with another layout writes its declaration by hand.",
+  "conventions": [
+    {"id": "skills", "folder": "skills", "match": "dir-with-SKILL.md", "kind": "skill", "name_from": "dir", "fill": []},
+    {"id": "agents", "folder": "agents", "match": "*.md", "kind": "agent", "name_from": "stem", "fill": []},
+    {"id": "commands", "folder": "commands", "match": "*.md", "kind": "command", "name_from": "stem", "fill": []},
+    {"id": "hooks", "folder": "hooks", "match": "file", "kind": "hook", "name_from": "stem", "fill": ["event"]},
+    {"id": "blocks", "folder": "blocks", "match": "*.md", "kind": "instruction-block", "name_from": "stem", "fill": [], "extension_point": "assistant-instructions"},
+    {"id": "mcp", "folder": "mcp", "match": "*.json", "kind": "mcp-server", "name_from": "stem", "fill": []},
+    {"id": "support", "folder": "support", "match": "entry", "kind": "support-file", "name_from": "stem", "fill": []}
+  ],
+  "hints": [
+    {"id": "runtime", "folder": "runtime", "text": "a runtime/ folder: if the capability runs code with dependencies, declare a [runtime] section (lock and code) by hand"}
+  ],
+  "exclusions": [".git", ".kaelen", "__pycache__", "kaelen.declaration.toml", "kaelen.declaration.draft.toml"],
+  "not_deduced": ["node", "capability", "version", "targets", "settings", "runtime", "previous", "signer", "requires", "groups", "items of kind git-lines", "items of kind engine"]
+}

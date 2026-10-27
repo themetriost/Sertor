@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sinthari.local/skillauthor/agent-lint.schema.json",
+  "title": "skillauthor agent-lint result",
+  "description": "Esito dei controlli meccanici su un file d'agente: fatti dell'intestazione, parità per destinazione, finding.",
+  "type": "object",
+  "required": ["agent", "name", "form", "facts", "parity", "findings", "allowed"],
+  "properties": {
+    "agent": {"type": "string"},
+    "name": {"type": "string"},
+    "form": {"enum": ["markdown", "toml"]},
+    "facts": {
+      "type": "object",
+      "required": ["fields", "tools_declared", "model_declared", "skills_named", "shell_tools"],
+      "properties": {
+        "fields": {"type": "object"},
+        "tools_declared": {"type": "boolean"},
+        "model_declared": {"type": "boolean"},
+        "shell_tools": {
+          "description": "Regola T (R12): shell dichiarate in `tools` e sistemi operativi su cui l'agente resta senza; null se la regola non si applica (senza `tools`, forma Copilot o Codex).",
+          "type": ["object", "null"],
+          "required": ["declared", "uncovered"],
+          "properties": {
+            "declared": {"type": "array", "items": {"type": "string"}},
+            "uncovered": {"type": "array", "items": {"enum": ["linux", "macos", "windows"]}}
+          }
+        },
+        "skills_named": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "status"],
+            "properties": {
+              "name": {"type": "string"},
+              "status": {"enum": ["found", "missing", "unchecked"]},
+              "match": {"enum": ["backtick", "plain"]}
+            }
+          }
+        }
+      }
+    },
+    "parity": {
+      "type": "object",
+      "required": ["reference", "targets"],
+      "properties": {
+        "reference": {"type": "string"},
+        "targets": {"type": "array", "items": {"enum": ["claude-code", "github-copilot", "codex"]}},
+        "status": {"const": "not-applicable"},
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["target", "field", "representation"],
+            "properties": {
+              "target": {"enum": ["claude-code", "github-copilot", "codex"]},
+              "field": {"type": "string"},
+              "representation": {"enum": ["represented", "different", "dropped", "unknown"]}
+            }
+          }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["rule", "severity", "location", "detail"],
+        "properties": {
+          "rule": {"enum": ["F", "H", "R", "P", "S", "T"]},
+          "severity": {"enum": ["blocking", "warning"]},
+          "location": {"type": "string"},
+          "detail": {"type": "string"}
+        }
+      }
+    },
+    "allowed": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["rule", "match", "why"],
+        "properties": {"rule": {"type": "string"}, "match": {"type": "string"}, "why": {"type": "string"}}
+      }
+    }
+  }
+}
