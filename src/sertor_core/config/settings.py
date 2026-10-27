@@ -30,6 +30,9 @@ _DEFAULT_EXCLUDES: tuple[str, ...] = (
     "dist", "build", "target", "bin", "obj", "out",
     ".index", "chroma", ".idea", ".vscode",
     "*.key", "*.pem", ".env",
+    # Kaelen: the main engine and package copies (`.kaelen/`), and every capability folder it
+    # installed (`.<node>/kaelen/`) — third-party copies, not this project's knowledge.
+    ".kaelen", ".*/kaelen",
 )
 
 
