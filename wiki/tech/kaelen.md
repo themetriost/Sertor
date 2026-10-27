@@ -40,12 +40,16 @@ d'installazione è **congelata** (sezione *Congelamento* di `CLAUDE.md`).
   `.kaelen/engine/`. Verifica: `python .kaelen/engine/run.py verify --host .`.
 - **Lint:** `.kaelen`, `.sinthari` e `.claude/skills/skill-authoring` sono in `extend-exclude` di ruff:
   è codice di terzi con il suo stile, come `packages/speclift`.
-- **Produttore: in preparazione.** È installato il **kit del produttore** `kaelen/producer-kit` 0.16.3
-  (skill `kaelen-authoring` e `kaelen-install`, agente `kaelen-author`, sezioni in `CLAUDE.md` e
-  `.gitignore`), ma Sertor non ha ancora una dichiarazione né pacchetti. Il primo è la capability `rag`
-  (E17-FEAT-004, deciso il 2026-10-27): runtime sul `[runtime]` di Kaelen, `[[previous]]` per i file del
-  nostro installatore. Wiki e SDLC seguono, consegnati a Thesmion e Sulcimen **dopo** la RAG, che fissa
-  lo schema.
+- **Produttore: primo pacchetto provato, non pubblicato.** È installato il **kit del produttore**
+  `kaelen/producer-kit` 0.16.3 (skill `kaelen-authoring` e `kaelen-install`, agente `kaelen-author`,
+  sezioni in `CLAUDE.md` e `.gitignore`). La capability `rag` (E17-FEAT-004) ha ora sorgenti in
+  `capabilities/rag/` e una dichiarazione per `sertor/rag` **0.7.0a1** (claude-code, github-copilot, codex):
+  runtime sul `[runtime]` di Kaelen, server MCP `sertor-rag`, skill, hook `memory-capture`, settings su
+  `.sertor/.env`. Il pacchetto `sertor/rag` 0.7.0a1 contiene anche `guided-setup` e `concierge`, ed è provato
+  su un ospite usa-e-getta su claude-code e codex (install, `verify --live`, `index`, `doctor` PASS); è in
+  pubblicazione per i test dal branch `153-pacchetto-kaelen-rag`, non ancora su `master`.
+  Restano fuori e dichiarati: `[[previous]]` e i tre hook di controllo. Wiki e SDLC seguono, consegnati a Thesmion e Sulcimen
+  **dopo** la RAG, che fissa lo schema.
 
 ## Versioni che contano
 

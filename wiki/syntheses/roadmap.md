@@ -116,7 +116,7 @@ Il repo contiene solo produzione: il prototipo è il nodo ProtoSertor.
 
 ### 🔄 In progress
 
-- **E17-FEAT-004 — pacchetto Kaelen della capability `rag`** · *dove:* branch `151-kaelen-producer-kit` (kit del produttore installato), dichiarazione da scrivere · *prossimo passo:* requisiti (ciclo SpecKit) · *decisioni prese:* runtime Kaelen; wiki/SDLC dopo · *aperto:* `previous` per blocchi a marker e voci in array JSON (da collaudare con Kaelen)
+- **E17-FEAT-004 — pacchetto Kaelen della capability `rag`** · *dove:* branch `153-pacchetto-kaelen-rag`: dichiarazione `capabilities/rag/kaelen.declaration.toml`, pacchetto `sertor/rag` **0.7.0a1** in `.kaelen/packages/rag/` (runtime Kaelen, MCP, blocco, skill eval + guided-setup, concierge, hook memory-capture), provato su ospiti usa-e-getta claude-code + codex (`verify --live` e `doctor` verdi) · *prossimo passo:* prove dell'utente via `uvx` dal commit, poi requisiti/spec per chiudere il resto · *decisioni prese:* runtime Kaelen; wiki/SDLC dopo · *aperto:* hook freshness/usage-check/version-check non ancora portati; `[[previous]]` per gli ospiti di `sertor install rag` (blocchi a marker e voci in array JSON); esecuzione reale dell'hook su Codex non provata; E10-FEAT-086 (il corpus dell'ospite indicizza gli asset della capability)
 
 Dopo: da scegliere fra i Should P1 di E10 e la separazione (E17).
 
@@ -270,7 +270,7 @@ combinazioni**, 8 esiti su 8.
 | **E7** | [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 1/7 | 6 | 14% | 🔄 in corso *(FEAT-006 consegnata)* |
 | **E8** | [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | 0/3 | 3 | 0% | 📋 non iniziata |
 | **E9** | [`second-brain`](../../requirements/second-brain/epic.md) | 0/10 | 10 | 0% | 📋 non iniziata |
-| **E10** | [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 43/79 | 36 | 54% | 🔄 **in corso — direzione attiva** |
+| **E10** | [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 43/80 | 37 | 54% | 🔄 **in corso — direzione attiva** |
 | **E11** | [`multiutente`](../../requirements/multiutente/epic.md) | 0/6 | 6 | 0% | 📋 non iniziata |
 | **E12** | [`usabilita`](../../requirements/usabilita/epic.md) | 5/14 | 9 | 36% | 🔄 in corso |
 | **E13** | [`documentazione-marketing`](../../requirements/documentazione-marketing/epic.md) | 8/15 | 7 | 53% | 🔄 in corso |
@@ -278,7 +278,7 @@ combinazioni**, 8 esiti su 8.
 | **E15** | [`fedelta-dogfood`](../../requirements/fedelta-dogfood/epic.md) | 7/12 | 5 | 58% | 🔄 in corso *(1 ritirata)* |
 | **E16** | [`evoluzione-modello-wiki`](../../requirements/evoluzione-modello-wiki/epic.md) | 0/4 | 4 | 0% | 📋 non iniziata |
 | **E17** | [`separazione-ecosistema`](../../requirements/separazione-ecosistema/epic.md) | 1/16 | 15 | 6% | 🔄 **in corso — il lavoro che domina** |
-| | **TOTALE** | **120/257** | **137** | **47%** | — |
+| | **TOTALE** | **120/258** | **138** | **47%** | — |
 
 > **Come leggere «Consegnate»:** il denominatore esclude le feature **ritirate** (`❌ Won't`/not-a-bug) e
 > quelle **promosse ad altra epica** — contarle come debito gonfierebbe il residuo con lavoro che nessuno

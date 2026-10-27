@@ -1,0 +1,342 @@
+"""Thin CLI of the deterministic wiki core (research D6, contracts/cli-commands.md).
+
+`python -m sertor_core.wiki_tools <op> --config <path> [--root <override>] [--json]` (equivalent
+to the console-script `sertor-wiki-tools`). **Thin** entry-point (Principio I): parses args →
+calls pure functions → prints the JSON contract or a human summary. Exit code: `0` ok · `1`
+explicit error (`ConfigError`) with message on stderr and, with `--json`, `wiki.error/1`.
+"""
+from __future__ import annotations
+
+import argparse
+import sys
+from datetime import date
+from pathlib import Path
+
+from sertor_core.domain.errors import ConfigError, SertorError
+from sertor_core.wiki_tools.collect import collect
+from sertor_core.wiki_tools.contracts import ErrorResult
+from sertor_core.wiki_tools.lint import lint
+from sertor_core.wiki_tools.profile import load_profile
+from sertor_core.wiki_tools.registry import append_log, migrate_log, upsert_index
+from sertor_core.wiki_tools.scan import scan
+from sertor_core.wiki_tools.structure import init_structure, validate
+
+_OPS = ("scan", "structure", "validate", "lint", "collect", "index", "append-log", "migrate",
+        "upsert-index", "move", "reconcile", "ritual-check", "distill-audit")
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="sertor-wiki-tools",
+        description="Host-agnostic deterministic wiki core (zero LLM, offline).",
+    )
+    parser.add_argument("op", choices=_OPS, help="operation to run")
+    parser.add_argument(
+        "subcommand", nargs="?", default=None,
+        help="subcommand (e.g. 'init' for 'structure') or source page (for 'move')",
+    )
+    parser.add_argument(
+        "dest", nargs="?", default=None,
+        help="destination page (for 'move')",
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true",
+        help="for 'move': compute the plan without modifying any file",
+    )
+    parser.add_argument(
+        "--config", default=None,
+        help="path to the host profile (TOML); if omitted, auto-discovery: "
+             "./wiki.config.toml then ./wiki/wiki.config.toml",
+    )
+    parser.add_argument(
+        "--root", default=None,
+        help="override of the host project root (Transcriptio-style --root)",
+    )
+    parser.add_argument(
+        "--json", action="store_true",
+        help="emit the JSON contract on stdout (otherwise a terse human summary)",
+    )
+    parser.add_argument(
+        "--entry-op", default=None,
+        help="log entry operation (for 'append-log': record|lint|distill|...)",
+    )
+    parser.add_argument(
+        "--title", default=None, help="log entry title (for 'append-log')",
+    )
+    parser.add_argument(
+        "--date", default=None,
+        help="entry date YYYY-MM-DD (for 'append-log'; default: today)",
+    )
+    parser.add_argument(
+        "--body-file", default=None,
+        help="file with the curated entry body (for 'append-log'; otherwise read from stdin)",
+    )
+    parser.add_argument(
+        "--page", default=None,
+        help="relative path of the page in the wiki (for 'upsert-index')",
+    )
+    parser.add_argument(
+        "--summary", default=None,
+        help="index-line summary (for 'upsert-index'; otherwise read from stdin). "
+             "The text is author-provided (LLM); the CLI neither generates nor rewrites it",
+    )
+    parser.add_argument(
+        "--base", default=None,
+        help="git diff base for 'ritual-check' (default: merge-base with master)",
+    )
+    parser.add_argument(
+        "--pages", default=None,
+        help="explicit comma-separated page list (rel to wiki root) for 'ritual-check' "
+             "(overrides git diff; use on non-git hosts)",
+    )
+    parser.add_argument(
+        "--threshold", type=int, default=None,
+        help="min distinct points for a distill-audit candidate (default: [ritual].audit_threshold "
+             "or 2)",
+    )
+    return parser
+
+
+def _launched_inside_wiki(cwd: Path) -> bool:
+    """True when CWD is itself the wiki dir whose `./wiki.config.toml` is the one feature 016 placed
+    in `wiki/` (i.e. `../wiki/wiki.config.toml` is the SAME file).
+
+    In that case the host root is the PARENT: resolving the config's relative paths (`root="wiki"`,
+    `source_dirs`) from CWD would double-nest to `wiki/wiki/...` (e.g. a misfiled log).
+    """
+    local = cwd / "wiki.config.toml"
+    parent = cwd.parent / "wiki" / "wiki.config.toml"
+    return local.is_file() and parent.is_file() and parent.samefile(local)
+
+
+def _discover_config(cwd: Path, root_arg: str | None) -> tuple[str, str | None]:
+    """Auto-discover the config path + effective root (feature 016); `ConfigError` if none found.
+
+    Search order: `./wiki.config.toml` (config at the host root, back-compat) then
+    `./wiki/wiki.config.toml` (config inside `wiki/`, root = CWD). Special case: launched from
+    INSIDE the wiki dir → anchor the root to the parent (see `_launched_inside_wiki`).
+    """
+    if (cwd / "wiki.config.toml").is_file():
+        inside = root_arg is None and _launched_inside_wiki(cwd)
+        result = ("wiki.config.toml", str(cwd.parent) if inside else root_arg)
+    elif (cwd / "wiki" / "wiki.config.toml").is_file():
+        result = ("wiki/wiki.config.toml", root_arg if root_arg is not None else ".")
+    else:
+        raise ConfigError(
+            "wiki configuration not found: expected ./wiki.config.toml or "
+            "./wiki/wiki.config.toml (or specify it with --config)"
+        )
+    return result
+
+
+def _explicit_root(config_arg: str, root_arg: str | None) -> str | None:
+    """Host root for an explicit `--config` (mirrors the auto-discovery anti-double-nest guard).
+
+    `--root` always wins. Otherwise, if the config sits inside a `wiki/` dir (the feature-016
+    layout `<host>/wiki/wiki.config.toml`), the host root is the dir CONTAINING `wiki/`, not the
+    config's own parent. Defaulting it (to `config.parent` in `load_profile`) would make the
+    config's `root="wiki"` re-nest to `wiki/wiki/` (the misfiled-log regression, recurred
+    2026-06-14 via `append-log` with no `--root`). Config elsewhere keeps the `None` default.
+    """
+    if root_arg is not None:
+        return root_arg
+    parent = Path(config_arg).parent
+    if parent.name == "wiki":
+        return str(parent.parent)
+    return None
+
+
+def _resolve_config(config_arg: str | None, root_arg: str | None) -> tuple[str, str | None]:
+    """Resolve `--config` (explicit or auto-discovered) and the effective `root_override` (016).
+
+    Explicit `--config` uses `--root` if given, else derives the host root (`_explicit_root`, the
+    same anti-double-nest guard as auto-discovery); otherwise auto-discovery (`_discover_config`).
+    Generic search order, no Sertor-specific path (Principio X).
+    """
+    if config_arg is not None:
+        result = (config_arg, _explicit_root(config_arg, root_arg))
+    else:
+        result = _discover_config(Path.cwd(), root_arg)
+    return result
+
+
+def _parse_date(value: str | None) -> date | None:
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError as exc:
+        raise ConfigError(f"invalid date (expected YYYY-MM-DD): {value}") from exc
+
+
+def _read_body(args) -> str | None:
+    """Curated entry body: from `--body-file`, otherwise from stdin if not a terminal."""
+    if args.body_file:
+        return Path(args.body_file).read_text(encoding="utf-8")
+    if not sys.stdin.isatty():
+        data = sys.stdin.read()
+        return data if data.strip() else None
+    return None
+
+
+def _run(args, profile):
+    op = args.op
+    if op == "scan":
+        return scan(profile)
+    if op == "lint":
+        return lint(profile)
+    if op == "validate":
+        return validate(profile)
+    if op == "collect":
+        return collect(profile)
+    if op == "structure":
+        if args.subcommand not in (None, "init"):
+            raise ConfigError(
+                f"subcommand 'structure {args.subcommand}' not supported (use 'init')"
+            )
+        return init_structure(profile)
+    if op == "index":
+        from sertor_core.wiki_tools.indexing import index_wiki
+
+        return index_wiki(profile)
+    if op == "append-log":
+        if not args.entry_op or not args.title:
+            raise ConfigError("append-log requires --entry-op and --title")
+        return append_log(
+            profile, args.entry_op, args.title,
+            on_date=_parse_date(args.date), body=_read_body(args),
+        )
+    if op == "migrate":
+        return migrate_log(profile)
+    if op == "upsert-index":
+        if not args.page:
+            raise ConfigError("upsert-index requires --page")
+        summary = args.summary if args.summary is not None else _read_body(args)
+        if summary is None:
+            raise ConfigError("upsert-index requires the summary (--summary or stdin)")
+        return upsert_index(profile, args.page, summary)
+    if op == "move":
+        from sertor_core.wiki_tools.move import move
+
+        if not args.subcommand or not args.dest:
+            raise ConfigError("move requires <src> <dest>")
+        return move(profile, args.subcommand, args.dest, dry_run=args.dry_run)
+    if op == "reconcile":
+        from sertor_core.wiki_tools.reconcile import reconcile
+
+        return reconcile(profile)
+    if op == "ritual-check":
+        from sertor_core.wiki_tools.ritual_check import ritual_check
+
+        pages = [p.strip() for p in args.pages.split(",") if p.strip()] if args.pages else None
+        return ritual_check(profile, base=args.base, pages=pages)
+    if op == "distill-audit":
+        from sertor_core.wiki_tools.distill_audit import distill_audit
+
+        return distill_audit(profile, threshold=args.threshold)
+    raise ConfigError(f"unsupported operation: {op}")  # pragma: no cover
+
+
+def _human(op: str, result) -> str:
+    data = result.to_dict()
+    if op == "scan":
+        # Name the files (E10-FEAT-045): "how many" forces the reader to reconstruct "which ones".
+        # `message` itself stays the host's verbatim string — the naming belongs to the rendering.
+        line = (
+            f"pending={data['pending']} anchor={data['anchor']} "
+            f"kind={data.get('anchor_kind')} :: {data['message']}"
+        )
+        paths = data.get("pending_paths") or []
+        if paths:
+            more = data.get("pending_truncated") or 0
+            tail = f" (+{more} more)" if more else ""
+            line += "\n  " + "\n  ".join(paths) + tail
+        if data.get("stale_recording"):
+            line += f"\n  note: uncommitted log entry {data['stale_recording']} is not today's"
+        return line
+    if op in ("lint", "validate"):
+        return (
+            f"broken_links={len(data['broken_links'])} orphans={len(data['orphans'])} "
+            f"missing_frontmatter={len(data['missing_frontmatter'])} "
+            f"naming_violations={len(data['naming_violations'])} "
+            f"stubs={len(data.get('stubs', []))}"
+        )
+    if op == "collect":
+        return f"pages={len(data['pages'])} root={data['root']}"
+    if op == "structure":
+        return f"created={data['created']} skipped_existing={data['skipped_existing']}"
+    if op == "index":
+        return (
+            f"collection={data['collection']} documents={data['documents']} "
+            f"regenerated={data['regenerated']}"
+        )
+    if op == "append-log":
+        return (
+            f"written={data['written']} partition={data['partition']} created={data['created']}"
+        )
+    if op == "migrate":
+        return (
+            f"migrated_entries={data['migrated_entries']} created={len(data['created'])} "
+            f"skipped={len(data['skipped'])}"
+        )
+    if op == "upsert-index":
+        return f"written={data['written']} action={data['action']} page={data['page']}"
+    if op == "move":
+        occ = sum(r["occurrences"] for r in data["rewritten"])
+        return (
+            f"moved={data['moved']} dry_run={data['dry_run']} "
+            f"rewritten={len(data['rewritten'])} occurrences={occ}"
+        )
+    if op == "reconcile":
+        return f"candidates={len(data['candidates'])} clean={data['clean']}"
+    if op == "ritual-check":
+        # Declare the perimeter here too, ALWAYS — including when nothing was found. It is the
+        # rendering a person and an agent actually read, and a bare `0` cannot distinguish "there is
+        # nothing" from "I looked somewhere else" (E10-FEAT-060).
+        sources = (data.get("perimeter") or {}).get("sources") or []
+        breakdown = " · ".join(f"{s['name']}={s['paths']}" for s in sources)
+        return (
+            f"scope={data['scope']} pages={len(data['pages_in_scope'])} "
+            f"distill={len(data['distill_candidates'])} drift={len(data['drift_candidates'])}\n"
+            f"  perimetro: {breakdown}\n"
+            f"  {data['declaration_scaffold']}"
+        )
+    if op == "distill-audit":
+        top = ", ".join(c["name"] for c in data["candidates"][:5])
+        tail = f" :: top: {top}" if top else ""
+        return (
+            f"debt={data['debt']} threshold={data['threshold']} "
+            f"corpus_files={data['corpus_files']}{tail}"
+        )
+    return result.to_json()  # pragma: no cover
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Console-script entry point. Returns the exit code."""
+    # Stable UTF-8 I/O on ANY console (e.g. Windows cp1252 cannot encode → wiki content has
+    # non-ASCII characters). stdout/stderr for output; **stdin** for the curated body of
+    # `append-log` (otherwise the body would be decoded as cp1252 → mojibake).
+    for stream in (sys.stdin, sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
+        except (AttributeError, ValueError):  # stream not reconfigurable (e.g. redirect): ok
+            pass
+
+    args = _build_parser().parse_args(argv)
+    try:
+        config_path, root_override = _resolve_config(args.config, args.root)
+        profile = load_profile(config_path, root_override=root_override)
+        result = _run(args, profile)
+    except SertorError as exc:
+        error = ErrorResult(error=type(exc).__name__, message=str(exc))
+        if args.json:
+            print(error.to_json())
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
+    print(result.to_json() if args.json else _human(args.op, result))
+    return 0
+
+
+if __name__ == "__main__":  # pragma: no cover
+    raise SystemExit(main())

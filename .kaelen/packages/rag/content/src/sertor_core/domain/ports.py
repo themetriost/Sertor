@@ -1,0 +1,264 @@
+"""Core ports (abstractions): the boundaries behind which concrete providers live.
+
+The core depends ONLY on these abstractions (Principio I/II); adapters in `adapters/` implement
+them by importing external SDKs. Defined as `Protocol` (structural typing): an adapter is
+compliant if it has the right methods, without any inheritance — easy to mock in tests.
+"""
+from __future__ import annotations
+
+from typing import Literal, Protocol, runtime_checkable
+
+from sertor_core.domain.entities import (
+    ContextBundle,
+    EmbeddedChunk,
+    GraphData,
+    LexicalEntry,
+    ObservedEvent,
+    RetrievalResult,
+    SymbolHit,
+)
+from sertor_core.domain.memory import SessionRef, TranscriptContent
+
+DocTypeFilter = Literal["code", "doc", "both"]
+
+
+@runtime_checkable
+class EmbeddingProvider(Protocol):
+    """Abstraction for the embedding provider (contracts/embedding-provider.md).
+
+    `embed` processes texts in batches and preserves order; `dim` is the vector dimension,
+    discovered on the first batch if initially `None`.
+    """
+
+    name: str
+    dim: int | None
+    batch_size: int
+
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        """Vectors for each text (order preserved). `[]` for empty input."""
+        ...
+
+
+@runtime_checkable
+class VectorStore(Protocol):
+    """Abstraction for the vector persistence+search backend (contracts/vector-store.md).
+
+    Namespaced by `collection`. `query` filters by document type without separate indexes.
+    A missing collection causes `query` to return `[]` and `exists()==False`; an unreachable
+    backend raises `VectorStoreError` (Principio IV).
+    """
+
+    def upsert(self, collection: str, records: list[EmbeddedChunk]) -> None:
+        """Insert/replace chunks (id, vector, payload). Idempotent for the same ids."""
+        ...
+
+    def query(
+        self,
+        collection: str,
+        vector: list[float],
+        k: int,
+        doc_type: DocTypeFilter = "both",
+    ) -> list[RetrievalResult]:
+        """Top-k by similarity, with optional doc_type filter. `[]` if collection is absent."""
+        ...
+
+    def delete(self, collection: str, ids: list[str]) -> None:
+        """Remove the given chunks from the collection."""
+        ...
+
+    def reset(self, collection: str) -> None:
+        """Empty/delete the collection (for idempotent rebuild-from-scratch).
+
+        Idempotent: resetting a missing collection is not an error.
+        """
+        ...
+
+    def exists(self, collection: str) -> bool:
+        """True if the collection exists and is initialised."""
+        ...
+
+    def list_collections(self) -> list[str]:
+        """Names of existing collections in the backend.
+
+        Used by the multi-collection combined search to distinguish a corpus that has never
+        been indexed (soft degradation) from one indexed with a different provider (explicit
+        error, FR-009).
+        """
+        ...
+
+
+@runtime_checkable
+class LexicalIndex(Protocol):
+    """Abstraction for the lexical index of the hybrid engine (contracts/lexical-index-port.md).
+
+    Namespaced by `collection` (the same corpus+provider namespaced name as the vector
+    collection it mirrors, FR-005). The policy for a missing index (degradation REQ-034) belongs
+    to the engine: the caller checks `exists()` before `query`.
+    """
+
+    def build(self, collection: str, entries: list[LexicalEntry]) -> None:
+        """Fully replace the collection's index (idempotent, atomic rebuild)."""
+        ...
+
+    def query(
+        self,
+        collection: str,
+        query: str,
+        k: int,
+        doc_type: DocTypeFilter = "both",
+    ) -> list[str]:
+        """Chunk ids in lexical relevance order, max `k`; doc_type filter applied BEFORE cut."""
+        ...
+
+    def lookup(self, collection: str, chunk_ids: list[str]) -> list[LexicalEntry]:
+        """Entries for the requested ids (order preserved, missing ones skipped).
+
+        Used by the hybrid engine to materialise `RetrievalResult`s for candidates that
+        arrived via the lexical path only (absent from the dense pool).
+        """
+        ...
+
+    def exists(self, collection: str) -> bool:
+        """True if the lexical index for the collection is present."""
+        ...
+
+    def reset(self, collection: str) -> None:
+        """Delete the collection's index (absent = no-op)."""
+        ...
+
+
+@runtime_checkable
+class Reranker(Protocol):
+    """Abstraction for the second reranking stage (FEAT-004, group C — optional extra).
+
+    `model` identifies the cross-encoder for the `rerank` log event (REQ-061).
+    """
+
+    model: str
+
+    def rerank(
+        self, query: str, results: list[RetrievalResult], k: int
+    ) -> list[RetrievalResult]:
+        """Top-k re-ordered by query-passage relevance; `score` = cross-encoder score."""
+        ...
+
+
+@runtime_checkable
+class CodeGraph(Protocol):
+    """Abstraction for the structural code graph (FEAT-005, contracts/code-graph-port.md).
+
+    Namespaced by corpus ONLY (the graph does not depend on the embedding provider). Two
+    absence semantics: graph not built → `GraphNotFoundError` (explicit); symbol absent →
+    empty results (legitimate). `build` does not require the graph library.
+    """
+
+    def build(self, corpus: str, data: GraphData) -> None:
+        """Fully replace the corpus artifact (snapshot, atomic, idempotent)."""
+        ...
+
+    def find_symbol(self, name: str) -> list[SymbolHit]:
+        """Definitions with an exact name match (class/function/method); empty if absent."""
+        ...
+
+    def list_symbols(self) -> list[str]:
+        """Every qualified name known to the graph (118, FR-024).
+
+        Feeds the deterministic lexical entry way: matching a natural-language question against the
+        symbol table needs the table. Same absence semantics as the rest of the port — graph not
+        built raises, an empty graph returns an empty list.
+        """
+        ...
+
+    def who_calls(self, name: str) -> list[SymbolHit]:
+        """Nodes with an outgoing `calls` edge to the symbol."""
+        ...
+
+    def related_docs(self, name: str) -> list[str]:
+        """Paths of documents with a `mentions` edge to the symbol."""
+        ...
+
+    def get_context(self, name: str) -> ContextBundle:
+        """Multi-hop bundle (definitions, callers, callees, bases, docs), sections limited."""
+        ...
+
+    def exists(self, corpus: str) -> bool:
+        """True if the graph artifact for the corpus is present."""
+        ...
+
+    def reset(self, corpus: str) -> None:
+        """Delete the corpus artifact (absent = no-op)."""
+        ...
+
+
+@runtime_checkable
+class ObservabilityStore(Protocol):
+    """Abstraction for the persistent observability archive (feature 020,
+    contracts/observability-store.md).
+
+    The seam between where events live (the persistence handler writes here) and who queries them
+    (FEAT-002 aggregation/report reads here). A store failure is non-fatal: `record_event` is a
+    no-op and `query_events` returns `[]`, both with a warning — the observed operation is never
+    affected (the observability layer is a service add-on, not a source of truth).
+    """
+
+    def record_event(self, ts: float, operation: str, fields: dict) -> None:
+        """Append an observed event (instant, operation kind, already-redacted fields)."""
+        ...
+
+    def query_events(
+        self, operation: str | None, since: float | None, until: float | None
+    ) -> list[ObservedEvent]:
+        """Events matching the filters (None = unconstrained), ordered by `ts` ascending."""
+        ...
+
+
+@runtime_checkable
+class RetrieverStrategy(Protocol):
+    """Retrieval strategy injected into the facade by the composition root (FR-017/018).
+
+    The caller guarantees that the primary collection exists (the facade keeps its tolerant
+    policy: the `exists()` check + warning remain its responsibility).
+    """
+
+    def retrieve(self, query: str, k: int, doc_type: DocTypeFilter) -> list[RetrievalResult]:
+        """Retrieval on the primary collection, already verified to exist."""
+        ...
+
+
+@runtime_checkable
+class TranscriptCaptureAdapter(Protocol):
+    """Host-agnostic abstraction of transcript capture (feature 031, FR-004).
+
+    Separates the *what* (list sessions, read their content as turns) from the host-specific
+    *how*. Claude Code is the first implementation, selected ONLY via configuration (FR-005). The
+    source is read-only: list/read never modify nor delete the files (FR-007). Structural typing →
+    a fake with the same methods is compliant without inheritance (SC-005).
+    """
+
+    kind: str  # adapter kind (e.g. "claude-code") → sessions.adapter_kind (FR-012)
+
+    def list_sessions(self) -> list[SessionRef]:
+        """References to the current project's sessions at the source.
+
+        Source absent/empty → `[]` (the adapter emits the warning; the service leaves the archive
+        unchanged, FR-006). Does not raise an unhandled error.
+        """
+        ...
+
+    def read_session(self, ref: SessionRef) -> TranscriptContent:
+        """Read the session and structure its turns (best-effort, defensive — D3).
+
+        Unparsable lines → skip + warning, never fatal. A session with no extractable turns
+        returns `turns=()` (the service skips it).
+        """
+        ...
+
+    def source_available(self) -> bool:
+        """True if the session source exists (E4-FEAT-011).
+
+        Lets the host-agnostic archiving service surface a **visible warning** when memory is
+        enabled but the source is absent (a path-encoding mismatch, or a project never opened with
+        this adapter) instead of a silent `archived=0` — without the service checking the adapter
+        identity. `list_sessions` keeps its contract (absent → `[]`).
+        """
+        ...

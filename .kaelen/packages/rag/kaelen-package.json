@@ -1,0 +1,1232 @@
+{
+  "schema": "kaelen.package-record/2",
+  "node": "sertor",
+  "capability": "rag",
+  "version": "0.7.0a1",
+  "contract": 1,
+  "engine": {
+    "version": "0.16.3",
+    "digest": "sha256:5e4d350fa236ac5329981934fe4b2a94b90adc79568cccfa5559eeb003a96c67"
+  },
+  "placement_rule": {
+    "digest": "sha256:90a023caa9780b3ba60d83aedea622a780f1a744635dea3e2283a7979e2a2f7b"
+  },
+  "producer_state": "sha256:1fc4e893c5c6940a92da1ca1266c98af79418c3ab5cc6f2c68ce74480534d106",
+  "targets": [
+    {
+      "target": "claude-code",
+      "items": [
+        {
+          "name": "rag-usage",
+          "kind": "instruction-block",
+          "qualifier": "assistant-instructions",
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": "CLAUDE.md",
+              "wrapper": "markdown-section",
+              "section": "rag/rag-usage",
+              "shared": {
+                "role": "instruction block"
+              }
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "sertor-rag",
+          "kind": "mcp-server",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".mcp.json",
+              "wrapper": "mcp-json-entry",
+              "section": "mcpServers.sertor-rag",
+              "shared": {
+                "role": "MCP server registration"
+              }
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "guided-setup",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".claude/skills/guided-setup/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "concierge",
+          "kind": "agent",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".claude/agents/concierge.md",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "eval-suite-author",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".claude/skills/eval-suite-author/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "eval-feedback",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".claude/skills/eval-feedback/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "memory-capture",
+          "kind": "hook",
+          "qualifier": "session-end",
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".sertor/kaelen/rag/hooks/memory-capture.py",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            },
+            {
+              "path": ".claude/settings.json",
+              "wrapper": "claude-hook-entry",
+              "section": "hooks.SessionEnd",
+              "shared": {
+                "role": "hook registration"
+              }
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "runtime-state",
+          "kind": "git-lines",
+          "qualifier": ".gitignore",
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".gitignore",
+              "wrapper": "git-section",
+              "section": "rag/runtime-state",
+              "shared": {
+                "role": "git ignore rules"
+              }
+            }
+          ],
+          "verified": "2026-10-18"
+        }
+      ]
+    },
+    {
+      "target": "github-copilot",
+      "items": [
+        {
+          "name": "rag-usage",
+          "kind": "instruction-block",
+          "qualifier": "assistant-instructions",
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".github/instructions/rag-usage.instructions.md",
+              "wrapper": "copilot-instructions-file",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "sertor-rag",
+          "kind": "mcp-server",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".mcp.json",
+              "wrapper": "mcp-json-entry",
+              "section": "mcpServers.sertor-rag",
+              "shared": {
+                "role": "MCP server registration"
+              }
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "guided-setup",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".github/skills/guided-setup/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "concierge",
+          "kind": "agent",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".github/agents/concierge.agent.md",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "eval-suite-author",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".github/skills/eval-suite-author/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "eval-feedback",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".github/skills/eval-feedback/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "memory-capture",
+          "kind": "hook",
+          "qualifier": "session-end",
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".sertor/kaelen/rag/hooks/memory-capture.py",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            },
+            {
+              "path": ".github/hooks/memory-capture.json",
+              "wrapper": "copilot-hook-file",
+              "section": "hooks.sessionEnd",
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "runtime-state",
+          "kind": "git-lines",
+          "qualifier": ".gitignore",
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".gitignore",
+              "wrapper": "git-section",
+              "section": "rag/runtime-state",
+              "shared": {
+                "role": "git ignore rules"
+              }
+            }
+          ],
+          "verified": "2026-10-18"
+        }
+      ]
+    },
+    {
+      "target": "codex",
+      "items": [
+        {
+          "name": "rag-usage",
+          "kind": "instruction-block",
+          "qualifier": "assistant-instructions",
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": "AGENTS.md",
+              "wrapper": "markdown-section",
+              "section": "rag/rag-usage",
+              "shared": {
+                "role": "instruction block"
+              }
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "sertor-rag",
+          "kind": "mcp-server",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".codex/config.toml",
+              "wrapper": "mcp-toml-entry",
+              "section": "mcp_servers.sertor-rag",
+              "shared": {
+                "role": "MCP server registration"
+              }
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "guided-setup",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".agents/skills/guided-setup/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "concierge",
+          "kind": "agent",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".codex/agents/concierge.toml",
+              "wrapper": "codex-agent-toml",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "eval-suite-author",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".agents/skills/eval-suite-author/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "eval-feedback",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".agents/skills/eval-feedback/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "memory-capture",
+          "kind": "hook",
+          "qualifier": "session-end",
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".sertor/kaelen/rag/hooks/memory-capture.py",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            },
+            {
+              "path": ".codex/hooks.json",
+              "wrapper": "codex-hook-entry",
+              "section": "hooks.SessionEnd",
+              "shared": {
+                "role": "hook registration"
+              }
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "runtime-state",
+          "kind": "git-lines",
+          "qualifier": ".gitignore",
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".gitignore",
+              "wrapper": "git-section",
+              "section": "rag/runtime-state",
+              "shared": {
+                "role": "git ignore rules"
+              }
+            }
+          ],
+          "verified": "2026-10-18"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": ".gitattributes",
+      "size": 8,
+      "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da"
+    },
+    {
+      "path": "content/capabilities/rag/agents/concierge.md",
+      "size": 3261,
+      "sha256": "3274e2e1f63014ec1a8ecbd3354ca7a1bd54b0c04091c39248000cdcaa3e207b"
+    },
+    {
+      "path": "content/capabilities/rag/blocks/rag-usage.md",
+      "size": 2795,
+      "sha256": "15ca45b6c5990f1bd07c3af8fd35bf74d2a477c25ee06309797a309b84cd8d69"
+    },
+    {
+      "path": "content/capabilities/rag/hooks/memory-capture.py",
+      "size": 1662,
+      "sha256": "6e917ed2191e7c370adf530ab0b5d5235914eaf27a09178ffae83fbb2382b35b"
+    },
+    {
+      "path": "content/capabilities/rag/mcp/sertor-rag.json",
+      "size": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+    },
+    {
+      "path": "content/capabilities/rag/runtime/requirements.lock",
+      "size": 168590,
+      "sha256": "198927566e5f009efbe19ea946096b8990792648593b147eeb6e8545965a6476"
+    },
+    {
+      "path": "content/capabilities/rag/skills/eval-feedback/SKILL.md",
+      "size": 4129,
+      "sha256": "95e6e89812400f051983467821ba0b4615d7b2c738a2e7b3c7ab83883efe276f"
+    },
+    {
+      "path": "content/capabilities/rag/skills/eval-suite-author/SKILL.md",
+      "size": 8542,
+      "sha256": "cd15861c276bd28788aa97e7c1578fd1c9d4b8d219e930a686f2ba78c06e0d2a"
+    },
+    {
+      "path": "content/capabilities/rag/skills/guided-setup/SKILL.md",
+      "size": 7165,
+      "sha256": "b6686106a05299cddd21d75a7032f3288657296c63d983fa7cb6410ddd205bc3"
+    },
+    {
+      "path": "content/src/sertor_core/README.md",
+      "size": 6699,
+      "sha256": "d15d74f58c03ce0d4b77df88296eee07c0da727461fd2b050dda3f9aef52a1d5"
+    },
+    {
+      "path": "content/src/sertor_core/__init__.py",
+      "size": 2372,
+      "sha256": "db86f8171510d2783bda0e5a0587b96f9288c59a0fe81eba7bc1fe0ec5954911"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/__init__.py",
+      "size": 86,
+      "sha256": "dfd09168c27673050bc67e4b11f5f4b1283ae96a37b46c69e7c26b14b82e059d"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/capture/__init__.py",
+      "size": 300,
+      "sha256": "9c2b7763eb0994c913511b2a89e05824562915d2ad9e9dd90db6b7f41a993089"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/capture/claude_code.py",
+      "size": 7449,
+      "sha256": "27b7cf16c1178d31cfa92574777621374d1a1ad7a6fa0d49a7d13a4dbf31673e"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/capture/copilot_cli.py",
+      "size": 10375,
+      "sha256": "9dc4d113ab6b58af2f78bdf1aebf0063562e1ff3e7885496d37b4caba08814e4"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/embeddings/__init__.py",
+      "size": 86,
+      "sha256": "5b4bc4c33ddb2b397d41b33c67ec31818d4a2083436b495071766161ee45ead1"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/embeddings/_openai_protocol.py",
+      "size": 5147,
+      "sha256": "f89437e5a883a56ff58a06e29ec8a477e26ef96b6769717d5dc3f5bfd8e5cadd"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/embeddings/_retry.py",
+      "size": 2628,
+      "sha256": "50f81d0a998adaadf8837a967f73057e92a246c4e7a7844b3c3cebb3a2c5b7e1"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/embeddings/azure.py",
+      "size": 2110,
+      "sha256": "713887ae016850c3d1eed962f96f9a327dbd8f5f2e844373049dd71d0292eb42"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/embeddings/cache.py",
+      "size": 6497,
+      "sha256": "ca685bcfb39d4a73f71504ed4248a6c6c685d23ed1f48ff0b8e721025542df70"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/embeddings/glove.py",
+      "size": 4822,
+      "sha256": "8a271605a7082baf2ebb15bb4efd0dd7cc268a86b14ec8351d4f70d22b1a4f98"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/embeddings/glove_cache.py",
+      "size": 5338,
+      "sha256": "68a5d8705a1d4e5174192768b35c8b0cee5eac086b451e741d52d6dba2ca3644"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/embeddings/hashing.py",
+      "size": 2648,
+      "sha256": "6718e1f9a5fc378df285cb1209b093a775e132569ca9e672bcde1ecbc8c69b0c"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/embeddings/ollama.py",
+      "size": 4463,
+      "sha256": "950c4827ffa6a452dc2da9ced01d385576f0568d16dccfc99c3f70806deab14c"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/embeddings/openai.py",
+      "size": 1968,
+      "sha256": "9bd4863850568b408dd98ca8101368aae52b1f44102829096c08c0e0f3ffaf88"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/graph/__init__.py",
+      "size": 85,
+      "sha256": "3949d71939215b725f0c2b312154d70dbde0316542ef4c423452c0e50791ddbb"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/graph/networkx_graph.py",
+      "size": 11047,
+      "sha256": "ba3f3dd3cada6396f51f894e82f0622666684d0a42b6c3c74e7ca58a875bc6fe"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/lexical/__init__.py",
+      "size": 59,
+      "sha256": "7c2a380cdd4cdd35a88460332bfdb47ef491dbcbf180131e0de5622762078fb2"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/lexical/bm25.py",
+      "size": 6851,
+      "sha256": "0fa6365f994c3f21137ae6f80e2048461e0952a1c657339a310827291aecbfc0"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/memory/__init__.py",
+      "size": 199,
+      "sha256": "48919884984b3d5c6138971341aa6a8992499cc96c0e3868a80de15b4ed9e610"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/memory/archive.py",
+      "size": 8591,
+      "sha256": "1a0b01107e55aefd5439510a3d38813f4b643a1d68ceafc7ec7c021771ad2317"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/rerank/__init__.py",
+      "size": 70,
+      "sha256": "10aca8221c948b9b0ffc6b5fd2177d4aa2e09c94263dc83e569d8318a6260f5c"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/rerank/flashrank.py",
+      "size": 1428,
+      "sha256": "00aebbe74e4d3dd531da7650f754ec105db6dd1724840b304ef1a31089d31c59"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/vectorstores/__init__.py",
+      "size": 95,
+      "sha256": "e8722775cc5fea52ab7c6e34ad8fa925f83dc8abcc90de3a7c032f9a629b3fb5"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/vectorstores/azure_search.py",
+      "size": 5660,
+      "sha256": "50bc0758ee74c8a49888641a28068dbf49543b7820b53166c9967bacbbb8eb57"
+    },
+    {
+      "path": "content/src/sertor_core/adapters/vectorstores/chroma.py",
+      "size": 11361,
+      "sha256": "88b0d4e57451120d0face1f29ea8f024fe50a2858055e40970f00609a791e878"
+    },
+    {
+      "path": "content/src/sertor_core/cli/__init__.py",
+      "size": 384,
+      "sha256": "3abd8ff8cfb5c8f98365410843cb8b32c688e20d4584af8f2d24767980fc35ea"
+    },
+    {
+      "path": "content/src/sertor_core/cli/__main__.py",
+      "size": 53953,
+      "sha256": "cd17aca92adcff9886a7c0f519437ea208185f0a268b68e3314e86383ebf248e"
+    },
+    {
+      "path": "content/src/sertor_core/cli/logging_setup.py",
+      "size": 4469,
+      "sha256": "7776525b2af393556061ddff5363a4ddb75387c8443fb94b0b377fdf09af170f"
+    },
+    {
+      "path": "content/src/sertor_core/cli/output.py",
+      "size": 33269,
+      "sha256": "99587735721971ccc06394a72a3ab8d8eeeed1bb80ff1550a0cbaa6efcda9049"
+    },
+    {
+      "path": "content/src/sertor_core/composition.py",
+      "size": 42706,
+      "sha256": "dd54dfaebf84ea5e4430f95ab7e23dc621fd1cc498e3e63885fa36769a6e8370"
+    },
+    {
+      "path": "content/src/sertor_core/config/__init__.py",
+      "size": 63,
+      "sha256": "446043a8729fcc557264b01bd5ce55928f61946f30690eb6b1b5f8043d95c3f0"
+    },
+    {
+      "path": "content/src/sertor_core/config/settings.py",
+      "size": 28992,
+      "sha256": "f2166218498cbd0328362fb4fdeada5e610441b4fcb3a8f11bf032af10ae1a30"
+    },
+    {
+      "path": "content/src/sertor_core/domain/__init__.py",
+      "size": 87,
+      "sha256": "247b64896602104dabb8c174d0bdbe388f552325939d8e2a9f2c986ef1c7c1e3"
+    },
+    {
+      "path": "content/src/sertor_core/domain/agent_context.py",
+      "size": 6446,
+      "sha256": "f915272f730c4927712e5ee3e6b656582e5e81cb970e4414a2caf9b46c0da655"
+    },
+    {
+      "path": "content/src/sertor_core/domain/entities.py",
+      "size": 7318,
+      "sha256": "9db1b9cff68fd86fa61196cdad4fedba6cb308c56558e0c326d141e96025b092"
+    },
+    {
+      "path": "content/src/sertor_core/domain/errors.py",
+      "size": 16059,
+      "sha256": "0997566d40cdcaad43261ef4d24ca28501149b42b72e6f6c29ccb67619262626"
+    },
+    {
+      "path": "content/src/sertor_core/domain/memory.py",
+      "size": 3219,
+      "sha256": "14b31da602dc8ed4d408b6078b7fd5c89a45ae497860ec3ce21d25ce0433b512"
+    },
+    {
+      "path": "content/src/sertor_core/domain/ports.py",
+      "size": 9782,
+      "sha256": "8ae38fd56d476d4c7f261173188a82ec00d84b89c5ef0b7a9ab1fe1c0229615c"
+    },
+    {
+      "path": "content/src/sertor_core/engines/__init__.py",
+      "size": 95,
+      "sha256": "08b37cbb6a2e0e33ff5c48d4c473cf8b8550e7e0158bd902a0cca002daa785da"
+    },
+    {
+      "path": "content/src/sertor_core/engines/baseline.py",
+      "size": 4593,
+      "sha256": "af163d8ac79197a707218db1432bf6e9acf07397470f5da9b1c8e47cf91475fd"
+    },
+    {
+      "path": "content/src/sertor_core/engines/evaluation.py",
+      "size": 3499,
+      "sha256": "e0711ccae5a6c7d76611389395b9713a6ebf841372b2877844cde97c2b6b54ea"
+    },
+    {
+      "path": "content/src/sertor_core/engines/hybrid.py",
+      "size": 10895,
+      "sha256": "fe30c2487658f532a9d095fccfa986f57cace23d1e456e288b1a4fa498dd361e"
+    },
+    {
+      "path": "content/src/sertor_core/observability/README.md",
+      "size": 1102,
+      "sha256": "3c94ab840c79e10a7c1c7eb56a613a3990f386880c10dc7dc24de9fd61d42785"
+    },
+    {
+      "path": "content/src/sertor_core/observability/__init__.py",
+      "size": 186,
+      "sha256": "a77cfca4f2b53d1032dbbe55a690d3b3c71da29392a3cf8e4f3f2d5ee2bd97cb"
+    },
+    {
+      "path": "content/src/sertor_core/observability/capture.py",
+      "size": 3026,
+      "sha256": "b33b50563c25f1d3331a7a4b278c540d6da9e7db4c6313a87515f29796126f3e"
+    },
+    {
+      "path": "content/src/sertor_core/observability/live.py",
+      "size": 9163,
+      "sha256": "a5aafaa709f612272e80a30c581b6a733b43810ede52aabb535cafdd8d18531c"
+    },
+    {
+      "path": "content/src/sertor_core/observability/logging.py",
+      "size": 1949,
+      "sha256": "64f4fffe26587a24b83ac39f4c2aa9277139ac6a6c630292b0864f4a31b5f470"
+    },
+    {
+      "path": "content/src/sertor_core/observability/otel.py",
+      "size": 7412,
+      "sha256": "daef0d35a15ac840d6f2fffeaf812984cbc29eed281a1d5be520998649f34852"
+    },
+    {
+      "path": "content/src/sertor_core/observability/scrub.py",
+      "size": 3240,
+      "sha256": "1048b009bbad1b768cbeb327972132a1ffd769ff80889636196776efdd18a3d5"
+    },
+    {
+      "path": "content/src/sertor_core/observability/store.py",
+      "size": 3898,
+      "sha256": "9b89f082c36123ef3b40186eb4277d4ab9453a63041fcb5503d0f40503a7edd4"
+    },
+    {
+      "path": "content/src/sertor_core/observability/tui.py",
+      "size": 3789,
+      "sha256": "3e1bfc92c0a120fa01c2d76abde6fdb1afd2314488b139a72145d4acd0952b0b"
+    },
+    {
+      "path": "content/src/sertor_core/services/__init__.py",
+      "size": 95,
+      "sha256": "daa9b99c1aaacd6af923908b6ca2ffe72edfa85329b98060dcfbf972b2cf6a96"
+    },
+    {
+      "path": "content/src/sertor_core/services/agent_context.py",
+      "size": 8400,
+      "sha256": "de9f65af14f8f9452bd35ff4579acd2d98c1a18520a22ce90216e1ceb9c569be"
+    },
+    {
+      "path": "content/src/sertor_core/services/chunking/__init__.py",
+      "size": 95,
+      "sha256": "5d63146f558fc6f93f8ee76d820fa4d5610cd82eb763ca25f143e388f54ed4ea"
+    },
+    {
+      "path": "content/src/sertor_core/services/chunking/_tokens.py",
+      "size": 3236,
+      "sha256": "a01c76248294237387666fdda8bc2d46ee56f65b3e25403763ba632fa8f5b9dc"
+    },
+    {
+      "path": "content/src/sertor_core/services/chunking/aspnet.py",
+      "size": 16930,
+      "sha256": "9f160ef818efab7fcc4f758e2f25d53be6be738521e5c42f5a614ac7240547a1"
+    },
+    {
+      "path": "content/src/sertor_core/services/chunking/code.py",
+      "size": 11412,
+      "sha256": "741c87cef6fc5ede79870f6b5bc1022553f469395a7a42bdb9f4908b14982617"
+    },
+    {
+      "path": "content/src/sertor_core/services/chunking/dispatch.py",
+      "size": 4970,
+      "sha256": "e76ca51b2cc28945c1e3e4aae0e4fd95c4fd617cc2b2ebfed5fb14eb679a505f"
+    },
+    {
+      "path": "content/src/sertor_core/services/chunking/fallback.py",
+      "size": 1415,
+      "sha256": "6a4d1fb84db8bad487610c53c2caba5ec9473891196ad64fd37ecd2490e4e9e2"
+    },
+    {
+      "path": "content/src/sertor_core/services/chunking/markdown.py",
+      "size": 1806,
+      "sha256": "34dd5b32bbdedaac4f9059b032e3c4dfdba8af81f6e953281b832795c30163e5"
+    },
+    {
+      "path": "content/src/sertor_core/services/dedup.py",
+      "size": 3539,
+      "sha256": "69abbb145f4b709fdf95aa288bb0c4e97e8ed41dbd2b04cfe06836e450915bdc"
+    },
+    {
+      "path": "content/src/sertor_core/services/doctor.py",
+      "size": 14163,
+      "sha256": "9638fed2263eb9ea3537cf381c5b717be5c72e24e62ee91cc1330d63c383527c"
+    },
+    {
+      "path": "content/src/sertor_core/services/episodic_search.py",
+      "size": 13935,
+      "sha256": "b16aa36efc5ec44e83d75a142e02a8a5a9093b94687b9907a3ad7156ed2a4b51"
+    },
+    {
+      "path": "content/src/sertor_core/services/eval/__init__.py",
+      "size": 1494,
+      "sha256": "8bbc2ffc334e419f3a448fceb31d9341db893c8aceaab46e26f8e30b89afce2a"
+    },
+    {
+      "path": "content/src/sertor_core/services/eval/baseline_io.py",
+      "size": 9272,
+      "sha256": "a3df26a6bcb99f4a034b6d27162dc40c6e937283e166c32a0503c4adcbd2cfe4"
+    },
+    {
+      "path": "content/src/sertor_core/services/eval/fused_runner.py",
+      "size": 5592,
+      "sha256": "e61f30cfa5245ee97ccb895adcd2ccd7afad6a883fe51e95ffe30a7d868219bd"
+    },
+    {
+      "path": "content/src/sertor_core/services/eval/fusion.py",
+      "size": 3152,
+      "sha256": "d4739f751ec651723da5f0100359ae043223175f90e976e6cdf7de59ac80760b"
+    },
+    {
+      "path": "content/src/sertor_core/services/eval/graph_baseline_io.py",
+      "size": 3256,
+      "sha256": "c25189a06adf01ba0e4a98870e69252734f67fedb01689ad02d032bda7e13f03"
+    },
+    {
+      "path": "content/src/sertor_core/services/eval/graph_eval.py",
+      "size": 4223,
+      "sha256": "d81d36c9ed6e18d7633e653e120fdd1da961463325ea4d8862cabd881e26519f"
+    },
+    {
+      "path": "content/src/sertor_core/services/eval/graph_regression.py",
+      "size": 2278,
+      "sha256": "611301c65359be6728dd43e389b1b493561fb04862c8e350a023f56d1034430d"
+    },
+    {
+      "path": "content/src/sertor_core/services/eval/graph_runner.py",
+      "size": 3882,
+      "sha256": "8e64a13b20f7f2597224e51abc599e4e3e1c4a6cb7db449f4b7691511f04352d"
+    },
+    {
+      "path": "content/src/sertor_core/services/eval/models.py",
+      "size": 13407,
+      "sha256": "d56fce7593e1b9fd270b03e0e28ca8a0eb93ce1d1b06181dfa9ec5525a6f50a2"
+    },
+    {
+      "path": "content/src/sertor_core/services/eval/regression.py",
+      "size": 4330,
+      "sha256": "bc5ac0b839f6c4c5039fd186e71e0fd615f2b173791a1b67a1a7ef1fe93f43cf"
+    },
+    {
+      "path": "content/src/sertor_core/services/eval/runner.py",
+      "size": 5180,
+      "sha256": "25f7b770482a342849ab7e63e4d75ea50116bc2dcdb6242c93a5ed00c9d2419a"
+    },
+    {
+      "path": "content/src/sertor_core/services/eval/suite_io.py",
+      "size": 13177,
+      "sha256": "6a850938d788a5b5de9fa222d5e2ad68b7bfd0791ab90c86e18dceb520a5514f"
+    },
+    {
+      "path": "content/src/sertor_core/services/graph_entry.py",
+      "size": 6929,
+      "sha256": "0edef37895dbb88368a662ad64afb063801b227521bb77487ce4512b9ff447f3"
+    },
+    {
+      "path": "content/src/sertor_core/services/graph_extraction.py",
+      "size": 14457,
+      "sha256": "5405689cb4f32348f4887a4697c93b474daa1083cfc64253696ccb89eebdf6bf"
+    },
+    {
+      "path": "content/src/sertor_core/services/index_manifest.py",
+      "size": 17771,
+      "sha256": "5094b798727d3e52735e50626b003296a7d2416a5dcb547e254be3b04cd9878d"
+    },
+    {
+      "path": "content/src/sertor_core/services/indexing.py",
+      "size": 20007,
+      "sha256": "4b44b3776ee00f1b1161e3427a61ab140f3587a99a4f91ce487e3b77e9885f0f"
+    },
+    {
+      "path": "content/src/sertor_core/services/ingestion.py",
+      "size": 6279,
+      "sha256": "a488b8aa731462571fbf1784a9a9695b9592bc8f0584055aa18f680c35a3b77b"
+    },
+    {
+      "path": "content/src/sertor_core/services/memory_archive.py",
+      "size": 5940,
+      "sha256": "cc2f12b9fb5fa4cbaa0d686b6a0768485f53784e5c21be22b229441b4b1bdcf5"
+    },
+    {
+      "path": "content/src/sertor_core/services/memory_semantic.py",
+      "size": 22729,
+      "sha256": "783be78b0863ac9231d124f44bd0ff4c7b40a8b80d64beaf3965af24fd4139cb"
+    },
+    {
+      "path": "content/src/sertor_core/services/observability_report.py",
+      "size": 8208,
+      "sha256": "836c768e3116fe94f339752a8906df9320ec8b4ae3e52ddaad7ba23a70dbeeda"
+    },
+    {
+      "path": "content/src/sertor_core/services/retrieval.py",
+      "size": 14133,
+      "sha256": "a869feb7f6d64700d4eb5fc9942eed3865d6b38aaf34557cd32287c3d08df6b1"
+    },
+    {
+      "path": "content/src/sertor_core/wiki_tools/__init__.py",
+      "size": 1481,
+      "sha256": "8e491b715fffb26f9f701aa3bd106c1203fe949fb909211132be98b14c029f4b"
+    },
+    {
+      "path": "content/src/sertor_core/wiki_tools/__main__.py",
+      "size": 14505,
+      "sha256": "40f4729313c6a7e1c68cdbd58db532f6629569a655c98a5317ea3097c5848e51"
+    },
+    {
+      "path": "content/src/sertor_core/wiki_tools/collect.py",
+      "size": 4449,
+      "sha256": "84831841b5a4ba160e03c9b6b2ff743712ff3709adf23587504619c387558772"
+    },
+    {
+      "path": "content/src/sertor_core/wiki_tools/contracts.py",
+      "size": 11973,
+      "sha256": "be611a4c6349049dc0fd4b46cafef59fafa760789a534d666598fe5725aad7d7"
+    },
+    {
+      "path": "content/src/sertor_core/wiki_tools/coverage.py",
+      "size": 4808,
+      "sha256": "926720403dfe9b8f2e9f5b48e2a4ed393ea7dd75b088aa123cb4a2b3541f8d2c"
+    },
+    {
+      "path": "content/src/sertor_core/wiki_tools/distill_audit.py",
+      "size": 7482,
+      "sha256": "dcd8d94ce3cb3da90d1e308d5ba04774bb3e1845d23d42dfff837baa2db2218f"
+    },
+    {
+      "path": "content/src/sertor_core/wiki_tools/frontmatter.py",
+      "size": 5464,
+      "sha256": "b2385a28b97f1d73a69162ca1afda8513e865f5f6f515d52c4d6e2a2e6a82930"
+    },
+    {
+      "path": "content/src/sertor_core/wiki_tools/indexing.py",
+      "size": 2373,
+      "sha256": "54f37a759800d3d66ae5e9cb9f081ee215526568d969305a5317a745458ebfa0"
+    },
+    {
+      "path": "content/src/sertor_core/wiki_tools/lint.py",
+      "size": 4278,
+      "sha256": "d4bae7ca21e3c3a37f548cb08274b104fd13d8515796616906417149fd6169bc"
+    },
+    {
+      "path": "content/src/sertor_core/wiki_tools/move.py",
+      "size": 5452,
+      "sha256": "1e1903dc2fd2971447cabeccdf89b80a852440ec2ba95cdfe828c1fd139e2ef2"
+    },
+    {
+      "path": "content/src/sertor_core/wiki_tools/profile.py",
+      "size": 9086,
+      "sha256": "b8fcf8a0103fc4a6aa9a668c0e85459194336e7a0831007898e1a42fe73ea5d1"
+    },
+    {
+      "path": "content/src/sertor_core/wiki_tools/reconcile.py",
+      "size": 1949,
+      "sha256": "0f885b3cebfb4ad76209bdef5a2a3a7203869b517bd057b74f511916612a2a84"
+    },
+    {
+      "path": "content/src/sertor_core/wiki_tools/registry.py",
+      "size": 11672,
+      "sha256": "e1a4b469077603ff843da1183a0c5496e6657faee082f36a255278e02210553b"
+    },
+    {
+      "path": "content/src/sertor_core/wiki_tools/ritual_check.py",
+      "size": 15919,
+      "sha256": "a846d28137a6428873853ecd5f97058fa6c7b2e733c6e7eab83b41e0226fa00d"
+    },
+    {
+      "path": "content/src/sertor_core/wiki_tools/scan.py",
+      "size": 17433,
+      "sha256": "98a108281c4a06d9d39f5a989d65c33788900f78f67a872a08f7a3d9741eef2b"
+    },
+    {
+      "path": "content/src/sertor_core/wiki_tools/structure.py",
+      "size": 5064,
+      "sha256": "1c637da4a67a60cac32abcf1559f2f936a24999507ab26bc5a82b039e8689f9b"
+    },
+    {
+      "path": "content/src/sertor_core/wiki_tools/vcs.py",
+      "size": 8662,
+      "sha256": "ac83b25b6c90161e597779c5a5849ef80006aff2bab1df3778f91d845eeb453a"
+    },
+    {
+      "path": "content/src/sertor_mcp/__init__.py",
+      "size": 361,
+      "sha256": "b108662223bbe317c9a03f1506d1d1778f57c3cc2cb740f34e1e54a64dff5dcb"
+    },
+    {
+      "path": "content/src/sertor_mcp/_sdk.py",
+      "size": 3423,
+      "sha256": "01f28a736b03585bb6d2b2dab06125bca20dc12d3ca109b7c4143c36ca9e5c0b"
+    },
+    {
+      "path": "content/src/sertor_mcp/server.py",
+      "size": 27225,
+      "sha256": "50b637198e712926e554c034e68755468a76f040c0575e21f4869b007de3716b"
+    },
+    {
+      "path": "declaration.toml",
+      "size": 4264,
+      "sha256": "2bb5f9da1e1e6898f39c177552c73936d8d09726a459ac13d41200fcd1299858"
+    },
+    {
+      "path": "engine/kaelen-0.16.3.dist-info/METADATA",
+      "size": 51,
+      "sha256": "9343b1682a4c7d6630a267cfb83c6fdb481374875df9c163859c9787345066c4"
+    },
+    {
+      "path": "engine/kaelen/__init__.py",
+      "size": 29,
+      "sha256": "a2ef6a8c323152cc5d88cc8ea265dca29c73bc00ad2924acad84f4219097ec55"
+    },
+    {
+      "path": "engine/kaelen/__main__.py",
+      "size": 58,
+      "sha256": "875841a5cd812d6dfc5f525527d83993cdab1982b20e135a561887348a69e306"
+    },
+    {
+      "path": "engine/kaelen/cli.py",
+      "size": 38999,
+      "sha256": "adebc5f98ddcedc18df4b6f61d3688ad5f70059d9b435938a623ef3cdc64a9e6"
+    },
+    {
+      "path": "engine/kaelen/contract/__init__.py",
+      "size": 1506,
+      "sha256": "32592239090d06e9cd691fe27cfa885c7b7281c149ce9ac08c9e9c196dc38199"
+    },
+    {
+      "path": "engine/kaelen/contract/coherence.py",
+      "size": 12819,
+      "sha256": "36e7c607498f83054f990f3941b9bf0e59462a4dc34c6386378532362f9ffdff"
+    },
+    {
+      "path": "engine/kaelen/contract/declaration-v1.schema.json",
+      "size": 10299,
+      "sha256": "e82c74a3ed3a19e2eb5d19694e50bbe557b7ece536f7f5ad4feb0817f5ec26ad"
+    },
+    {
+      "path": "engine/kaelen/contract/schema_eval.py",
+      "size": 8334,
+      "sha256": "d2573745232fae68d9d0b6592e410454582de95872a5f2f4e7b5d65b1a1e4926"
+    },
+    {
+      "path": "engine/kaelen/draft/__init__.py",
+      "size": 18040,
+      "sha256": "4508b4a8a49e2e5b9479aa34089c40ffe280ad1277066b67d470c5d6911f1f4b"
+    },
+    {
+      "path": "engine/kaelen/draft/conventions.json",
+      "size": 1571,
+      "sha256": "21e8556d35bd2a3c8753a2393d9c332d637261b3078e79aa54227f55055caa42"
+    },
+    {
+      "path": "engine/kaelen/host/__init__.py",
+      "size": 89604,
+      "sha256": "0ba64cb95095dc20ad3ce38a4cdab78dc853dd9c1b4325ad890879afd21da20f"
+    },
+    {
+      "path": "engine/kaelen/host/apply.py",
+      "size": 31089,
+      "sha256": "02d375ed1552ef6c89dd68106fcee4844ce26d9bb85a1675f1a87d9731777c88"
+    },
+    {
+      "path": "engine/kaelen/host/checks.py",
+      "size": 6240,
+      "sha256": "837a4ac1945e0bad91f34821e6ee5e77998611e38c04870cb34d39706d6ed50b"
+    },
+    {
+      "path": "engine/kaelen/host/consent.py",
+      "size": 2280,
+      "sha256": "fa0ea0a45356cce79c1f44209dc30757326e57f3ab39c20c11b766495710915a"
+    },
+    {
+      "path": "engine/kaelen/host/contributions.py",
+      "size": 18340,
+      "sha256": "dd65a341d98531574007fe0f8a82094867f6bdf07d7becbc315b9b67a4fe77f7"
+    },
+    {
+      "path": "engine/kaelen/host/desired.py",
+      "size": 10029,
+      "sha256": "376887304d5ac1cb5e6e369492ede60246d83a2002c6886915d045b336ed81d3"
+    },
+    {
+      "path": "engine/kaelen/host/home.py",
+      "size": 6632,
+      "sha256": "3aeed0b33001903d7ef94ef1a54233797a021a261e134ea9bf5b22f97d1ad321"
+    },
+    {
+      "path": "engine/kaelen/host/jsonspan.py",
+      "size": 14593,
+      "sha256": "9a411c7c7f0f9b257dadf8badfbdcbdf4a571a1adb6be528d81cc34103561c10"
+    },
+    {
+      "path": "engine/kaelen/host/live.py",
+      "size": 5985,
+      "sha256": "0ef235b3b0aa9f37d068218515a579feb2aa25d70f0dcaa4efde7191ae1c85d4"
+    },
+    {
+      "path": "engine/kaelen/host/reconcile.py",
+      "size": 29421,
+      "sha256": "35011b2883e49a0d8e681382d18f69ae04c7a80b829f490a2be41ff03ed852d4"
+    },
+    {
+      "path": "engine/kaelen/host/registry.py",
+      "size": 7481,
+      "sha256": "0e53d416a09f9040ba3e0c88230f4f63a7073ce486fe23d6562e33602e9c2928"
+    },
+    {
+      "path": "engine/kaelen/host/render.py",
+      "size": 6626,
+      "sha256": "a77568a8b5bd4ee33da8b11cb7943234f6007397aa7bea7098abf4f43f3398e6"
+    },
+    {
+      "path": "engine/kaelen/host/runtime.py",
+      "size": 14607,
+      "sha256": "d1ff13579597fc7e2684e195fd3ce15b137fc6047a5d1c25fcf6a79e2fafb4f0"
+    },
+    {
+      "path": "engine/kaelen/host/sections.py",
+      "size": 4453,
+      "sha256": "0a9bddc02ccae6a6d55cac21d14f1fe1e9c6b9cac5d4584878c3744206b3a6a2"
+    },
+    {
+      "path": "engine/kaelen/host/settingsfile.py",
+      "size": 2542,
+      "sha256": "1be24d525363cd4fb5e64dda4d68319bf0e187cffd120614d5fbf8ed1573ab30"
+    },
+    {
+      "path": "engine/kaelen/host/source.py",
+      "size": 6488,
+      "sha256": "22c2b0ab17adaa4b176d8297a1b1936bfaeea9ae4f937d59cfe478a3195046da"
+    },
+    {
+      "path": "engine/kaelen/host/state.py",
+      "size": 4500,
+      "sha256": "ff1408c4d99395140bc1a27492a0f80b92c97faa625504101a3b9a6c2abbb1f0"
+    },
+    {
+      "path": "engine/kaelen/outcome.py",
+      "size": 17007,
+      "sha256": "ae72adbbebd05a784efc92284eaaca40e92679899f76d2f23f8ba31333fbd447"
+    },
+    {
+      "path": "engine/kaelen/package/__init__.py",
+      "size": 9297,
+      "sha256": "8c9201695c9e72e4e097613c4a0808e55d51365c6a8490dfa3109a1270e70768"
+    },
+    {
+      "path": "engine/kaelen/package/distribution.py",
+      "size": 3608,
+      "sha256": "565b414c4664a0355601db5e9521a0b1635f7056b4df072c22edba4e45920c89"
+    },
+    {
+      "path": "engine/kaelen/package/inject.py",
+      "size": 1997,
+      "sha256": "95c8c0d1709a9fc497d7b13f33f7751a9698fed4607d23aebce30d40741b7a71"
+    },
+    {
+      "path": "engine/kaelen/package/launcher.py.txt",
+      "size": 972,
+      "sha256": "8e94e699dfe7db1fa055f7e38651e2d3744282a789f3a7a246eebac013f0d63d"
+    },
+    {
+      "path": "engine/kaelen/package/location.py",
+      "size": 3209,
+      "sha256": "f81e91de9b83bd672ba0a4872a7c0bb543cb0d19b8ac67b7b006cd1717837799"
+    },
+    {
+      "path": "engine/kaelen/package/plan.py",
+      "size": 7161,
+      "sha256": "5520b8c26612f1d337571e527000aa97eae33debcd4958d28d70354350af887e"
+    },
+    {
+      "path": "engine/kaelen/package/record.py",
+      "size": 2244,
+      "sha256": "7329e3045e8a97888ad5d71071c97c39106006ccece3ea0502fda4e5bd30ec5f"
+    },
+    {
+      "path": "engine/kaelen/placement/__init__.py",
+      "size": 14326,
+      "sha256": "66d4878aed77643a141ec339817d4ae65e91cd58c398ef0c735c3dad73ebe643"
+    },
+    {
+      "path": "engine/kaelen/placement/rule.json",
+      "size": 40314,
+      "sha256": "ceb718080f30c678fdfa9ebe88034f183d15af10db67ea2c6c27b85ef063589c"
+    },
+    {
+      "path": "engine/kaelen/producer.py",
+      "size": 3786,
+      "sha256": "4fef7ad6fe2a87bb9aad35e85a125663fb11a9ff533d277f1b2a36f76cf0805e"
+    },
+    {
+      "path": "engine/kaelen/provenance.py",
+      "size": 12278,
+      "sha256": "08e08d395d5478b5da5cebf9a1aa450523f534c86cb58bbca37a9020464726b6"
+    },
+    {
+      "path": "engine/kaelen/validate.py",
+      "size": 4490,
+      "sha256": "34e2679b9f796e1123528d9785f854443088cd354e56d94d3576080cf3ee2f04"
+    },
+    {
+      "path": "engine/kaelen/versions.py",
+      "size": 3057,
+      "sha256": "b200895a59087cd7a6bf176c147862aeef3340670abae2ff1737baa800d9a11d"
+    },
+    {
+      "path": "kaelen_launch.py",
+      "size": 388,
+      "sha256": "1f5f72e4b590787712516d4de30198c38bbad386c355ee4a13460f9cedb956e1"
+    },
+    {
+      "path": "pyproject.toml",
+      "size": 554,
+      "sha256": "b5f9125edbd93cd3a1e886480505ac603f03dbd9e29833a02d75e7ee3caa77b0"
+    },
+    {
+      "path": "run.py",
+      "size": 972,
+      "sha256": "8e94e699dfe7db1fa055f7e38651e2d3744282a789f3a7a246eebac013f0d63d"
+    }
+  ]
+}
