@@ -99,7 +99,8 @@ def test_disabled_reranker_returns_pure_rrf_without_event(caplog):
 def test_rerank_configured_without_extra_raises_actionable_error(tmp_path, monkeypatch):
     # Simulate the extra being absent even if installed: importing `flashrank` → ImportError.
     monkeypatch.setitem(sys.modules, "flashrank", None)
-    settings = Settings(index_dir=tmp_path, corpus="x", rerank_enabled=True)
+    settings = Settings(index_dir=tmp_path, corpus="x", rerank_enabled=True,
+                        embed_provider="hash")     # no network: GloVe would download its vectors
     with pytest.raises(ConfigError) as exc:
         composition.build_engine(settings)
     assert "sertor-core[rerank]" in str(exc.value)     # actionable (FR-012), never silent fallback
