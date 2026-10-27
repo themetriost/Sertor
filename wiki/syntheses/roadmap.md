@@ -3,7 +3,7 @@ title: Roadmap & stato di prodotto (pagina viva)
 type: synthesis
 tags: [roadmap, piano, stato, produzione, backlog]
 created: 2026-06-03
-updated: 2026-10-12
+updated: 2026-10-27
 sources: ["requirements/**/epic.md", "specs/**", ".specify/memory/constitution.md", "VERSION", "CHANGELOG.md"]
 ---
 
@@ -343,7 +343,7 @@ combinazioni**, 8 esiti su 8.
 **Fermi per decisione utente:** go-public/PyPI (E2-FEAT-006, dal 2026-07-17) · E11 `multiutente`
 (differita) · E2-FEAT-019 (attesa esterna Noetix) · rimozione del CLI `acta` **di macchina** (0.4.0,
 `uv tool uninstall acta`: tocca gli altri nodi dell'host). Il runtime del nodo è su **Acta 0.7.0** dal
-2026-10-20; il residuo di macchina tiene rosso solo il controllo `cli-di-macchina` di `acta doctor`.
+2026-10-20; il residuo di macchina tiene rosso solo il controllo `cli-di-macchina` di `acta doctor`. Installazione di Sinthari (`skill-authoring`) — in attesa di un pacchetto col motore Kaelen 0.16.3 (2026-10-27).
 
 > **⚠️ La superficie che nessuna guardia presidia — emersa il 2026-07-30, da rifletterci prima di
 > scegliere.** In un giorno si sono rotte **due** superfici testuali: la roadmap (5 voci che dichiaravano

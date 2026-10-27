@@ -15,7 +15,8 @@ from sertor_core.engines.hybrid import HybridEngine
 
 
 def _settings(tmp_path, **overrides) -> Settings:
-    base = Settings(index_dir=tmp_path / ".index", corpus="graph-sel")
+    # `hash`: no network — the default GloVe embedder downloads its vectors (hermetic unit test).
+    base = Settings(index_dir=tmp_path / ".index", corpus="graph-sel", embed_provider="hash")
     return replace(base, **overrides) if overrides else base
 
 
