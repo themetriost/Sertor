@@ -1,0 +1,130 @@
+# Sertor RAG as a Kaelen capability — TEST PREVIEW (E17-FEAT-004).
+#
+# Retrieval over the host's own code and documentation, served to the agent through an MCP server and
+# a CLI. This first package is for testing on throwaway hosts: it does NOT yet replace
+# `sertor install rag`, and it leaves out, on purpose, what still depends on the frozen installer:
+#   - the freshness, usage-check and version-check hooks (they call the CLI through `uv run --project
+#     .sertor`, and version-check is superseded by `kaelen update`);
+#   - [[previous]] for hosts set up by `sertor install rag` (digests to be measured on such a host).
+#
+# Sources live in capabilities/rag/ (adapted copies: the CLI goes through the capability's launcher);
+# the runtime code is the repository's own src/ (sertor_core + sertor_mcp).
+
+contract = 1
+node = "sertor"
+capability = "rag"
+version = "0.7.0a1"
+targets = ["claude-code", "github-copilot", "codex"]
+settings_file = ".sertor/.env"
+
+# --- The agent-facing items -------------------------------------------------------------------------
+
+# How the agent uses the RAG: vehicles only, search before reading, errors are signals.
+[[items]]
+kind = "instruction-block"
+name = "rag-usage"
+source = "capabilities/rag/blocks/rag-usage.md"
+extension_point = "assistant-instructions"
+
+# The MCP server: search_code / search_docs / search_combined / navigation / memory tools.
+[[items]]
+kind = "mcp-server"
+name = "sertor-rag"
+source = "capabilities/rag/mcp/sertor-rag.json"
+entry = "mcp"
+
+# Guided setup: from installed to a verified RAG (provider choice, .sertor/.env, first index, doctor),
+# and the concierge agent that conducts it. Adapted to Kaelen: no install step, no `sertor configure`.
+[[items]]
+kind = "skill"
+name = "guided-setup"
+source = "capabilities/rag/skills/guided-setup"
+
+[[items]]
+kind = "agent"
+name = "concierge"
+source = "capabilities/rag/agents/concierge.md"
+
+# Assisted authoring of the evaluation suite, and relevance feedback that refines it.
+[[items]]
+kind = "skill"
+name = "eval-suite-author"
+source = "capabilities/rag/skills/eval-suite-author"
+
+[[items]]
+kind = "skill"
+name = "eval-feedback"
+source = "capabilities/rag/skills/eval-feedback"
+
+# Conversation memory capture at session end (does nothing unless SERTOR_MEMORY=true).
+[[items]]
+kind = "hook"
+name = "memory-capture"
+source = "capabilities/rag/hooks/memory-capture.py"
+event = "session-end"
+runtime = true
+
+# What the RAG writes in the host and must never be versioned: index, config with keys, state.
+[[items]]
+kind = "git-lines"
+name = "runtime-state"
+file = ".gitignore"
+lines = [".sertor/.index*", ".sertor/.env", ".sertor/.rag-health.json", ".sertor/.last-hook-error"]
+
+# --- The environment --------------------------------------------------------------------------------
+
+[runtime]
+language = "python"
+python = ">=3.11"
+lock = "capabilities/rag/runtime/requirements.lock"   # uv export, extras azure/graph/mcp/rerank, hashed
+code = "src"
+
+[runtime.entry_points.sertor-rag]
+module = "sertor_core.cli"
+
+[runtime.entry_points.mcp]
+module = "sertor_mcp.server"
+
+# --- Configuration the host operator supplies (written to .sertor/.env) ------------------------------
+
+[[settings]]
+name = "SERTOR_EMBED_PROVIDER"
+description = "Embedding provider: glove (local, default), hash, ollama, azure or openai."
+secret = false
+default = "glove"
+
+[[settings]]
+name = "SERTOR_STORE_BACKEND"
+description = "Vector store: local (Chroma on disk, default) or azure (Azure AI Search)."
+secret = false
+default = "local"
+
+[[settings]]
+name = "SERTOR_CORPUS"
+description = "Name of this project's corpus; the index lives in .sertor/.index-<corpus>."
+secret = false
+required = true
+
+[[settings]]
+name = "SERTOR_MEMORY"
+description = "Conversation memory: true to archive past sessions locally (off by default, privacy)."
+secret = false
+default = "false"
+
+[[settings]]
+name = "OPENAI_API_KEY"
+description = "API key for SERTOR_EMBED_PROVIDER=openai."
+secret = true
+required = false
+
+[[settings]]
+name = "AZURE_OPENAI_ENDPOINT"
+description = "Azure OpenAI endpoint for SERTOR_EMBED_PROVIDER=azure."
+secret = false
+required = false
+
+[[settings]]
+name = "AZURE_OPENAI_API_KEY"
+description = "Azure OpenAI key for SERTOR_EMBED_PROVIDER=azure."
+secret = true
+required = false
