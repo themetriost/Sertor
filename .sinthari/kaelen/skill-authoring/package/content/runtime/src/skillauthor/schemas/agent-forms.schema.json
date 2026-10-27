@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sinthari.local/skillauthor/agent-forms.schema.json",
+  "title": "skillauthor agent-forms",
+  "type": "object",
+  "required": [
+    "source",
+    "reference",
+    "forms",
+    "in_sync"
+  ],
+  "properties": {
+    "source": {
+      "type": "string"
+    },
+    "reference": {
+      "type": "string"
+    },
+    "in_sync": {
+      "type": "boolean"
+    },
+    "forms": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "file",
+          "target",
+          "status",
+          "differences"
+        ],
+        "properties": {
+          "file": {
+            "type": "string"
+          },
+          "target": {
+            "enum": [
+              "claude-code",
+              "github-copilot",
+              "codex"
+            ]
+          },
+          "status": {
+            "enum": [
+              "in-sync",
+              "declared-losses-only",
+              "unverified",
+              "diverges"
+            ]
+          },
+          "differences": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "field",
+                "kind",
+                "detail"
+              ],
+              "properties": {
+                "field": {
+                  "type": "string"
+                },
+                "kind": {
+                  "enum": [
+                    "declared-loss",
+                    "missing",
+                    "different",
+                    "prompt-differs",
+                    "unverified"
+                  ]
+                },
+                "detail": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

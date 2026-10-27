@@ -143,6 +143,8 @@ extend-exclude = [
     "packages/speclift", "packages/specaudit",
     "packages/sertor/src/sertor_installer/assets",
     ".claude/hooks",  # dogfood's own installed copies of the deliverable hook artifacts (A-09)
+    # Capabilities installed by Kaelen from other nodes: third-party code with its own style.
+    ".kaelen", ".sinthari", ".claude/skills/skill-authoring",
 ]
 src = [
     "src", "tests",

@@ -1,0 +1,150 @@
+{
+  "skill_name": "agent-review",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Rivedi la definizione dell'agente in configuration-manager/configuration-manager.md. È un agente di un altro nodo (Sertor) che usiamo solo con Claude Code: lo deleghiamo in background per fare i commit dei nostri step. Vorrei sapere cosa aspettarmi quando lo delego e cosa andrebbe cambiato, in ordine di importanza. Non modificare il file. Scrivi il rapporto in review.md e i finding in review.json nella cartella degli output.",
+      "expected_output": "Un rapporto con i finding ordinati (bloccanti, poi migliorie), ognuno con prova e proposta, e un registro JSON; il file dell'agente invariato.",
+      "files": [
+        "configuration-manager/configuration-manager.md"
+      ],
+      "expectations": [
+        {
+          "text": "Segnala come bloccante che il model fissato (haiku) determina l'identità con cui l'agente firma i commit (regola del footer Co-Authored-By, righe 25-27) e che quindi un brief non può ottenere un'altra firma; cita il campo model e le righe della firma",
+          "kind": "merit"
+        },
+        {
+          "text": "Segnala che il prompt non dice cosa prevale quando il brief chiede qualcosa che contraddice le sue regole o l'intestazione (per esempio una firma diversa), oppure che il rapporto non obbliga a dichiarare gli scostamenti dal brief",
+          "kind": "merit"
+        },
+        {
+          "text": "Non segnala come difetto bloccante il campo tools per eccesso di strumenti (è ristretto; il divieto di scrivere file, che la shell può scavalcare, è un confine dichiarato e vale al massimo una miglioria) né la parità fra assistenti (l'agente è solo per Claude Code). Un bloccante perché l'unica shell dichiarata (Bash) manca su Windows non viola questa asserzione",
+          "kind": "merit"
+        },
+        {
+          "text": "Ogni finding del rapporto ha una prova (campo o numero di riga) e una modifica proposta, e i bloccanti precedono le migliorie",
+          "kind": "protocol"
+        },
+        {
+          "text": "review.json esiste e ogni finding ha id, severity (blocking o improvement), summary e status",
+          "kind": "protocol"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Devo distribuire l'agente skill-author/skill-author.md su Claude Code, GitHub Copilot e Codex. Delega la sua procedura alla skill skill-authoring, che trovi in skill-author/skills/skill-authoring/SKILL.md. Prima di distribuirlo voglio una review della definizione dell'agente: cosa succede quando lo delego con un brief incompleto, cosa può fare, cosa non è scritto. Non modificare niente. Scrivi il rapporto in review.md e i finding in review.json nella cartella degli output.",
+      "expected_output": "Un rapporto con i finding ordinati, che vede i difetti fra intestazione, brief e confine d'autorità, e un registro JSON.",
+      "files": [
+        "skill-author/skill-author.md",
+        "skill-author/skills/skill-authoring/SKILL.md"
+      ],
+      "expectations": [
+        {
+          "text": "Segnala che l'intestazione non dichiara tools, quindi l'agente riceve tutti gli strumenti dell'ospite (compreso avviare altri agenti e scrivere file), mentre i confini del prompt (niente versioning, installazione, scrittura fuori dalla cartella) restano affidati alla promessa",
+          "kind": "merit"
+        },
+        {
+          "text": "Segnala che né il prompt né la skill delegata dicono cosa fare quando il brief non autorizza il collaudo (esecuzioni costose con sotto-agenti): il prompt copre solo il caso in cui l'agente non può avviarli",
+          "kind": "merit"
+        },
+        {
+          "text": "Segnala che nulla obbliga l'agente a dichiarare e restituire come domanda un valore provvisorio (default) scritto al posto di una decisione dell'autore, per esempio nella bozza della skill",
+          "kind": "merit"
+        },
+        {
+          "text": "Non segnala come difetto l'assenza del campo model",
+          "kind": "merit"
+        },
+        {
+          "text": "Ogni finding del rapporto ha una prova (campo o numero di riga) e una modifica proposta, e i bloccanti precedono le migliorie",
+          "kind": "protocol"
+        },
+        {
+          "text": "review.json esiste e ogni finding ha id, severity (blocking o improvement), summary e status",
+          "kind": "protocol"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Abbiamo scritto un nuovo agente, clean-agent/changelog-drafter.md, che useremo solo con Claude Code. Fammi una review della definizione prima che lo mettiamo in uso: voglio sapere se ci sono problemi seri o solo ritocchi. Non modificarlo. Scrivi il rapporto in review.md e i finding in review.json nella cartella degli output.",
+      "expected_output": "Un rapporto che non inventa bloccanti su un agente con contratti di brief, rapporto e autorità già scritti; eventuali migliorie con prova.",
+      "files": [
+        "clean-agent/changelog-drafter.md"
+      ],
+      "expectations": [
+        {
+          "text": "Il rapporto non contiene finding bloccanti su intestazione, contratto del brief, contratto del rapporto, confine d'autorità o parità (l'agente li definisce già: brief minimo con arresto, rapporto con scostamenti, decisioni riservate con default dichiarato, regola per brief contraddittorio)",
+          "kind": "merit"
+        },
+        {
+          "text": "Riconosce esplicitamente almeno due dei contratti già scritti dall'agente (per esempio la regola per il brief incompleto, l'obbligo di dichiarare gli scostamenti, la regola per il brief che contraddice) invece di chiederli come mancanti",
+          "kind": "merit"
+        },
+        {
+          "text": "Segnala almeno una lacuna reale dell'agente, con la prova: per esempio che la shell fra i tools scavalca la promessa 'git solo in lettura, un solo file scritto', che il ripiego su .draft non dice cosa fare se esiste anche quello, che la tabella tipo→categoria è troncata, o che manca una regola per un intervallo vuoto o rifiutato",
+          "kind": "merit"
+        },
+        {
+          "text": "Ogni finding presente (se ce ne sono) ha una prova e una modifica proposta",
+          "kind": "protocol"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Abbiamo due agenti nuovi, tool-coverage/dep-auditor.md e tool-coverage/glossary-checker.md, che useremo con Claude Code. Prima di metterli in uso vorrei una review della definizione di ciascuno: problemi seri prima, ritocchi dopo. Non modificarli. Scrivi un rapporto per agente in review-dep-auditor.md e review-glossary-checker.md, e i finding in review-dep-auditor.json e review-glossary-checker.json, nella cartella degli output.",
+      "expected_output": "Per dep-auditor un bloccante sulla shell che manca su Linux e macOS, con la prova del campo tools e della riga del prompt che esegue i comandi; per glossary-checker nessun finding sugli strumenti; un registro JSON per agente.",
+      "files": [
+        "tool-coverage/dep-auditor.md",
+        "tool-coverage/glossary-checker.md"
+      ],
+      "expectations": [
+        {
+          "text": "Per dep-auditor segnala come bloccante che l'unica shell dichiarata è PowerShell mentre il prompt esegue comandi (uv, npm), quindi su Linux e macOS l'agente resta senza shell e non può fare il controllo; cita il campo tools e almeno una riga del prompt con un comando (righe 22-23)",
+          "kind": "merit"
+        },
+        {
+          "text": "Per dep-auditor la modifica proposta per gli strumenti è dichiarare anche la shell di Linux e macOS (Bash) o comunque una shell disponibile su ogni sistema, non togliere la shell",
+          "kind": "merit"
+        },
+        {
+          "text": "Per glossary-checker non c'è alcun finding (né bloccante né miglioria) che dica che mancano strumenti o una shell: l'agente legge e cerca soltanto, e Read, Grep, Glob bastano",
+          "kind": "merit"
+        },
+        {
+          "text": "Esistono review-dep-auditor.json e review-glossary-checker.json, e ogni finding ha id, severity (blocking o improvement), summary e status",
+          "kind": "protocol"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Ci hanno passato due agenti da mettere in uso con Claude Code: missing-tools/test-reporter.md e missing-tools/heading-checker.md. Voglio una review della definizione di ciascuno, con i problemi seri prima e i ritocchi dopo. Non modificarli. Scrivi un rapporto per agente in review-test-reporter.md e review-heading-checker.md, e i finding in review-test-reporter.json e review-heading-checker.json, nella cartella degli output.",
+      "expected_output": "Per test-reporter un bloccante perché il prompt esegue i test ma tools non dichiara nessuna shell; per heading-checker la shell dichiarata e non usata è una miglioria (toglierla), non un bloccante sulla shell che manca su Windows; un registro JSON per agente.",
+      "files": [
+        "missing-tools/test-reporter.md",
+        "missing-tools/heading-checker.md"
+      ],
+      "expectations": [
+        {
+          "text": "Per test-reporter segnala come bloccante che il prompt chiede di eseguire comandi (uv run pytest, riga 22) mentre tools (Read, Grep, Glob, Write) non dichiara alcuna shell, quindi l'agente non può eseguire i test; cita il campo tools e la riga del comando",
+          "kind": "merit"
+        },
+        {
+          "text": "Per test-reporter la modifica proposta è dichiarare una shell per ogni sistema operativo (Bash e PowerShell), non solo Bash",
+          "kind": "merit"
+        },
+        {
+          "text": "Per heading-checker non c'è un finding bloccante sugli strumenti: la shell (Bash) dichiarata non è usata dal prompt, e il rapporto la tratta come miglioria con la proposta di toglierla, non come shell che manca su Windows da completare con PowerShell",
+          "kind": "merit"
+        },
+        {
+          "text": "Esistono review-test-reporter.json e review-heading-checker.json, e ogni finding ha id, severity (blocking o improvement), summary e status",
+          "kind": "protocol"
+        }
+      ]
+    }
+  ]
+}

@@ -269,7 +269,7 @@ combinazioni**, 8 esiti su 8.
 | **E7** | [`ingestione-estesa`](../../requirements/ingestione-estesa/epic.md) | 1/7 | 6 | 14% | 🔄 in corso *(FEAT-006 consegnata)* |
 | **E8** | [`conoscenza-schema-sql`](../../requirements/conoscenza-schema-sql/epic.md) | 0/3 | 3 | 0% | 📋 non iniziata |
 | **E9** | [`second-brain`](../../requirements/second-brain/epic.md) | 0/10 | 10 | 0% | 📋 non iniziata |
-| **E10** | [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 42/76 | 34 | 55% | 🔄 **in corso — direzione attiva** |
+| **E10** | [`debito-tecnico`](../../requirements/debito-tecnico/epic.md) | 42/78 | 36 | 54% | 🔄 **in corso — direzione attiva** |
 | **E11** | [`multiutente`](../../requirements/multiutente/epic.md) | 0/6 | 6 | 0% | 📋 non iniziata |
 | **E12** | [`usabilita`](../../requirements/usabilita/epic.md) | 5/14 | 9 | 36% | 🔄 in corso |
 | **E13** | [`documentazione-marketing`](../../requirements/documentazione-marketing/epic.md) | 8/15 | 7 | 53% | 🔄 in corso |
@@ -277,7 +277,7 @@ combinazioni**, 8 esiti su 8.
 | **E15** | [`fedelta-dogfood`](../../requirements/fedelta-dogfood/epic.md) | 7/12 | 5 | 58% | 🔄 in corso *(1 ritirata)* |
 | **E16** | [`evoluzione-modello-wiki`](../../requirements/evoluzione-modello-wiki/epic.md) | 0/4 | 4 | 0% | 📋 non iniziata |
 | **E17** | [`separazione-ecosistema`](../../requirements/separazione-ecosistema/epic.md) | 1/16 | 15 | 6% | 🔄 **in corso — il lavoro che domina** |
-| | **TOTALE** | **119/254** | **135** | **47%** | — |
+| | **TOTALE** | **119/256** | **137** | **47%** | — |
 
 > **Come leggere «Consegnate»:** il denominatore esclude le feature **ritirate** (`❌ Won't`/not-a-bug) e
 > quelle **promosse ad altra epica** — contarle come debito gonfierebbe il residuo con lavoro che nessuno
@@ -343,8 +343,7 @@ combinazioni**, 8 esiti su 8.
 **Fermi per decisione utente:** go-public/PyPI (E2-FEAT-006, dal 2026-07-17) · E11 `multiutente`
 (differita) · E2-FEAT-019 (attesa esterna Noetix) · rimozione del CLI `acta` **di macchina** (0.4.0,
 `uv tool uninstall acta`: tocca gli altri nodi dell'host). Il runtime del nodo è su **Acta 0.7.0** dal
-2026-10-20; il residuo di macchina tiene rosso solo il controllo `cli-di-macchina` di `acta doctor`. Installazione di Sinthari (`skill-authoring`) — in attesa di un pacchetto col motore Kaelen 0.16.3 (2026-10-27).
-
+2026-10-20; il residuo di macchina tiene rosso solo il controllo `cli-di-macchina` di `acta doctor`.
 > **⚠️ La superficie che nessuna guardia presidia — emersa il 2026-07-30, da rifletterci prima di
 > scegliere.** In un giorno si sono rotte **due** superfici testuali: la roadmap (5 voci che dichiaravano
 > uno stato falso) e le **note di rilascio** (comandi non eseguibili, pubblicati su tre canali). Nessuna

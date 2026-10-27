@@ -1,0 +1,66 @@
+# La capability installabile di Sinthari: scrivere, collaudare e rivedere skill (feature 004) e rivedere
+# la definizione di un agente (feature 005, dalla 0.2.0) e correggerla (feature 006, dalla 0.3.0).
+#
+# Scritta a mano dalla bozza di `kaelen draft`. Contiene solo ciò che è di Sinthari: le skill
+# speclift, specaudit (Limentris) e tracestate, contract-author (Vestiger) vivono in questo repository
+# ma appartengono ad altri nodi, e le impacchettano loro.
+
+contract = 1
+node = "sinthari"
+capability = "skill-authoring"
+version = "0.3.1"
+targets = ["claude-code", "github-copilot", "codex"]
+
+# La skill che scrive e collauda, e quella che rivede: una sola capability (decisione della 004).
+[[items]]
+kind = "skill"
+name = "skill-authoring"
+source = "skills/skill-authoring"
+
+[[items]]
+kind = "skill"
+name = "skill-review"
+source = "skills/skill-review"
+
+# La review della definizione di un agente (intestazione e prompt), sopra skill-review (feature 005).
+[[items]]
+kind = "skill"
+name = "agent-review"
+source = "skills/agent-review"
+
+# L'autore delegato: un agente sottile sopra la skill skill-authoring.
+[[items]]
+kind = "agent"
+name = "skill-author"
+source = "agents/skill-author.md"
+
+# La correzione guidata della definizione di un agente, a partire dalla sua review (feature 006).
+[[items]]
+kind = "skill"
+name = "agent-authoring"
+source = "skills/agent-authoring"
+
+# Il correttore delegato: un agente sottile sopra la skill agent-authoring.
+[[items]]
+kind = "agent"
+name = "agent-author"
+source = "agents/agent-author.md"
+
+# Dice all'assistente dell'ospite quali skill usare e come raggiungere il runtime installato.
+[[items]]
+kind = "instruction-block"
+name = "skill-authoring"
+source = "blocks/skill-authoring.md"
+extension_point = "assistant-instructions"
+
+# Il runtime deterministico `skillauthor` (lint, agent-lint, agent-diff, agent-forms, cost, digest, verdict, ready,
+# parity). Vive in runtime/,
+# separato dal codice che questo repository produce per altri nodi (src/).
+[runtime]
+language = "python"
+python = ">=3.12"
+lock = "runtime/requirements.lock"
+code = "runtime/src"
+
+[runtime.entry_points.skillauthor]
+module = "skillauthor"

@@ -1,0 +1,1113 @@
+{
+  "schema": "kaelen.package-record/2",
+  "node": "sinthari",
+  "capability": "skill-authoring",
+  "version": "0.3.1",
+  "contract": 1,
+  "engine": {
+    "version": "0.16.3",
+    "digest": "sha256:5e4d350fa236ac5329981934fe4b2a94b90adc79568cccfa5559eeb003a96c67"
+  },
+  "placement_rule": {
+    "digest": "sha256:90a023caa9780b3ba60d83aedea622a780f1a744635dea3e2283a7979e2a2f7b"
+  },
+  "producer_state": "sha256:ad9ee51f6af6fb0d8e1ef4ddcf550aed271a26f3a4ea00fd602a6ffeca6eb3d2",
+  "targets": [
+    {
+      "target": "claude-code",
+      "items": [
+        {
+          "name": "skill-authoring",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".claude/skills/skill-authoring/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "skill-review",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".claude/skills/skill-review/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "agent-review",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".claude/skills/agent-review/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "skill-author",
+          "kind": "agent",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".claude/agents/skill-author.md",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "agent-authoring",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".claude/skills/agent-authoring/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "agent-author",
+          "kind": "agent",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".claude/agents/agent-author.md",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "skill-authoring",
+          "kind": "instruction-block",
+          "qualifier": "assistant-instructions",
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": "CLAUDE.md",
+              "wrapper": "markdown-section",
+              "section": "skill-authoring/skill-authoring",
+              "shared": {
+                "role": "instruction block"
+              }
+            }
+          ],
+          "verified": "2026-10-16"
+        }
+      ]
+    },
+    {
+      "target": "github-copilot",
+      "items": [
+        {
+          "name": "skill-authoring",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".github/skills/skill-authoring/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "skill-review",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".github/skills/skill-review/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "agent-review",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".github/skills/agent-review/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "skill-author",
+          "kind": "agent",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".github/agents/skill-author.agent.md",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "agent-authoring",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".github/skills/agent-authoring/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "agent-author",
+          "kind": "agent",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".github/agents/agent-author.agent.md",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "skill-authoring",
+          "kind": "instruction-block",
+          "qualifier": "assistant-instructions",
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".github/instructions/skill-authoring.instructions.md",
+              "wrapper": "copilot-instructions-file",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        }
+      ]
+    },
+    {
+      "target": "codex",
+      "items": [
+        {
+          "name": "skill-authoring",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".agents/skills/skill-authoring/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "skill-review",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".agents/skills/skill-review/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "agent-review",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".agents/skills/agent-review/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "skill-author",
+          "kind": "agent",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".codex/agents/skill-author.toml",
+              "wrapper": "codex-agent-toml",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "agent-authoring",
+          "kind": "skill",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".agents/skills/agent-authoring/",
+              "wrapper": "verbatim",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "agent-author",
+          "kind": "agent",
+          "qualifier": null,
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": ".codex/agents/agent-author.toml",
+              "wrapper": "codex-agent-toml",
+              "section": null,
+              "shared": null
+            }
+          ],
+          "verified": "2026-10-16"
+        },
+        {
+          "name": "skill-authoring",
+          "kind": "instruction-block",
+          "qualifier": "assistant-instructions",
+          "outcome": "placed",
+          "locations": [
+            {
+              "path": "AGENTS.md",
+              "wrapper": "markdown-section",
+              "section": "skill-authoring/skill-authoring",
+              "shared": {
+                "role": "instruction block"
+              }
+            }
+          ],
+          "verified": "2026-10-16"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": ".gitattributes",
+      "size": 8,
+      "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da"
+    },
+    {
+      "path": "content/agents/agent-author.md",
+      "size": 6491,
+      "sha256": "e6a86325de7000d09ad18b0a06c87d03626edfc5ed0d075a910d3c6ff3e35a01"
+    },
+    {
+      "path": "content/agents/skill-author.md",
+      "size": 6879,
+      "sha256": "fc0d0e3d62adf7d1be294162da7175230ec1981e4b0ee7bd4c41be48dd096193"
+    },
+    {
+      "path": "content/blocks/skill-authoring.md",
+      "size": 1877,
+      "sha256": "289530bb70378f818ad9453cddca49b9416551f3bebc35021e793c6acb8765b8"
+    },
+    {
+      "path": "content/runtime/requirements.lock",
+      "size": 12323,
+      "sha256": "58651659474e029c64d7a1b3a0e3ccffec1334784e10bcb2d4485ca8d0d0854d"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/__init__.py",
+      "size": 302,
+      "sha256": "cc58d762680dc53f0b5ff1f33deadc2d6c84071067e2af840e6d96e03ec11c73"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/__main__.py",
+      "size": 148,
+      "sha256": "3cf6dc917ef0409d91b7c95430ede988a472631b6191612b3aa83105de69e041"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/adapters/__init__.py",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/adapters/agent_fs.py",
+      "size": 2472,
+      "sha256": "e904a6add6f74b704e4f9c74353db739f3782ce7bffc9e3528f25e2bc0da78a9"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/adapters/skill_fs.py",
+      "size": 4472,
+      "sha256": "4134eac5ce925df702b67337bc0faff577797687879db80fd180ecd6d3512527"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/adapters/workspace_fs.py",
+      "size": 1239,
+      "sha256": "b6a389285fcf00d4a66ffdce5e18597bd16be466bf921d2563d26610a9d3f972"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/agent_diff.py",
+      "size": 3261,
+      "sha256": "c7c0ef7f5ad071156030701e3823a62569f8fb73d4ab69df10e50d48f1fe606c"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/agent_forms.py",
+      "size": 3112,
+      "sha256": "5334d0d815cb20c0d2c20b04795cbc62f3ac62117490fb4b80ee5d93d8e0523e"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/agent_lint.py",
+      "size": 7968,
+      "sha256": "e9add2e0a553913bd739f7a75e0ec4fbd90a82bb410535f0d2b1e6f280e60e05"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/cli.py",
+      "size": 2378,
+      "sha256": "d35b81b848804c170523448205c2f631e9095085238734720191925281b6b6ca"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/commands.py",
+      "size": 11586,
+      "sha256": "2784e685b3dfb3bd0e734134d05b2d9f23327aa5b21215df13d0a82469eb907f"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/config.py",
+      "size": 3608,
+      "sha256": "b115eec6e882eedc56bc0abdaf23a79e4ea1c892fe7fa87e5c3384abcda5239a"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/cost.py",
+      "size": 1371,
+      "sha256": "212e2952b1399012d28365e85afb472ff72c4e2132f10403a977cda0a52981db"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/digest.py",
+      "size": 1844,
+      "sha256": "1b24f32a4ad80bf59a2f9efbde347ffe230d23629362959d04c12f294decf664"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/domain/__init__.py",
+      "size": 81,
+      "sha256": "eaa52d5f9c415b96d1dc75047d8447f8d020eb9b3877f6926fa340264bb5c404"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/domain/errors.py",
+      "size": 923,
+      "sha256": "fecc295e412545197033debdc4a6135a9643ee620ba8570c6d67fd9440530e15"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/domain/models.py",
+      "size": 9108,
+      "sha256": "c41abd116efc1a2728eaf3ca0ab6ddc4667ed3250054623457c91f5168debc30"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/domain/ports.py",
+      "size": 625,
+      "sha256": "42842285ccae7ccdc2cb9f6c69fa12e4d5f0c52a3cb63488c0f10fba23e40789"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/jsonfiles.py",
+      "size": 1099,
+      "sha256": "6c9428de27eddc46b9d8380cd658b7ede9467dd900638cdd3b5463e95c2e009f"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/lint.py",
+      "size": 6011,
+      "sha256": "2a0110f560bef1bec92f45ce6df5032b755ce0e196b9d3f37f80db94ad9754a4"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/observability.py",
+      "size": 747,
+      "sha256": "5ec38031ccea5750ef6be270125e614016542e69c9477e0675d1fdb35b86ad67"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/parity.py",
+      "size": 1950,
+      "sha256": "11dccb288d4e83250255cd4f89155ff15e7d45e2bd3d9c4b6964ecf22c7cc1cf"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/ready.py",
+      "size": 7646,
+      "sha256": "5a0acba8486bc32e268f044e2215dd2640db634dc01c1ebc38b9dab4d69516c7"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/schemas/__init__.py",
+      "size": 840,
+      "sha256": "df965a86b057175ac58e33a4878a6c1e74dee80d73e33cf09590ffb4f880f2ed"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/schemas/agent-diff.schema.json",
+      "size": 1322,
+      "sha256": "1e05b5bd4b5ed2070f1c0e591ed698bb4ef2f0e68ad4b3374300973fa67af389"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/schemas/agent-forms.schema.json",
+      "size": 1814,
+      "sha256": "253da45f3e2a6932ad4e397cbc8d945c3f0984c8c09b02bd1361d8ad0d5274c5"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/schemas/agent-lint.schema.json",
+      "size": 3142,
+      "sha256": "2ae3f8cbb6acbd9b6f62c581d056e2ed294005882c687845031cbdf15145037d"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/schemas/evals.schema.json",
+      "size": 1399,
+      "sha256": "4847f54756d8e6e03592fa66e73b5b0b6cc1c15297561c3e88383bbf55ba1b05"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/schemas/grading.schema.json",
+      "size": 916,
+      "sha256": "90cd8d0a2c3edaa3a1fc86ccee7a2e7e2afc880d0ac711869b0e9e8ea544b758"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/schemas/lint.schema.json",
+      "size": 804,
+      "sha256": "c17d9003e79c627d3b72f179117d564cf93182f80da1c66f9e26878e547967c5"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/schemas/ready.schema.json",
+      "size": 1523,
+      "sha256": "1ba68b1b92a2011f34f0281a6a3daa1fe4f19d49960292edd2d8b43f2f2f7115"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/schemas/review.schema.json",
+      "size": 1872,
+      "sha256": "217604bcc1a5af42f461fb5e0f5a62eac57a91552639967b5494f17cdac64de1"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/schemas/verdict.schema.json",
+      "size": 1899,
+      "sha256": "3ca10e3b9b4d8624e382f7ad089ab366408b36863c2462c05d12ca1d7ffe9cb3"
+    },
+    {
+      "path": "content/runtime/src/skillauthor/verdict.py",
+      "size": 3966,
+      "sha256": "0fae5aaf584a2714af15fcd116db2d73036f05921b8f33dc408951ddc8773533"
+    },
+    {
+      "path": "content/skills/agent-authoring/SKILL.md",
+      "size": 15389,
+      "sha256": "70de5b7fd8bba86553cde4803f8f5eba6db7ed9b0519768bea230a84d200d8d3"
+    },
+    {
+      "path": "content/skills/agent-authoring/evals/evals.json",
+      "size": 4707,
+      "sha256": "9767bbf54caaa2b658e9c92c4987295903309499bda839cd47ff836b89635aba"
+    },
+    {
+      "path": "content/skills/agent-authoring/evals/files/deploy-helper/deploy-helper.md",
+      "size": 464,
+      "sha256": "dbac5cf75f3bb0224bb5e28ed3fc5d6ee77709c32aa27e4c53da98441b445e59"
+    },
+    {
+      "path": "content/skills/agent-authoring/evals/files/deploy-helper/review.json",
+      "size": 668,
+      "sha256": "78946a09383ac21db582abded7430efada9b7b3d55e8742246d9b2d00bb6b083"
+    },
+    {
+      "path": "content/skills/agent-authoring/evals/files/report-writer/report-writer.md",
+      "size": 337,
+      "sha256": "30bdb42e57defbfd8b44d890b551d927f795579bc60ae061126ee702e84888ae"
+    },
+    {
+      "path": "content/skills/agent-authoring/evals/files/report-writer/review.json",
+      "size": 611,
+      "sha256": "5b0ede523f616776702762556412b1dad5590353e24107b862abaec5d88577e3"
+    },
+    {
+      "path": "content/skills/agent-authoring/evals/files/ticket-bot/review.json",
+      "size": 601,
+      "sha256": "1766b96099a3b96ba26a5bf2a68f41a46698f44dc1d444d9893023231f3f0c05"
+    },
+    {
+      "path": "content/skills/agent-authoring/evals/files/ticket-bot/skills/triage/SKILL.md",
+      "size": 294,
+      "sha256": "14a8b66ae080274cbd1f1ca36d4d624b9e900ee13241ed779bec84dd46b3e0ec"
+    },
+    {
+      "path": "content/skills/agent-authoring/evals/files/ticket-bot/ticket-bot.md",
+      "size": 249,
+      "sha256": "8003577556e9e27e6460460f9410dc66ebedc31e7d5ef83b04dd05f802316eb1"
+    },
+    {
+      "path": "content/skills/agent-authoring/references/cycle.md",
+      "size": 4895,
+      "sha256": "8e1cb11c24929a5c94ee7672dfcaff38a926e7b72c7ebb6ba6bdcc8c03119aab"
+    },
+    {
+      "path": "content/skills/agent-authoring/references/forms.md",
+      "size": 4433,
+      "sha256": "6aa370690970acb180d1eda4db1fe180ac6d2070d7eb9eff54a063c972f5664f"
+    },
+    {
+      "path": "content/skills/agent-authoring/references/header.md",
+      "size": 4102,
+      "sha256": "efc0d6d9abb35f51812989b409599b3da7b40f649b22ba3c5becfc2a16039f46"
+    },
+    {
+      "path": "content/skills/agent-authoring/references/runtime.md",
+      "size": 7512,
+      "sha256": "deb2179535f354737e998dc7b9385cd16729a64769e6c9aa160ca36434b8144e"
+    },
+    {
+      "path": "content/skills/agent-authoring/references/schemas/agent-diff.schema.json",
+      "size": 1322,
+      "sha256": "1e05b5bd4b5ed2070f1c0e591ed698bb4ef2f0e68ad4b3374300973fa67af389"
+    },
+    {
+      "path": "content/skills/agent-authoring/references/schemas/agent-forms.schema.json",
+      "size": 1814,
+      "sha256": "253da45f3e2a6932ad4e397cbc8d945c3f0984c8c09b02bd1361d8ad0d5274c5"
+    },
+    {
+      "path": "content/skills/agent-authoring/references/schemas/agent-lint.schema.json",
+      "size": 3142,
+      "sha256": "2ae3f8cbb6acbd9b6f62c581d056e2ed294005882c687845031cbdf15145037d"
+    },
+    {
+      "path": "content/skills/agent-authoring/references/schemas/evals.schema.json",
+      "size": 1399,
+      "sha256": "4847f54756d8e6e03592fa66e73b5b0b6cc1c15297561c3e88383bbf55ba1b05"
+    },
+    {
+      "path": "content/skills/agent-authoring/references/schemas/grading.schema.json",
+      "size": 916,
+      "sha256": "90cd8d0a2c3edaa3a1fc86ccee7a2e7e2afc880d0ac711869b0e9e8ea544b758"
+    },
+    {
+      "path": "content/skills/agent-authoring/references/schemas/ready.schema.json",
+      "size": 1523,
+      "sha256": "1ba68b1b92a2011f34f0281a6a3daa1fe4f19d49960292edd2d8b43f2f2f7115"
+    },
+    {
+      "path": "content/skills/agent-authoring/references/schemas/review.schema.json",
+      "size": 1872,
+      "sha256": "217604bcc1a5af42f461fb5e0f5a62eac57a91552639967b5494f17cdac64de1"
+    },
+    {
+      "path": "content/skills/agent-authoring/references/schemas/verdict.schema.json",
+      "size": 1899,
+      "sha256": "3ca10e3b9b4d8624e382f7ad089ab366408b36863c2462c05d12ca1d7ffe9cb3"
+    },
+    {
+      "path": "content/skills/agent-authoring/references/testing.md",
+      "size": 3526,
+      "sha256": "4595b705add68e4d2cd0c1053fdd7c74f72c2e20c6c64e024b0167f44078f143"
+    },
+    {
+      "path": "content/skills/agent-authoring/references/worked-example.md",
+      "size": 7046,
+      "sha256": "db413c31bed78a9d3d1ca86f1f9b593325c7c329c10dec8370dfed821a13d0bf"
+    },
+    {
+      "path": "content/skills/agent-review/SKILL.md",
+      "size": 11543,
+      "sha256": "570991589716d780fde7c22df8d84d520a09452b50b2b461be03c30cbca52aec"
+    },
+    {
+      "path": "content/skills/agent-review/evals/evals.json",
+      "size": 10168,
+      "sha256": "9bdea309f0a4099cf40cf2ac54a37964f0bd38dc35957619dad11fef398de000"
+    },
+    {
+      "path": "content/skills/agent-review/evals/files/clean-agent/changelog-drafter.md",
+      "size": 3418,
+      "sha256": "10601e7b66e388899d006754a215ca3f6f389771f5621a5c6f71098b02368b19"
+    },
+    {
+      "path": "content/skills/agent-review/evals/files/configuration-manager/configuration-manager.md",
+      "size": 5291,
+      "sha256": "794c919aef8efc690170d00a11cf1d6ea477ea0d25f2e16d6efdf860c8ded9fc"
+    },
+    {
+      "path": "content/skills/agent-review/evals/files/missing-tools/heading-checker.md",
+      "size": 1592,
+      "sha256": "8618d14ec2e6bec9df5a5a19756c8950ae3c5c24bfc61359cace43d4f681c088"
+    },
+    {
+      "path": "content/skills/agent-review/evals/files/missing-tools/test-reporter.md",
+      "size": 1807,
+      "sha256": "26c0e54f000a6ed096cd5a5a49ce91a9a6f796f73e72b76ad0e3a125a44db02f"
+    },
+    {
+      "path": "content/skills/agent-review/evals/files/skill-author/skill-author.md",
+      "size": 3720,
+      "sha256": "9871fabcafafa695c7fa38f90c6441303b41b4dc57c2fc1c4409358504ce17cf"
+    },
+    {
+      "path": "content/skills/agent-review/evals/files/skill-author/skills/skill-authoring/SKILL.md",
+      "size": 19554,
+      "sha256": "60c5940e802b8b5fdd83898223df3f72fe6753f9d4adf1ecae60c9ab7022fe1b"
+    },
+    {
+      "path": "content/skills/agent-review/evals/files/tool-coverage/dep-auditor.md",
+      "size": 2228,
+      "sha256": "197cd0fe74e28e05977f7f11458085bd176def11fc4b5bd0a5396698f8bd9206"
+    },
+    {
+      "path": "content/skills/agent-review/evals/files/tool-coverage/glossary-checker.md",
+      "size": 1851,
+      "sha256": "0ec458cd3d84d08c51d35367aa30c82a5326f025088a4475b214ba4904e648e9"
+    },
+    {
+      "path": "content/skills/agent-review/references/cold-run.md",
+      "size": 5328,
+      "sha256": "f1debe63486cabd891f07e29c78ba8fd9363cd19ab1db7b018964e5c601a5ff2"
+    },
+    {
+      "path": "content/skills/agent-review/references/dimensions.md",
+      "size": 16161,
+      "sha256": "32d594465c7120e960ba7d3891f0ae296304f79121724d0343ecf4097903eb8e"
+    },
+    {
+      "path": "content/skills/agent-review/references/parity.md",
+      "size": 2718,
+      "sha256": "857580573612f7cfd5bdd27d8bc36aef7748696b02428d3610b81188d4d6f350"
+    },
+    {
+      "path": "content/skills/agent-review/references/runtime.md",
+      "size": 7083,
+      "sha256": "892c838b4ade6da3079baca19854af207efb3318436419073ef551ff1cc14cd2"
+    },
+    {
+      "path": "content/skills/agent-review/references/schemas/agent-lint.schema.json",
+      "size": 3142,
+      "sha256": "2ae3f8cbb6acbd9b6f62c581d056e2ed294005882c687845031cbdf15145037d"
+    },
+    {
+      "path": "content/skills/agent-review/references/schemas/review.schema.json",
+      "size": 1147,
+      "sha256": "f50527388227fa0a31357546e53d295806e878288e9038dcb62ca5c610ccd3b1"
+    },
+    {
+      "path": "content/skills/agent-review/references/worked-example.md",
+      "size": 7843,
+      "sha256": "44813764e94af3f99dfc077fe488779456be970440f712485226d7a62f10a843"
+    },
+    {
+      "path": "content/skills/skill-authoring/SKILL.md",
+      "size": 20858,
+      "sha256": "395387c0ea18e3a6ec4a4f989c7f3d91bdaa0252e6398267104efbad57f410b7"
+    },
+    {
+      "path": "content/skills/skill-authoring/evals/agent-evals.json",
+      "size": 1586,
+      "sha256": "4ce99dcfd4f0164f08e371687100fd07d3f2114232c74702bd99c23f4b60189c"
+    },
+    {
+      "path": "content/skills/skill-authoring/evals/evals.json",
+      "size": 6863,
+      "sha256": "8a785e5cb1462ac276bfdec3274c3462038436f785804d6aa0df18bd2078b3eb"
+    },
+    {
+      "path": "content/skills/skill-authoring/evals/files/meeting-notes-review.md",
+      "size": 714,
+      "sha256": "a5f5c944e462a71f196e5653bb1b70d3b23476f97f1c1f291cfc3a3fddccf3f2"
+    },
+    {
+      "path": "content/skills/skill-authoring/evals/files/meeting-notes-verdict.json",
+      "size": 456,
+      "sha256": "7b1a325883098983fb08f6b04f1f16834a62bff01f58abdd288656caf64d8df2"
+    },
+    {
+      "path": "content/skills/skill-authoring/evals/files/meeting-notes/SKILL.md",
+      "size": 391,
+      "sha256": "1c2884d3980635b2a7485b00091086385fe8fc72450581510f2de1bbac69f6f2"
+    },
+    {
+      "path": "content/skills/skill-authoring/references/runtime-boundary.md",
+      "size": 2983,
+      "sha256": "e1de61657dba88993c252208eb94f9bbe31a4fe9d6af445312dd003ef0eb09ea"
+    },
+    {
+      "path": "content/skills/skill-authoring/references/runtime.md",
+      "size": 7987,
+      "sha256": "4635503d0e985c5f600679b1dd4dbf64a1549fbf096ab81e480d1e5de402e7ad"
+    },
+    {
+      "path": "content/skills/skill-authoring/references/schemas/evals.schema.json",
+      "size": 1399,
+      "sha256": "4847f54756d8e6e03592fa66e73b5b0b6cc1c15297561c3e88383bbf55ba1b05"
+    },
+    {
+      "path": "content/skills/skill-authoring/references/schemas/grading.schema.json",
+      "size": 916,
+      "sha256": "90cd8d0a2c3edaa3a1fc86ccee7a2e7e2afc880d0ac711869b0e9e8ea544b758"
+    },
+    {
+      "path": "content/skills/skill-authoring/references/schemas/lint.schema.json",
+      "size": 804,
+      "sha256": "c17d9003e79c627d3b72f179117d564cf93182f80da1c66f9e26878e547967c5"
+    },
+    {
+      "path": "content/skills/skill-authoring/references/schemas/ready.schema.json",
+      "size": 1193,
+      "sha256": "d30e407444a961d2193686d055665ce203f85b767a2df389225d5562bedfea6d"
+    },
+    {
+      "path": "content/skills/skill-authoring/references/schemas/review.schema.json",
+      "size": 1147,
+      "sha256": "f50527388227fa0a31357546e53d295806e878288e9038dcb62ca5c610ccd3b1"
+    },
+    {
+      "path": "content/skills/skill-authoring/references/schemas/verdict.schema.json",
+      "size": 1899,
+      "sha256": "3ca10e3b9b4d8624e382f7ad089ab366408b36863c2462c05d12ca1d7ffe9cb3"
+    },
+    {
+      "path": "content/skills/skill-authoring/references/sinthari-rules.md",
+      "size": 3649,
+      "sha256": "0facc026e3a8538f2de10ee321801dc6aaf80b5e2d5ebcfc5fe38aff5bc5f75f"
+    },
+    {
+      "path": "content/skills/skill-authoring/references/worked-example.md",
+      "size": 4924,
+      "sha256": "69434d789fb49fa8cad711937b6d1bcab3257970060935fcfcb18203228f9192"
+    },
+    {
+      "path": "content/skills/skill-authoring/vendor/skill-creator/LICENSE",
+      "size": 11345,
+      "sha256": "bc6b3af2f331cbc7fb0da1344efb2cbe5877a31498b4d70dbc7000f3405a1362"
+    },
+    {
+      "path": "content/skills/skill-authoring/vendor/skill-creator/NOTICE",
+      "size": 1535,
+      "sha256": "e17736c0b1b9c0bae25dedb3038e7204c404126946acbec6f84a47e816df58c9"
+    },
+    {
+      "path": "content/skills/skill-authoring/vendor/skill-creator/agents/grader.md",
+      "size": 11364,
+      "sha256": "2d7b1d1600dcb3b818f908c1c71ed74ac62aa09790f88df0f8040f5bcf9a2174"
+    },
+    {
+      "path": "content/skills/skill-authoring/vendor/skill-creator/eval-viewer/generate_review.py",
+      "size": 16365,
+      "sha256": "fc9d1b9243fe5ab6012ebd579bd76d0035de1b79fd3b969de114defab26478fb"
+    },
+    {
+      "path": "content/skills/skill-authoring/vendor/skill-creator/eval-viewer/viewer.html",
+      "size": 44998,
+      "sha256": "a53213426ee1100441d701a3a0d49cda7a842f992d2c36463f4d3cc0258575fa"
+    },
+    {
+      "path": "content/skills/skill-authoring/vendor/skill-creator/scripts/__init__.py",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "content/skills/skill-authoring/vendor/skill-creator/scripts/generate_report.py",
+      "size": 12847,
+      "sha256": "13df7118a3c50c83c4c3250a606d5f2b20b25a3d44cbc392b3d669ec75281453"
+    },
+    {
+      "path": "content/skills/skill-authoring/vendor/skill-creator/scripts/improve_description.py",
+      "size": 11116,
+      "sha256": "87d864570220b699fac52da309d2d6efdb060647bfebc74f768128e646accf80"
+    },
+    {
+      "path": "content/skills/skill-authoring/vendor/skill-creator/scripts/run_eval.py",
+      "size": 11464,
+      "sha256": "43e3b8f80dbf69c343967ba77e268fae991d9fa3ed68b32a0ff02532cd48657f"
+    },
+    {
+      "path": "content/skills/skill-authoring/vendor/skill-creator/scripts/run_loop.py",
+      "size": 13605,
+      "sha256": "7bd6f674203168520517eec94c55f493c0d154339b061b4d7c0f0dad187d0f21"
+    },
+    {
+      "path": "content/skills/skill-authoring/vendor/skill-creator/scripts/utils.py",
+      "size": 1661,
+      "sha256": "3af8ae62c40c73ab712207436a0d9a981e845f25c5a7040229eb189cc8e45bb1"
+    },
+    {
+      "path": "content/skills/skill-review/SKILL.md",
+      "size": 8773,
+      "sha256": "ee3d6f0dd385841ad3eea530f1aac922b06a4088f52d8e5dac301fdbd714c4b7"
+    },
+    {
+      "path": "declaration.toml",
+      "size": 2155,
+      "sha256": "825b300914b120d13089086ccb1b0c75978e9896f9a31cb8416209383b65e4b2"
+    },
+    {
+      "path": "engine/kaelen-0.16.3.dist-info/METADATA",
+      "size": 51,
+      "sha256": "9343b1682a4c7d6630a267cfb83c6fdb481374875df9c163859c9787345066c4"
+    },
+    {
+      "path": "engine/kaelen/__init__.py",
+      "size": 29,
+      "sha256": "a2ef6a8c323152cc5d88cc8ea265dca29c73bc00ad2924acad84f4219097ec55"
+    },
+    {
+      "path": "engine/kaelen/__main__.py",
+      "size": 58,
+      "sha256": "875841a5cd812d6dfc5f525527d83993cdab1982b20e135a561887348a69e306"
+    },
+    {
+      "path": "engine/kaelen/cli.py",
+      "size": 38999,
+      "sha256": "adebc5f98ddcedc18df4b6f61d3688ad5f70059d9b435938a623ef3cdc64a9e6"
+    },
+    {
+      "path": "engine/kaelen/contract/__init__.py",
+      "size": 1506,
+      "sha256": "32592239090d06e9cd691fe27cfa885c7b7281c149ce9ac08c9e9c196dc38199"
+    },
+    {
+      "path": "engine/kaelen/contract/coherence.py",
+      "size": 12819,
+      "sha256": "36e7c607498f83054f990f3941b9bf0e59462a4dc34c6386378532362f9ffdff"
+    },
+    {
+      "path": "engine/kaelen/contract/declaration-v1.schema.json",
+      "size": 10299,
+      "sha256": "e82c74a3ed3a19e2eb5d19694e50bbe557b7ece536f7f5ad4feb0817f5ec26ad"
+    },
+    {
+      "path": "engine/kaelen/contract/schema_eval.py",
+      "size": 8334,
+      "sha256": "d2573745232fae68d9d0b6592e410454582de95872a5f2f4e7b5d65b1a1e4926"
+    },
+    {
+      "path": "engine/kaelen/draft/__init__.py",
+      "size": 18040,
+      "sha256": "4508b4a8a49e2e5b9479aa34089c40ffe280ad1277066b67d470c5d6911f1f4b"
+    },
+    {
+      "path": "engine/kaelen/draft/conventions.json",
+      "size": 1571,
+      "sha256": "21e8556d35bd2a3c8753a2393d9c332d637261b3078e79aa54227f55055caa42"
+    },
+    {
+      "path": "engine/kaelen/host/__init__.py",
+      "size": 89604,
+      "sha256": "0ba64cb95095dc20ad3ce38a4cdab78dc853dd9c1b4325ad890879afd21da20f"
+    },
+    {
+      "path": "engine/kaelen/host/apply.py",
+      "size": 31089,
+      "sha256": "02d375ed1552ef6c89dd68106fcee4844ce26d9bb85a1675f1a87d9731777c88"
+    },
+    {
+      "path": "engine/kaelen/host/checks.py",
+      "size": 6240,
+      "sha256": "837a4ac1945e0bad91f34821e6ee5e77998611e38c04870cb34d39706d6ed50b"
+    },
+    {
+      "path": "engine/kaelen/host/consent.py",
+      "size": 2280,
+      "sha256": "fa0ea0a45356cce79c1f44209dc30757326e57f3ab39c20c11b766495710915a"
+    },
+    {
+      "path": "engine/kaelen/host/contributions.py",
+      "size": 18340,
+      "sha256": "dd65a341d98531574007fe0f8a82094867f6bdf07d7becbc315b9b67a4fe77f7"
+    },
+    {
+      "path": "engine/kaelen/host/desired.py",
+      "size": 10029,
+      "sha256": "376887304d5ac1cb5e6e369492ede60246d83a2002c6886915d045b336ed81d3"
+    },
+    {
+      "path": "engine/kaelen/host/home.py",
+      "size": 6632,
+      "sha256": "3aeed0b33001903d7ef94ef1a54233797a021a261e134ea9bf5b22f97d1ad321"
+    },
+    {
+      "path": "engine/kaelen/host/jsonspan.py",
+      "size": 14593,
+      "sha256": "9a411c7c7f0f9b257dadf8badfbdcbdf4a571a1adb6be528d81cc34103561c10"
+    },
+    {
+      "path": "engine/kaelen/host/live.py",
+      "size": 5985,
+      "sha256": "0ef235b3b0aa9f37d068218515a579feb2aa25d70f0dcaa4efde7191ae1c85d4"
+    },
+    {
+      "path": "engine/kaelen/host/reconcile.py",
+      "size": 29421,
+      "sha256": "35011b2883e49a0d8e681382d18f69ae04c7a80b829f490a2be41ff03ed852d4"
+    },
+    {
+      "path": "engine/kaelen/host/registry.py",
+      "size": 7481,
+      "sha256": "0e53d416a09f9040ba3e0c88230f4f63a7073ce486fe23d6562e33602e9c2928"
+    },
+    {
+      "path": "engine/kaelen/host/render.py",
+      "size": 6626,
+      "sha256": "a77568a8b5bd4ee33da8b11cb7943234f6007397aa7bea7098abf4f43f3398e6"
+    },
+    {
+      "path": "engine/kaelen/host/runtime.py",
+      "size": 14607,
+      "sha256": "d1ff13579597fc7e2684e195fd3ce15b137fc6047a5d1c25fcf6a79e2fafb4f0"
+    },
+    {
+      "path": "engine/kaelen/host/sections.py",
+      "size": 4453,
+      "sha256": "0a9bddc02ccae6a6d55cac21d14f1fe1e9c6b9cac5d4584878c3744206b3a6a2"
+    },
+    {
+      "path": "engine/kaelen/host/settingsfile.py",
+      "size": 2542,
+      "sha256": "1be24d525363cd4fb5e64dda4d68319bf0e187cffd120614d5fbf8ed1573ab30"
+    },
+    {
+      "path": "engine/kaelen/host/source.py",
+      "size": 6488,
+      "sha256": "22c2b0ab17adaa4b176d8297a1b1936bfaeea9ae4f937d59cfe478a3195046da"
+    },
+    {
+      "path": "engine/kaelen/host/state.py",
+      "size": 4500,
+      "sha256": "ff1408c4d99395140bc1a27492a0f80b92c97faa625504101a3b9a6c2abbb1f0"
+    },
+    {
+      "path": "engine/kaelen/outcome.py",
+      "size": 17007,
+      "sha256": "ae72adbbebd05a784efc92284eaaca40e92679899f76d2f23f8ba31333fbd447"
+    },
+    {
+      "path": "engine/kaelen/package/__init__.py",
+      "size": 9297,
+      "sha256": "8c9201695c9e72e4e097613c4a0808e55d51365c6a8490dfa3109a1270e70768"
+    },
+    {
+      "path": "engine/kaelen/package/distribution.py",
+      "size": 3608,
+      "sha256": "565b414c4664a0355601db5e9521a0b1635f7056b4df072c22edba4e45920c89"
+    },
+    {
+      "path": "engine/kaelen/package/inject.py",
+      "size": 1997,
+      "sha256": "95c8c0d1709a9fc497d7b13f33f7751a9698fed4607d23aebce30d40741b7a71"
+    },
+    {
+      "path": "engine/kaelen/package/launcher.py.txt",
+      "size": 972,
+      "sha256": "8e94e699dfe7db1fa055f7e38651e2d3744282a789f3a7a246eebac013f0d63d"
+    },
+    {
+      "path": "engine/kaelen/package/location.py",
+      "size": 3209,
+      "sha256": "f81e91de9b83bd672ba0a4872a7c0bb543cb0d19b8ac67b7b006cd1717837799"
+    },
+    {
+      "path": "engine/kaelen/package/plan.py",
+      "size": 7161,
+      "sha256": "5520b8c26612f1d337571e527000aa97eae33debcd4958d28d70354350af887e"
+    },
+    {
+      "path": "engine/kaelen/package/record.py",
+      "size": 2244,
+      "sha256": "7329e3045e8a97888ad5d71071c97c39106006ccece3ea0502fda4e5bd30ec5f"
+    },
+    {
+      "path": "engine/kaelen/placement/__init__.py",
+      "size": 14326,
+      "sha256": "66d4878aed77643a141ec339817d4ae65e91cd58c398ef0c735c3dad73ebe643"
+    },
+    {
+      "path": "engine/kaelen/placement/rule.json",
+      "size": 40314,
+      "sha256": "ceb718080f30c678fdfa9ebe88034f183d15af10db67ea2c6c27b85ef063589c"
+    },
+    {
+      "path": "engine/kaelen/producer.py",
+      "size": 3786,
+      "sha256": "4fef7ad6fe2a87bb9aad35e85a125663fb11a9ff533d277f1b2a36f76cf0805e"
+    },
+    {
+      "path": "engine/kaelen/provenance.py",
+      "size": 12278,
+      "sha256": "08e08d395d5478b5da5cebf9a1aa450523f534c86cb58bbca37a9020464726b6"
+    },
+    {
+      "path": "engine/kaelen/validate.py",
+      "size": 4490,
+      "sha256": "34e2679b9f796e1123528d9785f854443088cd354e56d94d3576080cf3ee2f04"
+    },
+    {
+      "path": "engine/kaelen/versions.py",
+      "size": 3057,
+      "sha256": "b200895a59087cd7a6bf176c147862aeef3340670abae2ff1737baa800d9a11d"
+    },
+    {
+      "path": "kaelen_launch.py",
+      "size": 402,
+      "sha256": "0bc75d37b9f7e09a7cab5862167773f7bac72f1ce14ab4d89720457c8e60cf1d"
+    },
+    {
+      "path": "pyproject.toml",
+      "size": 622,
+      "sha256": "50912a2c2ceb7a2261d3852c9a93b04ef65de0e9b78afb6cd5a3340a17dff57c"
+    },
+    {
+      "path": "run.py",
+      "size": 972,
+      "sha256": "8e94e699dfe7db1fa055f7e38651e2d3744282a789f3a7a246eebac013f0d63d"
+    }
+  ]
+}

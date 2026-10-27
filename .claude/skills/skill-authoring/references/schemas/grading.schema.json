@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sinthari.local/skillauthor/grading.schema.json",
+  "title": "skillauthor grading",
+  "description": "Valutazione di una esecuzione. Compatibile con grading.json di skill-creator (campi extra ammessi); kind_challenge è un'estensione facoltativa.",
+  "type": "object",
+  "required": ["expectations"],
+  "properties": {
+    "expectations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["text", "passed"],
+        "properties": {
+          "text": {"type": "string"},
+          "passed": {"type": "boolean"},
+          "evidence": {"type": "string"},
+          "kind_challenge": {
+            "type": "object", "required": ["proposed_kind", "why"],
+            "properties": {"proposed_kind": {"enum": ["merit", "protocol"]}, "why": {"type": "string"}}
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,29 @@
+Vendored material from "skill-creator" by Anthropic, licensed under the Apache License, Version 2.0
+(see LICENSE in this folder).
+
+Source: the copy of skill-creator in the Sinthari repository (.claude/skills/skill-creator/, versioned in
+commit d095a8d on 2026-07-30). Copied into skills/skill-authoring/vendor/skill-creator/ on 2026-10-20.
+
+Files copied unchanged:
+  scripts/__init__.py
+  scripts/utils.py
+  scripts/run_eval.py
+  scripts/improve_description.py
+  scripts/run_loop.py
+  scripts/generate_report.py
+  eval-viewer/generate_review.py
+  eval-viewer/viewer.html
+
+Files modified by Sinthari (Apache License 2.0, section 4(b)):
+  agents/grader.md
+    - "Inputs": expectations may be objects { text, kind: merit|protocol }, not only strings.
+    - Added a header comment stating the modification.
+    - Added the section "Sinthari adaptation": what the grader must not see (the skill under test, the
+      writing conversation, the configuration), how to challenge a declared kind with kind_challenge
+      without changing it, and the output contract against grading.schema.json (received by path in
+      the prompt, so the grader never reads inside the skill under test).
+
+Host note: scripts/run_eval.py, improve_description.py and run_loop.py drive the `claude` command-line
+tool (`claude -p`). They work only where Claude Code is installed, and not on Windows (run_eval.py
+uses select.select on a subprocess pipe). The skill-authoring skill declares the description-optimization
+step "not available here" on any other host.

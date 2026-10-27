@@ -329,8 +329,14 @@ def _undetermined(
     return result
 
 
-def scan(profile: WikiProfile) -> ScanResult:
-    """Report the work not yet recorded in the wiki, and how that answer was obtained.
+def scan_with_all_paths(profile: WikiProfile) -> tuple[ScanResult, list[str]]:
+    """`scan`, plus the FULL list of pending paths (`ScanResult.pending_paths` is truncated).
+
+    The result names at most `pending_paths_limit` files, for readability. Anything that must act
+    on every pending file — the coverage a log entry declares — needs the whole list: deriving it
+    from the truncated one made an entry cover 10 files at most (E10-FEAT-084).
+
+    Report the work not yet recorded in the wiki, and how that answer was obtained.
 
     Absent anchor (missing/empty log) → everything is pending. `message` comes from the profile's
     localised `strings` and is left **verbatim** unless the host opts in with a `{files}`
@@ -348,7 +354,7 @@ def scan(profile: WikiProfile) -> ScanResult:
         if worktree_pair is None or raw_committed is None:
             # Could not look. Saying `pending: 0` here would be indistinguishable from a clean
             # project — the false-clean this feature removes (US2).
-            return _undetermined(profile, anchor, dirs_scanned, REASON_VCS_UNREADABLE)
+            return _undetermined(profile, anchor, dirs_scanned, REASON_VCS_UNREADABLE), []
 
         raw_worktree, raw_untracked = worktree_pair
         worktree = _to_project_paths(profile, raw_worktree)
@@ -365,7 +371,7 @@ def scan(profile: WikiProfile) -> ScanResult:
         else:
             ids = content_ids(in_scope, profile.config_dir)
             if ids is None:
-                return _undetermined(profile, anchor, dirs_scanned, REASON_VCS_UNREADABLE)
+                return _undetermined(profile, anchor, dirs_scanned, REASON_VCS_UNREADABLE), []
             pending_paths = [
                 p for p in in_scope if not coverage.covers(covered, p, ids[p])
             ]
@@ -416,4 +422,9 @@ def scan(profile: WikiProfile) -> ScanResult:
         determination=determination,
         legacy_coverage=legacy,
     )
-    return result
+    return result, pending_paths
+
+
+def scan(profile: WikiProfile) -> ScanResult:
+    """Report the work not yet recorded in the wiki (see `scan_with_all_paths`)."""
+    return scan_with_all_paths(profile)[0]

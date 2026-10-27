@@ -396,6 +396,22 @@ def test_a_recording_covers_what_existed_when_it_was_written(tmp_path):
     assert scan(_profile(host)).pending == 0
 
 
+def test_a_recording_covers_more_files_than_the_displayed_list(tmp_path):
+    """E10-FEAT-084: the displayed list is truncated to 10; the coverage of an entry must not be.
+
+    Before the fix one entry covered at most 10 files, so a step touching 61 (an installed
+    capability) needed six entries to close the gate.
+    """
+    host = _host_git(tmp_path)
+    for i in range(12):
+        (host / "src" / f"f{i:02d}.py").write_text("v = 1\n", encoding="utf-8")
+    assert len(scan(_profile(host)).pending_paths) == 10    # the display stays truncated
+
+    res = _record(host)
+    assert res.covered == 12
+    assert scan(_profile(host)).pending == 0
+
+
 def test_an_item_recorded_then_edited_again_is_pending(tmp_path):
     """Coverage is about content: the same path with new content is not the same work."""
     host = _host_git(tmp_path)

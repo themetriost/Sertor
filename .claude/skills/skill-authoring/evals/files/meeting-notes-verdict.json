@@ -1,0 +1,17 @@
+{
+  "skill_name": "meeting-notes",
+  "verdict": "validated",
+  "per_expectation": [
+    {
+      "eval_id": 1,
+      "text": "Ogni action item delle note corrisponde a un impegno detto nel transcript",
+      "kind": "merit",
+      "pass_rate_with": 1.0,
+      "pass_rate_without": 0.0,
+      "separates": true
+    }
+  ],
+  "missing": [],
+  "kind_challenges": [],
+  "skill_digest": "sha256:5a6043a728a0e02acebf1260bcca18cf7510ca805137998609e34635092eca62"
+}

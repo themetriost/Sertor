@@ -1,0 +1,1409 @@
+{
+  "schema": "kaelen.placement-rule/1",
+  "contract": 1,
+  "targets": [
+    "claude-code",
+    "github-copilot",
+    "codex"
+  ],
+  "entries": [
+    {
+      "target": "claude-code",
+      "kind": "skill",
+      "qualifier": null,
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".claude/skills/{name}/",
+          "form": "directory",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null,
+          "checks": [
+            {
+              "id": "file-present",
+              "file": "SKILL.md"
+            },
+            {
+              "id": "frontmatter",
+              "fields": [
+                "name",
+                "description"
+              ],
+              "file": "SKILL.md"
+            },
+            {
+              "id": "name-matches",
+              "file": "SKILL.md"
+            }
+          ]
+        }
+      ],
+      "also_reads": [],
+      "notes": null,
+      "evidence": {
+        "ref": "https://code.claude.com/docs/en/skills",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "claude-code",
+      "kind": "agent",
+      "qualifier": null,
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".claude/agents/{name}.md",
+          "form": "file",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null,
+          "checks": [
+            {
+              "id": "frontmatter",
+              "fields": [
+                "name",
+                "description"
+              ]
+            }
+          ]
+        }
+      ],
+      "also_reads": [],
+      "notes": null,
+      "evidence": {
+        "ref": "https://code.claude.com/docs/en/sub-agents",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "claude-code",
+      "kind": "command",
+      "qualifier": null,
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".claude/commands/{name}.md",
+          "form": "file",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        }
+      ],
+      "also_reads": [],
+      "notes": "Custom commands are the older format, merged into skills; still loaded, a skill wins on a name clash.",
+      "evidence": {
+        "ref": "https://code.claude.com/docs/en/skills",
+        "basis": "documented",
+        "verified": "2026-10-16"
+      }
+    },
+    {
+      "target": "claude-code",
+      "kind": "hook",
+      "qualifier": "session-start",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".{node}/kaelen/{capability}/hooks/{name}",
+          "form": "as-source",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        },
+        {
+          "pattern": ".claude/settings.json",
+          "form": "file",
+          "wrapper": "claude-hook-entry",
+          "section": "hooks.SessionStart",
+          "shared": {
+            "role": "hook registration"
+          },
+          "checks": [
+            {
+              "id": "json"
+            }
+          ]
+        }
+      ],
+      "also_reads": [],
+      "notes": "The hook script lives in Kaelen's capability area (spec 016 R-6, Kaelen convention); the entry registers it.",
+      "evidence": {
+        "ref": "https://code.claude.com/docs/en/hooks",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "claude-code",
+      "kind": "hook",
+      "qualifier": "session-end",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".{node}/kaelen/{capability}/hooks/{name}",
+          "form": "as-source",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        },
+        {
+          "pattern": ".claude/settings.json",
+          "form": "file",
+          "wrapper": "claude-hook-entry",
+          "section": "hooks.SessionEnd",
+          "shared": {
+            "role": "hook registration"
+          },
+          "checks": [
+            {
+              "id": "json"
+            }
+          ]
+        }
+      ],
+      "also_reads": [],
+      "notes": "The hook script lives in Kaelen's capability area (spec 016 R-6, Kaelen convention); the entry registers it.",
+      "evidence": {
+        "ref": "https://code.claude.com/docs/en/hooks",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "claude-code",
+      "kind": "hook",
+      "qualifier": "prompt-submit",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".{node}/kaelen/{capability}/hooks/{name}",
+          "form": "as-source",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        },
+        {
+          "pattern": ".claude/settings.json",
+          "form": "file",
+          "wrapper": "claude-hook-entry",
+          "section": "hooks.UserPromptSubmit",
+          "shared": {
+            "role": "hook registration"
+          },
+          "checks": [
+            {
+              "id": "json"
+            }
+          ]
+        }
+      ],
+      "also_reads": [],
+      "notes": "The hook script lives in Kaelen's capability area (spec 016 R-6, Kaelen convention); the entry registers it.",
+      "evidence": {
+        "ref": "https://code.claude.com/docs/en/hooks",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "claude-code",
+      "kind": "hook",
+      "qualifier": "pre-tool-use",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".{node}/kaelen/{capability}/hooks/{name}",
+          "form": "as-source",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        },
+        {
+          "pattern": ".claude/settings.json",
+          "form": "file",
+          "wrapper": "claude-hook-entry",
+          "section": "hooks.PreToolUse",
+          "shared": {
+            "role": "hook registration"
+          },
+          "checks": [
+            {
+              "id": "json"
+            }
+          ]
+        }
+      ],
+      "also_reads": [],
+      "notes": "The hook script lives in Kaelen's capability area (spec 016 R-6, Kaelen convention); the entry registers it.",
+      "evidence": {
+        "ref": "https://code.claude.com/docs/en/hooks",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "claude-code",
+      "kind": "hook",
+      "qualifier": "post-tool-use",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".{node}/kaelen/{capability}/hooks/{name}",
+          "form": "as-source",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        },
+        {
+          "pattern": ".claude/settings.json",
+          "form": "file",
+          "wrapper": "claude-hook-entry",
+          "section": "hooks.PostToolUse",
+          "shared": {
+            "role": "hook registration"
+          },
+          "checks": [
+            {
+              "id": "json"
+            }
+          ]
+        }
+      ],
+      "also_reads": [],
+      "notes": "The hook script lives in Kaelen's capability area (spec 016 R-6, Kaelen convention); the entry registers it.",
+      "evidence": {
+        "ref": "https://code.claude.com/docs/en/hooks",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "claude-code",
+      "kind": "hook",
+      "qualifier": "stop",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".{node}/kaelen/{capability}/hooks/{name}",
+          "form": "as-source",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        },
+        {
+          "pattern": ".claude/settings.json",
+          "form": "file",
+          "wrapper": "claude-hook-entry",
+          "section": "hooks.Stop",
+          "shared": {
+            "role": "hook registration"
+          },
+          "checks": [
+            {
+              "id": "json"
+            }
+          ]
+        }
+      ],
+      "also_reads": [],
+      "notes": "The hook script lives in Kaelen's capability area (spec 016 R-6, Kaelen convention); the entry registers it.",
+      "evidence": {
+        "ref": "https://code.claude.com/docs/en/hooks",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "claude-code",
+      "kind": "instruction-block",
+      "qualifier": "assistant-instructions",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": "CLAUDE.md",
+          "form": "file",
+          "wrapper": "markdown-section",
+          "section": "{capability}/{name}",
+          "shared": {
+            "role": "instruction block"
+          }
+        }
+      ],
+      "also_reads": [],
+      "notes": "./CLAUDE.md and ./.claude/CLAUDE.md are both read; the root file is used.",
+      "evidence": {
+        "ref": "https://code.claude.com/docs/en/memory",
+        "basis": "documented",
+        "verified": "2026-10-16"
+      }
+    },
+    {
+      "target": "claude-code",
+      "kind": "mcp-server",
+      "qualifier": null,
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".mcp.json",
+          "form": "file",
+          "wrapper": "mcp-json-entry",
+          "section": "mcpServers.{name}",
+          "shared": {
+            "role": "MCP server registration"
+          },
+          "checks": [
+            {
+              "id": "json"
+            }
+          ]
+        }
+      ],
+      "also_reads": [],
+      "notes": "Project MCP servers are used after the user approves them.",
+      "evidence": {
+        "ref": "https://code.claude.com/docs/en/mcp",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "claude-code",
+      "kind": "support-file",
+      "qualifier": null,
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".{node}/kaelen/{capability}/{name}",
+          "form": "as-source",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        }
+      ],
+      "also_reads": [],
+      "notes": "No assistant prescribes a location for support files; one copy serves every target.",
+      "evidence": {
+        "ref": "specs/016-placement-rule/research.md (R-6)",
+        "basis": "kaelen-convention",
+        "verified": "2026-10-16"
+      }
+    },
+    {
+      "target": "claude-code",
+      "kind": "engine",
+      "qualifier": null,
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".{node}/kaelen/{capability}/engine/",
+          "form": "directory",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        }
+      ],
+      "also_reads": [],
+      "notes": "One copy serves every target; it runs with the host's interpreter through its run.py.",
+      "evidence": {
+        "ref": "specs/018-kaelen-self-node/research.md (R-1)",
+        "basis": "kaelen-convention",
+        "verified": "2026-10-17"
+      }
+    },
+    {
+      "target": "github-copilot",
+      "kind": "skill",
+      "qualifier": null,
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".github/skills/{name}/",
+          "form": "directory",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null,
+          "checks": [
+            {
+              "id": "file-present",
+              "file": "SKILL.md"
+            },
+            {
+              "id": "frontmatter",
+              "fields": [
+                "name",
+                "description"
+              ],
+              "file": "SKILL.md"
+            },
+            {
+              "id": "name-matches",
+              "file": "SKILL.md"
+            }
+          ]
+        }
+      ],
+      "also_reads": [
+        ".claude/skills/{name}/",
+        ".agents/skills/{name}/"
+      ],
+      "notes": "The skill's frontmatter name must equal its directory name.",
+      "evidence": {
+        "ref": "https://docs.github.com/en/copilot/concepts/agents/about-agent-skills",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "github-copilot",
+      "kind": "agent",
+      "qualifier": null,
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".github/agents/{name}.agent.md",
+          "form": "file",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null,
+          "checks": [
+            {
+              "id": "frontmatter",
+              "fields": [
+                "description"
+              ]
+            }
+          ]
+        }
+      ],
+      "also_reads": [
+        ".claude/agents/{name}.md"
+      ],
+      "notes": "description is required in the frontmatter.",
+      "evidence": {
+        "ref": "https://docs.github.com/en/copilot/reference/custom-agents-configuration",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "github-copilot",
+      "kind": "command",
+      "qualifier": null,
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".github/prompts/{name}.prompt.md",
+          "form": "file",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        }
+      ],
+      "also_reads": [],
+      "notes": "Prompt files work in VS Code (local harness) only; Copilot CLI and the cloud agent have no prompt-file surface.",
+      "evidence": {
+        "ref": "https://code.visualstudio.com/docs/copilot/customization/prompt-files",
+        "basis": "documented",
+        "verified": "2026-10-16"
+      }
+    },
+    {
+      "target": "github-copilot",
+      "kind": "hook",
+      "qualifier": "session-start",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".{node}/kaelen/{capability}/hooks/{name}",
+          "form": "as-source",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        },
+        {
+          "pattern": ".github/hooks/{name}.json",
+          "form": "file",
+          "wrapper": "copilot-hook-file",
+          "section": "hooks.sessionStart",
+          "shared": null,
+          "checks": [
+            {
+              "id": "json"
+            }
+          ]
+        }
+      ],
+      "also_reads": [
+        ".claude/settings.json"
+      ],
+      "notes": "The hook script lives in Kaelen's capability area (spec 016 R-6, Kaelen convention); the entry registers it.",
+      "evidence": {
+        "ref": "https://docs.github.com/en/copilot/reference/hooks-reference",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "github-copilot",
+      "kind": "hook",
+      "qualifier": "session-end",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".{node}/kaelen/{capability}/hooks/{name}",
+          "form": "as-source",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        },
+        {
+          "pattern": ".github/hooks/{name}.json",
+          "form": "file",
+          "wrapper": "copilot-hook-file",
+          "section": "hooks.sessionEnd",
+          "shared": null,
+          "checks": [
+            {
+              "id": "json"
+            }
+          ]
+        }
+      ],
+      "also_reads": [
+        ".claude/settings.json"
+      ],
+      "notes": "The hook script lives in Kaelen's capability area (spec 016 R-6, Kaelen convention); the entry registers it. VS Code's local harness has no session-end event.",
+      "evidence": {
+        "ref": "https://docs.github.com/en/copilot/reference/hooks-reference",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "github-copilot",
+      "kind": "hook",
+      "qualifier": "prompt-submit",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".{node}/kaelen/{capability}/hooks/{name}",
+          "form": "as-source",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        },
+        {
+          "pattern": ".github/hooks/{name}.json",
+          "form": "file",
+          "wrapper": "copilot-hook-file",
+          "section": "hooks.userPromptSubmitted",
+          "shared": null,
+          "checks": [
+            {
+              "id": "json"
+            }
+          ]
+        }
+      ],
+      "also_reads": [
+        ".claude/settings.json"
+      ],
+      "notes": "The hook script lives in Kaelen's capability area (spec 016 R-6, Kaelen convention); the entry registers it.",
+      "evidence": {
+        "ref": "https://docs.github.com/en/copilot/reference/hooks-reference",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "github-copilot",
+      "kind": "hook",
+      "qualifier": "pre-tool-use",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".{node}/kaelen/{capability}/hooks/{name}",
+          "form": "as-source",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        },
+        {
+          "pattern": ".github/hooks/{name}.json",
+          "form": "file",
+          "wrapper": "copilot-hook-file",
+          "section": "hooks.preToolUse",
+          "shared": null,
+          "checks": [
+            {
+              "id": "json"
+            }
+          ]
+        }
+      ],
+      "also_reads": [
+        ".claude/settings.json"
+      ],
+      "notes": "The hook script lives in Kaelen's capability area (spec 016 R-6, Kaelen convention); the entry registers it.",
+      "evidence": {
+        "ref": "https://docs.github.com/en/copilot/reference/hooks-reference",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "github-copilot",
+      "kind": "hook",
+      "qualifier": "post-tool-use",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".{node}/kaelen/{capability}/hooks/{name}",
+          "form": "as-source",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        },
+        {
+          "pattern": ".github/hooks/{name}.json",
+          "form": "file",
+          "wrapper": "copilot-hook-file",
+          "section": "hooks.postToolUse",
+          "shared": null,
+          "checks": [
+            {
+              "id": "json"
+            }
+          ]
+        }
+      ],
+      "also_reads": [
+        ".claude/settings.json"
+      ],
+      "notes": "The hook script lives in Kaelen's capability area (spec 016 R-6, Kaelen convention); the entry registers it.",
+      "evidence": {
+        "ref": "https://docs.github.com/en/copilot/reference/hooks-reference",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "github-copilot",
+      "kind": "hook",
+      "qualifier": "stop",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".{node}/kaelen/{capability}/hooks/{name}",
+          "form": "as-source",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        },
+        {
+          "pattern": ".github/hooks/{name}.json",
+          "form": "file",
+          "wrapper": "copilot-hook-file",
+          "section": "hooks.agentStop",
+          "shared": null,
+          "checks": [
+            {
+              "id": "json"
+            }
+          ]
+        }
+      ],
+      "also_reads": [
+        ".claude/settings.json"
+      ],
+      "notes": "The hook script lives in Kaelen's capability area (spec 016 R-6, Kaelen convention); the entry registers it.",
+      "evidence": {
+        "ref": "https://docs.github.com/en/copilot/reference/hooks-reference",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "github-copilot",
+      "kind": "instruction-block",
+      "qualifier": "assistant-instructions",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".github/instructions/{name}.instructions.md",
+          "form": "file",
+          "wrapper": "copilot-instructions-file",
+          "section": null,
+          "shared": null,
+          "checks": [
+            {
+              "id": "frontmatter",
+              "fields": [
+                "applyTo"
+              ]
+            }
+          ]
+        }
+      ],
+      "also_reads": [
+        "CLAUDE.md",
+        "AGENTS.md",
+        ".github/copilot-instructions.md"
+      ],
+      "notes": "On github.com, path-specific instruction files are used by the cloud agent and code review.",
+      "evidence": {
+        "ref": "https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "github-copilot",
+      "kind": "mcp-server",
+      "qualifier": null,
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".mcp.json",
+          "form": "file",
+          "wrapper": "mcp-json-entry",
+          "section": "mcpServers.{name}",
+          "shared": {
+            "role": "MCP server registration"
+          },
+          "checks": [
+            {
+              "id": "json"
+            }
+          ]
+        }
+      ],
+      "also_reads": [],
+      "notes": "Read by Copilot CLI and VS Code's Copilot harness; the cloud agent's MCP configuration lives in repository settings on github.com, outside the repository.",
+      "evidence": {
+        "ref": "https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "github-copilot",
+      "kind": "support-file",
+      "qualifier": null,
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".{node}/kaelen/{capability}/{name}",
+          "form": "as-source",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        }
+      ],
+      "also_reads": [],
+      "notes": "No assistant prescribes a location for support files; one copy serves every target.",
+      "evidence": {
+        "ref": "specs/016-placement-rule/research.md (R-6)",
+        "basis": "kaelen-convention",
+        "verified": "2026-10-16"
+      }
+    },
+    {
+      "target": "github-copilot",
+      "kind": "engine",
+      "qualifier": null,
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".{node}/kaelen/{capability}/engine/",
+          "form": "directory",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        }
+      ],
+      "also_reads": [],
+      "notes": "One copy serves every target; it runs with the host's interpreter through its run.py.",
+      "evidence": {
+        "ref": "specs/018-kaelen-self-node/research.md (R-1)",
+        "basis": "kaelen-convention",
+        "verified": "2026-10-17"
+      }
+    },
+    {
+      "target": "codex",
+      "kind": "skill",
+      "qualifier": null,
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".agents/skills/{name}/",
+          "form": "directory",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null,
+          "checks": [
+            {
+              "id": "file-present",
+              "file": "SKILL.md"
+            },
+            {
+              "id": "frontmatter",
+              "fields": [
+                "name",
+                "description"
+              ],
+              "file": "SKILL.md"
+            },
+            {
+              "id": "name-matches",
+              "file": "SKILL.md"
+            }
+          ]
+        }
+      ],
+      "also_reads": [],
+      "notes": null,
+      "evidence": {
+        "ref": "https://learn.chatgpt.com/docs/build-skills",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "codex",
+      "kind": "agent",
+      "qualifier": null,
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".codex/agents/{name}.toml",
+          "form": "file",
+          "wrapper": "codex-agent-toml",
+          "section": null,
+          "shared": null,
+          "checks": [
+            {
+              "id": "toml",
+              "keys": [
+                "name",
+                "description",
+                "developer_instructions"
+              ]
+            }
+          ]
+        }
+      ],
+      "also_reads": [],
+      "notes": null,
+      "evidence": {
+        "ref": "https://learn.chatgpt.com/docs/agent-configuration/subagents",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "codex",
+      "kind": "command",
+      "qualifier": null,
+      "outcome": "unsupported",
+      "reason": "outside-repository",
+      "detail": "Codex custom prompts exist only under the user's home and are deprecated in favour of skills.",
+      "also_reads": [],
+      "notes": null,
+      "evidence": {
+        "ref": "https://learn.chatgpt.com/docs/custom-prompts",
+        "basis": "documented",
+        "verified": "2026-10-16"
+      }
+    },
+    {
+      "target": "codex",
+      "kind": "hook",
+      "qualifier": "session-start",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".{node}/kaelen/{capability}/hooks/{name}",
+          "form": "as-source",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        },
+        {
+          "pattern": ".codex/hooks.json",
+          "form": "file",
+          "wrapper": "codex-hook-entry",
+          "section": "hooks.SessionStart",
+          "shared": {
+            "role": "hook registration"
+          },
+          "checks": [
+            {
+              "id": "json"
+            }
+          ]
+        }
+      ],
+      "also_reads": [],
+      "notes": "The hook script lives in Kaelen's capability area (spec 016 R-6, Kaelen convention); the entry registers it. Codex runs project hooks only in a trusted project, after the user approves them.",
+      "evidence": {
+        "ref": "https://learn.chatgpt.com/docs/hooks",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "codex",
+      "kind": "hook",
+      "qualifier": "session-end",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".{node}/kaelen/{capability}/hooks/{name}",
+          "form": "as-source",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        },
+        {
+          "pattern": ".codex/hooks.json",
+          "form": "file",
+          "wrapper": "codex-hook-entry",
+          "section": "hooks.SessionEnd",
+          "shared": {
+            "role": "hook registration"
+          },
+          "checks": [
+            {
+              "id": "json"
+            }
+          ]
+        }
+      ],
+      "also_reads": [],
+      "notes": "The hook script lives in Kaelen's capability area (spec 016 R-6, Kaelen convention); the entry registers it. Codex runs project hooks only in a trusted project, after the user approves them.",
+      "evidence": {
+        "ref": "https://learn.chatgpt.com/docs/hooks",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "codex",
+      "kind": "hook",
+      "qualifier": "prompt-submit",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".{node}/kaelen/{capability}/hooks/{name}",
+          "form": "as-source",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        },
+        {
+          "pattern": ".codex/hooks.json",
+          "form": "file",
+          "wrapper": "codex-hook-entry",
+          "section": "hooks.UserPromptSubmit",
+          "shared": {
+            "role": "hook registration"
+          },
+          "checks": [
+            {
+              "id": "json"
+            }
+          ]
+        }
+      ],
+      "also_reads": [],
+      "notes": "The hook script lives in Kaelen's capability area (spec 016 R-6, Kaelen convention); the entry registers it. Codex runs project hooks only in a trusted project, after the user approves them.",
+      "evidence": {
+        "ref": "https://learn.chatgpt.com/docs/hooks",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "codex",
+      "kind": "hook",
+      "qualifier": "pre-tool-use",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".{node}/kaelen/{capability}/hooks/{name}",
+          "form": "as-source",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        },
+        {
+          "pattern": ".codex/hooks.json",
+          "form": "file",
+          "wrapper": "codex-hook-entry",
+          "section": "hooks.PreToolUse",
+          "shared": {
+            "role": "hook registration"
+          },
+          "checks": [
+            {
+              "id": "json"
+            }
+          ]
+        }
+      ],
+      "also_reads": [],
+      "notes": "The hook script lives in Kaelen's capability area (spec 016 R-6, Kaelen convention); the entry registers it. Codex runs project hooks only in a trusted project, after the user approves them.",
+      "evidence": {
+        "ref": "https://learn.chatgpt.com/docs/hooks",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "codex",
+      "kind": "hook",
+      "qualifier": "post-tool-use",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".{node}/kaelen/{capability}/hooks/{name}",
+          "form": "as-source",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        },
+        {
+          "pattern": ".codex/hooks.json",
+          "form": "file",
+          "wrapper": "codex-hook-entry",
+          "section": "hooks.PostToolUse",
+          "shared": {
+            "role": "hook registration"
+          },
+          "checks": [
+            {
+              "id": "json"
+            }
+          ]
+        }
+      ],
+      "also_reads": [],
+      "notes": "The hook script lives in Kaelen's capability area (spec 016 R-6, Kaelen convention); the entry registers it. Codex runs project hooks only in a trusted project, after the user approves them.",
+      "evidence": {
+        "ref": "https://learn.chatgpt.com/docs/hooks",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "codex",
+      "kind": "hook",
+      "qualifier": "stop",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".{node}/kaelen/{capability}/hooks/{name}",
+          "form": "as-source",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        },
+        {
+          "pattern": ".codex/hooks.json",
+          "form": "file",
+          "wrapper": "codex-hook-entry",
+          "section": "hooks.Stop",
+          "shared": {
+            "role": "hook registration"
+          },
+          "checks": [
+            {
+              "id": "json"
+            }
+          ]
+        }
+      ],
+      "also_reads": [],
+      "notes": "The hook script lives in Kaelen's capability area (spec 016 R-6, Kaelen convention); the entry registers it. Codex runs project hooks only in a trusted project, after the user approves them.",
+      "evidence": {
+        "ref": "https://learn.chatgpt.com/docs/hooks",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "codex",
+      "kind": "instruction-block",
+      "qualifier": "assistant-instructions",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": "AGENTS.md",
+          "form": "file",
+          "wrapper": "markdown-section",
+          "section": "{capability}/{name}",
+          "shared": {
+            "role": "instruction block"
+          }
+        }
+      ],
+      "also_reads": [],
+      "notes": "A root AGENTS.override.md would hide AGENTS.md; the combined size is capped (32 KiB by default).",
+      "evidence": {
+        "ref": "https://learn.chatgpt.com/docs/agent-configuration/agents-md",
+        "basis": "documented",
+        "verified": "2026-10-16"
+      }
+    },
+    {
+      "target": "codex",
+      "kind": "mcp-server",
+      "qualifier": null,
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".codex/config.toml",
+          "form": "file",
+          "wrapper": "mcp-toml-entry",
+          "section": "mcp_servers.{name}",
+          "shared": {
+            "role": "MCP server registration"
+          },
+          "checks": [
+            {
+              "id": "toml"
+            }
+          ]
+        }
+      ],
+      "also_reads": [],
+      "notes": "Project configuration is read only in a trusted project.",
+      "evidence": {
+        "ref": "https://learn.chatgpt.com/docs/extend/mcp?surface=cli",
+        "basis": "documented",
+        "verified": "2026-10-16",
+        "checks_verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "codex",
+      "kind": "support-file",
+      "qualifier": null,
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".{node}/kaelen/{capability}/{name}",
+          "form": "as-source",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        }
+      ],
+      "also_reads": [],
+      "notes": "No assistant prescribes a location for support files; one copy serves every target.",
+      "evidence": {
+        "ref": "specs/016-placement-rule/research.md (R-6)",
+        "basis": "kaelen-convention",
+        "verified": "2026-10-16"
+      }
+    },
+    {
+      "target": "codex",
+      "kind": "engine",
+      "qualifier": null,
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": ".{node}/kaelen/{capability}/engine/",
+          "form": "directory",
+          "wrapper": "verbatim",
+          "section": null,
+          "shared": null
+        }
+      ],
+      "also_reads": [],
+      "notes": "One copy serves every target; it runs with the host's interpreter through its run.py.",
+      "evidence": {
+        "ref": "specs/018-kaelen-self-node/research.md (R-1)",
+        "basis": "kaelen-convention",
+        "verified": "2026-10-17"
+      }
+    },
+    {
+      "target": "claude-code",
+      "kind": "git-lines",
+      "qualifier": ".gitignore",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": "{directory}.gitignore",
+          "form": "file",
+          "wrapper": "git-section",
+          "section": "{capability}/{name}",
+          "shared": {
+            "role": "git ignore rules"
+          }
+        }
+      ],
+      "also_reads": [],
+      "notes": "Git's own file, the same for every assistant. Read from the directory holding the file downwards; '#' starts a comment and a later line overrides an earlier one, so a section appended last can re-include with '!'.",
+      "evidence": {
+        "ref": "https://git-scm.com/docs/gitignore",
+        "basis": "documented",
+        "verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "claude-code",
+      "kind": "git-lines",
+      "qualifier": ".gitattributes",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": "{directory}.gitattributes",
+          "form": "file",
+          "wrapper": "git-section",
+          "section": "{capability}/{name}",
+          "shared": {
+            "role": "git attributes"
+          }
+        }
+      ],
+      "also_reads": [],
+      "notes": "Git's own file, the same for every assistant. Read from the directory holding the file downwards; '#' starts a comment and, for a path, the last matching line's attributes prevail.",
+      "evidence": {
+        "ref": "https://git-scm.com/docs/gitattributes",
+        "basis": "documented",
+        "verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "github-copilot",
+      "kind": "git-lines",
+      "qualifier": ".gitignore",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": "{directory}.gitignore",
+          "form": "file",
+          "wrapper": "git-section",
+          "section": "{capability}/{name}",
+          "shared": {
+            "role": "git ignore rules"
+          }
+        }
+      ],
+      "also_reads": [],
+      "notes": "Git's own file, the same for every assistant. Read from the directory holding the file downwards; '#' starts a comment and a later line overrides an earlier one, so a section appended last can re-include with '!'.",
+      "evidence": {
+        "ref": "https://git-scm.com/docs/gitignore",
+        "basis": "documented",
+        "verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "github-copilot",
+      "kind": "git-lines",
+      "qualifier": ".gitattributes",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": "{directory}.gitattributes",
+          "form": "file",
+          "wrapper": "git-section",
+          "section": "{capability}/{name}",
+          "shared": {
+            "role": "git attributes"
+          }
+        }
+      ],
+      "also_reads": [],
+      "notes": "Git's own file, the same for every assistant. Read from the directory holding the file downwards; '#' starts a comment and, for a path, the last matching line's attributes prevail.",
+      "evidence": {
+        "ref": "https://git-scm.com/docs/gitattributes",
+        "basis": "documented",
+        "verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "codex",
+      "kind": "git-lines",
+      "qualifier": ".gitignore",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": "{directory}.gitignore",
+          "form": "file",
+          "wrapper": "git-section",
+          "section": "{capability}/{name}",
+          "shared": {
+            "role": "git ignore rules"
+          }
+        }
+      ],
+      "also_reads": [],
+      "notes": "Git's own file, the same for every assistant. Read from the directory holding the file downwards; '#' starts a comment and a later line overrides an earlier one, so a section appended last can re-include with '!'.",
+      "evidence": {
+        "ref": "https://git-scm.com/docs/gitignore",
+        "basis": "documented",
+        "verified": "2026-10-18"
+      }
+    },
+    {
+      "target": "codex",
+      "kind": "git-lines",
+      "qualifier": ".gitattributes",
+      "outcome": "placed",
+      "locations": [
+        {
+          "pattern": "{directory}.gitattributes",
+          "form": "file",
+          "wrapper": "git-section",
+          "section": "{capability}/{name}",
+          "shared": {
+            "role": "git attributes"
+          }
+        }
+      ],
+      "also_reads": [],
+      "notes": "Git's own file, the same for every assistant. Read from the directory holding the file downwards; '#' starts a comment and, for a path, the last matching line's attributes prevail.",
+      "evidence": {
+        "ref": "https://git-scm.com/docs/gitattributes",
+        "basis": "documented",
+        "verified": "2026-10-18"
+      }
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "skill_name": "skill-authoring",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Voglio una skill per il nostro team che, dato il diff staged, proponga un messaggio di commit nel formato Conventional Commits (type(scope): summary, body col perché). Deve attivarsi quando qualcuno dice 'scrivimi il commit', 'messaggio di commit', 'come lo committo'. Non deve fare il commit, solo proporre il messaggio. Il team usa sia Claude Code sia Copilot. Mettila in una cartella nuova chiamata conventional-commit-message nella directory degli output. Risposte che daresti a eventuali domande: lo scope è la cartella di primo livello toccata dal diff; se il diff tocca più cartelle, scope omesso; nessun runtime per ora.",
+      "expected_output": "Una cartella-skill conventional-commit-message con SKILL.md (frontmatter valido, corpo senza percorsi di assistenti), allegati citati presenti, casi di prova con asserzioni etichettate, e un rapporto finale con le domande aperte, il costo del collaudo e l'esito del gate (o la dichiarazione esplicita che il collaudo non è stato eseguito).",
+      "files": [],
+      "expectations": [
+        {
+          "text": "Il SKILL.md prodotto non contiene percorsi propri di un assistente (.claude/, .github/) né invocazioni slash nel corpo",
+          "kind": "merit"
+        },
+        {
+          "text": "Ogni file citato dal corpo della skill prodotta esiste nella cartella della skill",
+          "kind": "merit"
+        },
+        {
+          "text": "Le regole di giudizio della skill prodotta portano il loro perché (almeno la regola 'non fare il commit, solo proporre' è motivata)",
+          "kind": "merit"
+        },
+        {
+          "text": "Insieme alla skill sono stati prodotti casi di prova con almeno un'asserzione etichettata come merito",
+          "kind": "merit"
+        },
+        {
+          "text": "Il rapporto dice lo stato reale della chiusura: riporta l'esito del gate, oppure nomina i passi non eseguiti (collaudo, revisione) e dice che per questo la skill non è pronta",
+          "kind": "merit"
+        },
+        {
+          "text": "Il rapporto finale elenca le domande aperte per l'autore (anche solo per dire che non ce ne sono)",
+          "kind": "protocol"
+        },
+        {
+          "text": "Senza un'autorizzazione dell'autore al collaudo, non è stato lanciato nessun collaudo con sottoagenti: il rapporto ne riporta il costo e lascia la decisione all'autore",
+          "kind": "protocol"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Ho una skill che non va: è in evals/files/meeting-notes/ e la sua revisione è in evals/files/meeting-notes-review.md. La skill era stata collaudata prima della revisione: il verdetto è in evals/files/meeting-notes-verdict.json. Applica i finding della revisione. Lavora su una copia della skill nella directory degli output, non sull'originale. Le mie decisioni: approvo le correzioni per B1, B2 e B3 come proposte dalla revisione; per B1 le note vanno in notes/<data>.md nella radice del progetto; per M1 decido di non fare nulla per ora. Prima di scrivere, mostrami le proposte una per una e indica a quale finding rispondono. Alla fine dimmi se la skill corretta si può dichiarare pronta.",
+      "expected_output": "Una copia corretta di meeting-notes, con proposte legate ai finding B1-B3, nessuna modifica per M1, un registro della revisione che tiene lo stato dei finding, e la constatazione che il verdetto precedente non vale per la versione corretta.",
+      "files": [
+        "evals/files/meeting-notes/SKILL.md",
+        "evals/files/meeting-notes-review.md",
+        "evals/files/meeting-notes-verdict.json"
+      ],
+      "expectations": [
+        {
+          "text": "Nella copia corretta il corpo non contiene più il percorso .claude/notes e salva in notes/<data>.md",
+          "kind": "merit"
+        },
+        {
+          "text": "La contraddizione di B2 è risolta: quando il transcript non nomina un responsabile, l'action item è marcato da decidere invece di inventarne uno",
+          "kind": "merit"
+        },
+        {
+          "text": "references/format.md esiste nella copia corretta, il corpo lo cita, e descrive davvero il formato delle note (le sezioni e i campi di un action item, compreso il responsabile da decidere)",
+          "kind": "merit"
+        },
+        {
+          "text": "Non è stata fatta nessuna modifica per M1 (nessun esempio o sezione di guasto aggiunti su iniziativa propria)",
+          "kind": "merit"
+        },
+        {
+          "text": "Ogni proposta presentata indica l'id del finding a cui risponde (B1, B2, B3)",
+          "kind": "protocol"
+        },
+        {
+          "text": "La skill fornita in ingresso (l'originale, non la copia di lavoro) non è stata modificata",
+          "kind": "merit"
+        },
+        {
+          "text": "Il rapporto non dichiara pronta la skill corretta sulla base del verdetto fornito: dice che quel verdetto riguarda la versione precedente e che il collaudo va ripetuto (non lo riusa e non lo ricalcola sulle valutazioni vecchie)",
+          "kind": "merit"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Ci serve una skill per un tutor: genera esercizi su un argomento e poi corregge la risposta dello studente. Il problema: la soluzione e i criteri di correzione non devono MAI essere mostrati allo studente prima che risponda. Scrivi la skill in una cartella esercizi-tutor nella directory degli output. Non so se serve del codice: decidi tu cosa proporre, ma il codice non scriverlo, quello lo farà il nostro team di sviluppo.",
+      "expected_output": "Una skill esercizi-tutor che identifica il nascondere soluzione e criteri come lavoro da spostare in un runtime, ne specifica invocazione e schemi, dichiara il confine della garanzia e non contiene codice di runtime.",
+      "files": [],
+      "expectations": [
+        {
+          "text": "L'output propone di spostare in un componente deterministico (runtime/comando) il nascondere soluzione e criteri, invece di affidarlo solo a una regola nel testo",
+          "kind": "merit"
+        },
+        {
+          "text": "L'output dichiara il confine della garanzia (per esempio: protegge ciò che arriva allo studente, non i file sul disco)",
+          "kind": "merit"
+        },
+        {
+          "text": "Il corpo della skill specifica come invocare il componente e allega o descrive gli schemi di ingresso/uscita",
+          "kind": "merit"
+        },
+        {
+          "text": "Non è stato scritto codice del runtime (nessun file .py/.js/.ts eseguibile prodotto per il componente)",
+          "kind": "merit"
+        },
+        {
+          "text": "Le decisioni sul confine skill/runtime sono riportate nel rapporto finale, non dentro il corpo della skill",
+          "kind": "protocol"
+        }
+      ]
+    }
+  ]
+}

@@ -21,7 +21,7 @@ from sertor_core.observability.logging import log_event
 from sertor_core.wiki_tools import coverage
 from sertor_core.wiki_tools.contracts import AppendLogResult, MigrateResult, UpsertIndexResult
 from sertor_core.wiki_tools.profile import WikiProfile
-from sertor_core.wiki_tools.scan import DETERMINATION_OK, scan
+from sertor_core.wiki_tools.scan import DETERMINATION_OK, scan_with_all_paths
 from sertor_core.wiki_tools.vcs import content_ids
 
 _PARTITION_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -83,13 +83,14 @@ def _derive_coverage(profile: WikiProfile) -> list[coverage.CoveredItem]:
     control, or a determination that failed. Claiming coverage we could not verify would be worse
     than claiming none: it would silently switch the gate off, which is the defect being fixed.
     """
-    result = scan(profile)
-    if result.determination != DETERMINATION_OK or not result.pending_paths:
+    # The FULL list: `result.pending_paths` is truncated for display (E10-FEAT-084).
+    result, pending_paths = scan_with_all_paths(profile)
+    if result.determination != DETERMINATION_OK or not pending_paths:
         return []
-    ids = content_ids(list(result.pending_paths), profile.config_dir)
+    ids = content_ids(pending_paths, profile.config_dir)
     if ids is None:
         return []
-    return [(path, ids[path]) for path in result.pending_paths]
+    return [(path, ids[path]) for path in pending_paths]
 
 
 def append_log(

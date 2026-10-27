@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sinthari.local/skillauthor/verdict.schema.json",
+  "title": "skillauthor verdict",
+  "type": "object",
+  "required": [
+    "skill_name",
+    "verdict",
+    "per_expectation",
+    "missing",
+    "kind_challenges"
+  ],
+  "properties": {
+    "skill_name": {
+      "type": "string"
+    },
+    "verdict": {
+      "enum": [
+        "validated",
+        "protocol-only",
+        "no-separation",
+        "incomplete"
+      ]
+    },
+    "per_expectation": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "eval_id",
+          "text",
+          "kind",
+          "pass_rate_with",
+          "pass_rate_without",
+          "separates"
+        ],
+        "properties": {
+          "eval_id": {
+            "type": "integer"
+          },
+          "text": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "merit",
+              "protocol"
+            ]
+          },
+          "pass_rate_with": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "pass_rate_without": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "separates": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "missing": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "kind_challenges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "eval_id",
+          "text",
+          "proposed_kind",
+          "why"
+        ]
+      }
+    },
+    "skill_digest": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Impronta sha256 della cartella della skill collaudata (verdetto legato alla versione)."
+    }
+  }
+}

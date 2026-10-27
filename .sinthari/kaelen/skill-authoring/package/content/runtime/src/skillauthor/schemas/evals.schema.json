@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sinthari.local/skillauthor/evals.schema.json",
+  "title": "skillauthor evals",
+  "description": "Casi di prova di una skill. Compatibile con evals.json di skill-creator; ogni expectation può dichiarare kind merit|protocol (stringa nuda = merit).",
+  "type": "object",
+  "required": ["skill_name", "evals"],
+  "properties": {
+    "skill_name": {"type": "string", "minLength": 1},
+    "evals": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "prompt", "expectations"],
+        "properties": {
+          "id": {"type": "integer"},
+          "prompt": {"type": "string", "minLength": 1},
+          "expected_output": {"type": "string"},
+          "files": {"type": "array", "items": {"type": "string"}},
+          "expectations": {
+            "type": "array", "minItems": 1,
+            "items": {
+              "oneOf": [
+                {"type": "string", "minLength": 1},
+                {
+                  "type": "object", "required": ["text", "kind"], "additionalProperties": false,
+                  "properties": {
+                    "text": {"type": "string", "minLength": 1},
+                    "kind": {"enum": ["merit", "protocol"]}
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

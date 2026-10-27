@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sinthari.local/skillauthor/review.schema.json",
+  "title": "skillauthor review register",
+  "description": "Registro dei finding di skill-review, trascritto dall'agente. Il gate ready si fida della trascrizione (confine dichiarato).",
+  "type": "object",
+  "required": ["skill_name", "round", "findings"],
+  "properties": {
+    "skill_name": {"type": "string"},
+    "round": {"type": "integer", "minimum": 1},
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "severity", "summary", "status"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "severity": {"enum": ["blocking", "improvement"]},
+          "summary": {"type": "string", "minLength": 1},
+          "status": {"enum": ["open", "resolved", "accepted"]},
+          "acceptance_reason": {"type": "string"}
+        },
+        "if": {"properties": {"status": {"const": "accepted"}}},
+        "then": {"required": ["acceptance_reason"], "properties": {"acceptance_reason": {"minLength": 1}}}
+      }
+    }
+  }
+}
